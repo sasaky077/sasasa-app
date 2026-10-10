@@ -674,6 +674,41 @@
     return !!played;
   }
 
+  function isRingPuzzleStage(stage) {
+    const data = getStoryScenarioData(stage);
+    return !!(data && String(data.stageType || '').toLowerCase() === 'puzzle');
+  }
+
+  function playRingPuzzleStage(stage, mode) {
+    const stageId = stage.baseStageId || stage.id;
+    const chapter = Number(stage.chapter || 5);
+    const storyMode = mode === 'beginner' ? 'beginner' : 'normal';
+    const overlay = document.createElement('div');
+    overlay.id = 'zeraphia-ring-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;background:#efebe3;';
+    const frame = document.createElement('iframe');
+    frame.title = '円環パズル';
+    frame.style.cssText = 'width:100%;height:100%;border:0;display:block;';
+    frame.src = 'ring_puzzle_ch05.html?rings=' + (Number(stage.stageNo) === 2 ? '3' : '4');
+    overlay.appendChild(frame);
+    document.body.appendChild(overlay);
+    let done = false;
+    function cleanup() { window.removeEventListener('message', onMessage); overlay.remove(); }
+    function returnToChapter() { if (typeof window.openStageSelect === 'function') window.openStageSelect(chapter, storyMode); }
+    function onMessage(event) {
+      if (event.source !== frame.contentWindow || event.origin !== location.origin || done) return;
+      if (event.data?.type === 'zeraphia-ring-exit') { done=true;cleanup();returnToChapter();return; }
+      if (event.data?.type !== 'zeraphia-ring-cleared') return;
+      done=true;cleanup();
+      const complete = () => { markNovelStoryStageCleared(stage.id);returnToChapter(); };
+      if (window.StoryNovel && typeof window.StoryNovel.playPost === 'function') {
+        const played = window.StoryNovel.playPost(stageId,{onComplete:complete,onExit:returnToChapter});
+        if (!played) complete();
+      } else complete();
+    }
+    window.addEventListener('message', onMessage);
+  }
+
   // ============================================================
   // STORY（SHOOTING）ステージ選択
   // ============================================================
@@ -717,7 +752,7 @@
       hideStageSelect();
       setReturnContext();
       if (typeof window.openShootingStage === 'function') {
-        if (replay && typeof window.openShootingEvent === 'function') {
+        if (replay && !isRingPuzzleStage(stage) && !isNovelOnlyStoryStage(stage) && typeof window.openShootingEvent === 'function') {
           window.openShootingEvent({ stageId: stage.id, storyReplay: true });
         } else {
           window.openShootingStage(stage.id);
@@ -742,7 +777,14 @@
     };
 
     const beginReadyStoryFlow = () => {
-      if (replay) { openBattle(); return; }
+      if (isRingPuzzleStage(stage)) {
+        if (replay) { hideStageSelect();playRingPuzzleStage(stage, storyMode);return; }
+        const novel=window.StoryNovel;
+        const played=novel.playPre(storyId,{onComplete:()=>playRingPuzzleStage(stage,storyMode),onExit:returnToChapter});
+        if (!played) playRingPuzzleStage(stage,storyMode);
+        return;
+      }
+      if (replay && !isNovelOnlyStoryStage(stage)) { openBattle(); return; }
       // StoryNovel準備後にNOVEL専用判定をやり直す。
       // 読込前に判定するとCH03-01などが通常戦闘扱いになってしまう。
       if (isNovelOnlyStoryStage(stage)) {
@@ -785,7 +827,7 @@
     hideStageSelect();
     setReturnContext();
     // 再挑戦はノベルのロードを待たず、戦闘モジュールだけ待つ。
-    if (replay && typeof window.openShootingEvent === 'function') {
+    if (replay && !isRingPuzzleStage(stage) && !isNovelOnlyStoryStage(stage) && typeof window.openShootingEvent === 'function') {
       openBattle();
       return;
     }

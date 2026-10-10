@@ -3313,7 +3313,821 @@
         "narration": true
       }
     ]
-  }
+  },
+"shooting_ch05_01": {
+  "chapter": 5,
+  "stageNo": 1,
+  "chapterTitle": "円環",
+  "stageTitle": "沈黙する円盤",
+  "stageType": "novel",
+  "pre": [
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "翌日。一行は二手に分かれていた。ジグとアウラはレオナクロスの装置を手に塔の周りを調査し、アルノは塔の上層から辺りを見張っている。",
+      "narration": true
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "塔・内部。中央には、かつてエリに反応した円盤がある。",
+      "narration": true
+    },
+    {
+      "speaker": "ミモザ",
+      "text": "……やっぱり、何も起こらないわね",
+      "left": "ミモザ",
+      "right": ""
+    },
+    {
+      "speaker": "エリ",
+      "text": "うん……",
+      "left": "",
+      "right": "エリ"
+    },
+    {
+      "speaker": "ミモザ",
+      "text": "あれ以来、エリが触れても反応しない。",
+      "left": "ミモザ",
+      "right": ""
+    },
+    {
+      "speaker": "ミモザ",
+      "text": "もちろん、私たちが触っても同じ。",
+      "left": "ミモザ",
+      "right": ""
+    },
+    {
+      "speaker": "エリ",
+      "text": "なんだったんだろう、あの時の光……",
+      "left": "",
+      "right": "エリ"
+    },
+    {
+      "speaker": "レオナクロス",
+      "text": "さあね。気まぐれだったんじゃないかな？",
+      "left": "",
+      "right": "レオナクロス"
+    },
+    {
+      "speaker": "ミモザ",
+      "text": "そんな適当な……",
+      "left": "ミモザ",
+      "right": ""
+    },
+    {
+      "speaker": "レオナクロス",
+      "text": "反応しないものを眺めていても、研究は一歩も進まないよ。",
+      "left": "",
+      "right": "レオナクロス"
+    },
+    {
+      "speaker": "レオナクロス",
+      "text": "ボクはちょっと、塔の周りを見てくる！",
+      "left": "",
+      "right": "レオナクロス"
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "レオナクロスが塔の外へ出ていく。",
+      "narration": true
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "塔・裏手。風の音。外壁には、長い年月を経た傷や亀裂が刻まれている。",
+      "narration": true
+    },
+    {
+      "speaker": "レオナクロス",
+      "text": "……おや？",
+      "left": "",
+      "right": "レオナクロス"
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "壁の一角に、奇妙な円形の紋様がある。",
+      "narration": true
+    },
+    {
+      "speaker": "レオナクロス",
+      "text": "なんだい、これは。",
+      "left": "",
+      "right": "レオナクロス"
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "指先で紋様に触れる。カチッ。円形の輪がわずかに回転する。",
+      "narration": true
+    },
+    {
+      "speaker": "レオナクロス",
+      "text": "……お？",
+      "left": "",
+      "right": "レオナクロス"
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "もう一度触れる。コトン。",
+      "narration": true
+    },
+    {
+      "speaker": "レオナクロス",
+      "text": "わっ、動いた！",
+      "left": "",
+      "right": "レオナクロス"
+    },
+    {
+      "speaker": "レオナクロス",
+      "text": "諸君！ ミモザ！ エリ！ ちょっと来たまえ！",
+      "left": "",
+      "right": "レオナクロス"
+    },
+    {
+      "speaker": "レオナクロス",
+      "text": "大発見だよ！",
+      "left": "",
+      "right": "レオナクロス"
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "塔の内側に、レオナクロスの声が響く。",
+      "narration": true
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "塔・上層。アルノが一瞬だけ下に目を向け、すぐにまた遠くへ視線を戻した。",
+      "narration": true
+    }
+  ]
+},
+  "shooting_ch05_02": {
+  "chapter": 5,
+  "stageNo": 2,
+  "chapterTitle": "円環",
+  "stageTitle": "ずれた輪",
+  "stageType": "puzzle",
+  "ringCount": 3,
+  "pre": [
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "塔・外壁。",
+      "narration": true
+    },
+    {
+      "speaker": "エリ",
+      "text": "どうしたの、レオナ？",
+      "left": "",
+      "right": "エリ"
+    },
+    {
+      "speaker": "レオナクロス",
+      "text": "これを見たまえ！",
+      "left": "",
+      "right": "レオナクロス"
+    },
+    {
+      "speaker": "ミモザ",
+      "text": "……円形の紋様？",
+      "left": "ミモザ",
+      "right": ""
+    },
+    {
+      "speaker": "レオナクロス",
+      "text": "触ると回るんだよ。ほら。",
+      "left": "",
+      "right": "レオナクロス"
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "レオナクロスが輪の一つに触れる。その輪と一緒に、すぐ内側の輪も回る。",
+      "narration": true
+    },
+    {
+      "speaker": "エリ",
+      "text": "あっ、本当だ。",
+      "left": "",
+      "right": "エリ"
+    },
+    {
+      "speaker": "ミモザ",
+      "text": "……なるほど。内側の輪と連動しているのね。",
+      "left": "ミモザ",
+      "right": ""
+    },
+    {
+      "speaker": "ミモザ",
+      "text": "よく見ると、それぞれの輪に線が刻まれてる。",
+      "left": "ミモザ",
+      "right": ""
+    },
+    {
+      "speaker": "エリ",
+      "text": "でも、途中で途切れてるね。",
+      "left": "",
+      "right": "エリ"
+    },
+    {
+      "speaker": "ミモザ",
+      "text": "ええ。何かの仕掛けに見えるわ。",
+      "left": "ミモザ",
+      "right": ""
+    },
+    {
+      "speaker": "レオナクロス",
+      "text": "……昔、こんなおもちゃがあったような。",
+      "left": "",
+      "right": "レオナクロス"
+    },
+    {
+      "speaker": "エリ",
+      "text": "おもちゃ？",
+      "left": "",
+      "right": "エリ"
+    },
+    {
+      "speaker": "レオナクロス",
+      "text": "いや、なんでもない。",
+      "left": "",
+      "right": "レオナクロス"
+    },
+    {
+      "speaker": "レオナクロス",
+      "text": "外側から中心まで、線をつなげればいいんじゃないかな。",
+      "left": "",
+      "right": "レオナクロス"
+    },
+    {
+      "speaker": "ミモザ",
+      "text": "やってみましょう。",
+      "left": "ミモザ",
+      "right": ""
+    }
+  ],
+  "post": [
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "途切れていた線が一本につながる。淡い金色の光が円盤に広がる。",
+      "narration": true
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "ガチャン！ 塔の内部から、重いものが動くような音が響く。",
+      "narration": true
+    },
+    {
+      "speaker": "エリ",
+      "text": "…………",
+      "left": "",
+      "right": "エリ"
+    },
+    {
+      "speaker": "ミモザ",
+      "text": "…………",
+      "left": "ミモザ",
+      "right": ""
+    },
+    {
+      "speaker": "レオナクロス",
+      "text": "…………ん？",
+      "left": "",
+      "right": "レオナクロス"
+    },
+    {
+      "speaker": "エリ",
+      "text": "……何も起きないね。",
+      "left": "",
+      "right": "エリ"
+    },
+    {
+      "speaker": "レオナクロス",
+      "text": "いや、今、絶対なにか……",
+      "left": "",
+      "right": "レオナクロス"
+    },
+    {
+      "speaker": "ミモザ",
+      "text": "そうね……何かが外れたような音。",
+      "left": "ミモザ",
+      "right": ""
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "ミモザが塔の壁に手を当てる。",
+      "narration": true
+    },
+    {
+      "speaker": "ミモザ",
+      "text": "音は、塔の内側から聞こえたわ。",
+      "left": "ミモザ",
+      "right": ""
+    },
+    {
+      "speaker": "エリ",
+      "text": "あっ……もしかして！",
+      "left": "",
+      "right": "エリ"
+    }
+  ]
+},
+  "shooting_ch05_03": {
+  "chapter": 5,
+  "stageNo": 3,
+  "chapterTitle": "円環",
+  "stageTitle": "もう一つの円環",
+  "stageType": "puzzle",
+  "ringCount": 4,
+  "pre": [
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "塔・内部。",
+      "narration": true
+    },
+    {
+      "speaker": "エリ",
+      "text": "塔の内側にも、同じ仕掛けがあるんじゃないかな？",
+      "left": "",
+      "right": "エリ"
+    },
+    {
+      "speaker": "ミモザ",
+      "text": "……なるほど。",
+      "left": "ミモザ",
+      "right": ""
+    },
+    {
+      "speaker": "ミモザ",
+      "text": "外と内、二つで一つの鍵になっているのかもしれないわね。",
+      "left": "ミモザ",
+      "right": ""
+    },
+    {
+      "speaker": "レオナクロス",
+      "text": "じゃあ、さっきの音は、外側の鍵が外れた音ってことかな？",
+      "left": "",
+      "right": "レオナクロス"
+    },
+    {
+      "speaker": "ミモザ",
+      "text": "可能性はあるわね。",
+      "left": "ミモザ",
+      "right": ""
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "三人が塔の内壁を調べる。",
+      "narration": true
+    },
+    {
+      "speaker": "エリ",
+      "text": "……あった。",
+      "left": "",
+      "right": "エリ"
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "外壁と同じ位置に、よく似た円形の紋様を見つける。",
+      "narration": true
+    },
+    {
+      "speaker": "ミモザ",
+      "text": "輪の数が、外のものより多いわね。",
+      "left": "ミモザ",
+      "right": ""
+    },
+    {
+      "speaker": "ミモザ",
+      "text": "でも、仕組みは同じみたい。",
+      "left": "ミモザ",
+      "right": ""
+    },
+    {
+      "speaker": "レオナクロス",
+      "text": "よし、こっちもつなげてみよう！",
+      "left": "",
+      "right": "レオナクロス"
+    }
+  ],
+  "post": [
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "途切れていた線が一本につながる。淡い金色の光が円盤に広がる。",
+      "narration": true
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "ガチャン！ 円環の中央部分が、壁の奥へ沈み込む。",
+      "narration": true
+    },
+    {
+      "speaker": "レオナクロス",
+      "text": "おっ！",
+      "left": "",
+      "right": "レオナクロス"
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "ゴトン……紋様のあった石板が下へ落ちる。",
+      "narration": true
+    },
+    {
+      "speaker": "エリ",
+      "text": "わっ……！",
+      "left": "",
+      "right": "エリ"
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "壁の奥に小さな空洞が現れ、薄い紙のようなものが一枚、ひらりと舞い落ちる。",
+      "narration": true
+    },
+    {
+      "speaker": "ミモザ",
+      "text": "……何かしら？",
+      "left": "ミモザ",
+      "right": ""
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "エリがそっと拾い上げる。",
+      "narration": true
+    },
+    {
+      "speaker": "エリ",
+      "text": "これは……",
+      "left": "",
+      "right": "エリ"
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "古びた紙には、いくつもの線と奇妙な印が描かれている。",
+      "narration": true
+    },
+    {
+      "speaker": "エリ",
+      "text": "……地図？",
+      "left": "",
+      "right": "エリ"
+    },
+    {
+      "speaker": "レオナクロス",
+      "text": "地図ぅ？",
+      "left": "",
+      "right": "レオナクロス"
+    },
+    {
+      "speaker": "ミモザ",
+      "text": "……見せて。",
+      "left": "ミモザ",
+      "right": ""
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "ミモザが紙を覗き込む。",
+      "narration": true
+    },
+    {
+      "speaker": "ミモザ",
+      "text": "…………",
+      "left": "ミモザ",
+      "right": ""
+    },
+    {
+      "speaker": "エリ",
+      "text": "ミモザ？",
+      "left": "",
+      "right": "エリ"
+    },
+    {
+      "speaker": "ミモザ",
+      "text": "……ええ。地図に見える……けど、読めないわ。",
+      "left": "ミモザ",
+      "right": ""
+    },
+    {
+      "speaker": "レオナクロス",
+      "text": "こんなところに、わざわざ隠してあったのかい？",
+      "left": "",
+      "right": "レオナクロス"
+    },
+    {
+      "speaker": "エリ",
+      "text": "でも……どこの地図なんだろう。",
+      "left": "",
+      "right": "エリ"
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "三人は、古びた地図を見つめる。",
+      "narration": true
+    }
+  ]
+},
+  "shooting_ch05_04": {
+  "chapter": 5,
+  "stageNo": 4,
+  "chapterTitle": "円環",
+  "stageTitle": "二人きりの巡回",
+  "pre": [
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "塔の周辺。同じころ。ジグとアウラは塔の周りを歩いていた。ジグの手には、レオナクロスから渡された小さな探知機。",
+      "narration": true
+    },
+    {
+      "speaker": "アウラ",
+      "text": "ジグちゃん、反応どう？",
+      "left": "アウラ",
+      "right": ""
+    },
+    {
+      "speaker": "ジグ",
+      "text": "……この辺は、まだ弱いな。",
+      "left": "ジグ",
+      "right": ""
+    },
+    {
+      "speaker": "アウラ",
+      "text": "レオナ、紋様の反応を調べてきてって言ってたけど、ついでにレムナントの欠片も拾ってきてって。",
+      "left": "アウラ",
+      "right": ""
+    },
+    {
+      "speaker": "ジグ",
+      "text": "強化デバイスの材料になるんだと。……人使い荒いぜ。",
+      "left": "ジグ",
+      "right": ""
+    },
+    {
+      "speaker": "アウラ",
+      "text": "ねえ、ジグちゃん。二人だけで動くのって、ちょっとまずくない？",
+      "left": "アウラ",
+      "right": ""
+    },
+    {
+      "speaker": "ジグ",
+      "text": "……だな。オレもお前も木属性だし。",
+      "left": "ジグ",
+      "right": ""
+    },
+    {
+      "speaker": "アウラ",
+      "text": "属性バリアのやつが来たら……",
+      "left": "アウラ",
+      "right": ""
+    },
+    {
+      "speaker": "ジグ",
+      "text": "終わりだぜ。",
+      "left": "ジグ",
+      "right": ""
+    },
+    {
+      "speaker": "アウラ",
+      "text": "でもでも、レオナの緊急装置があるから、何かあったら誰か来てくれるよ！",
+      "left": "アウラ",
+      "right": ""
+    },
+    {
+      "speaker": "ジグ",
+      "text": "……ま、前もアルノが来てくれたしな。",
+      "left": "ジグ",
+      "right": ""
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "しばらく、二人は黙って歩く。",
+      "narration": true
+    },
+    {
+      "speaker": "ジグ",
+      "text": "それにしても、リュネってのは、なんだったんだろうな。",
+      "left": "ジグ",
+      "right": ""
+    },
+    {
+      "speaker": "アウラ",
+      "text": "うん……どこから来て、どこに消えちゃったんだろ。",
+      "left": "アウラ",
+      "right": ""
+    },
+    {
+      "speaker": "ジグ",
+      "text": "エリが呼んだら来た、ってのもな……",
+      "left": "ジグ",
+      "right": ""
+    },
+    {
+      "speaker": "アウラ",
+      "text": "また会えるといいね。",
+      "left": "アウラ",
+      "right": ""
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "ピピッ。探知機が強く反応する。",
+      "narration": true
+    },
+    {
+      "speaker": "アウラ",
+      "text": "あ……ジグちゃん、あの建物の裏。すごく反応が強い。",
+      "left": "アウラ",
+      "right": ""
+    },
+    {
+      "speaker": "ジグ",
+      "text": "……これは。",
+      "left": "ジグ",
+      "right": ""
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "建物の影から、レムナントが三体、ゆっくりと姿を現す。",
+      "narration": true
+    },
+    {
+      "speaker": "ジグ",
+      "text": "準備はいいか？",
+      "left": "ジグ",
+      "right": ""
+    },
+    {
+      "speaker": "アウラ",
+      "text": "うん！",
+      "left": "アウラ",
+      "right": ""
+    },
+    {
+      "speaker": "ジグ",
+      "text": "属性バリアは……なしだ。いくぞ！",
+      "left": "ジグ",
+      "right": ""
+    }
+  ],
+  "combat": [
+    {
+      "speaker": "ジグ",
+      "text": "弾が多い……アウラ、離れんなよ！",
+      "left": "ジグ",
+      "right": ""
+    },
+    {
+      "speaker": "アウラ",
+      "text": "わかってる！",
+      "left": "アウラ",
+      "right": ""
+    }
+  ],
+  "post": [
+    {
+      "speaker": "ジグ",
+      "text": "……よし、終わった。",
+      "left": "ジグ",
+      "right": ""
+    },
+    {
+      "speaker": "アウラ",
+      "text": "はぁ……はぁ……弾、多すぎ……",
+      "left": "アウラ",
+      "right": ""
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "アウラが灰の中から、小さな欠片を拾い上げる。",
+      "narration": true
+    },
+    {
+      "speaker": "アウラ",
+      "text": "欠片、あったよ！ これでレオナも喜ぶね。",
+      "left": "アウラ",
+      "right": ""
+    },
+    {
+      "speaker": "ジグ",
+      "text": "ああ。……戻るか。",
+      "left": "ジグ",
+      "right": ""
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "塔・上層。エリたちが基地へ戻ったあとも、アルノは塔の上層に残り、周囲を見張っていた。",
+      "narration": true
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "風が、灰を細く巻き上げている。",
+      "narration": true
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "人影も、足音も、気配さえもない。",
+      "narration": true
+    },
+    {
+      "speaker": "？？？",
+      "text": "ねえ。",
+      "left": "",
+      "right": ""
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "不意に、塔の下から声がした。",
+      "narration": true
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "アルノの眉が、ぴくりと動く。ゆっくりと視線を落とす。",
+      "narration": true
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "つい先ほどまで誰もいなかった塔の真下に、三つの人影が立っていた。",
+      "narration": true
+    },
+    {
+      "speaker": "",
+      "left": "",
+      "right": "",
+      "text": "アルノは、その三人をじっと見つめる。",
+      "narration": true
+    },
+    {
+      "speaker": "？？？",
+      "text": "キミ、なにしてるの？",
+      "left": "",
+      "right": ""
+    }
+  ]
+}
 }
   );
 })();

@@ -2028,6 +2028,7 @@
     shooting_ch03_03: Object.freeze([20]),      // アルノ
     shooting_ch04_02: Object.freeze([1, 20, 3]), // エリ / アルノ / アウラ
     shooting_ch04_03: Object.freeze([1, 20, 3]), // エリ / アルノ / アウラ
+    shooting_ch05_04: Object.freeze([5, 3]), // ジグ / アウラ（初回固定）
   });
 
   // CH03-04、CH04-01、CH04-04は指定キャラから3人を選択。固定編成表には重複登録しない。
@@ -2051,7 +2052,7 @@
     if (!isStoryShootingStage() || !selectedStage) return false;
     const id = String(selectedStage.baseStageId || selectedStage.id || '');
     const match = id.match(/ch(\d{2})_(\d{2})/i);
-    return !!match && (Number(match[1]) > 4 || (Number(match[1]) === 4 && Number(match[2]) >= 4 && id !== 'shooting_ch04_04'));
+    return !!match && id !== 'shooting_ch05_04' && (Number(match[1]) > 4 || (Number(match[1]) === 4 && Number(match[2]) >= 4 && id !== 'shooting_ch04_04'));
   }
 
   function getSelectedStoryFixedPartyIds() {

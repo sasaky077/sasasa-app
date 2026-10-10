@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>円環パズル 試作｜ZERAPHIA 第5章</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --paper:#efebe3;
+  --paper-hi:#fbf9f4;
+  --ink:#463a2f;
+  --ink-soft:#7d6d5a;
+  --line:#b5a78f;
+  --line-faint:rgba(150,128,98,.22);
+  --band:rgba(255,255,255,.46);
+  --gold:#a77f3c;
+  --glow:#e9cf8f;
+  --btn-bg:rgba(255,253,248,.7);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#1f1c19; --paper-hi:#2b2722; --ink:#ece3d4; --ink-soft:#b3a58f;
+    --line:#76695a; --line-faint:rgba(210,190,160,.16); --band:rgba(255,255,255,.05);
+    --gold:#d8b46c; --glow:#f2dba4; --btn-bg:rgba(255,255,255,.05);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#1f1c19; --paper-hi:#2b2722; --ink:#ece3d4; --ink-soft:#b3a58f;
+  --line:#76695a; --line-faint:rgba(210,190,160,.16); --band:rgba(255,255,255,.05);
+  --gold:#d8b46c; --glow:#f2dba4; --btn-bg:rgba(255,255,255,.05);
+}
+html,body{height:100%;margin:0}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  background:var(--paper);
+  background-image:radial-gradient(ellipse at 50% 42%, var(--paper-hi) 0%, var(--paper) 62%);
+  color:var(--ink);
+  font-family:"Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;
+  -webkit-tap-highlight-color:transparent;
+}
+main{
+  max-width:430px; margin:0 auto; min-height:100%;
+  display:flex; flex-direction:column; align-items:center;
+  padding:22px 18px 20px; box-sizing:border-box;
+}
+.chapter{margin:0;font-size:11px;letter-spacing:.24em;color:var(--ink-soft)}
+h1{margin:6px 0 0;font-size:20px;font-weight:500;letter-spacing:.16em}
+.guide{
+  margin:14px 0 0; min-height:3.7em; max-width:22em;
+  font-size:13px; line-height:1.85; color:var(--ink-soft); text-align:center;
+  transition:opacity .4s ease;
+}
+.stage{width:min(92vw,400px);aspect-ratio:1/1;margin:6px 0 4px}
+svg{width:100%;height:100%;display:block;overflow:visible;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+
+.ring{transform-box:view-box;transform-origin:0 0;transition:transform .5s cubic-bezier(.32,.72,.2,1);cursor:pointer;outline:none}
+.ring .band{fill:none;stroke:var(--band);transition:stroke .3s ease}
+.ring:focus-visible .band{stroke:var(--line-faint)}
+.ring .edge{fill:none;stroke:var(--line-faint);stroke-width:1}
+.ring .tick{stroke:var(--line-faint);stroke-width:1}
+.ring .decoy{fill:none;stroke:var(--line);stroke-width:2.2;stroke-linecap:round;opacity:.55}
+.ring .dot{fill:var(--line);opacity:.5}
+.trace{fill:none;stroke:var(--line);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;transition:stroke .45s ease, filter .45s ease}
+.trace.lit{stroke:var(--gold);filter:drop-shadow(0 0 3px var(--glow))}
+.ring.hint .band{animation:hint 1.7s ease-in-out}
+@keyframes hint{0%,100%{stroke:var(--band)}35%,65%{stroke:var(--glow)}}
+
+.fixed{fill:none;stroke:var(--line);stroke-width:3;stroke-linecap:round}
+.fixed.lit{stroke:var(--gold);filter:drop-shadow(0 0 3px var(--glow))}
+.mark{fill:var(--line)}
+.mark.lit{fill:var(--gold)}
+.disk{fill:var(--paper-hi);stroke:var(--line);stroke-width:1.2;transition:fill .8s ease, stroke .8s ease}
+.sigil{fill:none;stroke:var(--line);stroke-width:1.4;transition:stroke .8s ease}
+.rays line{stroke:var(--gold);stroke-width:1.6;stroke-linecap:round;opacity:0;stroke-dasharray:150;stroke-dashoffset:150}
+
+svg.solved .disk{fill:var(--glow);stroke:var(--gold)}
+svg.solved .sigil{stroke:var(--gold)}
+svg.solved .disk-wrap{animation:breathe 3.2s ease-in-out infinite;transform-box:view-box;transform-origin:0 0}
+svg.solved .rays line{animation:ray 1.6s ease-out forwards}
+svg.solved .ring{cursor:default}
+@keyframes ray{0%{opacity:0;stroke-dashoffset:150}20%{opacity:.85}100%{opacity:.18;stroke-dashoffset:0}}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+
+.status{margin:4px 0 0;font-size:12px;letter-spacing:.1em;color:var(--ink-soft)}
+.status b{color:var(--ink);font-weight:500}
+.controls{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;justify-content:center}
+button{
+  appearance:none;font:inherit;font-size:12px;letter-spacing:.08em;color:var(--ink);
+  background:var(--btn-bg);border:1px solid var(--line-faint);
+  padding:9px 16px;min-height:40px;border-radius:2px;cursor:pointer;
+}
+button:active{opacity:.6}
+button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+button[aria-pressed="true"]{border-color:var(--gold);color:var(--gold)}
+.modes{display:flex;gap:8px;margin-top:22px}
+.modes button{font-size:11px;padding:7px 12px;min-height:34px}
+.note{margin:10px 0 0;font-size:11px;line-height:1.7;color:var(--ink-soft);text-align:center}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+@media (prefers-reduced-motion:reduce){
+  .ring{transition-duration:.12s}
+  svg.solved .disk-wrap{animation:none}
+  svg.solved .rays line{animation-duration:.01s}
+}
+</style>
+</head>
+<body>
+<main>
+  <p class="chapter">第5章　円環</p>
+  <button id="puzzleExit" type="button" style="align-self:flex-start;min-height:32px;padding:5px 10px" onclick="parent.postMessage({type:'zeraphia-ring-exit'},location.origin)">戻る</button>
+  <h1 id="puzzleTitle">ずれた輪</h1>
+  <p class="guide" id="guide">輪に触れると、ひとつずつ回る。<br>紋様の線を、外から円盤の中心までつなげよう。</p>
+
+  <div class="stage">
+    <svg id="board" viewBox="-205 -205 410 410" role="group" aria-label="円盤と輪"></svg>
+  </div>
+
+  <p class="status" id="status">つながった線　<b id="count">0</b> / <span id="total">4</span><span id="statusNote"></span></p>
+
+  <div class="controls">
+    <button type="button" id="hintBtn">ヒント</button>
+    
+  </div>
+
+  <div class="modes" style="display:none" role="group" aria-label="難易度">
+    <button type="button" data-mode="easy" aria-pressed="false">三つの輪</button>
+    <button type="button" data-mode="linked" aria-pressed="true">四つの輪・連動</button>
+  </div>
+  <p class="note" id="modeNote">連動：触れた輪の、すぐ内側の輪も一緒に回ります。</p>
+  <p class="sr" aria-live="polite" id="live"></p>
+</main>
+
+<script>
+(function(){
+  'use strict';
+  const NS = 'http://www.w3.org/2000/svg';
+  const STEPS = 8;              // 45°刻み
+  const ENTRANCE = 0;           // 入口は真上
+  const TRACES = 3;             // 1つの輪に刻まれた線の数（どれも外から内へ通り抜けている）
+  const OUTER = 178, INNER = 58, GAP = 6, DISK_R = 46;
+
+  const svg = document.getElementById('board');
+  const guide = document.getElementById('guide');
+  const countEl = document.getElementById('count');
+  const totalEl = document.getElementById('total');
+  const statusNote = document.getElementById('statusNote');
+  const live = document.getElementById('live');
+  const modeNote = document.getElementById('modeNote');
+
+  let mode = new URLSearchParams(location.search).get('rings') === '3' ? 'easy' : 'linked';
+  let rings = [];      // {outer, inner, mid, traces:[{o,n}], rot, deg, el, traceEls}
+  let notch = 0;
+  let solutions = [];  // 正解になる回転の組（複数ありうる）
+  let solved = false;
+  let evalTimer = 0, idleTimer = 0;
+  let fixedEls = {};
+
+  const mod = (a, m) => ((a % m) + m) % m;
+  const rand = n => Math.floor(Math.random() * n);
+  const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = rand(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const ang = s => (s * 45 - 90) * Math.PI / 180;
+  const pt = (r, s) => [+(r * Math.cos(ang(s))).toFixed(2), +(r * Math.sin(ang(s))).toFixed(2)];
+  const el = (tag, attrs, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+
+  // ---------- 盤面の生成 ----------
+  // 1つの輪に、外の縁から内の縁まで通り抜ける線を3本刻む。
+  // 線どうしは重ならず、間に必ず1マス空ける（つながって見えないように）。
+  function makeRingTraces() {
+    for (let attempt = 0; attempt < 300; attempt++) {
+      const occ = new Array(STEPS).fill(false);
+      const traces = [];
+      for (const s of shuffle([...Array(STEPS).keys()])) {
+        if (traces.length >= TRACES) break;
+        const len = rand(3);                 // 0:まっすぐ / 1:45°曲がる / 2:90°曲がる
+        const dir = rand(2) ? 1 : -1;
+        const steps = [];
+        for (let k = 0; k <= len; k++) steps.push(mod(s + dir * k, STEPS));
+        const blocked = steps.some(x => occ[x] || occ[mod(x + 1, STEPS)] || occ[mod(x - 1, STEPS)]);
+        if (blocked) continue;
+        steps.forEach(x => { occ[x] = true; });
+        traces.push({ o: s, n: steps[steps.length - 1] });
+      }
+      if (traces.length === TRACES) return traces;
+    }
+    return null;
+  }
+
+  // 入口から順に線をたどる。外の口が前の線の終点と合う線が、その輪の中に1本だけある。
+  function follow(rs, rots, nt) {
+    let cur = ENTRANCE, k = 0;
+    const path = [];
+    for (let i = 0; i < rs.length; i++) {
+      const t = rs[i].traces.findIndex(tr => mod(tr.o + rots[i], STEPS) === cur);
+      if (t < 0) break;
+      path.push(t);
+      cur = mod(rs[i].traces[t].n + rots[i], STEPS);
+      k++;
+    }
+    return { k, path, end: cur, solved: k === rs.length && cur === nt };
+  }
+
+  function solutionsFor(rs, nt) {
+    const out = [];
+    const walk = (i, cur, rots) => {
+      if (i === rs.length) { if (cur === nt) out.push(rots.slice()); return; }
+      rs[i].traces.forEach(tr => {
+        const rot = mod(cur - tr.o, STEPS);
+        rots.push(rot);
+        walk(i + 1, mod(tr.n + rot, STEPS), rots);
+        rots.pop();
+      });
+    };
+    walk(0, ENTRANCE, []);
+    return out;
+  }
+
+  function generate(count) {
+    const maxSolutions = count === 3 ? 1 : 2;
+    let best = null;
+    for (let tries = 0; tries < 400; tries++) {
+      const rs = [];
+      let ok = true;
+      for (let i = 0; i < count; i++) {
+        const t = makeRingTraces();
+        if (!t) { ok = false; break; }
+        rs.push({ traces: t });
+      }
+      if (!ok) continue;
+      // 正解の道を1本決め、その終点を円盤の切れ込みにする（必ず解ける）
+      let cur = ENTRANCE;
+      rs.forEach(r => {
+        const t = r.traces[rand(TRACES)];
+        const rot = mod(cur - t.o, STEPS);
+        cur = mod(t.n + rot, STEPS);
+      });
+      const nt = cur;
+      const sols = solutionsFor(rs, nt);
+      const cand = { rs, notch: nt, sols };
+      if (sols.length <= maxSolutions) return cand;
+      if (!best || sols.length < best.sols.length) best = cand;
+    }
+    return best;
+  }
+
+  // ---------- 描画 ----------
+  function arcPath(r, from, to) {
+    const delta = mod(to - from, STEPS);
+    if (delta === 0) return '';
+    const sweep = delta <= 4 ? 1 : 0;
+    const [x, y] = pt(r, to);
+    return `A ${r} ${r} 0 0 ${sweep} ${x} ${y}`;
+  }
+  function tracePath(ring, tr) {
+    const [x1, y1] = pt(ring.outer, tr.o);
+    const [x2, y2] = pt(ring.mid, tr.o);
+    const [x3, y3] = pt(ring.inner, tr.n);
+    return `M ${x1} ${y1} L ${x2} ${y2} ${arcPath(ring.mid, tr.o, tr.n)} L ${x3} ${y3}`;
+  }
+
+  function newPuzzle() {
+    clearTimeout(evalTimer); clearTimeout(idleTimer);
+    solved = false;
+    svg.innerHTML = '';
+    svg.classList.remove('solved');
+
+    const count = mode === 'linked' ? 4 : 3;
+    const width = (OUTER - INNER - GAP * (count - 1)) / count;
+    const g = generate(count);
+    notch = g.notch;
+    solutions = g.sols;
+    rings = g.rs.map((r, i) => {
+      const outer = OUTER - i * (width + GAP);
+      const inner = outer - width;
+      return { outer, inner, mid: (outer + inner) / 2, traces: r.traces, rot: 0, deg: 0 };
+    });
+
+    // 初期配置：解けていない、正解とも一致しない回転から始める
+    do {
+      rings.forEach(r => { r.rot = rand(STEPS); });
+    } while (follow(rings, rings.map(r => r.rot), notch).solved);
+    rings.forEach(r => { r.deg = r.rot * 45; });
+
+    draw();
+    totalEl.textContent = String(count + 1);
+    guide.innerHTML = mode === 'linked'
+      ? '輪に触れると、その輪と、すぐ内側の輪が一緒に回る。<br>入口から円盤の切れ込みまで、紋様を一本につなげよう。'
+      : 'どの輪にも、通り抜ける線が三本ある。<br>入口から円盤の切れ込みまで、一本につながる組み合わせを探そう。';
+    guide.style.opacity = 1;
+    evaluate(true);
+    armIdleHint();
+  }
+
+  function draw() {
+    const rays = el('g', { class: 'rays' }, svg);
+    for (let s = 0; s < STEPS; s++) {
+      const [x1, y1] = pt(DISK_R + 4, s + 0.5);
+      const [x2, y2] = pt(DISK_R + 154, s + 0.5);
+      const l = el('line', { x1, y1, x2, y2 }, rays);
+      l.style.animationDelay = (s * 0.07) + 's';
+    }
+
+    rings.forEach((r, i) => {
+      const g = el('g', {
+        class: 'ring', tabindex: '0', role: 'button',
+        'aria-label': `外側から${i + 1}番目の輪を回す`,
+        'data-i': String(i)
+      }, svg);
+      el('circle', { class: 'band', r: r.mid, 'stroke-width': r.outer - r.inner }, g);
+      el('circle', { class: 'edge', r: r.outer }, g);
+      el('circle', { class: 'edge', r: r.inner }, g);
+      for (let s = 0; s < STEPS; s++) {
+        const [x1, y1] = pt(r.outer - 3, s);
+        const [x2, y2] = pt(r.outer - 8, s);
+        el('line', { class: 'tick', x1, y1, x2, y2 }, g);
+      }
+      r.traceEls = r.traces.map(tr => el('path', { class: 'trace', d: tracePath(r, tr) }, g));
+      r.el = g;
+      g.style.transform = `rotate(${r.deg}deg)`;
+    });
+
+    const [ex1, ey1] = pt(OUTER + 20, ENTRANCE);
+    const [ex2, ey2] = pt(OUTER, ENTRANCE);
+    fixedEls.entrance = el('line', { class: 'fixed', x1: ex1, y1: ey1, x2: ex2, y2: ey2 }, svg);
+    const [mx, my] = pt(OUTER + 24, ENTRANCE);
+    fixedEls.mark = el('rect', { class: 'mark', x: mx - 4, y: my - 4, width: 8, height: 8, transform: `rotate(45 ${mx} ${my})` }, svg);
+
+    const wrap = el('g', { class: 'disk-wrap' }, svg);
+    const [nx1, ny1] = pt(INNER, notch);
+    const [nx2, ny2] = pt(DISK_R, notch);
+    fixedEls.notch = el('line', { class: 'fixed', x1: nx1, y1: ny1, x2: nx2, y2: ny2 }, wrap);
+    el('circle', { class: 'disk', r: DISK_R }, wrap);
+    el('circle', { class: 'sigil', r: 24 }, wrap);
+    // 紋様の線は円盤の縁まで届かせる（輪の8方向とそろえる）
+    for (let s = 0; s < STEPS; s++) {
+      const [x1, y1] = pt(DISK_R, s);
+      const [x2, y2] = pt(DISK_R, s + 4);
+      if (s < 4) el('line', { class: 'sigil', x1, y1, x2, y2, 'stroke-width': s % 2 ? .8 : 1.4 }, wrap);
+    }
+    el('circle', { class: 'sigil', r: 6 }, wrap);
+  }
+
+  // ---------- 判定 ----------
+  function evaluate(instant) {
+    const res = follow(rings, rings.map(r => r.rot), notch);
+    fixedEls.entrance.classList.add('lit');
+    fixedEls.mark.classList.add('lit');
+    rings.forEach((r, i) => {
+      r.traceEls.forEach((p, t) => {
+        p.style.transitionDelay = instant ? '0s' : (i * 0.09) + 's';
+        p.classList.toggle('lit', i < res.k && res.path[i] === t);
+      });
+    });
+    fixedEls.notch.style.transitionDelay = instant ? '0s' : (rings.length * 0.09) + 's';
+    fixedEls.notch.classList.toggle('lit', res.solved);
+    countEl.textContent = String(res.k + (res.solved ? 1 : 0));
+    statusNote.textContent = (!res.solved && res.k === rings.length) ? '　切れ込みに届いていない' : '';
+    if (res.solved && !solved) win();
+  }
+
+  function win() {
+    solved = true;
+    clearTimeout(idleTimer);
+    setTimeout(() => {
+      svg.classList.add('solved');
+      guide.style.opacity = 0;
+      setTimeout(() => {
+        guide.innerHTML = '……つながった。<br>止まっていた紋様に、律動が戻っていく。';
+        guide.style.opacity = 1;
+      }, 400);
+      live.textContent = '紋様がすべてつながりました。';
+      setTimeout(() => parent.postMessage({type:'zeraphia-ring-cleared'}, location.origin), 2200);
+    }, rings.length * 90 + 450);
+  }
+
+  // ---------- 操作 ----------
+  function rotate(i, dir) {
+    if (solved || !rings[i]) return;
+    const targets = rings[i + 1] ? [i, i + 1] : [i];
+    targets.forEach(t => {
+      const r = rings[t];
+      r.rot = mod(r.rot + dir, STEPS);
+      r.deg += 45 * dir;
+      r.el.style.transform = `rotate(${r.deg}deg)`;
+    });
+    clearTimeout(evalTimer);
+    evalTimer = setTimeout(() => evaluate(false), 480);
+    armIdleHint();
+  }
+
+  function ringAt(clientX, clientY) {
+    const p = svg.createSVGPoint();
+    p.x = clientX; p.y = clientY;
+    const m = svg.getScreenCTM();
+    if (!m) return -1;
+    const q = p.matrixTransform(m.inverse());
+    const d = Math.hypot(q.x, q.y);
+    return rings.findIndex((r, i) => d >= r.inner - GAP / 2 && d <= r.outer + GAP / 2 + (i === 0 ? 10 : 0));
+  }
+
+  svg.addEventListener('pointerdown', e => {
+    const i = ringAt(e.clientX, e.clientY);
+    if (i >= 0) { e.preventDefault(); rotate(i, 1); }
+  });
+  svg.addEventListener('keydown', e => {
+    const g = e.target.closest && e.target.closest('.ring');
+    if (!g) return;
+    const i = Number(g.getAttribute('data-i'));
+    if (e.key === 'ArrowLeft') { e.preventDefault(); rotate(i, -1); }
+    else if (e.key === 'ArrowRight' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); rotate(i, 1); }
+  });
+
+  // ヒント：いまの配置から最も近い正解を選び、最初に回すべき輪を光らせる
+  function tapsTo(sol) {
+    const cur = rings.map(r => r.rot);
+    const plan = [];
+    for (let i = 0; i < cur.length; i++) {
+      const t = mod(sol[i] - cur[i], STEPS);
+      plan.push(t);
+      if (i + 1 < cur.length) cur[i + 1] = mod(cur[i + 1] + t, STEPS);
+    }
+    return plan;
+  }
+  function showHint() {
+    if (solved || !solutions.length) return;
+    let bestPlan = null;
+    solutions.forEach(sol => {
+      const plan = tapsTo(sol);
+      const total = plan.reduce((a, b) => a + b, 0);
+      if (!bestPlan || total < bestPlan.total) bestPlan = { plan, total };
+    });
+    const i = bestPlan.plan.findIndex(t => t > 0);
+    if (i < 0) return;
+    const g = rings[i].el;
+    g.classList.remove('hint');
+    void g.getBoundingClientRect();
+    g.classList.add('hint');
+    live.textContent = `外側から${i + 1}番目の輪を回してみよう。`;
+  }
+  function armIdleHint() {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(showHint, 40000);
+  }
+
+  document.getElementById('hintBtn').addEventListener('click', showHint);
+  
+  document.querySelectorAll('.modes button').forEach(b => {
+    b.addEventListener('click', () => {
+      mode = b.dataset.mode;
+      document.querySelectorAll('.modes button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      modeNote.textContent = mode === 'linked'
+        ? '連動：触れた輪の、すぐ内側の輪も一緒に回ります。'
+        : 'キーボードでは、輪を選んで ← → で回せます。';
+      newPuzzle();
+    });
+  });
+
+  document.getElementById('puzzleTitle').textContent = mode === 'easy' ? 'ずれた輪' : 'もう一つの円環';
+  guide.innerHTML = '輪に触れると、すぐ内側の輪も一緒に回る。<br>紋様の線を、外から円盤の中心までつなげよう。';
+  newPuzzle();
+})();
+</script>
+</body>
+</html>

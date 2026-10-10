@@ -31,7 +31,7 @@
     get 2() { return window.ZERAPHIA_STORY_SCENARIO?.['shooting_ch02_01']?.chapterTitle || '残骸'; },
     get 3() { return window.ZERAPHIA_STORY_SCENARIO?.['shooting_ch03_01']?.chapterTitle || '魂との邂逅'; },
     get 4() { return window.ZERAPHIA_STORY_SCENARIO?.['shooting_ch04_01']?.chapterTitle || '水音'; },
-    5: '未定',
+    get 5() { return window.ZERAPHIA_STORY_SCENARIO?.['shooting_ch05_01']?.chapterTitle || '円環'; },
     6: '未定',
     7: '未定',
     8: '未定'
@@ -61,6 +61,7 @@
     CH05_01: 'shooting_ch05_01',
     CH05_02: 'shooting_ch05_02',
     CH05_03: 'shooting_ch05_03',
+    CH05_04: 'shooting_ch05_04',
 
     DAILY_MON_INTERMEDIATE: 'shooting_daily_mon_intermediate',
     DAILY_MON_ADVANCED: 'shooting_daily_mon_advanced',
@@ -666,84 +667,38 @@
     }),
 
     // ============================================================
-    // CHAPTER 05 - 境界のマリオネット
-    // 全ステージ共通：左右操作反転。
-    // HARDを基準仕様とし、NORMALも同一仕様で提供する。
-    // ============================================================
+    // CHAPTER 05 — 円環
     [SHOOTING_STAGE_ID.CH05_01]: Object.freeze({
-      id: SHOOTING_STAGE_ID.CH05_01,
-      chapter: 5,
-      stageNo: 1,
-      get name() { return window.ZERAPHIA_STORY_SCENARIO?.['shooting_ch05_01']?.stageTitle || '境界のマリオネット'; },
-      type: 'normal',
-      background: 'images/battle_bg_01.webp',
-      introImage: 'images/remnant_05_battle_start.webp',
-      reverseHorizontalControls: true,
-      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.MINI_05]),
-      normalBattle: Object.freeze({
-        totalEnemies: 6,
-        maxActive: 3,
-        spawnIntervalMs: 760,
-        infiniteEnemies: true,
-        enemyHp: 1100,
-      }),
-      mission: Object.freeze({
-        type: SHOOTING_MISSION_TYPE.COLLECT_ITEM,
-        target: 3,
-        text: 'アイテムを3つ取得しろ',
-      }),
-      playable: true,
+      id: SHOOTING_STAGE_ID.CH05_01, chapter:5, stageNo:1,
+      get name(){return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch05_01?.stageTitle || '沈黙する円盤';},
+      type:'normal', background:'images/battle_bg_01.webp', enemyIds:Object.freeze([]),
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'物語を読む'}),playable:true
     }),
-
     [SHOOTING_STAGE_ID.CH05_02]: Object.freeze({
-      id: SHOOTING_STAGE_ID.CH05_02,
-      chapter: 5,
-      stageNo: 2,
-      get name() { return window.ZERAPHIA_STORY_SCENARIO?.['shooting_ch05_02']?.stageTitle || '境界のマリオネット'; },
-      type: 'normal',
-      background: 'images/battle_bg_01.webp',
-      introImage: 'images/remnant_05_battle_start.webp',
-      reverseHorizontalControls: true,
-      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.MINI_05]),
-      normalBattle: Object.freeze({
-        totalEnemies: 3,
-        maxActive: 3,
-        spawnIntervalMs: 0,
-        spawnAllAtStart: true,
-        enemyHp: 1400,
-        enemyFireRate: 940,
-        enemyBulletSpeed: 245,
-        enemyBulletDamage: 125,
-        mirageWarningEveryMs: 5200,
-        mirageWarningTelegraphMs: 700,
-      }),
-      mission: Object.freeze({
-        type: SHOOTING_MISSION_TYPE.CLEAR_TIME,
-        targetSeconds: 90,
-        text: '90秒以内に敵を3体撃破しろ',
-      }),
-      playable: true,
+      id: SHOOTING_STAGE_ID.CH05_02, chapter:5, stageNo:2,
+      get name(){return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch05_02?.stageTitle || 'ずれた輪';},
+      type:'normal', background:'images/battle_bg_01.webp', enemyIds:Object.freeze([]),
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'三つの輪の紋様をつなぐ'}),playable:true
     }),
-
     [SHOOTING_STAGE_ID.CH05_03]: Object.freeze({
-      id: SHOOTING_STAGE_ID.CH05_03,
-      chapter: 5,
-      stageNo: 3,
-      get name() { return window.ZERAPHIA_STORY_SCENARIO?.['shooting_ch05_03']?.stageTitle || 'レムナント：ミラージュ'; },
-      type: 'boss',
-      background: 'images/battle_bg_01.webp',
-      introImage: 'images/remnant_05_battle_start.webp',
-      reverseHorizontalControls: true,
-      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.REMNANT_05]),
-      mission: Object.freeze({
-        type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
-        text: 'レムナント：ミラージュを撃破しろ',
-      }),
-      playable: true,
+      id: SHOOTING_STAGE_ID.CH05_03, chapter:5, stageNo:3,
+      get name(){return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch05_03?.stageTitle || 'もう一つの円環';},
+      type:'normal', background:'images/battle_bg_01.webp', enemyIds:Object.freeze([]),
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'四つの輪の紋様をつなぐ'}),playable:true
+    }),
+    [SHOOTING_STAGE_ID.CH05_04]: Object.freeze({
+      id: SHOOTING_STAGE_ID.CH05_04, chapter:5, stageNo:4,
+      get name(){return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch05_04?.stageTitle || '二人きりの巡回';},
+      type:'normal', background:'images/battle_bg_01.webp',
+      enemyIds:Object.freeze([SHOOTING_ENEMY_ID.MINI_05]),
+      normalBattle:Object.freeze({totalEnemies:3,maxActive:3,spawnIntervalMs:0,spawnAllAtStart:true,
+        itemDropRate:0,enemyElementSequence:Object.freeze(['dark','dark','dark']),
+        enemyHp:1600,enemyBulletDamage:115,enemyBulletSpeed:250,enemyFireRate:780,barrageLevel:4}),
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'闇属性レムナント3体を撃破'}),playable:true
     }),
 
     // ============================================================
-    // SPECIAL EVENT - 無貌の天使
+        // SPECIAL EVENT - 無貌の天使
     // 「照射◯秒」は現行プレイ感の基準DPSを約190としてHP化。
     // wave1: 約40秒 → 7,600 / wave2: 約100秒 → 19,000
     // object: 約5秒 → 950

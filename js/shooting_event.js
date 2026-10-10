@@ -10,7 +10,7 @@
   const currentVersionParam = current && current.src
     ? new URL(current.src, location.href).searchParams.get('v')
     : '';
-  const MODULE_VERSION = '20261010-build1293-replay-roster';
+  const MODULE_VERSION = '20261010-build1294-ch05';
   window.__sasaphiaShootingLoaderVersion = MODULE_VERSION;
 
   window.openShootingEvent = window.openShootingEvent || function (...args) {
