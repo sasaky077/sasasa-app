@@ -1991,10 +1991,18 @@
 
   // build1272: CH04-04だけを先行検証。既存の未クリア分岐は変更しない。
   let storyReplayStageId = '';
+  // CLEAR済み判定は画面からのフラグに加え、保存されたクリア履歴でも確認する。
+  // ステージごとの入口差（CH04-02 / CH04-04等）に左右されない共通ルール。
   function isStoryReplayBattle() {
-    return !!(selectedStage && storyReplayStageId &&
-      String(selectedStage.baseStageId || selectedStage.id || '')
-        .replace(/^shooting_beginner_/, 'shooting_') === storyReplayStageId);
+    if (!isStoryShootingStage() || !selectedStage) return false;
+    const actualId = String(selectedStage.id || '');
+    const baseId = String(selectedStage.baseStageId || actualId).replace(/^shooting_beginner_/, 'shooting_');
+    if (storyReplayStageId === baseId) return true;
+    try {
+      const clears = JSON.parse(localStorage.getItem('zeraphia_story_stage_clears_v1') || '{}') || {};
+      const records = JSON.parse(localStorage.getItem('zeraphia_shooting_stage_records_v1') || '{}') || {};
+      return [actualId, baseId].some(id => !!clears[id] || !!records[id]?.cleared);
+    } catch (_) { return false; }
   }
 
   // build1080: STORYはシナリオ上の固定編成で出撃する。
