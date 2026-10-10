@@ -2287,6 +2287,17 @@
       });
     }
 
+    // Free-party roster: show only characters actually owned by the player.
+    // Explicit STORY companion slots are the sole exception (e.g. CH04-04 guest Ryune).
+    // Filtering after the roster rebuild also handles ownership changes between stage opens.
+    roster.querySelectorAll('[data-character-id]').forEach(el => {
+      const id = Number(el.getAttribute('data-character-id'));
+      const storyGuest = !!(selectableStoryParty && selectableStoryParty.allowedIds.includes(id));
+      if (!storyGuest && !isShootingCharacterOwned(id)) {
+        (el.closest('.shooting-character-option-wrap') || el).remove();
+      }
+    });
+
     selectedPartyIds = selectedPartyIds.filter(id =>
       isShootingCharacterAvailableForCurrentParty(id) &&
       (!selectableStoryParty || selectableStoryParty.allowedIds.includes(Number(id)))
