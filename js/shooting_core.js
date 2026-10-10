@@ -1993,7 +1993,8 @@
   let storyReplayStageId = '';
   function isStoryReplayBattle() {
     return !!(selectedStage && storyReplayStageId &&
-      String(selectedStage.baseStageId || selectedStage.id || '') === storyReplayStageId);
+      String(selectedStage.baseStageId || selectedStage.id || '')
+        .replace(/^shooting_beginner_/, 'shooting_') === storyReplayStageId);
   }
   function isCh404Replay() { return isStoryReplayBattle() && storyReplayStageId === 'shooting_ch04_04'; }
 
@@ -2239,7 +2240,7 @@
           String(c.panelImage || c.image || '')
         ].join(':');
       })
-      .join('|') + `|stage:${String(selectedStage?.id || '')}`;
+      .join('|') + `|stage:${String(selectedStage?.id || '')}|replay:${isCh404Replay() ? 1 : 0}`;
   }
 
   function refreshShootingRoster() {
@@ -22319,9 +22320,10 @@
     resolveSelectedStage(options || {});
     // stage_selectがクリア履歴を確認した時だけ再挑戦扱いにする。
     // 戦闘開始後のCLEAR更新で初回攻略が再挑戦へ変化しないよう固定。
+    const normalizedStoryStageId = String(selectedStage?.baseStageId || selectedStage?.id || '')
+      .replace(/^shooting_beginner_/, 'shooting_');
     storyReplayStageId = (options && options.storyReplay === true &&
-      String(selectedStage?.baseStageId || selectedStage?.id || '') === 'shooting_ch04_04')
-      ? 'shooting_ch04_04' : '';
+      normalizedStoryStageId === 'shooting_ch04_04') ? 'shooting_ch04_04' : '';
     selectedRaidContext = options && options.raidContext ? { ...options.raidContext } : null;
     BOSS = getCurrentShootingEnemy();
     shootingBattleBgmSessionActive = false;
