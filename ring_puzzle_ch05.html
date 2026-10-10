@@ -2,71 +2,57 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>円環パズル 試作｜ZERAPHIA 第5章</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>円環｜ZERAPHIA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
   box-sizing:border-box;
-  padding-top:env(safe-area-inset-top,0px);
-  padding-bottom:env(safe-area-inset-bottom,0px);
-  --paper:#efebe3;
-  --paper-hi:#fbf9f4;
-  --ink:#463a2f;
-  --ink-soft:#7d6d5a;
-  --line:#b5a78f;
+  --paper:#eee4d2;
+  --paper-hi:#fffdf8;
+  --ink:#382b1d;
+  --ink-soft:#665039;
+  --line:#92734a;
   --line-faint:rgba(150,128,98,.22);
-  --band:rgba(255,255,255,.46);
-  --gold:#a77f3c;
+  --band:rgba(255,255,255,.82);
+  --gold:#b18427;
   --glow:#e9cf8f;
-  --btn-bg:rgba(255,253,248,.7);
+  --btn-bg:#fffaf0;
 }
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){
-    --paper:#1f1c19; --paper-hi:#2b2722; --ink:#ece3d4; --ink-soft:#b3a58f;
-    --line:#76695a; --line-faint:rgba(210,190,160,.16); --band:rgba(255,255,255,.05);
-    --gold:#d8b46c; --glow:#f2dba4; --btn-bg:rgba(255,255,255,.05);
-  }
-}
-:root[data-theme="dark"]{
-  --paper:#1f1c19; --paper-hi:#2b2722; --ink:#ece3d4; --ink-soft:#b3a58f;
-  --line:#76695a; --line-faint:rgba(210,190,160,.16); --band:rgba(255,255,255,.05);
-  --gold:#d8b46c; --glow:#f2dba4; --btn-bg:rgba(255,255,255,.05);
-}
-html,body{height:100%;margin:0}
+html,body{position:fixed;inset:0;width:100%;height:100%;height:100dvh;margin:0;padding:0;overflow:hidden!important;overscroll-behavior:none;touch-action:none;-webkit-overflow-scrolling:auto}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{
   background:var(--paper);
-  background-image:radial-gradient(ellipse at 50% 42%, var(--paper-hi) 0%, var(--paper) 62%);
+  background-image:radial-gradient(ellipse at 50% 38%, var(--paper-hi) 0%, var(--paper) 68%);
   color:var(--ink);
   font-family:"Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;
   -webkit-tap-highlight-color:transparent;
 }
 main{
-  max-width:430px; margin:0 auto; min-height:100%;
+  width:100%;max-width:480px; margin:0 auto; height:100dvh; min-height:0; overflow:hidden; justify-content:space-between;
   display:flex; flex-direction:column; align-items:center;
-  padding:22px 18px 20px; box-sizing:border-box;
+  padding:calc(12px + env(safe-area-inset-top)) 14px calc(12px + env(safe-area-inset-bottom)); box-sizing:border-box;
 }
 .chapter{margin:0;font-size:11px;letter-spacing:.24em;color:var(--ink-soft)}
 h1{margin:6px 0 0;font-size:20px;font-weight:500;letter-spacing:.16em}
 .guide{
-  margin:14px 0 0; min-height:3.7em; max-width:22em;
+  margin:6px 0 0; min-height:3.4em; max-width:22em;
   font-size:13px; line-height:1.85; color:var(--ink-soft); text-align:center;
   transition:opacity .4s ease;
 }
-.stage{width:min(92vw,400px);aspect-ratio:1/1;margin:6px 0 4px}
-svg{width:100%;height:100%;display:block;overflow:visible;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.stage{width:min(94vw,410px,49dvh);height:min(94vw,410px,49dvh);flex:0 1 auto;aspect-ratio:1/1;margin:4px 0;min-height:0}
+svg{width:100%;height:100%;display:block;overflow:hidden;touch-action:manipulation;user-select:none;-webkit-user-select:none}
 
 .ring{transform-box:view-box;transform-origin:0 0;transition:transform .5s cubic-bezier(.32,.72,.2,1);cursor:pointer;outline:none}
 .ring .band{fill:none;stroke:var(--band);transition:stroke .3s ease}
 .ring:focus-visible .band{stroke:var(--line-faint)}
 .ring .edge{fill:none;stroke:var(--line-faint);stroke-width:1}
 .ring .tick{stroke:var(--line-faint);stroke-width:1}
-.ring .decoy{fill:none;stroke:var(--line);stroke-width:2.2;stroke-linecap:round;opacity:.55}
+.ring .decoy{fill:none;stroke:var(--line);stroke-width:3.3;stroke-linecap:round;opacity:.55}
 .ring .dot{fill:var(--line);opacity:.5}
-.trace{fill:none;stroke:var(--line);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;transition:stroke .45s ease, filter .45s ease}
+.trace{fill:none;stroke:var(--ink-soft);stroke-width:5.2;stroke-linecap:round;stroke-linejoin:round;transition:stroke .45s ease, filter .45s ease}
 .trace.lit{stroke:var(--gold);filter:drop-shadow(0 0 3px var(--glow))}
 .ring.hint .band{animation:hint 1.7s ease-in-out}
 @keyframes hint{0%,100%{stroke:var(--band)}35%,65%{stroke:var(--glow)}}
@@ -87,20 +73,20 @@ svg.solved .ring{cursor:default}
 @keyframes ray{0%{opacity:0;stroke-dashoffset:150}20%{opacity:.85}100%{opacity:.18;stroke-dashoffset:0}}
 @keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
 
-.status{margin:4px 0 0;font-size:12px;letter-spacing:.1em;color:var(--ink-soft)}
+.status{margin:4px 0 0;font-size:13px;letter-spacing:.1em;color:var(--ink-soft)}
 .status b{color:var(--ink);font-weight:500}
-.controls{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;justify-content:center}
+.controls{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;justify-content:center}
 button{
   appearance:none;font:inherit;font-size:12px;letter-spacing:.08em;color:var(--ink);
-  background:var(--btn-bg);border:1px solid var(--line-faint);
-  padding:9px 16px;min-height:40px;border-radius:2px;cursor:pointer;
+  background:var(--btn-bg);border:1px solid #a88954;
+  padding:9px 16px;min-height:40px;border-radius:0;box-shadow:0 2px 8px rgba(92,66,32,.10);cursor:pointer;
 }
 button:active{opacity:.6}
 button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 button[aria-pressed="true"]{border-color:var(--gold);color:var(--gold)}
 .modes{display:flex;gap:8px;margin-top:22px}
 .modes button{font-size:11px;padding:7px 12px;min-height:34px}
-.note{margin:10px 0 0;font-size:11px;line-height:1.7;color:var(--ink-soft);text-align:center}
+.note{margin:4px 0 0;font-size:11px;line-height:1.7;color:var(--ink-soft);text-align:center}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 
 @media (prefers-reduced-motion:reduce){
@@ -108,12 +94,14 @@ button[aria-pressed="true"]{border-color:var(--gold);color:var(--gold)}
   svg.solved .disk-wrap{animation:none}
   svg.solved .rays line{animation-duration:.01s}
 }
+@media (max-height:690px){h1{font-size:17px}.guide{font-size:11px;line-height:1.55}.stage{width:min(92vw,42dvh);height:min(92vw,42dvh)}.chapter{font-size:10px}.note{font-size:10px}}
+@media (max-height:560px){.stage{width:min(90vw,37dvh);height:min(90vw,37dvh)}.guide{min-height:0}.note{line-height:1.3}}
 </style>
 </head>
 <body>
 <main>
-  <p class="chapter">第5章　円環</p>
-  <button id="puzzleExit" type="button" style="align-self:flex-start;min-height:32px;padding:5px 10px" onclick="parent.postMessage({type:'zeraphia-ring-exit'},location.origin)">戻る</button>
+  <p class="chapter">ZERAPHIA　/　第五章・円環</p>
+  <button id="puzzleExit" type="button" style="align-self:flex-start;min-height:32px;padding:5px 10px" onclick="window.sendRingEvent('zeraphia-ring-exit')">戻る</button>
   <h1 id="puzzleTitle">ずれた輪</h1>
   <p class="guide" id="guide">輪に触れると、ひとつずつ回る。<br>紋様の線を、外から円盤の中心までつなげよう。</p>
 
@@ -139,6 +127,9 @@ button[aria-pressed="true"]{border-color:var(--gold);color:var(--gold)}
 <script>
 (function(){
   'use strict';
+  window.sendRingEvent = function(type){
+    try { if(type === 'zeraphia-ring-cleared' && typeof window.zeraphiaRingClear === 'function') { window.zeraphiaRingClear(); return; } if(type === 'zeraphia-ring-exit' && typeof window.zeraphiaRingExit === 'function') { window.zeraphiaRingExit(); return; } parent.postMessage({type:type}, location.origin); } catch(e) { console.error(e); }
+  };
   const NS = 'http://www.w3.org/2000/svg';
   const STEPS = 8;              // 45°刻み
   const ENTRANCE = 0;           // 入口は真上
@@ -379,7 +370,7 @@ button[aria-pressed="true"]{border-color:var(--gold);color:var(--gold)}
         guide.style.opacity = 1;
       }, 400);
       live.textContent = '紋様がすべてつながりました。';
-      setTimeout(() => parent.postMessage({type:'zeraphia-ring-cleared'}, location.origin), 2200);
+      setTimeout(() => window.sendRingEvent('zeraphia-ring-cleared'), 2200);
     }, rings.length * 90 + 450);
   }
 

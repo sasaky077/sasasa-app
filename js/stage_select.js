@@ -683,30 +683,70 @@
     const stageId = stage.baseStageId || stage.id;
     const chapter = Number(stage.chapter || 5);
     const storyMode = mode === 'beginner' ? 'beginner' : 'normal';
+    const old = document.getElementById('zeraphia-ring-overlay');
+    if (old) old.remove();
     const overlay = document.createElement('div');
     overlay.id = 'zeraphia-ring-overlay';
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;background:#efebe3;';
+    overlay.style.cssText = 'position:fixed!important;inset:0!important;width:100%!important;height:100%!important;height:100dvh!important;z-index:2147483647!important;background:#f1eadb!important;overflow:hidden!important;overscroll-behavior:none!important;touch-action:none!important;';
     const frame = document.createElement('iframe');
     frame.title = '円環パズル';
-    frame.style.cssText = 'width:100%;height:100%;border:0;display:block;';
-    frame.src = 'ring_puzzle_ch05.html?rings=' + (Number(stage.stageNo) === 2 ? '3' : '4');
+    frame.setAttribute('scrolling','no');
+    frame.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;display:block;overflow:hidden;';
+    frame.src = 'ring_puzzle_ch05.html?v=1296&rings=' + (Number(stage.stageNo) === 2 ? '3' : '4');
     overlay.appendChild(frame);
     document.body.appendChild(overlay);
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousBodyTouch = document.body.style.touchAction;
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
     let done = false;
-    function cleanup() { window.removeEventListener('message', onMessage); overlay.remove(); }
-    function returnToChapter() { if (typeof window.openStageSelect === 'function') window.openStageSelect(chapter, storyMode); }
+    let watch = null;
+    function cleanup() {
+      window.removeEventListener('message', onMessage);
+      if (watch) clearInterval(watch);
+      overlay.remove();
+      document.documentElement.style.overflow = previousHtmlOverflow;
+      document.body.style.overflow = previousBodyOverflow;
+      document.body.style.touchAction = previousBodyTouch;
+    }
+    function returnToChapter() {
+      if (typeof window.openStageSelect === 'function') window.openStageSelect(chapter, storyMode);
+    }
+    function cleared() {
+      if (done) return;
+      done = true;
+      cleanup();
+      const complete = () => { markNovelStoryStageCleared(stage.id); returnToChapter(); };
+      try {
+        if (window.StoryNovel && typeof window.StoryNovel.playPost === 'function') {
+          const played = window.StoryNovel.playPost(stageId,{onComplete:complete,onExit:complete});
+          if (played) return;
+        }
+      } catch (err) { console.error('[CH05] post story failed',err); }
+      complete();
+    }
     function onMessage(event) {
-      if (event.source !== frame.contentWindow || event.origin !== location.origin || done) return;
-      if (event.data?.type === 'zeraphia-ring-exit') { done=true;cleanup();returnToChapter();return; }
-      if (event.data?.type !== 'zeraphia-ring-cleared') return;
-      done=true;cleanup();
-      const complete = () => { markNovelStoryStageCleared(stage.id);returnToChapter(); };
-      if (window.StoryNovel && typeof window.StoryNovel.playPost === 'function') {
-        const played = window.StoryNovel.playPost(stageId,{onComplete:complete,onExit:returnToChapter});
-        if (!played) complete();
-      } else complete();
+      if (done || event.source !== frame.contentWindow) return;
+      if (!event.data || typeof event.data !== 'object') return;
+      if (event.data.type === 'zeraphia-ring-exit') { done=true;cleanup();returnToChapter(); }
+      if (event.data.type === 'zeraphia-ring-cleared') cleared();
     }
     window.addEventListener('message', onMessage);
+    frame.addEventListener('load', () => {
+      try {
+        const child = frame.contentWindow;
+        if (!child || !child.document || !child.document.getElementById('board')) return;
+        // Same-origin direct bridge; postMessage remains supported as a backup.
+        child.zeraphiaRingClear = cleared;
+        child.zeraphiaRingExit = () => { if (!done) {done=true;cleanup();returnToChapter();} };
+        watch = setInterval(() => {
+          try { if (!done && child.document.getElementById('board')?.classList.contains('solved')) { clearInterval(watch); watch=null; setTimeout(cleared, 2400); } }
+          catch (_) {}
+        }, 700);
+      } catch (_) { /* cross-origin: use postMessage */ }
+    });
   }
 
   // ============================================================
