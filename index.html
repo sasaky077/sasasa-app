@@ -7914,9 +7914,16 @@ function selectChara(now, gacha) {
     var areaRect = area ? area.getBoundingClientRect() : null;
 
     var logicalW = Math.min(310, Math.max(250, window.innerWidth * 0.80));
+    // build1382: SEサイズは従来の表示を維持。画面が縦長のスマホでは
+    // 355pxの固定上限を段階的に緩めて、余った縦空間を立ち絵に使用する。
+    // 下端の位置（favorite-area の bottom）は変更しない。
+    var viewportH = window.innerHeight;
+    var tallPhoneBonus = window.innerWidth <= 500
+      ? Math.max(0, Math.min(80, (viewportH - 700) * 0.5))
+      : 0;
     var logicalH = areaRect
-      ? Math.min(355, Math.max(305, areaRect.height * 0.78))
-      : Math.min(350, Math.max(310, window.innerHeight * 0.52));
+      ? Math.min(355 + tallPhoneBonus, Math.max(305, areaRect.height * 0.78))
+      : Math.min(350 + tallPhoneBonus, Math.max(310, viewportH * 0.52));
 
     // 実際のキャラ本体はこの高さへ統一。下に少し余白を残す。
     var targetVisibleH = logicalH - 18;
