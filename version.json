@@ -1,4 +1,4 @@
 {
-  "build": 1332,
-  "note": "CH06 novel character panels: Teufel=chara_37_panel, Aina=chara_17_panel, Veronica=chara_22_panel. No combat, scenario, or story logic changes."
+  "build": 1333,
+  "note": "Fix LeonaCross portrait to left and Mimosa portrait to right across story chapters, including explicit and automatic cast layout. Dialogue, gameplay and portrait mappings unchanged."
 }

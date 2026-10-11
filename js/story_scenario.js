@@ -3375,8 +3375,8 @@
     {
       "speaker": "レオナクロス",
       "text": "さあね。気まぐれだったんじゃないかな？",
-      "left": "",
-      "right": "レオナクロス",
+      "left": "レオナクロス",
+      "right": "",
       "location": "scene_disk_down.webp",
     },
     {
@@ -3389,15 +3389,15 @@
     {
       "speaker": "レオナクロス",
       "text": "反応しないものを眺めていても、研究は一歩も進まないよ。",
-      "left": "",
-      "right": "レオナクロス",
+      "left": "レオナクロス",
+      "right": "",
         "location": "scene_disk_down.webp",
     },
     {
       "speaker": "レオナクロス",
       "text": "ボクはちょっと、塔の周りを見てくる！",
-      "left": "",
-      "right": "レオナクロス",
+      "left": "レオナクロス",
+      "right": "",
       "location": "scene_disk_down.webp",
     },
     {
@@ -3419,8 +3419,8 @@
     {
       "speaker": "レオナクロス",
       "text": "……おや？",
-      "left": "",
-      "right": "レオナクロス",
+      "left": "レオナクロス",
+      "right": "",
       "location": "scene_tower_middle.webp",
     },
     {
@@ -3434,8 +3434,8 @@
     {
       "speaker": "レオナクロス",
       "text": "なんだ…これは。",
-      "left": "",
-      "right": "レオナクロス",
+      "left": "レオナクロス",
+      "right": "",
       "location": "scene_ch05_02.webp",
     },
     {
@@ -3449,8 +3449,8 @@
     {
       "speaker": "レオナクロス",
       "text": "……へ？",
-      "left": "",
-      "right": "レオナクロス",
+      "left": "レオナクロス",
+      "right": "",
       "location": "scene_ch05_02.webp",
     },
     {
@@ -3464,22 +3464,22 @@
     {
       "speaker": "レオナクロス",
       "text": "これは…！",
-      "left": "",
-      "right": "レオナクロス",
+      "left": "レオナクロス",
+      "right": "",
       "location": "scene_ch05_02.webp",
     },
     {
       "speaker": "レオナクロス",
       "text": "ミモザ！ エリ！ ちょっと来てくれ！",
-      "left": "",
-      "right": "レオナクロス",
+      "left": "レオナクロス",
+      "right": "",
       "location": "scene_ch05_02.webp",
     },
     {
       "speaker": "レオナクロス",
       "text": "大発見だよ！",
-      "left": "",
-      "right": "レオナクロス",
+      "left": "レオナクロス",
+      "right": "",
       "location": "scene_ch05_02.webp",
     },
     {
@@ -3526,8 +3526,8 @@
     {
       "speaker": "レオナクロス",
       "text": "これを見たまえ！",
-      "left": "",
-      "right": "レオナクロス",
+      "left": "レオナクロス",
+      "right": "",
       "location": "scene_ch05_02.webp",
     },
     {
@@ -3540,8 +3540,8 @@
     {
       "speaker": "レオナクロス",
       "text": "触ると回るんだよ。ほら。",
-      "left": "",
-      "right": "レオナクロス",
+      "left": "レオナクロス",
+      "right": "",
       "location": "scene_ch05_02.webp",
     },
     {
@@ -3590,15 +3590,15 @@
     {
       "speaker": "レオナクロス",
       "text": "……昔、こんなおもちゃがあったような。",
-      "left": "",
-      "right": "レオナクロス",
+      "left": "レオナクロス",
+      "right": "",
       "location": "scene_ch05_02.webp",
     },
     {
       "speaker": "レオナクロス",
       "text": "外側から中心まで、線をつなげればいいんじゃないかな。",
-      "left": "",
-      "right": "レオナクロス",
+      "left": "レオナクロス",
+      "right": "",
       "location": "scene_ch05_02.webp",
     },
     {
@@ -3643,8 +3643,8 @@
     {
       "speaker": "レオナクロス",
       "text": "…………ん？",
-      "left": "",
-      "right": "レオナクロス",
+      "left": "レオナクロス",
+      "right": "",
       "location": "scene_ch05_02.webp",
     },
     {
@@ -3657,8 +3657,8 @@
     {
       "speaker": "レオナクロス",
       "text": "いや、今、絶対なにか……",
-      "left": "",
-      "right": "レオナクロス",
+      "left": "レオナクロス",
+      "right": "",
       "location": "scene_ch05_02.webp",
     },
     {
@@ -3732,8 +3732,8 @@
     {
       "speaker": "レオナクロス",
       "text": "じゃあ、さっきの音は、外側の鍵が外れた音ってことかな？",
-      "left": "",
-      "right": "レオナクロス",
+      "left": "レオナクロス",
+      "right": "",
       "location": "scene_in_tower.webp",
     },
     {
@@ -3777,8 +3777,8 @@
     {
       "speaker": "レオナクロス",
       "text": "よし、ちょっとやってみよう。",
-      "left": "",
-      "right": "レオナクロス",
+      "left": "レオナクロス",
+      "right": "",
       "location": "scene_ch05_03.webp",
     }
   ],
@@ -3802,8 +3802,8 @@
     {
       "speaker": "レオナクロス",
       "text": "おっ！",
-      "left": "",
-      "right": "レオナクロス",
+      "left": "レオナクロス",
+      "right": "",
       "location": "scene_ch05_03.webp",
     },
     {
@@ -3869,8 +3869,8 @@
     {
       "speaker": "レオナクロス",
       "text": "うーん…",
-      "left": "",
-      "right": "レオナクロス",
+      "left": "レオナクロス",
+      "right": "",
       "location": "scene_ch05_04.webp",
     },
     {
@@ -3905,8 +3905,8 @@
     {
       "speaker": "レオナクロス",
       "text": "こんなところに、わざわざ隠してあったのかい？",
-      "left": "",
-      "right": "レオナクロス",
+      "left": "レオナクロス",
+      "right": "",
       "location": "scene_ch05_04.webp",
     },
     {

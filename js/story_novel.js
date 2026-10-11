@@ -159,6 +159,22 @@
     return {left:'', right:current, active:current};
   }
 
+  // build1333: 立ち絵の向きに合わせた左右固定ルール。
+  // 明示指定と自動配置の両方に適用。ほかのキャラは必要な場合だけ反対側へ移す。
+  function enforcePortraitSides(cast){
+    const left=String(cast && cast.left || '');
+    const right=String(cast && cast.right || '');
+    const hasLeo=left==='レオナクロス' || right==='レオナクロス';
+    const hasMimosa=left==='ミモザ' || right==='ミモザ';
+    if(!hasLeo && !hasMimosa) return cast;
+    const other=[left,right].find(name=>name && name!=='レオナクロス' && name!=='ミモザ') || '';
+    return {
+      left:hasLeo ? 'レオナクロス' : other,
+      right:hasMimosa ? 'ミモザ' : other,
+      active:cast.active
+    };
+  }
+
   const STORY_BG_PATHS = Object.freeze({
     outside_tower: 'images/scene_outside_tower.webp',
     outside_tower_enemy: 'images/scene_outside_tower_enemy.webp',
@@ -1037,7 +1053,7 @@
     const rightImg=rightWrap.querySelector('img');
     const itemWrap=root.querySelector('.story-novel-item');
     const itemImg=itemWrap ? itemWrap.querySelector('img') : null;
-    const castInfo=resolveCast(session.entries, session.index);
+    const castInfo=enforcePortraitSides(resolveCast(session.entries, session.index));
 
     function applyCharacter(wrap,img,name,active){
       const src=name ? getCharacterPanel(name) : '';
