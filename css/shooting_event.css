@@ -12603,3 +12603,63 @@ html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-
   html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-stage-gimmick-elements img,
   html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-reward-chip img{ width:28px !important; height:28px !important; }
 }
+
+/* ============================================================
+   build1381: ハオ(ID54)専用 WOOD CHARGE
+   水属性CHARGEの汎用スタイルを共有しても、木の緑色で表示する。
+   射撃判定・当たり判定・ダメージはJS側の既存仕様を継承。
+   ============================================================ */
+#shooting-event-root #shooting-arena .shooting-bullet.shooting-mia-charge-shot.shooting-hao-charge-shot.shooting-bullet-wood{
+  background:
+    radial-gradient(ellipse at 50% 27%,
+      rgba(255,255,245,.96) 0 9%,
+      rgba(224,255,203,.94) 15%,
+      rgba(157,239,114,.79) 37%,
+      rgba(75,185,79,.43) 58%,
+      rgba(28,124,48,.16) 76%,
+      transparent 88%) !important;
+  border:0 !important;
+  outline:0 !important;
+  box-shadow:
+    0 0 11px rgba(235,255,221,.66),
+    0 0 24px rgba(114,214,100,.50),
+    0 0 38px rgba(45,154,62,.28) !important;
+  filter:none !important;
+}
+#shooting-event-root #shooting-arena .shooting-bullet.shooting-mia-charge-shot.shooting-hao-charge-shot.shooting-bullet-wood::before{
+  content:'' !important;
+  position:absolute !important;
+  left:22% !important;top:7% !important;
+  right:auto !important;bottom:auto !important;
+  width:56% !important;height:55% !important;
+  border:0 !important;border-radius:50% 50% 46% 46% / 34% 34% 66% 66% !important;
+  background:
+    radial-gradient(ellipse at 50% 28%,
+      rgba(255,255,245,.99) 0 17%,
+      rgba(220,254,199,.92) 28%,
+      rgba(142,233,118,.60) 52%,
+      rgba(47,156,66,.17) 75%,
+      transparent 100%) !important;
+  filter:blur(.6px) !important;
+  box-shadow:none !important;
+  opacity:.98 !important;
+}
+#shooting-event-root #shooting-arena .shooting-bullet.shooting-mia-charge-shot.shooting-hao-charge-shot.shooting-bullet-wood::after{
+  content:'' !important;
+  position:absolute !important;
+  top:29% !important;left:50% !important;
+  right:auto !important;bottom:auto !important;
+  width:98% !important;height:218% !important;
+  border:0 !important;
+  transform:translateX(-50%) !important;
+  border-radius:44% 44% 68% 68% / 10% 10% 90% 90% !important;
+  background:linear-gradient(to bottom,
+    rgba(227,255,197,.82) 0%,
+    rgba(163,239,137,.58) 16%,
+    rgba(84,201,97,.38) 39%,
+    rgba(35,146,69,.19) 67%,
+    transparent 100%) !important;
+  filter:blur(5px) !important;
+  box-shadow:none !important;
+  opacity:.92 !important;
+}

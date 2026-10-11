@@ -2784,7 +2784,7 @@
     id: CHARACTER_ID.HAO, effectKey: 'hao',
     label: 'CHARGE / FUTURE TRIGGER',
     description: '木属性のCHARGE型。ULTで敵弾を全消去し、前方へ5段階の起動紋様を設置。触れた時点の強さで全敵へ落雷を与える。',
-    shotType: 'charge', shotStyle: 'kaina-charge', shotCount: 1,
+    shotType: 'charge', shotStyle: 'kaina-charge', shotElement: 'wood', shotCount: 1,
     fireRate: 0, bulletSpeed: 760, shotPowerRate: 0.90,
     chargeMinMs: 120, chargeMaxMs: 1200, chargeMinSize: 28, chargeMaxSize: 72,
     ultName: '天機・五刻の雷',

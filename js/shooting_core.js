@@ -8229,7 +8229,7 @@
     if (state.miaChargePreviewRaf) cancelAnimationFrame(state.miaChargePreviewRaf);
 
     const el = document.createElement('i');
-    el.className = 'shooting-bullet shooting-mia-charge-shot shooting-charge-preview' + getCharacterBulletClass(c);
+    el.className = 'shooting-bullet shooting-mia-charge-shot shooting-charge-preview' + (Number(c.id) === Number(CHARACTER_ID.HAO) ? ' shooting-hao-charge-shot' : '') + getCharacterBulletClass(c);
     el.setAttribute('aria-hidden', 'true');
     arena.appendChild(el);
     state.miaChargePreviewEl = el;
@@ -8366,7 +8366,7 @@
 
     const y = state.player.y - Number(c.shotOffsetY || 44);
     const p = makeProjectile(
-      'shooting-bullet shooting-mia-charge-shot' + getCharacterBulletClass(c),
+      'shooting-bullet shooting-mia-charge-shot' + (Number(c.id) === Number(CHARACTER_ID.HAO) ? ' shooting-hao-charge-shot' : '') + getCharacterBulletClass(c),
       state.player.x,
       y,
       0,
@@ -26929,7 +26929,7 @@
     style.textContent = `
       /* build1313: Etched ground sigil, not a floating rotating ring. */
       .shooting-hao-trigger{
-        position:absolute;width:74px;height:74px;z-index:44;pointer-events:none;
+        position:absolute;left:0;top:0;width:74px;height:74px;z-index:44;pointer-events:none;
         border:0;background:transparent;box-shadow:none;overflow:visible;
         --hao-light:rgba(170,212,148,.75);--hao-light-strong:rgba(203,239,174,.95);
         --hao-glow:rgba(138,188,109,.42);
@@ -27058,8 +27058,9 @@
     const height = Math.max(80, bounds.height || arena.clientHeight);
     const playerX = Number(state.player.x || width * .5);
     const playerY = Number(state.player.y || height * .75);
-    const x = Math.max(35, Math.min(width - 35, playerX));
-    const y = Math.max(35, Math.min(height - 35, playerY - 85));
+    const x = Math.max(37, Math.min(width - 37, playerX));
+    // Front of player is the UPWARD direction (negative arena Y).
+    const y = Math.max(37, Math.min(height - 37, playerY - 85));
     const el = document.createElement('div');
     el.className = 'shooting-hao-trigger is-arming';
     el.setAttribute('aria-label', 'ハオ ULT 起動紋様');
@@ -27092,6 +27093,11 @@
         </g>
       </svg>
       <span class="hao-caption"><span class="hao-level">LV1</span><span class="hao-power">×1.0</span></span>`;
+    // positionUnit uses translate(x,y) from the ARENA origin. Absolute children
+    // without left/top:0 inherit their static position (dependent on sibling DOM),
+    // so the visible sigil and collision coordinates disagree.
+    el.style.left = '0px';
+    el.style.top = '0px';
     arena.appendChild(el);
     positionUnit(el, x, y);
     state.haoTrigger = {
@@ -27123,7 +27129,8 @@
     // プレイヤー自身が紋様へ接触した時だけ起爆。敵弾との接触は無視する。
     const dx = Number(state.player.x || 0) - trigger.x;
     const dy = Number(state.player.y || 0) - trigger.y;
-    if (dx * dx + dy * dy > 32 * 32) return;
+    // Same center as positionUnit(), allowing contact on the outer visible ring.
+    if (dx * dx + dy * dy > 36 * 36) return;
 
     // 消す→演出→攻撃の順。複数フレームで再発動しない。
     const owner = trigger.owner;
