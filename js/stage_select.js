@@ -692,7 +692,7 @@
     frame.title = '円環パズル';
     frame.setAttribute('scrolling','no');
     frame.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;display:block;overflow:hidden;';
-    frame.src = 'ring_puzzle_ch05.html?v=1336&rings=' + (Number(stage.stageNo) === 2 ? '3' : '4');
+    frame.src = 'ring_puzzle_ch05.html?v=1345-rich-ui&rings=' + (Number(stage.stageNo) === 2 ? '3' : '4');
     overlay.appendChild(frame);
     document.body.appendChild(overlay);
     const previousHtmlOverflow = document.documentElement.style.overflow;
