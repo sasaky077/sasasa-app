@@ -1,4 +1,4 @@
 {
-  "build": 1343,
-  "note": "Move ECHO TOWER ranking/reward diamonds down 10px to avoid clipping; explicitly load tower CSS."
+  "build": 1344,
+  "note": "Adjust ECHO TOWER floor label colors and remove intro ornament diamond under ECHO TOWER."
 }

@@ -57,11 +57,7 @@ html body #screen-resonance-tower.resonance-tower-screen.active{display:block !i
   color:#fff0d2;font:600 clamp(6.5px,1.6vw,9.5px)/1.5 'Cinzel',serif;
   letter-spacing:.02em;white-space:nowrap;margin-top:8px;
 }
-#screen-resonance-tower .resonance-tower-ornament{
-  width:76%;height:13px;display:flex;align-items:center;justify-content:center;
-  margin-top:4px;font:13px/1 'Cinzel',serif;color:#dfc99a;
-  border-top:1px solid rgba(233,211,165,.6);
-}
+#screen-resonance-tower .resonance-tower-ornament{display:none !important;}
 #screen-resonance-tower .resonance-tower-intro p{
   margin:9px 0 0;color:#fff4e1;
   font:500 clamp(9px,2.5vw,13px)/1.9 'Noto Serif JP',serif;
@@ -136,6 +132,12 @@ html body #screen-resonance-tower.resonance-tower-screen.active{display:block !i
 }
 #screen-resonance-tower .resonance-tower-floor-label{
   font:400 clamp(8px,2.35vw,11px)/1.2 'Noto Serif JP',serif;letter-spacing:.06em;white-space:nowrap;
+}
+#screen-resonance-tower .resonance-tower-floor:not(.is-final) .resonance-tower-floor-label{
+  color:#ffffff;
+}
+#screen-resonance-tower .resonance-tower-floor.is-final .resonance-tower-floor-label{
+  color:#7b5a3d;
 }
 #screen-resonance-tower .resonance-tower-floor.is-trial .resonance-tower-floor-label{
   border-radius:0;background:rgba(178,74,75,.63);padding:1px 5px;
