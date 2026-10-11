@@ -1,4 +1,4 @@
 {
-  "build": 1377,
-  "note": "Rebuilt party formation as a direct stage overlay, entirely separate from legacy battle HUD/arena. Defined dedicated header CSS and removed duplicate header display."
+  "build": 1378,
+  "note": "Match story chapter card illustration to images/icon_story_XX.webp (CH01-CH06 included; missing chapters fall back to CH01), without changing navigation or unlock rules."
 }

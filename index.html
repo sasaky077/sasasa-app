@@ -18927,9 +18927,19 @@ function fadeOutOpeningBgm(){
           '<span class="junkou-story-card-rule" aria-hidden="true"></span>' +
           '<span class="junkou-story-card-title' + (sixOrLess ? ' is-six-or-less' : '') + '">' + escapeHtml(title) + '</span>' +
         '</span>' +
-        '<span class="junkou-story-card-art"><img src="images/icon_story_01.webp" alt="" decoding="async"></span>' +
+        '<span class="junkou-story-card-art"><img src="images/icon_story_' + String(chapter).padStart(2, '0') + '.webp?v=1378" alt="" decoding="async" loading="lazy"></span>' +
         '<span class="junkou-story-card-arrow" aria-hidden="true">›</span>' +
         (unlocked ? '' : '<span class="junkou-story-card-lock">LOCKED</span>');
+      // CH07 / CH08 の挿絵が未配置の環境でもカードを壊さない。
+      // 対応素材が配置されれば画像名だけで自動的に差し替わる。
+      const illustration = button.querySelector('.junkou-story-card-art img');
+      if (illustration) {
+        illustration.addEventListener('error', function(){
+          illustration.onerror = null;
+          const fallback = 'images/icon_story_01.webp?v=1378';
+          if (illustration.getAttribute('src') !== fallback) illustration.src = fallback;
+        }, { once: true });
+      }
       button.addEventListener('click', function(){ openChapter(chapter, mode || 'normal'); });
       list.appendChild(button);
     }
