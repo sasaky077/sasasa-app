@@ -1,0 +1,427 @@
+/* ZERAPHIA build1377 — PARTY FORMATION FULL ISOLATION
+   The selector is a DIRECT SIBLING of shooting-arena, not a battle overlay.
+   It deliberately does not use .shooting-character-select to escape 30+ legacy selectors.
+   During selection the former shooting HUD is removed from the render tree.
+*/
+#shooting-event-root.zpf-party-open > .shooting-stage > .shooting-hud,
+#shooting-event-root.zpf-party-open > .shooting-stage > .shooting-footer{
+  display:none !important;
+}
+#shooting-event-root.zpf-party-open > .shooting-stage > .shooting-arena,
+#shooting-event-root.zpf-party-open > .shooting-stage > .shooting-boss-hud,
+#shooting-event-root.zpf-party-open > .shooting-stage > .shooting-mission-hud,
+#shooting-event-root.zpf-party-open > .shooting-stage > .shooting-battle-timer{
+  visibility:hidden !important;
+  pointer-events:none !important;
+}
+#shooting-event-root > .shooting-stage > #shooting-character-select.zpf-screen{
+  display:none !important;
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  max-height:100% !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  transform:none !important;
+  z-index:90 !important;
+  background:
+    linear-gradient(180deg,rgba(255,253,247,.78),rgba(255,251,243,.75)),
+    url('../images/bg_charalist.webp') center / cover no-repeat,
+    #f8f3e8 !important;
+  overflow:hidden !important;
+  touch-action:auto !important;
+  pointer-events:auto !important;
+}
+#shooting-event-root > .shooting-stage > #shooting-character-select.zpf-screen.show{
+  display:flex !important;
+  align-items:stretch !important;
+  justify-content:center !important;
+}
+#shooting-event-root > .shooting-stage > #shooting-character-select.zpf-screen .zpf-shell{
+  width:100% !important;
+  max-width:760px !important;
+  height:100% !important;
+  max-height:100% !important;
+  min-height:0 !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:stretch !important;
+  position:relative !important;
+  padding:0 !important;
+  margin:0 auto !important;
+  overflow:hidden !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  color:#513b26 !important;
+  font-family:'Noto Serif JP',serif !important;
+}
+/* Header lives exclusively in the dedicated panel. No CSS content injection. */
+#shooting-event-root .zpf-shell > .zpf-header{
+  flex:0 0 auto !important;
+  position:relative !important;
+  display:grid !important;
+  grid-template-columns: minmax(72px,.95fr) minmax(0,2.35fr) minmax(85px,1.05fr) !important;
+  align-items:center !important;
+  gap:6px !important;
+  height:100px !important;
+  min-height:100px !important;
+  margin:0 !important;
+  padding:12px 12px 8px !important;
+  background:linear-gradient(180deg,rgba(255,253,248,.94),rgba(255,252,247,.38)) !important;
+  border:0 !important;
+  border-bottom:1px solid rgba(178,139,72,.57) !important;
+  box-shadow:none !important;
+  overflow:hidden !important;
+  color:#4d301a !important;
+  text-align:center !important;
+  box-sizing:border-box !important;
+}
+#shooting-event-root .zpf-header .zpf-header-back{
+  position:relative !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  gap:4px !important;
+  align-self:center !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:none !important;
+  height:44px !important;
+  min-height:44px !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  color:#67401d !important;
+  font:600 16px/1.2 'Noto Serif JP',serif !important;
+  white-space:nowrap !important;
+  letter-spacing:.03em !important;
+  text-shadow:none !important;
+  cursor:pointer !important;
+}
+#shooting-event-root .zpf-header .zpf-header-back > span{
+  display:inline-block !important;
+  color:#8e662e !important;
+  font:500 34px/1 'Cinzel',serif !important;
+  vertical-align:middle !important;
+  transform:translateY(-2px) !important;
+}
+#shooting-event-root .zpf-header .zpf-header-back::before,
+#shooting-event-root .zpf-header .zpf-header-back::after{
+  content:none !important;
+  display:none !important;
+}
+#shooting-event-root .zpf-header .zpf-header-center{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:100% !important;
+  min-width:0 !important;
+  height:auto !important;
+  position:static !important;
+  padding:0 !important;
+  margin:0 !important;
+  border:0 !important;
+  box-shadow:none !important;
+  text-align:center !important;
+  overflow:hidden !important;
+  gap:3px !important;
+}
+#shooting-event-root .zpf-header .zpf-header-chapter{
+  display:block !important;
+  width:100% !important;
+  color:#987042 !important;
+  font:600 10px/1.2 'Cinzel',serif !important;
+  letter-spacing:.17em !important;
+  white-space:nowrap !important;
+  text-overflow:ellipsis !important;
+  overflow:hidden !important;
+}
+#shooting-event-root .zpf-header .zpf-header-stage{
+  display:block !important;
+  width:100% !important;
+  color:#503217 !important;
+  font:700 clamp(15px,5vw,27px)/1.22 'Noto Serif JP',serif !important;
+  letter-spacing:.02em !important;
+  white-space:nowrap !important;
+  text-overflow:ellipsis !important;
+  overflow:hidden !important;
+}
+#shooting-event-root .zpf-header .zpf-header-subtitle{
+  display:block !important;
+  width:100% !important;
+  color:#957b52 !important;
+  font:500 10px/1.3 'Noto Serif JP',serif !important;
+  white-space:nowrap !important;
+  text-overflow:ellipsis !important;
+  overflow:hidden !important;
+}
+#shooting-event-root .zpf-header .zpf-header-score{
+  min-width:0 !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:flex-end !important;
+  justify-content:center !important;
+  gap:5px !important;
+  text-align:right !important;
+  padding:0 !important;
+  margin:0 !important;
+}
+#shooting-event-root .zpf-header .zpf-header-score span{
+  display:block !important;
+  color:#8f6a39 !important;
+  font:600 9px/1 'Cinzel',serif !important;
+  letter-spacing:.10em !important;
+  white-space:nowrap !important;
+}
+#shooting-event-root .zpf-header .zpf-header-score strong{
+  display:block !important;
+  color:#51371d !important;
+  font:700 clamp(15px,4.5vw,23px)/1 'Cinzel',serif !important;
+  letter-spacing:.02em !important;
+  white-space:nowrap !important;
+}
+@media(max-width:390px){
+  #shooting-event-root .zpf-shell > .zpf-header{
+    grid-template-columns:76px minmax(0,1fr) 92px !important;
+    height:82px !important;
+    min-height:82px !important;
+    gap:5px !important;
+    padding:8px 10px 7px !important;
+  }
+  #shooting-event-root .zpf-header .zpf-header-back{font-size:14px !important;}
+  #shooting-event-root .zpf-header .zpf-header-stage{font-size:17px !important;}
+  #shooting-event-root .zpf-header .zpf-header-score strong{font-size:17px !important;}
+}
+@media(max-width:340px){
+  #shooting-event-root .zpf-shell > .zpf-header{
+    grid-template-columns:65px minmax(0,1fr) 84px !important;
+    padding-left:8px !important;
+    padding-right:8px !important;
+  }
+  #shooting-event-root .zpf-header .zpf-header-back{font-size:12px !important;}
+  #shooting-event-root .zpf-header .zpf-header-stage{font-size:15px !important;}
+  #shooting-event-root .zpf-header .zpf-header-score strong{font-size:15px !important;}
+}
+
+#shooting-event-root .zpf-intro{
+  flex:0 0 auto !important; padding:9px 14px 6px !important;
+  text-align:center !important;
+  background:linear-gradient(180deg,rgba(255,252,246,.8),rgba(255,252,246,.23)) !important;
+}
+#shooting-event-root .zpf-intro-heading{
+  display:flex !important; flex-direction:column !important; align-items:center !important; position:relative !important;
+  gap:2px !important;
+}
+#shooting-event-root .zpf-intro-mark{
+  position:absolute !important; left:8px !important; top:14px !important;
+  color:#be974e !important; font-size:27px !important; line-height:1 !important;
+}
+#shooting-event-root .zpf-intro-heading strong{
+  color:#543617 !important; font:700 clamp(21px,6.4vw,30px)/1.15 'Noto Serif JP',serif !important;
+  letter-spacing:.07em !important; text-shadow:0 1px 1px #fff !important;
+}
+#shooting-event-root .zpf-intro-english{
+  font:600 9px/1.2 'Cinzel',serif !important; letter-spacing:.30em !important; color:#967448 !important;
+}
+#shooting-event-root .zpf-rule{
+  margin:7px auto 0 !important; min-height:14px !important; max-width:100% !important;
+  color:#756041 !important; font:500 clamp(10px,2.65vw,12px)/1.45 'Noto Serif JP',serif !important;
+  letter-spacing:.025em !important; text-align:center !important;
+}
+#shooting-event-root .zpf-slots{
+  flex:0 0 auto !important;
+  display:flex !important; align-items:stretch !important; justify-content:center !important;
+  gap:clamp(8px,3vw,16px) !important;
+  padding:11px 14px 12px !important; margin:0 !important;
+  min-height:0 !important; border:0 !important;
+  border-top:1px solid rgba(196,161,101,.45) !important;
+  border-bottom:1px solid rgba(196,161,101,.5) !important;
+  background:rgba(255,253,246,.45) !important;
+}
+#shooting-event-root .zpf-slots > .shooting-party-slot{
+  flex:0 1 130px !important;
+  position:relative !important; display:flex !important; align-items:center !important; justify-content:center !important;
+  width:min(29vw,130px) !important; height:auto !important; aspect-ratio:1 / 1.06 !important;
+  min-width:0 !important; max-height:132px !important; margin:0 !important; padding:0 !important;
+  border:1px solid rgba(185,144,71,.63) !important;
+  border-radius:0 !important;
+  background:radial-gradient(circle,rgba(255,255,255,.5) 0%,rgba(247,241,229,.62) 100%) !important;
+  box-shadow:inset 0 0 0 4px rgba(255,252,246,.65),0 2px 6px rgba(105,80,37,.07) !important;
+  color:#aa8447 !important; overflow:visible !important;
+}
+#shooting-event-root .zpf-slots > .shooting-party-slot:first-child{
+  border-color:#cca34f !important;
+  box-shadow:inset 0 0 0 4px rgba(255,252,246,.80),0 0 0 2px rgba(225,178,77,.29),0 0 12px rgba(234,189,97,.3) !important;
+}
+#shooting-event-root .zpf-slots > .shooting-party-slot.empty::after{
+  content:'✧'; position:absolute; bottom:7px; left:50%; transform:translateX(-50%);
+  font:24px/1 'Cinzel',serif; color:rgba(180,141,75,.36); pointer-events:none;
+}
+#shooting-event-root .zpf-slots > .shooting-party-slot.empty b{
+  color:#b58c4f !important; font:400 clamp(31px,9vw,45px)/1 'Noto Serif JP',serif !important;
+  text-shadow:0 1px 0 #fff !important; transform:none !important; position:static !important;
+}
+#shooting-event-root .zpf-slots > .shooting-party-slot .zpf-slot-number{
+  position:absolute !important; z-index:5 !important;
+  left:50% !important; top:-11px !important; transform:translateX(-50%) !important;
+  width:27px !important; height:27px !important; line-height:25px !important;
+  display:flex !important; align-items:center !important; justify-content:center !important;
+  border:1px solid rgba(190,147,78,.8) !important; border-radius:50% !important;
+  background:linear-gradient(180deg,#fffef9,#f6eada) !important;
+  color:#906c33 !important; font:700 15px/1 'Cinzel',serif !important;
+  box-shadow:0 2px 5px rgba(89,58,22,.12) !important;
+}
+#shooting-event-root .zpf-slots > .shooting-party-slot.filled > img:not(.shooting-party-slot-element-icon){
+  position:static !important; display:block !important;
+  width:100% !important; height:100% !important; object-fit:cover !important;
+}
+#shooting-event-root .zpf-slots > .shooting-party-slot.filled .shooting-party-slot-element-icon{
+  position:absolute !important; top:5px !important; left:5px !important; z-index:3 !important;
+  width:22px !important; height:22px !important; object-fit:contain !important;
+}
+#shooting-event-root .zpf-slots > .shooting-party-slot.filled small{
+  position:absolute !important; bottom:0 !important; left:0 !important; right:0 !important;
+  padding:7px 2px 3px !important; border:0 !important;
+  color:#fffaf2 !important; background:linear-gradient(0deg,rgba(82,58,27,.82),transparent) !important;
+  font:600 10px/1.2 'Noto Serif JP',serif !important;
+}
+#shooting-event-root .zpf-slots > .shooting-party-slot.filled i{
+  position:absolute !important; z-index:5 !important; top:3px !important; right:3px !important;
+  width:18px !important; height:18px !important; border:1px solid #e2c994 !important;
+  border-radius:50% !important; background:#fffdf8 !important; color:#8b5f35 !important;
+  font:700 12px/16px 'Noto Serif JP',serif !important;
+}
+
+/* 4-column roster: the one and only scrollable region. */
+html body #shooting-event-root #shooting-character-select.zpf-screen.show .zpf-roster{
+  flex:1 1 0 !important; min-height:0 !important; width:100% !important; max-width:100% !important;
+  display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+  grid-auto-rows:max-content !important; align-content:start !important; align-items:start !important;
+  gap:clamp(5px,1.6vw,10px) !important;
+  margin:0 !important; padding:12px clamp(10px,3vw,22px) 24px !important;
+  overflow-y:auto !important; overflow-x:hidden !important; overscroll-behavior:contain !important;
+  -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important;
+  background:rgba(255,252,246,.20) !important;
+}
+#shooting-event-root #shooting-character-select.zpf-screen .zpf-roster .shooting-character-option-wrap{
+  min-width:0 !important; max-width:100% !important; margin:0 !important; padding:0 !important;
+  position:relative !important;
+}
+#shooting-event-root #shooting-character-select.zpf-screen .zpf-roster .shooting-character-option{
+  box-sizing:border-box !important; min-width:0 !important; max-width:100% !important;
+  display:flex !important; flex-direction:column !important; align-items:stretch !important;
+  width:100% !important; height:auto !important; margin:0 !important; padding:3px !important;
+  border:1px solid rgba(199,163,94,.68) !important; border-radius:0 !important;
+  background:linear-gradient(180deg,rgba(255,254,251,.86),rgba(248,242,230,.94)) !important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.88) !important;
+  filter:none !important;
+}
+#shooting-event-root #shooting-character-select.zpf-screen .zpf-roster .shooting-character-option.selected{
+  border-color:#c59736 !important;
+  background:linear-gradient(180deg,#fffdf8,#f6ebd7) !important;
+  box-shadow:0 0 0 2px #eac26c,0 0 10px rgba(221,174,79,.48) !important;
+}
+#shooting-event-root #shooting-character-select.zpf-screen .zpf-roster .shooting-character-option.locked{
+  opacity:.45 !important; filter:grayscale(.75) !important;
+}
+#shooting-event-root #shooting-character-select.zpf-screen .zpf-roster .shooting-character-portrait{
+  box-sizing:border-box !important; position:relative !important;
+  display:block !important; width:100% !important; height:auto !important; aspect-ratio:1 / 1.0 !important;
+  margin:0 !important; padding:0 !important; overflow:hidden !important; border:0 !important; border-radius:0 !important;
+  background:rgba(255,252,245,.25) !important;
+}
+#shooting-event-root #shooting-character-select.zpf-screen .zpf-roster .shooting-character-portrait > img:not(.shooting-character-element-icon){
+  display:block !important; width:100% !important; height:100% !important;
+  max-width:100% !important; max-height:100% !important;
+  margin:0 !important; padding:0 !important;
+  object-fit:cover !important; object-position:top center !important; border:0 !important;
+  border-radius:0 !important; filter:none !important;
+}
+#shooting-event-root #shooting-character-select.zpf-screen .zpf-roster .shooting-character-element-icon{
+  position:absolute !important; z-index:5 !important; top:3px !important; left:3px !important;
+  width:clamp(16px,4.7vw,25px) !important; height:clamp(16px,4.7vw,25px) !important;
+  max-width:25px !important; max-height:25px !important;
+  padding:0 !important; margin:0 !important;
+  background:rgba(255,253,247,.78) !important; border:1px solid rgba(188,150,77,.42) !important;
+  border-radius:50% !important; object-fit:contain !important; filter:none !important;
+}
+#shooting-event-root #shooting-character-select.zpf-screen .zpf-roster .shooting-character-level-label{
+  box-sizing:border-box !important; display:block !important; width:100% !important;
+  min-height:21px !important; margin:0 !important; padding:4px 0 3px !important;
+  background:rgba(255,254,251,.94) !important;
+  color:#5c452b !important; text-align:center !important;
+  font:700 clamp(10px,2.7vw,14px)/1.1 'Cinzel','Noto Serif JP',serif !important;
+  white-space:nowrap !important; letter-spacing:.01em !important;
+}
+
+/* Fixed bottom actions — never part of roster scrolling. */
+html body #shooting-event-root #shooting-character-select.zpf-screen.show .zpf-actions{
+  flex:0 0 auto !important; position:relative !important; z-index:5 !important;
+  display:grid !important; grid-template-columns:1fr 1.5fr !important; gap:10px !important;
+  width:100% !important; margin:0 !important;
+  padding:11px 12px max(14px,env(safe-area-inset-bottom,14px)) !important;
+  border-top:1px solid rgba(194,153,82,.54) !important;
+  background:rgba(255,251,243,.95) !important;
+  box-shadow:0 -7px 18px rgba(105,73,28,.08) !important;
+}
+html body #shooting-event-root #shooting-character-select.zpf-screen.show .zpf-actions > button{
+  position:relative !important; inset:auto !important;
+  display:flex !important; align-items:center !important; justify-content:center !important;
+  width:100% !important; min-width:0 !important; max-width:none !important;
+  height:46px !important; min-height:46px !important; margin:0 !important; padding:0 6px !important;
+  border:1px solid rgba(178,134,65,.7) !important;
+  border-radius:0 !important; outline:0 !important;
+  color:#5d3f20 !important; background:linear-gradient(180deg,#fffef9,#f7eee0) !important;
+  font:700 clamp(13px,3.6vw,17px)/1.25 'Noto Serif JP',serif !important;
+  letter-spacing:.04em !important; text-shadow:none !important;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.65) !important;
+}
+html body #shooting-event-root #shooting-character-select.zpf-screen.show .zpf-actions .zpf-btn-start:not(:disabled){
+  color:#fffdf8 !important; background:linear-gradient(180deg,#9b7849,#55391e) !important;
+  border-color:#aa823f !important; box-shadow:inset 0 0 0 1px #d7b77c,0 2px 6px rgba(59,37,17,.15) !important;
+}
+html body #shooting-event-root #shooting-character-select.zpf-screen.show .zpf-actions .zpf-btn-start:disabled{
+  opacity:1 !important; filter:none !important;
+  color:#fffefb !important; background:linear-gradient(180deg,#b2aba2,#85817d) !important;
+  border-color:#a19a90 !important;
+  cursor:not-allowed !important;
+}
+html body #shooting-event-root #shooting-character-select.zpf-screen.show .zpf-actions button::before,
+html body #shooting-event-root #shooting-character-select.zpf-screen.show .zpf-actions button::after{
+  content:'✧' !important; position:absolute !important; top:50% !important; transform:translateY(-50%) !important;
+  color:currentColor !important; opacity:.5 !important; font:16px/1 'Cinzel',serif !important;
+}
+html body #shooting-event-root #shooting-character-select.zpf-screen.show .zpf-actions button::before{left:9px !important;}
+html body #shooting-event-root #shooting-character-select.zpf-screen.show .zpf-actions button::after{right:9px !important;}
+
+/* Small phones preserve selectable cards, with only roster scrolling. */
+@media (max-width:390px){
+  #shooting-event-root .zpf-intro{padding:8px 8px 6px !important;}
+  #shooting-event-root .zpf-slots{gap:8px !important; padding:10px 9px 10px !important;}
+  #shooting-event-root .zpf-slots > .shooting-party-slot{max-height:115px !important;}
+  html body #shooting-event-root #shooting-character-select.zpf-screen.show .zpf-roster{padding:9px 9px 20px !important; gap:5px !important;}
+  #shooting-event-root #shooting-character-select.zpf-screen .zpf-roster .shooting-character-level-label{min-height:18px !important; padding:3px 0 2px !important;}
+  html body #shooting-event-root #shooting-character-select.zpf-screen.show .zpf-actions{padding:8px 9px max(10px,env(safe-area-inset-bottom,10px)) !important;gap:8px !important;}
+  html body #shooting-event-root #shooting-character-select.zpf-screen.show .zpf-actions > button{height:43px !important;min-height:43px !important;}
+}
+@media (max-height:640px){
+  #shooting-event-root .zpf-intro{padding-top:5px !important;padding-bottom:4px !important;}
+  #shooting-event-root .zpf-intro-heading strong{font-size:20px !important;}
+  #shooting-event-root .zpf-rule{margin-top:4px !important; font-size:10px !important;}
+  #shooting-event-root .zpf-slots{padding-top:9px !important; padding-bottom:9px !important;}
+  #shooting-event-root .zpf-slots > .shooting-party-slot{max-height:94px !important;}
+}
+
+/* Core's fixed-story-party rule sets roster.style.display='none'. Respect it
+   even though the independent layout otherwise forces a CSS grid. */
+html body #shooting-event-root #shooting-character-select.zpf-screen.show .zpf-roster[style*="display: none"]{
+  display:none !important;
+}

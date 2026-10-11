@@ -27,6 +27,7 @@
           <div class="shooting-hud-title">
             <span id="shooting-hud-kicker">SPECIAL EVENT</span>
             <strong id="shooting-hud-stage-title">無貌の天使<i id="shooting-hud-difficulty" style="display:none"></i></strong>
+            <small class="zpf-stage-subtitle" id="zpf-stage-subtitle"></small>
           </div>
           <div class="shooting-score" id="shooting-score">SCORE 000000</div>
         </header>
@@ -58,30 +59,6 @@
             <span>ULT FULL CHARGE</span>
             <small>ダブルタップでULTスキルの使用が可能</small>
           </div>
-          <div class="shooting-character-select" id="shooting-character-select" aria-hidden="false">
-            <div class="shooting-character-select-card shooting-party-select-card">
-              <div class="shooting-party-select-head">
-                <strong>パーティ編成</strong>
-                <small id="shooting-party-rule-text">最大3人 · 1人から出撃可能</small>
-              </div>
-              <div class="shooting-party-slots" id="shooting-party-slots"></div>
-              <div class="shooting-party-blessing" hidden aria-hidden="true" data-feature-state="reserved" style="display:none!important;">
-                <div class="shooting-party-section-head"><span>加護</span><small>未実装</small></div>
-                <button type="button" class="shooting-party-blessing-current disabled" id="shooting-party-blessing-current" onclick="toggleShootingBlessingPicker()">
-                  <span class="shooting-party-blessing-plus">－</span>
-                  <span><b id="shooting-party-blessing-name">未実装の機能です</b><small>現在準備中</small></span>
-                </button>
-                <div class="shooting-party-blessing-picker" id="shooting-party-blessing-picker"></div>
-              </div>
-              <div class="shooting-character-grid shooting-party-roster">
-                ${getShootingRosterHtml()}
-              </div>
-              <div class="shooting-party-actions">
-                <button type="button" class="shooting-party-cancel" onclick="closeShootingEvent()">キャンセル</button>
-                <button type="button" class="shooting-character-start" id="shooting-character-start" onclick="startSelectedShootingCharacter()">戦闘開始</button>
-              </div>
-            </div>
-          </div>
           <div class="shooting-start-copy" id="shooting-start-copy">
             <b id="shooting-start-character">ERI</b>
             <span>ドラッグ / WASD・矢印キーで移動</span>
@@ -100,6 +77,47 @@
           </div>
           <div class="shooting-switch-rail" id="shooting-switch-rail" aria-label="キャラクター切り替え"></div>
         </div>
+
+          <div class="zpf-screen" id="shooting-character-select" aria-hidden="false">
+            <div class="zpf-shell" role="region" aria-label="バトル前のパーティ編成">
+              <header class="zpf-header" aria-label="ステージ情報">
+                <button class="zpf-header-back" type="button" onclick="closeShootingEvent()" aria-label="戻る"><span aria-hidden="true">‹</span> 戻る</button>
+                <div class="zpf-header-center">
+                  <span class="zpf-header-chapter" id="zpf-header-chapter">CHAPTER 01</span>
+                  <strong class="zpf-header-stage" id="zpf-header-stage">ステージ1</strong>
+                  <small class="zpf-header-subtitle" id="zpf-header-subtitle">始まりの静寂</small>
+                </div>
+                <div class="zpf-header-score">
+                  <span>HIGH SCORE</span>
+                  <strong id="zpf-header-score">000000</strong>
+                </div>
+              </header>
+              <div class="zpf-intro">
+                <div class="zpf-intro-heading">
+                  <span class="zpf-intro-mark" aria-hidden="true">✧</span>
+                  <strong>パーティ編成</strong>
+                  <span class="zpf-intro-english">— PARTY FORMATION —</span>
+                </div>
+                <div class="zpf-rule" id="shooting-party-rule-text">最大3人 · 1人から出撃可能</div>
+              </div>
+              <div class="zpf-slots" id="shooting-party-slots" aria-label="編成枠"></div>
+              <div class="shooting-party-blessing" hidden aria-hidden="true" data-feature-state="reserved" style="display:none!important;">
+                <div class="shooting-party-section-head"><span>加護</span><small>未実装</small></div>
+                <button type="button" class="shooting-party-blessing-current disabled" id="shooting-party-blessing-current" onclick="toggleShootingBlessingPicker()">
+                  <span class="shooting-party-blessing-plus">－</span>
+                  <span><b id="shooting-party-blessing-name">未実装の機能です</b><small>現在準備中</small></span>
+                </button>
+                <div class="shooting-party-blessing-picker" id="shooting-party-blessing-picker"></div>
+              </div>
+              <div class="shooting-party-roster zpf-roster" role="list" aria-label="所持キャラクター">
+                ${getShootingRosterHtml()}
+              </div>
+              <div class="zpf-actions">
+                <button type="button" class="shooting-party-cancel zpf-btn-cancel" onclick="closeShootingEvent()">キャンセル</button>
+                <button type="button" class="shooting-character-start zpf-btn-start" id="shooting-character-start" onclick="startSelectedShootingCharacter()">戦闘開始</button>
+              </div>
+            </div>
+          </div>
 
         <footer class="shooting-footer">
           <div class="shooting-player-hud">
@@ -450,6 +468,8 @@
     if (!panel) return;
     panel.classList.toggle('show', visible);
     panel.setAttribute('aria-hidden', visible ? 'false' : 'true');
+    const root = document.getElementById(rootId);
+    if (root) root.classList.toggle('zpf-party-open', !!visible);
     if (visible) setBattleHudVisible(rootId, false);
   }
 

@@ -2393,6 +2393,23 @@
       difficulty.textContent = difficultyLabel ? `― ${difficultyLabel} ―` : '';
       difficulty.style.display = difficultyLabel ? 'inline' : 'none';
     }
+    // build1375: PARTY FORMATION 専用サブタイトル。戦闘中は CSS で非表示。
+    const partySubtitle = document.getElementById('zpf-stage-subtitle');
+    if (partySubtitle) partySubtitle.textContent = isSpecialEvent ? '' : String(selectedStage?.name || selectedStage?.displayName || '');
+    // build1376: party-specific header is independently laid out and no longer inherits battle HUD CSS.
+    if (!inBattle) {
+      const partyChapter = document.getElementById('zpf-header-chapter');
+      const partyStage = document.getElementById('zpf-header-stage');
+      const partySubtitle = document.getElementById('zpf-header-subtitle');
+      const partyScore = document.getElementById('zpf-header-score');
+      if (partyChapter) partyChapter.textContent = isSpecialEvent ? 'SPECIAL EVENT' : `CHAPTER ${String(selectedStage?.chapter || 1).padStart(2, '0')}`;
+      if (partyStage) partyStage.textContent = stageTitle;
+      if (partySubtitle) {
+        partySubtitle.textContent = isSpecialEvent ? String(selectedStage?.difficultyLabel || '') : String(selectedStage?.name || selectedStage?.displayName || '');
+        partySubtitle.style.display = partySubtitle.textContent ? '' : 'none';
+      }
+      if (partyScore) partyScore.textContent = formatShootingScore(selectedStageHighScore);
+    }
     if (score) {
       if (inBattle) {
         if (isRaidStage() && state?.boss) {
@@ -3574,7 +3591,7 @@
 
     wrap.innerHTML = Array.from({ length: slotCount }, (_, i) => {
       const id = selectedPartyIds[i];
-      if (!id) return `<button type="button" class="shooting-party-slot empty" aria-label="空きスロット"><span>${i + 1}</span><b>＋</b></button>`;
+      if (!id) return `<button type="button" class="shooting-party-slot empty" aria-label="編成枠${i + 1}・空き"><span class="zpf-slot-number">${i + 1}</span><b aria-hidden="true">＋</b></button>`;
       const c = buildResonatedCharacterProfile(id);
       const fixedStoryMember = !!fixedStoryParty;
       const fixedStoryEri =
@@ -3585,10 +3602,12 @@
 
       return (fixedStoryMember || fixedStoryEri)
         ? `<button type="button" class="shooting-party-slot filled fixed" data-character-id="${id}" aria-label="${c.name}・ストーリー固定枠">
+            <span class="zpf-slot-number">${i + 1}</span>
             ${getShootingPartySlotElementIconHtml(c)}
             <img src="${c.panelImage || c.image}" alt="${c.name}" draggable="false"><small>${c.name}</small>
           </button>`
         : `<button type="button" class="shooting-party-slot filled" data-character-id="${id}" onclick="removeShootingPartyCharacter(${id})" aria-label="${c.name}を外す">
+            <span class="zpf-slot-number">${i + 1}</span>
             ${getShootingPartySlotElementIconHtml(c)}
             <img src="${c.panelImage || c.image}" alt="${c.name}" draggable="false"><small>${c.name}</small><i>×</i>
           </button>`;

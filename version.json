@@ -1,4 +1,4 @@
 {
-  "build": 1374,
-  "note": "Rebuilt gacha providing-rate modal with independent stylesheet and image assets for all normal/special/limited encounter pools; probabilities unchanged."
+  "build": 1377,
+  "note": "Rebuilt party formation as a direct stage overlay, entirely separate from legacy battle HUD/arena. Defined dedicated header CSS and removed duplicate header display."
 }
