@@ -1,4 +1,4 @@
 {
-  "build": 1328,
-  "note": "CH04-04 only: change normal add spawn interval to 15s (including first add), reduce all 3 reinforced summoner HP by 20% (1800->1440). Normal add HP and cap unchanged."
+  "build": 1330,
+  "note": "Fix player LASER visual stacking: exclude laser elemental class from common bullet z-index override; laser now behind normal enemies, bosses and hostile bullet layers. No combat behavior change."
 }

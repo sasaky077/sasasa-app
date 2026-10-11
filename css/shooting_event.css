@@ -12056,8 +12056,6 @@ html body:not(.ui-immersive)
 #shooting-event-root .shooting-bomb-split-burst,
 #shooting-event-root .shooting-bomb-throw-pop,
 #shooting-event-root .shooting-lightning-chain-effect,
-#shooting-event-root .shooting-noah-laser,
-#shooting-event-root .shooting-ignis-laser,
 #shooting-event-root .shooting-eri-ult-ray,
 #shooting-event-root .shooting-eri-ult-mark,
 #shooting-event-root .shooting-eri-ult-slash,
@@ -12079,6 +12077,14 @@ html body:not(.ui-immersive)
   z-index:42 !important;
 }
 
+/* build1329 — 通常LASERは敵本体・敵弾より背面に描画する。
+   z=8 < 通常敵のレイヤー(9) / DOM敵弾(10) / Canvas敵弾(17) / BOSS(20)。
+   ノアのLASERも .shooting-ignis-laser を共有するため同じ優先度。
+   攻撃判定・貫通・威力・発射間隔には影響しない。 */
+#shooting-event-root .shooting-ignis-laser{
+  z-index:8 !important;
+}
+
 /* BOSSはHUDより前、プレイヤー攻撃より後ろ */
 #shooting-event-root .shooting-boss{
   z-index:20 !important;
@@ -12091,7 +12097,7 @@ html body:not(.ui-immersive)
    Layer order inside arena: allied projectile(9) < enemy bullet(11) < player(12) < boss(20).
    ============================================================ */
 #shooting-event-root .shooting-bullet,
-#shooting-event-root [class*="shooting-bullet-"],
+#shooting-event-root [class*="shooting-bullet-"]:not(.shooting-ignis-laser),
 #shooting-event-root .shooting-ult-shot,
 #shooting-event-root .shooting-mia-charge-shot,
 #shooting-event-root .shooting-cluster-projectile,
@@ -12100,6 +12106,13 @@ html body:not(.ui-immersive)
 #shooting-event-root .shooting-conjure-ult-homing,
 #shooting-event-root .shooting-noah-ult-bullet{
   z-index:9 !important;
+}
+
+/* build1330: 元素属性の shooting-bullet-* を併用するLASERを、
+   自機ショット共通のz-index:9に誤分類しない。通常敵layer:9の後ろへ固定。
+   レーザー要素は敵より後にappendされるため、同じ9ではレーザーが前面になる。 */
+#shooting-event-root #shooting-arena .shooting-ignis-laser{
+  z-index:8 !important;
 }
 
 #shooting-event-root .shooting-enemy-bullet,
