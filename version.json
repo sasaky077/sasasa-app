@@ -1,4 +1,4 @@
 {
-  "build": 1373,
-  "note": "Reduced filter modal title and section heading sizes, replaced close button with provided image, and slimmed selected option borders without changing choice text sizes."
+  "build": 1374,
+  "note": "Rebuilt gacha providing-rate modal with independent stylesheet and image assets for all normal/special/limited encounter pools; probabilities unchanged."
 }

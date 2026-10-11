@@ -429,6 +429,7 @@
   <link rel="stylesheet" href="css/character_list.css?v=1368-translucent-header">
   <link rel="stylesheet" href="css/character_filter.css?v=1373-filter-size-close">
   <link rel="stylesheet" href="css/character_detail_shot.css?v=1372-fixed-icons">
+  <link rel="stylesheet" href="css/gacha_ratio.css?v=1374-rebuild">
 
   <style id="item-page-build682-fixes">
     /* build682: item page visual alignment */
@@ -3842,21 +3843,28 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 
   </div>
 
-  <!-- ガチャ排出詳細 -->
-  <div id="gacha-pool-detail-modal" class="gacha-pool-detail-modal" aria-hidden="true">
-    <div class="gacha-pool-detail-backdrop" onclick="closeGachaPoolDetail()"></div>
-    <section class="gacha-pool-detail-sheet" role="dialog" aria-modal="true" aria-labelledby="gacha-pool-detail-title">
-      <button class="gacha-pool-detail-close" type="button" onclick="closeGachaPoolDetail()" aria-label="閉じる">×</button>
-      <div class="gacha-pool-detail-kicker">PROBABILITY</div>
-      <h2 id="gacha-pool-detail-title" class="gacha-pool-detail-title">提供割合</h2>
-      <div id="gacha-pool-detail-subtitle" class="gacha-pool-detail-subtitle"></div>
-      <div class="gacha-pool-rate-summary">
-        <div class="gacha-pool-rate-box is-sr"><span>SR</span><b id="gacha-rate-sr">6%</b></div>
-        <div class="gacha-pool-rate-box is-r"><span>R</span><b id="gacha-rate-r">64%</b></div>
-        <div class="gacha-pool-rate-box is-item"><span>進化素材</span><b id="gacha-rate-item">30%</b></div>
+  <!-- ガチャ提供割合 build1374: 独立UI。3種共通の提供データは既存描画関数で取得する -->
+  <div id="gacha-pool-detail-modal" class="zgr-modal" aria-hidden="true">
+    <div class="zgr-backdrop" onclick="closeGachaPoolDetail()"></div>
+    <section class="zgr-sheet" role="dialog" aria-modal="true" aria-labelledby="gacha-pool-detail-title">
+      <div class="zgr-sheet-outline" aria-hidden="true"></div>
+      <header class="zgr-header">
+        <button class="zgr-close" type="button" onclick="closeGachaPoolDetail()" aria-label="閉じる"><img src="images/button_close.webp" alt="" decoding="async"></button>
+        <h2 id="gacha-pool-detail-title" class="zgr-title">提供割合</h2>
+        <div class="zgr-ornament" aria-hidden="true"><span>✦</span></div>
+        <div id="gacha-pool-detail-subtitle" class="zgr-subtitle">通常邂逅</div>
+      </header>
+      <div class="zgr-summary" aria-label="排出カテゴリ別提供割合">
+        <div class="zgr-rate is-sr"><span>SR</span><b id="gacha-rate-sr">6%</b><small aria-hidden="true">✦ ✦ ✦ ✦ ✦</small></div>
+        <div class="zgr-rate is-r"><span>R</span><b id="gacha-rate-r">64%</b><small aria-hidden="true">✦ ✦ ✦ ✦ ✦</small></div>
+        <div class="zgr-rate is-material"><span>進化素材</span><b id="gacha-rate-item">30%</b><small aria-hidden="true">✦ ✦ ✦ ✦ ✦</small></div>
       </div>
-      <div id="gacha-pool-detail-content" class="gacha-pool-detail-content"></div>
-      <div class="gacha-pool-detail-note">※ どの邂逅もキャラ70%・進化素材30%。SR/Rとピックアップの提供割合は邂逅ごとに異なります。素材6種類はそれぞれ5%。</div>
+      <div id="gacha-pool-detail-content" class="zgr-content" tabindex="0" aria-label="提供割合の詳細一覧"></div>
+      <div class="zgr-note" id="gacha-pool-detail-note">
+        <p>※ キャラ70%・進化素材30%です。</p>
+        <p>※ SR/Rとピックアップの提供割合は邂逅ごとに異なります。</p>
+        <p>※ 素材6種類はそれぞれ5%です。</p>
+      </div>
     </section>
   </div>
 
@@ -6858,17 +6866,19 @@ document.addEventListener('touchend', function (e) {
       var img = getGachaPoolCharacterImage(chara);
       var element = chara && chara.element ? String(chara.element).toUpperCase() : '';
       var ownershipProgress = getGachaCharacterOwnershipProgress(id);
+      var knownElement = ['FIRE','AQUA','WOOD','LIGHT','DARK'].indexOf(element) >= 0;
+      var elementIcon = knownElement ? '<img class="zgr-attribute-icon" src="images/type_' + element.toLowerCase() + '.webp" alt="" decoding="async">' : '';
       var displayRate = getGachaRateValue(rateMap, id, eachRate);
       return '' +
-        '<button class="gacha-pool-entry is-character" type="button" onclick="openGachaPoolCharacterDetail(' + Number(id) + ')" aria-label="' + detailEscapeHTML(name + 'の能力を見る') + '">' +
-          '<img class="gacha-pool-entry-img" src="' + detailEscapeHTML(img) + '" alt="' + detailEscapeHTML(name) + '"' + (Number(id) === 54 ? ' onerror="handleGachaHaoImageError(this)"' : '') + '>' +
-          '<div class="gacha-pool-entry-main">' +
-            '<div class="gacha-pool-entry-name">' + detailEscapeHTML(limitPlayerDisplayName(name)) + '</div>' +
-            '<div class="gacha-pool-entry-meta">' + detailEscapeHTML(element) + '</div>' +
-            '<div class="gacha-pool-entry-owned">所有状況：' + ownershipProgress + '/5</div>' +
+        '<button class="zgr-entry is-character" type="button" onclick="openGachaPoolCharacterDetail(' + Number(id) + ')" aria-label="' + detailEscapeHTML(name + 'の能力を見る') + '">' +
+          '<img class="zgr-entry-img" src="' + detailEscapeHTML(img) + '" alt="' + detailEscapeHTML(name) + '"' + (Number(id) === 54 ? ' onerror="handleGachaHaoImageError(this)"' : '') + '>' +
+          '<div class="zgr-entry-main">' +
+            '<div class="zgr-entry-name">' + detailEscapeHTML(limitPlayerDisplayName(name)) + elementIcon + '</div>' +
+            '<div class="zgr-entry-meta">' + detailEscapeHTML(element) + '</div>' +
+            '<div class="zgr-entry-owned">所有状況：' + ownershipProgress + '/5</div>' +
           '</div>' +
-          '<div class="gacha-pool-entry-rate">' + formatGachaRate(displayRate * 100) + '</div>' +
-          '<div class="gacha-pool-entry-chevron" aria-hidden="true">›</div>' +
+          '<div class="zgr-entry-rate">' + formatGachaRate(displayRate * 100) + '</div>' +
+          '<div class="zgr-entry-chevron" aria-hidden="true">›</div>' +
         '</button>';
     }).join('');
   }
@@ -6890,13 +6900,13 @@ document.addEventListener('touchend', function (e) {
         ? DAILY_WEEKDAY_REWARD_MASTER[id]
         : fallback[id] || {name:String(id),img:'images/unknown.webp'};
       return '' +
-        '<div class="gacha-pool-entry is-material">' +
-          '<img class="gacha-pool-entry-img" src="' + detailEscapeHTML(data.img || 'images/unknown.webp') + '" alt="">' +
-          '<div class="gacha-pool-entry-main">' +
-            '<div class="gacha-pool-entry-name">' + detailEscapeHTML(data.name || String(id)) + '</div>' +
-            '<div class="gacha-pool-entry-meta">EVOLUTION ITEM</div>' +
+        '<div class="zgr-entry is-material">' +
+          '<img class="zgr-entry-img" src="' + detailEscapeHTML(data.img || 'images/unknown.webp') + '" alt="">' +
+          '<div class="zgr-entry-main">' +
+            '<div class="zgr-entry-name">' + detailEscapeHTML(data.name || String(id)) + '</div>' +
+            '<div class="zgr-entry-meta">EVOLUTION ITEM</div>' +
           '</div>' +
-          '<div class="gacha-pool-entry-rate">' + formatGachaRate(eachRate) + '</div>' +
+          '<div class="zgr-entry-rate">' + formatGachaRate(eachRate) + '</div>' +
         '</div>';
     }).join('');
   }
@@ -6957,7 +6967,7 @@ document.addEventListener('touchend', function (e) {
 
     function buildCategorizedRows(ids, totalRate, limited, rateMap){
       if(!ids.length){
-        return '<div class="gacha-pool-empty">対象なし</div>';
+        return '<div class="zgr-empty">現在、対象キャラクターは登場していません</div>';
       }
       return buildGachaCharacterPoolRows(ids, totalRate, limited ? ids : [], rateMap || null);
     }
@@ -6972,37 +6982,44 @@ document.addEventListener('touchend', function (e) {
         gacha.poolType === 'pickup' ? '限定邂逅' :
         (gacha.poolType === 'limited' ? '特別邂逅' : '通常邂逅');
     }
+    var srRateBox = document.getElementById('gacha-rate-sr');
+    var rRateBox = document.getElementById('gacha-rate-r');
+    var itemRateBox = document.getElementById('gacha-rate-item');
+    if (srRateBox) srRateBox.textContent = formatGachaRate(Number(gacha.srRate || 0) * 100);
+    if (rRateBox) rRateBox.textContent = formatGachaRate(Number(gacha.rRate != null ? gacha.rRate : GACHA_R_RATE) * 100);
+    if (itemRateBox) itemRateBox.textContent = formatGachaRate(materialRate * 100);
 
     content.innerHTML =
-      '<div class="gacha-pool-section">' +
-        '<div class="gacha-pool-section-head"><span>SR CHARACTER <em>(限定)</em></span><b>' +
+      '<div class="zgr-section">' +
+        '<div class="zgr-section-head"><span>SR CHARACTER <em>(限定)</em></span><b>' +
           formatGachaRate(limitedSrTotalRate * 100) +
         '</b></div>' +
-        '<div class="gacha-pool-section-list">' + buildCategorizedRows(limitedSrIds, limitedSrTotalRate, true, srRateMap) + '</div>' +
+        '<div class="zgr-section-list">' + buildCategorizedRows(limitedSrIds, limitedSrTotalRate, true, srRateMap) + '</div>' +
       '</div>' +
-      '<div class="gacha-pool-section">' +
-        '<div class="gacha-pool-section-head"><span>SR CHARACTER <em>(通常)</em></span><b>' +
+      '<div class="zgr-section">' +
+        '<div class="zgr-section-head"><span>SR CHARACTER <em>(通常)</em></span><b>' +
           formatGachaRate(normalSrTotalRate * 100) +
         '</b></div>' +
-        '<div class="gacha-pool-section-list">' + buildCategorizedRows(normalSrIds, normalSrTotalRate, false, srRateMap) + '</div>' +
+        '<div class="zgr-section-list">' + buildCategorizedRows(normalSrIds, normalSrTotalRate, false, srRateMap) + '</div>' +
       '</div>' +
-      '<div class="gacha-pool-section">' +
-        '<div class="gacha-pool-section-head"><span>R CHARACTER <em>(限定)</em></span><b>' +
+      '<div class="zgr-section">' +
+        '<div class="zgr-section-head"><span>R CHARACTER <em>(限定)</em></span><b>' +
           formatGachaRate(limitedRTotalRate * 100) +
         '</b></div>' +
-        '<div class="gacha-pool-section-list">' + buildCategorizedRows(limitedRIds, limitedRTotalRate, true, null) + '</div>' +
+        '<div class="zgr-section-list">' + buildCategorizedRows(limitedRIds, limitedRTotalRate, true, null) + '</div>' +
       '</div>' +
-      '<div class="gacha-pool-section">' +
-        '<div class="gacha-pool-section-head"><span>R CHARACTER <em>(通常)</em></span><b>' +
+      '<div class="zgr-section">' +
+        '<div class="zgr-section-head"><span>R CHARACTER <em>(通常)</em></span><b>' +
           formatGachaRate(normalRTotalRate * 100) +
         '</b></div>' +
-        '<div class="gacha-pool-section-list">' + buildCategorizedRows(normalRIds, normalRTotalRate, false, null) + '</div>' +
+        '<div class="zgr-section-list">' + buildCategorizedRows(normalRIds, normalRTotalRate, false, null) + '</div>' +
       '</div>' +
-      '<div class="gacha-pool-section">' +
-        '<div class="gacha-pool-section-head"><span>EVOLUTION ITEM</span><b>' + formatGachaRate(materialRate * 100) + '</b></div>' +
-        '<div class="gacha-pool-section-list">' + buildGachaMaterialPoolRows(materialIds, materialRate * 100) + '</div>' +
+      '<div class="zgr-section">' +
+        '<div class="zgr-section-head"><span>EVOLUTION ITEM</span><b>' + formatGachaRate(materialRate * 100) + '</b></div>' +
+        '<div class="zgr-section-list">' + buildGachaMaterialPoolRows(materialIds, materialRate * 100) + '</div>' +
       '</div>';
 
+    content.scrollTop = 0;
     modal.classList.add('is-open');
     modal.setAttribute('aria-hidden','false');
     document.body.classList.add('is-gacha-pool-detail-open');
