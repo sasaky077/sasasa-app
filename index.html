@@ -6659,7 +6659,12 @@ document.addEventListener('touchend', function (e) {
         name:'ハオ', element:'wood', rarity:'sr',
         panelImg:'images/chara_54_panel.webp',
         img:'images/chara_54.webp', upImg:'images/chara_54_up.webp',
-        ultImg:'images/chara_54_cutin.webp', stats:{ HP:610, ATK:285 }
+        ultImg:'images/chara_54_cutin.webp', stats:{ HP:610, ATK:285 },
+        // build1322: 詳細画面で戦闘キャラマスターを取得できない場合もULTを正しく表示。
+        shotType:'charge', shotPowerRate:0.90, fireRate:0,
+        ultType:'hao_fivefold_trigger', ultName:'天機・五刻の雷',
+        ultDescription:'発動時に敵弾を全消去し、前方へ起動紋様を設置。接触時に全敵へ木属性落雷。0/2/4/6/8秒でLV1〜5に成長（ATK×1.0/1.8/3.0/4.0/5.0）。LV5は維持、設置後0.5秒間は接触判定なし。',
+        burstNeed:30, ultGainPerHit:0.476
       }
     }[id];
     if(!displayFallback) return found;
@@ -6669,7 +6674,12 @@ document.addEventListener('touchend', function (e) {
       panelImg: found.panelImg || displayFallback.panelImg,
       img: found.img || displayFallback.img,
       element: found.element || displayFallback.element,
-      rarity: found.rarity || displayFallback.rarity
+      rarity: found.rarity || displayFallback.rarity,
+      // stale master values must not erase the ULT details from the gacha preview.
+      ultName: found.ultName || displayFallback.ultName,
+      ultDescription: found.ultDescription || displayFallback.ultDescription,
+      ultType: found.ultType || displayFallback.ultType,
+      shotType: found.shotType || displayFallback.shotType
     });
   }
 
@@ -15942,8 +15952,12 @@ function getShootingNormalPowerRate(c){
 
 function buildShootingUltDescription(c){
   if(!c) return '';
-  return c.ultDescription ? String(c.ultDescription) :
-    (c.description ? String(c.description) : 'ULT効果の詳細情報が設定されていない。');
+  if(c.ultDescription) return String(c.ultDescription);
+  // build1322: ID54のULT説明は共鳴プレビューでも常に復元可能にする。
+  if(Number(c.id) === 54){
+    return '発動時に敵弾を全消去し、前方へ起動紋様を設置。接触時に全敵へ木属性落雷。0/2/4/6/8秒でLV1〜5に成長（ATK×1.0/1.8/3.0/4.0/5.0）。LV5は維持、設置後0.5秒間は接触判定なし。';
+  }
+  return c.description ? String(c.description) : 'ULT効果の詳細情報が設定されていない。';
 }
 
 function buildShootingStatusRow(label, value){
@@ -16109,7 +16123,7 @@ function buildCharacterDetailHTML(data, options){
       '<div class="detail-section-title">ULT</div>' +
       '<div class="detail-shooting-card detail-shooting-ult">' +
         '<div class="detail-shooting-ult-head">' +
-          '<strong>' + detailEscapeHTML(c.ultName || 'ULT') + '</strong>' +
+          '<strong>' + detailEscapeHTML(c.ultName || (Number(c.id) === 54 ? '天機・五刻の雷' : 'ULT')) + '</strong>' +
           ultElementHtml +
         '</div>' +
         '<div class="detail-shooting-desc">' + detailEscapeHTML(buildShootingUltDescription(c)) + '</div>' +
@@ -18660,7 +18674,7 @@ function fadeOutOpeningBgm(){
 
 
 
-<script src="js/shooting_characters.js?v=1321-master-refresh"></script>
+<script src="js/shooting_characters.js?v=1323-aina-stealth"></script>
 <script src="js/story_scenario.js?v=1316-ch06-01-03-split"></script>
 <script src="js/story_novel.js?v=1314-ch06-cast"></script>
 <script src="js/stage_select.js?v=1297-ch05-transition"></script>
@@ -18738,7 +18752,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1316-ch06-01-03-split"></script>
+<script src="js/shooting_event.js?v=1323-aina-stealth"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
 <script src="js/skin_system.js?v=1076-home-canvas-normalize"></script>

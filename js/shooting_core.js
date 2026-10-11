@@ -1925,7 +1925,7 @@
     const step = Math.max(0, Number(state.chapter43RhythmStep || 0));
     const ways = Math.max(2, Number(cfg.ways || 10));
     const spread = Math.max(.2, Number(cfg.spreadRad || 1.34));
-    const aimedAngle = Math.atan2(state.player.y - state.boss.y, state.player.x - state.boss.x);
+    const aimedAngle = Math.atan2(getEnemyAimPosition().y - state.boss.y, getEnemyAimPosition().x - state.boss.x);
 
     // 毎回同じ10WAYの軌道をなぞると固定安置ができるため、
     // fan全体の向き・各弾角度・速度を小さくランダム化する。
@@ -2705,6 +2705,61 @@
   function getCurrentCharacter() {
     const id = state && state.activeCharacterId ? state.activeCharacterId : selectedCharacterId;
     return getBattleCharacter(id);
+  }
+
+  // build1323: アイナの気配遮断。敵が認識する座標だけを発動時の位置に固定する。
+  // プレイヤー本体の座標・被弾・固定弾幕には一切干渉しない。
+  function isAinaStealthActive(now) {
+    return !!(state && !state.ended && !state.finishing &&
+      Number(state.activeCharacterId) === Number(CHARACTER_ID.KAINA) &&
+      Number(now == null ? performance.now() : now) < Number(state.ainaStealthUntil || 0));
+  }
+
+  function getEnemyAimPosition() {
+    if (isAinaStealthActive()) {
+      return { x: state.ainaStealthAimX, y: state.ainaStealthAimY };
+    }
+    return state?.player || { x: 0, y: 0 };
+  }
+
+  function getAinaStealthShotMultiplier(c, now) {
+    return c && Number(c.id) === Number(CHARACTER_ID.KAINA) && isAinaStealthActive(now)
+      ? Math.max(1, Number(c.ainaStealthShotMultiplier || 1.3)) : 1;
+  }
+
+  function endAinaStealth() {
+    if (!state) return;
+    state.ainaStealthUntil = 0;
+    const player = document.getElementById(PLAYER_ID);
+    if (player) player.classList.remove('aina-stealth-active');
+  }
+
+  function updateAinaStealth(now) {
+    if (state && Number(state.ainaStealthUntil || 0) > 0 && !isAinaStealthActive(now)) {
+      endAinaStealth();
+    }
+  }
+
+  function useAinaStealthUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+    const now = performance.now();
+    showUltCut(c.ultName, c.effectKey, c);
+    // 敵弾消去や無敵時間を付与しない。既存弾もそのまま進行する。
+    state.ainaStealthAimX = Number(state.player.x);
+    state.ainaStealthAimY = Number(state.player.y);
+    state.ainaStealthUntil = now + Math.max(1000, Number(c.ainaStealthDurationMs || 10000));
+    state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), now + 220);
+    state.lastShotAt = -9999;
+    if (!document.getElementById('shooting-aina-stealth-css')) {
+      const style = document.createElement('style');
+      style.id = 'shooting-aina-stealth-css';
+      style.textContent = `
+        #${PLAYER_ID}.aina-stealth-active { opacity:.46; filter:drop-shadow(0 0 7px rgba(180,220,210,.56)); transition:opacity .35s,filter .35s; }
+      `;
+      document.head.appendChild(style);
+    }
+    document.getElementById(PLAYER_ID)?.classList.add('aina-stealth-active');
+    renderHud();
   }
 
   function getActiveMember() {
@@ -3886,6 +3941,7 @@
       combo: 0, maxCombo: 0, lastComboHitAt: 0,
       storyScoreFinalized: false, storyScoreClearBonus: 0, storyScoreTimeBonus: 0, storyScoreSurvivalBonus: 0, bossDefeatScoreAwarded: false,
       ultActiveUntil: 0, ultLockUntil: 0, playerShotLockUntil: 0, hayateMoonlightUntil: 0,
+      ainaStealthUntil: 0, ainaStealthAimX: 0, ainaStealthAimY: 0,
       ultCutinActive: false, ultCutinTimer: 0, skipNextUltCut: false,
       paused: false, pauseStartedAt: 0,
       arnoAuraUntil: 0, arnoAuraNextTickAt: 0, arnoAuraOwnerId: 0,
@@ -4042,6 +4098,7 @@
     const now = performance.now();
     if (!forced && now < (state.switchReadyAt || 0)) return;
     if (getCurrentCharacter().id === CHARACTER_ID.HAYATE) stopHayateMoonlightForSwitch();
+    if (Number(state.activeCharacterId) === Number(CHARACTER_ID.KAINA)) endAinaStealth();
     if (getCurrentCharacter().shotType === 'charge') clearMiaChargeState();
     if (getCurrentCharacter().shotType === 'conjure') clearConjurePlacementPreview();
     if (getCurrentCharacter().shotType === 'trap') clearRemnaTrapPlacementPreview();
@@ -8270,8 +8327,7 @@
       activeMember && Number(now || performance.now()) < (activeMember.atkBuffUntil || 0)
         ? Number(activeMember.atkBuffMultiplier || 1)
         : 1;
-    // build823: CHARGEも通常射撃と同じATK UPフィールド補正を受ける。
-    // これによりアイナの「紅蓮の領域」(ATK×1.3)が自身のCHARGEにも正しく適用される。
+    // CHARGEにも既存のATK UPフィールドとアイナの隠密射撃×1.3を個別に適用する。
     const wolfFieldAtkMultiplier = getWolfAtkFieldStatus(Number(now || performance.now())).multiplier;
 
     const damage =
@@ -8279,7 +8335,8 @@
       Number(c.shotPowerRate || 1.24) *
       chargeRatio *
       itemAtkBuffMultiplier *
-      wolfFieldAtkMultiplier;
+      wolfFieldAtkMultiplier *
+      getAinaStealthShotMultiplier(c, Number(now || performance.now()));
 
     const y = state.player.y - Number(c.shotOffsetY || 44);
     const p = makeProjectile(
@@ -9346,7 +9403,8 @@
       Number(c.shotPowerRate || 0.095) *
       powerMultiplier *
       itemAtkBuffMultiplier *
-      wolfFieldAtkMultiplier;
+      wolfFieldAtkMultiplier *
+      getAinaStealthShotMultiplier(c, now);
 
     // SUBはMAINとは独立した射撃間隔を持つ。現時点でSUB所持はノアのみ。
     fireCharacterSubShot(c, now, powerMultiplier, itemAtkBuffMultiplier, wolfFieldAtkMultiplier);
@@ -11029,6 +11087,7 @@
     selectedPartyIds = [arnoId];
 
     state.ch104ArnoJoined = true;
+    endAinaStealth();
     state.activeCharacterId = arnoId;
     selectedCharacterId = arnoId;
     state.switchReadyAt = performance.now() + 800;
@@ -11875,8 +11934,8 @@
       if (now - enemy.lastShotAt < fireRate) return;
       enemy.lastShotAt = now;
 
-      const dx = state.player.x - enemy.x;
-      const dy = state.player.y - enemy.y;
+      const dx = getEnemyAimPosition().x - enemy.x;
+      const dy = getEnemyAimPosition().y - enemy.y;
       const angle = Math.atan2(dy, dx);
       const element = normalizeCombatElement(def.element);
       shootNormalEnemyProjectile(
@@ -11920,8 +11979,8 @@
         if (now < enemy.attackExecuteAt) return;
 
         enemy.el.classList.remove('generic-charge-warning');
-        const dx = state.player.x - enemy.x;
-        const dy = state.player.y - enemy.y;
+        const dx = getEnemyAimPosition().x - enemy.x;
+        const dy = getEnemyAimPosition().y - enemy.y;
         const len = Math.max(1, Math.hypot(dx, dy));
         const speed = Math.max(120, Number(def.chargeSpeed || 500));
 
@@ -11949,8 +12008,8 @@
         if (now < enemy.attackExecuteAt) return;
 
         enemy.el.classList.remove('violence-warning');
-        const dx = state.player.x - enemy.x;
-        const dy = state.player.y - enemy.y;
+        const dx = getEnemyAimPosition().x - enemy.x;
+        const dy = getEnemyAimPosition().y - enemy.y;
         const baseAngle = Math.atan2(dy, dx);
         const action = enemy.actionIndex % 3;
 
@@ -12016,8 +12075,8 @@
         }
         if (enemy.mirageWarningExecuteAt && now >= enemy.mirageWarningExecuteAt) {
           enemy.mirageWarningExecuteAt = 0;
-          const dx = state.player.x - enemy.x;
-          const dy = state.player.y - enemy.y;
+          const dx = getEnemyAimPosition().x - enemy.x;
+          const dy = getEnemyAimPosition().y - enemy.y;
           const angle = Math.atan2(dy, dx);
           const p = shootNormalEnemyProjectile(
             enemy,
@@ -12040,8 +12099,8 @@
 
       if (now - enemy.lastShotAt < fireRate) return;
       enemy.lastShotAt = now;
-      const dx = state.player.x - enemy.x;
-      const dy = state.player.y - enemy.y;
+      const dx = getEnemyAimPosition().x - enemy.x;
+      const dy = getEnemyAimPosition().y - enemy.y;
       const baseAngle = Math.atan2(dy, dx);
       const spread = (enemy.actionIndex++ % 2) === 0
         ? [-0.28, 0, 0.28]
@@ -12066,8 +12125,8 @@
       if (now - enemy.lastShotAt < fireRate) return;
       enemy.lastShotAt = now;
 
-      const dx = state.player.x - enemy.x;
-      const dy = state.player.y - enemy.y;
+      const dx = getEnemyAimPosition().x - enemy.x;
+      const dy = getEnemyAimPosition().y - enemy.y;
       const baseAngle = Math.atan2(dy, dx);
       const speed = Number(cfg.enemyBulletSpeed || def.bulletSpeed || 220);
       const damage = Number(cfg.enemyBulletDamage || def.bulletDamage || 105);
@@ -12290,7 +12349,7 @@
     if (def.behavior === 'faceless_minion_v1') {
       if (now - enemy.lastShotAt < getStageAdjustedEnemyFireInterval(Number(def.fireRate || 1180))) return;
       enemy.lastShotAt = now;
-      const base = Math.atan2(state.player.y - enemy.y, state.player.x - enemy.x);
+      const base = Math.atan2(getEnemyAimPosition().y - enemy.y, getEnemyAimPosition().x - enemy.x);
       [-0.18, 0, 0.18].forEach(offset => {
         shootNormalEnemyProjectile(
           enemy,
@@ -12306,7 +12365,7 @@
     if (def.behavior === 'remnant07_clone_v1') {
       if (now - enemy.lastShotAt < getStageAdjustedEnemyFireInterval(Number(def.fireRate || 980))) return;
       enemy.lastShotAt = now;
-      const base = Math.atan2(state.player.y - enemy.y, state.player.x - enemy.x);
+      const base = Math.atan2(getEnemyAimPosition().y - enemy.y, getEnemyAimPosition().x - enemy.x);
       [-0.30,-0.15,0,0.15,0.30].forEach(offset => {
         shootNormalEnemyProjectile(
           enemy,
@@ -12322,8 +12381,8 @@
     // CHAPTER 01など既存敵。
     if (now - enemy.lastShotAt < getStageAdjustedEnemyFireInterval(Number(def.fireRate || 1550))) return;
     enemy.lastShotAt = now;
-    const dx = state.player.x - enemy.x;
-    const dy = state.player.y - enemy.y;
+    const dx = getEnemyAimPosition().x - enemy.x;
+    const dy = getEnemyAimPosition().y - enemy.y;
     const angle = Math.atan2(dy, dx);
     const speed = Number(def.bulletSpeed || 185);
     shootNormalEnemyProjectile(
@@ -12903,8 +12962,8 @@
     if (now - state.lastBossShotAt < getStageAdjustedEnemyFireInterval(interval)) return;
     state.lastBossShotAt = now;
 
-    const dx = state.player.x - state.boss.x;
-    const dy = state.player.y - state.boss.y;
+    const dx = getEnemyAimPosition().x - state.boss.x;
+    const dy = getEnemyAimPosition().y - state.boss.y;
     const baseAngle = Math.atan2(dy, dx);
     const speed = Number(BOSS.bulletSpeed || 285);
 
@@ -13137,8 +13196,8 @@
       // build1037: ボス左右の安置つぶし。
       // プレイヤーがノアとほぼ同じ高さまで上がり、左右へ回り込んだ時だけ、
       // 近い側面から短い3WAY迎撃を行う。通常位置では発動しない。
-      const sideDx = Number(state.player.x || 0) - Number(state.boss.x || 0);
-      const sideDy = Math.abs(Number(state.player.y || 0) - Number(state.boss.y || 0));
+      const sideDx = Number(getEnemyAimPosition().x || 0) - Number(state.boss.x || 0);
+      const sideDy = Math.abs(Number(getEnemyAimPosition().y || 0) - Number(state.boss.y || 0));
       const sideGuardActive = sideDy <= 112 && Math.abs(sideDx) >= 66;
 
       if (sideGuardActive) {
@@ -13151,8 +13210,8 @@
           const side = sideDx < 0 ? -1 : 1;
           const sideOriginX = Number(state.boss.x || 0) + side * 54;
           const sideOriginY = Number(state.boss.y || 0) + 4;
-          const aimDx = Number(state.player.x || 0) - sideOriginX;
-          const aimDy = Number(state.player.y || 0) - sideOriginY;
+          const aimDx = Number(getEnemyAimPosition().x || 0) - sideOriginX;
+          const aimDy = Number(getEnemyAimPosition().y || 0) - sideOriginY;
           const sideAim = Math.atan2(aimDy, aimDx);
           const sideSpread = phase === 3 ? 0.18 : 0.14;
           const sideSpeed = speed * (phase === 1 ? 0.92 : (phase === 2 ? 0.98 : 1.05));
@@ -13184,8 +13243,8 @@
       // 追従弾だけ左右対称制約の例外。
       const extraEvery = phase === 1 ? 8 : (phase === 2 ? 7 : 6);
       if ((state.noahSpiralStep % extraEvery) === 0) {
-        const dx = state.player.x - state.boss.x;
-        const dy = state.player.y - state.boss.y;
+        const dx = getEnemyAimPosition().x - state.boss.x;
+        const dy = getEnemyAimPosition().y - state.boss.y;
         const aim = Math.atan2(dy, dx);
         const offsets = phase === 1 ? [-0.12, 0.12] : (phase === 2 ? [-0.13, 0.13] : [-0.22, 0, 0.22]);
         for (let i = 0; i < offsets.length; i++) {
@@ -13231,8 +13290,8 @@
     }
 
     // 自機狙いの追加扇形：WAVEが進むほど本数を増やす。
-    const dx = state.player.x - state.boss.x;
-    const dy = state.player.y - state.boss.y;
+    const dx = getEnemyAimPosition().x - state.boss.x;
+    const dy = getEnemyAimPosition().y - state.boss.y;
     const baseAngle = Math.atan2(dy, dx);
     const fanOffsets = {
       1: [-0.3, -0.1, 0.1, 0.3],
@@ -13423,8 +13482,8 @@
     if (now - state.lastBossShotAt < getStageAdjustedEnemyFireInterval(interval)) return;
     state.lastBossShotAt = now;
 
-    const dx = state.player.x - state.boss.x;
-    const dy = state.player.y - state.boss.y;
+    const dx = getEnemyAimPosition().x - state.boss.x;
+    const dy = getEnemyAimPosition().y - state.boss.y;
     const baseAngle = Math.atan2(dy, dx);
     const speed = Number(BOSS.bulletSpeed || 248);
     state.boss.patternTick = (state.boss.patternTick || 0) + 1;
@@ -13948,7 +14007,7 @@
     const volleyIndex = Number(state.facelessVolleyIndex || 0);
     state.facelessVolleyIndex = volleyIndex + 1;
 
-    const base = Math.atan2(state.player.y - state.boss.y, state.player.x - state.boss.x);
+    const base = Math.atan2(getEnemyAimPosition().y - state.boss.y, getEnemyAimPosition().x - state.boss.x);
     offsets.forEach(offset => {
       const a = base + offset;
       state.enemyBullets.push(makeProjectile(
@@ -14133,8 +14192,8 @@
     state.ch07InvisibleHp = 0;
     document.getElementById(BOSS_ID)?.classList.remove('ch07-invisible');
 
-    const dx = Number(state.player.x || 0) - originX;
-    const dy = Number(state.player.y || 0) - originY;
+    const dx = Number(getEnemyAimPosition().x || 0) - originX;
+    const dy = Number(getEnemyAimPosition().y || 0) - originY;
     const baseAngle = Math.atan2(dy, dx);
     const speed = Math.max(260, Number(BOSS?.bulletSpeed || 235) * 1.16);
 
@@ -14188,8 +14247,8 @@
       executeAt:Number(now || performance.now()) + warningMs,
       startX:Number(state.boss.x || 0),
       startY:Number(state.boss.y || 0),
-      targetX:Number(state.player.x || 0),
-      targetY:Number(state.player.y || 0),
+      targetX:Number(getEnemyAimPosition().x || 0),
+      targetY:Number(getEnemyAimPosition().y || 0),
     };
     const boss = document.getElementById(BOSS_ID);
     if (boss) boss.classList.add('ch07-dash-warning');
@@ -14209,8 +14268,8 @@
           dash.startedAt = ts;
           dash.fromX = Number(state.boss.x || dash.startX || w * .5);
           dash.fromY = Number(state.boss.y || dash.startY || h * .18);
-          dash.toX = clamp(Number(dash.targetX || state.player.x || w * .5), 48, w - 48);
-          dash.toY = clamp(Number(dash.targetY || state.player.y || h * .72), 90, h - 70);
+          dash.toX = clamp(Number(dash.targetX || getEnemyAimPosition().x || w * .5), 48, w - 48);
+          dash.toY = clamp(Number(dash.targetY || getEnemyAimPosition().y || h * .72), 90, h - 70);
           boss?.classList.remove('ch07-dash-warning');
           boss?.classList.add('ch07-dashing');
         }
@@ -14506,7 +14565,7 @@
     if (now - Number(state.lastBossShotAt || 0) < getStageAdjustedEnemyFireInterval(interval)) return;
     state.lastBossShotAt = now;
 
-    const base = Math.atan2(state.player.y - state.boss.y, state.player.x - state.boss.x);
+    const base = Math.atan2(getEnemyAimPosition().y - state.boss.y, getEnemyAimPosition().x - state.boss.x);
     const offsets = phase === 1
       ? [-.18,0,.18]
       : (phase === 2 ? [-.30,-.15,0,.15,.30] : [-.42,-.28,-.14,0,.14,.28,.42]);
@@ -14589,7 +14648,7 @@
 
     const damage = getAmbushWaveDamage(state.ambushWave || 1);
     const speed = Math.max(60, Number(cfg?.minionBulletSpeed || 108));
-    const base = Math.atan2(state.player.y - obj.y, state.player.x - obj.x);
+    const base = Math.atan2(getEnemyAimPosition().y - obj.y, getEnemyAimPosition().x - obj.x);
 
     // 左右2発。低速追尾方向へ撃つ。軽量DOMのまま確実に生成する。
     [-0.14,0.14].forEach(offset => {
@@ -14725,7 +14784,7 @@
       state.lastBossShotAt = now;
       state.ambushVolleyIndex = Number(state.ambushVolleyIndex || 0) + 1;
 
-      const base = Math.atan2(state.player.y - state.boss.y, state.player.x - state.boss.x);
+      const base = Math.atan2(getEnemyAimPosition().y - state.boss.y, getEnemyAimPosition().x - state.boss.x);
       const step = wave === 1 ? 0.19 : 0.17;
       const count = 5;
       const center = (count - 1) / 2;
@@ -15066,8 +15125,8 @@
       // WARNING中も通常弾幕は止めない。大技の予兆と通常攻撃を同時進行させる。
       if (now < state.bossDangerExecuteAt) return false;
 
-      const dx = state.player.x - state.boss.x;
-      const dy = state.player.y - state.boss.y;
+      const dx = getEnemyAimPosition().x - state.boss.x;
+      const dy = getEnemyAimPosition().y - state.boss.y;
       const angle = Math.atan2(dy, dx);
       const speed = Math.max(325, Number(BOSS.bulletSpeed || 240) * 1.38);
 
@@ -15429,8 +15488,8 @@
     if (now - state.lastBossShotAt < getStageAdjustedEnemyFireInterval(fireRates[phase])) return;
     state.lastBossShotAt = now;
 
-    const dx = state.player.x - state.boss.x;
-    const dy = state.player.y - state.boss.y;
+    const dx = getEnemyAimPosition().x - state.boss.x;
+    const dy = getEnemyAimPosition().y - state.boss.y;
     const baseAngle = Math.atan2(dy, dx);
     const patterns = {
       1: [-0.22, 0, 0.22],
@@ -15926,7 +15985,7 @@
         const recoilY = Math.max(48, restY - Math.min(22, h * .032));
 
         // 横は軽くプレイヤー側へ寄るだけ。突進直前に狙いを読める程度に留める。
-        const targetX = clamp(w * .5 + (state.player.x - w * .5) * .22, 58, w - 58);
+        const targetX = clamp(w * .5 + (getEnemyAimPosition().x - w * .5) * .22, 58, w - 58);
         const followX = .014;
         state.boss.x += (targetX - state.boss.x) * Math.min(1, followX * 60 * dt);
 
@@ -15964,7 +16023,7 @@
         const phase = state.boss.phase || 1;
         const xAmp = phase === 1 ? w * 0.22 : phase === 2 ? w * 0.28 : w * 0.32;
         const centerFollow = phase === 3 ? 0.18 : 0.10;
-        const playerInfluence = (state.player.x - w * 0.5) * centerFollow;
+        const playerInfluence = (getEnemyAimPosition().x - w * 0.5) * centerFollow;
         const targetX = clamp(w * 0.5 + playerInfluence + Math.sin(t * (0.86 + phase * 0.08)) * xAmp, 56, w - 56);
         const targetY = Math.max(58, h * (phase === 3 ? 0.16 : 0.18) + Math.sin(t * (1.35 + phase * 0.18)) * (phase === 3 ? 18 : 12));
         const blended = applyBossStartBlend(targetX, targetY);
@@ -18472,6 +18531,7 @@
       resetCombo(true);
     }
     if (!state.koTransition) updateMovement(dt, ts);
+    updateAinaStealth(ts);
     updateHaoTrigger(ts);
     updateConjurePlacementPreview(ts);
     updateRemnaTrapPlacementPreview(ts);
@@ -27146,6 +27206,7 @@
       c.ultType === 'painter_dark_paint_bomb'
     ) usePainterElementSpreadUlt(c);
     else if (c.ultType === 'hao_fivefold_trigger') useHaoUlt(c);
+    else if (c.ultType === 'aina_stealth') useAinaStealthUlt(c);
     else if (c.ultType === 'forbidden_shock') useNinaUlt(c); // 旧ニーナ落雷演出を70%威力で再利用
     else if (c.ultType === 'nina_output_max' || c.ultType === 'nina_lightning_storm') useNinaOutputMax(c);
     else if (c.ultType === 'noah_time_homing') useNoahUlt(c);

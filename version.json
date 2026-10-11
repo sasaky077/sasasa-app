@@ -1,4 +1,4 @@
 {
-  "build": 1321,
-  "note": "Fix gacha rate-details resonance visibility for all 12 recently-added characters, including Hao; show all four bonuses upfront and refresh character master cache; preserve existing bonuses and gameplay."
+  "build": 1323,
+  "note": "Aina (ID17) 10s concealment ULT: enemy aim uses last detected position, charge shot x1.3; no invulnerability, no enemy bullet clear. Cached module refresh."
 }

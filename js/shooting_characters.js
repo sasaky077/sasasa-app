@@ -2047,16 +2047,15 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.KAINA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.KAINA, effectKey: 'kaina',
-    label: 'CHARGE / ATK FIELD',
-    description: '長押しで溜め、離して撃つRチャージ型。ULTはウルフと同系統のATK UP領域を展開するR版。',
-    ultDescription: '発動時に画面内の敵弾をすべて消去。フィールド中央へ円形のATK UP領域を10秒間展開し、領域内の操作キャラのATKを1.3倍にする。',
-    ultName: '紅蓮の領域',
+    label: 'CHARGE / STEALTH',
+    description: '長押しで力を蓄えるRチャージ型。ULTで10秒間敵の認識から姿を消し、射撃威力を強化する。',
+    ultDescription: '10秒間、敵からのターゲッティングを無効化し、発動時の最後に感知された位置を狙わせる。通常射撃ダメージ×1.3。敵弾は消去されず、無敵にもならない。固定弾幕・既存の敵弾・接触ダメージは通常どおり。',
+    ultName: '気配遮断',
     shotType: 'charge', shotStyle: 'kaina-charge', fireRate: 0, bulletSpeed: 760, shotPowerRate: 0.90, shotCount: 1,
     chargeMinMs: 120, chargeMaxMs: 1200, chargeMinSize: 28, chargeMaxSize: 72,
-    ultBaseType: 'field', ultAddons: ['bullet_clear','player_buff'], ultType: 'wolf_atk_field',
-    ultFieldDurationMs: 10000,
-    ultFieldAtkMultiplier: 1.3,
-    ultFieldRadius: 112,
+    ultBaseType: 'buff', ultAddons: ['enemy_aim_block','shot_power_up'], ultType: 'aina_stealth',
+    ainaStealthDurationMs: 10000,
+    ainaStealthShotMultiplier: 1.3,
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.REISIA] = buildShootingCharacter({
