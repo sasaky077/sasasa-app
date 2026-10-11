@@ -1,4 +1,4 @@
 {
-  "build": 1323,
-  "note": "Aina (ID17) 10s concealment ULT: enemy aim uses last detected position, charge shot x1.3; no invulnerability, no enemy bullet clear. Cached module refresh."
+  "build": 1326,
+  "note": "Unify ULT descriptions by effect type and runtime parameters across 54 characters; remove references to other character names; no battle or gacha changes."
 }

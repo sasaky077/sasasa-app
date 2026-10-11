@@ -52,7 +52,7 @@
     LEONA_CROSS: 39,
     KUREHA: 41,
     KYOU: 42, SUZU: 43, MELORIA: 44, KIRIMARU: 45, AIRENA: 46,
-    LINLIN: 47, MUUMUU: 48, MEGMEG: 49, CHACHA: 51, RUIRUI: 53, // ID52 is reserved for Noah (existing saves/RPC)
+    LINLIN: 47, MUUMUU: 48, MEGMEG: 49, CHACHA: 51, RUIRUI: 53, HAO: 54, // ID52 is reserved for Noah (existing saves/RPC)
   });
 
   // ============================================================
@@ -107,7 +107,7 @@
     39: 'r',   // レオナクロス
     41: 'sr',  // シュオリン
     42: 'r', 43: 'r', 44: 'r', 45: 'r', 46: 'r',
-    47: 'r', 48: 'r', 49: 'r', 51: 'r', 53: 'r',
+    47: 'r', 48: 'r', 49: 'r', 51: 'r', 53: 'r', 54: 'sr',
   });
 
   // 現行互換：R はSRに対して基本性能(HP/ATK)を20%落とす。育成/凸の新倍率は別フェーズで統合予定。
@@ -1267,6 +1267,25 @@
     "homeOffsetY": -24,
     "hidden": false
   },
+  // build1312: 恒常SR 木属性・占い師ハオ（ID54）。画像は別途投入される命名規則を使用。
+  "54": {
+    "id": 54,
+    "name": "ハオ",
+    "element": "wood",
+    "hp": 610,
+    "atk": 285,
+    "image": "images/chara_54_battle_back.webp",
+    "panelImage": "images/chara_54_panel.webp",
+    "cutinImage": "images/chara_54_cutin.webp",
+    "uiScale": { "panel": 1, "battleBack": 1.2, "battleUp": 1 },
+    "portraitImage": "images/chara_54.webp",
+    "homeImage": "images/chara_54_cut.webp",
+    "upImage": "images/chara_54_up.webp",
+    "homeScale": 0.82,
+    "homeOffsetX": 0,
+    "homeOffsetY": -24,
+    "hidden": false
+  },
   "50": {
     "id": 50,
     "name": "SIGMA-IX",
@@ -1419,8 +1438,8 @@
     // 通常攻撃ダメージは ATK × shotPowerRate。
     // fireRate / shotCount と合わせて理論DPSを調整する。
     label: 'BALANCE',
-    description: '暫定性能。ULTは敵弾を全消去し、敵を1秒停止させた後、ATKの280%ダメージを与える。',
-    ultDescription: '発動時に画面内の敵弾をすべて消去し、敵を約1秒間停止させる。0.42秒後に敵全体へATK×2.8のダメージを与える。',
+    description: '暫定性能。ULTは敵弾を全消去し、敵を約1.4秒停止。約0.84秒後に敵全体へATK×2.8のダメージ。',
+    ultDescription: '発動時に画面内の敵弾をすべて消去し、敵を約1.4秒間停止。約0.84秒後に敵全体へATK×2.8のダメージを与える。',
     ultName: '駆け巡る閃光',
     ultType: 'balance_flash',
     moveSpeed: 400,
@@ -1474,7 +1493,7 @@
     ...ERI_BASE_PROFILE,
     id: CHARACTER_ID.ERI,
     effectKey: 'eri',
-    description: '扱いやすい2連射の標準型。ULTは敵弾を全消去し、敵を1秒停止させた後、ATKの280%ダメージを与える。',
+    description: '扱いやすい2連射の標準型。ULTは敵弾を全消去、約1.4秒間敵を停止。約0.84秒後にATK×2.8の全体ダメージ。',
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.SUI] = buildShootingCharacter({
@@ -1548,13 +1567,13 @@
   });
 
 
-  // アリス：通常攻撃をベロニカ系の近距離斬撃へ変更。ULT「環流」は従来どおり。
+  // アリス：R版アルノ斬撃ULT（1タップATK×0.25）。通常射撃はベロニカ系近距離斬撃。
   SHOOTING_CHARACTERS[CHARACTER_ID.FLORA] = buildShootingCharacter({
     ...SHOOTING_CHARACTERS[CHARACTER_ID.FLORA],
     id: CHARACTER_ID.FLORA,
     effectKey: 'arno',
-    label: 'STRIKE / AURA',
-    description: '前方の近距離を斬り払う近接型。通常攻撃はベロニカと同じ近距離斬撃で、ULTは敵弾を消去して5秒間の攻撃オーラを展開する。',
+    label: 'STRIKE / SLASH',
+    description: '前方を斬り払う近接型。ULTは敵の目前へ接近し、4秒間の高速連打斬撃を放つ。',
     shotType: 'strike',
     shotCount: 1,
     fireRate: 520,
@@ -1562,14 +1581,15 @@
     slashRange: 182,
     slashWidth: 120,
     slashVisualMs: 180,
-    ultDescription: '発動時に画面内の敵弾をすべて消去し、5秒間攻撃オーラを展開。0.25秒ごとに固定1.8ダメージを与える（最大36ダメージ/1体）。',
+    ultDescription: '発動時に盤面の敵弾を全消去して時間停止。最も近い敵の目前へ接近し、4秒間、タップするたびにATK×0.25の斬撃を放つ。終了時は発動前の位置へ戻って戦闘を再開する。',
     ultName: '環流',
-    ultType: 'arno_aura',
+    ultType: 'arno_thousand_slash',
     burstDamage: 36,
     burstNeed: 30,
     ultGainPerHit: 0.555,
-    auraDurationMs: 5000,
-    auraTickMs: 250,
+    arnoSlashDurationMs: 4000,
+    arnoSlashDamageAtkRate: 0.25,
+    arnoSlashMinTapIntervalMs: 80,
     auraTickDamage: 1.8,
   });
 
@@ -1626,7 +1646,7 @@
     id: CHARACTER_ID.GRESHA,
     effectKey: 'gresha',
     label: 'BURN FIELD / ORBIT SHOT',
-    description: 'クラリネと同型の4ライン円環射撃。ULTは敵陣へ6秒間「焼野原」を展開し、範囲内の敵全員へ毎秒ATK×1.5の火属性ダメージを与える。',
+    description: '4ラインの円環射撃。ULTは敵陣へ6秒間「焼野原」を展開し、範囲内の敵全員へ毎秒ATK×1.5の火属性ダメージを与える。',
     ultDescription: '敵陣に6秒間ダメージフィールド「焼野原」を展開。フィールド内にいる敵全員へ1秒ごとにATK×1.5の火属性ダメージを与える。',
     ultName: '焼野原',
     ultType: 'gresha_burn_field',
@@ -1710,11 +1730,11 @@
     ...ERI_BASE_PROFILE,
     id: CHARACTER_ID.ROSE,
     effectKey: 'rose',
-    label: 'SEED / HEAL FLOWER',
-    description: '0.5秒ごとに7発の種子Spreadを放つ。ULTは5.2秒間大花を展開して敵弾を遮断。0.24秒ごとにハートを10個放ち、取得した場のキャラのみ最大HPの5%回復／敵へATKの30%ダメージ。',
-    ultDescription: '中央に大花を5.2秒間展開して敵弾を遮断。0.24秒ごとにハートを10個放つ。ハートを取得すると、その時点で操作中のキャラの最大HPを5%回復。敵に命中した場合はATK×30%のダメージを与える。',
-    ultName: '花園の息吹',
-    ultType: 'rose_flower_heart',
+    label: 'SEED / FORTRESS',
+    description: '0.5秒ごとに7発の種子Spreadを放つ。ULTは5秒間、前方に盤面全幅の防御壁を固定設置。通常敵弾を吸収して操作中のキャラを1発につき最大HP3%回復。接触する敵には0.25秒ごとにATK×1.0の木属性ダメージ。',
+    ultDescription: '5秒間、前方に盤面全幅の防御壁を設置。通常敵弾を吸収するたび操作中キャラの最大HPを3%回復（最大HP上限）。接触した敵へ0.25秒ごとにATK×1.0の木属性ダメージ。WARNING・HEAVY・レーザー等は防げない。展開中は通常射撃が停止する。',
+    ultName: 'ローズフォートレス',
+    ultType: 'rose_fortress',
     moveSpeed: 400,
 
     // ---- 通常ショット ----
@@ -1732,7 +1752,15 @@
     coreTop: '38%',
     shotOffsetY: 40,
 
-    // ---- ULT / 花 ----
+    // ---- ULT / ローズフォートレス ----
+    fortressImage: 'images/chara_09_battle_object.webp',
+    fortressDurationMs: 5000,
+    fortressForwardOffsetY: 92,
+    fortressContactIntervalMs: 250,
+    fortressContactDamageAtkRate: 1.0,
+    fortressBulletHealMaxHpRate: 0.03,
+
+    // ---- 廃止済み旧「花園の息吹」設定（別系統に影響させない）----
     flowerImage: 'images/chara_09_battle_flower.webp',
     flowerDurationMs: 5200,
     flowerHeartIntervalMs: 240,
@@ -1949,8 +1977,8 @@
     id: CHARACTER_ID.MITO,
     effectKey: 'mito',
     label: 'FAMILIAR / TEMPORARY DOUBLE',
-    description: 'ULT発動で召喚獣を8秒間フィールドへ独立召喚。召喚獣はミトと同じHP・ATK・ショット性能を持って自律移動しながら射撃する。HPが0になると消滅。8秒経過で消える場合は残HPをミトの回復へ変換する。',
-    ultDescription: 'HP・ATK・通常ショット性能がミトと同じ召喚獣を8秒間召喚する。召喚獣は独立してフィールド内を移動・射撃し、敵弾や接触でHPを失う。HP0で消滅。8秒間生存した場合、残HP分だけミトを回復する。召喚獣の攻撃ではULTゲージは増加しない。',
+    description: 'ULT発動で本体のHP・ATK・通常射撃性能を引き継ぐ召喚獣を8秒間召喚。独立して移動・射撃し、HPが0になると消滅。8秒間生存した場合は残HP分だけ本体を回復する。',
+    ultDescription: '本体のHP・ATK・通常射撃性能を引き継ぐ召喚獣を8秒間召喚する。召喚獣は独立して移動・射撃し、敵弾や接触でHPを失う。HP0で消滅。8秒間生存した場合、召喚獣の残HP分だけ本体を回復する。召喚獣の攻撃ではULTゲージは増加しない。',
 
     moveSpeed: 400,
     fireRate: 170,
@@ -2041,7 +2069,7 @@
     label: 'LASER / AQUA', description: '細い水流レーザーを連続照射するRレーザー型。',
     shotType: 'laser', shotStyle: 'ryune', laserSize: 'M', fireRate: 100, laserWidth: 10, laserHitWidth: 34, laserDamageAtkRate: 0.058, laserVisualHoldMs: 125,
     ultName: 'アブソリュート・レーテー',
-    ultDescription: '盤面の敵全員にATKの2.0倍の水属性ダメージを与え、全属性バリアを消滅させる。',
+    ultDescription: '盤面の敵全員の属性バリアを解除し、敵全体へATK×2.8のダメージを与える。',
     ultBaseType: 'beam', ultAddons: ['damage', 'barrier_clear'], ultType: 'ryune_absolute_lethe',
   });
 
@@ -2197,7 +2225,7 @@
     id: CHARACTER_ID.REI,
     effectKey: 'rei',
     label: 'HOMING / BLACK HOLE',
-    description: 'ウルフと同じ深いJ字軌道の2発ホーミング射撃。ULTは敵陣にブラックホールを生成し、すべての敵を吸引・拘束しながら継続ダメージを与える。',
+    description: '深いJ字軌道を描く2発ホーミング射撃。ULTは敵陣にブラックホールを生成し、敵を吸引・拘束しながら継続ダメージを与える。',
     ultDescription: '敵陣へブラックホールを射出し、7秒間展開。通常敵・大型敵・ボスを中心へ吸引して拘束し、展開中に合計ATK×3.5相当の継続ダメージを与える。',
     ultName: '深淵水界',
     ultType: 'eltena_black_hole',
@@ -2374,7 +2402,7 @@
     effectKey: 'testchan',
     label: 'TRAP / PHOTON BUSTER',
     description: '闇属性の設置型TRAPで敵を迎撃するテクニカル型。最大3基まで設置可能。ULTは闇属性の極太レーザーを5秒間照射する。',
-    ultDescription: '正面へ闇属性の極太レーザーを5秒間連続照射する。SIGMA-IXのブラックシップと同系統の照射性能。',
+    ultDescription: '正面へ極太レーザーを5秒間連続照射する。0.25秒ごとにATK×0.35のダメージを与え、全段命中で最大ATK×7.0。敵弾消去・スタン・無敵は発生しない。',
     ultName: '対神性滅焼破壊砲 -フォトンバスター 202-',
     ultType: 'testchan_black_ship',
     moveSpeed: 400,
@@ -2633,32 +2661,32 @@
   // 既存UI互換ビュー
   // ============================================================
   // build1282: 恒常R 5体。既存ショット/ULTエンジンを再利用する。
-  SHOOTING_CHARACTERS[42] = buildShootingCharacter({ ...SHOOTING_CHARACTERS[22], id:42, effectKey:'kyou', ultType:'veronica_brass_punch', description:'ベロニカと同型の近接攻撃と一撃ULT。' });
+  SHOOTING_CHARACTERS[42] = buildShootingCharacter({ ...SHOOTING_CHARACTERS[22], id:42, name:getShootingCharacterMaster(42).name, effectKey:'kyou', ultType:'veronica_brass_punch', description:'真正面の超近接打撃。ULTは狭い射程へ一撃を叩き込み、命中時ATK×7.0のダメージを与える。' });
   SHOOTING_CHARACTERS[45] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:45, effectKey:'kirimaru', shotType:'spread', shotCount:5, fireRate:500, bulletSpeed:650, shotPowerRate:0.20, ultType:'jig_scramble_ray', ultName:'水鏡乱反射', ultDescription:'水属性の反射レーザーを5秒間展開する。', jigUltDurationMs:5000, jigUltBeamCount:6, jigUltBeamSpeed:520, jigUltBeamLength:280, jigUltBeamWidth:2, jigUltDamageAtkRate:0.12, jigUltHitIntervalMs:200 });
-  SHOOTING_CHARACTERS[43] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:43, effectKey:'suzu', shotType:'parallel', shotCount:2, shotSpacing:28, fireRate:500, bulletSpeed:640, shotPowerRate:0.14, ultType:'suzu_bullet_silence', ultName:'静寂の森', ultDescription:'敵弾を全消去し、3.5秒間新たな敵弾を封じる。敵の移動は継続。' });
+  SHOOTING_CHARACTERS[43] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:43, effectKey:'suzu', shotType:'parallel', shotCount:2, shotSpacing:28, fireRate:500, bulletSpeed:640, shotPowerRate:0.14, ultType:'suzu_bullet_silence', suzuBulletSilenceMs:3500, ultName:'静寂の森', ultDescription:'敵弾を全消去し、3.5秒間新たな敵弾を封じる。敵の移動は継続。' });
   SHOOTING_CHARACTERS[46] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:46, effectKey:'airena', shotType:'charge', shotStyle:'kaina-charge', fireRate:0, bulletSpeed:760, shotPowerRate:0.90, shotCount:1, chargeMinMs:120, chargeMaxMs:1200, chargeMinSize:28, chargeMaxSize:72, ultType:'airena_atk_item', ultName:'光の祝福', ultDescription:'ATK1.5倍・5秒のアイテムを1個出現させる。', itemAtkMultiplier:1.5, itemAtkDurationMs:5000 });
-  SHOOTING_CHARACTERS[44] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:44, effectKey:'meloria', shotType:'piercing', shotCount:1, fireRate:530, bulletSpeed:720, shotPowerRate:0.28, ultType:'meloria_stun', ultName:'冥府の宣告', ultDescription:'敵全員を5秒スタン。各敵に20%の確率で最大HP50%のダメージ。', ultStunMs:5000 });
+  SHOOTING_CHARACTERS[44] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:44, effectKey:'meloria', shotType:'piercing', shotCount:1, fireRate:530, bulletSpeed:720, shotPowerRate:0.28, ultType:'meloria_stun', ultName:'冥府の宣告', ultDescription:'敵全員を5秒スタン。各敵に20%の確率で最大HP50%のダメージ。', ultStunMs:5000, meloriaPercentChance:0.20, meloriaMaxHpDamageRate:0.50 });
 
   // build1308 — 恒常R 5体。属性・画像・R倍率は上の共通マスターが正本。
   // ULTは既存の射撃エンジンを再利用。空欄のメグメグSHOTは暫定的にジグのLASER M。
   SHOOTING_CHARACTERS[CHARACTER_ID.LINLIN] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON,
     id: CHARACTER_ID.LINLIN, effectKey:'linlin',
-    label:'PARALLEL / WOOD', description:'木属性のPARALLEL 2連射。ULTはエリと同効果。',
+    label:'PARALLEL / WOOD', description:'木属性のPARALLEL 2連射。ULTは敵弾を全消去し、敵を短時間停止させて全体攻撃を放つ。',
     shotType:'parallel', shotCount:2, shotSpacing:18, fireRate:170, bulletSpeed:780, shotPowerRate:0.095,
     ultName:'フォレストショット',
-    ultDescription:'エリと同じく、敵弾を消去し敵を短時間停止。敵全体へATK×2.8の木属性ダメージ。',
+    ultDescription:'発動時に画面内の敵弾をすべて消去し、敵を約1.4秒間停止。約0.84秒後に敵全体へATK×2.8のダメージを与える。',
     ultType:'balance_flash', ultDamageAtkMultiplier:2.8,
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.MUUMUU] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON,
     id: CHARACTER_ID.MUUMUU, effectKey:'muumuu',
-    label:'ORBIT / DARK', description:'闇属性のORBIT 2発。リュネのULT挙動を共有。',
+    label:'ORBIT / DARK', description:'闇属性のORBIT 2発。ULTは敵全体へ攻撃し、属性バリアを解除する。',
     shotType:'orbit', shotCount:2, shotSpacing:28, fireRate:450, bulletSpeed:520, shotPowerRate:0.165,
     orbitRadius:32, orbitAngularSpeed:11.8, orbitForwardLoopRate:0.29, orbitPhaseStep:Math.PI,
     ultName:'奥義・鵺の型',
-    ultDescription:'リュネと同じく、全敵へATK×2.0の闇属性ダメージと全属性バリア解除。',
+    ultDescription:'盤面の敵全員の属性バリアを解除し、敵全体へATK×2.0のダメージを与える。',
     ultType:'ryune_absolute_lethe', ultBaseType:'beam', ultAddons:['damage','barrier_clear'],
     ultDamageAtkMultiplier:2.0,
   });
@@ -2666,11 +2694,11 @@
   SHOOTING_CHARACTERS[CHARACTER_ID.MEGMEG] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON,
     id: CHARACTER_ID.MEGMEG, effectKey:'megmeg',
-    label:'LASER / FIRE', description:'SHOT未指定につき暫定LASER M。ULTはジグの反射レーザーと同効果。',
+    label:'LASER / FIRE', description:'暫定LASER M射撃。ULTは複数のレーザーを画面端で反射させて敵を攻撃する。',
     shotType:'laser', shotStyle:'megmeg', laserSize:'M', fireRate:100,
     laserWidth:10, laserHitWidth:34, laserDamageAtkRate:0.058, laserVisualHoldMs:125,
     ultName:'ディバイン・フレア',
-    ultDescription:'ジグと同じく、火属性のレーザー6本を5秒間反射させながら敵を攻撃する。',
+    ultDescription:'発動時に画面内の敵弾を全消去。自身を起点に6本の反射レーザーを射出し、5秒間、画面端で反射しながら敵を貫通してダメージを与える。',
     ultType:'jig_scramble_ray', ultBaseType:'beam', ultAddons:['damage','bullet_clear'],
     jigUltDurationMs:5000, jigUltBeamCount:6, jigUltBeamSpeed:520, jigUltBeamLength:280,
     jigUltBeamWidth:2, jigUltDamageAtkRate:0.12, jigUltHitIntervalMs:200,
@@ -2679,10 +2707,10 @@
   SHOOTING_CHARACTERS[CHARACTER_ID.CHACHA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON,
     id: CHARACTER_ID.CHACHA, effectKey:'chacha',
-    label:'SPREAD / LIGHT', description:'光属性のSPREAD 5WAY。ULTはニーナの電撃16発型を70%威力で使用。',
+    label:'SPREAD / LIGHT', description:'光属性のSPREAD 5WAY。ULTは敵へ連続落雷を放ち、命中時に麻痺させる。',
     shotType:'spread', shotCount:5, fireRate:500, bulletSpeed:650, shotPowerRate:0.20,
     ultName:'フォビドゥン・ショック',
-    ultDescription:'ニーナの電撃攻撃方式。8秒間に最大16回の落雷攻撃（1発ATK×2.8＝基準の70%）。命中時は敵を麻痺させる。',
+    ultDescription:'8秒間に最大16回の落雷攻撃を行う。1発ごとにATK×2.8のダメージを与え、命中時は敵を3秒間麻痺させる。',
     ultType:'forbidden_shock', ultBaseType:'damage', ultAddons:['damage','stun'],
     ninaUltDurationMs:8000, ninaUltHitCount:16, ninaUltHitAtkMultiplier:2.8,
     ninaUltParalyzeMs:3000,
@@ -2691,13 +2719,30 @@
   SHOOTING_CHARACTERS[CHARACTER_ID.RUIRUI] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON,
     id: CHARACTER_ID.RUIRUI, effectKey:'ruirui',
-    label:'CLUSTER / AQUA', description:'水属性のCLUSTER 4分裂。ULTはシイナの円環フィールドと同効果。',
+    label:'CLUSTER / AQUA', description:'水属性のCLUSTER 4分裂。ULTは周囲に円環を展開し、敵弾を減速させる。',
     shotType:'cluster', clusterSize:'M', clusterSplitCount:4, clusterFragmentDamageRate:0.5,
     shotCount:1, fireRate:550, bulletSpeed:650, shotPowerRate:0.27,
     ultName:'アビス・マレディクション',
-    ultDescription:'シイナと同じく、7秒間自身の周囲へ円環を展開し、円内の敵弾速度を50%にする。',
+    ultDescription:'自身を中心に円環を7秒間展開する。円環内に入った敵弾は移動速度が50%に低下し、外へ出ると元の速度へ戻る。',
     ultType:'shiina_light_ring', ultBaseType:'field', ultAddons:['enemy_bullet_slow'],
     lightRingDurationMs:7000, lightRingRadius:190, lightRingBulletSpeedMultiplier:0.5,
+  });
+
+  // build1312: ハオ / 木属性・恒常SR。CHARGEと5段階の接触起動ULT。
+  SHOOTING_CHARACTERS[CHARACTER_ID.HAO] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON,
+    id: CHARACTER_ID.HAO, effectKey: 'hao',
+    label: 'CHARGE / FUTURE TRIGGER',
+    description: '木属性のCHARGE型。ULTで敵弾を全消去し、前方へ5段階の起動紋様を設置。触れた時点の強さで全敵へ落雷を与える。',
+    shotType: 'charge', shotStyle: 'kaina-charge', shotCount: 1,
+    fireRate: 0, bulletSpeed: 760, shotPowerRate: 0.90,
+    chargeMinMs: 120, chargeMaxMs: 1200, chargeMinSize: 28, chargeMaxSize: 72,
+    ultName: '天機・五刻の雷',
+    ultDescription: '発動時に敵弾を全消去し、前方へ起動紋様を設置。接触時に全敵へ木属性落雷。0/2/4/6/8秒でLV1〜5に成長（ATK×1.0/1.8/3.0/4.0/5.0）。LV5は維持、設置後0.5秒間は接触判定なし。',
+    ultType: 'hao_fivefold_trigger', ultBaseType: 'trap', ultAddons: ['bullet_clear', 'damage'],
+    haoTriggerUpgradeMs: 2000, haoTriggerSafetyMs: 500,
+    haoTriggerMultipliers: [1.0, 1.8, 3.0, 4.0, 5.0],
+    burstNeed: 30, ultGainPerHit: 0.476,
   });
 
   // 別マスターではない。SHOOTING_CHARACTER_MASTERから毎回生成する読み取り用配列。
@@ -2793,6 +2838,54 @@
     conjureUltHomingTurnRate: 8.5,
     conjureUltTurretOffsetX: 54,
     conjureUltTurretOffsetY: -8,
+  });
+
+
+  // build1326: ULT説明の共通テンプレート。個別の固有名・他キャラへの参照を入れず、
+  // 同じultTypeなら基本文言を同じにして性能パラメータだけを差し替える。
+  // 戦闘処理・数値そのものは変更しない。
+  function formatUltNumber(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return '0.0';
+    const rounded = Math.round(n * 100) / 100;
+    return rounded.toFixed(rounded * 10 === Math.round(rounded * 10) ? 1 : 2);
+  }
+  function formatUltSeconds(value) {
+    return String(Number((Number(value) / 1000).toFixed(2)));
+  }
+  function getCanonicalUltDescription(c) {
+    const damage = rate => 'ATK×' + formatUltNumber(rate);
+    switch (c.ultType) {
+      case 'balance_flash':
+        return '発動時に画面内の敵弾をすべて消去し、敵を約1.4秒間停止。約0.84秒後に敵全体へ' + damage(c.ultDamageAtkMultiplier ?? 2.8) + 'のダメージを与える。';
+      case 'arno_thousand_slash':
+        return '発動時に盤面の敵弾を全消去して時間停止。最も近い敵の目前へ接近し、' + formatUltSeconds(c.arnoSlashDurationMs ?? 4000) + '秒間、タップするたびに' + damage(c.arnoSlashDamageAtkRate ?? 0.35) + 'の斬撃を放つ。終了時は発動前の位置へ戻って戦闘を再開する。';
+      case 'wolf_atk_field':
+        return '発動時に画面内の敵弾をすべて消去。フィールド中央へ円形のATK強化領域を' + formatUltSeconds(c.ultFieldDurationMs ?? 10000) + '秒間展開し、領域内の操作キャラのATKを' + formatUltNumber(c.ultFieldAtkMultiplier ?? 1.5) + '倍にする。';
+      case 'jig_scramble_ray':
+        return '発動時に画面内の敵弾をすべて消去。自身を起点に' + String(c.jigUltBeamCount ?? 6) + '本のレーザーを射出。' + formatUltSeconds(c.jigUltDurationMs ?? 5000) + '秒間、画面端で反射しながら敵を貫通し、命中時に' + damage(c.jigUltDamageAtkRate ?? 0.12) + 'のダメージを与える。';
+      case 'testchan_black_ship':
+        return '正面へ極太レーザーを' + formatUltSeconds(c.ultBeamDurationMs ?? 5000) + '秒間連続照射する。' + formatUltSeconds(c.ultBeamTickMs ?? 250) + '秒ごとに' + damage(c.ultBeamTickAtkMultiplier ?? 0.35) + 'のダメージを与える。敵弾消去・スタン・無敵は発生しない。';
+      case 'shiina_light_ring':
+        return '自身を中心に円環を' + formatUltSeconds(c.lightRingDurationMs ?? 7000) + '秒間展開する。円環内に入った敵弾は移動速度が' + String(Math.round(100 * (c.lightRingBulletSpeedMultiplier ?? 0.5))) + '%に低下し、外へ出ると元の速度へ戻る。';
+      case 'ryune_absolute_lethe':
+        return '盤面の敵全員の属性バリアを解除し、敵全体へ' + damage(c.ultDamageAtkMultiplier ?? 2.0) + 'のダメージを与える。';
+      case 'veronica_brass_punch':
+        return '真正面の超狭範囲へ一撃を放つ。命中時は' + damage(c.ultDamageAtkMultiplier ?? 7) + 'のダメージを与える。敵を追尾せず、攻撃範囲外ならMISSとなる。';
+      case 'eltena_black_hole': {
+        const base = '敵陣へブラックホールを射出し、' + formatUltSeconds(c.blackHoleDurationMs ?? 8000) + '秒間展開。通常敵・大型敵・ボスを中心へ吸引・拘束する。';
+        const continuousRate = Number(c.blackHoleDamageAtkMultiplier || 0);
+        return base + (continuousRate > 0
+          ? '展開中に合計' + damage(continuousRate) + 'の継続ダメージを与える。'
+          : 'ULT自体のダメージはない。');
+      }
+      default: return null;
+    }
+  }
+  // ステータス画面・提供割合・図鑑は同じ戦闘プロファイルを参照する。
+  Object.values(SHOOTING_CHARACTERS).forEach(c => {
+    const description = getCanonicalUltDescription(c);
+    if (description) c.ultDescription = description;
   });
 
   window.ShootingCharacters = Object.freeze({

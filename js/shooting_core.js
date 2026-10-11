@@ -3951,6 +3951,7 @@
       ignisFireWheel: null,
       ignisBossBurnUntil: 0, ignisBossBurnNextTickAt: 0,
       roseFortress: null,
+      suzuBulletSilenceUntil: 0,
       conjureTurrets: [],
       conjureDeployments: [],
       conjurePlacementPreview: null,
@@ -5302,6 +5303,8 @@
 
     // ノア落雷中 / エルテナ重力場中は盤面全体の敵行動が停止するため、
     // gameLoop外の遅延処理から来た弾生成も最終入口で必ず遮断する。
+    // スズULT: 弾の生成だけ封印。敵の移動や攻撃準備は継続。
+    if (ts < Number(state.suzuBulletSilenceUntil || 0)) return true;
     if (ts < Number(state.noahMovementFreezeUntil || 0)) return true;
     if (isEnemyPullFieldActive(ts)) return true;
 
@@ -9361,6 +9364,10 @@
     if (isChapter43BossStage() && state?.chapter43AttackSealed) return;
 
     const c = getCurrentCharacter();
+
+    // ロゼULT: 壁展開中はロゼの通常射撃だけ停止。味方への交代・移動は可能。
+    if (c && Number(c.id) === CHARACTER_ID.ROSE &&
+        state.roseFortress && now < Number(state.roseFortress.endAt || 0)) return;
 
     // ミアは自動射撃を行わず、pointerup時のCHARGE RELEASEだけで攻撃する。
     if (c && c.shotType === 'charge') return;
@@ -24206,8 +24213,8 @@
     // 指を実際に保持中なら次の pointer/touch move で通常どおり入力状態が復帰する。
     pointerActive = false;
 
-    // ローズフォートレス展開中も味方射撃・敵行動を止めない。
-    // ULT再入力のための追加ロックも設けない（ゲージ消費そのものが再発動を制御）。
+    // ローズフォートレスはロゼ本人の通常射撃のみ中止。ほかの味方の射撃・敵行動は継続。
+    // ULT再入力のための追加ロックは設けない（ゲージ消費そのものが再発動を制御）。
     state.ultLockUntil = Math.min(Number(state.ultLockUntil || 0), now);
   }
 
@@ -27175,6 +27182,86 @@
     renderHud();
   }
 
+  // build1324: スズULT「静寂の森」：既存の敵弾を消去し、3.5秒間だけ弾生成を封印。
+  // 敵の移動・HP・照準AIには手を触れない。全弾生成の共通ゲートで抑止する。
+  function useSuzuBulletSilenceUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+    showUltCut(c.ultName, c.effectKey, c);
+    ultScreenFlash('ult-flash-eri', c);
+    clearEnemyBulletsOnly();
+    const now = performance.now();
+    state.suzuBulletSilenceUntil = Math.max(Number(state.suzuBulletSilenceUntil || 0),
+      now + Math.max(0, Number(c.suzuBulletSilenceMs ?? 3500)));
+    state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), now + 250);
+    renderHud();
+  }
+
+  // build1324: メロリアULT「冥府の宣告」。全敵5秒停止＋敵1体ずつ20%で最大HP50%。
+  // 既存弾は消さず、割合ダメージはULT由来なのでULTゲージやコンボ加算なし。
+  function useMeloriaStunUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+    showUltCut(c.ultName, c.effectKey, c);
+    ultScreenFlash('ult-flash-nem', c);
+    const now = performance.now();
+    applyAngeEnemyFreeze(Math.max(0, Number(c.ultStunMs ?? 5000)));
+    const chance = Math.max(0, Math.min(1, Number(c.meloriaPercentChance ?? 0.2)));
+    const hpRatio = Math.max(0, Number(c.meloriaMaxHpDamageRate ?? 0.5));
+
+    // 通常敵はBOSS戦の増援も含む。各対象が独立して20%抽選する。
+    (state.normalEnemies || []).slice().forEach(enemy => {
+      if (!enemy || !enemy.el || enemy.hp <= 0 || Math.random() >= chance) return;
+      const maxHp = Math.max(1, Number(enemy.hpMax || enemy.hp || 1));
+      damageNormalEnemy(enemy, maxHp * hpRatio, now, true);
+    });
+    state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
+
+    if (!isNormalBattle() && state.boss && state.boss.hp > 0 && Math.random() < chance) {
+      const boss = state.boss;
+      const damage = Math.min(Number(boss.hp || 0), Math.max(0, Number(boss.hpMax || boss.hp || 1)) * hpRatio);
+      boss.hp = Math.max(0, Number(boss.hp || 0) - damage);
+      if (!addScoreAttackDamageScore(damage)) addLegacyCombatScore(Math.round(damage * 100));
+      showBossDamageNumber(damage, true);
+      createHit(Number(boss.x || 0), Number(boss.y || 0), true);
+      updateBossPhase();
+      if (boss.hp <= 0) beginBossDefeat();
+    }
+    state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), now + 250);
+    renderHud();
+  }
+
+  // build1324: アイレナULT「光の祝福」：前方に拾えるATK×1.5・5秒アイテムを1個。
+  // ミモザの既存ATK UP取得システムを再利用し、拾ったキャラだけ強化する。
+  function useAirenaAtkItemUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+    showUltCut(c.ultName, c.effectKey, c);
+    ultScreenFlash('ult-flash-mimosa', c);
+    const arena = document.getElementById('shooting-arena');
+    const layer = document.getElementById('shooting-collectible-layer');
+    if (!arena || !layer) return;
+    const now = performance.now();
+    const multiplier = Math.max(1, Number(c.itemAtkMultiplier || 1.5));
+    const duration = Math.max(100, Number(c.itemAtkDurationMs || 5000));
+    const x = clamp(Number(state.player.x || arena.clientWidth * 0.5), 35, Math.max(35, arena.clientWidth - 35));
+    const y = clamp(Number(state.player.y || arena.clientHeight * 0.75) - 86, 65,
+      Math.max(65, arena.clientHeight - 65));
+    const el = document.createElement('div');
+    el.className = 'shooting-mimosa-item mimosa-item-atk';
+    el.innerHTML = '<i></i>';
+    layer.appendChild(el);
+    const item = {
+      uid: `airena_atk_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
+      sourceType: 'airena_atk_item', el, x, y,
+      kind: 'atk', label: 'ATK UP',
+      detail: `ATK ×${multiplier.toFixed(1)} / ${Math.round(duration / 1000)}秒`,
+      atkBuffMultiplier: multiplier,
+      atkBuffDurationMs: duration
+    };
+    state.mimosaItems.push(item);
+    positionUnit(el, x, y);
+    state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), now + 250);
+    renderHud();
+  }
+
   function executeCharacterUlt(c) {
     if (!state || state.ended || state.finishing) return;
 
@@ -27184,6 +27271,9 @@
     if (c.ultType === 'ryune_absolute_lethe' || Number(c.id) === 25) useLyuneAbsoluteLetheUlt(c);
     else if (c.ultType === 'sui_clock_burst') useSuiUlt(c);
     else if (c.ultType === 'rose_fortress') useRoseUlt(c);
+    else if (c.ultType === 'suzu_bullet_silence') useSuzuBulletSilenceUlt(c);
+    else if (c.ultType === 'meloria_stun') useMeloriaStunUlt(c);
+    else if (c.ultType === 'airena_atk_item') useAirenaAtkItemUlt(c);
     else if (c.ultType === 'ignis_fire_wheel') useIgnisUlt(c);
     else if (c.ultType === 'clarine_decoy') useClarineUlt(c);
     else if (c.ultType === 'gresha_burn_field') useGreshaUlt(c);
