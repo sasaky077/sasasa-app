@@ -1,0 +1,106 @@
+/* ZERAPHIA build1379 — Unified BACK art.
+   This is a visual skin only: keep all existing onclick handlers & their text
+   for assistive technology. Loading this after older page CSS is intentional.
+   Scoped to the five requested screens plus ordinary .app-page headers.
+   The artwork is naturally transparent and uses the exact supplied asset.
+*/
+
+/* Shared page headers (Quest landing, Character list/detail, Friend, Settings, etc.). */
+html body:not(.ui-immersive) .screen.app-page > .app-page-header > button.app-page-back,
+/* Quest landing header has strong older !important rules. */
+html body:not(.ui-immersive) #screen-ninmu.junkou-rebuilt > .junkou-page-header > button.junkou-page-back,
+/* Character list/detail shares one button but has screen-specific old CSS. */
+html body:not(.ui-immersive) #screen-zukan.zchar-redesign > .app-page-header > button#zukan-detail-back,
+/* Daily and chapter stage-selectors are dynamically created. */
+html body #shooting-daily-stage-select.zds-screen button.zds-back,
+html body #stage-select-modal.zss-root button.zss-back {
+  box-sizing:border-box !important;
+  display:inline-block !important;
+  flex:0 0 82px !important;
+  width:82px !important;
+  min-width:82px !important;
+  max-width:82px !important;
+  height:35px !important;
+  min-height:35px !important;
+  max-height:35px !important;
+  padding:0 !important;
+  margin:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  outline-offset:2px !important;
+  box-shadow:none !important;
+  background:transparent url('../images/button_back.webp') center/100% 100% no-repeat !important;
+  /* Retain original text in the DOM to preserve accessible button names. */
+  font-size:0 !important;
+  line-height:0 !important;
+  letter-spacing:0 !important;
+  color:transparent !important;
+  -webkit-text-fill-color:transparent !important;
+  text-shadow:none !important;
+  text-indent:-9999px !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  cursor:pointer !important;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+
+/* Discard legacy arrow/border pseudo-elements on old back buttons. */
+html body:not(.ui-immersive) .screen.app-page > .app-page-header > button.app-page-back::before,
+html body:not(.ui-immersive) .screen.app-page > .app-page-header > button.app-page-back::after,
+html body:not(.ui-immersive) #screen-zukan.zchar-redesign > .app-page-header > button#zukan-detail-back::before,
+html body:not(.ui-immersive) #screen-zukan.zchar-redesign > .app-page-header > button#zukan-detail-back::after,
+html body #shooting-daily-stage-select.zds-screen button.zds-back::before,
+html body #shooting-daily-stage-select.zds-screen button.zds-back::after,
+html body #stage-select-modal.zss-root button.zss-back::before,
+html body #stage-select-modal.zss-root button.zss-back::after {
+  content:none !important;
+  display:none !important;
+}
+
+/* The roster back button must remain a normal grid item (not legacy absolute). */
+html body:not(.ui-immersive) #screen-zukan.zchar-redesign > .app-page-header > button#zukan-detail-back {
+  position:relative !important;
+  inset:auto !important;
+  transform:none !important;
+  justify-self:start !important;
+  align-self:center !important;
+}
+
+/* Keep Quest landing back button visible without changing the other header items. */
+html body:not(.ui-immersive) #screen-ninmu.junkou-rebuilt > .junkou-page-header > button.junkou-page-back {
+  position:relative !important;
+  z-index:5 !important;
+  align-self:center !important;
+}
+
+/* Preserve the daily stage header's absolute positioning and no-overlap sizing. */
+html body #shooting-daily-stage-select.zds-screen button.zds-back {
+  position:absolute !important;
+  left:10px !important;
+  top:15px !important;
+}
+/* Chapter header: leave normal-flow position intact, avoid title collisions. */
+html body #stage-select-modal.zss-root button.zss-back {
+  position:relative !important;
+  z-index:2 !important;
+}
+
+@media(max-width:365px){
+  html body:not(.ui-immersive) .screen.app-page > .app-page-header > button.app-page-back,
+  html body:not(.ui-immersive) #screen-ninmu.junkou-rebuilt > .junkou-page-header > button.junkou-page-back,
+  html body:not(.ui-immersive) #screen-zukan.zchar-redesign > .app-page-header > button#zukan-detail-back,
+  html body #shooting-daily-stage-select.zds-screen button.zds-back,
+  html body #stage-select-modal.zss-root button.zss-back {
+    flex-basis:75px !important;
+    width:75px !important;
+    min-width:75px !important;
+    max-width:75px !important;
+    height:32px !important;
+    min-height:32px !important;
+    max-height:32px !important;
+  }
+}
+@media(max-height:620px){
+  html body #shooting-daily-stage-select.zds-screen button.zds-back {top:5px !important;}
+}

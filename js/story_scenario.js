@@ -2580,7 +2580,7 @@
   "shooting_ch04_01": {
     "chapter": 4,
     "stageNo": 1,
-    "chapterTitle": "呼ばれたもの",
+    "chapterTitle": "呼び声",
     "stageTitle": "宿探し",
     "pre": [
       {
@@ -2680,7 +2680,7 @@
 "shooting_ch04_02": {
     "chapter": 4,
     "stageNo": 2,
-    "chapterTitle": "呼ばれたもの",
+    "chapterTitle": "呼び声",
     "stageTitle": "先客",
     "pre": [
       {
@@ -2850,7 +2850,7 @@
   "shooting_ch04_03": {
     "chapter": 4,
     "stageNo": 3,
-    "chapterTitle": "呼ばれたもの",
+    "chapterTitle": "呼び声",
     "stageTitle": "炎の壁",
     "pre": [
 
@@ -3100,7 +3100,7 @@
   "shooting_ch04_04": {
     "chapter": 4,
     "stageNo": 4,
-    "chapterTitle": "呼ばれたもの",
+    "chapterTitle": "呼び声",
     "stageTitle": "水音",
     "pre": [
       {

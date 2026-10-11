@@ -1,4 +1,4 @@
 {
-  "build": 1378,
-  "note": "Match story chapter card illustration to images/icon_story_XX.webp (CH01-CH06 included; missing chapters fall back to CH01), without changing navigation or unlock rules."
+  "build": 1380,
+  "note": "Rename CHAPTER 04 title to 呼び声 across the story chapter and stages."
 }
