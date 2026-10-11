@@ -11481,16 +11481,16 @@
       const element = phaseElements[state.ch404Phase];
       // A newly appearing reinforced enemy receives its own fresh barrier.
       const enemy = createNormalEnemy(Object.assign({}, base, {
-        element, strongEnemy: true, ch404Role: 'summoner', ch404Hp: 1800,
+        element, strongEnemy: true, ch404Role: 'summoner', ch404Hp: 1440,
       }), now);
       if (!enemy) return;
       state.normalEnemies.push(enemy);
       state.normalSpawned++;
-      state.ch404SummonAt = now + 10000;
+      state.ch404SummonAt = now + 15000;
       return;
     }
     if (now < Number(state.ch404SummonAt || 0)) return;
-    state.ch404SummonAt = now + 10000;
+    state.ch404SummonAt = now + 15000;
     const adds = state.normalEnemies.filter(e => e && e.hp > 0 && e.ch404Role === 'add');
     if (adds.length >= 4) return;
     const base = getShootingEnemy(selectedStage.enemyIds[0]);

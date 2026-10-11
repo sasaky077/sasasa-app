@@ -1,4 +1,4 @@
 {
-  "build": 1327,
-  "note": "Reassign 7 R-character ULTs: shared heal hearts+invulnerability (Ange/Rinrin/Noel), single-target strike (Shigure), bullet-slow ring (Patra/Serena), barrier-clear global attack (Orion). Keep shooting and other roster unchanged."
+  "build": 1328,
+  "note": "CH04-04 only: change normal add spawn interval to 15s (including first add), reduce all 3 reinforced summoner HP by 20% (1800->1440). Normal add HP and cap unchanged."
 }
