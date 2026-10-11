@@ -1,4 +1,4 @@
 {
-  "build": 1345,
-  "note": "Rich CH05 ring puzzle UI: ornate golden parchment, luminous rings, compass centerpiece, redesigned hint button; gameplay rules unchanged."
+  "build": 1352,
+  "note": "DAILY stage select: remove the back button frame/background/shadow to match shared frameless navigation; preserve iPhone SE layout."
 }

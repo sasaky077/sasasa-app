@@ -19133,6 +19133,34 @@
     return true;
   }
 
+
+  // build1350: DAILYは旧巡行共通CSSから独立した画面。
+  // 戦闘・回数・報酬・GIMMICKの既存関数だけを再利用する。
+  function buildDailyStageCard(indexNo, levelLabel, mission, kind, level, gimmicks, hasCoin) {
+    return `
+      <button type="button" class="zds-card" data-daily-kind="${kind}" data-daily-level="${level}"
+              onclick="openDailyStage('${level}','${kind}')">
+        <div class="zds-art" aria-hidden="true">
+          <img src="images/icon_dairy.webp" alt="" draggable="false" loading="eager">
+          <span class="zds-number">${indexNo}</span>
+        </div>
+        <div class="zds-card-content">
+          <div class="zds-card-titleline">
+            <strong>${levelLabel}</strong>
+            <span class="zds-count" data-daily-remaining>残り 1/1</span>
+          </div>
+          <div class="zds-condition"><span class="zds-swords" aria-hidden="true">⚔</span>${mission}</div>
+          <div class="zds-gimmick">${gimmicks}</div>
+          <div class="zds-rewards">
+            <span class="zds-reward-caption">報酬</span>
+            ${hasCoin ? `<span class="zds-coin"><img src="images/icon_coin.webp" alt="コイン"><b>×10,000</b></span>` : ''}
+            <span class="zds-materials" data-daily-material-slot></span>
+          </div>
+        </div>
+        <span class="zds-chevron" aria-hidden="true">›</span>
+      </button>`;
+  }
+
   function showDailyStageSelect(options = {}) {
     if (typeof window.requireChapter03ContentUnlock === 'function' && !window.requireChapter03ContentUnlock()) return false;
     closeDailyStageSelect();
@@ -19140,146 +19168,54 @@
     const immediate = !!(options && options.immediate);
     const overlay = document.createElement('div');
     overlay.id = 'shooting-daily-stage-select';
-    overlay.className = 'shooting-special-stage-select shooting-faceless-stage-select shooting-daily-stage-select';
-
+    // NO old daily/faceless/special classes: they are heavily overridden by old CSS.
+    overlay.className = 'zds-screen';
     if (immediate) {
       overlay.classList.add('show');
       overlay.style.transition = 'none';
     }
 
-    const intermediateAttributeHtml = buildStageSelectAttributePreview(getDailyStageId('intermediate','weekday'));
-    const advancedAttributeHtml = buildStageSelectAttributePreview(getDailyStageId('advanced','weekday'));
-    const expIntermediateAttributeHtml = buildStageSelectAttributePreview(getDailyStageId('intermediate','exp'));
-    const expAdvancedAttributeHtml = buildStageSelectAttributePreview(getDailyStageId('advanced','exp'));
-    const intermediateGimmickHtml = buildStageGimmickPreview(getDailyStageId('intermediate','weekday'));
-    const advancedGimmickHtml = buildStageGimmickPreview(getDailyStageId('advanced','weekday'));
-    const expIntermediateGimmickHtml = buildStageGimmickPreview(getDailyStageId('intermediate','exp'));
-    const expAdvancedGimmickHtml = buildStageGimmickPreview(getDailyStageId('advanced','exp'));
-
+    const getGimmicks = (level, kind) => buildStageGimmickPreview(getDailyStageId(level, kind));
     overlay.innerHTML = `
-      <div class="shooting-special-stage-page shooting-faceless-stage-page shooting-daily-stage-page">
-        <div class="shooting-special-stage-header shooting-faceless-stage-header shooting-daily-stage-header">
-          <button type="button"
-                  class="shooting-special-stage-back shooting-faceless-stage-back"
-                  onclick="closeDailyStageSelect()"
-                  aria-label="戻る">＜戻る</button>
-          <div class="shooting-special-stage-title shooting-faceless-stage-title">デイリー巡行</div>
+      <div class="zds-surface">
+        <div class="zds-pagehead">
+          <button type="button" class="zds-back" onclick="closeDailyStageSelect()" aria-label="戻る">〈 戻る</button>
+          <h2 class="zds-heading">デイリー巡行</h2>
+          <div class="zds-ornament" aria-hidden="true"><span>✦</span></div>
         </div>
-
-        <div class="shooting-special-stage-list shooting-faceless-stage-list shooting-daily-stage-list">
-          <div class="shooting-daily-kind-heading">
-            <strong>曜日素材</strong><span>限界突破素材</span>
-          </div>
-
-          <button type="button"
-                  class="shooting-special-stage-row shooting-faceless-stage-row shooting-daily-stage-row"
-                  data-daily-kind="weekday"
-                  data-daily-level="intermediate"
-                  onclick="openDailyStage('intermediate','weekday')">
-            <div class="shooting-special-stage-no shooting-faceless-stage-no">01</div>
-            <div class="shooting-special-stage-main shooting-faceless-stage-main">
-              <div class="shooting-special-stage-name-row shooting-faceless-stage-name-row">
-                <strong>中級</strong>
-                <span class="shooting-daily-stage-remaining" data-daily-remaining>残り 1 / 1</span>
-              </div>
-              <div class="shooting-special-stage-condition shooting-faceless-stage-condition">クリア条件：敵をすべて撃破</div>
-              ${intermediateAttributeHtml}
-              ${intermediateGimmickHtml}
-              <div class="shooting-daily-stage-reward">
-                <span class="shooting-daily-stage-reward-label">報酬</span>
-                <span class="shooting-daily-stage-reward-chip shooting-daily-stage-reward-coin">
-                  <img src="images/icon_coin.webp" alt="コイン"><b>×10,000</b>
-                </span>
-                <span class="shooting-daily-stage-reward-chip" data-daily-material-slot></span>
-              </div>
+        <div class="zds-scroll">
+          <section class="zds-section" aria-label="曜日素材">
+            <div class="zds-sectionhead">
+              <span class="zds-sectionicon" aria-hidden="true">✧</span>
+              <strong>曜日素材</strong><span class="zds-section-sub">刻界突破素材</span>
+              <img class="zds-section-art" src="images/icon_dairy.webp" alt="" aria-hidden="true" draggable="false">
             </div>
-          </button>
-
-          <button type="button"
-                  class="shooting-special-stage-row shooting-faceless-stage-row shooting-daily-stage-row"
-                  data-daily-kind="weekday"
-                  data-daily-level="advanced"
-                  onclick="openDailyStage('advanced','weekday')">
-            <div class="shooting-special-stage-no shooting-faceless-stage-no">02</div>
-            <div class="shooting-special-stage-main shooting-faceless-stage-main">
-              <div class="shooting-special-stage-name-row shooting-faceless-stage-name-row">
-                <strong>上級</strong>
-                <span class="shooting-daily-stage-remaining" data-daily-remaining>残り 1 / 1</span>
-              </div>
-              <div class="shooting-special-stage-condition shooting-faceless-stage-condition">クリア条件：敵をすべて撃破</div>
-              ${advancedAttributeHtml}
-              ${advancedGimmickHtml}
-              <div class="shooting-daily-stage-reward">
-                <span class="shooting-daily-stage-reward-label">報酬</span>
-                <span class="shooting-daily-stage-reward-chip shooting-daily-stage-reward-coin">
-                  <img src="images/icon_coin.webp" alt="コイン"><b>×10,000</b>
-                </span>
-                <span class="shooting-daily-stage-reward-chip" data-daily-material-slot></span>
-              </div>
+            ${buildDailyStageCard('01','中級','クリア条件：敵をすべて撃破','weekday','intermediate', getGimmicks('intermediate','weekday'), true)}
+            ${buildDailyStageCard('02','上級','クリア条件：敵をすべて撃破','weekday','advanced', getGimmicks('advanced','weekday'), true)}
+          </section>
+          <section class="zds-section" aria-label="経験値素材">
+            <div class="zds-sectionhead">
+              <span class="zds-sectionicon zds-book" aria-hidden="true">✥</span>
+              <strong>経験値素材</strong><span class="zds-section-sub">キャラクター強化素材</span>
+              <img class="zds-section-art" src="images/icon_dairy.webp" alt="" aria-hidden="true" draggable="false">
             </div>
-          </button>
-
-          <div class="shooting-daily-kind-heading shooting-daily-kind-heading-exp">
-            <strong>経験値素材</strong><span>キャラクター強化素材</span>
-          </div>
-
-          <button type="button"
-                  class="shooting-special-stage-row shooting-faceless-stage-row shooting-daily-stage-row shooting-daily-exp-row"
-                  data-daily-kind="exp"
-                  data-daily-level="intermediate"
-                  onclick="openDailyStage('intermediate','exp')">
-            <div class="shooting-special-stage-no shooting-faceless-stage-no">03</div>
-            <div class="shooting-special-stage-main shooting-faceless-stage-main">
-              <div class="shooting-special-stage-name-row shooting-faceless-stage-name-row">
-                <strong>中級</strong>
-                <span class="shooting-daily-stage-remaining" data-daily-remaining>残り 1 / 1</span>
-              </div>
-              <div class="shooting-special-stage-condition shooting-faceless-stage-condition">経験値素材を合計10個獲得</div>
-              ${expIntermediateAttributeHtml}
-              ${expIntermediateGimmickHtml}
-              <div class="shooting-daily-stage-reward">
-                <span class="shooting-daily-stage-reward-label">報酬</span>
-                <span class="shooting-daily-stage-reward-chip" data-daily-material-slot></span>
-              </div>
-            </div>
-          </button>
-
-          <button type="button"
-                  class="shooting-special-stage-row shooting-faceless-stage-row shooting-daily-stage-row shooting-daily-exp-row"
-                  data-daily-kind="exp"
-                  data-daily-level="advanced"
-                  onclick="openDailyStage('advanced','exp')">
-            <div class="shooting-special-stage-no shooting-faceless-stage-no">04</div>
-            <div class="shooting-special-stage-main shooting-faceless-stage-main">
-              <div class="shooting-special-stage-name-row shooting-faceless-stage-name-row">
-                <strong>上級</strong>
-                <span class="shooting-daily-stage-remaining" data-daily-remaining>残り 1 / 1</span>
-              </div>
-              <div class="shooting-special-stage-condition shooting-faceless-stage-condition">経験値素材を合計10個獲得</div>
-              ${expAdvancedAttributeHtml}
-              ${expAdvancedGimmickHtml}
-              <div class="shooting-daily-stage-reward">
-                <span class="shooting-daily-stage-reward-label">報酬</span>
-                <span class="shooting-daily-stage-reward-chip" data-daily-material-slot></span>
-              </div>
-            </div>
-          </button>
+            ${buildDailyStageCard('03','中級','経験値素材を合計10個獲得','exp','intermediate', getGimmicks('intermediate','exp'), false)}
+            ${buildDailyStageCard('04','上級','経験値素材を合計10個獲得','exp','advanced', getGimmicks('advanced','exp'), false)}
+          </section>
         </div>
       </div>`;
 
     document.body.appendChild(overlay);
+    // Leave original server-authoritative reward and attempt-state refresh unchanged.
     refreshDailyStageSelect();
     if (typeof window.syncDailyAttemptStateFromServer === 'function') {
       void window.syncDailyAttemptStateFromServer();
     }
-
-    if (!immediate) {
-      requestAnimationFrame(() => overlay.classList.add('show'));
-    } else {
-      requestAnimationFrame(() => {
-        if (overlay.isConnected) overlay.style.transition = '';
-      });
-    }
+    if (!immediate) requestAnimationFrame(() => overlay.classList.add('show'));
+    else requestAnimationFrame(() => {
+      if (overlay.isConnected) overlay.style.transition = '';
+    });
+    return true;
   }
 
   window.closeDailyStageSelect = closeDailyStageSelect;

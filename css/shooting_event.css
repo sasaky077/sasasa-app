@@ -12252,3 +12252,354 @@ html body:not(.ui-immersive)
 /* build1293: CH04 party UI is driven by JS ownership/story rules, not legacy stage CSS. */
 #shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-party-roster::after{content:none!important;display:none!important;pointer-events:none!important}
 #shooting-event-root:is([data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"]) .shooting-character-option:not(.locked):not(:disabled){opacity:1!important;filter:none!important;pointer-events:auto!important}
+
+
+/* ============================================================
+   build1348 DAILY STAGE SELECT REWORK
+   - build1347の注入型UIを廃止
+   - 巡行画面に近い紙面/カードUIへ再調整
+   ============================================================ */
+html body:not(.ui-immersive) .shooting-faceless-stage-select.shooting-daily-stage-select{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.18), rgba(246,240,230,.18)),
+    url("../images/zeraphia_bg_01.webp") center top/cover no-repeat !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-page{
+  position:relative !important;
+  z-index:1 !important;
+  width:100% !important;
+  max-width:430px !important;
+  height:100% !important;
+  margin:0 auto !important;
+  display:flex !important;
+  flex-direction:column !important;
+  overflow:hidden !important;
+  background:transparent !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-header-area{
+  flex:0 0 auto !important;
+  padding:10px 14px 0 !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-header{
+  position:relative !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:4px !important;
+  min-height:124px !important;
+  padding:16px 8px 10px !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-header .shooting-faceless-stage-back{
+  position:absolute !important;
+  left:0 !important;
+  top:4px !important;
+  transform:none !important;
+  min-width:92px !important;
+  min-height:42px !important;
+  padding:0 14px !important;
+  border-radius:12px !important;
+  background:linear-gradient(180deg, rgba(255,255,255,.96), rgba(246,238,225,.98)) !important;
+  border:1px solid rgba(198,164,108,.48) !important;
+  box-shadow:0 4px 12px rgba(97,70,31,.10) !important;
+  color:#7b5a31 !important;
+  font-size:13px !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-kicker{
+  color:#ccb791 !important;
+  font:600 12px/1 "Cinzel","Noto Serif JP",serif !important;
+  letter-spacing:.18em !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-faceless-stage-title{
+  color:#693b14 !important;
+  font-family:"Noto Serif JP","Yu Mincho",serif !important;
+  font-size:28px !important;
+  font-weight:600 !important;
+  letter-spacing:.08em !important;
+  line-height:1.2 !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-title-ornament{
+  position:relative !important;
+  width:240px !important;
+  height:18px !important;
+  margin-top:4px !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-title-ornament::before,
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-title-ornament::after{
+  content:"" !important;
+  position:absolute !important;
+  top:50% !important;
+  width:calc(50% - 18px) !important;
+  height:1px !important;
+  background:linear-gradient(90deg, rgba(201,171,118,0), rgba(201,171,118,.95)) !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-title-ornament::before{left:0 !important}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-title-ornament::after{right:0 !important; transform:scaleX(-1) !important}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-title-ornament span{
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  width:12px !important;
+  height:12px !important;
+  transform:translate(-50%,-50%) rotate(45deg) !important;
+  border:1px solid rgba(198,157,93,.9) !important;
+  background:rgba(255,250,240,.92) !important;
+  box-shadow:0 0 0 2px rgba(255,248,236,.7) !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-list{
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  overflow-y:auto !important;
+  -webkit-overflow-scrolling:touch !important;
+  padding:0 14px calc(22px + env(safe-area-inset-bottom,16px)) !important;
+  gap:14px !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-kind-heading{
+  display:grid !important;
+  grid-template-columns:42px minmax(0,auto) minmax(80px,1fr) !important;
+  align-items:center !important;
+  gap:10px !important;
+  min-height:68px !important;
+  padding:0 10px 0 6px !important;
+  border:1px solid rgba(211,186,141,.62) !important;
+  border-radius:16px !important;
+  background:linear-gradient(180deg, rgba(253,250,244,.95), rgba(245,237,224,.88)) !important;
+  box-shadow:0 4px 14px rgba(104,79,42,.08) !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-kind-icon{
+  width:36px !important;
+  height:36px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  border-radius:50% !important;
+  border:1px solid rgba(200,170,116,.62) !important;
+  color:#9e7538 !important;
+  font-size:17px !important;
+  background:radial-gradient(circle at 35% 30%, rgba(255,255,255,.96), rgba(241,229,203,.82)) !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-kind-copy{display:flex !important; align-items:baseline !important; gap:8px !important; min-width:0 !important}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-kind-copy strong{
+  color:#4f3213 !important;
+  font-size:18px !important;
+  font-weight:600 !important;
+  letter-spacing:.06em !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-kind-copy span{
+  color:#8f7450 !important;
+  font-size:11px !important;
+  letter-spacing:.04em !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-kind-banner{
+  height:42px !important;
+  border-radius:12px !important;
+  border:1px solid rgba(214,194,158,.58) !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,0) 45%),
+    linear-gradient(135deg, rgba(231,237,247,.86), rgba(250,241,223,.88) 58%, rgba(206,219,239,.92)) !important;
+  position:relative !important;
+  overflow:hidden !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-kind-banner::after{
+  content:"" !important;
+  position:absolute !important;
+  inset:0 !important;
+  background:
+    linear-gradient(90deg, rgba(146,161,188,.26) 0 34%, transparent 34% 100%),
+    linear-gradient(0deg, rgba(114,87,55,.12), rgba(114,87,55,0));
+  clip-path:polygon(0 100%, 0 58%, 16% 28%, 34% 46%, 50% 12%, 67% 42%, 81% 26%, 100% 8%, 100% 100%);
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-kind-banner.is-exp{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,0) 45%),
+    linear-gradient(135deg, rgba(244,234,217,.92), rgba(255,245,223,.92) 58%, rgba(231,221,199,.92)) !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-kind-heading-exp{ margin-top:6px !important; }
+
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-row{
+  appearance:none !important;
+  -webkit-appearance:none !important;
+  position:relative !important;
+  width:100% !important;
+  min-height:138px !important;
+  padding:8px 12px 8px 8px !important;
+  display:grid !important;
+  grid-template-columns:112px minmax(0,1fr) 18px !important;
+  align-items:center !important;
+  gap:12px !important;
+  border:1px solid rgba(210,186,144,.76) !important;
+  border-radius:18px !important;
+  background:linear-gradient(180deg, rgba(255,255,255,.96), rgba(247,240,228,.98)) !important;
+  box-shadow:0 6px 18px rgba(91,67,31,.10) !important;
+  overflow:hidden !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-row:active{
+  transform:translateY(1px) !important;
+  filter:brightness(.985) !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-row.is-exhausted{
+  opacity:.56 !important;
+  filter:saturate(.45) !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-thumb{
+  position:relative !important;
+  min-height:122px !important;
+  border-radius:14px !important;
+  border:1px solid rgba(182,155,108,.34) !important;
+  overflow:hidden !important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.28) !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-thumb::before{
+  content:"" !important;
+  position:absolute !important;
+  inset:0 !important;
+  background:
+    radial-gradient(circle at 68% 18%, rgba(255,245,214,.96) 0 8%, rgba(255,245,214,.32) 14%, transparent 28%),
+    linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,0) 36%),
+    linear-gradient(145deg, #bfcbe0, #f2e7d2 52%, #c3b19d) !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-thumb::after{
+  content:"" !important;
+  position:absolute !important;
+  left:0 !important;
+  right:0 !important;
+  bottom:0 !important;
+  height:68% !important;
+  background:
+    linear-gradient(90deg, rgba(72,84,118,.78) 0 32%, transparent 32% 100%),
+    linear-gradient(0deg, rgba(64,76,104,.24), rgba(64,76,104,0));
+  clip-path:polygon(0 100%,0 48%,16% 24%,31% 44%,46% 12%,61% 30%,79% 16%,100% 0,100% 100%) !important;
+  opacity:.86 !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-thumb.is-02::before{background:radial-gradient(circle at 26% 18%, rgba(255,236,212,.95) 0 8%, rgba(255,236,212,.26) 14%, transparent 28%), linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,0) 36%), linear-gradient(145deg, #9faad0, #e9ddd2 54%, #be9994) !important}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-thumb.is-02::after{background:linear-gradient(90deg, rgba(70,78,118,.84) 0 40%, transparent 40% 100%), linear-gradient(0deg, rgba(98,66,67,.30), rgba(98,66,67,0)); clip-path:polygon(0 100%,0 62%,24% 34%,42% 54%,58% 18%,72% 38%,100% 8%,100% 100%) !important}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-thumb.is-03::before{background:radial-gradient(circle at 22% 22%, rgba(255,246,213,.95) 0 8%, rgba(255,246,213,.24) 14%, transparent 28%), linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,0) 36%), linear-gradient(145deg, #d8c18c, #f8edd5 50%, #ead4a6) !important}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-thumb.is-03::after{background:linear-gradient(90deg, rgba(177,141,84,.68) 0 36%, transparent 36% 100%), linear-gradient(0deg, rgba(127,93,45,.20), rgba(127,93,45,0)); clip-path:polygon(0 100%,0 60%,22% 38%,39% 60%,56% 24%,73% 34%,100% 10%,100% 100%) !important}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-thumb.is-04::before{background:radial-gradient(circle at 70% 18%, rgba(255,245,214,.95) 0 8%, rgba(255,245,214,.26) 14%, transparent 28%), linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,0) 36%), linear-gradient(145deg, #b2bed6, #f4e7d2 50%, #d6c3a2) !important}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-no-badge{
+  position:absolute !important;
+  left:0 !important;
+  top:0 !important;
+  width:52px !important;
+  height:100% !important;
+  display:flex !important;
+  align-items:flex-start !important;
+  justify-content:center !important;
+  padding-top:10px !important;
+  color:#fff !important;
+  font-family:"Cinzel",serif !important;
+  font-size:28px !important;
+  line-height:1 !important;
+  background:linear-gradient(180deg, rgba(50,56,94,.92), rgba(92,104,148,.82)) !important;
+  text-shadow:0 1px 4px rgba(0,0,0,.18) !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-faceless-stage-main{
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+  gap:8px !important;
+  min-width:0 !important;
+  padding-right:2px !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-faceless-stage-name-row{
+  display:flex !important;
+  align-items:center !important;
+  gap:10px !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-faceless-stage-name-row strong{
+  color:#223f72 !important;
+  font-size:22px !important;
+  font-weight:700 !important;
+  letter-spacing:.04em !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-exp-row .shooting-faceless-stage-name-row strong{ color:#223f72 !important; }
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-remaining{
+  margin-left:auto !important;
+  min-width:92px !important;
+  min-height:34px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:0 12px !important;
+  border-radius:999px !important;
+  border:1px solid rgba(216,191,145,.9) !important;
+  background:linear-gradient(180deg, rgba(251,244,230,.98), rgba(242,228,201,.94)) !important;
+  color:#8f6b38 !important;
+  font-size:12px !important;
+  font-weight:600 !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-faceless-stage-condition{
+  color:#5c4932 !important;
+  font-size:13px !important;
+  line-height:1.4 !important;
+  letter-spacing:.02em !important;
+  margin:0 !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-stage-gimmicks,
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-reward{
+  display:flex !important;
+  align-items:center !important;
+  gap:8px !important;
+  flex-wrap:wrap !important;
+  margin:0 !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-stage-gimmick-label,
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-reward-label{
+  color:#91703f !important;
+  font-family:"Cinzel","Noto Serif JP",serif !important;
+  font-size:10px !important;
+  letter-spacing:.10em !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-stage-gimmick-list{
+  gap:6px !important;
+  flex-wrap:wrap !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-stage-gimmick-chip{
+  font-size:12px !important;
+  color:#6d5635 !important;
+  gap:4px !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-stage-gimmick-elements img{
+  width:19px !important;
+  height:19px !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-reward-chip{
+  display:inline-flex !important;
+  align-items:center !important;
+  gap:4px !important;
+  padding:0 !important;
+  border:0 !important;
+  background:transparent !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-reward-chip img{
+  width:32px !important;
+  height:32px !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-reward-chip b{
+  color:#7c5e32 !important;
+  font-size:13px !important;
+  font-weight:700 !important;
+}
+html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-chevron{
+  color:#9b7a49 !important;
+  font-size:26px !important;
+  line-height:1 !important;
+  align-self:center !important;
+}
+@media (max-width:380px){
+  html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-header{ min-height:112px !important; }
+  html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-faceless-stage-title{ font-size:24px !important; }
+  html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-kind-copy{ flex-direction:column !important; align-items:flex-start !important; gap:2px !important; }
+  html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-kind-heading{ grid-template-columns:40px minmax(0,1fr) !important; }
+  html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-kind-banner{ grid-column:1 / -1 !important; margin:0 4px 8px 4px !important; }
+  html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-row{ grid-template-columns:96px minmax(0,1fr) 16px !important; min-height:132px !important; }
+  html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-thumb{ min-height:116px !important; }
+  html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-no-badge{ width:46px !important; font-size:24px !important; }
+  html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-faceless-stage-name-row{ flex-direction:column !important; align-items:flex-start !important; gap:6px !important; }
+  html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-faceless-stage-name-row strong{ font-size:20px !important; }
+  html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-remaining{ margin-left:0 !important; min-width:84px !important; min-height:30px !important; font-size:11px !important; }
+  html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-faceless-stage-condition{ font-size:12px !important; }
+  html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-stage-gimmick-chip{ font-size:11px !important; }
+  html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-stage-gimmick-elements img,
+  html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-reward-chip img{ width:28px !important; height:28px !important; }
+}
