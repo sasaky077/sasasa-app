@@ -1,0 +1,234 @@
+/* ============================================================
+   build1342 — ECHO TOWER full-screen fixed composition.
+   Existing home HUD and bottom navigation remain above this scene.
+   ============================================================ */
+html body #screen-resonance-tower.resonance-tower-screen{
+  position:fixed !important;
+  inset:0 !important;
+  display:none !important;
+  width:100% !important;
+  max-width:430px !important;
+  height:100dvh !important;
+  min-height:100dvh !important;
+  max-height:100dvh !important;
+  padding:0 !important;
+  margin:0 auto !important;
+  box-sizing:border-box !important;
+  overflow:hidden !important;
+  overscroll-behavior:none !important;
+  touch-action:manipulation;
+  z-index:40 !important;
+  isolation:isolate;
+  background:#b8b4ad url('../images/zankyou_bg.webp') center center / cover no-repeat !important;
+  color:#f7eee0;
+  font-family:'Noto Serif JP','Yu Mincho',serif;
+}
+html body #screen-resonance-tower.resonance-tower-screen.active{display:block !important;}
+#screen-resonance-tower .resonance-tower-haze{
+  position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:linear-gradient(90deg,rgba(18,21,26,.53) 0%,rgba(26,26,28,.31) 46%,rgba(26,23,26,.10) 77%),
+    linear-gradient(to bottom,rgba(38,34,36,.17) 0%,transparent 33%,transparent 74%,rgba(24,22,23,.26) 100%);
+}
+#screen-resonance-tower .resonance-tower-composition{
+  position:absolute;z-index:2;
+  top:calc(env(safe-area-inset-top) + 83px);
+  left:clamp(11px,3.5vw,19px);right:clamp(11px,3.5vw,19px);
+  bottom:calc(76px + env(safe-area-inset-bottom) + 7px);
+  min-height:0;overflow:hidden;
+}
+#screen-resonance-tower .resonance-tower-back{
+  position:absolute;z-index:4;left:0;top:0;
+  appearance:none;border:0;border-radius:0;padding:4px 0;
+  color:#fff4db;background:transparent;box-shadow:none;
+  text-shadow:0 1px 5px #28242b,0 0 9px rgba(30,30,30,.8);
+  font:500 clamp(12px,1.7dvh,15px)/1.4 'Noto Serif JP',serif;letter-spacing:.1em;
+  cursor:pointer;
+}
+#screen-resonance-tower .resonance-tower-intro{
+  position:absolute;top:10.5%;left:0;width:56%;z-index:2;
+  text-shadow:0 2px 6px rgba(12,12,16,.7),0 0 12px rgba(12,12,16,.6);
+}
+#screen-resonance-tower .resonance-tower-intro h1{
+  margin:0;color:#fff3dc;
+  font:500 clamp(25px,7.5vw,40px)/1.28 'Noto Serif JP',serif;
+  letter-spacing:.12em;white-space:nowrap;
+}
+#screen-resonance-tower .resonance-tower-english{
+  color:#fff0d2;font:600 clamp(6.5px,1.6vw,9.5px)/1.5 'Cinzel',serif;
+  letter-spacing:.02em;white-space:nowrap;margin-top:8px;
+}
+#screen-resonance-tower .resonance-tower-ornament{
+  width:76%;height:13px;display:flex;align-items:center;justify-content:center;
+  margin-top:4px;font:13px/1 'Cinzel',serif;color:#dfc99a;
+  border-top:1px solid rgba(233,211,165,.6);
+}
+#screen-resonance-tower .resonance-tower-intro p{
+  margin:9px 0 0;color:#fff4e1;
+  font:500 clamp(9px,2.5vw,13px)/1.9 'Noto Serif JP',serif;
+  letter-spacing:.07em;
+}
+#screen-resonance-tower .resonance-tower-actions{
+  position:absolute;z-index:3;right:1%;top:0;
+  display:flex;gap:clamp(7px,2vw,13px);
+}
+#screen-resonance-tower .resonance-tower-menu{
+  appearance:none;display:flex;flex-direction:column;align-items:center;gap:5px;
+  padding:0;border:0;box-shadow:none;background:transparent;
+  color:#302d2b;font:600 clamp(8px,2.2vw,11px)/1.3 'Noto Serif JP',serif;
+  white-space:nowrap;cursor:pointer;text-shadow:0 1px 4px rgba(255,255,255,.9);
+}
+#screen-resonance-tower .resonance-tower-menu-diamond{
+  width:clamp(29px,9vw,40px);height:clamp(29px,9vw,40px);
+  display:flex;align-items:center;justify-content:center;
+  transform:rotate(45deg) scale(.78);
+  background:linear-gradient(145deg,rgba(80,68,58,.92),rgba(150,126,94,.76));
+  border:1px solid #bfa882;
+  box-shadow:0 0 0 2px rgba(60,49,40,.38),0 2px 5px rgba(0,0,0,.33);
+}
+#screen-resonance-tower .resonance-tower-menu-diamond svg{
+  width:72%;height:72%;transform:rotate(-45deg);color:#fff3d2;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.5));
+}
+#screen-resonance-tower .resonance-tower-floor-list{
+  position:absolute;z-index:2;right:0;top:17%;bottom:8%;
+  width:46%;display:grid;
+  grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1.15fr) repeat(9,minmax(0,1fr));
+  gap:clamp(2px,.52dvh,5px);min-height:0;overflow:hidden;
+}
+#screen-resonance-tower .resonance-tower-floor{
+  --floor-bg-position:50%;
+  position:relative;min-height:0;height:100%;width:100%;padding:0 6px;
+  display:flex;align-items:center;justify-content:flex-start;
+  gap:clamp(4px,1.4vw,9px);
+  border:1px solid rgba(225,220,206,.55);border-radius:0;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 2px 4px rgba(13,12,12,.26);
+  background:linear-gradient(90deg,rgba(30,28,30,.79) 0%,rgba(44,40,46,.62) 57%,rgba(19,19,25,.26) 100%),
+      url('../images/zankyou_bg.webp') var(--floor-bg-position) 50% / 220% auto no-repeat;
+  color:#f6eee6;cursor:pointer;text-align:left;overflow:hidden;
+  font-family:'Noto Serif JP',serif;text-shadow:0 1px 3px rgba(0,0,0,.8);
+}
+#screen-resonance-tower .resonance-tower-floor.is-trial{
+  border-color:rgba(208,158,148,.77);
+  background:linear-gradient(90deg,rgba(78,39,41,.91),rgba(122,53,55,.65) 65%,rgba(73,38,46,.48)),
+    url('../images/zankyou_bg.webp') var(--floor-bg-position) 50% / 220% auto no-repeat;
+}
+#screen-resonance-tower .resonance-tower-floor.is-final{
+  background:linear-gradient(90deg,rgba(254,250,234,.97) 0%,rgba(248,235,206,.87) 61%,rgba(250,243,229,.3) 100%),
+    url('../images/zankyou_bg.webp') 50% 35% / 220% auto no-repeat;
+  border-color:#fff1cc;color:#382b21;text-shadow:0 1px 2px rgba(255,255,255,.85);
+}
+#screen-resonance-tower .resonance-tower-floor.is-selected{
+  outline:1px solid rgba(255,236,188,.85);outline-offset:-3px;
+  box-shadow:0 0 0 1px rgba(243,222,165,.58),0 0 12px rgba(252,229,178,.46);
+}
+#screen-resonance-tower .resonance-tower-floor:focus-visible{outline:2px solid #fff0bf;outline-offset:-3px;}
+#screen-resonance-tower .resonance-tower-floor-no{
+  font:400 clamp(17px,5vw,26px)/1 'Cinzel',serif;
+  letter-spacing:-.035em;color:inherit;flex:0 0 36%;
+  white-space:nowrap;
+}
+#screen-resonance-tower .resonance-tower-floor-copy{
+  min-width:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;
+  gap:clamp(0px,.3dvh,4px);
+}
+#screen-resonance-tower .resonance-tower-floor-name{
+  font:500 clamp(9px,2.8vw,13px)/1.2 'Noto Serif JP',serif;letter-spacing:.08em;white-space:nowrap;
+}
+#screen-resonance-tower .resonance-tower-floor-label{
+  font:400 clamp(8px,2.35vw,11px)/1.2 'Noto Serif JP',serif;letter-spacing:.06em;white-space:nowrap;
+}
+#screen-resonance-tower .resonance-tower-floor.is-trial .resonance-tower-floor-label{
+  border-radius:0;background:rgba(178,74,75,.63);padding:1px 5px;
+}
+#screen-resonance-tower .resonance-tower-trial-tag{display:none;}
+#screen-resonance-tower .resonance-tower-oath{
+  position:absolute;z-index:2;left:0;bottom:2%;width:51%;
+  box-sizing:border-box;padding:clamp(7px,1.4dvh,14px) 6px 6px;
+  border:1px solid rgba(255,246,219,.55);
+  background:linear-gradient(180deg,rgba(24,22,25,.52),rgba(27,24,26,.70));
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.12),0 4px 13px rgba(0,0,0,.3);
+  color:#fff0d5;text-align:center;text-shadow:0 1px 4px rgba(0,0,0,.8);
+}
+#screen-resonance-tower .resonance-tower-oath-star{
+  color:#edd8a3;font:clamp(17px,4.7vw,29px)/1 'Noto Serif JP',serif;margin-bottom:3px;
+}
+#screen-resonance-tower .resonance-tower-oath h2{
+  margin:0;color:#ffe8bd;
+  font:500 clamp(11px,3.5vw,17px)/1.5 'Noto Serif JP',serif;
+  letter-spacing:.11em;
+}
+#screen-resonance-tower .resonance-tower-oath h2 span{font-size:.75em;font-weight:400;}
+#screen-resonance-tower .resonance-tower-oath p{
+  margin:7px 0 9px;
+  font:400 clamp(8px,2.25vw,11px)/1.7 'Noto Serif JP',serif;
+  letter-spacing:.025em;
+}
+#screen-resonance-tower .resonance-tower-week-note{
+  display:flex;justify-content:center;align-items:center;gap:5px;
+  min-height:26px;border:1px solid rgba(236,217,177,.45);
+  background:rgba(35,31,31,.6);font-size:clamp(8px,2vw,10px);white-space:nowrap;
+}
+#screen-resonance-tower .resonance-tower-week-note small{
+  font-size:clamp(6px,1.6vw,8px);color:#eee0c7;
+}
+#screen-resonance-tower .resonance-tower-availability{
+  position:absolute;bottom:0;left:2px;z-index:3;color:rgba(253,246,230,.72);
+  font:8px/1 'Noto Serif JP',serif;letter-spacing:.02em;
+}
+#screen-resonance-tower .resonance-tower-panel-layer[hidden]{display:none !important;}
+#screen-resonance-tower .resonance-tower-panel-layer{
+  position:absolute;z-index:210;inset:0;display:flex;align-items:center;justify-content:center;
+  padding:20px;box-sizing:border-box;
+}
+#screen-resonance-tower .resonance-tower-panel-shade{
+  position:absolute;inset:0;background:rgba(19,18,22,.64);
+}
+#screen-resonance-tower .resonance-tower-panel{
+  position:relative;z-index:1;width:min(100%,340px);box-sizing:border-box;
+  padding:28px 22px 18px;
+  background:linear-gradient(150deg,rgba(249,246,234,.97),rgba(223,211,190,.97));
+  border:1px solid #d7bd84;box-shadow:0 7px 30px rgba(0,0,0,.35);
+  color:#433a30;text-align:center;
+}
+#screen-resonance-tower .resonance-tower-panel-close{
+  position:absolute;right:9px;top:4px;border:none;box-shadow:none;background:transparent;
+  font-size:25px;color:#796448;cursor:pointer;
+}
+#screen-resonance-tower .resonance-tower-panel-kicker{
+  font:9px/1.5 'Cinzel',serif;letter-spacing:.18em;color:#947858;
+}
+#screen-resonance-tower .resonance-tower-panel h2{font:500 20px/1.5 'Noto Serif JP',serif;margin:10px 0;}
+#screen-resonance-tower .resonance-tower-panel p{font:12px/1.9 'Noto Serif JP',serif;}
+#screen-resonance-tower .resonance-tower-panel-foot{color:#86745a;font-size:10px!important;}
+#screen-resonance-tower .resonance-tower-panel-dismiss{
+  padding:9px 30px;border:1px solid #ad9770;background:rgba(254,252,243,.8);
+  color:#5a4c3a;font:12px 'Noto Serif JP',serif;cursor:pointer;
+}
+@media(max-width:365px){
+  #screen-resonance-tower .resonance-tower-intro h1{font-size:clamp(22px,7.25vw,27px);}
+  #screen-resonance-tower .resonance-tower-floor-no{flex-basis:34%;font-size:clamp(16px,5vw,19px);}
+  #screen-resonance-tower .resonance-tower-floor-name{font-size:9px;}
+  #screen-resonance-tower .resonance-tower-floor-label{font-size:8px;}
+  #screen-resonance-tower .resonance-tower-oath{width:52%;}
+}
+@media(max-height:730px){
+  #screen-resonance-tower .resonance-tower-composition{
+    top:calc(env(safe-area-inset-top) + 78px);
+    bottom:calc(70px + env(safe-area-inset-bottom) + 4px);
+  }
+  #screen-resonance-tower .resonance-tower-floor-list{top:17%;bottom:8%;}
+  #screen-resonance-tower .resonance-tower-intro{top:9%;}
+  #screen-resonance-tower .resonance-tower-intro p{margin-top:5px;}
+  #screen-resonance-tower .resonance-tower-oath{bottom:2%;padding-top:6px;}
+  #screen-resonance-tower .resonance-tower-oath p{margin:4px 0 6px;}
+}
+@media(max-height:580px){
+  #screen-resonance-tower .resonance-tower-composition{top:calc(env(safe-area-inset-top) + 66px);bottom:calc(62px + env(safe-area-inset-bottom) + 2px);}
+  #screen-resonance-tower .resonance-tower-floor-list{top:17%;bottom:8%;}
+  #screen-resonance-tower .resonance-tower-intro{top:8%;}
+  #screen-resonance-tower .resonance-tower-ornament{height:6px;margin-top:0;}
+  #screen-resonance-tower .resonance-tower-intro p{line-height:1.45;}
+  #screen-resonance-tower .resonance-tower-oath-star{display:none;}
+  #screen-resonance-tower .resonance-tower-oath p{line-height:1.4;}
+  #screen-resonance-tower .resonance-tower-week-note{min-height:19px;}
+}

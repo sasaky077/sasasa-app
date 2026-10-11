@@ -1,4 +1,4 @@
 {
-  "build": 1341,
-  "note": "Fix Nina (36) and Olivia (40) rarity mapping to SR in all client character views and combat; gacha server rates unchanged."
+  "build": 1342,
+  "note": "ECHO TOWER fullscreen no-scroll floor selection using supplied zankyou_bg.webp; existing HUD/nav retained; battle/rewards remain unconnected."
 }
