@@ -20819,6 +20819,10 @@
             if (amount && typeof window.showToast === 'function') {
               window.showToast(`記憶の欠片 ×${amount} を入手しました。`);
             }
+            if(typeof window.loadInventoryFromSupabase === 'function' && typeof userId !== 'undefined'){
+              try { await window.loadInventoryFromSupabase(userId); }
+              catch(refreshError){ console.warn('[story memory fragments] inventory refresh failed', refreshError); }
+            }
             const status = await sb.rpc('get_story_memory_fragment_status');
             if (!status.error) {
               localStorage.setItem('zeraphia_memory_fragment_claim_keys_v1',JSON.stringify(status.data?.claimed_keys || []));

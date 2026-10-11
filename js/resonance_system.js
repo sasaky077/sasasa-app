@@ -73,6 +73,16 @@ function getCharacterResonanceConfig(target){
 window.getCharacterResonanceConfig = getCharacterResonanceConfig;
 
 var evolutionMaterials = loadEvolutionMaterialsFromLocal();
+// build1334: クラウド再読込後も、起動時の素材スナップショットを使い続けない。
+window.addEventListener('zeraphia:evolution-materials-cloud-loaded', function(event){
+  var payload = event && event.detail;
+  if(!payload || typeof payload !== 'object' || Array.isArray(payload)){
+    payload = loadEvolutionMaterialsFromLocal();
+  }
+  evolutionMaterials = Object.assign({}, payload);
+  if(typeof updateZukanLimitBreakNotice === 'function') updateZukanLimitBreakNotice();
+});
+
 
 function loadEvolutionMaterialsFromLocal(){
   try {
@@ -449,11 +459,101 @@ function getAutoLimitBreakMaterial(target){
 }
 
 
+// build1334: ストーリー加入キャラの素材消費と突破Lv保存はサーバーで原子的に確定。
+async function executeStoryLimitBreakSecure(target, vesselId, options){
+  if(!target || !isStoryLimitBreakCharacter(target)) return false;
+  var level = Math.max(0, Number(target.limitBreak || 0));
+  if(level >= MAX_LIMIT_BREAK){
+    showToast('限界突破LvはすでにMAXです');
+    return false;
+  }
+  var status = getLimitBreakMaterialStatus(target, vesselId);
+  if(!status.canLimitBreak){
+    showToast('限界突破素材が不足しています');
+    return false;
+  }
+  var choice = status.recipe.soulVesselId;
+  if(!choice){
+    showToast('魂の器を選択してください');
+    return false;
+  }
+  try {
+    if(!sb || typeof sb.rpc !== 'function') throw new Error('サーバーに接続できません');
+    var args = {
+      p_character_id: Number(target.id),
+      p_expected_level: level,
+      p_soul_vessel_id: choice,
+      p_character_row_id: target.db_id != null ? Number(target.db_id) : null
+    };
+    var response = await sb.rpc('secure_story_character_limit_break', args);
+    if(response.error) throw response.error;
+    var result = response.data;
+    if(!result || result.ok !== true || Number(result.limit_break) !== level + 1){
+      throw new Error('限界突破の確定結果を確認できませんでした');
+    }
+
+    target.limitBreak = Number(result.limit_break);
+    target.db_id = result.character_row_id;
+    target.stats = result.stats || applyLimitBreakStats(target.baseStats || {}, target.limitBreak, target.rarity, target.id);
+
+    // 即時表示用。再読込もサーバーから行い、他のアイテム画面を含めて整合させる。
+    var balances = result.balances || {};
+    Object.keys(balances).forEach(function(id){
+      var n = Math.max(0, Number(balances[id] || 0));
+      if(n > 0) evolutionMaterials[id] = n;
+      else delete evolutionMaterials[id];
+    });
+    saveEvolutionMaterialsToLocal();
+    try {
+      if(typeof window.loadInventoryFromSupabase === 'function'){
+        await window.loadInventoryFromSupabase(userId);
+      }
+    } catch(syncError){
+      console.warn('[Resonance] server commit succeeded; inventory refresh deferred', syncError);
+    }
+
+    try {
+      renderBox();
+      updateMainUI();
+      if(currentZukanMainTab !== 'box') showDetail(target, false);
+      if(typeof updateZukanLimitBreakNotice === 'function') updateZukanLimitBreakNotice();
+    } catch(renderError) {
+      // サーバーの突破確定後にUI更新で失敗しても、二重消費や再試行はしない。
+      console.warn('[Resonance] secure limit break committed; UI refresh failed', renderError);
+    }
+    var completeText = document.getElementById('lb-complete-text');
+    if(completeText){
+      var bonus = getResonanceBonusMaster(target);
+      var unlocked = bonus && bonus[target.limitBreak];
+      completeText.textContent = '共鳴Lvが ' + target.limitBreak + ' になりました。' +
+        (unlocked ? ' 「' + unlocked.title + '」を解放しました。' : '');
+    }
+    if(!(options && options.silent)){
+      var completeModal = document.getElementById('limitbreak-complete-modal');
+      if(completeModal) completeModal.classList.add('active');
+    }
+    return true;
+  } catch(err){
+    console.error('[Resonance] story limit break rejected',err);
+    var message = String(err && err.message || '');
+    if(/insufficient|不足/i.test(message)) showToast('素材が不足しています。所持数を更新して確認してください');
+    else if(/level changed|reload/i.test(message)) showToast('共鳴Lvが更新されています。画面を開き直してください');
+    else showToast('限界突破を確定できませんでした。通信状態をご確認ください');
+    try {
+      if(typeof window.loadInventoryFromSupabase === 'function') await window.loadInventoryFromSupabase(userId);
+    } catch(_){}
+    return false;
+  }
+}
+
 async function executeLimitBreak(target, material, selectedSoulVesselId, options){
 
-  if(!target) return;
+  if(!target) return false;
+  if(isStoryLimitBreakCharacter(target)){
+    return await executeStoryLimitBreakSecure(target, selectedSoulVesselId, options);
+  }
   var isEri = Number(target.id) === 1;
-  if(!isStoryLimitBreakCharacter(target) && !material) return;
+  if(!material) return false;
 
   var currentLb = target.limitBreak || 0;
 

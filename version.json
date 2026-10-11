@@ -1,4 +1,4 @@
 {
-  "build": 1333,
-  "note": "Fix LeonaCross portrait to left and Mimosa portrait to right across story chapters, including explicit and automatic cast layout. Dialogue, gameplay and portrait mappings unchanged."
+  "build": 1334,
+  "note": "Fix story memory fragment ownership and limit-break consumption: refresh authoritative Supabase inventory, atomic server-side story resonance upgrade, correct cloud material cache synchronization."
 }

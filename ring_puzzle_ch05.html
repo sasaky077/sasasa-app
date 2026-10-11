@@ -73,7 +73,7 @@ button:active{filter:brightness(.93)}button:focus-visible{outline:2px solid var(
   <p class="status" id="status">つながった線　<b id="count">0</b> / <span id="total">4</span><span id="statusNote"></span></p>
 
   <div class="controls">
-    <button type="button" id="hintBtn">ヒント</button>
+    <button type="button" id="hintBtn">ヒント（残り2）</button>
     
   </div>
 
@@ -81,7 +81,7 @@ button:active{filter:brightness(.93)}button:focus-visible{outline:2px solid var(
     <button type="button" data-mode="easy" aria-pressed="false">三つの輪</button>
     <button type="button" data-mode="linked" aria-pressed="true">四つの輪・連動</button>
   </div>
-  <p class="note" id="modeNote">連動：触れた輪の、すぐ内側の輪も一緒に回ります。</p>
+  <p class="note" id="modeNote" style="display:none"></p>
   <p class="sr" aria-live="polite" id="live"></p>
 </main>
 
@@ -112,6 +112,10 @@ button:active{filter:brightness(.93)}button:focus-visible{outline:2px solid var(
   let solved = false;
   let evalTimer = 0, idleTimer = 0;
   let fixedEls = {};
+  const HINT_MAX = 2;            // ヒントは2回まで
+  let hintsLeft = HINT_MAX;
+  const hintBtn = document.getElementById('hintBtn');
+  const updateHintBtn = () => { hintBtn.textContent = `ヒント（残り${hintsLeft}）`; hintBtn.disabled = solved || hintsLeft <= 0; };
 
   const mod = (a, m) => ((a % m) + m) % m;
   const rand = n => Math.floor(Math.random() * n);
@@ -243,11 +247,12 @@ button:active{filter:brightness(.93)}button:focus-visible{outline:2px solid var(
     } while (follow(rings, rings.map(r => r.rot), notch).solved);
     rings.forEach(r => { r.deg = r.rot * 45; });
 
+    hintsLeft = HINT_MAX; updateHintBtn();
     draw();
     totalEl.textContent = String(count + 1);
     guide.innerHTML = mode === 'linked'
-      ? '輪に触れると、その輪と、すぐ内側の輪が一緒に回る。<br>入口から円盤の切れ込みまで、紋様を一本につなげよう。'
-      : 'どの輪にも、通り抜ける線が三本ある。<br>入口から円盤の切れ込みまで、一本につながる組み合わせを探そう。';
+      ? '輪に触れると、その輪と、すぐ内側の輪が一緒に回る。<br>外側の円から内側の円まで、線を一本につなげよう。'
+      : '輪に触れると、その輪と、すぐ内側の輪が一緒に回る。<br>外側の円から内側の円まで、線を一本につなげよう。';
     guide.style.opacity = 1;
     evaluate(true);
     armIdleHint();
@@ -322,6 +327,7 @@ button:active{filter:brightness(.93)}button:focus-visible{outline:2px solid var(
 
   function win() {
     solved = true;
+    updateHintBtn();
     clearTimeout(idleTimer);
     setTimeout(() => {
       svg.classList.add('solved');
@@ -384,7 +390,7 @@ button:active{filter:brightness(.93)}button:focus-visible{outline:2px solid var(
     return plan;
   }
   function showHint() {
-    if (solved || !solutions.length) return;
+    if (solved || !solutions.length || hintsLeft <= 0) return;
     let bestPlan = null;
     solutions.forEach(sol => {
       const plan = tapsTo(sol);
@@ -393,15 +399,16 @@ button:active{filter:brightness(.93)}button:focus-visible{outline:2px solid var(
     });
     const i = bestPlan.plan.findIndex(t => t > 0);
     if (i < 0) return;
+    hintsLeft--; updateHintBtn();
     const g = rings[i].el;
     g.classList.remove('hint');
     void g.getBoundingClientRect();
     g.classList.add('hint');
     live.textContent = `外側から${i + 1}番目の輪を回してみよう。`;
   }
+  // 放置時の自動ヒントは、回数制限を回避できてしまうため使わない
   function armIdleHint() {
     clearTimeout(idleTimer);
-    idleTimer = setTimeout(showHint, 40000);
   }
 
   document.getElementById('hintBtn').addEventListener('click', showHint);
