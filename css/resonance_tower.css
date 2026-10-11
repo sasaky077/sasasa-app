@@ -68,7 +68,7 @@ html body #screen-resonance-tower.resonance-tower-screen.active{display:block !i
   letter-spacing:.07em;
 }
 #screen-resonance-tower .resonance-tower-actions{
-  position:absolute;z-index:3;right:1%;top:0;
+  position:absolute;z-index:3;right:1%;top:10px;
   display:flex;gap:clamp(7px,2vw,13px);
 }
 #screen-resonance-tower .resonance-tower-menu{

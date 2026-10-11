@@ -1,4 +1,4 @@
 {
-  "build": 1342,
-  "note": "ECHO TOWER fullscreen no-scroll floor selection using supplied zankyou_bg.webp; existing HUD/nav retained; battle/rewards remain unconnected."
+  "build": 1343,
+  "note": "Move ECHO TOWER ranking/reward diamonds down 10px to avoid clipping; explicitly load tower CSS."
 }
