@@ -424,6 +424,9 @@
   <link rel="stylesheet" href="css/skin_system.css?v=1069-skin-controls-fullscreen">
   <link rel="stylesheet" href="css/score_attack_chrome.css?v=696-score-self-badge-corner">
   <link rel="stylesheet" href="css/app_chrome.css?v=693-score-ranking-nav-v2">
+  <link rel="stylesheet" href="css/junkou_top.css?v=1357-story-title-six">
+  <link rel="stylesheet" href="css/story_stage_select.css?v=1365-reward-tile">
+  <link rel="stylesheet" href="css/character_list.css?v=1368-translucent-header">
 
   <style id="item-page-build682-fixes">
     /* build682: item page visual alignment */
@@ -3436,52 +3439,93 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
   <div class="loading-txt">LOADING...</div>
 </div>
 
-<div id="screen-ninmu" class="screen app-page app-page--standard">
-  <header class="app-page-header">
-    <button type="button" class="app-page-back" onclick="showMainTab('main')">＜戻る</button>
-    <div class="app-page-heading"><h1 class="app-page-title">巡行</h1></div>
+<div id="screen-ninmu" class="screen app-page app-page--standard junkou-rebuilt" data-junkou-cat="daily">
+  <header class="app-page-header junkou-page-header">
+    <button type="button" class="app-page-back junkou-page-back" onclick="showMainTab('main')">〈 戻る</button>
+    <div class="app-page-heading junkou-page-heading">
+      <h1 class="app-page-title">巡行</h1>
+      <div class="junkou-heading-en">QUEST</div>
+    </div>
     <div class="app-page-action"></div>
   </header>
 
-  <div class="app-page-content ninmu-layout">
-    <div class="ninmu-left" aria-label="巡行カテゴリ">
-      <button class="ninmu-cat-item active" id="ninmu-cat-daily" onclick="switchNinmuCat('daily')">
-        <span class="ninmu-cat-jp">デイリー</span><span class="ninmu-cat-en">DAILY</span>
+  <div class="app-page-content ninmu-layout junkou-workspace">
+    <nav class="ninmu-left junkou-tabs" aria-label="巡行カテゴリ">
+      <button type="button" class="ninmu-cat-item junkou-tab active" id="ninmu-cat-daily" onclick="switchNinmuCat('daily')" aria-label="デイリー">
+        <span class="junkou-tab-icon" aria-hidden="true">✧</span>
+        <span class="ninmu-cat-jp">デイリー</span>
+        <span class="ninmu-cat-en">DAILY</span>
       </button>
-      <button class="ninmu-cat-item" id="ninmu-cat-special" onclick="switchNinmuCat('special')">
-        <span class="ninmu-cat-jp">特別邂逅</span><span class="ninmu-cat-en">SPECIAL</span>
+      <button type="button" class="ninmu-cat-item junkou-tab" id="ninmu-cat-special" onclick="switchNinmuCat('special')" aria-label="特別巡行">
+        <span class="junkou-tab-icon" aria-hidden="true">✥</span>
+        <span class="ninmu-cat-jp">特別巡行</span>
+        <span class="ninmu-cat-en">SPECIAL</span>
       </button>
-      <button class="ninmu-cat-item" id="ninmu-cat-story" onclick="switchNinmuCat('story')">
-        <span class="ninmu-cat-jp">ストーリー</span><span class="ninmu-cat-en">STORY</span>
+      <button type="button" class="ninmu-cat-item junkou-tab" id="ninmu-cat-story" onclick="switchNinmuCat('story')" aria-label="ストーリー">
+        <span class="junkou-tab-icon" aria-hidden="true">♧</span>
+        <span class="ninmu-cat-jp">ストーリー</span>
+        <span class="ninmu-cat-en">STORY</span>
       </button>
-    </div>
+    </nav>
 
-    <div class="ninmu-right">
-      <div id="ninmu-panel-daily" class="ninmu-panel">
-        <div class="ninmu-chapter-list">
-          <div class="ninmu-chapter-item shooting-entry-card daily-stage-entry-card"
-               onclick="showDailyStageSelect()"
-               role="button"
-               tabindex="0"
-               aria-label="デイリー巡行">
-            <div class="ninmu-chapter-label">DAILY QUEST</div>
-            <div class="ninmu-chapter-title">デイリー巡行</div>
+    <div class="ninmu-right junkou-panel-column">
+      <div id="ninmu-panel-daily" class="ninmu-panel junkou-daily-content">
+        <button class="junkou-feature" type="button" onclick="showDailyStageSelect()" aria-label="デイリー巡行のステージ選択を開く">
+          <span class="junkou-feature-picture">
+            <img src="images/icon_dairy_top.webp" alt="" decoding="async">
+          </span>
+          <span class="junkou-feature-copy">
+            <span class="junkou-feature-kicker">DAILY QUEST</span>
+            <span class="junkou-feature-title">デイリー巡行</span>
+            <span class="junkou-feature-line" aria-hidden="true"><i></i></span>
+            <span class="junkou-feature-desc">毎日挑戦できるクエストです。<br>育成に必要な素材を獲得できます。</span>
+            <span class="junkou-feature-enter" aria-hidden="true">›</span>
+          </span>
+        </button>
+        <section class="junkou-reward-section" aria-label="デイリー巡行の主な獲得アイテム">
+          <div class="junkou-reward-heading"><span>✧</span><strong>主な獲得アイテム</strong><span>✧</span></div>
+          <div class="junkou-reward-grid">
+            <div class="junkou-reward-item">
+              <img src="images/junkou_reward_kyoumei.webp" alt="" decoding="async">
+              <span>限界突破素材</span>
+            </div>
+            <div class="junkou-reward-item">
+              <img src="images/junkou_reward_exp_gold.webp" alt="" decoding="async">
+              <span>経験値素材</span>
+            </div>
           </div>
-        </div>
+        </section>
       </div>
-
       <div id="ninmu-panel-special" class="ninmu-panel" style="display:none">
-        <div class="ninmu-chapter-list">
-          <div class="ninmu-chapter-item shooting-entry-card" onclick="openShootingEvent()" role="button" tabindex="0" aria-label="SPECIAL EVENT 無貌の天使">
-            <div class="ninmu-chapter-label">SPECIAL EVENT</div>
-            <div class="ninmu-chapter-title">無貌の天使</div>
-            <div class="roguelite-card-boss-art" aria-hidden="true"><img src="images/enemy_faceless_panel.webp" alt=""></div>
-          </div>
-          <div class="ninmu-chapter-item shooting-entry-card shooting-special-ticket-card noah-stage-entry-card" data-open-noah-piece role="button" tabindex="0" aria-label="SPECIAL STAGE 楽園 -ノア-">
-            <div class="ninmu-chapter-label">SPECIAL STAGE</div>
-            <div class="ninmu-chapter-title">楽園 -ノア-</div>
-                        <div class="special-ticket-balance"><span>SPECIAL TICKET -ノア-</span><b id="special-ticket-count">--</b>枚</div>
-          </div>
+        <div class="junkou-special-list" aria-label="特別巡行ステージ一覧">
+          <button type="button" class="junkou-special-card junkou-special-card-event shooting-entry-card" onclick="openShootingEvent()" aria-label="SPECIAL EVENT 無貌の天使">
+            <span class="junkou-special-copy">
+              <span class="junkou-special-kicker">SPECIAL EVENT</span>
+              <span class="junkou-special-rule" aria-hidden="true"></span>
+              <span class="junkou-special-title">無貌の天使</span>
+            </span>
+            <span class="junkou-special-art" aria-hidden="true">
+              <img src="images/icon_event_01.webp" alt="">
+            </span>
+            <span class="junkou-special-play" aria-hidden="true"><img src="images/special_play_button.webp" alt=""></span>
+          </button>
+
+          <button type="button" class="junkou-special-card junkou-special-card-ticket shooting-entry-card shooting-special-ticket-card noah-stage-entry-card" data-open-noah-piece aria-label="SPECIAL STAGE 楽園 -ノア-">
+            <span class="junkou-special-copy">
+              <span class="junkou-special-kicker">SPECIAL STAGE</span>
+              <span class="junkou-special-rule" aria-hidden="true"></span>
+              <span class="junkou-special-title">楽園 -ノア-</span>
+              <span class="junkou-special-ticket-balance">
+                <img src="images/special_stage_ticket.webp" alt="" decoding="async">
+                <span>SPECIAL TICKET -ノア-</span>
+                <b id="special-ticket-count">--</b><span class="junkou-special-ticket-unit">枚</span>
+              </span>
+            </span>
+            <span class="junkou-special-art" aria-hidden="true">
+              <img src="images/icon_event_99.webp" alt="">
+            </span>
+            <span class="junkou-special-play" aria-hidden="true"><img src="images/special_play_button.webp" alt=""></span>
+          </button>
         </div>
       </div>
 
@@ -3499,8 +3543,8 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
       </div>
 
       <div id="ninmu-panel-story" class="ninmu-panel" style="display:none">
-        <div class="ninmu-chapter-list" id="story-chapter-list">
-          <!-- CHAPTER 01〜08 は stage_select.js の進捗ロジックで描画 -->
+        <div class="ninmu-chapter-list junkou-story-list" id="story-chapter-list">
+          <!-- CHAPTER 01〜08 は STORYタブ専用の装飾リストとして描画 -->
         </div>
       </div>
 
@@ -3831,7 +3875,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
   </div>
 </div>
 
-<div id="screen-zukan" class="screen app-page app-page--standard is-primoa-mode">
+<div id="screen-zukan" class="screen app-page app-page--standard is-primoa-mode zchar-redesign">
   <header class="app-page-header">
     <button id="zukan-detail-back" class="app-page-back" type="button" onclick="showMainTab('main')">＜戻る</button>
     <div class="app-page-heading"><h1 class="app-page-title" id="zukan-header-title">キャラ一覧</h1></div>
@@ -9854,11 +9898,17 @@ startTitleBgm();
       if (!window.requireChapter03ContentUnlock()) return false;
     }
 
+    var junkouRoot = document.getElementById('screen-ninmu');
+    if (junkouRoot) junkouRoot.dataset.junkouCat = cat;
+
     ['daily','special','story'].forEach(function(c){
       var btn   = document.getElementById('ninmu-cat-' + c);
       var panel = document.getElementById('ninmu-panel-' + c);
       var active = (c === cat);
-      if(btn)   btn.classList.toggle('active', active);
+      if(btn) {
+        btn.classList.toggle('active', active);
+        btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+      }
       if(panel) panel.style.display = active ? '' : 'none';
     });
 
@@ -14769,18 +14819,22 @@ function showTenResult(results){
       : ' disabled aria-disabled="true"';
 
     return '' +
-      '<button class="primoa-index-card element-' + elementKey + ' rarity-' + rarityKey + ' ' + (owned ? 'is-owned' : 'is-unowned') + (canLimitBreak ? ' can-limit-break' : '') + (canLevelUp ? ' can-level-up' : '') + (isMaxLimitBreak ? ' is-max-limitbreak' : '') + '" type="button"' + interactionAttr + ' aria-label="' + detailEscapeHTML(name + '・' + rarityLabel + lbAria) + '">' +
-        (canGrow ? '<span class="primoa-index-limitbreak-dot" aria-label="育成可能"></span>' : '') +
-        '<span class="primoa-index-image-wrap zimg-placeholder">' +
-          '<img class="primoa-index-image zimg-lazy zimg-loading" ' +
-            'src="' + detailEscapeHTML(panelSrc) + '" ' +
-            'data-zimg-original="' + detailEscapeHTML(panelSrc) + '" ' +
-            'loading="eager" decoding="async" fetchpriority="auto" ' +
-            'alt="' + detailEscapeHTML(name) + '">' +
-          getElementCornerIconHTML(chara, 'primoa-index-element-icon') +
+      '<button class="primoa-index-card zchar-card element-' + elementKey + ' rarity-' + rarityKey + ' ' + (owned ? 'is-owned' : 'is-unowned') + (canLimitBreak ? ' can-limit-break' : '') + (canLevelUp ? ' can-level-up' : '') + (isMaxLimitBreak ? ' is-max-limitbreak' : '') + '" type="button"' + interactionAttr + ' aria-label="' + detailEscapeHTML(name + '・' + rarityLabel + lbAria) + '">' +
+        '<span class="zchar-portrait-shell">' +
+          '<span class="primoa-index-image-wrap zchar-portrait zimg-placeholder">' +
+            '<img class="primoa-index-image zchar-image zimg-lazy zimg-loading" ' +
+              'src="' + detailEscapeHTML(panelSrc) + '" ' +
+              'data-zimg-original="' + detailEscapeHTML(panelSrc) + '" ' +
+              'loading="eager" decoding="async" fetchpriority="auto" ' +
+              'alt="' + detailEscapeHTML(name) + '">' +
+          '</span>' +
+          getElementCornerIconHTML(chara, 'primoa-index-element-icon zchar-attribute') +
+          (canGrow ? '<span class="primoa-index-limitbreak-dot zchar-notice" aria-label="育成可能"></span>' : '') +
         '</span>' +
-        '<span class="primoa-index-name">' + (owned ? ('Lv.' + currentLevel) : '未所持') + '</span>' +
-        (owned ? ('<span class="primoa-index-lb" aria-hidden="true">' + limitBreakDots + '</span>') : '<span class="primoa-index-lb primoa-index-lb-unowned" aria-hidden="true"></span>') +
+        '<span class="zchar-meta">' +
+          '<span class="primoa-index-name zchar-level">' + (owned ? ('Lv.' + currentLevel) : '未所持') + '</span>' +
+          (owned ? ('<span class="primoa-index-lb zchar-resonance" aria-label="限界突破 ' + lb + '/' + lbMax + '">' + limitBreakDots + '</span>') : '<span class="primoa-index-lb primoa-index-lb-unowned zchar-resonance" aria-hidden="true"></span>') +
+        '</span>' +
       '</button>';
   }
 
@@ -18722,7 +18776,98 @@ function fadeOutOpeningBgm(){
 <script src="js/shooting_characters.js?v=1341-nina-olivia-sr"></script>
 <script src="js/story_scenario.js?v=1336-ch06-paper-reveal"></script>
 <script src="js/story_novel.js?v=1333-cast-sides"></script>
-<script src="js/stage_select.js?v=1345-ring-rich-ui"></script>
+<script src="js/stage_select.js?v=1365-reward-tile"></script>
+
+<script>
+(function(){
+  'use strict';
+
+  function escapeHtml(text){
+    return String(text == null ? '' : text).replace(/[&<>"']/g, function(ch){
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[ch]) || ch;
+    });
+  }
+
+  function getStoryTitle(chapter){
+    try {
+      const titles = window.ShootingStages && window.ShootingStages.SHOOTING_CHAPTER_TITLES;
+      if (titles && titles[chapter]) return String(titles[chapter]);
+    } catch (_) {}
+    return '未定';
+  }
+
+  function isUnlockedChapter(chapter, mode){
+    try {
+      if (typeof window.isStoryChapterUnlocked === 'function') return !!window.isStoryChapterUnlocked(chapter, mode || 'normal');
+    } catch (_) {}
+    return Number(chapter) === 1;
+  }
+
+  function openChapter(chapter, mode){
+    if (!isUnlockedChapter(chapter, mode)) {
+      if (typeof window.showToast === 'function') {
+        window.showToast('解放されていません');
+      } else {
+        alert('解放されていません');
+      }
+      return;
+    }
+    if (typeof window.openStageSelect === 'function') {
+      window.openStageSelect(chapter, mode || 'normal');
+    }
+  }
+
+  function renderStoryChapterListRich(mode){
+    const list = document.getElementById('story-chapter-list');
+    if (!list) return;
+    const min = 1;
+    const max = 8;
+    list.innerHTML = '';
+    list.classList.add('junkou-story-list');
+
+    for (let chapter = min; chapter <= max; chapter++) {
+      const unlocked = isUnlockedChapter(chapter, mode || 'normal');
+      const title = unlocked ? getStoryTitle(chapter) : '???';
+      const sixOrLess = Array.from(String(title)).length <= 6;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'ninmu-chapter-item story-chapter-item junkou-story-card' + (unlocked ? '' : ' is-locked');
+      button.setAttribute('aria-label', unlocked
+        ? 'CHAPTER ' + String(chapter).padStart(2, '0') + ' ' + title
+        : 'CHAPTER ' + String(chapter).padStart(2, '0') + ' 未解放');
+      button.innerHTML = '' +
+        '<span class="junkou-story-card-copy">' +
+          '<span class="junkou-story-card-kicker">CHAPTER:' + String(chapter).padStart(2, '0') + '</span>' +
+          '<span class="junkou-story-card-rule" aria-hidden="true"></span>' +
+          '<span class="junkou-story-card-title' + (sixOrLess ? ' is-six-or-less' : '') + '">' + escapeHtml(title) + '</span>' +
+        '</span>' +
+        '<span class="junkou-story-card-art"><img src="images/icon_story_01.webp" alt="" decoding="async"></span>' +
+        '<span class="junkou-story-card-arrow" aria-hidden="true">›</span>' +
+        (unlocked ? '' : '<span class="junkou-story-card-lock">LOCKED</span>');
+      button.addEventListener('click', function(){ openChapter(chapter, mode || 'normal'); });
+      list.appendChild(button);
+    }
+  }
+
+  window.renderStoryChapterList = renderStoryChapterListRich;
+
+  function refreshIfVisible(){
+    const root = document.getElementById('screen-ninmu');
+    if (root && root.dataset && root.dataset.junkouCat === 'story') {
+      renderStoryChapterListRich('normal');
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', refreshIfVisible, { once:true });
+  } else {
+    setTimeout(refreshIfVisible, 0);
+  }
+
+  window.addEventListener('pageshow', refreshIfVisible);
+})();
+</script>
+
 <!-- 32マス共有盤面バトル（新規追加） -->
 <link rel="stylesheet" href="css/battle_32_ui.css?v=593">
 <script src="js/remnant_blessings.js?v=593"></script>

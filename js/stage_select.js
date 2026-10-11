@@ -122,14 +122,107 @@
     const rank = record.bestRank || '—';
     const rankClass = record.bestRank ? ` rank-${record.bestRank.toLowerCase()}` : ' rank-none';
     return `
-      <div class="ss-stage-record" aria-label="ベスト記録">
-        <div class="ss-stage-record-rank${rankClass}">
+      <div class="zss-record" aria-label="ベスト記録">
+        <div class="zss-record-rank${rankClass}">
           <span>RANK</span><b>${rank}</b>
         </div>
-        <div class="ss-stage-record-score">
+        <div class="zss-record-score">
           <span>HIGH SCORE</span><b>${formatStoryShootingScore(record.highScore)}</b>
         </div>
       </div>`;
+  }
+
+  function escapeStageSelectHtml(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function(ch){
+      return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[ch] || ch;
+    });
+  }
+
+  const STORY_REWARD_ELEMENT = Object.freeze({
+    1: Object.freeze({ id:'light', name:'魂の器(光)', image:'images/type_light.webp' }),
+    2: Object.freeze({ id:'fire', name:'魂の器(火)', image:'images/type_fire.webp' }),
+    3: Object.freeze({ id:'wood', name:'魂の器(木)', image:'images/type_wood.webp' }),
+    4: Object.freeze({ id:'light', name:'魂の器(光)', image:'images/type_light.webp' }),
+    5: Object.freeze({ id:'dark', name:'魂の器(闇)', image:'images/type_dark.webp' }),
+    6: Object.freeze({ id:'aqua', name:'魂の器(水)', image:'images/type_aqua.webp' }),
+    7: Object.freeze({ id:'dark', name:'魂の器(闇)', image:'images/type_dark.webp' }),
+    8: Object.freeze({ id:'light', name:'魂の器(光)', image:'images/type_light.webp' }),
+  });
+
+  function getStoryStageRewardPreview(stageDef, mode = 'normal') {
+    const chapter = Math.max(1, Math.floor(Number(stageDef && stageDef.chapter || 1)));
+    const stageNo = Math.max(1, Math.floor(Number(stageDef && (stageDef.stageNo || stageDef.no) || 1)));
+    const gold = Math.max(500, chapter * 350 + stageNo * 150);
+    const rewards = [
+      { name:'ゴールド', image:'images/icon_coin.webp', amount:'×' + gold.toLocaleString('ja-JP') }
+    ];
+
+    if (chapter === 1 && stageNo === 3) {
+      rewards.push({ name:'レムナントの残骸', image:'images/item_memory_mini.webp', amount:'×3' });
+    } else if (mode === 'normal' && stageNo === 4) {
+      rewards.push({ name:'記憶の欠片', image:'images/item_memory.webp', amount:'×1' });
+    } else if (chapter >= 2 && stageNo >= 3) {
+      rewards.push(
+        stageNo >= 4
+          ? { name:'強化素材・金', image:'images/item_exp_gold.webp', amount:'×1' }
+          : { name:'強化素材・銀', image:'images/item_exp_silver.webp', amount:'×1' }
+      );
+    } else {
+      rewards.push({ name:'共鳴石', image:'images/item_kyoumeistone.webp', amount:'×1' });
+    }
+
+    const elementReward = STORY_REWARD_ELEMENT[chapter] || STORY_REWARD_ELEMENT[1];
+    if (elementReward) rewards.push({ name:elementReward.name, image:elementReward.image, amount:'×1' });
+
+    return rewards.slice(0, 3);
+  }
+
+  function buildStoryRewardPreviewHtml(stageDef, mode = 'normal') {
+    return getStoryStageRewardPreview(stageDef, mode).map(function(item){
+      return '<span class="zss-reward-chip" title="' + escapeStageSelectHtml(item.name) + '">' +
+        '<span class="zss-reward-icon"><img src="' + escapeStageSelectHtml(item.image) + '" alt="' + escapeStageSelectHtml(item.name) + '"></span>' +
+        '<span class="zss-reward-count">' + escapeStageSelectHtml(item.amount || '') + '</span>' +
+      '</span>';
+    }).join('');
+  }
+
+  function buildStorySpecialRewardNote(chapter, stageNo, mode) {
+    const rewardStage = mode === 'normal' && Number(stageNo) === 4 && Number(chapter) >= 1 && Number(chapter) <= 30;
+    if (!rewardStage) return '';
+    const specialS = [4,7,10,13,16,19,22,25,28,30].includes(Number(chapter));
+    let claimedKeys = [];
+    try { claimedKeys = JSON.parse(localStorage.getItem('zeraphia_memory_fragment_claim_keys_v1') || '[]') || []; } catch(_) {}
+    const key = String(chapter).padStart(2,'0');
+    const clearClaimed = claimedKeys.includes('chapter_' + key);
+    const sClaimed = claimedKeys.includes('rank_s_' + key);
+    return '<div class="zss-reward-note">' +
+      '<div>章クリア：記憶の欠片 ×1' + (clearClaimed ? '（獲得済み）' : '') + '</div>' +
+      (specialS ? '<div>Sランククリア：記憶の欠片 ×1' + (sClaimed ? '（獲得済み）' : '') + '</div>' : '') +
+    '</div>';
+  }
+
+  function buildStoryGimmickHtml(stageDef) {
+    let gimmicks = [];
+    try {
+      if (typeof window.getShootingStageGimmickInfo === 'function') gimmicks = window.getShootingStageGimmickInfo(stageDef) || [];
+    } catch (_) {}
+    if (!Array.isArray(gimmicks) || !gimmicks.length) {
+      return '<span class="zss-gimmick-chip is-none"><b>なし</b></span>';
+    }
+    return gimmicks.map(function(item){
+      const label = escapeStageSelectHtml(item && item.label ? item.label : '');
+      let extra = '';
+      if (Array.isArray(item && item.elements) && item.elements.length) {
+        extra += '<span class="zss-gimmick-elements">' + item.elements.map(function(elementId){
+          const safe = String(elementId || '').toLowerCase();
+          return '<img src="images/type_' + escapeStageSelectHtml(safe) + '.webp" alt="' + escapeStageSelectHtml(safe) + '">';
+        }).join('') + '</span>';
+      }
+      if (item && item.id === 'timeLimit' && Number(item.seconds || 0) > 0) {
+        extra += '<small>' + escapeStageSelectHtml(String(item.seconds) + '秒') + '</small>';
+      }
+      return '<span class="zss-gimmick-chip gimmick-' + escapeStageSelectHtml(item && item.id ? item.id : 'etc') + '"><b>' + label + '</b>' + extra + '</span>';
+    }).join('');
   }
 
   function markStoryStageCleared(stageId) {
@@ -300,221 +393,23 @@
     if (document.getElementById('stage-select-modal')) return;
 
     const el = document.createElement('div');
-    el.id = 'stage-select-modal';
-    el.style.cssText = [
-      'position:fixed',
-      'top:var(--header-h,82px)', 'right:0',
-      'bottom:var(--bottom-nav-h,76px)', 'left:0',
-      'z-index:200',
-      'display:none', 'flex-direction:column',
-      'background:#07080a', 'color:#e8e4dc',
-      'font-family:"Noto Serif JP",serif',
-      'opacity:0', 'transition:opacity 0.35s ease',
-    ].join(';');
-
+    el.id = 'stage-select-modal'; // Existing game event handlers depend on this ID.
+    el.className = 'zss-root'; // Completely separate presentation namespace.
+    el.style.display = 'none';
+    el.style.opacity = '0';
+    el.style.transition = 'opacity .24s ease';
     el.innerHTML = `
-      <div class="ss-header">
-        <button class="ss-back-btn" onclick="closeStageSelect()">‹ 戻る</button>
-        <div class="ss-title" id="ss-title">討伐任務</div>
-        <div class="ss-spacer"></div>
-      </div>
-      <div class="ss-list-wrap">
-        <div class="ss-list" id="ss-list"></div>
-      </div>
-    `;
-
+      <div class="zss-shell">
+        <header class="zss-page-head">
+          <button class="zss-back" type="button" onclick="closeStageSelect()">〈 戻る</button>
+          <div class="zss-title" id="ss-title">CHAPTER 01</div>
+          <div class="zss-title-rule" aria-hidden="true"><span>✦</span></div>
+        </header>
+        <div class="zss-scroll">
+          <div class="zss-list" id="ss-list"></div>
+        </div>
+      </div>`;
     document.body.appendChild(el);
-    injectStyle();
-  }
-
-  // ============================================================
-  // CSS
-  // ============================================================
-  function injectStyle() {
-    if (document.getElementById('stage-select-style')) return;
-    const s = document.createElement('style');
-    s.id = 'stage-select-style';
-    s.textContent = `
-      /* ヘッダー */
-      .ss-header {
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        padding: max(18px, env(safe-area-inset-top, 18px)) 16px 12px;
-        border-bottom: 1px solid rgba(255,255,255,.06);
-        background: rgba(0,0,0,.5);
-        gap: 12px;
-      }
-      .ss-back-btn {
-        background: none;
-        border: none;
-        color: rgba(232,228,220,.5);
-        font-family: "Noto Serif JP", serif;
-        font-size: 14px;
-        letter-spacing: 1px;
-        cursor: pointer;
-        padding: 4px 0;
-        flex-shrink: 0;
-      }
-      .ss-back-btn:active { color: rgba(232,228,220,.85); }
-      .ss-title {
-        flex: 1;
-        text-align: center;
-        font-family: "Cinzel", serif;
-        font-size: 15px;
-        letter-spacing: 4px;
-        color: rgba(232,228,220,.85);
-      }
-      .ss-spacer { flex-shrink: 0; width: 48px; }
-
-      /* リスト */
-      .ss-list-wrap {
-        flex: 1;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-        padding: 0 0 calc(40px + env(safe-area-inset-bottom, 20px));
-      }
-      .ss-list {
-        display: flex;
-        flex-direction: column;
-        gap: 0;
-      }
-
-      /* ステージカード */
-      .ss-card {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        min-height: 72px;
-        padding: 14px 18px;
-        border-radius: 0;
-        border: 0;
-        border-bottom: 1px solid rgba(255,255,255,.08);
-        background: rgba(255,255,255,.03);
-        cursor: pointer;
-        -webkit-tap-highlight-color: transparent;
-        transition: background .15s;
-        position: relative;
-        overflow: hidden;
-      }
-      .ss-card::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(135deg, rgba(255,255,255,.03) 0%, transparent 60%);
-        pointer-events: none;
-      }
-      .ss-card:active {
-        background: rgba(255,255,255,.09);
-      }
-      .ss-card.locked {
-        opacity: .35;
-        pointer-events: none;
-      }
-
-      /* ステージ番号 */
-      .ss-card-no {
-        flex-shrink: 0;
-        width: 36px;
-        height: auto;
-        border-radius: 0;
-        border: 0;
-        background: transparent;
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        font-family: "Cinzel", serif;
-        font-size: 11px;
-        color: rgba(232,228,220,.55);
-        letter-spacing: .12em;
-      }
-
-      /* テキストエリア */
-      .ss-card-body {
-        flex: 1;
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-      .ss-card-name {
-        font-size: 15px;
-        letter-spacing: 1px;
-        color: rgba(232,228,220,.9);
-        font-weight: 500;
-      }
-      .ss-card-meta {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .ss-card-enemy {
-        font-size: 11px;
-        letter-spacing: 2px;
-        color: rgba(232,228,220,.4);
-        font-family: "Cinzel", serif;
-      }
-      .ss-card-reward {
-        font-size: 10px;
-        color: rgba(180,160,100,.6);
-        letter-spacing: 1px;
-      }
-
-      /* 難易度バッジ */
-      .ss-diff-badge {
-        flex-shrink: 0;
-        font-family: "Cinzel", serif;
-        font-size: 8px;
-        letter-spacing: 2px;
-        padding: 0;
-        border-radius: 0;
-        border: 0;
-        background: transparent;
-      }
-
-      /* 矢印 */
-      .ss-card-arrow {
-        flex-shrink: 0;
-        font-size: 16px;
-        color: rgba(232,228,220,.2);
-      }
-
-      /* ロックアイコン */
-      .ss-lock-icon {
-        flex-shrink: 0;
-        font-size: 14px;
-        color: rgba(232,228,220,.2);
-      }
-
-      .ss-roguelite-preparing {
-        min-height: 52vh;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 48px 24px;
-        text-align: center;
-      }
-      .ss-roguelite-preparing-en {
-        font-family: "Cinzel", serif;
-        font-size: 11px;
-        letter-spacing: .32em;
-        color: rgba(190,170,255,.42);
-        margin-bottom: 18px;
-      }
-      .ss-roguelite-preparing-main {
-        font-size: 15px;
-        letter-spacing: .12em;
-        color: rgba(232,228,220,.82);
-      }
-      .ss-roguelite-preparing-sub {
-        margin-top: 10px;
-        font-size: 11px;
-        letter-spacing: .08em;
-        color: rgba(232,228,220,.35);
-      }
-    `;
-    document.body.appendChild(s);
   }
 
   // ============================================================
@@ -552,7 +447,7 @@
         const missionText = stageDef.mission?.text || (isBoss ? 'BOSSを撃破' : '敵を撃破');
 
         const card = document.createElement('div');
-        card.className = 'ss-card ss-story-shooting-card' + (unlocked ? '' : ' locked');
+        card.className = 'zss-card zss-story-shooting-card' + (unlocked ? '' : ' locked');
         if (cleared) card.classList.add('story-cleared');
 
         const stageNo = Number(stageDef.stageNo || stageDef.no || 0);
@@ -560,31 +455,30 @@
         const storyScenario = getStoryScenarioData(stageDef);
         const isNovelOnly = !!(storyScenario && String(storyScenario.stageType || '').toLowerCase() === 'novel');
         const displayCondition = isNovelOnly ? 'ストーリーを読む' : missionText;
-
-        const rewardStage = mode === 'normal' && Number(stageNo) === 4 && Number(chapter) >= 1 && Number(chapter) <= 30;
-        const specialS = [4,7,10,13,16,19,22,25,28,30].includes(Number(chapter));
-        let claimedKeys = [];
-        try { claimedKeys = JSON.parse(localStorage.getItem('zeraphia_memory_fragment_claim_keys_v1') || '[]') || []; } catch(_) {}
-        const key = String(chapter).padStart(2,'0');
-        const clearClaimed = claimedKeys.includes('chapter_' + key);
-        const sClaimed = claimedKeys.includes('rank_s_' + key);
-        const rewardHtml = rewardStage
-          ? `<div style="font-size:10px;line-height:1.7;color:#96784b;margin-top:5px">章クリア：記憶の欠片 ×1 ${clearClaimed ? '（獲得済み）' : ''}${specialS ? `<div>Sランククリア：記憶の欠片 ×1 ${sClaimed ? '（獲得済み）' : ''}</div>` : ''}</div>`
-          : '';
+        const gimmickHtml = buildStoryGimmickHtml(stageDef);
+        const rewardHtml = buildStoryRewardPreviewHtml(stageDef, mode);
+        const rewardNoteHtml = buildStorySpecialRewardNote(chapter, stageNo, mode);
 
         card.innerHTML = `
-          <div class="ss-card-no">${String(stageNo).padStart(2, '0')}</div>
-          <div class="ss-card-body">
-            <div class="ss-card-name-row">
-              <div class="ss-card-name">${displayStageName}${cleared ? '　<span class="ss-story-clear" aria-label="クリア済み">CLEAR</span>' : ''}</div>
+          <div class="zss-card-no" aria-hidden="true"><span>✧</span><b>${String(stageNo).padStart(2, '0')}</b><span>✧</span></div>
+          <div class="zss-card-body">
+            <div class="zss-card-name-row">
+              <span class="zss-card-name">${displayStageName}</span>
+              ${cleared ? '<span class="zss-clear-badge" aria-label="クリア済み">✓ CLEAR</span>' : ''}
             </div>
-            <div class="ss-card-meta">
-              <div class="ss-card-enemy">クリア条件：${displayCondition}</div>
-              ${rewardHtml}
+            <div class="zss-mission">クリア条件：${escapeStageSelectHtml(displayCondition)}</div>
+            <div class="zss-card-row zss-card-row-gimmick">
+              <span class="zss-card-label">GIMMICK</span>
+              <span class="zss-gimmicks">${gimmickHtml}</span>
             </div>
+            <div class="zss-card-row zss-card-row-reward">
+              <span class="zss-card-label">主な報酬</span>
+              <span class="zss-rewards">${rewardHtml}</span>
+            </div>
+            ${rewardNoteHtml}
           </div>
           ${buildStoryRecordHtml(record)}
-          ${unlocked ? '<div class="ss-card-arrow">›</div>' : '<div class="ss-lock-icon">🔒</div>'}
+          ${unlocked ? '<span class="zss-arrow" aria-hidden="true">›</span>' : '<span class="zss-lock" aria-hidden="true">🔒</span>'}
         `;
 
         if (unlocked) card.onclick = () => onShootingStoryStageTap(stageDef, mode);

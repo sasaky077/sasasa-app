@@ -1,4 +1,4 @@
 {
-  "build": 1352,
-  "note": "DAILY stage select: remove the back button frame/background/shadow to match shared frameless navigation; preserve iPhone SE layout."
+  "build": 1368,
+  "note": "Increase transparency of the character list title bar while preserving title, search and menu readability."
 }
