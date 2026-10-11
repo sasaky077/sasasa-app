@@ -3744,11 +3744,11 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
       <div id="gacha-pool-detail-subtitle" class="gacha-pool-detail-subtitle"></div>
       <div class="gacha-pool-rate-summary">
         <div class="gacha-pool-rate-box is-sr"><span>SR</span><b id="gacha-rate-sr">6%</b></div>
-        <div class="gacha-pool-rate-box is-r"><span>R</span><b id="gacha-rate-r">47%</b></div>
-        <div class="gacha-pool-rate-box is-item"><span>進化素材</span><b id="gacha-rate-item">47%</b></div>
+        <div class="gacha-pool-rate-box is-r"><span>R</span><b id="gacha-rate-r">64%</b></div>
+        <div class="gacha-pool-rate-box is-item"><span>進化素材</span><b id="gacha-rate-item">30%</b></div>
       </div>
       <div id="gacha-pool-detail-content" class="gacha-pool-detail-content"></div>
-      <div class="gacha-pool-detail-note">※ 表示確率は各カテゴリ内を均等抽選した場合の1回あたりの提供割合です。</div>
+      <div class="gacha-pool-detail-note">※ どの邂逅もキャラ70%・進化素材30%。SR/Rとピックアップの提供割合は邂逅ごとに異なります。素材6種類はそれぞれ5%。</div>
     </section>
   </div>
 
@@ -6331,10 +6331,14 @@ document.addEventListener('touchend', function (e) {
 
 
   // ─── ガチャ仕様 v259 ───────────────────────────
-  // ガチャは2種類のみ。
-  // 1) 恒常ガチャ: R23 + 恒常SR5。限定SR5は排出しない。
-  // 2) 限定ガチャ: R23 + 恒常SR5 + 限定SR4。
-  // 排出率はどちらも SR6% / R47% / 進化素材47%。
+  // build1312: 恒常SRのハオ(54)を全4ガチャのSR候補に追加。恒常R29体はそのまま。
+  // 1) 恒常ガチャ: 恒常R29 + 恒常SR5（限定SRは排出なし）。
+  // 2) 限定ガチャ: 恒常R29 + 恒常SR5 + 限定SR5。
+  // 3) PUガチャ: 恒常R29 + PU-SR1 + 恒常SR5。
+  // build1311: 邂逅の区分別確率（各ガチャのカテゴリ合計は70%キャラ/30%素材）。
+  // 通常: SR6% / R64% / 素材30% （恒常SR5体は均等）。
+  // 特別: SR8% / R62% / 素材30% （限定SR5体各1.2% / 恒常SR5体各0.4%）。
+  // 限定: SR6% / R64% / 素材30% （対象PU SR1体が1.2% / 恒常SR5体各1.2%）。
   // 価格は従来どおり 1回5結晶 / 10回50結晶、天井50回。
   //
   // 限定SR build1124
@@ -6342,56 +6346,73 @@ document.addEventListener('touchend', function (e) {
   // AQUA レイ(33) / WOOD ロゼ(9) / DARK シュリ(8) / LIGHT ハヤテ(4) / FIRE シュオリン(41)
   const GACHA_LIMITED_SR_IDS = [33, 9, 8, 4, 41];
 
-  // 恒常SR（各属性1体） v308
-  // FIRE ウルフ(2) / AQUA スゥ(31) / WOOD ミモザ(28)
-  // DARK アヤネ(11) / LIGHT ミト(7)
-  const GACHA_PERMANENT_SR_IDS = [2, 31, 11, 7];
+  // 恒常SR5体：ウルフ(2) / スゥ(31) / アヤネ(11) / ミト(7) / ハオ(54)
+  const GACHA_PERMANENT_SR_IDS = [2, 31, 11, 7, 54];
 
-  // ストーリー加入キャラを除外した恒常R（クロエ38＋追加R42～46を含む）。
-  // 全ガチャがこの共通プールを参照する。抽選の正本はSupabaseのdraw_gacha。
+  // build1309: ストーリー加入キャラを除いた恒常R29体。
+  // 47/48/49/51/53を含む共通プール。全4ガチャの提供割合表示で共有し、
+  // サーバーの draw_gacha_core_v633 と同じ29体を均等抽選する。ID52=ノアは除外。
   const GACHA_R_IDS = [
     6, 10, 12, 13, 14, 15, 16,
     18, 19, 21, 23, 24, 26, 27, 29, 30, 34, 35, 38,
-    42, 43, 44, 45, 46
+    42, 43, 44, 45, 46,
+    47, 48, 49, 51, 53 // 52 はノア専用IDなので除外
   ];
 
+  const GACHA_CHARACTER_RATE = 0.70;
   const GACHA_SR_RATE = 0.06;
-  const GACHA_R_RATE = 0.47;
-  const GACHA_MATERIAL_RATE = 0.47;
+  const GACHA_R_RATE = 0.64;
+  const GACHA_SPECIAL_SR_RATE = 0.08;
+  const GACHA_SPECIAL_R_RATE = 0.62;
+  const GACHA_PICKUP_INDIVIDUAL_RATE = 0.012;
+  const GACHA_MATERIAL_RATE = 0.30;
+  // 特別邂逅の「ピックアップ」は限定SR5体を指す。それぞれ1.2%。
+  const GACHA_SPECIAL_SR_RATE_MAP = {
+    33: GACHA_PICKUP_INDIVIDUAL_RATE,
+    9: GACHA_PICKUP_INDIVIDUAL_RATE,
+    8: GACHA_PICKUP_INDIVIDUAL_RATE,
+    4: GACHA_PICKUP_INDIVIDUAL_RATE,
+    41: GACHA_PICKUP_INDIVIDUAL_RATE,
+    2: (GACHA_SPECIAL_SR_RATE - 5 * GACHA_PICKUP_INDIVIDUAL_RATE) / 5,
+    31: (GACHA_SPECIAL_SR_RATE - 5 * GACHA_PICKUP_INDIVIDUAL_RATE) / 5,
+    11: (GACHA_SPECIAL_SR_RATE - 5 * GACHA_PICKUP_INDIVIDUAL_RATE) / 5,
+    7: (GACHA_SPECIAL_SR_RATE - 5 * GACHA_PICKUP_INDIVIDUAL_RATE) / 5,
+    54: (GACHA_SPECIAL_SR_RATE - 5 * GACHA_PICKUP_INDIVIDUAL_RATE) / 5
+  };
 
   // 限定ピックアップ邂逅（ニーナ）
-  // ニーナ(36) 0.6% / 他の恒常SR 各0.5%
-  // 合計SR 3.1%、残りは R / 進化素材 を半々にする。
+  // ニーナ(36) 1.2%、恒常SR5体 各1.2%。限定邂逅はSR計6%。
   const GACHA_PICKUP_NINA_ID = 36;
   const GACHA_PICKUP_SR_RATE_MAP = {
-    36: 0.006, // ニーナ 0.6%
-    2:  0.005,
-    31: 0.005,
-    11: 0.005,
-    7:  0.005
+    36: GACHA_PICKUP_INDIVIDUAL_RATE, // ニーナ 1.2%
+    2:  (GACHA_SR_RATE - GACHA_PICKUP_INDIVIDUAL_RATE) / 5,
+    31: (GACHA_SR_RATE - GACHA_PICKUP_INDIVIDUAL_RATE) / 5,
+    11: (GACHA_SR_RATE - GACHA_PICKUP_INDIVIDUAL_RATE) / 5,
+    7:  (GACHA_SR_RATE - GACHA_PICKUP_INDIVIDUAL_RATE) / 5,
+    54: (GACHA_SR_RATE - GACHA_PICKUP_INDIVIDUAL_RATE) / 5
   };
   const GACHA_PICKUP_SR_TOTAL_RATE = Object.keys(GACHA_PICKUP_SR_RATE_MAP).reduce(function(total, key){
     return total + Number(GACHA_PICKUP_SR_RATE_MAP[key] || 0);
   }, 0);
-  const GACHA_PICKUP_R_RATE = (1 - GACHA_PICKUP_SR_TOTAL_RATE) / 2;
-  const GACHA_PICKUP_MATERIAL_RATE = (1 - GACHA_PICKUP_SR_TOTAL_RATE) / 2;
+  const GACHA_PICKUP_R_RATE = GACHA_R_RATE;
+  const GACHA_PICKUP_MATERIAL_RATE = GACHA_MATERIAL_RATE;
 
   // 限定ピックアップ邂逅（オリビア） build973
-  // オリビア(40) 0.6% / 他の恒常SR 各0.5%
-  // 合計SR 3.1%、残りは R / 進化素材 を半々にする。
+  // オリビア(40) 1.2%、恒常SR5体 各1.2%。限定邂逅はSR計6%。
   const GACHA_PICKUP_OLIVIA_ID = 40;
   const GACHA_PICKUP_OLIVIA_SR_RATE_MAP = {
-    40: 0.006, // オリビア 0.6%
-    2:  0.005,
-    31: 0.005,
-    11: 0.005,
-    7:  0.005
+    40: GACHA_PICKUP_INDIVIDUAL_RATE, // オリビア 1.2%
+    2:  (GACHA_SR_RATE - GACHA_PICKUP_INDIVIDUAL_RATE) / 5,
+    31: (GACHA_SR_RATE - GACHA_PICKUP_INDIVIDUAL_RATE) / 5,
+    11: (GACHA_SR_RATE - GACHA_PICKUP_INDIVIDUAL_RATE) / 5,
+    7:  (GACHA_SR_RATE - GACHA_PICKUP_INDIVIDUAL_RATE) / 5,
+    54: (GACHA_SR_RATE - GACHA_PICKUP_INDIVIDUAL_RATE) / 5
   };
   const GACHA_PICKUP_OLIVIA_SR_TOTAL_RATE = Object.keys(GACHA_PICKUP_OLIVIA_SR_RATE_MAP).reduce(function(total, key){
     return total + Number(GACHA_PICKUP_OLIVIA_SR_RATE_MAP[key] || 0);
   }, 0);
-  const GACHA_PICKUP_OLIVIA_R_RATE = (1 - GACHA_PICKUP_OLIVIA_SR_TOTAL_RATE) / 2;
-  const GACHA_PICKUP_OLIVIA_MATERIAL_RATE = (1 - GACHA_PICKUP_OLIVIA_SR_TOTAL_RATE) / 2;
+  const GACHA_PICKUP_OLIVIA_R_RATE = GACHA_R_RATE;
+  const GACHA_PICKUP_OLIVIA_MATERIAL_RATE = GACHA_MATERIAL_RATE;
 
   // 進化素材枠。6種を均等抽選。
   const GACHA_EVOLUTION_MATERIAL_IDS = [
@@ -6408,9 +6429,9 @@ document.addEventListener('touchend', function (e) {
       id: 'gacha_02',
       category: 'normal',
       poolType: 'permanent',
-      title: '恒常邂逅',
+      title: '通常邂逅',
       detailTitle: 'STANDARD ENCOUNTER',
-      desc: 'SR6% / R47% / 進化素材47%。限定SRは排出なし。',
+      desc: 'SR6% / R64% / 進化素材30%。恒常SR5体を均等排出。',
       thumbTitle: '恒常',
       img: 'images/gacha_banner_01.webp',
       cost: 5,
@@ -6431,9 +6452,9 @@ document.addEventListener('touchend', function (e) {
       id: 'gacha_03',
       category: 'normal',
       poolType: 'pickup',
-      title: '限定ピックアップ邂逅',
+      title: '限定邂逅',
       detailTitle: 'NINA PICKUP ENCOUNTER',
-      desc: 'ニーナ 0.6% / 他恒常SR 各0.625% / R48.45% / 進化素材48.45%',
+      desc: 'SR6% / R64% / 進化素材30%。ニーナ1.2%・恒常SR各0.96%。',
       thumbTitle: 'ニーナPU',
       img: 'images/gacha_banner_03.webp',
       cost: 5,
@@ -6455,9 +6476,9 @@ document.addEventListener('touchend', function (e) {
       id: 'gacha_05',
       category: 'normal',
       poolType: 'pickup',
-      title: '限定ピックアップ邂逅',
+      title: '限定邂逅',
       detailTitle: 'OLIVIA PICKUP ENCOUNTER',
-      desc: 'オリビア 0.6% / 他恒常SR 各0.625% / R48.45% / 進化素材48.45%',
+      desc: 'SR6% / R64% / 進化素材30%。オリビア1.2%・恒常SR各0.96%。',
       thumbTitle: 'オリビアPU',
       img: 'images/gacha_banner_04.webp',
       cost: 5,
@@ -6480,15 +6501,16 @@ document.addEventListener('touchend', function (e) {
       id: 'gacha_04',
       category: 'normal',
       poolType: 'limited',
-      title: '限定邂逅',
+      title: '特別邂逅',
       detailTitle: 'LIMITED ENCOUNTER',
-      desc: 'SR6% / R47% / 進化素材47%。限定SR5体を含む。',
-      thumbTitle: '限定',
+      desc: 'SR8% / R62% / 進化素材30%。限定SR5体各1.2%、恒常SR5体各0.4%。',
+      thumbTitle: '特別',
       img: 'images/gacha_banner_02.webp',
       cost: 5,
-      srRate: GACHA_SR_RATE,
-      rRate: GACHA_R_RATE,
+      srRate: GACHA_SPECIAL_SR_RATE,
+      rRate: GACHA_SPECIAL_R_RATE,
       materialRate: GACHA_MATERIAL_RATE,
+      characterRateMap: GACHA_SPECIAL_SR_RATE_MAP,
       limitedCharacterIds: GACHA_LIMITED_SR_IDS,
       limitedRCharacterIds: [],
       srCharacterIds: GACHA_PERMANENT_SR_IDS.concat(GACHA_LIMITED_SR_IDS),
@@ -6796,7 +6818,7 @@ document.addEventListener('touchend', function (e) {
 
     if(subtitle){
       subtitle.textContent =
-        gacha.poolType === 'pickup' ? '限定ピックアップ邂逅' :
+        gacha.poolType === 'pickup' ? '限定邂逅' :
         (gacha.poolType === 'limited' ? '特別邂逅' : '通常邂逅');
     }
 
@@ -18562,7 +18584,7 @@ function fadeOutOpeningBgm(){
 
 
 
-<script src="js/shooting_characters.js?v=1212-aura-cluster"></script>
+<script src="js/shooting_characters.js?v=1312-hao"></script>
 <script src="js/story_scenario.js?v=1298-ch05-locations"></script>
 <script src="js/story_novel.js?v=1266-post-skip-right"></script>
 <script src="js/stage_select.js?v=1297-ch05-transition"></script>
@@ -18640,7 +18662,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1308-olivia-ult-gain"></script>
+<script src="js/shooting_event.js?v=1312-hao"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
 <script src="js/skin_system.js?v=1076-home-canvas-normalize"></script>

@@ -18472,6 +18472,7 @@
       resetCombo(true);
     }
     if (!state.koTransition) updateMovement(dt, ts);
+    updateHaoTrigger(ts);
     updateConjurePlacementPreview(ts);
     updateRemnaTrapPlacementPreview(ts);
     updateConjureDeployments(dt, ts);
@@ -22792,6 +22793,7 @@
       closeDailyStageSelect();
     }
     clearUltTimers();
+    clearHaoTrigger();
     if (state) {
       state.running = false;
       state.ended = true;
@@ -26877,7 +26879,240 @@
       state.boss.lyuneBarrierRemoved = true;
       bossShield.remove();
     }
-    applyUltDamage(Math.max(0, Number(c.atk || 0)) * 2.0, true, c);
+    applyUltDamage(Math.max(0, Number(c.atk || 0)) * Math.max(0, Number(c.ultDamageAtkMultiplier ?? 2.0)), true, c);
+  }
+
+  // build1312: ハオULT『天機・五刻の雷』。盤面固定の成長トリガーを自キャラが回収すると全体落雷。
+  const HAO_TRIGGER_DEFAULT_MULTIPLIERS = Object.freeze([1.0, 1.8, 3.0, 4.0, 5.0]);
+
+  function ensureHaoTriggerStyle() {
+    if (document.getElementById('shooting-hao-trigger-style')) return;
+    const style = document.createElement('style');
+    style.id = 'shooting-hao-trigger-style';
+    style.textContent = `
+      /* build1313: Etched ground sigil, not a floating rotating ring. */
+      .shooting-hao-trigger{
+        position:absolute;width:74px;height:74px;z-index:44;pointer-events:none;
+        border:0;background:transparent;box-shadow:none;overflow:visible;
+        --hao-light:rgba(170,212,148,.75);--hao-light-strong:rgba(203,239,174,.95);
+        --hao-glow:rgba(138,188,109,.42);
+        font-family:'Noto Serif JP',serif;
+      }
+      .shooting-hao-trigger .hao-ground{
+        position:absolute;inset:4px;border-radius:50%;transform:scaleY(.76);
+        background:radial-gradient(ellipse at 50% 50%,
+          rgba(9,27,15,.48) 0%,rgba(20,48,25,.40) 39%,
+          rgba(28,65,33,.16) 62%,transparent 78%);
+        box-shadow:inset 0 0 11px rgba(5,24,13,.38),
+          0 0 10px var(--hao-glow);
+      }
+      .shooting-hao-trigger .hao-mark{
+        position:absolute;inset:0;width:100%;height:100%;overflow:visible;
+        transform:scaleY(.76);transform-origin:50% 50%;
+        filter:drop-shadow(0 1px 0 rgba(9,23,14,.95)) drop-shadow(0 0 3px var(--hao-glow));
+        animation:haoSigilBreathe 2.6s ease-in-out infinite;
+      }
+      .shooting-hao-trigger .hao-engrave{
+        fill:none;stroke:rgba(16,42,23,.92);stroke-width:2.9;
+        stroke-linejoin:round;stroke-linecap:round;
+      }
+      .shooting-hao-trigger .hao-line{
+        fill:none;stroke:var(--hao-light);stroke-width:1.2;
+        stroke-linejoin:round;stroke-linecap:round;
+      }
+      .shooting-hao-trigger .hao-accent{
+        fill:none;stroke:var(--hao-light-strong);stroke-width:1.5;
+        stroke-linecap:round;stroke-linejoin:round;
+      }
+      .shooting-hao-trigger .hao-inner,
+      .shooting-hao-trigger .hao-veins,
+      .shooting-hao-trigger .hao-runes,
+      .shooting-hao-trigger .hao-crest{
+        opacity:.10;transition:opacity .35s ease;
+      }
+      .shooting-hao-trigger[data-level="2"] .hao-inner,
+      .shooting-hao-trigger[data-level="3"] .hao-inner,
+      .shooting-hao-trigger[data-level="4"] .hao-inner,
+      .shooting-hao-trigger[data-level="5"] .hao-inner{opacity:.82}
+      .shooting-hao-trigger[data-level="3"] .hao-veins,
+      .shooting-hao-trigger[data-level="4"] .hao-veins,
+      .shooting-hao-trigger[data-level="5"] .hao-veins{opacity:.87}
+      .shooting-hao-trigger[data-level="4"] .hao-runes,
+      .shooting-hao-trigger[data-level="5"] .hao-runes{opacity:.96}
+      .shooting-hao-trigger[data-level="5"] .hao-crest{opacity:1}
+      .shooting-hao-trigger[data-level="3"],
+      .shooting-hao-trigger[data-level="4"]{
+        --hao-light:rgba(180,231,151,.89);--hao-light-strong:rgba(222,250,190,.98);
+        --hao-glow:rgba(145,202,115,.56);
+      }
+      .shooting-hao-trigger[data-level="5"]{
+        --hao-light:rgba(241,207,126,.9);--hao-light-strong:rgba(255,236,178,1);
+        --hao-glow:rgba(242,209,116,.78);
+      }
+      .shooting-hao-trigger[data-level="5"] .hao-ground{
+        background:radial-gradient(ellipse at 50% 50%,
+          rgba(52,43,16,.53) 0%,rgba(78,65,28,.35) 40%,
+          rgba(113,90,40,.16) 62%,transparent 78%);
+        box-shadow:inset 0 0 12px rgba(45,31,11,.4),0 0 17px var(--hao-glow);
+      }
+      .shooting-hao-trigger[data-level="5"] .hao-mark{
+        filter:drop-shadow(0 1px 0 rgba(49,33,12,.9)) drop-shadow(0 0 5px var(--hao-glow));
+      }
+      .shooting-hao-trigger .hao-caption{
+        position:absolute;top:66px;left:50%;transform:translateX(-50%);
+        display:flex;gap:4px;align-items:center;white-space:nowrap;
+        font-size:9px;line-height:1;letter-spacing:.035em;
+        color:#e7f3d2;text-shadow:0 1px 3px rgba(8,32,11,.9),0 0 3px rgba(20,47,18,.8);
+        opacity:.78;
+      }
+      .shooting-hao-trigger[data-level="5"] .hao-caption{color:#fff0bb;opacity:.94}
+      .shooting-hao-trigger .hao-power{font-size:8px;opacity:.78}
+      .shooting-hao-trigger.is-arming{opacity:.62}
+      .shooting-hao-lightning{position:absolute;z-index:49;width:16px;pointer-events:none;opacity:0;animation:haoLightningStrike .4s ease-out both}
+      .shooting-hao-lightning::before{content:'';position:absolute;left:2px;top:0;bottom:0;width:12px;
+        background:linear-gradient(180deg,transparent,rgba(237,255,217,.98) 15%,#fff 48%,rgba(184,236,141,.88) 78%,transparent);
+        filter:drop-shadow(0 0 7px #daf6a7);clip-path:polygon(48% 0%,75% 0%,48% 27%,92% 31%,37% 61%,72% 67%,24% 100%,40% 66%,4% 60%,58% 35%,20% 29%)}
+      .shooting-hao-lightning::after{content:'';position:absolute;left:50%;bottom:-9px;width:54px;height:18px;transform:translateX(-50%);border:2px solid rgba(219,247,170,.9);border-radius:50%;box-shadow:0 0 12px #dfffbb;background:radial-gradient(ellipse,rgba(255,254,218,.6),transparent 70%)}
+      @keyframes haoLightningStrike{0%{opacity:0}15%{opacity:1}48%{opacity:1}100%{opacity:0}}
+      @keyframes haoSigilBreathe{0%,100%{opacity:.76}50%{opacity:1}}
+      @media(prefers-reduced-motion:reduce){.shooting-hao-trigger .hao-mark{animation:none}}
+    `;
+    document.head.appendChild(style);
+  }
+
+  function clearHaoTrigger() {
+    if (!state || !state.haoTrigger) return;
+    if (state.haoTrigger.el) state.haoTrigger.el.remove();
+    state.haoTrigger = null;
+  }
+
+  function getHaoTriggerLevel(trigger, now) {
+    const step = Math.max(250, Number(trigger.upgradeMs || 2000));
+    return Math.min(5, 1 + Math.floor(Math.max(0, now - trigger.startedAt) / step));
+  }
+
+  function spawnHaoLightningOnBoard(points) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    for (const point of points) {
+      const el = document.createElement('i');
+      el.className = 'shooting-hao-lightning';
+      const targetY = Math.max(25, Number(point.y || 0));
+      const targetX = Number(point.x || 0);
+      el.style.left = `${targetX - 8}px`;
+      el.style.top = '0px';
+      el.style.height = `${targetY}px`;
+      arena.appendChild(el);
+      setTimeout(() => el.remove(), 470);
+    }
+  }
+
+  function useHaoUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+    showUltCut(c.ultName, c.effectKey, c);
+    ultScreenFlash('ult-flash-eri', c);
+    clearEnemyBulletsOnly();
+    clearHaoTrigger(); // 同一キャラの再発動は前のトリガーと置換
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    ensureHaoTriggerStyle();
+    const bounds = arena.getBoundingClientRect();
+    const width = Math.max(80, bounds.width || arena.clientWidth);
+    const height = Math.max(80, bounds.height || arena.clientHeight);
+    const playerX = Number(state.player.x || width * .5);
+    const playerY = Number(state.player.y || height * .75);
+    const x = Math.max(35, Math.min(width - 35, playerX));
+    const y = Math.max(35, Math.min(height - 35, playerY - 85));
+    const el = document.createElement('div');
+    el.className = 'shooting-hao-trigger is-arming';
+    el.setAttribute('aria-label', 'ハオ ULT 起動紋様');
+    el.dataset.level = '1';
+    el.innerHTML = `
+      <span class="hao-ground" aria-hidden="true"></span>
+      <svg class="hao-mark" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+        <circle class="hao-engrave" cx="50" cy="50" r="42"/>
+        <circle class="hao-line" cx="50" cy="50" r="40"/>
+        <circle class="hao-line" cx="50" cy="50" r="34"/>
+        <path class="hao-line" d="M50 8v8 M92 50h-8 M50 92v-8 M8 50h8"/>
+        <path class="hao-accent" d="M50 22 74 50 50 78 26 50Z"/>
+        <g class="hao-inner hao-line">
+          <circle cx="50" cy="50" r="24"/>
+          <path d="M50 28v44 M28 50h44"/>
+        </g>
+        <g class="hao-veins hao-accent">
+          <path d="M50 31 Q61 40 50 49 Q39 40 50 31Z"/>
+          <path d="M50 69 Q39 60 50 51 Q61 60 50 69Z"/>
+        </g>
+        <g class="hao-runes hao-line">
+          <path d="M26 25 31 20 35 25 M74 25 69 20 65 25"/>
+          <path d="M26 75 31 80 35 75 M74 75 69 80 65 75"/>
+        </g>
+        <g class="hao-crest hao-accent">
+          <path d="M50 12 54 20 50 26 46 20Z"/>
+          <path d="M88 50 80 54 74 50 80 46Z"/>
+          <path d="M50 88 46 80 50 74 54 80Z"/>
+          <path d="M12 50 20 46 26 50 20 54Z"/>
+        </g>
+      </svg>
+      <span class="hao-caption"><span class="hao-level">LV1</span><span class="hao-power">×1.0</span></span>`;
+    arena.appendChild(el);
+    positionUnit(el, x, y);
+    state.haoTrigger = {
+      el, x, y, startedAt: performance.now(), owner: c,
+      upgradeMs: Number(c.haoTriggerUpgradeMs || 2000),
+      safetyMs: Number(c.haoTriggerSafetyMs || 500),
+      multipliers: Array.isArray(c.haoTriggerMultipliers) ? c.haoTriggerMultipliers : HAO_TRIGGER_DEFAULT_MULTIPLIERS,
+      level: 1
+    };
+    state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), performance.now() + 220);
+  }
+
+  function updateHaoTrigger(now) {
+    if (!state || !state.haoTrigger) return;
+    if (state.ended || state.finishing) { clearHaoTrigger(); return; }
+    const trigger = state.haoTrigger;
+    if (!trigger.el || !trigger.el.isConnected) { clearHaoTrigger(); return; }
+    const level = getHaoTriggerLevel(trigger, now);
+    if (level !== trigger.level) {
+      trigger.level = level;
+      trigger.el.dataset.level = String(level);
+      const label = trigger.el.querySelector('.hao-level');
+      const power = trigger.el.querySelector('.hao-power');
+      if (label) label.textContent = `LV${level}`;
+      if (power) power.textContent = `×${Number(trigger.multipliers[level - 1] || 1).toFixed(1)}`;
+    }
+    if (now - trigger.startedAt < trigger.safetyMs) return;
+    trigger.el.classList.remove('is-arming');
+    // プレイヤー自身が紋様へ接触した時だけ起爆。敵弾との接触は無視する。
+    const dx = Number(state.player.x || 0) - trigger.x;
+    const dy = Number(state.player.y || 0) - trigger.y;
+    if (dx * dx + dy * dy > 32 * 32) return;
+
+    // 消す→演出→攻撃の順。複数フレームで再発動しない。
+    const owner = trigger.owner;
+    const multiplier = Number(trigger.multipliers[level - 1] || 1);
+    const damage = Math.max(0, Number(owner.atk || 0)) * multiplier;
+    const targets = getEriUltTargetPoints();
+    if (!isNormalBattle() && Array.isArray(state.normalEnemies)) {
+      for (const enemy of state.normalEnemies) {
+        if (enemy && enemy.el && enemy.hp > 0) targets.push({x: enemy.x,y: enemy.y});
+      }
+    }
+    clearHaoTrigger();
+    spawnHaoLightningOnBoard(targets);
+    // ボス戦における増援も盤面の全敵に含む。通常戦と同じ属性相性処理を適用。
+    if (!isNormalBattle() && Array.isArray(state.normalEnemies)) {
+      for (const enemy of state.normalEnemies) {
+        if (!enemy || !enemy.el || enemy.hp <= 0) continue;
+        const element = getUltAttackElement(owner);
+        const targetElement = getCombatTargetElement(enemy);
+        damageNormalEnemy(enemy, applyElementDamage(damage, element, targetElement), now, true,
+          getElementDamageReaction(element, targetElement));
+      }
+      state.normalEnemies = state.normalEnemies.filter(e => e && e.hp > 0);
+    }
+    applyUltDamage(damage, true, owner);
+    renderHud();
   }
 
   function executeCharacterUlt(c) {
@@ -26886,7 +27121,7 @@
     // ULTの内部属性と、画像を使わない演出の基調色を同じ属性へ同期。
     applyUltElementVisualContext(c);
 
-    if (Number(c.id) === 25) useLyuneAbsoluteLetheUlt(c);
+    if (c.ultType === 'ryune_absolute_lethe' || Number(c.id) === 25) useLyuneAbsoluteLetheUlt(c);
     else if (c.ultType === 'sui_clock_burst') useSuiUlt(c);
     else if (c.ultType === 'rose_fortress') useRoseUlt(c);
     else if (c.ultType === 'ignis_fire_wheel') useIgnisUlt(c);
@@ -26910,6 +27145,8 @@
       c.ultType === 'painter_light_paint_bomb' ||
       c.ultType === 'painter_dark_paint_bomb'
     ) usePainterElementSpreadUlt(c);
+    else if (c.ultType === 'hao_fivefold_trigger') useHaoUlt(c);
+    else if (c.ultType === 'forbidden_shock') useNinaUlt(c); // 旧ニーナ落雷演出を70%威力で再利用
     else if (c.ultType === 'nina_output_max' || c.ultType === 'nina_lightning_storm') useNinaOutputMax(c);
     else if (c.ultType === 'noah_time_homing') useNoahUlt(c);
     else if (c.ultType === 'jig_scramble_ray') useJigScrambleUlt(c);

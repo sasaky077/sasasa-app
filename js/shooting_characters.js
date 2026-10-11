@@ -52,6 +52,7 @@
     LEONA_CROSS: 39,
     KUREHA: 41,
     KYOU: 42, SUZU: 43, MELORIA: 44, KIRIMARU: 45, AIRENA: 46,
+    LINLIN: 47, MUUMUU: 48, MEGMEG: 49, CHACHA: 51, RUIRUI: 53, // ID52 is reserved for Noah (existing saves/RPC)
   });
 
   // ============================================================
@@ -106,6 +107,7 @@
     39: 'r',   // レオナクロス
     41: 'sr',  // シュオリン
     42: 'r', 43: 'r', 44: 'r', 45: 'r', 46: 'r',
+    47: 'r', 48: 'r', 49: 'r', 51: 'r', 53: 'r',
   });
 
   // 現行互換：R はSRに対して基本性能(HP/ATK)を20%落とす。育成/凸の新倍率は別フェーズで統合予定。
@@ -1154,6 +1156,117 @@
   "homeOffsetY": -24,
   "hidden": false
 },
+  // build1308: 追加恒常R 5体。既存ノア（52）はIDを変更しない。
+  "47": {
+    "id": 47,
+    "name": "リンリン",
+    "element": "wood",
+    "hp": 620,
+    "atk": 250,
+    "image": "images/chara_47_battle_back.webp",
+    "panelImage": "images/chara_47_panel.webp",
+    "cutinImage": "images/chara_47_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.2,
+      "battleUp": 1
+    },
+    "portraitImage": "images/chara_47.webp",
+    "homeImage": "images/chara_47_cut.webp",
+    "upImage": "images/chara_47_up.webp",
+    "homeScale": 0.82,
+    "homeOffsetX": 0,
+    "homeOffsetY": -24,
+    "hidden": false
+  },
+  "48": {
+    "id": 48,
+    "name": "ムゥムゥ",
+    "element": "dark",
+    "hp": 610,
+    "atk": 265,
+    "image": "images/chara_48_battle_back.webp",
+    "panelImage": "images/chara_48_panel.webp",
+    "cutinImage": "images/chara_48_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.2,
+      "battleUp": 1
+    },
+    "portraitImage": "images/chara_48.webp",
+    "homeImage": "images/chara_48_cut.webp",
+    "upImage": "images/chara_48_up.webp",
+    "homeScale": 0.82,
+    "homeOffsetX": 0,
+    "homeOffsetY": -24,
+    "hidden": false
+  },
+  "49": {
+    "id": 49,
+    "name": "メグメグ",
+    "element": "fire",
+    "hp": 590,
+    "atk": 275,
+    "image": "images/chara_49_battle_back.webp",
+    "panelImage": "images/chara_49_panel.webp",
+    "cutinImage": "images/chara_49_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.2,
+      "battleUp": 1
+    },
+    "portraitImage": "images/chara_49.webp",
+    "homeImage": "images/chara_49_cut.webp",
+    "upImage": "images/chara_49_up.webp",
+    "homeScale": 0.82,
+    "homeOffsetX": 0,
+    "homeOffsetY": -24,
+    "hidden": false
+  },
+  "51": {
+    "id": 51,
+    "name": "チャチャ",
+    "element": "light",
+    "hp": 600,
+    "atk": 255,
+    "image": "images/chara_51_battle_back.webp",
+    "panelImage": "images/chara_51_panel.webp",
+    "cutinImage": "images/chara_51_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.2,
+      "battleUp": 1
+    },
+    "portraitImage": "images/chara_51.webp",
+    "homeImage": "images/chara_51_cut.webp",
+    "upImage": "images/chara_51_up.webp",
+    "homeScale": 0.82,
+    "homeOffsetX": 0,
+    "homeOffsetY": -24,
+    "hidden": false
+  },
+  "53": {
+    "id": 53,
+    "name": "ルイルイ",
+    "element": "aqua",
+    "hp": 625,
+    "atk": 250,
+    "image": "images/chara_53_battle_back.webp",
+    "panelImage": "images/chara_53_panel.webp",
+    "cutinImage": "images/chara_53_cutin.webp",
+    "uiScale": {
+      "panel": 1,
+      "battleBack": 1.2,
+      "battleUp": 1
+    },
+    "portraitImage": "images/chara_53.webp",
+    "homeImage": "images/chara_53_cut.webp",
+    "upImage": "images/chara_53_up.webp",
+    "homeScale": 0.82,
+    "homeOffsetX": 0,
+    "homeOffsetY": -24,
+    "hidden": false
+  },
   "50": {
     "id": 50,
     "name": "SIGMA-IX",
@@ -2526,6 +2639,67 @@
   SHOOTING_CHARACTERS[43] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:43, effectKey:'suzu', shotType:'parallel', shotCount:2, shotSpacing:28, fireRate:500, bulletSpeed:640, shotPowerRate:0.14, ultType:'suzu_bullet_silence', ultName:'静寂の森', ultDescription:'敵弾を全消去し、3.5秒間新たな敵弾を封じる。敵の移動は継続。' });
   SHOOTING_CHARACTERS[46] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:46, effectKey:'airena', shotType:'charge', shotStyle:'kaina-charge', fireRate:0, bulletSpeed:760, shotPowerRate:0.90, shotCount:1, chargeMinMs:120, chargeMaxMs:1200, chargeMinSize:28, chargeMaxSize:72, ultType:'airena_atk_item', ultName:'光の祝福', ultDescription:'ATK1.5倍・5秒のアイテムを1個出現させる。', itemAtkMultiplier:1.5, itemAtkDurationMs:5000 });
   SHOOTING_CHARACTERS[44] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:44, effectKey:'meloria', shotType:'piercing', shotCount:1, fireRate:530, bulletSpeed:720, shotPowerRate:0.28, ultType:'meloria_stun', ultName:'冥府の宣告', ultDescription:'敵全員を5秒スタン。各敵に20%の確率で最大HP50%のダメージ。', ultStunMs:5000 });
+
+  // build1308 — 恒常R 5体。属性・画像・R倍率は上の共通マスターが正本。
+  // ULTは既存の射撃エンジンを再利用。空欄のメグメグSHOTは暫定的にジグのLASER M。
+  SHOOTING_CHARACTERS[CHARACTER_ID.LINLIN] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON,
+    id: CHARACTER_ID.LINLIN, effectKey:'linlin',
+    label:'PARALLEL / WOOD', description:'木属性のPARALLEL 2連射。ULTはエリと同効果。',
+    shotType:'parallel', shotCount:2, shotSpacing:18, fireRate:170, bulletSpeed:780, shotPowerRate:0.095,
+    ultName:'フォレストショット',
+    ultDescription:'エリと同じく、敵弾を消去し敵を短時間停止。敵全体へATK×2.8の木属性ダメージ。',
+    ultType:'balance_flash', ultDamageAtkMultiplier:2.8,
+  });
+
+  SHOOTING_CHARACTERS[CHARACTER_ID.MUUMUU] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON,
+    id: CHARACTER_ID.MUUMUU, effectKey:'muumuu',
+    label:'ORBIT / DARK', description:'闇属性のORBIT 2発。リュネのULT挙動を共有。',
+    shotType:'orbit', shotCount:2, shotSpacing:28, fireRate:450, bulletSpeed:520, shotPowerRate:0.165,
+    orbitRadius:32, orbitAngularSpeed:11.8, orbitForwardLoopRate:0.29, orbitPhaseStep:Math.PI,
+    ultName:'奥義・鵺の型',
+    ultDescription:'リュネと同じく、全敵へATK×2.0の闇属性ダメージと全属性バリア解除。',
+    ultType:'ryune_absolute_lethe', ultBaseType:'beam', ultAddons:['damage','barrier_clear'],
+    ultDamageAtkMultiplier:2.0,
+  });
+
+  SHOOTING_CHARACTERS[CHARACTER_ID.MEGMEG] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON,
+    id: CHARACTER_ID.MEGMEG, effectKey:'megmeg',
+    label:'LASER / FIRE', description:'SHOT未指定につき暫定LASER M。ULTはジグの反射レーザーと同効果。',
+    shotType:'laser', shotStyle:'megmeg', laserSize:'M', fireRate:100,
+    laserWidth:10, laserHitWidth:34, laserDamageAtkRate:0.058, laserVisualHoldMs:125,
+    ultName:'ディバイン・フレア',
+    ultDescription:'ジグと同じく、火属性のレーザー6本を5秒間反射させながら敵を攻撃する。',
+    ultType:'jig_scramble_ray', ultBaseType:'beam', ultAddons:['damage','bullet_clear'],
+    jigUltDurationMs:5000, jigUltBeamCount:6, jigUltBeamSpeed:520, jigUltBeamLength:280,
+    jigUltBeamWidth:2, jigUltDamageAtkRate:0.12, jigUltHitIntervalMs:200,
+  });
+
+  SHOOTING_CHARACTERS[CHARACTER_ID.CHACHA] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON,
+    id: CHARACTER_ID.CHACHA, effectKey:'chacha',
+    label:'SPREAD / LIGHT', description:'光属性のSPREAD 5WAY。ULTはニーナの電撃16発型を70%威力で使用。',
+    shotType:'spread', shotCount:5, fireRate:500, bulletSpeed:650, shotPowerRate:0.20,
+    ultName:'フォビドゥン・ショック',
+    ultDescription:'ニーナの電撃攻撃方式。8秒間に最大16回の落雷攻撃（1発ATK×2.8＝基準の70%）。命中時は敵を麻痺させる。',
+    ultType:'forbidden_shock', ultBaseType:'damage', ultAddons:['damage','stun'],
+    ninaUltDurationMs:8000, ninaUltHitCount:16, ninaUltHitAtkMultiplier:2.8,
+    ninaUltParalyzeMs:3000,
+  });
+
+  SHOOTING_CHARACTERS[CHARACTER_ID.RUIRUI] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON,
+    id: CHARACTER_ID.RUIRUI, effectKey:'ruirui',
+    label:'CLUSTER / AQUA', description:'水属性のCLUSTER 4分裂。ULTはシイナの円環フィールドと同効果。',
+    shotType:'cluster', clusterSize:'M', clusterSplitCount:4, clusterFragmentDamageRate:0.5,
+    shotCount:1, fireRate:550, bulletSpeed:650, shotPowerRate:0.27,
+    ultName:'アビス・マレディクション',
+    ultDescription:'シイナと同じく、7秒間自身の周囲へ円環を展開し、円内の敵弾速度を50%にする。',
+    ultType:'shiina_light_ring', ultBaseType:'field', ultAddons:['enemy_bullet_slow'],
+    lightRingDurationMs:7000, lightRingRadius:190, lightRingBulletSpeedMultiplier:0.5,
+  });
 
   // 別マスターではない。SHOOTING_CHARACTER_MASTERから毎回生成する読み取り用配列。
   const CHARACTER_CATALOG = Object.freeze(
