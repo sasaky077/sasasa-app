@@ -1489,6 +1489,41 @@
     if (profile) SHOOTING_CHARACTERS[Number(id)] = profile;
   });
 
+  // build1327 — 共有ULT「慈愛の光」: 回復系のアンジェ・ノエル・リンリン。
+  // 通常ショットとキャラ固有の画像はそのまま。ULTのみ同一仕様を使用する。
+  SHOOTING_CHARACTERS[CHARACTER_ID.ANGE] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, id: CHARACTER_ID.ANGE, effectKey:'ange',
+    label:'PARALLEL / HEAL',
+    description:'2連射型。ULTで敵弾を消去し、3.5秒間の無敵と3個の回復ハートを展開する。',
+    ultName: '慈愛の光',
+    ultDescription: '発動時に画面内の敵弾をすべて消去し、3.5秒間無敵になる。盤面のランダムな位置に回復ハートを3個召喚。各ハートを取得すると、取得キャラの最大HPの30%を回復する。',
+    ultType: 'ange_healing_hearts', ultBaseType: 'item_summon', ultAddons: ['bullet_clear','invincible','heal'],
+    ultInvincibleDurationMs: 3500, ultHeartCount: 3, ultHeartHealPercent: 0.30,
+    ultHeartLifeMs: 7000, ultHeartBlinkLeadMs: 2000,
+  });
+
+  // build1327 — シグレ: 正面狭範囲の近接一撃（命中しなければMISS）。
+  SHOOTING_CHARACTERS[CHARACTER_ID.SHIGURE] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, id: CHARACTER_ID.SHIGURE, effectKey:'shigure',
+    label:'PARALLEL / PUNCH',
+    description:'2連射型。ULTで真正面の狭い範囲へ近接一撃を放つ。',
+    ultName:'神速一撃',
+    ultDescription:'真正面の超狭範囲へ1Hitだけの強烈な一撃を叩き込む。命中時はATKの700%ダメージ。追尾せず、範囲外なら完全にMISSとなる。',
+    ultType:'veronica_brass_punch', ultBaseType:'damage', ultAddons:['damage'],
+    ultDamageAtkMultiplier:7.0, ultPunchRange:118, ultPunchWidth:68,
+  });
+
+  // build1327 — パトラ: シイナ/ルイルイ共通の敵弾減速円環。
+  SHOOTING_CHARACTERS[CHARACTER_ID.PATRA] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, id: CHARACTER_ID.PATRA, effectKey:'patra',
+    label:'PARALLEL / SLOW RING',
+    description:'2連射型。ULTで自機の周囲に7秒間、敵弾の速度を半減する円環を展開する。',
+    ultName:'砂時計の円環',
+    ultDescription:'自身を中心に円環を7秒間展開する。円環内に入った敵弾は移動速度が50%に低下し、外へ出ると元の速度へ戻る。',
+    ultType:'shiina_light_ring', ultBaseType:'field', ultAddons:['enemy_bullet_slow'],
+    lightRingDurationMs:7000, lightRingRadius:190, lightRingBulletSpeedMultiplier:0.5,
+  });
+
   SHOOTING_CHARACTERS[CHARACTER_ID.ERI] = buildShootingCharacter({
     ...ERI_BASE_PROFILE,
     id: CHARACTER_ID.ERI,
@@ -2058,10 +2093,13 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.SERA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.SERA, effectKey: 'sera',
-    label: 'ORBIT / SUMMON', description: '2発の円環軌道ショット。ULTは植物系召喚物を設置するR召喚型。',
+    label: 'ORBIT / SLOW RING', description: '2発の円環軌道ショット。ULTで7秒間、敵弾の速度を半減する円環を展開する。',
     shotType: 'orbit', shotCount: 2, shotSpacing: 28, fireRate: 450, bulletSpeed: 520, shotPowerRate: 0.165,
     orbitRadius: 30, orbitAngularSpeed: 12.0, orbitForwardLoopRate: 0.29, orbitPhaseStep: Math.PI,
-    ultBaseType: 'summon', ultAddons: ['damage'], ultType: 'prototype_generic',
+    ultName: '静寂の円環',
+    ultDescription: '自身を中心に円環を7秒間展開する。円環内に入った敵弾は移動速度が50%に低下し、外へ出ると元の速度へ戻る。',
+    ultBaseType:'field', ultAddons:['enemy_bullet_slow'], ultType:'shiina_light_ring',
+    lightRingDurationMs:7000, lightRingRadius:190, lightRingBulletSpeedMultiplier:0.5,
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.RYUNE] = buildShootingCharacter({
@@ -2095,9 +2133,13 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.NOEL] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.NOEL, effectKey: 'noel',
-    label: 'BOMB / ITEM', description: '着弾時に小範囲へ広がるRスプラッシュ型。ULTは支援アイテムを少数出現させる。',
+    label: 'BOMB / HEAL', description: '着弾時に小範囲へ広がるRスプラッシュ型。ULTで敵弾を消去し、3.5秒間の無敵と3個の回復ハートを展開する。',
     shotType: 'bomb', bombSize: 'M', shotCount: 1, fireRate: 550, bulletSpeed: 660, shotPowerRate: 0.27, splashRadius: 76, splashDamageRate: 0.55,
-    ultBaseType: 'item_summon', ultAddons: [], ultType: 'prototype_generic',
+    ultName: '慈愛の光',
+    ultDescription: '発動時に画面内の敵弾をすべて消去し、3.5秒間無敵になる。盤面のランダムな位置に回復ハートを3個召喚。各ハートを取得すると、取得キャラの最大HPの30%を回復する。',
+    ultType: 'ange_healing_hearts', ultBaseType: 'item_summon', ultAddons: ['bullet_clear','invincible','heal'],
+    ultInvincibleDurationMs: 3500, ultHeartCount: 3, ultHeartHealPercent: 0.30,
+    ultHeartLifeMs: 7000, ultHeartBlinkLeadMs: 2000,
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.IONA] = buildShootingCharacter({
@@ -2109,7 +2151,7 @@
     slashWidth: 120,
     slashVisualMs: 180,
     ultName: 'キョーレツな一発をあげる♡',
-    ultDescription: '真正面の超狭範囲へ1Hitだけの強烈な拳を叩き込む。命中時はATKの700%ダメージ。追尾せず、範囲外なら完全にMISSとなる。',
+    ultDescription: '真正面の超狭範囲へ1Hitだけの強烈な一撃を叩き込む。命中時はATKの700%ダメージ。追尾せず、範囲外なら完全にMISSとなる。',
     ultBaseType: 'damage', ultAddons: ['damage'], ultType: 'veronica_brass_punch',
     ultDamageAtkMultiplier: 7.0,
     ultPunchRange: 118,
@@ -2121,7 +2163,7 @@
     label: 'ORBIT / BULLET SLOW FIELD',
     description: '2発の円環軌道ショット。ULTは自身を中心に大きな光の円環を7秒間展開し、円内へ入った敵弾の速度を半減する。',
     ultName: '術式・光の円環',
-    ultDescription: '自身を中心に大きな光のサークルを7秒間展開する。サークル内に入った敵弾は移動速度が50%に低下し、サークル外へ出ると元の速度へ戻る。',
+    ultDescription: '自身を中心に円環を7秒間展開する。円環内に入った敵弾は移動速度が50%に低下し、外へ出ると元の速度へ戻る。',
     shotType: 'orbit', shotCount: 2, shotSpacing: 28, fireRate: 450, bulletSpeed: 520, shotPowerRate: 0.165,
     orbitRadius: 32, orbitAngularSpeed: 11.8, orbitForwardLoopRate: 0.29, orbitPhaseStep: Math.PI,
     ultBaseType: 'field', ultAddons: ['enemy_bullet_slow'], ultType: 'shiina_light_ring',
@@ -2178,10 +2220,13 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.ORION] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.ORION, effectKey: 'orion',
-    label: 'SHOTGUN / LIGHT', description: '高威力の単発精密射撃。ULTは広範囲光撃＋弾消し。',
+    label: 'SHOTGUN / BARRIER CLEAR', description: '高威力の単発精密射撃。ULTで敵の属性バリアを解除し、敵全体へダメージを与える。',
     shotType: 'shotgun', shotCount: 1, fireRate: 600, bulletSpeed: 1400, shotPowerRate: 0.44,
     ultGainPerHit: 3.600,
-    ultBaseType: 'burst', ultAddons: ['bullet_clear'], ultType: 'prototype_generic',
+    ultName:'星界の解放',
+    ultDescription:'盤面の敵全員の属性バリアを解除し、敵全体へATK×2.0のダメージを与える。',
+    ultBaseType:'beam', ultAddons:['damage','barrier_clear'], ultType:'ryune_absolute_lethe',
+    ultDamageAtkMultiplier:2.0,
   });
 
   // v306: 限定SR FIRE / LASER
@@ -2672,11 +2717,13 @@
   SHOOTING_CHARACTERS[CHARACTER_ID.LINLIN] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON,
     id: CHARACTER_ID.LINLIN, effectKey:'linlin',
-    label:'PARALLEL / WOOD', description:'木属性のPARALLEL 2連射。ULTは敵弾を全消去し、敵を短時間停止させて全体攻撃を放つ。',
+    label:'PARALLEL / HEAL', description:'木属性のPARALLEL 2連射。ULTで敵弾を消去し、3.5秒間の無敵と3個の回復ハートを展開する。',
     shotType:'parallel', shotCount:2, shotSpacing:18, fireRate:170, bulletSpeed:780, shotPowerRate:0.095,
-    ultName:'フォレストショット',
-    ultDescription:'発動時に画面内の敵弾をすべて消去し、敵を約1.4秒間停止。約0.84秒後に敵全体へATK×2.8のダメージを与える。',
-    ultType:'balance_flash', ultDamageAtkMultiplier:2.8,
+    ultName: '慈愛の光',
+    ultDescription: '発動時に画面内の敵弾をすべて消去し、3.5秒間無敵になる。盤面のランダムな位置に回復ハートを3個召喚。各ハートを取得すると、取得キャラの最大HPの30%を回復する。',
+    ultType: 'ange_healing_hearts', ultBaseType: 'item_summon', ultAddons: ['bullet_clear','invincible','heal'],
+    ultInvincibleDurationMs: 3500, ultHeartCount: 3, ultHeartHealPercent: 0.30,
+    ultHeartLifeMs: 7000, ultHeartBlinkLeadMs: 2000,
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.MUUMUU] = buildShootingCharacter({

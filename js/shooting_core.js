@@ -18106,10 +18106,10 @@
   }
 
   // ============================================================
-  // build929: アンジェ ULT「慈愛の光」
+  // build1327: 共通ULT「慈愛の光」
   // ============================================================
-  // 敵本体の移動・新規弾生成だけを3秒停止し、既存弾は消さない。
-  // 同時に、取得キャラの最大HP33%を回復するハートを3個設置する。
+  // 発動時に敵弾全消去、3.5秒間は発動キャラが無敵。
+  // ランダム3か所の回復ハートは取得した味方の最大HP30%を個別に回復。
   function ensureAngeHeartStyles() {
     if (document.getElementById('shooting-ange-heart-style-v1')) return;
     const style = document.createElement('style');
@@ -18206,7 +18206,7 @@
     const count = Math.max(1, Math.floor(Number(c.ultHeartCount || 3)));
     const lifeMs = Math.max(1000, Number(c.ultHeartLifeMs || 7000));
     const blinkLeadMs = Math.max(0, Math.min(lifeMs, Number(c.ultHeartBlinkLeadMs || 2000)));
-    const healPercent = Math.max(0, Number(c.ultHeartHealPercent || 0.33));
+    const healPercent = Math.max(0, Number(c.ultHeartHealPercent ?? 0.30));
     const positions = getAngeHeartSpawnPositions(count, arena.clientWidth, arena.clientHeight);
 
     positions.forEach((pos, index) => {
@@ -18287,14 +18287,20 @@
 
   function useAngeUlt(c) {
     if (!state || state.ended || state.finishing) return;
-    showUltCut(c.ultName || '慈愛の光', c.effectKey);
+    const now = performance.now();
+    showUltCut(c.ultName || '慈愛の光', c.effectKey, c);
     ultScreenFlash('ult-flash-mimosa', c);
 
-    // 重要：既存の敵弾は消さない。停止対象は敵本体の移動と「これから出る弾」だけ。
-    applyAngeEnemyFreeze(Number(c.ultEnemyFreezeMs || 3000));
+    clearEnemyBulletsOnly();
+    // member個別バフ。交代先には無敵を引き継がず、当たり判定・自キャラ座標も変えない。
+    const member = getActiveMember();
+    if (member) {
+      const duration = Math.max(0, Number(c.ultInvincibleDurationMs ?? 3500));
+      member.invincibleUntil = Math.max(Number(member.invincibleUntil || 0), now + duration);
+    }
     spawnAngeHealingHearts(c);
 
-    state.ultLockUntil = performance.now() + 300;
+    state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), now + 300);
     renderHud();
   }
 
@@ -27284,6 +27290,7 @@
     else if (c.ultType === 'eltena_black_hole') useEltenaUlt(c);
     else if (c.ultType === 'kureha_fire_black_hole') useKurehaUlt(c);
     else if (c.ultType === 'nem_stun') useNemUlt(c);
+  // build1327: shared healing ULT dispatcher includes アンジェ・リンリン・ノエル.
     else if (c.ultType === 'ange_healing_hearts') useAngeUlt(c);
     else if (c.ultType === 'mimosa_item_spawn') useMimosaUlt(c);
     else if (c.ultType === 'mito_summon_double') useMitoUlt(c);

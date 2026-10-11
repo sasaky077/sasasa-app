@@ -1,4 +1,4 @@
 {
-  "build": 1326,
-  "note": "Unify ULT descriptions by effect type and runtime parameters across 54 characters; remove references to other character names; no battle or gacha changes."
+  "build": 1327,
+  "note": "Reassign 7 R-character ULTs: shared heal hearts+invulnerability (Ange/Rinrin/Noel), single-target strike (Shigure), bullet-slow ring (Patra/Serena), barrier-clear global attack (Orion). Keep shooting and other roster unchanged."
 }
