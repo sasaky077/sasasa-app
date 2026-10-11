@@ -1,4 +1,4 @@
 {
-  "build": 1330,
-  "note": "Fix player LASER visual stacking: exclude laser elemental class from common bullet z-index override; laser now behind normal enemies, bosses and hostile bullet layers. No combat behavior change."
+  "build": 1332,
+  "note": "CH06 novel character panels: Teufel=chara_37_panel, Aina=chara_17_panel, Veronica=chara_22_panel. No combat, scenario, or story logic changes."
 }

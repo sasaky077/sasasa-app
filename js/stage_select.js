@@ -749,6 +749,88 @@
     });
   }
 
+  // CH06 only: self-contained HTML mini games. Clear is accepted ONLY from the
+  // final explicit completion event, never from a partial board state.
+  function isChapter6StandaloneStage(stage) {
+    const id = String((stage && (stage.baseStageId || stage.id)) || '');
+    // ID-first: on fast replay taps scenario JS may not have loaded yet.
+    return id === 'shooting_ch06_02' || id === 'shooting_ch06_04';
+  }
+
+  function playChapter6StandaloneStage(stage, mode = 'normal') {
+    const stageId = String(stage.baseStageId || stage.id);
+    const isStealth = stageId === 'shooting_ch06_02';
+    const chapter = Number(stage.chapter || 6);
+    const storyMode = mode === 'beginner' ? 'beginner' : 'normal';
+    const file = isStealth ? 'stealth_ch06.html' : 'map_puzzle_ch06.html';
+    const prefix = isStealth ? 'stealth' : 'map';
+    const overlayId = 'zeraphia-ch06-game-overlay';
+    document.getElementById(overlayId)?.remove();
+    const overlay = document.createElement('div');
+    overlay.id = overlayId;
+    overlay.style.cssText = 'position:fixed!important;inset:0!important;width:100%!important;height:100dvh!important;z-index:2147483647!important;background:#f1eadb!important;overflow:hidden!important;overscroll-behavior:none!important;touch-action:none!important;';
+    const frame = document.createElement('iframe');
+    frame.title = isStealth ? 'アイナの隠密ミニゲーム' : '道しるべ・紙のパズル';
+    frame.setAttribute('scrolling','no');
+    frame.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;display:block;overflow:hidden;';
+    frame.src = file + '?v=1331';
+    overlay.appendChild(frame);
+    document.body.appendChild(overlay);
+    const prev = [document.documentElement.style.overflow,document.body.style.overflow,document.body.style.touchAction];
+    document.documentElement.style.overflow='hidden';
+    document.body.style.overflow='hidden';
+    document.body.style.touchAction='none';
+    let done = false;
+    function cleanup() {
+      window.removeEventListener('message', onMessage);
+      overlay.remove();
+      document.documentElement.style.overflow=prev[0];
+      document.body.style.overflow=prev[1];
+      document.body.style.touchAction=prev[2];
+      try { const child=frame.contentWindow; if(child){ delete child['zeraphia'+(isStealth?'Stealth':'Map')+'Clear']; delete child['zeraphia'+(isStealth?'Stealth':'Map')+'Exit']; } }catch(_){}
+    }
+    function returnToChapter() {
+      if(typeof window.openStageSelect==='function') window.openStageSelect(chapter,storyMode);
+    }
+    function exit() { if(done)return; done=true;cleanup();returnToChapter(); }
+    function cleared() {
+      if(done)return;
+      done=true;
+      cleanup();
+      const complete=()=>{
+        markNovelStoryStageCleared(stage.id);
+        if(typeof window.renderStoryChapterList==='function'){
+          window.renderStoryChapterList('normal');
+          window.renderStoryChapterList('beginner');
+        }
+        returnToChapter();
+      };
+      try {
+        if(window.StoryNovel && typeof window.StoryNovel.playPost==='function'){
+          const played=window.StoryNovel.playPost(stageId,{onComplete:complete,onExit:complete});
+          if(played)return;
+        }
+      }catch(err){console.error('[CH06] post-story failed',err);}
+      complete();
+    }
+    function onMessage(event) {
+      if(done || event.source!==frame.contentWindow || event.origin!==location.origin)return;
+      if(!event.data || typeof event.data!=='object')return;
+      if(event.data.type==='zeraphia-'+prefix+'-cleared')cleared();
+      else if(event.data.type==='zeraphia-'+prefix+'-exit')exit();
+    }
+    window.addEventListener('message',onMessage);
+    frame.addEventListener('load',()=>{
+      if(done)return;
+      try {
+        const child=frame.contentWindow;
+        if(!child || !child.document || !child.document.getElementById('board'))return;
+        child['zeraphia'+(isStealth?'Stealth':'Map')+'Clear']=cleared;
+        child['zeraphia'+(isStealth?'Stealth':'Map')+'Exit']=exit;
+      }catch(_){ /* postMessage fallback */ }
+    });
+  }
+
   // ============================================================
   // STORY（SHOOTING）ステージ選択
   // ============================================================
@@ -792,7 +874,7 @@
       hideStageSelect();
       setReturnContext();
       if (typeof window.openShootingStage === 'function') {
-        if (replay && !isRingPuzzleStage(stage) && !isNovelOnlyStoryStage(stage) && typeof window.openShootingEvent === 'function') {
+        if (replay && !isRingPuzzleStage(stage) && !isChapter6StandaloneStage(stage) && !isNovelOnlyStoryStage(stage) && typeof window.openShootingEvent === 'function') {
           window.openShootingEvent({ stageId: stage.id, storyReplay: true });
         } else {
           window.openShootingStage(stage.id);
@@ -817,6 +899,14 @@
     };
 
     const beginReadyStoryFlow = () => {
+      if (isChapter6StandaloneStage(stage)) {
+        const openGame = () => { hideStageSelect(); setReturnContext(); playChapter6StandaloneStage(stage, storyMode); };
+        if (replay) { openGame(); return; }
+        const novel=window.StoryNovel;
+        const played=novel.playPre(storyId,{onComplete:openGame,onExit:returnToChapter});
+        if (!played) openGame();
+        return;
+      }
       if (isRingPuzzleStage(stage)) {
         if (replay) { hideStageSelect();playRingPuzzleStage(stage, storyMode);return; }
         const novel=window.StoryNovel;
@@ -867,7 +957,7 @@
     hideStageSelect();
     setReturnContext();
     // 再挑戦はノベルのロードを待たず、戦闘モジュールだけ待つ。
-    if (replay && !isRingPuzzleStage(stage) && !isNovelOnlyStoryStage(stage) && typeof window.openShootingEvent === 'function') {
+    if (replay && isStoryNovelReady() && !isRingPuzzleStage(stage) && !isChapter6StandaloneStage(stage) && !isNovelOnlyStoryStage(stage) && typeof window.openShootingEvent === 'function') {
       openBattle();
       return;
     }

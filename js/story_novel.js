@@ -13,7 +13,10 @@
     'リュネ':25,
     'ミモザ':28,
     'ラテルナ':32,
-    'レオナクロス':39
+    'レオナクロス':39,
+    'トイフェル':37,
+    'アイナ':17,
+    'ベロニカ':22
   });
 
   let session = null;
@@ -60,7 +63,17 @@
     return entriesFor(stageId,phase).length>0;
   }
 
+  // CH06: ノベル立ち絵は指定されたパネル画像を固定で使う。
+  // CHARACTERS側のimg（全身絵等）より優先する。
+  const chapter6PanelImages = Object.freeze({
+    'トイフェル': 'images/chara_37_panel.webp',
+    'アイナ': 'images/chara_17_panel.webp',
+    'ベロニカ': 'images/chara_22_panel.webp'
+  });
+
   function getCharacterPanel(name){
+    const chapter6Panel = chapter6PanelImages[String(name||'')];
+    if(chapter6Panel) return chapter6Panel;
     // CH04-04: リュネは指定された専用パネル画像を使用する。
     if(String(name||'') === 'リュネ') return 'images/chara_25_panel.webp';
     const id=speakerIds[String(name||'')];

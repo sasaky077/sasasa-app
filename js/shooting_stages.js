@@ -32,7 +32,7 @@
     get 3() { return window.ZERAPHIA_STORY_SCENARIO?.['shooting_ch03_01']?.chapterTitle || '魂との邂逅'; },
     get 4() { return window.ZERAPHIA_STORY_SCENARIO?.['shooting_ch04_01']?.chapterTitle || '水音'; },
     get 5() { return window.ZERAPHIA_STORY_SCENARIO?.['shooting_ch05_01']?.chapterTitle || '円環'; },
-    6: '未定',
+    get 6() { return window.ZERAPHIA_STORY_SCENARIO?.['shooting_ch06_01']?.chapterTitle || '来訪者'; },
     7: '未定',
     8: '未定'
   };
@@ -63,6 +63,11 @@
     CH05_02: 'shooting_ch05_02',
     CH05_03: 'shooting_ch05_03',
     CH05_04: 'shooting_ch05_04',
+
+    CH06_01: 'shooting_ch06_01',
+    CH06_02: 'shooting_ch06_02',
+    CH06_03: 'shooting_ch06_03',
+    CH06_04: 'shooting_ch06_04',
 
     DAILY_MON_INTERMEDIATE: 'shooting_daily_mon_intermediate',
     DAILY_MON_ADVANCED: 'shooting_daily_mon_advanced',
@@ -711,6 +716,43 @@
         itemDropRate:0,enemyElementSequence:Object.freeze(['dark','dark','dark']),
         enemyHp:1600,enemyBulletDamage:115,enemyBulletSpeed:250,enemyFireRate:780,barrageLevel:4}),
       mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'闇属性レムナント3体を撃破'}),playable:true
+    }),
+
+    // ============================================================
+    // CHAPTER 06 — 来訪者（物語 → 隠密ゲーム → 属性バリア戦 → 紙のパズル）
+    // ============================================================
+    [SHOOTING_STAGE_ID.CH06_01]: Object.freeze({
+      id:SHOOTING_STAGE_ID.CH06_01, chapter:6, stageNo:1,
+      get name(){return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch06_01?.stageTitle || '気配';},
+      type:'normal', background:'images/battle_bg_01.webp', enemyIds:Object.freeze([]),
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'物語を読む'}),playable:true
+    }),
+    [SHOOTING_STAGE_ID.CH06_02]: Object.freeze({
+      id:SHOOTING_STAGE_ID.CH06_02, chapter:6, stageNo:2,
+      get name(){return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch06_02?.stageTitle || '吉か凶か';},
+      type:'normal', background:'images/battle_bg_01.webp', enemyIds:Object.freeze([]),
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'隠密ミニゲームを2戦クリア'}),playable:true
+    }),
+    [SHOOTING_STAGE_ID.CH06_03]: Object.freeze({
+      id:SHOOTING_STAGE_ID.CH06_03, chapter:6, stageNo:3,
+      get name(){return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch06_03?.stageTitle || '火を払う水';},
+      type:'normal', background:'images/battle_bg_01.webp',
+      enemyIds:Object.freeze([SHOOTING_ENEMY_ID.MINI_03]),
+      weaknessOnlyEnemies:true,
+      normalBattle:Object.freeze({
+        totalEnemies:3, maxActive:3, spawnAllAtStart:true, spawnIntervalMs:500,
+        itemDropRate:0, enemyImage:'images/zako_enemy_01_normal_light.webp',
+        enemyElementSequence:Object.freeze(['fire','fire','wood']),
+        enemyHpSequence:Object.freeze([2200,2200,2200]),
+        enemyBulletDamage:125, enemyBulletSpeed:250, enemyFireRate:1000, barrageLevel:4
+      }),
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'火2体・木1体の強化個体を撃破'}),playable:true
+    }),
+    [SHOOTING_STAGE_ID.CH06_04]: Object.freeze({
+      id:SHOOTING_STAGE_ID.CH06_04, chapter:6, stageNo:4,
+      get name(){return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch06_04?.stageTitle || '道しるべ';},
+      type:'normal', background:'images/battle_bg_01.webp', enemyIds:Object.freeze([]),
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'2枚の紙の紋様をつなぐ'}),playable:true
     }),
 
     // ============================================================
