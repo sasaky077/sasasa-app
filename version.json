@@ -1,4 +1,4 @@
 {
-  "build": 1368,
-  "note": "Increase transparency of the character list title bar while preserving title, search and menu readability."
+  "build": 1373,
+  "note": "Reduced filter modal title and section heading sizes, replaced close button with provided image, and slimmed selected option borders without changing choice text sizes."
 }

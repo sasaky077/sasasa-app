@@ -1,0 +1,94 @@
+/* build1371 — キャラ詳細 SHOT 表示専用（他の画面を変更しない） */
+#detail-modal .detail-shot-type-value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  max-width: 100%;
+  min-width: 0;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+#detail-modal .detail-shot-element-icon,
+#detail-modal .detail-shot-kind-icon {
+  display: block;
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+  object-fit: contain;
+}
+#detail-modal .detail-shot-kind-icon {
+  width: 19px;
+  height: 19px;
+  flex-basis: 19px;
+}
+#detail-modal .detail-shot-separator {
+  color: #b39a79;
+  font-size: 13px;
+  font-weight: 400;
+}
+#detail-modal .detail-shot-kind-name,
+#detail-modal .detail-shot-kind-count {
+  font-family: "Cinzel", "Noto Serif JP", serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0;
+  color: #4c4031;
+}
+#detail-modal .detail-shot-kind-count {
+  margin-left: 1px;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 390px) {
+  #detail-modal .detail-status-grid .detail-status-row:has(.detail-shot-type-value) {
+    gap: 4px !important;
+  }
+  #detail-modal .detail-shot-type-value { gap: 3px; }
+  #detail-modal .detail-shot-element-icon { width: 16px; height: 16px; flex-basis: 16px; }
+  #detail-modal .detail-shot-kind-icon { width: 17px; height: 17px; flex-basis: 17px; }
+  #detail-modal .detail-shot-kind-name,
+  #detail-modal .detail-shot-kind-count { font-size: 11px; }
+}
+
+/* build1372: prevent intrinsic dimensions of attribute/shot icons from escaping the row */
+#detail-modal .detail-status-grid .detail-status-val .detail-shot-type-value {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 4px !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  white-space: nowrap !important;
+  flex-wrap: nowrap !important;
+}
+#detail-modal .detail-status-grid .detail-status-val img.detail-shot-element-icon {
+  display: inline-block !important;
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  min-height: 16px !important;
+  max-width: 16px !important;
+  max-height: 16px !important;
+  flex: 0 0 16px !important;
+  object-fit: contain !important;
+}
+#detail-modal .detail-status-grid .detail-status-val img.detail-shot-kind-icon {
+  display: inline-block !important;
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+  max-width: 18px !important;
+  max-height: 18px !important;
+  flex: 0 0 18px !important;
+  object-fit: contain !important;
+}
+#detail-modal .detail-status-grid .detail-status-row:has(.detail-shot-type-value) {
+  min-height: 28px !important;
+}
+#detail-modal .detail-status-grid .detail-status-row:has(.detail-shot-type-value) > .detail-status-label {
+  flex: 0 1 auto !important;
+  white-space: nowrap !important;
+}
