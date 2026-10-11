@@ -43,6 +43,7 @@ svg.linked .trail{animation:pulse 1.6s ease-in-out infinite}
 .ring2{fill:none;stroke:#7d5d36;stroke-width:1.6}
 .node.lit .ring2{stroke:#c18c20}
 svg.fade .edge,svg.fade .node,svg.fade .trail,svg.fade .trail-head{transition:opacity 1.6s ease;opacity:.07}
+svg.fade.clean .edge,svg.fade.clean .node,svg.fade.clean .trail,svg.fade.clean .trail-head{opacity:0}
 .reveal{animation:revealIn 2.2s ease forwards;opacity:0}
 @keyframes revealIn{to{opacity:1}}
 .status{margin:0;padding:5px 18px;font-size:12px;letter-spacing:.1em;color:#6b5030;background:linear-gradient(90deg,transparent,#fff9eb 20%,#fff9eb 80%,transparent);border-top:1px solid rgba(162,119,51,.27);border-bottom:1px solid rgba(162,119,51,.27)}
@@ -146,6 +147,7 @@ function solutions(L,limit){
     if(!L.revealImage) return;
     const img=el('image',{class:'reveal',href:L.revealImage,x:0,y:0,width:360,height:280,preserveAspectRatio:'xMidYMid meet'},svg);
     img.addEventListener('error',()=>img.remove());
+    img.addEventListener('load',()=>svg.classList.add('clean'));
   }
 
   function updateStatus(){

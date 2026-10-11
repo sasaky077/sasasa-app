@@ -5838,8 +5838,8 @@ window.NOTICE_ITEMS = [
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
 <script src="js/shooting_resonance.js?v=1321-gacha-preview-master"></script>
-<script src="js/resonance_system.js?v=1334-memory-sync-secure"></script>
-<script src="js/resonance_ui.js?v=1334-story-memory-modal"></script>
+<script src="js/resonance_system.js?v=1335-atomic-gacha-secure"></script>
+<script src="js/resonance_ui.js?v=1335-cloud-verify-all"></script>
 <script src="js/character_levelup.js?v=693-score-ranking-nav-v2"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
@@ -9021,17 +9021,9 @@ startTitleBgm();
       captured_at: data.capturedAt || new Date().toISOString()  // ISOタイムスタンプを使用
     };
 
-    // 常にINSERT（BOX方式：重複可）
-    var result = await sb.from('collected_characters').insert(payload).select();
-    if(result.error){
-      console.error('saveToDB error:', result.error);
-      if(saveEl) saveEl.textContent = '保存失敗 :(';
-      return;
-    }
-    if(result.data && result.data[0]){
-      data.db_id = result.data[0].id;
-    }
-    if(saveEl) saveEl.textContent = '✓ 保存しました';
+    // build1335: キャラは署名済み抽選/報酬RPCがサーバーへ直接付与する。
+    // クライアントからのINSERTを禁止（重複作成や偽キャラ登録を防止）。
+    if(saveEl) saveEl.textContent = '✓ サーバーで保存済み';
   }
 
 
@@ -18678,9 +18670,9 @@ function fadeOutOpeningBgm(){
 
 
 <script src="js/shooting_characters.js?v=1327-ult-group-rebalance"></script>
-<script src="js/story_scenario.js?v=1333-cast-sides"></script>
+<script src="js/story_scenario.js?v=1336-ch06-paper-reveal"></script>
 <script src="js/story_novel.js?v=1333-cast-sides"></script>
-<script src="js/stage_select.js?v=1331-ch06-games"></script>
+<script src="js/stage_select.js?v=1336-ch06-paper-reveal"></script>
 <!-- 32マス共有盤面バトル（新規追加） -->
 <link rel="stylesheet" href="css/battle_32_ui.css?v=593">
 <script src="js/remnant_blessings.js?v=593"></script>

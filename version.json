@@ -1,4 +1,4 @@
 {
-  "build": 1334,
-  "note": "Fix story memory fragment ownership and limit-break consumption: refresh authoritative Supabase inventory, atomic server-side story resonance upgrade, correct cloud material cache synchronization."
+  "build": 1336,
+  "note": "CH06-04: paper reveal images (disc map / unknown map) shown in map puzzle; added 'large ringed lights = disc towers' dialogue."
 }

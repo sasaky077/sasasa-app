@@ -5351,6 +5351,35 @@
         "location": "scene_ch05_04.webp"
       },
       {
+        "speaker": "レオナクロス",
+        "text": "待ってくれ。その光と、ここの光……ほかと光り方が違わないか？",
+        "left": "レオナクロス",
+        "right": "",
+        "location": "scene_ch05_04.webp"
+      },
+      {
+        "speaker": "",
+        "left": "",
+        "right": "",
+        "text": "いくつもの光の中に、ひときわ大きく、輪をまとった光が点々とある。",
+        "narration": true,
+        "location": "scene_ch05_04.webp"
+      },
+      {
+        "speaker": "ミモザ",
+        "text": "この塔にも、トイフェルたちの塔にも……円盤がある。",
+        "left": "",
+        "right": "ミモザ",
+        "location": "scene_ch05_04.webp"
+      },
+      {
+        "speaker": "ミモザ",
+        "text": "じゃあ、この大きな光は……円盤のある塔？",
+        "left": "",
+        "right": "ミモザ",
+        "location": "scene_ch05_04.webp"
+      },
+      {
         "speaker": "",
         "left": "",
         "right": "",

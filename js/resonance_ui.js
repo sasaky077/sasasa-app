@@ -395,8 +395,8 @@ async function openLimitBreakModal(target){
   var listEl = document.getElementById('lb-material-list');
   if(!listEl) return;
 
-  // build1334: ローカルキャッシュを根拠に「記憶の欠片不足」と表示しない。
-  if(isStoryLimitBreakCharacter(target) && typeof window.loadInventoryFromSupabase === 'function'){
+  // build1335: ストーリー／ガチャ双方、サーバーの所持数を読み直してから素材判定する。
+  if(typeof window.loadInventoryFromSupabase === 'function'){
     listEl.innerHTML = '<div class="lb-no-material">所持素材を確認しています…</div>';
     document.getElementById('limitbreak-modal').classList.add('active');
     try {
