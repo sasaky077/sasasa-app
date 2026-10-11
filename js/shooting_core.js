@@ -2037,6 +2037,7 @@
     shooting_ch04_02: Object.freeze([1, 20, 3]), // エリ / アルノ / アウラ
     shooting_ch04_03: Object.freeze([1, 20, 3]), // エリ / アルノ / アウラ
     shooting_ch05_04: Object.freeze([5, 3]), // ジグ / アウラ（初回固定）
+    shooting_ch06_03: Object.freeze([20, 22]), // アルノ / ベロニカ（初回・再挑戦とも2体固定）
   });
 
   // CH03-04、CH04-01、CH04-04は指定キャラから3人を選択。固定編成表には重複登録しない。
@@ -2058,16 +2059,18 @@
   // CH04-04以降は所持キャラから自由編成。CH04-03以前の物語編成は維持。
   function isFreeStoryPartyStage() {
     if (!isStoryShootingStage() || !selectedStage) return false;
-    const id = String(selectedStage.baseStageId || selectedStage.id || '');
+    const id = String(selectedStage.baseStageId || selectedStage.id || '').replace(/^shooting_beginner_/, 'shooting_');
     const match = id.match(/ch(\d{2})_(\d{2})/i);
-    return !!match && id !== 'shooting_ch05_04' && (Number(match[1]) > 4 || (Number(match[1]) === 4 && Number(match[2]) >= 4 && id !== 'shooting_ch04_04'));
+    return !!match && id !== 'shooting_ch05_04' && id !== 'shooting_ch06_03' && (Number(match[1]) > 4 || (Number(match[1]) === 4 && Number(match[2]) >= 4 && id !== 'shooting_ch04_04'));
   }
 
   function getSelectedStoryFixedPartyIds() {
-    if (isStoryReplayBattle() || isFreeStoryPartyStage() || !isStoryShootingStage() || !selectedStage) return null;
-    const key = String(selectedStage.id || '')
+    if (!isStoryShootingStage() || !selectedStage) return null;
+    const key = String(selectedStage.baseStageId || selectedStage.id || '')
       .toLowerCase()
       .replace(/^shooting_beginner_/, 'shooting_');
+    // build1337: CH06-03はCLEAR後の再挑戦でも2体固定。ほかのSTORY再挑戦は従来の自由編成を維持。
+    if (key !== 'shooting_ch06_03' && (isStoryReplayBattle() || isFreeStoryPartyStage())) return null;
     const ids = STORY_FIXED_PARTY_MAP[key];
     return Array.isArray(ids) && ids.length ? ids.map(Number) : null;
   }
@@ -2100,6 +2103,8 @@
   function isShootingCharacterAvailableForCurrentParty(id) {
     id = Number(id);
     if (!SHOOTING_CHARACTERS[id] || !isPublicShootingCharacterId(id)) return false;
+    // CH06-03固定ゲストは未所持でも使える（再挑戦・中断再開・戦闘状態の再構築を含む）。
+    if (getSelectedStoryFixedPartyIds()?.includes(id)) return true;
     if (isGachaTrialStage() && id === gachaTrialCharacterId) return true;
     const cfg = getSelectedStorySelectablePartyConfig();
     if (cfg && cfg.allowedIds.includes(id)) return true;
@@ -2170,9 +2175,10 @@
   }
 
   function ensureStoryEriLeader() {
-    if (isStoryReplayBattle() || isFreeStoryPartyStage() || !isStoryShootingStage()) return;
-    // build1080: ステージ固有の固定編成が定義されている場合は最優先。
+    if (!isStoryShootingStage()) return;
+    // build1337: CH06-03の再挑戦でも固定編成を維持。他ステージの再挑戦仕様は変更しない。
     if (applySelectedStoryFixedParty()) return;
+    if (isStoryReplayBattle() || isFreeStoryPartyStage()) return;
     // build1216: CH03-04は指定5人から任意3人。エリを固定しない。
     if (isSelectedStorySelectablePartyStage()) {
       const cfg = getSelectedStorySelectablePartyConfig();
@@ -2914,7 +2920,7 @@
     const now = performance.now();
 
     selectedPartyIds = Array.isArray(snapshot.selectedPartyIds)
-      ? snapshot.selectedPartyIds.map(Number).filter(id => SHOOTING_CHARACTERS[id] && isShootingCharacterOwned(id)).slice(0, PARTY_SIZE)
+      ? snapshot.selectedPartyIds.map(Number).filter(id => SHOOTING_CHARACTERS[id] && isShootingCharacterAvailableForCurrentParty(id)).slice(0, PARTY_SIZE)
       : [];
     if (isStoryShootingStage()) ensureStoryEriLeader();
     if (!selectedPartyIds.length) return false;
@@ -3676,14 +3682,14 @@
 
     const ruleText = document.getElementById('shooting-party-rule-text');
     if (ruleText) {
-      if (isStoryReplayBattle()) {
-        ruleText.textContent = 'CLEAR再挑戦 · 所持キャラから最大3人を自由編成';
-      } else if (fixedStoryParty) {
+      if (fixedStoryParty) {
         const names = fixedStoryParty
           .map(id => buildResonatedCharacterProfile(id)?.name || '')
           .filter(Boolean)
           .join('・');
         ruleText.textContent = `STORY固定編成 · ${names}`;
+      } else if (isStoryReplayBattle()) {
+        ruleText.textContent = 'CLEAR再挑戦 · 所持キャラから最大3人を自由編成';
       } else {
         const selectableStoryParty = getSelectedStorySelectablePartyConfig();
         ruleText.textContent = selectableStoryParty
