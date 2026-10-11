@@ -2036,11 +2036,12 @@
     shooting_ch03_03: Object.freeze([20]),      // アルノ
     shooting_ch04_02: Object.freeze([1, 20, 3]), // エリ / アルノ / アウラ
     shooting_ch04_03: Object.freeze([1, 20, 3]), // エリ / アルノ / アウラ
+    shooting_ch04_04: Object.freeze([1, 3, 25]), // エリ / アウラ / リュネ（初回固定・編成済み）
     shooting_ch05_04: Object.freeze([5, 3]), // ジグ / アウラ（初回固定）
     shooting_ch06_03: Object.freeze([20, 22]), // アルノ / ベロニカ（初回・再挑戦とも2体固定）
   });
 
-  // CH03-04、CH04-01、CH04-04は指定キャラから3人を選択。固定編成表には重複登録しない。
+  // CH03-04とCH04-01は指定キャラから3人を選択。CH04-04初回は固定編成として自動セット。
   const STORY_SELECTABLE_PARTY_MAP = Object.freeze({
     shooting_ch03_04: Object.freeze({
       allowedIds: Object.freeze([1, 5, 3, 39, 28]), // エリ / ジグ / アウラ / レオナクロス / ミモザ
@@ -2048,10 +2049,6 @@
     }),
     shooting_ch04_01: Object.freeze({
       allowedIds: Object.freeze([1, 5, 3, 20, 28, 39]),
-      requiredSize: 3,
-    }),
-    shooting_ch04_04: Object.freeze({
-      allowedIds: Object.freeze([1, 3, 25]), // エリ / アウラ / リュネ
       requiredSize: 3,
     }),
   });
@@ -2069,7 +2066,8 @@
     const key = String(selectedStage.baseStageId || selectedStage.id || '')
       .toLowerCase()
       .replace(/^shooting_beginner_/, 'shooting_');
-    // build1337: CH06-03はCLEAR後の再挑戦でも2体固定。ほかのSTORY再挑戦は従来の自由編成を維持。
+    // build1338: CH04-04未CLEARは3人固定で出撃時点から編成済み。再挑戦は従来の自由編成。
+    // CH06-03だけは再挑戦でも2体固定。
     if (key !== 'shooting_ch06_03' && (isStoryReplayBattle() || isFreeStoryPartyStage())) return null;
     const ids = STORY_FIXED_PARTY_MAP[key];
     return Array.isArray(ids) && ids.length ? ids.map(Number) : null;
@@ -22628,7 +22626,8 @@
     if (applySelectedStoryFixedParty()) {
       // STORY固定編成をそのまま使用。所持状況には依存しない。
     } else if (isSelectedStorySelectablePartyStage()) {
-      // build1216: CH03-04は空の3枠から、指定5人のうち3人をプレイヤーが選ぶ。
+      // CH03-04 / CH04-01の選択編成は空枠から指定メンバーを選ぶ。
+      // CH04-04初回は固定編成へ移したため、この分岐に入らない。
       selectedPartyIds = [];
       const cfg = getSelectedStorySelectablePartyConfig();
       selectedCharacterId =
