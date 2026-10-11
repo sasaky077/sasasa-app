@@ -401,8 +401,19 @@
 .gacha-resonance-tab.active{color:#74555d;font-weight:700;filter:saturate(1.32) brightness(.96) contrast(1.04) drop-shadow(0 2px 3px rgba(122,89,28,.22));transform:translateY(-1px)}
 .gacha-resonance-tab:active{transform:translateY(1px) scale(.98)}
 .gacha-resonance-tab:focus-visible{outline:1px solid rgba(185,145,62,.72);outline-offset:1px}
-.gacha-resonance-current{display:flex;flex-direction:column;gap:5px;margin:0 0 12px;padding:10px 12px;border-left:3px solid #d8b96b;background:rgba(216,185,107,.08);font-size:11px;line-height:1.65;color:#ccc}
-.gacha-resonance-current b{color:#f1d58c;font-size:12px;letter-spacing:.06em}
+.gacha-resonance-current{display:flex;flex-direction:column;gap:5px;margin:0 0 12px;padding:10px 12px;border-left:3px solid #d8b96b;background:rgba(216,185,107,.1);font-size:11px;line-height:1.65;color:#6b543b}
+.gacha-resonance-current b{color:#78562d;font-size:12px;letter-spacing:.06em}
+/* build1321: 未所持でも4段階の効果を画面上部に一覧表示する */
+.gacha-resonance-overview{margin:6px 0 13px;border-top:1px solid rgba(177,148,101,.32);border-bottom:1px solid rgba(177,148,101,.32);font-family:'Noto Serif JP',serif;color:#614e3d}
+.gacha-resonance-overview-heading{font-size:11px;font-weight:700;letter-spacing:.08em;padding:9px 2px 6px}
+.gacha-resonance-overview-row{display:grid;grid-template-columns:42px minmax(0,1fr) 52px;gap:7px;align-items:center;padding:8px 3px;border-top:1px solid rgba(177,148,101,.16);font-size:11px;line-height:1.45}
+.gacha-resonance-overview-row .lv{font-weight:700;color:#927348;white-space:nowrap}
+.gacha-resonance-overview-row .effect{min-width:0;overflow-wrap:anywhere}
+.gacha-resonance-overview-row .state{font-size:9px;text-align:right;color:#9c8a6d}
+.gacha-resonance-overview-row.is-active{background:rgba(187,149,82,.11)}
+.gacha-resonance-overview-row.is-active .state{color:#6b8e52;font-weight:700}
+.gacha-resonance-overview-row.is-next .state{color:#a77d45}
+.gacha-resonance-overview-missing{padding:9px 3px;font-size:11px;color:#8f7354}
 #detail-modal.is-gacha-pickup-preview #detail-name{display:none!important}
 </style>
   <link rel="stylesheet" href="css/shooting_event.css?v=1293-replay-roster">
@@ -5826,7 +5837,7 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=1319-resonance-default-all"></script>
+<script src="js/shooting_resonance.js?v=1321-gacha-preview-master"></script>
 <script src="js/resonance_system.js?v=1285-memory-fragment"></script>
 <script src="js/resonance_ui.js?v=1285-memory-fragment"></script>
 <script src="js/character_levelup.js?v=693-score-ranking-nav-v2"></script>
@@ -16105,7 +16116,7 @@ function buildCharacterDetailHTML(data, options){
       '</div>' +
     '</div>';
 
-  if(typeof buildResonanceBonusHTML === 'function'){
+  if(!options.skipResonanceSection && typeof buildResonanceBonusHTML === 'function'){
     html += '<div class="detail-shooting-section detail-shooting-resonance">' +
       '<div class="detail-section-title">共鳴</div>' +
       buildResonanceBonusHTML(Object.assign({}, data, { id:c.id, limitBreak:lb })) +
@@ -16332,11 +16343,31 @@ async function deleteCurrentChara(){
   }
 
   function buildSelectedResonanceSummary(chara, lb){
-    if(lb <= 0) return '<div class="gacha-resonance-current"><b>無凸</b><span>強化効果なし</span></div>';
+    if(lb <= 0) return '<div class="gacha-resonance-current"><b>無凸</b><span>強化効果なし。下の一覧でLv.1〜4の効果を確認できます。</span></div>';
     var master=getResonanceBonusMaster(chara);
     var bonus=master && master[lb];
-    if(!bonus) return '';
+    if(!bonus) return '<div class="gacha-resonance-current"><b>強化Lv.'+lb+'</b><span>効果情報を取得できませんでした。</span></div>';
     return '<div class="gacha-resonance-current"><b>強化Lv.'+lb+'　'+detailEscapeHTML(bonus.summary || '')+'</b><span>'+detailEscapeHTML(bonus.detail || '')+'</span></div>';
+  }
+
+  // 提供割合から開いたとき、未所持・無凸でも共鳴4段階をひと目で確認できる。
+  function buildGachaResonanceOverview(chara, selectedLb){
+    var master=getResonanceBonusMaster(chara);
+    var html='<div class="gacha-resonance-overview"><div class="gacha-resonance-overview-heading">共鳴効果（全4段階）</div>';
+    if(!master){
+      return html+'<div class="gacha-resonance-overview-missing">共鳴効果の情報がありません。</div></div>';
+    }
+    for(var lv=1;lv<=4;lv++){
+      var bonus=master[lv];
+      if(!bonus) continue;
+      var state=lv<=selectedLb?'適用中':(lv===selectedLb+1?'次回解放':'未解放');
+      var cls=lv<=selectedLb?' is-active':(lv===selectedLb+1?' is-next':'');
+      html+='<div class="gacha-resonance-overview-row'+cls+'">'+
+        '<span class="lv">Lv.'+lv+'</span>'+
+        '<span class="effect">'+detailEscapeHTML(bonus.summary || '')+'</span>'+
+        '<span class="state">'+state+'</span></div>';
+    }
+    return html+'</div>';
   }
 
   function renderGachaPreviewCharacterDetail(){
@@ -16366,7 +16397,8 @@ async function deleteCurrentChara(){
     document.getElementById('detail-opts').innerHTML=
       buildGachaResonanceTabs(chara.id,gachaPreviewLimitBreak)+
       buildSelectedResonanceSummary(chara,gachaPreviewLimitBreak)+
-      buildCharacterDetailHTML(chara,{showLimitBreakButton:false,preferResolvedData:true});
+      buildGachaResonanceOverview(chara,gachaPreviewLimitBreak)+
+      buildCharacterDetailHTML(chara,{showLimitBreakButton:false,preferResolvedData:true,skipResonanceSection:true});
   }
 
   function switchGachaPreviewLimitBreak(limitBreak){
@@ -18628,7 +18660,7 @@ function fadeOutOpeningBgm(){
 
 
 
-<script src="js/shooting_characters.js?v=1317-hao-master-refresh"></script>
+<script src="js/shooting_characters.js?v=1321-master-refresh"></script>
 <script src="js/story_scenario.js?v=1316-ch06-01-03-split"></script>
 <script src="js/story_novel.js?v=1314-ch06-cast"></script>
 <script src="js/stage_select.js?v=1297-ch05-transition"></script>

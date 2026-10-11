@@ -1,4 +1,4 @@
 {
-  "build": 1319,
-  "note": "Add automatic Lv1-Lv4 generic resonance for all unconfigured registered characters; retain all existing unique bonuses and adapt charge/laser mechanics."
+  "build": 1321,
+  "note": "Fix gacha rate-details resonance visibility for all 12 recently-added characters, including Hao; show all four bonuses upfront and refresh character master cache; preserve existing bonuses and gameplay."
 }

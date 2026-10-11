@@ -372,7 +372,7 @@
       2: bonus('射撃増幅', '通常射撃ダメージ +10%', '通常射撃の1Hitダメージを10%強化する。', [
         { type:'profileMultiply', field:'shotPowerRate', multiplier:1.10 }
       ]),
-      3: bonus('射撃加速', '連射速度 +8%', '通常射撃の間隔を8%短縮する。', [
+      3: bonus('射撃加速', '通常射撃の連射速度 ×1.09', '通常射撃の連射速度を約1.09倍にする。', [
         { type:'profileMultiply', field:'fireRate', multiplier:0.92 }
       ]),
       4: bonus('深層同調', 'ULTゲージ獲得量 +20%', '命中時のULTゲージ獲得量を20%増加する。', [
@@ -401,32 +401,53 @@
       2: bonus('射撃増幅', '通常射撃ダメージ +10%', '通常射撃の1Hitダメージを10%強化する。', [
         { type:'profileMultiply', field:damageField, multiplier:1.10 }
       ]),
-      3: bonus('射撃加速', charge ? 'チャージ時間 -8%' : '連射間隔 -8%',
-        charge ? 'CHARGEの溜め時間を8%短縮する。' : '通常射撃の間隔を8%短縮する。', speedEffects),
+      3: bonus('射撃加速', charge ? 'チャージ時間 -8%' : '通常射撃の連射速度 ×1.09',
+        charge ? 'CHARGEの溜め時間を8%短縮する。' : '通常射撃の連射速度を約1.09倍にする。', speedEffects),
       4: bonus('深層同調', 'ULTゲージ獲得量 +20%', '命中時のULTゲージ獲得量を20%増加する。', [
         { type:'profileMultiply', field:'ultGainPerHit', multiplier:1.20 }
       ])
     });
   }
 
+  // build1321: 提供割合は未所持キャラも表示するため、古いキャラマスターが
+  // ブラウザに残っていると、新規12体の汎用レゾナンスだけ見えなくなることがあった。
+  // build1319で確定済みの12体のみ、表示・効果共通の安全な登録済み情報を保持する。
+  // CHARGE / LASER は属性・攻撃方式に合わせたLv.2/Lv.3効果を維持。
+  const RECENT_DEFAULT_CHARACTERS = Object.freeze({
+    41: Object.freeze({name:'シュオリン',shotType:'spread'}),
+    42: Object.freeze({name:'キョウ',shotType:'strike'}),
+    43: Object.freeze({name:'スズ',shotType:'parallel'}),
+    44: Object.freeze({name:'メロリア',shotType:'piercing'}),
+    45: Object.freeze({name:'キリマル',shotType:'spread'}),
+    46: Object.freeze({name:'アイレナ',shotType:'charge'}),
+    47: Object.freeze({name:'リンリン',shotType:'parallel'}),
+    48: Object.freeze({name:'ムゥムゥ',shotType:'orbit'}),
+    49: Object.freeze({name:'メグメグ',shotType:'laser'}),
+    51: Object.freeze({name:'チャチャ',shotType:'spread'}),
+    53: Object.freeze({name:'ルイルイ',shotType:'cluster'}),
+    54: Object.freeze({name:'ハオ',shotType:'charge'})
+  });
   const AUTO_BONUS_CACHE = Object.create(null);
 
   function getBonusMaster(characterId) {
     const id = Number(characterId);
     if (!Number.isSafeInteger(id) || id <= 0) return null;
-    // 従来の固有効果・既存の汎用設定は完全に維持。
+    // 既存42体の固有効果・設定済み汎用効果は必ず優先し、変更しない。
     if (Object.prototype.hasOwnProperty.call(BONUS_MASTER, id)) return BONUS_MASTER[id];
 
-    // 未設定の「登録済みキャラ」だけに4段階を自動で追加。
-    // 起動順の都合でこのモジュールはキャラ定義より先にロードされる。
-    // そのため初回参照時に最新の統合マスターへ問い合わせる。
     const registry = window.ShootingCharacters;
     const master = registry && typeof registry.getShootingCharacterMaster === 'function'
       ? registry.getShootingCharacterMaster(id) : null;
-    if (!master) return null;
+    const profile = registry && registry.SHOOTING_CHARACTERS
+      ? registry.SHOOTING_CHARACTERS[id] : null;
+    const known = RECENT_DEFAULT_CHARACTERS[id] || null;
+    // 未登録IDまでレゾナンスを作ることはしない。
+    if (!master && !known) return null;
     if (!AUTO_BONUS_CACHE[id]) {
-      const profile = registry.SHOOTING_CHARACTERS && registry.SHOOTING_CHARACTERS[id];
-      AUTO_BONUS_CACHE[id] = defaultSet(String(master.name || `No.${id}`), profile && profile.shotType);
+      AUTO_BONUS_CACHE[id] = defaultSet(
+        String((master && master.name) || (known && known.name) || `No.${id}`),
+        (profile && profile.shotType) || (known && known.shotType) || ''
+      );
     }
     return AUTO_BONUS_CACHE[id];
   }
