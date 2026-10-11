@@ -1,4 +1,4 @@
 {
-  "build": 1313,
-  "note": "Hao (ID54) ULT visual refinement: low-profile ground-engraved wood-element sigil with staged rune illumination and subdued green-to-gold pulses; gameplay, damage, 0.5s safety, and gacha remain unchanged."
+  "build": 1319,
+  "note": "Add automatic Lv1-Lv4 generic resonance for all unconfigured registered characters; retain all existing unique bonuses and adapt charge/laser mechanics."
 }

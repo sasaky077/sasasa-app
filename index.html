@@ -5826,7 +5826,7 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=1285-memory-fragment"></script>
+<script src="js/shooting_resonance.js?v=1319-resonance-default-all"></script>
 <script src="js/resonance_system.js?v=1285-memory-fragment"></script>
 <script src="js/resonance_ui.js?v=1285-memory-fragment"></script>
 <script src="js/character_levelup.js?v=693-score-ranking-nav-v2"></script>
@@ -6631,26 +6631,56 @@ document.addEventListener('touchend', function (e) {
   function getGachaPoolCharacter(charaId){
     var id = Number(charaId);
     var found = null;
+    // ガチャ詳細をマスタの再読込中に開いてもリストを崩さない。
     if(typeof getCharaById === 'function'){
-      found = getCharaById(id);
+      try { found = getCharaById(id); } catch(_error) { found = null; }
     }
     if(!found && typeof CHARACTERS !== 'undefined' && Array.isArray(CHARACTERS)){
       found = CHARACTERS.find(function(c){ return Number(c.id) === id; }) || null;
     }
-    // 限定PUの提供割合は、キャラマスタ未読込・欠落時でも名前とパネル画像を表示する。
-    // 他のキャラやガチャ抽選処理には影響させない。
-    var pickupFallback = {
-      36: { name:'ニーナ', panelImg:'images/chara_36_panel.webp' },
-      40: { name:'オリビア', panelImg:'images/chara_40_panel.webp' }
+    // build1317: 54=ハオも表示用に明示。古いキャラマスタがブラウザに残っていても
+    // 名前が No.54 になったり、不明画像になったりするのを防止する。
+    // 排出確率・抽選処理・キャラ性能には影響しない。
+    var displayFallback = {
+      36: { name:'ニーナ', panelImg:'images/chara_36_panel.webp', rarity:'SR' },
+      40: { name:'オリビア', panelImg:'images/chara_40_panel.webp', rarity:'SR' },
+      54: {
+        name:'ハオ', element:'wood', rarity:'sr',
+        panelImg:'images/chara_54_panel.webp',
+        img:'images/chara_54.webp', upImg:'images/chara_54_up.webp',
+        ultImg:'images/chara_54_cutin.webp', stats:{ HP:610, ATK:285 }
+      }
     }[id];
-    if(!pickupFallback) return found;
-    if(!found) return { id:id, name:pickupFallback.name, panelImg:pickupFallback.panelImg, rarity:'SR' };
-    if(found.name && (found.panelImg || found.img || found.upImg)) return found;
-    return Object.assign({}, found, {
-      name:found.name || pickupFallback.name,
-      panelImg:found.panelImg || found.img || found.upImg || pickupFallback.panelImg
+    if(!displayFallback) return found;
+    if(!found) return Object.assign({id:id}, displayFallback);
+    return Object.assign({}, displayFallback, found, {
+      name: found.name || displayFallback.name,
+      panelImg: found.panelImg || displayFallback.panelImg,
+      img: found.img || displayFallback.img,
+      element: found.element || displayFallback.element,
+      rarity: found.rarity || displayFallback.rarity
     });
   }
+
+  // ハオ画像の投入順が端末・環境で異なる場合に、既存の画像素材へフォールバック。
+  // 最後まで見つからなければ通常の不明画像に戻し、無限再読み込みを防ぐ。
+  window.handleGachaHaoImageError = function(img){
+    if(!img) return;
+    var candidates = [
+      'images/chara_54_panel.webp',
+      'images/chara_54.webp',
+      'images/chara_54_up.webp',
+      'images/chara_54_cut.webp',
+      'images/unknown.webp'
+    ];
+    var next = Math.max(0, Number(img.dataset.haoFallbackNext || 0));
+    var current = img.getAttribute('src');
+    while(next < candidates.length && candidates[next] === current) next++;
+    if(next >= candidates.length){img.onerror = null; return;}
+    img.dataset.haoFallbackNext = String(next + 1);
+    img.src = candidates[next];
+    if(next === candidates.length - 1) img.onerror = null;
+  };
 
   function getGachaPoolCharacterImage(chara){
     if(!chara) return 'images/unknown.webp';
@@ -6712,7 +6742,7 @@ document.addEventListener('touchend', function (e) {
       var displayRate = getGachaRateValue(rateMap, id, eachRate);
       return '' +
         '<button class="gacha-pool-entry is-character" type="button" onclick="openGachaPoolCharacterDetail(' + Number(id) + ')" aria-label="' + detailEscapeHTML(name + 'の能力を見る') + '">' +
-          '<img class="gacha-pool-entry-img" src="' + detailEscapeHTML(img) + '" alt="">' +
+          '<img class="gacha-pool-entry-img" src="' + detailEscapeHTML(img) + '" alt="' + detailEscapeHTML(name) + '"' + (Number(id) === 54 ? ' onerror="handleGachaHaoImageError(this)"' : '') + '>' +
           '<div class="gacha-pool-entry-main">' +
             '<div class="gacha-pool-entry-name">' + detailEscapeHTML(limitPlayerDisplayName(name)) + '</div>' +
             '<div class="gacha-pool-entry-meta">' + detailEscapeHTML(element) + '</div>' +
@@ -6766,7 +6796,9 @@ document.addEventListener('touchend', function (e) {
     closeGachaPoolDetail();
 
     if(typeof showZukanCharacterDetail === 'function'){
-      showZukanCharacterDetail(chara, { gachaPreview:true });
+      // 提供割合側で補完された未所持キャラも、そのまま詳細へ引き継ぐ。
+      // 描画時に古いCHARACTERSからID検索し直すとハオ(54)が消えていた。
+      showZukanCharacterDetail(chara, { gachaPreview:true, gachaPoolPreview:true });
 
       var rank = document.getElementById('detail-rank');
       if(rank){
@@ -16260,6 +16292,9 @@ async function deleteCurrentChara(){
 
   var gachaPreviewCharacterId = null;
   var gachaPreviewLimitBreak = 0;
+  // build1318: マスタ未反映でも、提供割合から渡したキャラの情報を保持する。
+  var gachaPreviewSourceCharacter = null;
+  var gachaPreviewFromPool = false;
 
   function cloneDetailCharacter(chara){
     return JSON.parse(JSON.stringify(chara || {}));
@@ -16305,7 +16340,12 @@ async function deleteCurrentChara(){
   }
 
   function renderGachaPreviewCharacterDetail(){
-    var base=getCharaById(gachaPreviewCharacterId);
+    // 既存の正本を優先。キャッシュ更新前などID54が未登録なら、クリック元の
+    // 提供割合キャラ情報を使ってプレビューを描画する（無凸〜完凸も同じデータ）。
+    var base = getCharaById(gachaPreviewCharacterId) ||
+      (gachaPreviewSourceCharacter && Number(gachaPreviewSourceCharacter.id) === Number(gachaPreviewCharacterId)
+        ? gachaPreviewSourceCharacter : null) ||
+      (typeof getGachaPoolCharacter === 'function' ? getGachaPoolCharacter(gachaPreviewCharacterId) : null);
     if(!base)return;
     var chara=applyPreviewResonanceToCharacter(base,gachaPreviewLimitBreak);
     var previewVisual = document.getElementById('detail-chara-visual');
@@ -16321,7 +16361,7 @@ async function deleteCurrentChara(){
     document.getElementById('detail-name').textContent='';
     var pickupTitleName=document.getElementById('gacha-pickup-title-name');
     if(pickupTitleName) pickupTitleName.textContent=chara.name;
-    document.getElementById('detail-rank').textContent='PICK UP / '+String(chara.rarity||'').toUpperCase()+' / No.'+chara.id;
+    document.getElementById('detail-rank').textContent=(gachaPreviewFromPool ? '' : 'PICK UP / ')+String(chara.rarity||'').toUpperCase()+' / No.'+chara.id;
     document.getElementById('detail-stat-table').innerHTML='';
     document.getElementById('detail-opts').innerHTML=
       buildGachaResonanceTabs(chara.id,gachaPreviewLimitBreak)+
@@ -16341,9 +16381,13 @@ async function deleteCurrentChara(){
 
     if(options.gachaPreview){
       gachaPreviewCharacterId=Number(chara.id);
+      gachaPreviewSourceCharacter=chara;
+      gachaPreviewFromPool=!!options.gachaPoolPreview;
       gachaPreviewLimitBreak=0;
       renderGachaPreviewCharacterDetail();
     }else{
+      gachaPreviewSourceCharacter=null;
+      gachaPreviewFromPool=false;
       var pickupTitleName=document.getElementById('gacha-pickup-title-name');
       if(pickupTitleName) pickupTitleName.textContent='';
       document.getElementById('detail-chara-visual').innerHTML=charaVisualHTML(chara,260);
@@ -18584,9 +18628,9 @@ function fadeOutOpeningBgm(){
 
 
 
-<script src="js/shooting_characters.js?v=1312-hao"></script>
-<script src="js/story_scenario.js?v=1298-ch05-locations"></script>
-<script src="js/story_novel.js?v=1266-post-skip-right"></script>
+<script src="js/shooting_characters.js?v=1317-hao-master-refresh"></script>
+<script src="js/story_scenario.js?v=1316-ch06-01-03-split"></script>
+<script src="js/story_novel.js?v=1314-ch06-cast"></script>
 <script src="js/stage_select.js?v=1297-ch05-transition"></script>
 <!-- 32マス共有盤面バトル（新規追加） -->
 <link rel="stylesheet" href="css/battle_32_ui.css?v=593">
@@ -18662,7 +18706,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1312-hao"></script>
+<script src="js/shooting_event.js?v=1316-ch06-01-03-split"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
 <script src="js/skin_system.js?v=1076-home-canvas-normalize"></script>

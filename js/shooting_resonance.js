@@ -363,6 +363,7 @@
     });
   }
 
+  // 既存の共通ボーナスはそのまま維持する（元から汎用設定済みのキャラ向け）。
   function genericSet(name) {
     return Object.freeze({
       1: bonus('基礎共鳴', 'HP・ATK +4%', `${name}の基礎HPとATKが4%上昇する。`, [
@@ -380,8 +381,54 @@
     });
   }
 
+  // build1319: 新規キャラ向け共通共鳴。固有マスターがあるキャラには一切適用しない。
+  // CHARGEの連射間隔は0なのでチャージ時間を、LASERの通常ダメージはレーザー倍率を強化。
+  function defaultSet(name, shotType) {
+    const shot = String(shotType || '').toLowerCase();
+    const charge = shot === 'charge';
+    const laser = shot === 'laser';
+    const damageField = laser ? 'laserDamageAtkRate' : 'shotPowerRate';
+    const speedEffects = charge
+      ? [
+          { type:'profileMultiply', field:'chargeMinMs', multiplier:0.92 },
+          { type:'profileMultiply', field:'chargeMaxMs', multiplier:0.92 }
+        ]
+      : [{ type:'profileMultiply', field:'fireRate', multiplier:0.92 }];
+    return Object.freeze({
+      1: bonus('基礎共鳴', 'HP・ATK +4%', `${name}の基礎HPとATKが4%上昇する。`, [
+        { type:'statRate', hp:0.04, atk:0.04 }
+      ]),
+      2: bonus('射撃増幅', '通常射撃ダメージ +10%', '通常射撃の1Hitダメージを10%強化する。', [
+        { type:'profileMultiply', field:damageField, multiplier:1.10 }
+      ]),
+      3: bonus('射撃加速', charge ? 'チャージ時間 -8%' : '連射間隔 -8%',
+        charge ? 'CHARGEの溜め時間を8%短縮する。' : '通常射撃の間隔を8%短縮する。', speedEffects),
+      4: bonus('深層同調', 'ULTゲージ獲得量 +20%', '命中時のULTゲージ獲得量を20%増加する。', [
+        { type:'profileMultiply', field:'ultGainPerHit', multiplier:1.20 }
+      ])
+    });
+  }
+
+  const AUTO_BONUS_CACHE = Object.create(null);
+
   function getBonusMaster(characterId) {
-    return BONUS_MASTER[Number(characterId)] || null;
+    const id = Number(characterId);
+    if (!Number.isSafeInteger(id) || id <= 0) return null;
+    // 従来の固有効果・既存の汎用設定は完全に維持。
+    if (Object.prototype.hasOwnProperty.call(BONUS_MASTER, id)) return BONUS_MASTER[id];
+
+    // 未設定の「登録済みキャラ」だけに4段階を自動で追加。
+    // 起動順の都合でこのモジュールはキャラ定義より先にロードされる。
+    // そのため初回参照時に最新の統合マスターへ問い合わせる。
+    const registry = window.ShootingCharacters;
+    const master = registry && typeof registry.getShootingCharacterMaster === 'function'
+      ? registry.getShootingCharacterMaster(id) : null;
+    if (!master) return null;
+    if (!AUTO_BONUS_CACHE[id]) {
+      const profile = registry.SHOOTING_CHARACTERS && registry.SHOOTING_CHARACTERS[id];
+      AUTO_BONUS_CACHE[id] = defaultSet(String(master.name || `No.${id}`), profile && profile.shotType);
+    }
+    return AUTO_BONUS_CACHE[id];
   }
 
   function getBonus(characterId, level) {
