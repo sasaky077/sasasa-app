@@ -36134,11 +36134,11 @@ img[src*="type_dark.webp"]{
 
 
 /* =========================================================
-   build574 PHASE EXPEDITION — home left menu placeholder
-   将来コンテンツ「位相遠征」。既存HOME TYPE MENUの文字組みを継承し、
-   「位」だけを赤、残りの「相遠征」は既存ブラウンのまま表示する。
+   build574 ECHO TOWER — home left menu placeholder
+   将来コンテンツ「残響の塔」。既存HOME TYPE MENUの文字組みを継承し、
+   「残」だけを赤、残りの「響の塔」は既存ブラウンのまま表示する。
    ========================================================= */
-#screen-main .phase-expedition-home-entry{
+#screen-main .resonance-tower-home-entry{
   position:absolute !important;
   left:18px !important;
   right:auto !important;
@@ -36150,8 +36150,8 @@ img[src*="type_dark.webp"]{
   z-index:30 !important;
 }
 
-/* 「位」だけ赤。残り文字は共通HOME TYPE MENUのブラウンを維持。 */
-#screen-main .phase-expedition-home-entry::before{
+/* 「残」だけ赤。残り文字は共通HOME TYPE MENUのブラウンを維持。 */
+#screen-main .resonance-tower-home-entry::before{
   color:#a13a35 !important;
   text-shadow:
     0 1px 0 rgba(255,255,255,.95),
@@ -36159,14 +36159,14 @@ img[src*="type_dark.webp"]{
     0 2px 3px rgba(104,38,34,.14) !important;
 }
 
-#screen-main .phase-expedition-home-entry::after{
+#screen-main .resonance-tower-home-entry::after{
   color:#60492c !important;
   left:49px !important;
   letter-spacing:.08em !important;
 }
 
 @media (max-width:380px), (max-height:700px){
-  #screen-main .phase-expedition-home-entry{
+  #screen-main .resonance-tower-home-entry{
     left:14px !important;
     top:calc(
       var(--home-shinju-top, calc(env(safe-area-inset-top) + 300px))
@@ -36179,7 +36179,7 @@ img[src*="type_dark.webp"]{
 /* =========================================================
    build583 HOME TYPE MENU — first-letter tilt only
    - 全メニュー共通で、傾きを付けるのは先頭1文字だけ。2文字目以降は0deg固定。
-   - 位相遠征は「位 / 相 / 遠 / 征」を4等分。
+   - 残響の塔は「残 / 響 / の / 塔」を4等分。
    - 神聖樹は「神 / 聖 / 樹」の字間を均等感を保ちつつ詰める。
    ========================================================= */
 #screen-main .home-type-entry.home-type-letterized::before,
@@ -36283,7 +36283,7 @@ img[src*="type_dark.webp"]{
   transform:scale(.95) !important;
 }
 
-#screen-main .phase-expedition-home-entry .phase-expedition-letter-grid{
+#screen-main .resonance-tower-home-entry .resonance-tower-letter-grid{
   left:0 !important;
   right:0 !important;
   top:0 !important;
@@ -36310,7 +36310,7 @@ img[src*="type_dark.webp"]{
   padding:0 !important;
 }
 
-#screen-main .phase-expedition-home-entry .phase-expedition-letter-grid .home-type-letter,
+#screen-main .resonance-tower-home-entry .resonance-tower-letter-grid .home-type-letter,
 #screen-main .shinju-home-entry .shinju-letter-grid .home-type-letter{
   position:static !important;
   left:auto !important;
@@ -36319,14 +36319,14 @@ img[src*="type_dark.webp"]{
   transform:none !important;
 }
 
-#screen-main .phase-expedition-home-entry .phase-expedition-letter-grid .is-head,
+#screen-main .resonance-tower-home-entry .resonance-tower-letter-grid .is-head,
 #screen-main .shinju-home-entry .shinju-letter-grid .is-head{
   font-size:30px !important;
   font-weight:500 !important;
 }
 
-#screen-main .phase-expedition-home-entry .phase-expedition-letter-grid .is-head{
-  /* build583: 「位」と「相」の間だけ、半角スペース1個分ほど広げる */
+#screen-main .resonance-tower-home-entry .resonance-tower-letter-grid .is-head{
+  /* build583: 「残」と「相」の間だけ、半角スペース1個分ほど広げる */
   transform:translateX(-4px) !important;
   color:#a13a35 !important;
   text-shadow:
@@ -36343,7 +36343,7 @@ img[src*="type_dark.webp"]{
     0 2px 3px rgba(79,57,27,.12) !important;
 }
 
-#screen-main .phase-expedition-home-entry .phase-expedition-letter-grid .is-rest,
+#screen-main .resonance-tower-home-entry .resonance-tower-letter-grid .is-rest,
 #screen-main .shinju-home-entry .shinju-letter-grid .is-rest{
   font-size:13px !important;
   font-weight:600 !important;
@@ -36362,11 +36362,11 @@ img[src*="type_dark.webp"]{
   #screen-main .home-type-letter.is-rest{
     font-size:12px !important;
   }
-  #screen-main .phase-expedition-home-entry .phase-expedition-letter-grid .is-head,
+  #screen-main .resonance-tower-home-entry .resonance-tower-letter-grid .is-head,
   #screen-main .shinju-home-entry .shinju-letter-grid .is-head{
     font-size:27px !important;
   }
-  #screen-main .phase-expedition-home-entry .phase-expedition-letter-grid .is-rest,
+  #screen-main .resonance-tower-home-entry .resonance-tower-letter-grid .is-rest,
   #screen-main .shinju-home-entry .shinju-letter-grid .is-rest{
     font-size:12px !important;
   }
@@ -36378,7 +36378,7 @@ img[src*="type_dark.webp"]{
    レイアウトの基準点を左右それぞれの列で完全統一。
    - 左列: button左端を同一化し、頭文字の開始位置も共通化
    - 右列: button右端を同一化し、頭文字の開始位置も共通化
-   - 位相遠征 / 神聖樹の特殊文字組みも、通常メニューと同じ頭文字X座標から開始
+   - 残響の塔 / 神聖樹の特殊文字組みも、通常メニューと同じ頭文字X座標から開始
    ========================================================= */
 #screen-main{
   --home-side-menu-inset:18px;
@@ -36389,7 +36389,7 @@ img[src*="type_dark.webp"]{
 #screen-main .bonus-home-entry,
 #screen-main .friend-home-entry,
 #screen-main .raid-home-entry,
-#screen-main .phase-expedition-home-entry{
+#screen-main .resonance-tower-home-entry{
   left:var(--home-side-menu-inset) !important;
   right:auto !important;
 }
@@ -36406,9 +36406,9 @@ img[src*="type_dark.webp"]{
   left:var(--home-side-menu-head-x) !important;
 }
 
-/* 位相遠征：先頭「位」を通常メニューと同じXから開始。
-   「位→相」だけ半角スペース1個ぶんほど広め、相→遠→征は等間隔。 */
-#screen-main .phase-expedition-home-entry .phase-expedition-letter-grid{
+/* 残響の塔：先頭「残」を通常メニューと同じXから開始。
+   「残→響」だけ半角スペース1個ぶんほど広め、響→の→塔は等間隔。 */
+#screen-main .resonance-tower-home-entry .resonance-tower-letter-grid{
   left:var(--home-side-menu-head-x) !important;
   right:auto !important;
   width:auto !important;
@@ -36419,11 +36419,11 @@ img[src*="type_dark.webp"]{
   justify-items:start !important;
   padding:0 !important;
 }
-#screen-main .phase-expedition-home-entry .phase-expedition-letter-grid .is-head{
+#screen-main .resonance-tower-home-entry .resonance-tower-letter-grid .is-head{
   transform:none !important;
   justify-self:start !important;
 }
-#screen-main .phase-expedition-home-entry .phase-expedition-letter-grid .is-rest{
+#screen-main .resonance-tower-home-entry .resonance-tower-letter-grid .is-rest{
   justify-self:start !important;
 }
 
@@ -36450,7 +36450,7 @@ img[src*="type_dark.webp"]{
     --home-side-menu-inset:14px;
     --home-side-menu-head-x:10px;
   }
-  #screen-main .phase-expedition-home-entry .phase-expedition-letter-grid{
+  #screen-main .resonance-tower-home-entry .resonance-tower-letter-grid{
     grid-template-columns:30px 12px 12px 12px !important;
     column-gap:3px !important;
   }
@@ -36475,8 +36475,8 @@ img[src*="type_dark.webp"]{
   left:var(--home-side-menu-rest-x) !important;
 }
 
-/* 位相遠征：位→相も同じ共通ギャップ。相→遠→征は軽く字間を確保。 */
-#screen-main .phase-expedition-home-entry .phase-expedition-letter-grid{
+/* 残響の塔：残→響も同じ共通ギャップ。響→の→塔は軽く字間を確保。 */
+#screen-main .resonance-tower-home-entry .resonance-tower-letter-grid{
   grid-template-columns:
     calc(var(--home-side-menu-rest-x) - var(--home-side-menu-head-x))
     var(--home-side-menu-rest-step)
@@ -36499,7 +36499,7 @@ img[src*="type_dark.webp"]{
     --home-side-menu-rest-x:43px;
     --home-side-menu-rest-step:16px;
   }
-  #screen-main .phase-expedition-home-entry .phase-expedition-letter-grid{
+  #screen-main .resonance-tower-home-entry .resonance-tower-letter-grid{
     grid-template-columns:
       calc(var(--home-side-menu-rest-x) - var(--home-side-menu-head-x))
       var(--home-side-menu-rest-step)
@@ -41406,3 +41406,44 @@ html body #screen-summon .summon-banner-arrow-next{
   min-height:40px !important;
   justify-self:center !important;
 }
+
+
+/* =========================================================
+   build1339 — 残響の塔：ホーム入口を設置し、
+   塔専用の10層プレビューを表示。階層進捗は未実装。
+   ========================================================= */
+#screen-resonance-tower.resonance-tower-screen{background:#f6f3ed;color:#51483e;font-family:"Noto Serif JP",serif}
+#screen-resonance-tower .resonance-tower-scroll{overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:18px 17px calc(125px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
+#screen-resonance-tower .resonance-tower-hero{position:relative;overflow:hidden;text-align:center;padding:25px 10px 24px;border:1px solid rgba(131,113,82,.17);background:radial-gradient(ellipse at 50% 10%,rgba(255,255,255,.97),rgba(243,240,231,.91) 62%,rgba(223,215,197,.50));}
+#screen-resonance-tower .resonance-tower-hero:before{content:"";position:absolute;left:50%;top:33px;width:116px;height:152px;transform:translateX(-50%);border:1px solid rgba(157,131,85,.20);clip-path:polygon(50% 0%,80% 18%,80% 100%,20% 100%,20% 18%);pointer-events:none}
+#screen-resonance-tower .resonance-tower-kicker{font:9px/1.5 "Cinzel",serif;letter-spacing:.23em;color:#988268}
+#screen-resonance-tower .resonance-tower-crest{font:32px/1.25 "Cinzel",serif;color:#a88d64;margin:15px auto 6px;opacity:.85}
+#screen-resonance-tower .resonance-tower-hero h2{font-size:25px;font-weight:500;letter-spacing:.18em;margin:6px 0 10px;color:#514337}
+#screen-resonance-tower .resonance-tower-hero p{font-size:11px;letter-spacing:.075em;line-height:1.7;margin:0;color:#87755f}
+#screen-resonance-tower .resonance-tower-meta{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin-top:17px}
+#screen-resonance-tower .resonance-tower-meta span{font-size:10px;letter-spacing:.04em;padding:5px 8px;border:1px solid #dcd2c2;background:rgba(255,255,255,.5);color:#776550}
+#screen-resonance-tower .resonance-tower-rules{padding:16px 3px 14px;border-bottom:1px solid #dfd6c6}
+#screen-resonance-tower .resonance-tower-rules h3,#screen-resonance-tower .resonance-tower-section-head h3{margin:0 0 7px;font-size:14px;font-weight:600;letter-spacing:.1em;color:#554534}
+#screen-resonance-tower .resonance-tower-rules p{margin:5px 0;font-size:11px;line-height:1.85;color:#756856}
+#screen-resonance-tower .resonance-tower-section-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:24px 0 12px}
+#screen-resonance-tower .resonance-tower-section-head h3{margin:0}
+#screen-resonance-tower .resonance-tower-section-head span{font-size:10px;color:#9d896d}
+#screen-resonance-tower .resonance-tower-floor-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+#screen-resonance-tower .resonance-tower-floor{appearance:none;display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid #ded5c5;background:linear-gradient(160deg,#fffdfa,#f1eee6);padding:13px 10px;border-radius:0;min-height:73px;box-shadow:0 2px 6px rgba(77,61,38,.035);color:#665746;font-family:inherit;cursor:pointer;}
+#screen-resonance-tower .resonance-tower-floor:focus-visible{outline:2px solid #a78c61;outline-offset:2px}
+#screen-resonance-tower .resonance-tower-floor.is-selected{border-color:#b79d72;background:#fffaf0;box-shadow:inset 0 0 0 1px #e2d5b9}
+#screen-resonance-tower .resonance-tower-floor.is-trial{border-color:#cfba9e;background:linear-gradient(160deg,#f8f0e5,#f2e8dc)}
+#screen-resonance-tower .resonance-tower-floor.is-final{border-color:#b49483;background:linear-gradient(160deg,#f3e9e6,#e9dacf)}
+#screen-resonance-tower .resonance-tower-floor-no{font:19px/1 "Cinzel",serif;color:#95805e;min-width:36px;flex:0 0 36px}
+#screen-resonance-tower .resonance-tower-floor.is-trial .resonance-tower-floor-no{color:#a7775c}
+#screen-resonance-tower .resonance-tower-floor.is-final .resonance-tower-floor-no{color:#8f5d55}
+#screen-resonance-tower .resonance-tower-floor-copy{min-width:0;display:flex;flex-direction:column;gap:6px}
+#screen-resonance-tower .resonance-tower-floor-name{font-size:12px;font-weight:600;letter-spacing:.08em;white-space:nowrap}
+#screen-resonance-tower .resonance-tower-floor-label{font-size:10px;color:#9f8a70}
+#screen-resonance-tower .resonance-tower-detail{margin-top:17px;padding:19px 17px 20px;background:#fcfaf6;border:1px solid #d9cfbf;text-align:center}
+#screen-resonance-tower .resonance-tower-detail-no{font:18px "Cinzel",serif;letter-spacing:.12em;color:#998367}
+#screen-resonance-tower .resonance-tower-detail h3{font-size:17px;font-weight:500;letter-spacing:.12em;margin:8px 0;color:#64513c}
+#screen-resonance-tower .resonance-tower-detail p{font-size:11px;line-height:1.8;color:#7e6d58;margin:12px 0}
+#screen-resonance-tower .resonance-tower-detail button{font:12px "Noto Serif JP",serif;border:1px solid #c8b69a;background:#eae3d7;color:#9a8d79;min-width:175px;padding:12px;border-radius:0;opacity:1;cursor:not-allowed}
+#screen-resonance-tower .resonance-tower-dev-note{font-size:10px!important;color:#a0927e!important;margin-top:15px!important}
+@media(max-width:365px){#screen-resonance-tower .resonance-tower-scroll{padding-left:12px;padding-right:12px}#screen-resonance-tower .resonance-tower-floor{gap:6px;padding:12px 7px}#screen-resonance-tower .resonance-tower-floor-no{font-size:16px;min-width:31px;flex-basis:31px}#screen-resonance-tower .resonance-tower-floor-name{font-size:11px}}

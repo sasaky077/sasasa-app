@@ -326,9 +326,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=1302-trial-layout"
+        href="css/style.css?v=1339-tower-entry"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=1302-trial-layout"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=1339-tower-entry"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -3588,8 +3588,8 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
     <span class="raid-notice-dot" aria-hidden="true"></span>
   </button>
 
-  <!-- 位相遠征：将来実装予定。ホーム左側、レイドバトルの下 -->
-  <button class="phase-expedition-home-entry home-type-entry" id="phase-expedition-home-entry" type="button" onclick="showToast('ストーリー[CHAPTER 08]をクリア後に解放されます。')" aria-label="位相遠征（未開放）" data-home-head="位" data-home-rest="相遠征"></button>
+  <!-- build1339: 週替わりコンテンツ「残響の塔」のホーム入口 -->
+  <button class="resonance-tower-home-entry home-type-entry" id="resonance-tower-home-entry" type="button" onclick="openResonanceTower()" aria-label="残響の塔を開く" data-home-head="残" data-home-rest="響の塔"></button>
 
   <button class="score-attack-home-entry home-type-entry" id="score-attack-home-entry" type="button" onclick="openScoreAttack()" aria-label="スコアアタックへ移動" data-home-head="ス" data-home-rest="コア&#10;　アタック" data-home-lines="2"></button>
 
@@ -3598,6 +3598,43 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
       <div class="fav-empty">ホーム画面にキャラを設定しよう</div>
     </div>
   </div>  
+</div>
+
+<!-- build1339 — 残響の塔：入口と10層プレビュー。戦闘/進捗/報酬は未実装。 -->
+<div id="screen-resonance-tower" class="screen app-page app-page--standard resonance-tower-screen">
+  <header class="app-page-header">
+    <button type="button" class="app-page-back" onclick="closeResonanceTower()">＜戻る</button>
+    <div class="app-page-heading"><h1 class="app-page-title">残響の塔</h1></div>
+    <div class="app-page-action"></div>
+  </header>
+  <div class="app-page-content resonance-tower-scroll">
+    <section class="resonance-tower-hero" aria-label="残響の塔のルール">
+      <span class="resonance-tower-kicker">ECHO TOWER / WEEKLY SURVIVAL</span>
+      <div class="resonance-tower-crest" aria-hidden="true">Ⅹ</div>
+      <h2>残響の塔</h2>
+      <p>一度登った者の力は、次の層には届かない。</p>
+      <div class="resonance-tower-meta">
+        <span>全10層</span><span>1〜3体で出撃</span><span>月曜 05:00 更新</span>
+      </div>
+    </section>
+    <section class="resonance-tower-rules" aria-label="挑戦ルール">
+      <h3>挑戦の掟</h3>
+      <p>階層をクリアしたキャラは、その週の残りの階層では使用不可。同じキャラの別個体も使用できません。</p>
+      <p>敗北してもキャラは消費されず、同じ階層に再挑戦できます。毎週月曜05:00（日本時間）に挑戦状況を更新する予定です。</p>
+    </section>
+    <div class="resonance-tower-section-head">
+      <h3>十の階層</h3>
+      <span>3 / 6 / 9 / 10F は難関</span>
+    </div>
+    <div id="resonance-tower-floor-list" class="resonance-tower-floor-list" aria-label="塔の階層一覧"></div>
+    <section class="resonance-tower-detail" aria-live="polite">
+      <span id="resonance-tower-selected-no" class="resonance-tower-detail-no">01F</span>
+      <h3 id="resonance-tower-selected-title">第一層</h3>
+      <p id="resonance-tower-selected-description">塔の入口。最初の試練。</p>
+      <button type="button" disabled aria-disabled="true">出撃準備中</button>
+      <p class="resonance-tower-dev-note">現在は入口・階層表示の先行実装です。戦闘・使用済み判定・週次進捗・報酬は未接続です。</p>
+    </section>
+  </div>
 </div>
 
 <!-- ボーナス一覧 -->
@@ -10025,7 +10062,7 @@ startTitleBgm();
 
   function syncChapter03ContentLockUI(forceUnlocked){
     var unlocked = forceUnlocked === true || isChapter03ContentUnlocked();
-    ['ninmu-cat-daily','ninmu-cat-special','raid-home-entry','shinju-home-entry','score-attack-home-entry'].forEach(function(id){
+    ['ninmu-cat-daily','ninmu-cat-special','raid-home-entry','shinju-home-entry','score-attack-home-entry','resonance-tower-home-entry'].forEach(function(id){
       var el = document.getElementById(id);
       if(!el) return;
       el.classList.toggle('is-ch03-locked', !unlocked);
@@ -10604,12 +10641,11 @@ startTitleBgm();
     setBottomNavLock('bnav-zukan', characterLocked, CHARACTER_CONTENT_LOCK_MESSAGE);
     setBottomNavLock('bnav-summon', gachaLocked, CH03_CONTENT_LOCK_MESSAGE);
 
-    ['raid-home-entry','shinju-home-entry','score-attack-home-entry'].forEach(function(id){
+    ['raid-home-entry','shinju-home-entry','score-attack-home-entry','resonance-tower-home-entry'].forEach(function(id){
       setHomeMenuLock(id, ch03Locked, CH03_CONTENT_LOCK_MESSAGE);
     });
 
-    // 位相遠征はCH08クリア後の機能。現時点では未開放としてロック表示。
-    setHomeMenuLock('phase-expedition-home-entry', true, 'ストーリー[CHAPTER 08]をクリア後に解放されます。');
+    // build1340: 残響の塔はCH03-04クリアで解放。他のCH03解放コンテンツと同じロック表示を使用。
   }
 
   window.syncLockedContentVisuals = syncLockedContentVisuals;
@@ -18669,7 +18705,7 @@ function fadeOutOpeningBgm(){
 
 
 
-<script src="js/shooting_characters.js?v=1327-ult-group-rebalance"></script>
+<script src="js/shooting_characters.js?v=1341-nina-olivia-sr"></script>
 <script src="js/story_scenario.js?v=1336-ch06-paper-reveal"></script>
 <script src="js/story_novel.js?v=1333-cast-sides"></script>
 <script src="js/stage_select.js?v=1336-ch06-paper-reveal"></script>
@@ -18773,6 +18809,7 @@ window.returnToTitleScreen = function(){
 </script>
 
 <script src="js/score_attack.js?v=759-score-resume-attempt-fix"></script>
+<script src="js/resonance_tower.js?v=1340-ch0304-unlock"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){
@@ -19942,8 +19979,8 @@ html body #global-user-frame .hud-sweep-line-player::after{
       if (!head && !rest) return;
       button.classList.add('home-type-letterized');
 
-      if (button.classList.contains('phase-expedition-home-entry')) {
-        renderEqualGrid(button, head, rest, 'phase-expedition-letter-grid');
+      if (button.classList.contains('resonance-tower-home-entry')) {
+        renderEqualGrid(button, head, rest, 'resonance-tower-letter-grid');
       } else if (button.classList.contains('shinju-home-entry')) {
         renderEqualGrid(button, head, rest, 'shinju-letter-grid');
       } else {
