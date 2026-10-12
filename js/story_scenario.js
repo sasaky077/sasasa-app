@@ -5610,7 +5610,651 @@
         "location": "scene_chapter06_8.webp"
       }
     ]
-  }
+  },
+    "shooting_ch07_01": {
+      "chapter": 7,
+      "stageNo": 1,
+      "chapterTitle": "灰路",
+      "stageTitle": "出発",
+      "stageType": "novel",
+      "pre": [
+        {
+          "speaker": "",
+          "left": "",
+          "right": "",
+          "text": "翌朝。拠点の塔の前に、九人が集まっていた。",
+          "narration": true,
+          "location": "scene_base_02.webp"
+        },
+        {
+          "speaker": "ミモザ",
+          "text": "地図の写しを見て。輪をまとった光のうち、いちばん近いのは……ここ。",
+          "left": "",
+          "right": "ミモザ",
+          "location": "scene_base_02.webp"
+        },
+        {
+          "speaker": "レオナクロス",
+          "text": "東か。歩いて、二日……いや、もう少しかかるかな。",
+          "left": "レオナクロス",
+          "right": "",
+          "location": "scene_base_02.webp"
+        },
+        {
+          "speaker": "トイフェル",
+          "text": "僕たちが来た方角だね。ちょうど、帰り道の途中だ。",
+          "left": "",
+          "right": "トイフェル",
+          "location": "scene_base_02.webp"
+        },
+        {
+          "speaker": "ミモザ",
+          "text": "拠点の円盤と同じものが、あの塔にもあるなら……比べてみれば、何か分かるかもしれない。",
+          "left": "",
+          "right": "ミモザ",
+          "location": "scene_base_02.webp"
+        },
+        {
+          "speaker": "ジグ",
+          "text": "……留守にすんのか。せっかく住めるようになったってのによ。",
+          "left": "ジグ",
+          "right": "",
+          "location": "scene_base_02.webp"
+        },
+        {
+          "speaker": "アウラ",
+          "text": "すぐ帰ってくるよ！ ね、エリ！",
+          "left": "",
+          "right": "アウラ",
+          "location": "scene_base_02.webp"
+        },
+        {
+          "speaker": "エリ",
+          "text": "うん。……それにね、あっちから、呼ばれてる気がするの。",
+          "left": "エリ",
+          "right": "",
+          "location": "scene_base_02.webp"
+        },
+        {
+          "speaker": "ベロニカ",
+          "text": "おでかけだァ！ ピクニックだァ！",
+          "left": "",
+          "right": "ベロニカ",
+          "location": "scene_base_02.webp"
+        },
+        {
+          "speaker": "ジグ",
+          "text": "遊びじゃねぇ。",
+          "left": "ジグ",
+          "right": "",
+          "location": "scene_base_02.webp"
+        },
+        {
+          "speaker": "アイナ",
+          "text": "……あの、道中の見張りは、私がします。",
+          "left": "",
+          "right": "アイナ",
+          "location": "scene_base_02.webp"
+        },
+        {
+          "speaker": "アルノ",
+          "text": "……前は私が行く。",
+          "left": "アルノ",
+          "right": "",
+          "location": "scene_base_02.webp"
+        },
+        {
+          "speaker": "トイフェル",
+          "text": "頼もしいね。じゃあ、行こうか。",
+          "left": "",
+          "right": "トイフェル",
+          "location": "scene_base_02.webp"
+        },
+        {
+          "speaker": "",
+          "left": "",
+          "right": "",
+          "text": "ジグが、拠点の扉に重い閂を下ろす。",
+          "narration": true,
+          "location": "scene_base_02.webp"
+        },
+        {
+          "speaker": "",
+          "left": "",
+          "right": "",
+          "text": "灰の舞う東の地平へ、九人は歩き出した。",
+          "narration": true,
+          "location": "scene_walk.webp"
+        }
+      ]
+    },
+    "shooting_ch07_02": {
+      "chapter": 7,
+      "stageNo": 2,
+      "chapterTitle": "灰路",
+      "stageTitle": "空の聖堂",
+      "pre": [
+        {
+          "speaker": "",
+          "left": "",
+          "right": "",
+          "text": "拠点を発って、半日。崩れかけた聖堂が、灰の中にぽつりと建っていた。",
+          "narration": true,
+          "location": "scene_walk.webp"
+        },
+        {
+          "speaker": "レオナクロス",
+          "text": "地図だと、ここにも光があったはずだ。……小さな光だったけどね。",
+          "left": "レオナクロス",
+          "right": "",
+          "location": "scene_walk.webp"
+        },
+        {
+          "speaker": "トイフェル",
+          "text": "寄っていこう。円盤があるかもしれない。",
+          "left": "",
+          "right": "トイフェル",
+          "location": "scene_walk.webp"
+        },
+        {
+          "speaker": "",
+          "left": "",
+          "right": "",
+          "text": "中はがらんとしていた。崩れた長椅子と、降り積もった灰。",
+          "narration": true,
+          "location": "scene_in_tower.webp"
+        },
+        {
+          "speaker": "",
+          "left": "",
+          "right": "",
+          "text": "その奥、祭壇の向こうに――灰をかぶった円盤がひとつ、静かに埋もれていた。",
+          "narration": true,
+          "location": "scene_disk_down.webp"
+        },
+        {
+          "speaker": "ミモザ",
+          "text": "円盤……！ ここにも。",
+          "left": "",
+          "right": "ミモザ",
+          "location": "scene_disk_down.webp"
+        },
+        {
+          "speaker": "ジグ",
+          "text": "……光ってねぇな。",
+          "left": "ジグ",
+          "right": "",
+          "location": "scene_disk_down.webp"
+        },
+        {
+          "speaker": "アウラ",
+          "text": "拠点のは、息してるみたいに光ってたのにね。",
+          "left": "",
+          "right": "アウラ",
+          "location": "scene_disk_down.webp"
+        },
+        {
+          "speaker": "",
+          "left": "",
+          "right": "",
+          "text": "エリが、そっと円盤に手を触れる。",
+          "narration": true,
+          "location": "scene_disk_down.webp"
+        },
+        {
+          "speaker": "",
+          "left": "",
+          "right": "",
+          "text": "……何も起きない。\n冷たい石の感触だけが、指先に残った。",
+          "narration": true,
+          "location": "scene_disk_down.webp"
+        },
+        {
+          "speaker": "エリ",
+          "text": "……何も、感じない。",
+          "left": "エリ",
+          "right": "",
+          "location": "scene_disk_down.webp"
+        },
+        {
+          "speaker": "ミモザ",
+          "text": "眠っているのかしら。それとも……",
+          "left": "",
+          "right": "ミモザ",
+          "location": "scene_disk_down.webp"
+        },
+        {
+          "speaker": "アルノ",
+          "text": "……長居は無用だ。出るぞ。",
+          "left": "アルノ",
+          "right": "",
+          "location": "scene_in_tower.webp"
+        },
+        {
+          "speaker": "",
+          "left": "",
+          "right": "",
+          "text": "一行が出口へ向き直った、そのとき。",
+          "narration": true,
+          "location": "scene_in_tower.webp"
+        },
+        {
+          "speaker": "",
+          "left": "",
+          "right": "",
+          "text": "――ズン。\n入ってきた入口のほうで、何かが崩れ落ちる音がした。",
+          "narration": true,
+          "location": "scene_in_tower.webp",
+          "effect": "rumble"
+        },
+        {
+          "speaker": "ジグ",
+          "text": "出口が……ふさがれた！？",
+          "left": "ジグ",
+          "right": "",
+          "location": "scene_in_tower.webp"
+        },
+        {
+          "speaker": "",
+          "left": "",
+          "right": "",
+          "text": "崩れた灰の向こうから、白い獣がゆっくりと姿を現す。\n三つの首が、同時にこちらを向いた。",
+          "narration": true,
+          "location": "scene_in_tower.webp"
+        },
+        {
+          "speaker": "アイナ",
+          "text": "強化個体です……！ 気配が、ひとつ……大きい……",
+          "left": "",
+          "right": "アイナ",
+          "location": "scene_in_tower.webp"
+        },
+        {
+          "speaker": "トイフェル",
+          "text": "退路を断ってきたか。倒すしかなさそうだね。",
+          "left": "",
+          "right": "トイフェル",
+          "location": "scene_in_tower.webp"
+        },
+        {
+          "speaker": "レオナクロス",
+          "text": "気をつけて。壁が動いてる……射線が切られるよ！",
+          "left": "レオナクロス",
+          "right": "",
+          "location": "scene_in_tower.webp"
+        }
+      ],
+      "combat": [],
+      "post": [
+        {
+          "speaker": "",
+          "left": "",
+          "right": "",
+          "text": "三つの首が力なく垂れ、白い巨狼が崩れ落ちる。\n灰が、静かに降り積もった。",
+          "narration": true,
+          "location": "scene_in_tower.webp"
+        },
+        {
+          "speaker": "アウラ",
+          "text": "やった……！",
+          "left": "",
+          "right": "アウラ",
+          "location": "scene_in_tower.webp"
+        },
+        {
+          "speaker": "",
+          "left": "",
+          "right": "",
+          "text": "エリは、もう一度、祭壇の奥を振り返った。",
+          "narration": true,
+          "location": "scene_disk_down.webp"
+        },
+        {
+          "speaker": "エリ",
+          "text": "……倒したら、何か変わるかも。",
+          "left": "エリ",
+          "right": "",
+          "location": "scene_disk_down.webp"
+        },
+        {
+          "speaker": "",
+          "left": "",
+          "right": "",
+          "text": "もう一度、円盤に触れる。\nけれど――やはり、何も起きなかった。",
+          "narration": true,
+          "location": "scene_disk_down.webp"
+        },
+        {
+          "speaker": "エリ",
+          "text": "……だめ、みたい。",
+          "left": "エリ",
+          "right": "",
+          "location": "scene_disk_down.webp"
+        },
+        {
+          "speaker": "レオナクロス",
+          "text": "あいつが円盤を守っていた……ってわけでも、なさそうだね。",
+          "left": "レオナクロス",
+          "right": "",
+          "location": "scene_disk_down.webp"
+        },
+        {
+          "speaker": "ミモザ",
+          "text": "拠点の円盤と、何が違うの……？ なんなのかしら、これ……",
+          "left": "",
+          "right": "ミモザ",
+          "location": "scene_disk_down.webp"
+        },
+        {
+          "speaker": "トイフェル",
+          "text": "地図の光も、ここは小さかった。輪も、まとっていなかった。",
+          "left": "",
+          "right": "トイフェル",
+          "location": "scene_disk_down.webp"
+        },
+        {
+          "speaker": "ミモザ",
+          "text": "……輪をまとった光と、そうでない光……",
+          "left": "",
+          "right": "ミモザ",
+          "location": "scene_disk_down.webp"
+        },
+        {
+          "speaker": "ジグ",
+          "text": "考えんのはあとだ。とりあえず出口、掘り出すぞ。",
+          "left": "ジグ",
+          "right": "",
+          "location": "scene_in_tower.webp"
+        },
+        {
+          "speaker": "ベロニカ",
+          "text": "掘るのォ？ ベロニカ、得意ィ！",
+          "left": "",
+          "right": "ベロニカ",
+          "location": "scene_in_tower.webp"
+        },
+        {
+          "speaker": "",
+          "left": "",
+          "right": "",
+          "text": "灰をかき分け、一行は聖堂をあとにした。\n背後の円盤は、最後まで、冷たく沈黙したままだった。",
+          "narration": true,
+          "location": "scene_walk.webp"
+        }
+      ]
+    },
+    "shooting_ch07_03": {
+      "chapter": 7,
+      "stageNo": 3,
+      "chapterTitle": "灰路",
+      "stageTitle": "灰の丘",
+      "pre": [
+        {
+          "speaker": "",
+          "left": "",
+          "right": "",
+          "text": "聖堂を出て、さらに東へ。\nやがて、灰が幾重にも積み重なった丘が、行く手をふさいだ。",
+          "narration": true,
+          "location": "scene_walk.webp"
+        },
+        {
+          "speaker": "",
+          "left": "",
+          "right": "",
+          "text": "丘の向こうに、塔の先端がかすかに見える。",
+          "narration": true,
+          "location": "scene_tower_far.webp"
+        },
+        {
+          "speaker": "エリ",
+          "text": "……あれ、かな。",
+          "left": "エリ",
+          "right": "",
+          "location": "scene_tower_far.webp"
+        },
+        {
+          "speaker": "ミモザ",
+          "text": "方角も合ってる。輪をまとった光……あの塔よ。",
+          "left": "",
+          "right": "ミモザ",
+          "location": "scene_tower_far.webp"
+        },
+        {
+          "speaker": "レオナクロス",
+          "text": "この丘を越える必要があるね。",
+          "left": "レオナクロス",
+          "right": "",
+          "location": "scene_tower_far.webp"
+        },
+        {
+          "speaker": "トイフェル",
+          "text": "回り込んだら、ずいぶん時間がかかりそうだ。",
+          "left": "",
+          "right": "トイフェル",
+          "location": "scene_tower_far.webp"
+        },
+        {
+          "speaker": "ジグ",
+          "text": "……越えるか。",
+          "left": "ジグ",
+          "right": "",
+          "location": "scene_tower_far.webp"
+        },
+        {
+          "speaker": "",
+          "left": "",
+          "right": "",
+          "text": "一歩、灰の斜面に足を踏み入れる。",
+          "narration": true,
+          "location": "scene_tower_far.webp"
+        },
+        {
+          "speaker": "",
+          "left": "",
+          "right": "",
+          "text": "――丘が、揺れた。",
+          "narration": true,
+          "location": "scene_tower_far.webp",
+          "effect": "rumble"
+        },
+        {
+          "speaker": "アウラ",
+          "text": "え……なに？",
+          "left": "",
+          "right": "アウラ",
+          "location": "scene_tower_far.webp"
+        },
+        {
+          "speaker": "",
+          "left": "",
+          "right": "",
+          "text": "ガサガサガサガサ……\n灰の下で、無数の何かがうごめく音がする。",
+          "narration": true,
+          "location": "scene_tower_far.webp"
+        },
+        {
+          "speaker": "アイナ",
+          "text": "下です……！ 灰の下に、たくさんの気配が……！",
+          "left": "",
+          "right": "アイナ",
+          "location": "scene_tower_far.webp"
+        },
+        {
+          "speaker": "",
+          "left": "",
+          "right": "",
+          "text": "足が、灰に沈んでいく。",
+          "narration": true,
+          "location": "scene_tower_far.webp"
+        },
+        {
+          "speaker": "ジグ",
+          "text": "ま、まずい……なんだ！？ 吸い込まれる……！",
+          "left": "ジグ",
+          "right": "",
+          "location": "scene_tower_far.webp"
+        },
+        {
+          "speaker": "",
+          "left": "",
+          "right": "",
+          "text": "灰の丘が、大きな口を開けるように崩れ落ちた。",
+          "narration": true,
+          "location": "scene_tower_far.webp",
+          "effect": "rumble"
+        }
+      ],
+      "combat": [],
+      "post": [
+        {
+          "speaker": "",
+          "left": "",
+          "right": "",
+          "text": "最後の大きな影が崩れると、うごめく音が、ぴたりと止んだ。",
+          "narration": true,
+          "location": "scene_tower_far.webp"
+        },
+        {
+          "speaker": "ジグ",
+          "text": "はぁ……はぁ……なんだったんだ、今の……",
+          "left": "ジグ",
+          "right": "",
+          "location": "scene_tower_far.webp"
+        },
+        {
+          "speaker": "レオナクロス",
+          "text": "近くにあるものに、手当たり次第に群がっていたね。……ボクの装置にまで。",
+          "left": "レオナクロス",
+          "right": "",
+          "location": "scene_tower_far.webp"
+        },
+        {
+          "speaker": "ミモザ",
+          "text": "小さい子たちを生んでいたのは、あの大きい個体……巣、だったのね。",
+          "left": "",
+          "right": "ミモザ",
+          "location": "scene_tower_far.webp"
+        },
+        {
+          "speaker": "アイナ",
+          "text": "皆さん……無事、ですか……？",
+          "left": "",
+          "right": "アイナ",
+          "location": "scene_tower_far.webp"
+        },
+        {
+          "speaker": "ベロニカ",
+          "text": "灰まみれェ！ キャハハハ！！",
+          "left": "",
+          "right": "ベロニカ",
+          "location": "scene_tower_far.webp"
+        },
+        {
+          "speaker": "トイフェル",
+          "text": "笑いごとじゃないよ、ベロニカ。",
+          "left": "",
+          "right": "トイフェル",
+          "location": "scene_tower_far.webp"
+        }
+      ]
+    },
+    "shooting_ch07_04": {
+      "chapter": 7,
+      "stageNo": 4,
+      "chapterTitle": "灰路",
+      "stageTitle": "夜明け",
+      "stageType": "novel",
+      "pre": [
+        {
+          "speaker": "",
+          "left": "",
+          "right": "",
+          "text": "灰の底から這い出したときには、空が白み始めていた。",
+          "narration": true,
+          "location": "scene_tower_middle.webp"
+        },
+        {
+          "speaker": "",
+          "left": "",
+          "right": "",
+          "text": "丘の向こう、朝の光の中に、塔がはっきりと姿を見せている。",
+          "narration": true,
+          "location": "scene_tower_near.webp"
+        },
+        {
+          "speaker": "アウラ",
+          "text": "見えた！ 塔だ！",
+          "left": "",
+          "right": "アウラ",
+          "location": "scene_tower_near.webp"
+        },
+        {
+          "speaker": "",
+          "left": "",
+          "right": "",
+          "text": "その塔を見上げた瞬間――エリの胸が、とくん、と鳴った。",
+          "narration": true,
+          "location": "scene_tower_near.webp"
+        },
+        {
+          "speaker": "エリ",
+          "text": "……呼んでる。",
+          "left": "エリ",
+          "right": "",
+          "location": "scene_tower_near.webp"
+        },
+        {
+          "speaker": "ミモザ",
+          "text": "エリ……？",
+          "left": "",
+          "right": "ミモザ",
+          "location": "scene_tower_near.webp"
+        },
+        {
+          "speaker": "エリ",
+          "text": "拠点の円盤に触れたときと、同じ感じ。……あそこに、何かいる。",
+          "left": "エリ",
+          "right": "",
+          "location": "scene_tower_near.webp"
+        },
+        {
+          "speaker": "トイフェル",
+          "text": "聖堂の円盤は、何も応えなかった。でも、あの塔のは……",
+          "left": "",
+          "right": "トイフェル",
+          "location": "scene_tower_near.webp"
+        },
+        {
+          "speaker": "レオナクロス",
+          "text": "生きている円盤……ってことかな。",
+          "left": "レオナクロス",
+          "right": "",
+          "location": "scene_tower_near.webp"
+        },
+        {
+          "speaker": "ジグ",
+          "text": "行ってみりゃ分かる。",
+          "left": "ジグ",
+          "right": "",
+          "location": "scene_tower_near.webp"
+        },
+        {
+          "speaker": "アルノ",
+          "text": "……行くぞ。",
+          "left": "アルノ",
+          "right": "",
+          "location": "scene_tower_near.webp"
+        },
+        {
+          "speaker": "",
+          "left": "",
+          "right": "",
+          "text": "九人は灰の丘を背に、朝の光の中へと歩き出した。",
+          "narration": true,
+          "location": "scene_tower_near.webp"
+        }
+      ]
+    }
 }
   );
 })();

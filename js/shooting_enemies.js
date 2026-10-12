@@ -28,6 +28,8 @@
     // CH07: 群がる強化個体（クモ型）。弾は撃たず、接触ダメージのみ。
     SWARM_SPIDER_LARGE: 'swarm_spider_large',
     SWARM_SPIDER_SMALL: 'swarm_spider_small',
+    // CH07-2: 空の聖堂の強化個体（バリアなし・単体）
+    STRONG_CH07_02: 'strong_ch07_02',
 
     // Remnant bosses
     REMNANT_01: 'shooting_remnant_01',
@@ -162,6 +164,17 @@
     // 大：TRAP爆発3回で撃破（通常射撃でも削れる）。5秒ごとに小を生む（1体につき同時3体まで）。
     // 小：TRAP爆発1回で撃破。速い。
     // ============================================================
+    // CH07-2 空の聖堂：出口をふさぐ強化個体（弱点バリアなし。遮断壁の向こうから弾幕）
+    // 白い三頭狼。
+    [SHOOTING_ENEMY_ID.STRONG_CH07_02]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.STRONG_CH07_02, kind: 'normal', implemented: true,
+      name: '白い三頭狼の強化個体', displayName: 'ENHANCED / WOLF',
+      element: 'neutral', image: 'images/strong_ch07_02_wolf.webp',
+      hp: 6000, bulletDamage: 120, bulletSpeed: 235, fireRate: 1100,
+      moveSpeed: 40, scoreValue: 3000, behavior: 'mini_barrage_v1',
+      strongEnemy: true, uiScale: 2.1,
+    }),
+
     [SHOOTING_ENEMY_ID.SWARM_SPIDER_LARGE]: Object.freeze({
       id: SHOOTING_ENEMY_ID.SWARM_SPIDER_LARGE, kind: 'normal', implemented: true,
       name: '灰織りの強化個体', displayName: 'SWARM / BROOD',

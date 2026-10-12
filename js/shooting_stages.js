@@ -69,7 +69,10 @@
     CH06_03: 'shooting_ch06_03',
     CH06_04: 'shooting_ch06_04',
 
+    CH07_01: 'shooting_ch07_01',
+    CH07_02: 'shooting_ch07_02',
     CH07_03: 'shooting_ch07_03',
+    CH07_04: 'shooting_ch07_04',
 
     DAILY_MON_INTERMEDIATE: 'shooting_daily_mon_intermediate',
     DAILY_MON_ADVANCED: 'shooting_daily_mon_advanced',
@@ -758,12 +761,33 @@
     }),
 
     // ============================================================
-    // CHAPTER 07 — 道中（※7-1/7-2/7-4は物語の骨組みが決まってから追加）
-    // 7-3 灰の夜：群がる強化個体。大3体の撃破でクリア。
+    // CHAPTER 07 — 灰路（仮）：9人で東の「輪をまとった光」の塔へ向かう道中
+    // 7-1 出発（物語） / 7-2 空の聖堂（強化個体・遮断壁） / 7-3 灰の丘（群がる強化個体） / 7-4 夜明け（物語）
     // ============================================================
+    [SHOOTING_STAGE_ID.CH07_01]: Object.freeze({
+      id:SHOOTING_STAGE_ID.CH07_01, chapter:7, stageNo:1,
+      get name(){return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch07_01?.stageTitle || '出発';},
+      type:'normal', background:'images/battle_bg_01.webp', enemyIds:Object.freeze([]),
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'物語を読む'}),playable:true
+    }),
+    [SHOOTING_STAGE_ID.CH07_02]: Object.freeze({
+      id:SHOOTING_STAGE_ID.CH07_02, chapter:7, stageNo:2,
+      get name(){return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch07_02?.stageTitle || '空の聖堂';},
+      type:'normal', background:'images/battle_bg_01.webp',
+      enemyIds:Object.freeze([SHOOTING_ENEMY_ID.STRONG_CH07_02]),
+      // 弱点バリアなし（weaknessOnlyEnemies を付けない）。遮断壁が左右にゆっくり動き、射線を切る。
+      chapter6Barriers:Object.freeze([
+        Object.freeze({ xRate:.50, yRate:.47, widthRate:.56, height:23, moveRangeRate:.18, moveSpeed:.34, contactDamage:85 }),
+      ]),
+      normalBattle:Object.freeze({
+        totalEnemies:1, maxActive:1, spawnAllAtStart:true, spawnIntervalMs:500, itemDropRate:0,
+        enemyBulletDamage:120, enemyBulletSpeed:235, enemyFireRate:1100, barrageLevel:4
+      }),
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'出口をふさぐ強化個体を撃破'}),playable:true
+    }),
     [SHOOTING_STAGE_ID.CH07_03]: Object.freeze({
       id:SHOOTING_STAGE_ID.CH07_03, chapter:7, stageNo:3,
-      get name(){return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch07_03?.stageTitle || '灰の夜';},
+      get name(){return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch07_03?.stageTitle || '灰の丘';},
       type:'normal', background:'images/battle_bg_ch07_03.webp',
       enemyIds:Object.freeze([SHOOTING_ENEMY_ID.SWARM_SPIDER_LARGE]),
       swarmBattle:Object.freeze({
@@ -780,6 +804,12 @@
         totalEnemies:3, maxActive:99, itemDropRate:0,
       }),
       mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'群れを生む強化個体3体を撃破'}),playable:true
+    }),
+    [SHOOTING_STAGE_ID.CH07_04]: Object.freeze({
+      id:SHOOTING_STAGE_ID.CH07_04, chapter:7, stageNo:4,
+      get name(){return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch07_04?.stageTitle || '夜明け';},
+      type:'normal', background:'images/battle_bg_01.webp', enemyIds:Object.freeze([]),
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'物語を読む'}),playable:true
     }),
 
     // ============================================================

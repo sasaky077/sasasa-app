@@ -2052,6 +2052,9 @@
       allowedIds: Object.freeze([1, 5, 3, 20, 28, 39]),
       requiredSize: 3,
     }),
+    // CH07：旅の9人（エリ/アウラ/ジグ/アルノ/ミモザ/レオナクロス/トイフェル/アイナ/ベロニカ）から3人。
+    shooting_ch07_02: Object.freeze({ allowedIds: Object.freeze([1, 3, 5, 20, 28, 39, 37, 17, 22]), requiredSize: 3 }),
+    shooting_ch07_03: Object.freeze({ allowedIds: Object.freeze([1, 3, 5, 20, 28, 39, 37, 17, 22]), requiredSize: 3 }),
   });
 
   // CH04-04以降は所持キャラから自由編成。CH04-03以前の物語編成は維持。
@@ -2059,6 +2062,8 @@
     if (!isStoryShootingStage() || !selectedStage) return false;
     const id = String(selectedStage.baseStageId || selectedStage.id || '').replace(/^shooting_beginner_/, 'shooting_');
     const match = id.match(/ch(\d{2})_(\d{2})/i);
+    // STORY_SELECTABLE_PARTY_MAP に載っているステージ（CH07の9人選択など）は自由編成にしない。
+    if (STORY_SELECTABLE_PARTY_MAP[id]) return false;
     return !!match && id !== 'shooting_ch05_04' && id !== 'shooting_ch06_03' && (Number(match[1]) > 4 || (Number(match[1]) === 4 && Number(match[2]) >= 4 && id !== 'shooting_ch04_04'));
   }
 
