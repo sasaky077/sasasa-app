@@ -2137,8 +2137,50 @@
     return !!(selectedStage && /^shooting_(?:beginner_)?ch04_0[1-3]$/i.test(String(selectedStage.id || '')));
   }
 
+  // Tower10: PHASE2 and PHASE3, each at 50% of that PHASE's own gauge.
+  // Uses existing relative-touch / absolute-mouse reversal and does not persist outside the fight.
+  const TOWER10_REVERSE_BANNER_ID='shooting-tower10-reverse-banner';
+  function removeTower10ReverseBanner() {
+    const el=document.getElementById(TOWER10_REVERSE_BANNER_ID);
+    if(el) el.remove();
+  }
+  function showTower10ReverseBanner(battleState,until) {
+    const arena=document.getElementById('shooting-arena');
+    if(!arena) return;
+    removeTower10ReverseBanner();
+    const el=document.createElement('div');
+    el.id=TOWER10_REVERSE_BANNER_ID;
+    el.setAttribute('role','status');
+    el.setAttribute('aria-live','assertive');
+    el.innerHTML='<strong>左右反転</strong><small>5秒間</small>';
+    arena.appendChild(el);
+    // Each phase owns its own end moment; a second phase can refresh the duration.
+    setTimeout(()=>{
+      if(state!==battleState || Number(battleState.tower10ReverseUntil||0)!==until) return;
+      removeTower10ReverseBanner();
+    },Math.max(0,until-performance.now())+35);
+  }
+  function maybeTriggerTower10ReverseControls() {
+    const cfg=selectedStage?.tower10ReverseControls;
+    if(!cfg || !state || state.ended || state.finishing || !state.boss || state.boss.hp<=0) return;
+    const phase=Number(state.boss.phase||1);
+    if(!Array.isArray(cfg.phases) || !cfg.phases.includes(phase)) return;
+    if(!Array.isArray(state.tower10ReverseTriggeredPhases)) state.tower10ReverseTriggeredPhases=[];
+    if(state.tower10ReverseTriggeredPhases.includes(phase)) return;
+    const floor=getBossGaugeFloorForPhase(phase);
+    const hp=getBossGaugeHpForPhase(phase);
+    const hpInGauge=Math.max(0,Number(state.boss.hp||0)-floor);
+    if(hpInGauge/hp>Number(cfg.triggerHpRatio??0.5)) return;
+    state.tower10ReverseTriggeredPhases.push(phase);
+    const now=performance.now();
+    const until=now+Math.max(0,Number(cfg.durationMs||5000));
+    state.tower10ReverseUntil=until;
+    showTower10ReverseBanner(state,until);
+  }
   function isHorizontalControlReversed() {
-    return !!(selectedStage && selectedStage.reverseHorizontalControls);
+    return !!(selectedStage && selectedStage.reverseHorizontalControls) ||
+      !!(selectedStage?.tower10ReverseControls && state && !state.ended && !state.finishing &&
+        performance.now()<Number(state.tower10ReverseUntil||0));
   }
 
   function isChapter43BossStage() {
@@ -2660,6 +2702,20 @@
       toggleBtn.setAttribute('data-ui-type', String(shootingUiLayoutType));
       toggleBtn.setAttribute('aria-label', `UI表示切替 現在タイプ${shootingUiLayoutType} / タップでタイプ${nextType}`);
       toggleBtn.title = `UI切替（現在 TYPE ${shootingUiLayoutType}）`;
+    }
+    updateShootingUiFlipMenuUi();
+  }
+
+  // build1436: UI切替ボタンは一時停止メニューの「UI反転」へ移設。
+  // TYPE 1 = 標準 / TYPE 2 = 左右反転（保存キー・クラス名は従来のまま）。
+  function updateShootingUiFlipMenuUi() {
+    const flipped = shootingUiLayoutType === 2;
+    const status = document.getElementById('shooting-pause-ui-flip-status');
+    if (status) status.textContent = flipped ? '反転' : '標準';
+    const btn = document.getElementById('shooting-pause-ui-flip');
+    if (btn) {
+      btn.setAttribute('aria-pressed', flipped ? 'true' : 'false');
+      btn.classList.toggle('is-on', flipped);
     }
   }
 
@@ -3794,6 +3850,7 @@
   function setCommonUiVisible(open) { UIModule.setCommonUiVisible(open); }
 
   function resetState() {
+    removeTower10ReverseBanner();
     // 旧バトルのITEM表示が何らかの経路で残っていても、新state作成前にDOM側を掃除する。
     purgeChapter4ItemDom();
 
@@ -3850,6 +3907,7 @@
       characterProfiles: resolvedProfiles,
       running: false, ended: false, finishing: false, countdown: true,
       phaseTransition: false, koTransition: false,
+      tower10ReverseUntil:0,tower10ReverseTriggeredPhases:[],
       activeCharacterId: selectedCharacterId,
       switchReadyAt: 0,
       party: selectedPartyIds.map(id => {
@@ -4559,6 +4617,16 @@
     if (member) {
       if (hpText) hpText.textContent = `${Math.ceil(member.hp)} / ${member.hpMax}`;
       if (hpBar) hpBar.style.width = `${clamp(member.hp / member.hpMax, 0, 1) * 100}%`;
+      // build1436: 縦HPゲージ（ULTゲージの対向側）
+      const hpRatio = clamp(member.hp / Math.max(1, member.hpMax), 0, 1);
+      if (hpText) hpText.textContent = String(Math.max(0, Math.ceil(member.hp)));
+      const hpSide = document.getElementById('shooting-hp-side');
+      const hpSideGauge = document.getElementById('shooting-hp-side-gauge');
+      if (hpSideGauge) hpSideGauge.style.setProperty('--hp-fill', String(hpRatio));
+      if (hpSide) {
+        hpSide.classList.toggle('is-low', hpRatio > 0 && hpRatio <= 0.3);
+        hpSide.classList.toggle('is-critical', hpRatio > 0 && hpRatio <= 0.15);
+      }
     }
 
     // 無敵・ATK UPの時限バフを自機に分かりやすく可視化する。
@@ -4864,7 +4932,7 @@
     const style = document.createElement('style');
     style.id = 'shooting-canvas-test-visual-style-v231';
     style.textContent = `
-      #shooting-event-root:is([data-shooting-stage="shooting_event_bullet_hell_test"],[data-shooting-stage^="shooting_event_faceless"],[data-shooting-stage="shooting_score_attack_normal"],[data-shooting-stage="shooting_score_attack_hard"],[data-shooting-stage="shooting_raid_test"],[data-shooting-stage^="shooting_ch04_"],[data-shooting-stage^="shooting_beginner_ch04_"],[data-shooting-stage^="shooting_ch07_"],[data-shooting-stage^="shooting_beginner_ch07_"]) #shooting-enemy-bullet-canvas{
+      #shooting-event-root #shooting-enemy-bullet-canvas{
         position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
         z-index:17!important;display:block!important;visibility:visible!important;opacity:1!important;
         pointer-events:none!important;background:transparent!important;filter:none!important;
@@ -4900,19 +4968,12 @@
     return m ? Number(m[1] || 0) : 0;
   }
 
+  // build1436: 敵弾は全ステージCanvas描画に統一（STORY / 塔 / デイリー / イベント /
+  // アンブッシュ / ノア / FACELESS / SCORE ATTACK / RAID / ガチャ試遊）。
+  // 弾1発ごとのDOM生成・削除をなくして軽量化し、自機との重なり順も全ステージで揃える。
+  // 問題があれば CANVAS_ENEMY_BULLET_TEST_ENABLED=false で従来DOMへ即時に戻せる。
   function isCanvasEnemyBulletTestStage() {
-    return !!(
-      selectedStage &&
-      (
-        String(selectedStage.id || '') === String(SHOOTING_STAGE_ID.BULLET_HELL_TEST || '') ||
-        isFacelessStage() ||
-        isScoreAttackStage() ||
-        isRaidStage() ||
-        isGachaTrialStage() || // ガチャ試遊の雑魚弾も既存Canvasに集約し、DOM増殖を防ぐ
-        String(selectedStage.id || '') === 'shooting_tower_08' || // Tower08: many MINI_03 volleys -> low-DOM canvas
-        getCanvasStoryChapter() > 0
-      )
-    );
+    return !!selectedStage;
   }
 
   // 既存コードはp.el.remove() / classList.contains()を利用するため、
@@ -5415,16 +5476,24 @@
     ) {
       const className = String(cls || '');
       const virtualEl = createCanvasProjectileElement(className);
-      const isDanger = className.includes('shooting-danger-bullet');
+      // アンブッシュのWARNING弾はDOM時と同じ直径18px（半径9）のまま、危険弾の見た目で描く。
+      const isAmbushWarningBullet = className.includes('shooting-ambush-warning-bullet');
+      const isAmbushBullet = !isAmbushWarningBullet && className.includes('shooting-ambush-bullet');
+      const isDanger = className.includes('shooting-danger-bullet') || isAmbushWarningBullet;
       const isFacelessObjectBullet = className.includes('shooting-faceless-object-bullet');
       const isFacelessBullet = className.includes('shooting-faceless-bullet');
       const isScoreAttackBullet = className.includes('shooting-score-attack-bullet');
       const isRaidLaser = className.includes('shooting-raid-green-laser');
       const isRaidBullet = isRaidStage();
-      const storyChapter = getCanvasStoryChapter() || (String(selectedStage?.id || '') === 'shooting_tower_08' ? 3 : 0);
+      // STORY以外（塔・デイリー・イベント等）は、従来の塔08-10Fと同じCH03系の見た目で描く。
+      const storyChapter = getCanvasStoryChapter() || 3;
       const isCurtainBullet = className.includes('shooting-ch04-curtain-bullet');
       const isHeavyBullet = className.includes('shooting-violence-heavy');
-      const radius = isDanger
+      const radius = isAmbushWarningBullet
+        ? 9
+        : isAmbushBullet
+        ? 4.5
+        : isDanger
         ? (isScoreAttackBullet ? 15 : 17)
         : (isFacelessObjectBullet
           ? 7
@@ -15802,6 +15871,9 @@
       state.boss.phase = nextPhase;
       beginBossPhaseBreak(nextPhase);
     }
+    // Called from every boss HP damage path (SHOT, ULT, DoT, etc.).
+    // Current HP is compared against the active gauge, not total boss HP.
+    maybeTriggerTower10ReverseControls();
   }
 
   function beginBossPhaseBreak(phase) {
@@ -21218,8 +21290,17 @@
     pointerY = state.player.y;
   }
 
+  // build1436: 下部バー（交代ボタン含む）から始まったタッチは移動ドラッグとして扱う。
+  // MENUなどの操作ボタン（.shooting-battle-controls）だけはUI操作のまま。
+  function isShootingFooterDragTarget(target) {
+    if (!target || typeof target.closest !== 'function') return false;
+    if (!target.closest('.shooting-footer')) return false;
+    return !target.closest('.shooting-battle-controls, a, input, select, textarea');
+  }
+
   function isShootingUiInteractionTarget(target) {
     if (!target || typeof target.closest !== 'function') return false;
+    if (isShootingFooterDragTarget(target)) return false;
     return !!target.closest(
       '.shooting-character-select, ' +
       '.shooting-result, ' +
@@ -21239,6 +21320,10 @@
     if (isShootingUiInteractionTarget(e.target)) return;
 
     const touchLike = isTouchLikePointer(e);
+    // build1436: 下部バー起点の操作はタッチの相対ドラッグだけ。
+    // マウスは絶対座標追従なので、バー上のクリックで自機を下端へワープさせない。
+    const fromFooter = isShootingFooterDragTarget(e.target);
+    if (fromFooter && !touchLike) return;
 
     // すでに別の指で操作中なら、その指以外のpointerdownは移動入力に使わない。
     if (
@@ -21253,6 +21338,7 @@
     const dx = e.clientX - lastTapX;
     const dy = e.clientY - lastTapY;
     const isDoubleTap =
+      !fromFooter &&
       lastTapAt > 0 &&
       (now - lastTapAt) <= ULT_DOUBLE_TAP_MS &&
       Math.hypot(dx, dy) <= ULT_DOUBLE_TAP_DISTANCE;
@@ -21285,10 +21371,20 @@
         if (e.cancelable) e.preventDefault();
         return;
       }
-    } else {
+    } else if (!fromFooter) {
       lastTapAt = now;
       lastTapX = e.clientX;
       lastTapY = e.clientY;
+    } else {
+      // 交代ボタンのタップ直後に盤面をタップしてもULT扱いにしない。
+      lastTapAt = 0;
+    }
+
+    // 交代ボタンのタップでチャージ/設置プレビューが始まり、
+    // 離した瞬間に発射・設置されないよう、バー起点では開始しない。
+    if (fromFooter) {
+      if (e.cancelable) e.preventDefault();
+      return;
     }
 
     // ミア：移動ドラッグと同じpointerを使ってチャージ開始。
@@ -21592,10 +21688,11 @@
       swipeStartAt = performance.now();
     }
 
-    if (!state.countdown && getCurrentCharacter().shotType === 'conjure' && !state.conjurePlacementPreview) {
+    const fromFooterTouch = isShootingFooterDragTarget(e.target);
+    if (!fromFooterTouch && !state.countdown && getCurrentCharacter().shotType === 'conjure' && !state.conjurePlacementPreview) {
       beginConjurePlacementPreview(performance.now());
     }
-    if (!state.countdown && getCurrentCharacter().shotType === 'trap' && !state.remnaTrapPlacementPreview) {
+    if (!fromFooterTouch && !state.countdown && getCurrentCharacter().shotType === 'trap' && !state.remnaTrapPlacementPreview) {
       beginRemnaTrapPlacementPreview(performance.now());
     }
 
@@ -22024,6 +22121,7 @@
     let menu = root.querySelector('#shooting-pause-menu');
     if (menu) {
       updateShootingBattleBgmMenuUi();
+      updateShootingUiFlipMenuUi();
       return menu;
     }
 
@@ -22039,6 +22137,9 @@
         <button type="button" class="shooting-pause-action shooting-pause-bgm-toggle" onclick="toggleShootingBattleBgm()" aria-pressed="true">
           <span>BGM　</span><strong id="shooting-pause-bgm-status">ON</strong>
         </button>
+        <button type="button" class="shooting-pause-action shooting-pause-ui-flip" id="shooting-pause-ui-flip" onclick="toggleShootingUiLayout()" aria-pressed="false" aria-label="UI左右反転">
+          <span>UI反転　</span><strong id="shooting-pause-ui-flip-status">標準</strong>
+        </button>
         <button type="button" class="shooting-pause-action shooting-pause-exit" onclick="exitShootingStageFromPause()">ステージを終了する</button>
         <button type="button" class="shooting-pause-action" onclick="restartShootingStageFromPause()">最初からやり直す</button>
         <button type="button" class="shooting-pause-action shooting-pause-close" onclick="closeShootingPauseMenu()">閉じる</button>
@@ -22046,6 +22147,7 @@
     `;
     root.appendChild(menu);
     updateShootingBattleBgmMenuUi();
+    updateShootingUiFlipMenuUi();
     return menu;
   }
 

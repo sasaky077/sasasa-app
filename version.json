@@ -1,4 +1,4 @@
 {
-  "build": 1434,
-  "note": "ECHO TOWER 08F: 2 simultaneous MINI_03, restore high-density 7/9/12 barrage and 1.28s cadence; preserve Canvas enemy bullet rendering. 04F and 06F walls unchanged."
+  "build": 1436,
+  "note": "Battle HUD re-layout: bench switch buttons (62px) moved off the battlefield into an 86px bottom bar ordered [MENU][UI切替] bench1 bench2 (mirrored by UI切替); larger vertical HP gauge opposite ULT; drags from the bottom bar move the player and switching fires only on a short tap. HUD text enlarged/darkened; player outline + ground shadow. Enemy bullets now always render above the player, and all stages (story, tower 01-10F, daily, events, ambush, Noah, faceless, score attack, raid, gacha trial) draw enemy bullets on the Canvas layer."
 }

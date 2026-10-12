@@ -55,6 +55,17 @@
               <i id="shooting-burst-gauge"></i>
             </div>
           </div>
+          <!-- build1436: 操作キャラHPはULTゲージの対向側に縦表示（表示専用・タッチを奪わない） -->
+          <div class="shooting-hp-side" id="shooting-hp-side" aria-label="HPゲージ">
+            <div class="shooting-hp-side-copy" aria-hidden="true">
+              <img class="shooting-player-element-icon" id="shooting-player-element-icon" src="images/type_light.webp" alt="" draggable="false">
+              <span>H P</span>
+            </div>
+            <div class="shooting-hp-side-track">
+              <i id="shooting-hp-side-gauge"></i>
+            </div>
+            <b class="shooting-hp-side-value" id="shooting-player-hp-text">670</b>
+          </div>
           <div class="shooting-ult-full-notice" id="shooting-ult-full-notice" aria-live="polite" aria-hidden="true">
             <span>ULT FULL CHARGE</span>
             <small>ダブルタップでULTスキルの使用が可能</small>
@@ -75,7 +86,6 @@
             <div class="shooting-player-buff-badges" id="shooting-player-buff-badges" aria-hidden="true"></div>
             <span id="shooting-player-core" class="shooting-player-core" aria-label="被弾判定コア"></span>
           </div>
-          <div class="shooting-switch-rail" id="shooting-switch-rail" aria-label="キャラクター切り替え"></div>
         </div>
 
           <div class="zpf-screen" id="shooting-character-select" aria-hidden="false">
@@ -119,23 +129,20 @@
             </div>
           </div>
 
-        <footer class="shooting-footer">
-          <div class="shooting-player-hud">
-            <div class="shooting-player-hud-top">
-              <div class="shooting-player-name-wrap">
-                <img class="shooting-player-element-icon" id="shooting-player-element-icon" src="images/type_light.webp" alt="" aria-hidden="true" draggable="false">
-                <div class="shooting-player-name" id="shooting-player-name">エリ</div>
-              </div>
-              <div class="shooting-player-hp-text" id="shooting-player-hp-text">670 / 670</div>
-            </div>
-            <div class="shooting-player-hp-bar" id="shooting-player-hp-bar"><i></i></div>
+        <!-- build1436: 交代ボタンは盤面に置かず、下部バーへまとめる。
+             並び（標準）: [MENU][UI切替] キャラ1 キャラ2 ／ UI切替で左右反転。
+             一時停止メニュー内の「UI反転」からも切り替え可能。 -->
+        <footer class="shooting-footer shooting-footer-v1436">
+          <div class="shooting-player-hud" aria-hidden="true" hidden>
+            <div class="shooting-player-name" id="shooting-player-name">エリ</div>
           </div>
+          <div class="shooting-switch-rail" id="shooting-switch-rail" aria-label="キャラクター切り替え"></div>
           <div class="shooting-battle-controls">
-            <button class="shooting-ui-layout-btn" id="shooting-ui-layout-btn" type="button" onclick="toggleShootingUiLayout()" aria-label="UI表示切替">
-              <span id="shooting-ui-layout-label">UI切替</span>
-            </button>
             <button class="shooting-battle-menu-btn" id="shooting-battle-menu-btn" type="button" onclick="openShootingPauseMenu()" aria-label="一時停止メニュー">
               <span class="sasaphia-menu-glyph" aria-hidden="true">☰</span>
+            </button>
+            <button class="shooting-ui-layout-btn" id="shooting-ui-layout-btn" type="button" onclick="toggleShootingUiLayout()" aria-label="UI左右反転">
+              <span id="shooting-ui-layout-label">UI切替</span>
             </button>
           </div>
         </footer>
@@ -239,43 +246,116 @@
       arena.addEventListener('touchend', onNativeTouchEnd, { passive: false });
       arena.addEventListener('touchcancel', onNativeTouchCancel, { passive: false });
     }
+    // build1436: 下部バー（交代ボタン + MENU）
+    // 交代ボタンは盤面の外へ移設した。自機が盤面下端にいる時は指がバーに掛かりやすいので、
+    // バーの上（交代ボタン上を含む、MENUを除く）から始めたタッチも移動ドラッグとして受け付ける。
+    // 交代は「ほぼ動かさずに短く離した」時だけ確定し、指を滑らせた場合は移動操作として扱う。
+    const footer = root.querySelector('.shooting-footer');
     const switchRail = root.querySelector('#shooting-switch-rail');
-    if (switchRail) {
-      // スマホでは click まで待つと、指が数px動いただけでタップがキャンセルされることがある。
-      // キャラチェンジは pointerdown の瞬間に確定させ、操作感を優先する。
-      switchRail.addEventListener('pointerdown', ev => {
-        ev.stopPropagation();
+    if (footer) {
+      footer.style.touchAction = 'none';
+      footer.style.webkitUserSelect = 'none';
+      footer.style.userSelect = 'none';
+      footer.style.webkitTouchCallout = 'none';
 
-        const btn = ev.target && ev.target.closest
-          ? ev.target.closest('.shooting-switch-btn')
-          : null;
+      footer.addEventListener('pointerdown', onPointerDown, { passive: false });
+      footer.addEventListener('pointermove', onPointerMove, { passive: false });
+      footer.addEventListener('pointerup', onPointerUp, { passive: false });
+      footer.addEventListener('pointercancel', onPointerUp, { passive: false });
+      if (typeof onNativeTouchStart === 'function') {
+        footer.addEventListener('touchstart', onNativeTouchStart, { passive: false });
+        footer.addEventListener('touchmove', onNativeTouchMove, { passive: false });
+        footer.addEventListener('touchend', onNativeTouchEnd, { passive: false });
+        footer.addEventListener('touchcancel', onNativeTouchCancel, { passive: false });
+      }
+    }
 
-        if (!btn || btn.disabled) return;
+    if (footer && switchRail) {
+      const TAP_MOVE_LIMIT = 12;   // px: これ以上動いたら交代せず移動操作とみなす
+      const TAP_TIME_LIMIT = 450;  // ms: 指を置いたまま長く止めていた場合も交代しない
+      let pending = null;
 
+      const findSwitchButton = target => (
+        target && target.closest ? target.closest('.shooting-switch-btn') : null
+      );
+      const beginTap = (target, x, y, key) => {
+        const btn = findSwitchButton(target);
+        if (!btn || btn.disabled) { pending = null; return; }
         const id = Number(btn.getAttribute('data-switch-id'));
-        if (!Number.isFinite(id)) return;
+        if (!Number.isFinite(id)) { pending = null; return; }
+        pending = { id, btn, x: Number(x) || 0, y: Number(y) || 0, at: performance.now(), key };
+        btn.classList.add('is-pressing');
+      };
+      const clearTap = () => {
+        if (pending && pending.btn) pending.btn.classList.remove('is-pressing');
+        pending = null;
+      };
+      const moveTap = (x, y) => {
+        if (!pending) return;
+        if (Math.hypot((Number(x) || 0) - pending.x, (Number(y) || 0) - pending.y) > TAP_MOVE_LIMIT) clearTap();
+      };
+      const finishTap = (x, y) => {
+        if (!pending) return;
+        const p = pending;
+        moveTap(x, y);
+        if (!pending) return;
+        clearTap();
+        if (performance.now() - p.at > TAP_TIME_LIMIT) return;
+        if (!p.btn.isConnected || p.btn.disabled) return;
+        if (typeof window.switchShootingCharacter === 'function') window.switchShootingCharacter(p.id);
+      };
 
-        ev.preventDefault();
-
-        // 直後に生成されるclickで二重切り替えされないようフラグを付与。
-        switchRail.dataset.suppressClick = '1';
-        window.switchShootingCharacter(id);
-
-        window.setTimeout(() => {
-          if (switchRail) delete switchRail.dataset.suppressClick;
-        }, 420);
-      }, { passive: false });
-
-      ['pointermove','pointerup','pointercancel'].forEach(type => {
-        switchRail.addEventListener(type, ev => ev.stopPropagation(), { passive: false });
-      });
-
-      switchRail.addEventListener('click', ev => {
-        ev.stopPropagation();
-        if (switchRail.dataset.suppressClick === '1') {
-          ev.preventDefault();
+      // Touch端末はTouch Eventsを正とする（iOSのpointercancel対策）。
+      // Pointer Eventsはマウス/ペン用。Touch系pointerは無視して二重発火を防ぐ。
+      footer.addEventListener('touchstart', ev => {
+        const t = ev.changedTouches && ev.changedTouches[0];
+        if (!t) return;
+        if (pending) { clearTap(); return; } // 2本目の指は交代に使わない
+        beginTap(ev.target, t.clientX, t.clientY, 'touch:' + t.identifier);
+      }, { passive: true, capture: true });
+      footer.addEventListener('touchmove', ev => {
+        if (!pending || !ev.touches) return;
+        for (let i = 0; i < ev.touches.length; i += 1) {
+          const t = ev.touches[i];
+          if ('touch:' + t.identifier === pending.key) { moveTap(t.clientX, t.clientY); return; }
         }
-      }, { passive: false });
+      }, { passive: true, capture: true });
+      footer.addEventListener('touchend', ev => {
+        if (!pending || !ev.changedTouches) return;
+        for (let i = 0; i < ev.changedTouches.length; i += 1) {
+          const t = ev.changedTouches[i];
+          if ('touch:' + t.identifier === pending.key) { finishTap(t.clientX, t.clientY); return; }
+        }
+      }, { passive: true, capture: true });
+      footer.addEventListener('touchcancel', () => clearTap(), { passive: true, capture: true });
+
+      footer.addEventListener('pointerdown', ev => {
+        if (ev.pointerType === 'touch') return;
+        if (ev.button != null && ev.button !== 0) return;
+        beginTap(ev.target, ev.clientX, ev.clientY, 'pointer:' + ev.pointerId);
+      }, { passive: true, capture: true });
+      footer.addEventListener('pointermove', ev => {
+        if (ev.pointerType === 'touch' || !pending || pending.key !== 'pointer:' + ev.pointerId) return;
+        moveTap(ev.clientX, ev.clientY);
+      }, { passive: true, capture: true });
+      footer.addEventListener('pointerup', ev => {
+        if (ev.pointerType === 'touch' || !pending || pending.key !== 'pointer:' + ev.pointerId) return;
+        finishTap(ev.clientX, ev.clientY);
+      }, { passive: true, capture: true });
+      footer.addEventListener('pointercancel', ev => {
+        if (ev.pointerType === 'touch') return;
+        clearTap();
+      }, { passive: true, capture: true });
+
+      // 交代はtouchend/pointerupで確定済み。ボタン既定のclickでは二重に交代させない。
+      // キーボード操作（detail===0）だけはclickで交代できるよう残す。
+      switchRail.addEventListener('click', ev => {
+        const btn = findSwitchButton(ev.target);
+        if (!btn) return;
+        if (ev.detail === 0 && !btn.disabled) return; // inline onclickへ通す
+        ev.preventDefault();
+        ev.stopPropagation();
+      }, true);
     }
 
     // build592: パーティ選択画面の「一覧」と「編成中スロット」の両方で

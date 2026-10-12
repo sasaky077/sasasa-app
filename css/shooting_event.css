@@ -12712,3 +12712,542 @@ html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-
 #shooting-event-root:is([data-shooting-stage="shooting_tower_04"],[data-shooting-stage="shooting_tower_06"]) .shooting-ch06-barrier.hit{
   background:#fff6c7;box-shadow:0 0 10px rgba(250,213,120,.8);
 }
+
+/* build1435: Tower10's 5-second horizontal-control inversion notice. */
+#shooting-event-root[data-shooting-stage="shooting_tower_10"] #shooting-tower10-reverse-banner{
+  position:absolute;left:50%;top:clamp(108px,22%,185px);transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-width:210px;max-width:calc(100% - 24px);box-sizing:border-box;
+  padding:10px 24px 8px;z-index:55;pointer-events:none;
+  background:linear-gradient(90deg,rgba(21,13,40,.18),rgba(28,16,51,.87) 16%,rgba(28,16,51,.87) 84%,rgba(21,13,40,.18));
+  border-top:1px solid rgba(255,221,174,.8);border-bottom:1px solid rgba(255,221,174,.8);
+  animation:tower10ReverseNotice .4s ease-out both;
+}
+#shooting-event-root #shooting-tower10-reverse-banner strong{
+  font-family:'Noto Serif JP',serif;font-size:clamp(29px,8vw,43px);line-height:1.17;
+  letter-spacing:.17em;color:#fff5e1;font-weight:700;white-space:nowrap;
+  text-shadow:0 2px 3px rgba(0,0,0,.9),0 0 12px rgba(241,171,99,.8);
+}
+#shooting-event-root #shooting-tower10-reverse-banner small{
+  margin-top:3px;font:600 12px/1.3 'Noto Serif JP',serif;letter-spacing:.16em;color:#ffe9b4;
+}
+@keyframes tower10ReverseNotice{
+  from{opacity:0;transform:translateX(-50%) scale(1.2)}
+  to{opacity:1;transform:translateX(-50%) scale(1)}
+}
+
+
+/* ============================================================
+   build1436: Battle HUD re-layout
+   - 交代ボタンを盤面から外し、下部バーへMENUとまとめる
+     （自機がボタン裏に入り操作不能になる不具合の対策）
+   - 操作キャラHPはULTゲージの対向側に縦表示（表示専用）
+   - UI切替は一時停止メニューの「UI反転」へ移設
+     TYPE 1 = 標準（ULT左 / HP右 / 交代左 / MENU右）
+     TYPE 2 = 反転（ULT右 / HP左 / 交代右 / MENU左）
+   ============================================================ */
+
+/* ---------- 下部バー ---------- */
+#shooting-event-root .shooting-footer.shooting-footer-v1436{
+  flex-direction:row !important;
+  justify-content:space-between !important;
+  align-items:center !important;
+  gap:10px !important;
+  overflow:visible !important;
+}
+#shooting-event-root.ui-type-2 .shooting-footer.shooting-footer-v1436{
+  flex-direction:row-reverse !important;
+}
+#shooting-event-root .shooting-footer-v1436 .shooting-player-hud{
+  display:none !important;
+}
+
+/* ---------- 交代ボタン（待機2体） ---------- */
+#shooting-event-root .shooting-footer-v1436 .shooting-switch-rail{
+  position:relative !important;
+  inset:auto !important;
+  left:auto !important;
+  right:auto !important;
+  top:auto !important;
+  bottom:auto !important;
+  transform:none !important;
+  z-index:1 !important;
+  flex:0 1 auto;
+  min-width:0;
+  height:100%;
+  display:flex;
+  flex-direction:row !important;
+  align-items:center !important;
+  justify-content:flex-start;
+  gap:20px !important;
+  padding:0 8px;
+}
+#shooting-event-root.ui-type-2 .shooting-footer-v1436 .shooting-switch-rail{
+  flex-direction:row-reverse !important;
+}
+#shooting-event-root .shooting-footer-v1436 .shooting-switch-btn{
+  flex:0 0 50px;
+  width:50px !important;
+  height:50px !important;
+  min-height:50px !important;
+  touch-action:none;
+  transition:transform .08s ease-out;
+}
+#shooting-event-root .shooting-footer-v1436 .shooting-switch-btn:not(.dead){
+  background:rgba(255,253,248,.96) !important;
+}
+#shooting-event-root .shooting-footer-v1436 .shooting-switch-btn:not(.dead) img{
+  opacity:1;
+}
+/* 旧 @media(max-width:480px) の画像58px固定が50pxの丸からはみ出すため、丸の内側に収める */
+html body #shooting-event-root .shooting-footer-v1436 .shooting-switch-btn img{
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  max-width:none !important;
+  margin:0 !important;
+  border-radius:50% !important;
+  object-fit:cover !important;
+  object-position:center;
+}
+/* ULTリング・札・バッジは丸の外側に出すため、ボタン自体はoverflow:visibleのまま */
+#shooting-event-root .shooting-footer-v1436 .shooting-switch-btn.cooling::after{
+  background:rgba(235,230,219,.52) !important;
+}
+#shooting-event-root .shooting-footer-v1436 .shooting-switch-btn.is-pressing:not(:disabled){
+  transform:scale(.93);
+}
+/* CHANGE / 残り秒数 / DOWN はボタン下端に重ねた小さな札で表示（バー内に収める） */
+#shooting-event-root .shooting-footer-v1436 .shooting-switch-status{
+  z-index:5;
+  left:50% !important;
+  right:auto !important;
+  bottom:-8px !important;
+  transform:translateX(-50%) !important;
+  width:auto !important;
+  min-width:42px;
+  padding:0 5px;
+  border:1px solid rgba(176,145,86,.45);
+  border-radius:99px;
+  background:rgba(255,253,247,.96);
+  font-size:8px !important;
+  line-height:12px !important;
+  text-align:center;
+  text-shadow:none;
+  pointer-events:none;
+}
+#shooting-event-root .shooting-footer-v1436 .shooting-switch-hp{
+  bottom:7px;
+}
+
+/* ---------- 縦HPゲージ（ULTの対向側） ---------- */
+#shooting-event-root .shooting-hp-side{
+  position:absolute;
+  z-index:24;
+  top:52%;
+  right:14px;
+  left:auto;
+  transform:translateY(-50%);
+  width:34px;
+  height:318px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  pointer-events:none;
+  opacity:.96;
+}
+#shooting-event-root.ui-type-2 .shooting-hp-side{
+  right:auto;
+  left:14px;
+}
+#shooting-event-root .shooting-hp-side-copy{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:3px;
+}
+#shooting-event-root .shooting-hp-side-copy img{
+  width:16px;
+  height:16px;
+  object-fit:contain;
+  filter:drop-shadow(0 1px 1px rgba(255,255,255,.9));
+}
+#shooting-event-root .shooting-hp-side-copy span{
+  font-family:"Cinzel",serif;
+  font-size:9px;
+  font-weight:600;
+  line-height:1;
+  letter-spacing:.06em;
+  color:#806437;
+  white-space:nowrap;
+  text-shadow:0 1px 0 rgba(255,255,255,.98),0 0 6px rgba(255,249,231,.9);
+}
+#shooting-event-root .shooting-hp-side-track{
+  position:relative;
+  width:12px;
+  height:254px;
+  flex:0 0 auto;
+  overflow:hidden;
+  border:1px solid rgba(140,106,48,.85);
+  background:rgba(255,252,244,.45);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.6),0 2px 8px rgba(70,50,20,.22);
+}
+#shooting-event-root .shooting-hp-side-track::before,
+#shooting-event-root .shooting-hp-side-track::after{
+  content:"";
+  position:absolute;
+  z-index:2;
+  left:50%;
+  width:6px;
+  height:1px;
+  transform:translateX(-50%);
+  background:rgba(147,112,51,.42);
+}
+#shooting-event-root .shooting-hp-side-track::before{top:50%}
+#shooting-event-root .shooting-hp-side-track::after{top:70%}
+#shooting-event-root #shooting-hp-side-gauge{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  height:100%;
+  transform-origin:center bottom;
+  transform:scaleY(var(--hp-fill,1));
+  transition:transform .15s linear,background .2s ease;
+  background:linear-gradient(180deg,#bfe0a8 0%,#7fb36c 45%,#4f8546 100%);
+  opacity:.95;
+}
+#shooting-event-root .shooting-hp-side-value{
+  font-family:"Cinzel",serif;
+  font-size:11px;
+  font-weight:700;
+  line-height:1;
+  letter-spacing:.02em;
+  color:#4a3920;
+  white-space:nowrap;
+  text-shadow:0 1px 0 rgba(255,255,255,.98),0 0 6px rgba(255,249,231,.95);
+}
+/* 30%以下：琥珀 / 15%以下：赤＋点滅 */
+#shooting-event-root .shooting-hp-side.is-low #shooting-hp-side-gauge{
+  background:linear-gradient(180deg,#f6dc93 0%,#e2ad4f 50%,#b9792b 100%);
+  opacity:.95;
+}
+#shooting-event-root .shooting-hp-side.is-critical #shooting-hp-side-gauge{
+  background:linear-gradient(180deg,#f6a593 0%,#d9604c 50%,#a8392c 100%);
+  opacity:1;
+}
+#shooting-event-root .shooting-hp-side.is-critical .shooting-hp-side-track{
+  animation:shootingHpCriticalPulse .7s ease-in-out infinite alternate;
+}
+#shooting-event-root .shooting-hp-side.is-critical .shooting-hp-side-value{
+  color:#b33a2b;
+}
+@keyframes shootingHpCriticalPulse{
+  from{border-color:rgba(190,80,60,.55);box-shadow:inset 0 0 0 1px rgba(255,255,255,.5),0 0 4px rgba(214,86,62,.2)}
+  to{border-color:rgba(222,84,60,.98);box-shadow:inset 0 0 0 1px rgba(255,255,255,.7),0 0 12px rgba(214,86,62,.6)}
+}
+@media (max-height:720px){
+  #shooting-event-root .shooting-hp-side{height:272px}
+  #shooting-event-root .shooting-hp-side-track{height:210px}
+}
+
+/* パーティ選択 / RESULT / 非戦闘時は縦HPも隠す */
+#shooting-event-root:not(.battle-hud-visible) .shooting-hp-side,
+#shooting-event-root:has(.shooting-character-select.show) .shooting-hp-side,
+#shooting-event-root:has(.shooting-result.show) .shooting-hp-side{
+  display:none !important;
+}
+
+/* ---------- 一時停止メニュー：UI反転 ---------- */
+#shooting-event-root .shooting-pause-action.shooting-pause-ui-flip.is-on strong{
+  color:#a5803b;
+}
+
+/* ---------- build1436b: 待機キャラボタンを大きく（操作性優先） ----------
+   ボタン 50px → 62px（旧・盤面上の丸と同じ大きさ）。
+   下部バーを 72px → 86px に広げ、盤面の下端もそれに合わせる（盤面は14px短くなる）。 */
+#shooting-event-root .shooting-footer.shooting-footer-v1436{
+  height:calc(86px + env(safe-area-inset-bottom, 0px)) !important;
+}
+#shooting-event-root:has(.shooting-footer-v1436) .shooting-arena{
+  bottom:calc(86px + env(safe-area-inset-bottom, 0px)) !important;
+}
+#shooting-event-root .shooting-footer-v1436 .shooting-switch-rail{
+  gap:24px !important;
+  padding:0 10px !important;
+}
+#shooting-event-root .shooting-footer-v1436 .shooting-switch-btn{
+  flex:0 0 62px !important;
+  width:62px !important;
+  height:62px !important;
+  min-height:62px !important;
+}
+#shooting-event-root .shooting-footer-v1436 .shooting-switch-status{
+  bottom:-9px !important;
+  min-width:48px;
+  font-size:9px !important;
+  line-height:13px !important;
+}
+#shooting-event-root .shooting-footer-v1436 .shooting-switch-hp{
+  left:10px;
+  right:10px;
+  bottom:9px;
+  height:5px;
+}
+
+
+/* ============================================================
+   build1436c: 下部バー並び替え / HP拡大 / 文字と自機の視認性
+   ============================================================ */
+
+/* ---------- 下部バー：[MENU][UI切替] キャラ1 キャラ2（反転時は鏡写し） ---------- */
+#shooting-event-root .shooting-footer-v1436 .shooting-battle-controls{
+  order:0 !important;
+  flex:0 0 auto !important;
+  flex-direction:row !important;
+  gap:6px !important;
+}
+#shooting-event-root .shooting-footer-v1436 .shooting-switch-rail{
+  order:1 !important;
+}
+#shooting-event-root.ui-type-2 .shooting-footer-v1436 .shooting-battle-controls{
+  flex-direction:row-reverse !important;
+}
+html body #shooting-event-root .shooting-footer-v1436 .shooting-battle-menu-btn,
+html body #shooting-event-root .shooting-footer-v1436 .shooting-ui-layout-btn{
+  display:inline-flex !important;
+  align-items:center;
+  justify-content:center;
+  flex:0 0 70px !important;
+  width:70px !important;
+  min-width:70px !important;
+  max-width:70px !important;
+  height:44px !important;
+  padding:0 4px !important;
+  font-size:12px !important;
+  font-weight:600 !important;
+  letter-spacing:.06em !important;
+  text-indent:0 !important;
+  color:#5a4526 !important;
+  border-color:rgba(140,108,55,.62) !important;
+}
+html body #shooting-event-root .shooting-footer-v1436 .shooting-battle-menu-btn .sasaphia-menu-glyph{
+  font-size:18px;
+  line-height:1;
+}
+@media (max-width:360px){
+  html body #shooting-event-root .shooting-footer-v1436 .shooting-battle-menu-btn,
+  html body #shooting-event-root .shooting-footer-v1436 .shooting-ui-layout-btn{
+    flex-basis:60px !important;
+    width:60px !important;
+    min-width:60px !important;
+    max-width:60px !important;
+    font-size:11px !important;
+  }
+  #shooting-event-root .shooting-footer-v1436 .shooting-switch-rail{
+    gap:20px !important;
+    padding:0 6px 0 10px !important;
+  }
+}
+
+/* ---------- 縦HPゲージ：大きく・やや透過 ---------- */
+#shooting-event-root .shooting-hp-side{
+  width:40px;
+  height:340px;
+  gap:7px;
+}
+#shooting-event-root .shooting-hp-side-track{
+  width:18px;
+  height:270px;
+  background:rgba(255,252,244,.30);
+}
+#shooting-event-root #shooting-hp-side-gauge{
+  opacity:.80;
+}
+#shooting-event-root .shooting-hp-side.is-low #shooting-hp-side-gauge{opacity:.85}
+#shooting-event-root .shooting-hp-side.is-critical #shooting-hp-side-gauge{opacity:.92}
+#shooting-event-root .shooting-hp-side-copy img{width:20px;height:20px}
+#shooting-event-root .shooting-hp-side-copy span{
+  font-size:11px;
+  font-weight:700;
+  color:#5f4520;
+}
+#shooting-event-root .shooting-hp-side-value{
+  font-size:13px;
+}
+@media (max-height:720px){
+  #shooting-event-root .shooting-hp-side{height:290px}
+  #shooting-event-root .shooting-hp-side-track{height:220px}
+}
+
+/* ---------- 文字の視認性 ---------- */
+/* 共通：明るい背景に負けないよう、白いふち取りで文字を浮かせる */
+html body #shooting-event-root .shooting-hud,
+html body #shooting-event-root .shooting-mission-hud,
+html body #shooting-event-root .shooting-boss-hud,
+html body #shooting-event-root .shooting-combo,
+html body #shooting-event-root .shooting-battle-timer{
+  --hud-halo:0 0 2px #fff,0 0 4px rgba(255,255,255,.95),0 1px 0 #fff;
+}
+
+/* ステージ名・スコア */
+html body #shooting-event-root .shooting-hud-title > span{
+  font-size:10px !important;
+  color:#7b6236 !important;
+  text-shadow:var(--hud-halo) !important;
+}
+html body #shooting-event-root .shooting-hud-title > strong{
+  color:#3d3021 !important;
+  text-shadow:var(--hud-halo) !important;
+}
+html body #shooting-event-root .shooting-hud-title small,
+html body #shooting-event-root .zpf-stage-subtitle{
+  color:#5a4628 !important;
+  opacity:1 !important;
+  text-shadow:var(--hud-halo) !important;
+}
+html body #shooting-event-root .shooting-score{
+  font-size:13px !important;
+  font-weight:600 !important;
+  color:#4f3d22 !important;
+  text-shadow:var(--hud-halo) !important;
+}
+
+/* ミッション（撃破ノルマなど） */
+html body #shooting-event-root .shooting-mission-hud span{
+  font-size:9px !important;
+  font-weight:600 !important;
+  letter-spacing:.08em !important;
+  color:#7a5c2c !important;
+  text-shadow:var(--hud-halo) !important;
+}
+html body #shooting-event-root .shooting-mission-hud strong{
+  font-size:13px !important;
+  font-weight:700 !important;
+  color:#33281a !important;
+  text-shadow:var(--hud-halo) !important;
+}
+html body #shooting-event-root .shooting-mission-hud b{
+  display:inline-block !important;
+  padding:3px 9px !important;
+  border-radius:99px !important;
+  font-size:12px !important;
+  font-weight:700 !important;
+  letter-spacing:.06em !important;
+  line-height:1.2 !important;
+  color:#fffaf0 !important;
+  background:rgba(120,84,34,.90) !important;
+  box-shadow:0 1px 4px rgba(60,40,15,.25) !important;
+  text-shadow:none !important;
+  white-space:nowrap !important;
+}
+html body #shooting-event-root .shooting-mission-hud b:empty{
+  display:none !important;
+}
+@media(max-width:420px){
+  html body #shooting-event-root .shooting-mission-hud span{font-size:8px !important}
+  html body #shooting-event-root .shooting-mission-hud strong{font-size:12px !important}
+  html body #shooting-event-root .shooting-mission-hud b{font-size:11px !important;padding:3px 8px !important}
+}
+
+/* ボス名・フェーズ */
+html body #shooting-event-root .shooting-boss-name{
+  font-size:12px !important;
+  font-weight:700 !important;
+  color:#3d2f1d !important;
+  opacity:1 !important;
+  text-shadow:var(--hud-halo) !important;
+}
+html body #shooting-event-root .shooting-boss-phase{
+  font-size:11px !important;
+  font-weight:700 !important;
+  color:#5a4424 !important;
+  opacity:1 !important;
+  text-shadow:var(--hud-halo) !important;
+}
+
+/* COMBO・タイマー */
+html body #shooting-event-root .shooting-combo strong{
+  color:#4d3a1f !important;
+  text-shadow:var(--hud-halo) !important;
+}
+html body #shooting-event-root .shooting-combo span{
+  font-size:11px !important;
+  font-weight:700 !important;
+  color:#6e5228 !important;
+  text-shadow:var(--hud-halo) !important;
+}
+html body #shooting-event-root .shooting-battle-timer small,
+html body #shooting-event-root .shooting-battle-timer strong{
+  color:#4d3a1f !important;
+  text-shadow:var(--hud-halo) !important;
+}
+html body #shooting-event-root .shooting-battle-timer small{font-size:9px !important;font-weight:700 !important}
+
+/* ULTゲージの文字 */
+html body #shooting-event-root .shooting-ult-side-copy span{
+  font-size:11px !important;
+  font-weight:700 !important;
+  color:#5f4520 !important;
+  text-shadow:0 0 2px #fff,0 0 4px rgba(255,255,255,.95) !important;
+}
+
+/* 交代ボタンの札 */
+#shooting-event-root .shooting-footer-v1436 .shooting-switch-status{
+  font-size:10px !important;
+  font-weight:700 !important;
+  color:#5a4526 !important;
+}
+
+/* ---------- 自機の視認性 ----------
+   明るい背景でも埋もれないよう、濃い縁取りと足元の影を付ける。
+   被弾無敵中の金色の光（.shooting-invincible-active）は従来どおり優先。 */
+#shooting-event-root .shooting-player:not(.shooting-invincible-active) img{
+  filter:
+    drop-shadow(0 0 1px rgba(38,26,10,.95))
+    drop-shadow(0 0 3px rgba(38,26,10,.55));
+}
+#shooting-event-root .shooting-player::after{
+  content:"";
+  position:absolute;
+  z-index:1;
+  left:50%;
+  bottom:4px;
+  width:56px;
+  height:14px;
+  transform:translateX(-50%);
+  border-radius:50%;
+  background:radial-gradient(closest-side,rgba(40,28,12,.38),rgba(40,28,12,0));
+  pointer-events:none;
+}
+/* 被弾判定コアも少し大きく・白ふちで見やすく */
+#shooting-event-root .shooting-player-core{
+  box-shadow:0 0 0 2px #fff,0 0 6px rgba(200,20,40,.85) !important;
+}
+
+/* ミッション帯の白いぼかしがステージ副題・ボス名に被って薄く見えていたため、
+   ぼかしの上下はみ出しを抑え、ボス名の帯をミッション帯より前面に出す */
+html body #shooting-event-root .shooting-mission-hud::before{
+  top:4px !important;
+  bottom:4px !important;
+}
+html body #shooting-event-root .shooting-boss-hud{
+  z-index:27 !important;
+}
+
+/* ============================================================
+   build1436d: 敵弾を自機より前面に
+   DOM描画の敵弾（z:11）が自機（z:12）の下に潜り、避けにくかった。
+   新しい並び: 味方弾(9) < 自機(12) < 回収アイテム(13) < 敵弾(14) < Canvas敵弾(17) < 危険弾(18) < BOSS(20)
+   ============================================================ */
+#shooting-event-root .shooting-enemy-bullet,
+#shooting-event-root .shooting-mini-enemy-bullet{
+  z-index:14 !important;
+}
+#shooting-event-root .shooting-enemy-bullet.shooting-danger-bullet,
+#shooting-event-root .shooting-mini-enemy-bullet.shooting-danger-bullet{
+  z-index:18 !important;
+}

@@ -168,6 +168,7 @@
       name:'第十層', type:'boss', background:'images/battle_bg_01.webp',
       enemyIds:Object.freeze([SHOOTING_ENEMY_ID.REMNANT_05]),
       bossVisualScale:1.0,
+      tower10ReverseControls:Object.freeze({phases:Object.freeze([2,3]),triggerHpRatio:0.5,durationMs:5000}),
       mission:Object.freeze({type:SHOOTING_MISSION_TYPE.BOSS_CLEAR,text:'最深部の守護者を撃破'}),
       playable:true
     });
@@ -196,7 +197,9 @@
       eventId:'resonance_tower',eventTitle:'残響の塔',
       difficultyLabel:String(floor).padStart(2,'0')+'F'+(difficult?' / 難関':''),
       name:'第'+floor+'層',type:'normal',background:'images/battle_bg_01.webp',
-      enemyIds:Object.freeze(TOWER_ENEMY_POOLS[floor-1]),normalBattle:Object.freeze(battle),
+      enemyIds:Object.freeze(TOWER_ENEMY_POOLS[floor-1]),
+      normalBattle:Object.freeze(floor===9?{...battle,enemyElementSequence:Object.freeze(['fire','aqua'])}:battle),
+      ...(floor===9?{weaknessOnlyEnemies:true}:{}),
       ...(barriers?{chapter6Barriers:barriers}:{}),
       mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'敵をすべて撃破'}),
       playable:true
