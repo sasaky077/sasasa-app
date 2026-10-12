@@ -1,0 +1,114 @@
+/* ZERAPHIA build1392 — ガチャ左右のページ案内を画像化。
+   古い矢印の擬似要素・親ボタンの移動アニメーションを明示的に停止。
+   スワイプ判定とボタンのクリック処理は既存JSを利用する。 */
+html body #screen-summon .summon-banner-arrow {
+  position: absolute !important;
+  top: 48% !important;
+  width: 54px !important;
+  min-width: 54px !important;
+  height: 68px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  overflow: visible !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  color: transparent !important;
+  font-size: 0 !important;
+  text-shadow: none !important;
+  opacity: 1 !important;
+  filter: none !important;
+  transform: translateY(-50%) !important;
+  transition: none !important;
+  animation: none !important;
+  z-index: 19 !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+html body #screen-summon .summon-banner-arrow-prev {
+  left: 4px !important;
+  right: auto !important;
+  margin-left: 0 !important;
+}
+html body #screen-summon .summon-banner-arrow-next {
+  right: 4px !important;
+  left: auto !important;
+  margin-right: 0 !important;
+}
+/* 優先度が高い旧「‹ ›」疑似要素まで確実に消す。 */
+html body #screen-summon .summon-banner-arrow::before,
+html body #screen-summon .summon-banner-arrow::after,
+html body #screen-summon .summon-banner-arrow.summon-banner-arrow-prev::before,
+html body #screen-summon .summon-banner-arrow.summon-banner-arrow-next::before,
+html body #screen-summon .summon-banner-arrow.summon-banner-arrow-prev::after,
+html body #screen-summon .summon-banner-arrow.summon-banner-arrow-next::after {
+  content: none !important;
+  display: none !important;
+  background: none !important;
+  border: 0 !important;
+  filter: none !important;
+}
+html body #screen-summon .summon-banner-arrow .summon-swipe-nav-icon {
+  display: block !important;
+  width: 52px !important;
+  height: 52px !important;
+  max-width: none !important;
+  max-height: none !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  object-fit: contain !important;
+  pointer-events: none !important;
+  user-select: none !important;
+  -webkit-user-drag: none !important;
+  transform-origin: center;
+  animation: zeraphiaSwipeArrowPulseLeft 1s ease-in-out infinite !important;
+}
+html body #screen-summon .summon-banner-arrow-next .summon-swipe-nav-icon {
+  animation-name: zeraphiaSwipeArrowPulseRight !important;
+}
+/* 1秒周期：発光 + 拡大 + 進行方向への小さな移動で横スワイプを案内。 */
+@keyframes zeraphiaSwipeArrowPulseLeft {
+  0%, 100% { transform: translateX(0) scale(.92); opacity: .75; filter: brightness(1) drop-shadow(0 0 2px rgba(255,236,174,.28)); }
+  50% { transform: translateX(-5px) scale(1.12); opacity: 1; filter: brightness(1.22) drop-shadow(0 0 8px rgba(251,199,75,.80)); }
+}
+@keyframes zeraphiaSwipeArrowPulseRight {
+  0%, 100% { transform: translateX(0) scale(.92); opacity: .75; filter: brightness(1) drop-shadow(0 0 2px rgba(255,236,174,.28)); }
+  50% { transform: translateX(5px) scale(1.12); opacity: 1; filter: brightness(1.22) drop-shadow(0 0 8px rgba(251,199,75,.80)); }
+}
+html body #screen-summon .summon-banner-arrow:focus-visible {
+  outline: 2px solid rgba(167,121,36,.95) !important;
+  outline-offset: 0 !important;
+}
+html body #screen-summon .summon-banner-arrow:active .summon-swipe-nav-icon {
+  animation-play-state: paused !important;
+  opacity: 1 !important;
+}
+@media (max-width: 360px) {
+  html body #screen-summon .summon-banner-arrow {width: 46px !important;min-width: 46px !important;height: 60px !important;}
+  html body #screen-summon .summon-banner-arrow-prev {left: 2px !important;}
+  html body #screen-summon .summon-banner-arrow-next {right: 2px !important;}
+  html body #screen-summon .summon-banner-arrow .summon-swipe-nav-icon {width: 45px !important;height: 45px !important;}
+}
+@media (prefers-reduced-motion: reduce) {
+  html body #screen-summon .summon-banner-arrow .summon-swipe-nav-icon,
+  html body #screen-summon .summon-banner-arrow-next .summon-swipe-nav-icon {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: drop-shadow(0 0 4px rgba(228,182,72,.45)) !important;
+  }
+}

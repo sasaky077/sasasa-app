@@ -426,7 +426,7 @@
   <link rel="stylesheet" href="css/app_chrome.css?v=693-score-ranking-nav-v2">
   <link rel="stylesheet" href="css/junkou_top.css?v=1357-story-title-six">
   <link rel="stylesheet" href="css/story_stage_select.css?v=1391-faceless-shared">
-  <link rel="stylesheet" href="css/faceless_stage_select.css?v=1391-canonical">
+  <link rel="stylesheet" href="css/faceless_stage_select.css?v=1395-left-edge-fade">
   <link rel="stylesheet" href="css/character_list.css?v=1368-translucent-header">
   <link rel="stylesheet" href="css/character_filter.css?v=1373-filter-size-close">
   <link rel="stylesheet" href="css/character_detail_shot.css?v=1372-fixed-icons">
@@ -3275,7 +3275,11 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
   #shooting-event-root[data-gacha-trial="1"] .shooting-pause-action:not(.shooting-pause-close):not(.shooting-pause-bgm-toggle) { display:none; }
 </style>
   <!-- build1379: universal image-based back button for quest/story/roster pages -->
-  <link rel="stylesheet" href="css/common_back_button.css?v=1383-back-alignment">
+  <link rel="stylesheet" href="css/common_back_button.css?v=1395-left-edge-fade">
+  <!-- build1392: supplied gold gacha navigation icons, once-per-second pulse -->
+  <link rel="stylesheet" href="css/gacha_swipe_nav.css?v=1392">
+  <!-- build1393: settings artwork + item-card design, placed last to override legacy styling -->
+  <link rel="stylesheet" href="css/setting_redesign.css?v=1395-left-edge-fade">
 </head>
 <body>
   <div class="global-user-frame" id="global-user-frame">
@@ -3977,77 +3981,62 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
   </div>
 </div>
 
-<!-- 設定画面 -->
-<div id="screen-setting" class="screen app-page app-page--standard">
-  <header class="app-page-header">
-    <button type="button" class="app-page-back" onclick="showMainTab('main')">＜戻る</button>
+<!-- 設定画面 — build1393: 添付完成図を基準にしたUI刷新。既存機能ID/handlersは維持 -->
+<div id="screen-setting" class="screen app-page app-page--standard settings-premium">
+  <header class="app-page-header setting-premium-header">
+    <button type="button" class="app-page-back" onclick="showMainTab('main')" aria-label="戻る" title="戻る"><span aria-hidden="true">❮</span> 戻る</button>
     <div class="app-page-heading"><h1 class="app-page-title">設定</h1></div>
     <div class="app-page-action"></div>
   </header>
-  <div class="app-page-content app-scroll-region setting-screen-scroll">
-  <div class="setting-section">
-    <div class="setting-section-title">プロフィール</div>
-    <div class="setting-row" onclick="openNameEdit()">
-      <span class="setting-row-label">プレイヤー名</span>
-      <span style="display:flex;align-items:center;gap:8px">
-        <span class="setting-row-sub" id="setting-display-name">-</span>
-        <span class="setting-row-arrow">›</span>
-      </span>
-    </div>
-  </div>
-  <div class="setting-section">
-    <div class="setting-section-title">サウンド</div>
-    <div class="setting-row setting-audio-row" onclick="toggleAudioSetting('main_bgm')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleAudioSetting('main_bgm');}" role="button" tabindex="0" aria-label="BGM設定を切り替える">
-      <span class="setting-row-label">BGM</span>
-      <span class="setting-audio-control">
-        <span class="setting-audio-status" id="main-bgm-status">ON</span>
-      </span>
-    </div>
-  </div>
-  <div class="setting-section">
-    <div class="setting-section-title">アカウント</div>
-
-    <div class="setting-row" onclick="openAccountProtection()">
-      <span class="setting-row-label">アカウント保護</span>
-      <span style="display:flex;align-items:center;gap:8px">
-        <span class="setting-row-sub" id="account-protection-status">確認中...</span>
-        <span class="setting-row-arrow">›</span>
-      </span>
-    </div>
-
-    <div class="setting-row" onclick="openDataTransfer()">
-      <span class="setting-row-label">データ引継ぎ</span>
-      <span class="setting-row-arrow">›</span>
-    </div>
-
-    <div class="setting-row" onclick="copyId()">
-      <span class="setting-row-label">ユーザーID</span>
-      <span style="display:flex;align-items:center;gap:8px;min-width:0">
-        <span class="setting-row-sub" id="setting-user-id" style="max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">-</span>
-        <span class="setting-row-arrow">›</span>
-      </span>
-    </div>
-
-    <div style="padding:8px 14px 12px;font-size:11px;line-height:1.65;color:rgba(95,82,63,.72)">
-      機種変更・端末故障に備える場合は、アカウント保護からメールアドレスを登録してください。
-    </div>
-  </div>
-  <div class="setting-section">
-    <div class="setting-section-title">その他</div>
-    <div class="setting-row" onclick="returnToTitleScreen()">
-      <span class="setting-row-label">タイトル画面に戻る</span>
-      <span class="setting-row-arrow">›</span>
-    </div>
-
-
-  </div>
-  <div class="setting-section" style="margin-bottom:16px">
-    <div class="setting-section-title">※注意※</div>
-    <div class="setting-row setting-danger" onclick="resetData()">
-      <span class="setting-row-label">データをリセット</span>
-      <span class="setting-row-arrow">›</span>
-    </div>
-  </div>
+  <div class="app-page-content app-scroll-region setting-screen-scroll" id="setting-premium-scroll">
+    <section class="setting-section setting-premium-section">
+      <div class="setting-section-title setting-premium-section-title"><span class="setting-title-emblem" aria-hidden="true">✧</span><strong>プロフィール</strong><small>PROFILE</small></div>
+      <div class="setting-row setting-premium-row" onclick="openNameEdit()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openNameEdit()}" role="button" tabindex="0" aria-label="プレイヤー名を変更">
+        <span class="setting-premium-icon"><img src="images/icon_setting_name.webp" alt=""></span>
+        <span class="setting-row-label">プレイヤー名</span>
+        <span class="setting-premium-value"><span class="setting-row-sub" id="setting-display-name">-</span></span>
+        <span class="setting-row-arrow" aria-hidden="true">›</span>
+      </div>
+    </section>
+    <section class="setting-section setting-premium-section">
+      <div class="setting-section-title setting-premium-section-title"><span class="setting-title-emblem" aria-hidden="true">✧</span><strong>サウンド</strong><small>SOUND</small></div>
+      <div class="setting-row setting-audio-row setting-premium-row" onclick="toggleAudioSetting('main_bgm')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleAudioSetting('main_bgm')}" role="button" tabindex="0" aria-label="BGM設定を切り替える">
+        <span class="setting-premium-icon"><img src="images/icon_setting_sound.webp" alt=""></span>
+        <span class="setting-row-label">BGM</span>
+        <span class="setting-audio-control setting-premium-value"><span class="setting-audio-status" id="main-bgm-status">ON</span></span>
+        <span class="setting-row-arrow" aria-hidden="true">›</span>
+      </div>
+    </section>
+    <section class="setting-section setting-premium-section setting-premium-account">
+      <div class="setting-section-title setting-premium-section-title"><span class="setting-title-emblem" aria-hidden="true">✧</span><strong>アカウント</strong><small>ACCOUNT</small></div>
+      <div class="setting-premium-account-rows">
+        <div class="setting-row setting-premium-row" onclick="openAccountProtection()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openAccountProtection()}" role="button" tabindex="0" aria-label="アカウント保護設定">
+          <span class="setting-premium-icon"><img src="images/icon_setting_security.webp" alt=""></span>
+          <span class="setting-row-label">アカウント保護</span>
+          <span class="setting-premium-value"><span class="setting-row-sub" id="account-protection-status">確認中...</span></span>
+          <span class="setting-row-arrow" aria-hidden="true">›</span>
+        </div>
+        <div class="setting-row setting-premium-row" onclick="openDataTransfer()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDataTransfer()}" role="button" tabindex="0" aria-label="データ引継ぎ">
+          <span class="setting-premium-icon"><img src="images/icon_setting_transfer.webp" alt=""></span>
+          <span class="setting-row-label">データ引継ぎ</span>
+          <span class="setting-premium-value"></span>
+          <span class="setting-row-arrow" aria-hidden="true">›</span>
+        </div>
+        <div class="setting-row setting-premium-row" onclick="copyId()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();copyId()}" role="button" tabindex="0" aria-label="ユーザーIDをコピー">
+          <span class="setting-premium-icon"><img src="images/icon_setting_userid.webp" alt=""></span>
+          <span class="setting-row-label">ユーザーID</span>
+          <span class="setting-premium-value"><span class="setting-row-sub" id="setting-user-id">-</span></span>
+          <span class="setting-row-arrow" aria-hidden="true">›</span>
+        </div>
+      </div>
+      <p class="setting-premium-advice"><span class="setting-advice-emblem" aria-hidden="true">!</span><span>機種変更・端末故障に備える場合は、アカウント保護から<br class="setting-note-desktop-break">メールアドレスを登録してください。</span></p>
+    </section>
+    <!-- 既存のタイトル復帰/データリセット機能も、折りたたみの中に維持。 -->
+    <details class="setting-premium-extras">
+      <summary>その他の設定</summary>
+      <div class="setting-row setting-premium-extra-row" onclick="returnToTitleScreen()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();returnToTitleScreen()}" role="button" tabindex="0"><span class="setting-row-label">タイトル画面に戻る</span><span class="setting-row-arrow">›</span></div>
+      <div class="setting-row setting-danger setting-premium-extra-row" onclick="resetData()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();resetData()}" role="button" tabindex="0"><span class="setting-row-label">データをリセット</span><span class="setting-row-arrow">›</span></div>
+    </details>
   </div>
 </div>
 
@@ -6711,7 +6700,7 @@ document.addEventListener('touchend', function (e) {
     prevBtn.type = 'button';
     prevBtn.className = 'summon-banner-arrow summon-banner-arrow-prev';
     prevBtn.setAttribute('aria-label', '前のガチャへ');
-    prevBtn.textContent = '‹';
+    prevBtn.innerHTML = '<img class="summon-swipe-nav-icon" src="images/icon_navi_left.webp?v=1392" alt="" aria-hidden="true" draggable="false" decoding="async">';
     prevBtn.onclick = function(event){
       event.stopPropagation();
       moveSummonBanner(-1);
@@ -6722,7 +6711,7 @@ document.addEventListener('touchend', function (e) {
     nextBtn.type = 'button';
     nextBtn.className = 'summon-banner-arrow summon-banner-arrow-next';
     nextBtn.setAttribute('aria-label', '次のガチャへ');
-    nextBtn.textContent = '›';
+    nextBtn.innerHTML = '<img class="summon-swipe-nav-icon" src="images/icon_navi_right.webp?v=1392" alt="" aria-hidden="true" draggable="false" decoding="async">';
     nextBtn.onclick = function(event){
       event.stopPropagation();
       moveSummonBanner(1);

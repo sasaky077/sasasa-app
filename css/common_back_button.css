@@ -29,7 +29,7 @@ html body #stage-select-modal.zss-root button.zss-back {
   border-radius:0 !important;
   outline-offset:2px !important;
   box-shadow:none !important;
-  background:transparent url('../images/button_back.webp') center/100% 100% no-repeat !important;
+  background:transparent url('../images/button_back.webp?v=1395-left-edge-fade') center/100% 100% no-repeat !important;
   /* Retain original text in the DOM to preserve accessible button names. */
   font-size:0 !important;
   line-height:0 !important;
