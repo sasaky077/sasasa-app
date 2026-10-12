@@ -173,14 +173,22 @@
     });
     const totalEnemies=[5,6,7,7,8,8,9,9,10][floor-1];
     const battle={
-      totalEnemies, maxActive:difficult?3:2, spawnIntervalMs:difficult?1100:1350,
+      totalEnemies,
+      // Tower08: keep its high-difficulty 2-enemy encounter, rendered via Canvas.
+      maxActive:difficult?3:2,
+      spawnIntervalMs:difficult?1100:1350,
       enemyHp:Math.round(520+floor*255+(difficult?350:0)),
       enemyBulletDamage:Math.round(65+floor*11),
       enemyBulletSpeed:145+floor*8,
+      // Tower08: restore strong 7/9/12-shot volleys, keep Canvas bullet rendering.
       enemyFireRate:Math.max(920,1920-floor*80),
       barrageLevel:Math.min(5,1+Math.floor(floor/2)),itemDropRate:0
     };
-    const barriers=floor===6?Object.freeze([Object.freeze({
+    // Tower04: fixed visible obstruction; Tower06: original mobile obstruction.
+    // Existing Chapter06 barrier collision logic handles projectile blocking.
+    const barriers=floor===4?Object.freeze([Object.freeze({
+      xRate:.5,yRate:.43,widthRate:.67,height:23,moveRangeRate:0,moveSpeed:0,contactDamage:80
+    })]):floor===6?Object.freeze([Object.freeze({
       xRate:.5,yRate:.44,widthRate:.58,height:22,moveRangeRate:.12,moveSpeed:.25,contactDamage:80
     })]):null;
     return Object.freeze({

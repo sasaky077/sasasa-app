@@ -1,4 +1,4 @@
 {
-  "build": 1432,
-  "note": "Fix oversized element and shot icons in party formation filter overlay, preserving search and filter behavior."
+  "build": 1434,
+  "note": "ECHO TOWER 08F: 2 simultaneous MINI_03, restore high-density 7/9/12 barrage and 1.28s cadence; preserve Canvas enemy bullet rendering. 04F and 06F walls unchanged."
 }

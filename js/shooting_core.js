@@ -4909,6 +4909,7 @@
         isScoreAttackStage() ||
         isRaidStage() ||
         isGachaTrialStage() || // ガチャ試遊の雑魚弾も既存Canvasに集約し、DOM増殖を防ぐ
+        String(selectedStage.id || '') === 'shooting_tower_08' || // Tower08: many MINI_03 volleys -> low-DOM canvas
         getCanvasStoryChapter() > 0
       )
     );
@@ -5420,7 +5421,7 @@
       const isScoreAttackBullet = className.includes('shooting-score-attack-bullet');
       const isRaidLaser = className.includes('shooting-raid-green-laser');
       const isRaidBullet = isRaidStage();
-      const storyChapter = getCanvasStoryChapter();
+      const storyChapter = getCanvasStoryChapter() || (String(selectedStage?.id || '') === 'shooting_tower_08' ? 3 : 0);
       const isCurtainBullet = className.includes('shooting-ch04-curtain-bullet');
       const isHeavyBullet = className.includes('shooting-violence-heavy');
       const radius = isDanger

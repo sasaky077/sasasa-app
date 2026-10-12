@@ -6,7 +6,7 @@
     '塔の入口。小規模な敵の群れを撃破する。',
     '水と木の敵が現れる。属性を選んで挑もう。',
     '第一の難関。火・水・木の混成部隊を突破せよ。',
-    '中層への足がかり。温存した仲間を活かそう。',
+    '遮断壁を越えて進む第四層。温存した仲間を活かそう。',
     '光と闇の敵が待ち受ける。相性を見極めよ。',
     '第二の難関。移動する遮断壁の先の敵を倒せ。',
     '上層への道。敵の数も攻撃密度も増す。',
@@ -221,7 +221,7 @@
           <div class="resonance-tower-seal-kicker">ECHO TOWER / SORTIE</div>
           <h2 id="tower-seal-title">封印対象の確認</h2>
           <div class="resonance-tower-seal-floor"></div>
-          <p id="tower-seal-message">この編成で勝利すると、以下の仲間は<br><strong>今週の残響の塔で封印</strong>されます。</p>
+          <p id="tower-seal-message">この編成で勝利すると、以下の仲間は<strong>今週の残響の塔で封印</strong>されます。</p>
           <div class="resonance-tower-seal-party" aria-label="勝利時の封印対象キャラクター"></div>
           <p class="resonance-tower-seal-note">敗北・中断した場合は封印されません。<br>封印が確定するのはクリア時のみです。</p>
           <div class="resonance-tower-seal-actions">

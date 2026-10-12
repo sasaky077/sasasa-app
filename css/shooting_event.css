@@ -12684,3 +12684,31 @@ html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-
   35%{filter:drop-shadow(0 0 18px rgba(255,220,140,.95)) brightness(1.35)}
   100%{filter:drop-shadow(0 0 6px rgba(255,236,190,.55)) brightness(1)}
 }
+
+/* build1433: ECHO TOWER 04/06 — chapter6 collision wall visual was missing for tower stage IDs.
+   Keep the original CH06 and DAILY styles unchanged. */
+#shooting-event-root:is([data-shooting-stage="shooting_tower_04"],[data-shooting-stage="shooting_tower_06"]) .shooting-ch06-barrier{
+  position:absolute;left:0;top:0;z-index:23;pointer-events:none;box-sizing:border-box;
+  border:1.5px solid rgba(170,128,53,.96);border-radius:3px;
+  background:linear-gradient(180deg,rgba(255,251,231,.97),rgba(212,193,143,.96) 50%,rgba(253,247,217,.97));
+  box-shadow:0 0 0 1px rgba(255,255,255,.75) inset,0 2px 7px rgba(33,25,10,.36);
+  opacity:1;visibility:visible;
+}
+#shooting-event-root:is([data-shooting-stage="shooting_tower_04"],[data-shooting-stage="shooting_tower_06"]) .shooting-ch06-barrier::before,
+#shooting-event-root:is([data-shooting-stage="shooting_tower_04"],[data-shooting-stage="shooting_tower_06"]) .shooting-ch06-barrier::after{
+  content:"";position:absolute;top:50%;width:11px;height:11px;
+  border:1px solid #a78349;background:#fffaf0;transform:translateY(-50%) rotate(45deg);
+}
+#shooting-event-root:is([data-shooting-stage="shooting_tower_04"],[data-shooting-stage="shooting_tower_06"]) .shooting-ch06-barrier::before{left:6px}
+#shooting-event-root:is([data-shooting-stage="shooting_tower_04"],[data-shooting-stage="shooting_tower_06"]) .shooting-ch06-barrier::after{right:6px}
+#shooting-event-root:is([data-shooting-stage="shooting_tower_04"],[data-shooting-stage="shooting_tower_06"]) .shooting-ch06-barrier i{
+  position:absolute;left:23px;right:23px;top:50%;height:2px;transform:translateY(-50%);
+  background:repeating-linear-gradient(90deg,#b98e48 0 10px,transparent 10px 17px);
+}
+#shooting-event-root:is([data-shooting-stage="shooting_tower_04"],[data-shooting-stage="shooting_tower_06"]) .shooting-ch06-barrier b{
+  position:absolute;left:50%;top:50%;width:13px;height:13px;
+  transform:translate(-50%,-50%) rotate(45deg);border:1px solid #ad8647;background:#fff8df;
+}
+#shooting-event-root:is([data-shooting-stage="shooting_tower_04"],[data-shooting-stage="shooting_tower_06"]) .shooting-ch06-barrier.hit{
+  background:#fff6c7;box-shadow:0 0 10px rgba(250,213,120,.8);
+}
