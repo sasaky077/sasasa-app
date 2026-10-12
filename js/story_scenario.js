@@ -2329,8 +2329,26 @@
     "post": [
       {
         "speaker": "",
-        "text": "大型レムナントが崩れ落ち、塔の内部に静寂が戻る。\nその奥には、幾重もの紋様が一点へと集まる、不思議な円盤だけが残されていた。",
+        "text": "天使の姿をした巨影が崩れ落ち、塔の内部に静寂が戻る。",
         "location": "scene_remnant_03_rip.webp",
+        "narration": true
+      },
+      {
+        "speaker": "",
+        "text": "舞い上がる灰の中から、小さな光がひとつ、ふわりと浮かび上がった。",
+        "location": "scene_remnant_03_rip.webp",
+        "narration": true
+      },
+      {
+        "speaker": "",
+        "text": "光はゆっくりと塔の奥へ漂い、\n幾重もの紋様が一点へと集まる、不思議な円盤の中へ吸い込まれていく。",
+        "location": "scene_disk.webp",
+        "narration": true
+      },
+      {
+        "speaker": "",
+        "text": "――ドクン。\n円盤が、ひとつ脈打った。",
+        "location": "scene_disk.webp",
         "narration": true
       },
 
