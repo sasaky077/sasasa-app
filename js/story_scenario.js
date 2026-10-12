@@ -4944,7 +4944,7 @@
       },
       {
         "speaker": "ジグ",
-        "text": "……チッ。俺は油断しねぇぞ。",
+        "text": "……チッ。アルノ、厳重監視だぜ。",
         "left": "ジグ",
         "right": "",
         "location": "scene_chapter06_2.webp"
@@ -5054,7 +5054,7 @@
       },
       {
         "speaker": "レオナクロス",
-        "text": "ミモザ、これって……",
+        "text": "ミ…ミモザ、これって……",
         "left": "レオナクロス",
         "right": "",
         "location": "scene_chapter06_3.webp"
@@ -5109,20 +5109,20 @@
         "right": "",
         "text": "トイフェルが懐から、折りたたまれた古い紙を取り出す。",
         "narration": true,
-        "location": "scene_chapter06_4.webp"
+        "location": "scene_chapter06_5.webp"
       },
       {
         "speaker": "トイフェル",
         "text": "ここに来る途中、寂れた聖堂で拾ったんだ。",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_chapter06_4.webp"
+        "location": "scene_chapter06_5.webp"
       },
       {
         "speaker": "",
         "left": "",
         "right": "",
-        "text": "二枚の紙が並べられる。線の引き方も、紙の古び方もよく似ている。けれど、描かれた図形はまるで違っていた。",
+        "text": "二枚の紙が並べられる。図形の配置、紙の古び方もよく似ている。けれど、描かれた図形はまるで違っていた。",
         "narration": true,
         "location": "scene_chapter06_5.webp"
       },
