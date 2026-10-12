@@ -114,7 +114,7 @@
   //   赤コアを意識して避ける被弾管理
   //
   // 04 旅立ち:
-  //   オーバーシアBOSS
+  //   竜型レムナントBOSS
   //
   function makeDailyStage(config) {
     const level = config.level === 'advanced' ? 'advanced' : 'intermediate';
@@ -276,12 +276,18 @@
         SHOOTING_ENEMY_ID.REMNANT_01,
       ]),
 
+      // build1415: このステージだけ戦闘用BOSS画像を差し替え。AI / HP / 弾幕は従来通り。
+      bossBattleImage: 'images/enemy_mini_03_battle.webp',
+      introImage: 'images/remnant_01_battle_start.webp',
+      // build1416: build1415比で約16%小さく表示（BOSS行動・HPは変更しない）。
+      bossVisualScale: 1.30,
+
       // build1168: 負けイベント～アルノ戦まで最初から2ゲージ設計。
       bossGauges: 2,
 
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
-        text: 'オーバーシアを撃破',
+        text: '竜型レムナントを撃破',
       }),
 
       playable: true,
@@ -400,6 +406,12 @@
         SHOOTING_ENEMY_ID.REMNANT_02,
       ]),
 
+      // build1415: BOSS画像だけ置換し、ボス戦闘ロジックは変更しない。
+      bossBattleImage: 'images/enemy_remmaster.webp',
+      introImage: 'images/remnant_02_battle_start.webp',
+      // build1416: build1415比で16%小さく表示（BOSS行動・HPは変更しない）。
+      bossVisualScale: 1.05,
+
       // build1190: CH02-04 boss battle uses two HP gauges.
       bossGauges: 2,
 
@@ -408,18 +420,18 @@
         enemyIds: Object.freeze([
           SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT,
         ]),
-        // build1214: CH02-04 イリシュ戦は突進(ATACK)雑魚を出さない。
-        // 援軍は通常射撃タイプのみ。
-        enemyVariants: Object.freeze(['normal', 'normal', 'normal', 'normal']),
-        totalEnemies: 4,
-        maxActive: 1,
-        startDelayMs: 4500,
-        spawnIntervalMs: 7000,
+        // build1415: LIGHT属性の遠隔1体と突進1体を各1回のみ出現させる。
+        // 合計2体上限なので、撃破後に蘇生・補充されない。
+        enemyVariants: Object.freeze(['normal', 'atack']),
+        totalEnemies: 2,
+        maxActive: 2,
+        startDelayMs: 3500,
+        spawnIntervalMs: 2500,
       }),
 
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
-        text: 'イリシュを撃破',
+        text: '白い影を撃破',
       }),
 
       // ボス画像 images/remnant_02_battle.webp を配置すればそのまま遊べる。

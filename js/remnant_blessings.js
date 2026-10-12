@@ -9,8 +9,8 @@
 
   const REMNANT_BLESSINGS = {
     remnant_01: {
-      id: 'remnant_01', remnantName: 'オーバーシア', name: 'オーバーシアの加護',
-      panelImg: 'images/remnant_01_panel.webp', cutinImg: 'images/remnant_01_cutin.webp', materialName: 'オーバーシアの心核',
+      id: 'remnant_01', remnantName: '竜型レムナント', name: '竜型レムナントの加護',
+      panelImg: 'images/remnant_01_panel.webp', cutinImg: 'images/remnant_01_cutin.webp', materialName: '竜型レムナントの心核',
       maxLevel: 5, conditionType: 'enemy_kill_count', invRequiredKills: 3,
       invName: '万象観測', invEffectType: 'critical_up', invDurationTurns: 1,
       levels: {
@@ -22,8 +22,8 @@
       },
     },
     remnant_02: {
-      id: 'remnant_02', remnantName: 'イリシュ', name: 'イリシュの加護',
-      panelImg: 'images/remnant_02_panel.webp', cutinImg: 'images/remnant_02_cutin.webp', materialName: 'イリシュの心核',
+      id: 'remnant_02', remnantName: '白い影', name: '白い影の加護',
+      panelImg: 'images/remnant_02_panel.webp', cutinImg: 'images/remnant_02_cutin.webp', materialName: '白い影の心核',
       maxLevel: 5, conditionType: 'multi_target_attack', invRequiredTargets: 2,
       invName: '壊滅衝動', invEffectType: 'single_enemy_damage',
       levels: {

@@ -13862,8 +13862,8 @@ function showTenResult(results){
   // レムナント一覧マスター。今後8体まで登録予定。
   // サキエルは No.04 として固定登録。
   var REMNANT_MASTER = [
-    { no: 1, id: 'remnant_01', enemyId: 'enemy_overseer_roguelite', legacyEnemyIds: ['enemy_01'], name: 'レムナント：オーバーシア', img: 'images/remnant_01.webp', panelImg: 'images/remnant_01_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
-    { no: 2, id: 'remnant_02', enemyId: 'enemy_irish_roguelite', legacyEnemyIds: ['enemy_02'], name: 'レムナント：イリシュ', img: 'images/remnant_02.webp', panelImg: 'images/remnant_02_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
+    { no: 1, id: 'remnant_01', enemyId: 'enemy_overseer_roguelite', legacyEnemyIds: ['enemy_01'], name: '竜型レムナント', img: 'images/remnant_01.webp', panelImg: 'images/remnant_01_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
+    { no: 2, id: 'remnant_02', enemyId: 'enemy_irish_roguelite', legacyEnemyIds: ['enemy_02'], name: '白い影', img: 'images/remnant_02.webp', panelImg: 'images/remnant_02_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
     { no: 3, id: 'remnant_03', enemyId: 'enemy_rivia_roguelite', legacyEnemyIds: ['enemy_03'], name: 'レムナント：リヴィア', img: 'images/remnant_03.webp', panelImg: 'images/remnant_03_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
     { no: 4, id: 'remnant_04', enemyId: 'enemy_sakiel_roguelite', legacyEnemyIds: [], name: 'レムナント：サキエル', img: 'images/remnant_04.webp', panelImg: 'images/remnant_04_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
     { no: 5, id: 'remnant_05', enemyId: 'enemy_remnant05_core', legacyEnemyIds: ['enemy_05'], name: 'レムナント：レム', img: 'images/remnant_05.webp', panelImg: 'images/remnant_05_panel.webp', hiddenName: '??????', acquireCondition: 'BOSSドロップ', desc: '記録は失われている。' },
@@ -19006,9 +19006,9 @@ function fadeOutOpeningBgm(){
 
 <!-- 32マス共有盤面バトル（新規追加） -->
 <link rel="stylesheet" href="css/battle_32_ui.css?v=593">
-<script src="js/remnant_blessings.js?v=593"></script>
+<script src="js/remnant_blessings.js?v=1416-names"></script>
 <!-- ローグライト（新規追加） -->
-<script src="js/shinju.js?v=896-server-authority"></script>
+<script src="js/shinju.js?v=1416-boss-name"></script>
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
 (function () {
@@ -19078,7 +19078,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1414-ch07"></script>
+<script src="js/shooting_event.js?v=1416-boss-names-intro-size"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
 <script src="js/skin_system.js?v=1076-home-canvas-normalize"></script>

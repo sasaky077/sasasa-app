@@ -302,8 +302,8 @@
       kind: 'boss',
       remnantNo: 1,
       implemented: true,
-      name: 'オーバーシア',
-      displayName: 'REMNANT 01　オーバーシア',
+      name: '竜型レムナント',
+      displayName: 'REMNANT 01　竜型レムナント',
       image: 'images/remnant_01_battle.webp',
       element: 'neutral',
 
@@ -326,8 +326,8 @@
       kind: 'boss',
       remnantNo: 2,
       implemented: true,
-      name: 'イリシュ',
-      displayName: 'REMNANT 02　イリシュ',
+      name: '白い影',
+      displayName: 'REMNANT 02　白い影',
       image: 'images/remnant_02_battle.webp',
       element: 'fire',
 

@@ -44,7 +44,7 @@
   const RUN_REWARD_MASTER = {
     default: {
       bossId: 'enemy_01',
-      bossName: 'レムナント：オーバーシア',
+      bossName: '竜型レムナント',
       itemName: '白糸の創世片',
       itemDesc: '白糸の残響から剥離した創世資源。神樹へ奉納できる。',
       exp: 140,
