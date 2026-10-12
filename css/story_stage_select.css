@@ -595,3 +595,184 @@ html body #stage-select-modal.zss-root {
   #stage-select-modal.zss-root .zss-record-score b {font-size:9px}
   #stage-select-modal.zss-root .zss-arrow {font-size:20px}
 }
+
+/* =============================================================
+   build1402 — CHAPTER rewards: one item per frame, five-slot grid
+   [usual] [usual] [first only] [first only] [S rank]
+   A single first-only item sits in slot 4. S always stays slot 5.
+   All rules scoped to STORY; DAILY/FACELESS are unaffected.
+   ============================================================= */
+#stage-select-modal.zss-root .zss-card-row-reward .zss-rewards {
+  display:grid !important;
+  grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+  align-items:center !important;
+  justify-items:stretch !important;
+  flex:1 1 0 !important;
+  width:100% !important;
+  min-width:0 !important;
+  gap:2px !important;
+}
+#stage-select-modal.zss-root .zss-card-row-reward .zss-reward-chip {
+  flex:none !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:none !important;
+  height:34px !important;
+  min-height:0 !important;
+  margin:0 !important;
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) !important;
+  grid-template-rows:minmax(0,1fr) !important;
+  align-items:center !important;
+  justify-items:center !important;
+  padding:1px !important;
+  box-sizing:border-box !important;
+  overflow:hidden !important;
+}
+#stage-select-modal.zss-root .zss-card-row-reward .zss-reward-slot-1 {grid-column:1 !important}
+#stage-select-modal.zss-root .zss-card-row-reward .zss-reward-slot-2 {grid-column:2 !important}
+#stage-select-modal.zss-root .zss-card-row-reward .zss-reward-slot-3 {grid-column:3 !important}
+#stage-select-modal.zss-root .zss-card-row-reward .zss-reward-slot-4 {grid-column:4 !important}
+#stage-select-modal.zss-root .zss-card-row-reward .zss-reward-slot-5 {grid-column:5 !important}
+#stage-select-modal.zss-root .zss-card-row-reward .zss-reward-bonus {
+  grid-template-rows:minmax(0,1fr) 9px !important;
+  padding:1px 0 0 !important;
+}
+#stage-select-modal.zss-root .zss-card-row-reward .zss-reward-icon {
+  width:100% !important;
+  height:100% !important;
+  min-height:0 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  overflow:hidden !important;
+  grid-row:1 !important;
+}
+#stage-select-modal.zss-root .zss-card-row-reward .zss-reward-icon img {
+  display:block !important;
+  width:min(22px,100%) !important;
+  height:21px !important;
+  max-width:100% !important;
+  max-height:100% !important;
+  object-fit:contain !important;
+}
+#stage-select-modal.zss-root .zss-card-row-reward .zss-reward-tag {
+  display:block !important;
+  width:100% !important;
+  min-height:9px !important;
+  font:600 6.8px/9px 'Noto Serif JP',serif !important;
+  letter-spacing:-.06em !important;
+  text-align:center !important;
+  color:#916730 !important;
+  white-space:nowrap !important;
+  grid-row:2 !important;
+}
+#stage-select-modal.zss-root .zss-card-row-reward .zss-reward-unavailable {
+  font:500 14px/1 'Cinzel',serif;
+  color:rgba(157,138,107,.48);
+}
+@media (max-width:359px) {
+  #stage-select-modal.zss-root .zss-card-row-reward .zss-rewards {gap:2px !important}
+  #stage-select-modal.zss-root .zss-card-row-reward .zss-reward-chip {height:31px !important}
+  #stage-select-modal.zss-root .zss-card-row-reward .zss-reward-icon img {width:min(20px,100%) !important;height:19px !important}
+  #stage-select-modal.zss-root .zss-card-row-reward .zss-reward-tag {font-size:6.3px !important;letter-spacing:-.075em !important}
+}
+@media (max-height:620px) {
+  #stage-select-modal.zss-root .zss-card-row-reward .zss-reward-chip {height:26px !important}
+  #stage-select-modal.zss-root .zss-card-row-reward .zss-reward-bonus {grid-template-rows:minmax(0,1fr) 8px !important}
+  #stage-select-modal.zss-root .zss-card-row-reward .zss-reward-icon img {width:min(17px,100%) !important;height:16px !important}
+  #stage-select-modal.zss-root .zss-card-row-reward .zss-reward-tag {min-height:8px !important;line-height:8px !important;font-size:6.2px !important}
+}
+
+/* =============================================================
+   build1406 — CHAPTER: first/S labels BELOW the reward frames.
+   The picture gets the whole frame. Preserve five fixed columns.
+   ============================================================= */
+#stage-select-modal.zss-root .zss-card-row-reward .zss-rewards {
+  align-items:start !important;
+  padding-bottom:10px !important; /* space owned by the outside label */
+}
+#stage-select-modal.zss-root .zss-card-row-reward .zss-reward-chip {
+  position:relative !important;
+  overflow:visible !important;
+  height:32px !important;
+  grid-template-rows:minmax(0,1fr) !important;
+  padding:1px !important;
+}
+#stage-select-modal.zss-root .zss-card-row-reward .zss-reward-bonus {
+  grid-template-rows:minmax(0,1fr) !important;
+  padding:1px !important;
+}
+#stage-select-modal.zss-root .zss-card-row-reward .zss-reward-icon img {
+  width:min(28px,100%) !important;
+  height:28px !important;
+  max-height:100% !important;
+}
+#stage-select-modal.zss-root .zss-card-row-reward .zss-reward-tag {
+  position:absolute !important;
+  top:calc(100% + 1px) !important;
+  bottom:auto !important;
+  left:0 !important;
+  right:0 !important;
+  width:100% !important;
+  min-height:9px !important;
+  font-size:6.6px !important;
+  line-height:9px !important;
+  letter-spacing:-.075em !important;
+  z-index:1 !important;
+  pointer-events:none !important;
+}
+@media(max-width:359px) {
+  #stage-select-modal.zss-root .zss-card-row-reward .zss-reward-tag {
+    font-size:6px !important;
+    letter-spacing:-.10em !important;
+  }
+}
+@media(max-height:620px) {
+  #stage-select-modal.zss-root .zss-card-row-reward .zss-rewards {
+    padding-bottom:9px !important;
+  }
+  #stage-select-modal.zss-root .zss-card-row-reward .zss-reward-chip {
+    height:26px !important;
+  }
+  #stage-select-modal.zss-root .zss-card-row-reward .zss-reward-icon img {
+    width:min(24px,100%) !important;
+    height:24px !important;
+  }
+  #stage-select-modal.zss-root .zss-card-row-reward .zss-reward-tag {
+    line-height:8px !important;
+    min-height:8px !important;
+  }
+}
+
+/* =============================================================
+   build1407 — STORY first-clear quantity, matching FACELESS.
+   A small counter stays inside the frame at top right while
+   the "初回のみ" tag stays OUTSIDE (build1406).
+   Only first-clear items; regular rewards and S-rank unchanged.
+   ============================================================= */
+#stage-select-modal.zss-root .zss-card-row-reward .zss-reward-first .zss-reward-first-count {
+  display:block !important;
+  position:absolute !important;
+  top:1px !important;
+  right:1px !important;
+  width:auto !important;
+  min-width:11px !important;
+  padding:1px !important;
+  margin:0 !important;
+  box-sizing:border-box !important;
+  z-index:2 !important;
+  background:rgba(255,252,246,.96) !important;
+  color:#7b4f32 !important;
+  text-align:right !important;
+  font:600 7px/1 'Noto Serif JP',serif !important;
+  letter-spacing:-.07em !important;
+  white-space:nowrap !important;
+  pointer-events:none !important;
+}
+@media (max-width:359px) {
+  #stage-select-modal.zss-root .zss-card-row-reward .zss-reward-first .zss-reward-first-count {
+    font-size:6.5px !important;
+    min-width:10px !important;
+  }
+}

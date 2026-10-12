@@ -4410,128 +4410,128 @@
         "speaker": "",
         "left": "",
         "right": "",
-        "text": "塔・内部。円盤の前に、一行が集まっていた。巡回を終えたジグとアウラも戻ってきている。",
+        "text": "拠点・入口。巡回を終えたジグとアウラも戻ってきている。",
         "narration": true,
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "アウラ",
         "text": "……え。なに……？ 誰！？",
         "left": "アウラ",
         "right": "",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "アルノ",
         "text": "塔の上で会った。",
         "left": "アルノ",
         "right": "",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "アルノ",
         "text": "我々と同じ境遇…とのことだ。",
         "left": "アルノ",
         "right": "",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "アイナ",
         "text": "私がアイナで…こっちがトイフェル、あの子がベロニカです…",
         "left": "",
         "right": "アイナ",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "ミモザ",
         "text": "……本当に、いたのね。私たちのほかにも。",
         "left": "",
         "right": "ミモザ",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "レオナクロス",
         "text": "ミモザの仮説、大当たりじゃないか！",
         "left": "レオナクロス",
         "right": "",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "アイナ",
         "text": "仮説…？",
         "left": "",
         "right": "アイナ",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "ミモザ",
         "text": "紋様を調べていたら、レムナントとは違う……人に近い性質の反応が見つかったの。私たちと同じように、この世界に迷い込んだ誰かがいるんじゃないかって。",
         "left": "",
         "right": "ミモザ",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "トイフェル",
         "text": "ザッツグレイト。君は研究者かい？",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "ミモザ",
-        "text": "ええ。",
+        "text": "ええ…そうよ。",
         "left": "",
         "right": "ミモザ",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "エリ",
         "text": "あの……あなたたちも、気づいたらここにいたの？",
         "left": "エリ",
         "right": "",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "アイナ",
         "text": "はい……",
         "left": "",
         "right": "アイナ",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "ベロニカ",
         "text": "目が覚めてからァ…ずーっと一緒ォ！",
         "left": "",
         "right": "ベロニカ",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "トイフェル",
         "text": "僕たちも、同じような人間がいるんじゃないかと思ってね。旅を続けてきた。",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "アルノ",
         "text": "なぜ…わざわざ塔の上にいる私に声をかけた。",
         "left": "アルノ",
         "right": "",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "トイフェル",
-        "text": "そりゃあ、5対3より1対3のほうが安全だろう。",
+        "text": "そりゃあ、5人より1人のほうが安全だろう。",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "アルノ",
         "text": "…お前たち、一切の気配がなかった。",
         "left": "アルノ",
         "right": "",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "",
@@ -4539,70 +4539,70 @@
         "right": "",
         "text": "アルノが疑いの目を向ける。",
         "narration": true,
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "トイフェル",
         "text": "アイナの力だよ。隠密が得意なんだ。",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "アイナ",
         "text": "気配だけ…姿までは消せません。",
         "left": "",
         "right": "アイナ",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "トイフェル",
         "text": "つまり、視界にさえ入らなければ、誰にも気づかれない。",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "レオナクロス",
         "text": "気配を完全に…？ それは興味深い！ ぜひ見せてくれたまえ！",
         "left": "レオナクロス",
         "right": "",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "アウラ",
         "text": "見たい見たい！ ジグちゃんで試してみてよ！",
         "left": "アウラ",
         "right": "",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "ジグ",
-        "text": "なんでオレなんだよ。",
+        "text": "な、なんでオレなんだよ。",
         "left": "ジグ",
         "right": "",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "トイフェル",
         "text": "ちょうどいい。僕たちに利用価値を感じてもらえるかもしれない。",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "トイフェル",
         "text": "アイナ、お願い。",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "アイナ",
         "text": "うん……",
         "left": "",
         "right": "アイナ",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       }
     ],
     "post": [
@@ -4612,49 +4612,49 @@
         "right": "",
         "text": "トン。ジグの肩に、小さな手が触れる。",
         "narration": true,
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "ジグ",
         "text": "…！？",
         "left": "ジグ",
         "right": "",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "アイナ",
         "text": "あ、あの…すみません…",
         "left": "",
         "right": "アイナ",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "レオナクロス",
         "text": "なんて便利な能力…",
         "left": "レオナクロス",
         "right": "",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "トイフェル",
         "text": "率直に言う。僕たちの目的は、協力者だ。",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "トイフェル",
         "text": "お願いできないだろうか。",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "ジグ",
         "text": "……ダメだ。",
         "left": "ジグ",
         "right": "",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "",
@@ -4662,63 +4662,63 @@
         "right": "",
         "text": "一瞬、空気が張り詰める。",
         "narration": true,
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "アウラ",
         "text": "ジ、ジグちゃん……",
         "left": "アウラ",
         "right": "",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "ジグ",
         "text": "いきなり出てきて、どう考えても怪しさマックスだろ。",
         "left": "ジグ",
         "right": "",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "アイナ",
         "text": "……もっともなお話です。",
         "left": "",
         "right": "アイナ",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "トイフェル",
         "text": "疑われるのは想定済みだ。ダメなら、無理にとは言わない、けど…",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "トイフェル",
         "text": "できるだけ全てを開示する。協力者が必要なんだ。",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "レオナクロス",
         "text": "もう少し、聞いてみてもいいんじゃないか？ボクたちも戦力が必要だっただろ。",
         "left": "レオナクロス",
         "right": "",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "アルノ",
         "text": "……少なくとも、敵意は感じない。",
         "left": "アルノ",
         "right": "",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "ジグ",
         "text": "それも……いかがわしい能力の仕業かもしれないぜ。",
         "left": "ジグ",
         "right": "",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "",
@@ -4726,42 +4726,42 @@
         "right": "",
         "text": "ピピピッ。レオナクロスの腰で、探知機がけたたましく鳴る。",
         "narration": true,
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "レオナクロス",
         "text": "反応だ……塔の南側！ 強化個体、それも複数！",
         "left": "レオナクロス",
         "right": "",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "ミモザ",
         "text": "属性は？",
         "left": "",
         "right": "ミモザ",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "レオナクロス",
         "text": "……赤が2つ。緑が1つ。",
         "left": "レオナクロス",
         "right": "",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "トイフェル",
         "text": "そんなことまで分かるのかい！？",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "レオナクロス",
         "text": "ボクの趣味だ。",
         "left": "レオナクロス",
         "right": "",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "",
@@ -4769,14 +4769,14 @@
         "right": "",
         "text": "レオナクロスが得意げに答える。",
         "narration": true,
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "トイフェル",
         "text": "へぇ…ますます興味がわいてくるね。",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "",
@@ -4784,21 +4784,21 @@
         "right": "",
         "text": "ピピピッ。探知機のアラートが鳴り続けている。",
         "narration": true,
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "エリ",
         "text": "とりあえず…向かおう！",
         "left": "エリ",
         "right": "",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "ミモザ",
         "text": "……ねえ。あなたたちの中に、水の属性は…？",
         "left": "",
         "right": "ミモザ",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "",
@@ -4806,14 +4806,14 @@
         "right": "",
         "text": "トイフェルとアイナの視線が、いつの間にかアウラとじゃれあっているベロニカに向いた。",
         "narration": true,
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       },
       {
         "speaker": "ベロニカ",
         "text": "んー？？ どうしたァー？？",
         "left": "",
         "right": "ベロニカ",
-        "location": "scene_in_tower.webp"
+        "location": "scene_chapter06_1.webp"
       }
     ]
   },
@@ -4829,49 +4829,49 @@
         "right": "",
         "text": "塔・南側。灰の舞う道の先に、レムナントが三体、ゆらりと浮かんでいる。",
         "narration": true,
-        "location": "scene_tower_far.webp"
+        "location": "scene_chapter06_2.webp"
       },
       {
         "speaker": "アイナ",
         "text": "私たちも、属性相性には苦労しました…",
         "left": "",
         "right": "アイナ",
-        "location": "scene_tower_far.webp"
+        "location": "scene_chapter06_2.webp"
       },
       {
         "speaker": "トイフェル",
         "text": "アイナがいなきゃ、とっくのとうに灰になってたよ。",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_tower_far.webp"
+        "location": "scene_chapter06_2.webp"
       },
       {
         "speaker": "アルノ",
         "text": "緑は私がやる。",
         "left": "アルノ",
         "right": "",
-        "location": "scene_tower_far.webp"
+        "location": "scene_chapter06_2.webp"
       },
       {
         "speaker": "ミモザ",
         "text": "赤いのは……任せていいのね？",
         "left": "",
         "right": "ミモザ",
-        "location": "scene_tower_far.webp"
+        "location": "scene_chapter06_2.webp"
       },
       {
         "speaker": "ベロニカ",
         "text": "まっかせなさァい！",
         "left": "",
         "right": "ベロニカ",
-        "location": "scene_tower_far.webp"
+        "location": "scene_chapter06_2.webp"
       },
       {
         "speaker": "トイフェル",
         "text": "ベロニカ、あまり暴れすぎないようにね。",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_tower_far.webp"
+        "location": "scene_chapter06_2.webp"
       }
     ],
     "post": [
@@ -4881,56 +4881,56 @@
         "right": "",
         "text": "最後のレムナントが崩れ、膜の欠片が灰とともに風に散っていく。",
         "narration": true,
-        "location": "scene_tower_far.webp"
+        "location": "scene_chapter06_2.webp"
       },
       {
         "speaker": "アウラ",
         "text": "ベロニカ強ーい！！",
         "left": "アウラ",
         "right": "",
-        "location": "scene_tower_far.webp"
+        "location": "scene_chapter06_2.webp"
       },
       {
         "speaker": "ベロニカ",
         "text": "キャハハハ！！",
         "left": "",
         "right": "ベロニカ",
-        "location": "scene_tower_far.webp"
+        "location": "scene_chapter06_2.webp"
       },
       {
         "speaker": "レオナクロス",
         "text": "戦い慣れている……",
         "left": "レオナクロス",
         "right": "",
-        "location": "scene_tower_far.webp"
+        "location": "scene_chapter06_2.webp"
       },
       {
         "speaker": "トイフェル",
         "text": "……少しは、信用してもらえたかな？",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_tower_far.webp"
+        "location": "scene_chapter06_2.webp"
       },
       {
         "speaker": "ミモザ",
         "text": "お互いに、利はあると判断するわ。",
         "left": "",
         "right": "ミモザ",
-        "location": "scene_tower_far.webp"
+        "location": "scene_chapter06_2.webp"
       },
       {
         "speaker": "ジグ",
-        "text": "……チッ。アルノ、しっかり監視するぞ。",
+        "text": "……チッ。俺は油断しねぇぞ。",
         "left": "ジグ",
         "right": "",
-        "location": "scene_tower_far.webp"
+        "location": "scene_chapter06_2.webp"
       },
       {
         "speaker": "トイフェル",
         "text": "ありがとう。君たちにもきっとメリットがあるはずだ。",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_tower_far.webp"
+        "location": "scene_chapter06_2.webp"
       },
       {
         "speaker": "",
@@ -4938,42 +4938,80 @@
         "right": "",
         "text": "少し離れたところでは、アウラとベロニカがまたじゃれあっている。",
         "narration": true,
-        "location": "scene_tower_far.webp"
+        "location": "scene_chapter06_2.webp"
       },
       {
         "speaker": "ミモザ",
         "text": "……それと、さっきの“情報交換”の話だけど。",
         "left": "",
         "right": "ミモザ",
-        "location": "scene_tower_far.webp"
+        "location": "scene_chapter06_2.webp"
       },
       {
         "speaker": "ミモザ",
         "text": "まずは、そちらから聞かせてもらえる？",
         "left": "",
         "right": "ミモザ",
-        "location": "scene_tower_far.webp"
+        "location": "scene_chapter06_2.webp"
       },
       {
         "speaker": "トイフェル",
         "text": "もちろん。",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_tower_far.webp"
+        "location": "scene_chapter06_2.webp"
       },
       {
         "speaker": "トイフェル",
-        "text": "僕たちが目を覚ましたのは、崩れた塔の根元だった。そこには、奇妙な印が刻まれていた。",
+        "text": "僕たちが目を覚ましたのは、崩れた塔の根元だった。",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_tower_far.webp"
+        "location": "scene_chapter06_2.webp"
+      },
+            {
+        "speaker": "ミモザ",
+        "text": "崩れた塔……",
+        "left": "",
+        "right": "ミモザ",
+        "location": "scene_chapter06_2.webp"
+      },
+　　　  {
+        "speaker": "トイフェル",
+        "text": "まぁ。このあたりと似たような感じさ。",
+        "left": "",
+        "right": "トイフェル",
+        "location": "scene_chapter06_2.webp"
       },
       {
+        "speaker": "トイフェル",
+        "text": "ただ、その塔には一つ特徴的なものがあった。",
+        "left": "",
+        "right": "トイフェル",
+        "location": "scene_chapter06_2.webp"
+      },
+
+            {
+        "speaker": "レオナクロス",
+        "text": "特徴的なもの？",
+        "left": "レオナクロス",
+        "right": "",
+        "location": "scene_chapter06_2.webp"
+      },
+
+            {
+        "speaker": "トイフェル",
+        "text": "崩れた塔の根本に、不思議な印があった。",
+        "left": "",
+        "right": "トイフェル",
+        "location": "scene_chapter06_2.webp"
+      },
+
+      {
         "speaker": "アイナ",
-        "text": "……こんな形です…",
+        "text": "……こんな形の…印。",
         "left": "",
         "right": "アイナ",
-        "location": "scene_tower_far.webp"
+        "location": "scene_chapter06_2.webp"
       },
       {
         "speaker": "",
@@ -4981,21 +5019,21 @@
         "right": "",
         "text": "アイナが、灰の積もった地面に指で印を描いていく。",
         "narration": true,
-        "location": "scene_tower_far.webp"
+        "location": "scene_chapter06_3.webp"
       },
       {
         "speaker": "ミモザ",
         "text": "……！",
         "left": "",
         "right": "ミモザ",
-        "location": "scene_tower_far.webp"
+        "location": "scene_chapter06_3.webp"
       },
       {
         "speaker": "レオナクロス",
         "text": "ミモザ、これって……",
         "left": "レオナクロス",
         "right": "",
-        "location": "scene_tower_far.webp"
+        "location": "scene_chapter06_3.webp"
       },
       {
         "speaker": "",
@@ -5003,43 +5041,43 @@
         "right": "",
         "text": "ミモザは黙って懐から古い紙を取り出し、二人の前に広げた。",
         "narration": true,
-        "location": "scene_tower_far.webp"
+        "location": "scene_chapter06_3.webp"
       },
       {
         "speaker": "",
         "left": "",
         "right": "",
-        "text": "紙の上に散らばる印。そのひとつひとつが、地面に描かれた形とぴたりと重なる。",
+        "text": "紙の上に散らばる印。地面に描かれた形と極めて似ている。",
         "narration": true,
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_4.webp"
       },
       {
         "speaker": "アイナ",
         "text": "……同じ、形です…",
         "left": "",
         "right": "アイナ",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_4.webp"
       },
       {
         "speaker": "トイフェル",
         "text": "……驚いたな。どこでこれを？",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_4.webp"
       },
       {
         "speaker": "ミモザ",
-        "text": "この塔の壁の中に、隠されていたの。",
+        "text": "さっきあなたたちが登っていた塔の中で、見つけたの。",
         "left": "",
         "right": "ミモザ",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_4.webp"
       },
       {
         "speaker": "トイフェル",
         "text": "……実は、僕たちも似たものを持っている。",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_4.webp"
       },
       {
         "speaker": "",
@@ -5047,14 +5085,14 @@
         "right": "",
         "text": "トイフェルが懐から、折りたたまれた古い紙を取り出す。",
         "narration": true,
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_4.webp"
       },
       {
         "speaker": "トイフェル",
-        "text": "目を覚ました塔の、円盤のそばに落ちていた。",
+        "text": "ここに来る途中、寂れた聖堂で拾ったんだ。",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_4.webp"
       },
       {
         "speaker": "",
@@ -5062,36 +5100,35 @@
         "right": "",
         "text": "二枚の紙が並べられる。線の引き方も、紙の古び方もよく似ている。けれど、描かれた図形はまるで違っていた。",
         "narration": true,
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_5.webp"
       },
       {
         "speaker": "レオナクロス",
-        "text": "ということは、この印は……塔を表している？",
+        "text": "ということは、この印は……塔の位置を表している？",
         "left": "レオナクロス",
         "right": "",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_5.webp"
       },
       {
         "speaker": "ミモザ",
-        "text": "……かもしれない。でも、線の意味も、何が描かれているのかも、まだ分からないわ。",
+        "text": "……かもしれない。でも、位置関係が分からないわ。現在地も…",
         "left": "",
         "right": "ミモザ",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_5.webp"
       },
       {
-        "speaker": "",
+        "speaker": "トイフェル",
         "left": "",
-        "right": "",
-        "text": "紙の上には、同じ印がいくつも散らばっている。そのすべてを、細い線が網の目のようにつないでいた。",
-        "narration": true,
-        "location": "scene_ch05_04.webp"
+        "right": "トイフェル",
+        "text": "うん。僕らが見た塔がどれを示すのかも、わからないな。",
+        "location": "scene_chapter06_5.webp"
       },
       {
-        "speaker": "エリ",
-        "text": "こんなに、たくさん……",
-        "left": "エリ",
-        "right": "",
-        "location": "scene_ch05_04.webp"
+        "speaker": "ミモザ",
+        "text": "いったい、誰が何の目的でこんなものを……",
+        "left": "",
+        "right": "ミモザ",
+        "location": "scene_chapter06_5.webp"      
       }
     ]
   },
@@ -5108,29 +5145,29 @@
         "right": "",
         "text": "その夜。拠点。焚き火のそばで、ミモザが二枚の古い紙を並べている。",
         "narration": true,
-        "location": "scene_chapter04_4.webp"
+        "location": "scene_chapter06_6.webp"
       },
       {
         "speaker": "ミモザ",
-        "text": "……印が塔を表しているとしても、この線の意味が分からない。",
+        "text": "……印が塔を表しているとして…この紙に何の意味が…",
         "left": "",
         "right": "ミモザ",
-        "location": "scene_chapter04_4.webp"
+        "location": "scene_chapter06_6.webp"
       },
       {
         "speaker": "エリ",
-        "text": "この線、全部の塔をつないでるのかな。",
+        "text": "私たちが調べた塔は…どこなんだろう。",
         "left": "エリ",
         "right": "",
-        "location": "scene_chapter04_4.webp"
+        "location": "scene_chapter06_6.webp"
       },
       {
         "speaker": "",
         "left": "",
         "right": "",
-        "text": "エリが、紙の線をそっと指でなぞる。",
+        "text": "エリが、紙の上の印をそっと指でなぞる。",
         "narration": true,
-        "location": "scene_chapter04_4.webp"
+        "location": "scene_chapter06_6.webp"
       },
       {
         "speaker": "",
@@ -5138,21 +5175,21 @@
         "right": "",
         "text": "指先が触れたところから、線がかすかに光を帯びた。",
         "narration": true,
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_6.webp"
       },
       {
         "speaker": "エリ",
         "text": "……え？",
         "left": "エリ",
         "right": "",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_6.webp"
       },
       {
         "speaker": "ミモザ",
         "text": "今……光った？",
         "left": "",
         "right": "ミモザ",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_6.webp"
       },
       {
         "speaker": "",
@@ -5160,84 +5197,92 @@
         "right": "",
         "text": "エリが指を離すと、光はすっと消える。",
         "narration": true,
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_6.webp"
       },
       {
         "speaker": "レオナクロス",
         "text": "おいおい、どうなってるんだ……",
         "left": "レオナクロス",
         "right": "",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_6.webp"
+      },
+      {
+        "speaker": "",
+        "left": "",
+        "right": "",
+        "text": "トイフェルが目を丸くしてエリを見ている。",
+        "narration": true,
+        "location": "scene_chapter06_6.webp"
       },
       {
         "speaker": "トイフェル",
         "text": "……やっぱり…君は何か特別な力を？",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_6.webp"
       },
       {
         "speaker": "エリ",
         "text": "え……？",
         "left": "エリ",
         "right": "",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_6.webp"
       },
       {
         "speaker": "トイフェル",
         "text": "僕は、人のエネルギーを感じ取るのが得意でね。",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_6.webp"
       },
       {
         "speaker": "トイフェル",
         "text": "塔の上から君たちを数えたとき、一人だけ、反応が…何というか…特殊だった。",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_6.webp"
       },
       {
         "speaker": "ミモザ",
         "text": "……結晶も、円盤も、エリにだけ反応した。この紙も、同じなのかもしれないわ。",
         "left": "",
         "right": "ミモザ",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_6.webp"
       },
       {
         "speaker": "トイフェル",
         "text": "…",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_6.webp"
       },
       {
-        "speaker": "アウラ",
-        "text": "エリ、大丈夫…？",
-        "left": "アウラ",
+        "speaker": "レオナクロス",
+        "text": "エリ、大丈夫か…？",
+        "left": "レオナクロス",
         "right": "",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_6.webp"
       },
       {
         "speaker": "エリ",
-        "text": "うん……特に…何ともない。",
+        "text": "うん……特に…なんにも…",
         "left": "エリ",
         "right": "",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_6.webp"
       },
       {
         "speaker": "ミモザ",
-        "text": "……そのまま、線を辿ってみてくれる？",
+        "text": "……そのまま、印を辿ってみてくれる？",
         "left": "",
         "right": "ミモザ",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_6.webp"
       },
       {
         "speaker": "エリ",
         "text": "……うん。やってみる。",
         "left": "エリ",
         "right": "",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_6.webp"
       }
     ],
     "post": [
@@ -5247,7 +5292,7 @@
         "right": "",
         "text": "エリの指が、最後の印にたどり着く。",
         "narration": true,
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "",
@@ -5255,7 +5300,7 @@
         "right": "",
         "text": "光の線がほどけるように広がり、紙の上に、地図のような紋様が浮かび上がった。",
         "narration": true,
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "",
@@ -5263,56 +5308,56 @@
         "right": "",
         "text": "小さな光がいくつも灯り、その間を、細い線が結んでいる。",
         "narration": true,
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "レオナクロス",
         "text": "これは……地図、なのか？",
         "left": "レオナクロス",
         "right": "",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "エリ",
         "text": "この線……どこかで……",
         "left": "エリ",
         "right": "",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "ミモザ",
         "text": "……あ。",
         "left": "",
         "right": "ミモザ",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "ミモザ",
         "text": "この線……地面に刻まれていた紋様と、同じ形……",
         "left": "",
         "right": "ミモザ",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "ミモザ",
         "text": "紋様が塔と塔をつないでいるなら……この光は、塔……？",
         "left": "",
         "right": "ミモザ",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "トイフェル",
         "text": "なら、僕たちが目を覚ました塔も、この中のどれかってことか。",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "ミモザ",
         "text": "……待って。",
         "left": "",
         "right": "ミモザ",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "",
@@ -5320,42 +5365,42 @@
         "right": "",
         "text": "ミモザが手帳を取り出し、ページをめくる。これまで辿ってきた紋様の写しが、びっしりと描き込まれている。",
         "narration": true,
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "ミモザ",
         "text": "聖堂からここまで、私たちが辿ってきた紋様……塔が林みたいに集まっていた場所が、ここ。",
         "left": "",
         "right": "ミモザ",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "ミモザ",
         "text": "そこから、この線をずっと辿って……",
         "left": "",
         "right": "ミモザ",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "ミモザ",
         "text": "……この塔、ここだわ。",
         "left": "",
         "right": "ミモザ",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "トイフェル",
         "text": "なら、僕たちが来たのは東から……たぶん、この光だ。",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "レオナクロス",
         "text": "待ってくれ。その光と、ここの光……ほかと光り方が違わないか？",
         "left": "レオナクロス",
         "right": "",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "",
@@ -5363,21 +5408,21 @@
         "right": "",
         "text": "いくつもの光の中に、ひときわ大きく、輪をまとった光が点々とある。",
         "narration": true,
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "ミモザ",
         "text": "この塔にも、トイフェルたちの塔にも……円盤がある。",
         "left": "",
         "right": "ミモザ",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "ミモザ",
         "text": "じゃあ、この大きな光は……円盤のある塔？",
         "left": "",
         "right": "ミモザ",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "",
@@ -5385,7 +5430,7 @@
         "right": "",
         "text": "続けて、エリがもう一枚の紙をなぞる。",
         "narration": true,
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "",
@@ -5393,42 +5438,42 @@
         "right": "",
         "text": "二枚目の紙にも、同じように紋様が浮かび上がる。けれど、そこに描かれた形は、誰の記憶とも重ならなかった。",
         "narration": true,
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "トイフェル",
         "text": "こっちは……分からないな。どこにも見覚えがない。",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "ミモザ",
         "text": "地形……なのかしら。でも、こんな場所……",
         "left": "",
         "right": "ミモザ",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "エリ",
         "text": "……",
         "left": "エリ",
         "right": "",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "アウラ",
         "text": "エリ？",
         "left": "アウラ",
         "right": "",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "エリ",
         "text": "……なんだろう。呼ばれてる、みたい。",
         "left": "エリ",
         "right": "",
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "",
@@ -5436,14 +5481,14 @@
         "right": "",
         "text": "光はゆっくりと薄れ、二枚の紙は元の古びた姿に戻った。",
         "narration": true,
-        "location": "scene_ch05_04.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "トイフェル",
         "text": "一度戻ってみる価値はありそうだね。",
         "left": "",
         "right": "トイフェル",
-        "location": "scene_chapter04_4.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "レオナクロス",
@@ -5457,35 +5502,35 @@
         "text": "……今夜は泊まってもらいましょう。いいわね？ジグ。",
         "left": "",
         "right": "ミモザ",
-        "location": "scene_chapter04_4.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "ジグ",
         "text": "……あんまりうるさくするなよ。",
         "left": "ジグ",
         "right": "",
-        "location": "scene_chapter04_4.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "ベロニカ",
         "text": "ジグちゃん、やっさしィー！",
         "left": "",
         "right": "ベロニカ",
-        "location": "scene_chapter04_4.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "ジグ",
         "text": "うるせぇ。",
         "left": "ジグ",
         "right": "",
-        "location": "scene_chapter04_4.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "アウラ",
         "text": "アハハ、私の真似っこだ！",
         "left": "アウラ",
         "right": "",
-        "location": "scene_chapter04_4.webp"
+        "location": "scene_chapter06_7.webp"
       },
       {
         "speaker": "",
@@ -5493,7 +5538,7 @@
         "right": "",
         "text": "夜更け。塔の上で、アルノはひとり見張りを続けていた。",
         "narration": true,
-        "location": "scene_ch_05_aruno2.webp"
+        "location": "scene_chapter06_8.webp"
       },
       {
         "speaker": "",
@@ -5501,14 +5546,14 @@
         "right": "",
         "text": "風が、灰を細く巻き上げる。",
         "narration": true,
-        "location": "scene_ch_05_aruno2.webp"
+        "location": "scene_chapter06_8.webp"
       },
       {
         "speaker": "アルノ",
         "text": "……何の用だ。",
         "left": "アルノ",
         "right": "",
-        "location": "scene_ch_05_aruno2.webp"
+        "location": "scene_chapter06_8.webp"
       },
       {
         "speaker": "",
@@ -5516,21 +5561,21 @@
         "right": "",
         "text": "振り返ると、少し離れたところにアイナが立っていた。",
         "narration": true,
-        "location": "scene_ch_05_aruno2.webp"
+        "location": "scene_chapter06_8.webp"
       },
       {
         "speaker": "アイナ",
         "text": "……すみません。",
         "left": "",
         "right": "アイナ",
-        "location": "scene_ch_05_aruno2.webp"
+        "location": "scene_chapter06_8.webp"
       },
       {
         "speaker": "アルノ",
         "text": "……",
         "left": "アルノ",
         "right": "",
-        "location": "scene_ch_05_aruno2.webp"
+        "location": "scene_chapter06_8.webp"
       },
       {
         "speaker": "",
@@ -5538,7 +5583,7 @@
         "right": "",
         "text": "二人は並んで、白い地平線を見つめていた。",
         "narration": true,
-        "location": "scene_ch_05_aruno2.webp"
+        "location": "scene_chapter06_8.webp"
       }
     ]
   }

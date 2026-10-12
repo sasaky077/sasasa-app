@@ -1,4 +1,4 @@
 {
-  "build": 1400,
-  "note": "Fix login bonus background bg_bonus, grayscale all previously claimed day cards, and center DAY7 ticket."
+  "build": 1408,
+  "note": "Stage GIMMICK: 属性バリア→バリア; add 遮断壁 for DAILY advanced and stages with chapter6Barriers. Gameplay unchanged."
 }

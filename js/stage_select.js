@@ -138,17 +138,9 @@
     });
   }
 
-  const STORY_REWARD_ELEMENT = Object.freeze({
-    1: Object.freeze({ id:'light', name:'魂の器(光)', image:'images/type_light.webp' }),
-    2: Object.freeze({ id:'fire', name:'魂の器(火)', image:'images/type_fire.webp' }),
-    3: Object.freeze({ id:'wood', name:'魂の器(木)', image:'images/type_wood.webp' }),
-    4: Object.freeze({ id:'light', name:'魂の器(光)', image:'images/type_light.webp' }),
-    5: Object.freeze({ id:'dark', name:'魂の器(闇)', image:'images/type_dark.webp' }),
-    6: Object.freeze({ id:'aqua', name:'魂の器(水)', image:'images/type_aqua.webp' }),
-    7: Object.freeze({ id:'dark', name:'魂の器(闇)', image:'images/type_dark.webp' }),
-    8: Object.freeze({ id:'light', name:'魂の器(光)', image:'images/type_light.webp' }),
-  });
-
+  // CHAPTER報酬欄: 通常 / 初回のみ / Sランク を分離する。
+  // shinju_aura（神樹の栄養）はCHAPTERの報酬プレビューに掲載しない。
+  // 表示は既存の報酬データの案内で、報酬付与処理自体は変更しない。
   function getStoryStageRewardPreview(stageDef, mode = 'normal') {
     const chapter = Math.max(1, Math.floor(Number(stageDef && stageDef.chapter || 1)));
     const stageNo = Math.max(1, Math.floor(Number(stageDef && (stageDef.stageNo || stageDef.no) || 1)));
@@ -157,11 +149,9 @@
       { name:'ゴールド', image:'images/icon_coin.webp', amount:'×' + gold.toLocaleString('ja-JP') }
     ];
 
-    if (chapter === 1 && stageNo === 3) {
-      rewards.push({ name:'レムナントの残骸', image:'images/item_memory_mini.webp', amount:'×3' });
-    } else if (mode === 'normal' && stageNo === 4) {
-      rewards.push({ name:'記憶の欠片', image:'images/item_memory.webp', amount:'×1' });
-    } else if (chapter >= 2 && stageNo >= 3) {
+    // 通常報酬の代表例。CH01-03のレムナントの残骸はミッション回収物であり、
+    // クリア報酬ではないため、CH01全ステージは共鳴石(5%ドロップ)を表示する。
+    if (chapter >= 2 && stageNo >= 3) {
       rewards.push(
         stageNo >= 4
           ? { name:'強化素材・金', image:'images/item_exp_gold.webp', amount:'×1' }
@@ -171,34 +161,66 @@
       rewards.push({ name:'共鳴石', image:'images/item_kyoumeistone.webp', amount:'×1' });
     }
 
-    const elementReward = STORY_REWARD_ELEMENT[chapter] || STORY_REWARD_ELEMENT[1];
-    if (elementReward) rewards.push({ name:elementReward.name, image:elementReward.image, amount:'×1' });
-
-    return rewards.slice(0, 3);
+    return rewards.filter(item => !/shinju_aura\.webp/i.test(item.image || '')).slice(0, 2);
   }
 
-  function buildStoryRewardPreviewHtml(stageDef, mode = 'normal') {
-    return getStoryStageRewardPreview(stageDef, mode).map(function(item){
-      return '<span class="zss-reward-chip" title="' + escapeStageSelectHtml(item.name) + '">' +
+  function buildStoryRewardChip(item, slot) {
+    // 1アイテム＝1フレーム。通常報酬は左の1・2枠を使う。
+    return '<span class="zss-reward-chip zss-reward-normal-item zss-reward-slot-' + slot + '" title="' + escapeStageSelectHtml(item.name) + '">' +
+      '<span class="zss-reward-icon"><img src="' + escapeStageSelectHtml(item.image) + '" alt="' + escapeStageSelectHtml(item.name) + '"></span>' +
+      '<span class="zss-reward-count">' + escapeStageSelectHtml(item.amount || '') + '</span>' +
+    '</span>';
+  }
+
+  function isStoryMemoryFragmentChapter(chapter) {
+    return [4,7,10,13,16,19,22,25,28,30].includes(Number(chapter));
+  }
+
+  function getStoryBonusRewardItems(stageDef, mode, category) {
+    const chapter = Math.max(1, Math.floor(Number(stageDef && stageDef.chapter || 1)));
+    const stageNo = Math.max(1, Math.floor(Number(stageDef && (stageDef.stageNo || stageDef.no) || 1)));
+    const isChapterFinal = mode === 'normal' && stageNo === 4;
+
+    if (category === 'first') {
+      // STORY初回クリア時: 結晶5個。章末は章クリア報酬を別フレームに表示。
+      const items = [{ name:'初回クリア：結晶 ×5', image:'images/icon_gem.webp', amount:'×5' }];
+      if (isChapterFinal) items.push({ name:'章クリア：記憶の欠片 ×1', image:'images/item_memory.webp', amount:'×1' });
+      return items;
+    }
+    // 現行実装で独立したSランク報酬が存在するのは、対象章の最終ステージのみ。
+    if (category === 's' && isChapterFinal && isStoryMemoryFragmentChapter(chapter)) {
+      return [{ name:'Sランククリア：記憶の欠片 ×1', image:'images/item_memory.webp' }];
+    }
+    return [];
+  }
+
+  function buildStoryBonusRewardHtml(stageDef, mode, category) {
+    const isFirst = category === 'first';
+    const items = getStoryBonusRewardItems(stageDef, mode, category).slice(0, isFirst ? 2 : 1);
+    const label = isFirst ? '初回のみ' : 'Sランク';
+    const itemClass = isFirst ? 'zss-reward-first' : 'zss-reward-s';
+    // 右寄せ5枠構成: [通常][通常][初回][初回][S]
+    // 初回が1個のときは4枠目を使い、3枠目を空けて位置がずれないようにする。
+    if (!items.length && !isFirst) {
+      return '<span class="zss-reward-chip zss-reward-bonus zss-reward-s zss-reward-slot-5" title="Sランク限定報酬なし">' +
+        '<span class="zss-reward-icon"><span class="zss-reward-unavailable" aria-label="Sランク限定報酬なし">—</span></span>' +
+        '<span class="zss-reward-tag">Sランク</span></span>';
+    }
+    return items.map(function(item, index) {
+      const slot = isFirst ? (items.length === 1 ? 4 : index + 3) : 5;
+      return '<span class="zss-reward-chip zss-reward-bonus ' + itemClass + ' zss-reward-slot-' + slot + '" title="' + escapeStageSelectHtml(item.name) + '">' +
         '<span class="zss-reward-icon"><img src="' + escapeStageSelectHtml(item.image) + '" alt="' + escapeStageSelectHtml(item.name) + '"></span>' +
-        '<span class="zss-reward-count">' + escapeStageSelectHtml(item.amount || '') + '</span>' +
+        (isFirst && item.amount ? '<span class="zss-reward-first-count">' + escapeStageSelectHtml(item.amount) + '</span>' : '') +
+        '<span class="zss-reward-tag">' + label + '</span>' +
       '</span>';
     }).join('');
   }
 
-  function buildStorySpecialRewardNote(chapter, stageNo, mode) {
-    const rewardStage = mode === 'normal' && Number(stageNo) === 4 && Number(chapter) >= 1 && Number(chapter) <= 30;
-    if (!rewardStage) return '';
-    const specialS = [4,7,10,13,16,19,22,25,28,30].includes(Number(chapter));
-    let claimedKeys = [];
-    try { claimedKeys = JSON.parse(localStorage.getItem('zeraphia_memory_fragment_claim_keys_v1') || '[]') || []; } catch(_) {}
-    const key = String(chapter).padStart(2,'0');
-    const clearClaimed = claimedKeys.includes('chapter_' + key);
-    const sClaimed = claimedKeys.includes('rank_s_' + key);
-    return '<div class="zss-reward-note">' +
-      '<div>章クリア：記憶の欠片 ×1' + (clearClaimed ? '（獲得済み）' : '') + '</div>' +
-      (specialS ? '<div>Sランククリア：記憶の欠片 ×1' + (sClaimed ? '（獲得済み）' : '') + '</div>' : '') +
-    '</div>';
+  function buildStoryRewardPreviewHtml(stageDef, mode = 'normal') {
+    const normal = getStoryStageRewardPreview(stageDef, mode).slice(0,2).map(function(item, index){
+      return buildStoryRewardChip(item, index + 1);
+    }).join('');
+    return normal + buildStoryBonusRewardHtml(stageDef, mode, 'first') + buildStoryBonusRewardHtml(stageDef, mode, 's');
   }
 
   function buildStoryGimmickHtml(stageDef) {
@@ -471,7 +493,6 @@
         const displayCondition = isNovelOnly ? 'ストーリーを読む' : missionText;
         const gimmickHtml = buildStoryGimmickHtml(stageDef);
         const rewardHtml = buildStoryRewardPreviewHtml(stageDef, mode);
-        const rewardNoteHtml = buildStorySpecialRewardNote(chapter, stageNo, mode);
 
         card.innerHTML = `
           <div class="zss-card-no" aria-hidden="true"><span>✧</span><b>${String(stageNo).padStart(2, '0')}</b><span>✧</span></div>
@@ -489,7 +510,6 @@
               <span class="zss-card-label">主な報酬</span>
               <span class="zss-rewards">${rewardHtml}</span>
             </div>
-            ${rewardNoteHtml}
           </div>
           ${buildStoryRecordHtml(record)}
           ${unlocked ? '<span class="zss-arrow" aria-hidden="true">›</span>' : '<span class="zss-lock" aria-hidden="true">🔒</span>'}

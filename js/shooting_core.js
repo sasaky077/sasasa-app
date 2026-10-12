@@ -18983,9 +18983,9 @@
   }
 
   const STAGE_GIMMICK_LABEL = Object.freeze({
-    elementBarrier: '属性バリア',
+    elementBarrier: 'バリア',
     timeLimit: '制限時間',
-    movingWall: '移動壁',
+    blockingWall: '遮断壁',
   });
 
   function getStageBarrierPreviewElements(stage) {
@@ -19049,8 +19049,9 @@
     if (Number(stage.timeLimitSeconds || 0) > 0) {
       gimmicks.push({ id:'timeLimit', label:STAGE_GIMMICK_LABEL.timeLimit, seconds:Math.max(1, Math.floor(Number(stage.timeLimitSeconds || 0))) });
     }
-    if (Array.isArray(stage.chapter6Barriers) && stage.chapter6Barriers.length > 0) {
-      gimmicks.push({ id:'movingWall', label:STAGE_GIMMICK_LABEL.movingWall });
+    // 遮断壁はstage定義に明示された場合に加え、DAILY上級でも自動生成される。
+    if ((Array.isArray(stage.chapter6Barriers) && stage.chapter6Barriers.length > 0) || isDailyAdvanced) {
+      gimmicks.push({ id:'blockingWall', label:STAGE_GIMMICK_LABEL.blockingWall });
     }
     return gimmicks;
   }
@@ -19113,8 +19114,8 @@
         detail = `<span class="shooting-stage-gimmick-notice-elements">${icons}</span><small>対応属性または無属性で攻撃可能</small>`;
       } else if (item.id === 'timeLimit') {
         detail = `<small>${item.seconds || Math.max(1, Math.floor(Number(selectedStage?.timeLimitSeconds || 0)))}秒</small>`;
-      } else if (item.id === 'movingWall') {
-        detail = '<small>壁が戦闘中に移動します</small>';
+      } else if (item.id === 'blockingWall') {
+        detail = '<small>射撃・移動を遮る壁に注意</small>';
       }
       return `<div class="shooting-stage-gimmick-notice-row"><strong>${item.label}</strong>${detail}</div>`;
     }).join('');
@@ -19295,6 +19296,8 @@
     const stage = getShootingStage(stageId);
     const mission = stage?.mission?.text || 'フェイスレスを撃破';
     const waveCount = stage?.faceless?.waveHp?.length || 2;
+    // Supabase first-clear reward: 上級5 / 最上級10 (one claim per stage).
+    const firstClearGems = stage?.faceless?.difficulty === 'super' ? 10 : 5;
     const attrs = buildStageSelectAttributePreview(stageId);
     return `
       <div class="zss-card zss-story-shooting-card zfs-card" role="button" tabindex="0"
@@ -19314,6 +19317,11 @@
             <span class="zss-rewards">
               <span class="zss-reward-chip" title="プレイヤーEXP"><span class="zss-reward-icon"><img src="images/icon_exp.webp" alt="プレイヤーEXP"></span></span>
               <span class="zss-reward-chip" title="コイン"><span class="zss-reward-icon"><img src="images/icon_coin.webp" alt="コイン"></span></span>
+              <span class="zss-reward-chip zfs-first-clear-gem" title="初回クリア報酬：結晶 ×${firstClearGems}" aria-label="初回のみ 結晶 ${firstClearGems}個">
+                <span class="zss-reward-icon"><img src="images/icon_gem.webp" alt="結晶"></span>
+                <span class="zfs-gem-count">×${firstClearGems}</span>
+                <span class="zfs-first-label">初回のみ</span>
+              </span>
             </span>
           </div>
         </div>
