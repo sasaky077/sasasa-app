@@ -25,6 +25,10 @@
     ZAKO_LIGHT_SHOT: 'zako_light_shot',
     ZAKO_LIGHT_LASER: 'zako_light_laser',
 
+    // CH07: 群がる強化個体（クモ型）。弾は撃たず、接触ダメージのみ。
+    SWARM_SPIDER_LARGE: 'swarm_spider_large',
+    SWARM_SPIDER_SMALL: 'swarm_spider_small',
+
     // Remnant bosses
     REMNANT_01: 'shooting_remnant_01',
     REMNANT_02: 'shooting_remnant_02',
@@ -150,6 +154,27 @@
       element: 'light', attackType: 'laser', image: 'images/zako_light_laser.webp',
       hp: 1700, laserDamage: 145, laserSpeed: 540, fireRate: 2050,
       moveSpeed: 30, scoreValue: 950, behavior: 'generic_element_laser_v1', uiScale: 1.0,
+    }),
+
+    // ============================================================
+    // CH07-3 群がる強化個体
+    // 一番近い味方オブジェクト（TRAP / デコイ / 召喚獣 / 自機）へ這い寄り、接触でダメージ。
+    // 大：TRAP爆発3回で撃破（通常射撃でも削れる）。5秒ごとに小を生む（1体につき同時3体まで）。
+    // 小：TRAP爆発1回で撃破。速い。
+    // ============================================================
+    [SHOOTING_ENEMY_ID.SWARM_SPIDER_LARGE]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.SWARM_SPIDER_LARGE, kind: 'normal', implemented: true,
+      name: '灰織りの強化個体', displayName: 'SWARM / BROOD',
+      element: 'neutral', attackType: 'contact', image: 'images/remnant_spider_large.webp',
+      hp: 3600, contactDamage: 140, moveSpeed: 30, scoreValue: 2400,
+      behavior: 'swarm_spider_v1', swarmRole: 'large', uiScale: 1.75,
+    }),
+    [SHOOTING_ENEMY_ID.SWARM_SPIDER_SMALL]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.SWARM_SPIDER_SMALL, kind: 'normal', implemented: true,
+      name: '灰織りの子', displayName: 'SWARM / LARVA',
+      element: 'neutral', attackType: 'contact', image: 'images/remnant_spider_small.webp',
+      hp: 160, contactDamage: 55, moveSpeed: 96, scoreValue: 120,
+      behavior: 'swarm_spider_v1', swarmRole: 'small', uiScale: 0.72,
     }),
 
     [SHOOTING_ENEMY_ID.MINI_01]: Object.freeze({

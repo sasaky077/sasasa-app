@@ -33,7 +33,7 @@
     get 4() { return window.ZERAPHIA_STORY_SCENARIO?.['shooting_ch04_01']?.chapterTitle || '水音'; },
     get 5() { return window.ZERAPHIA_STORY_SCENARIO?.['shooting_ch05_01']?.chapterTitle || '円環'; },
     get 6() { return window.ZERAPHIA_STORY_SCENARIO?.['shooting_ch06_01']?.chapterTitle || '来訪者'; },
-    7: '未定',
+    get 7() { const s=window.ZERAPHIA_STORY_SCENARIO||{}; return s.shooting_ch07_01?.chapterTitle || s.shooting_ch07_03?.chapterTitle || '未定'; },
     8: '未定'
   };
 
@@ -68,6 +68,8 @@
     CH06_02: 'shooting_ch06_02',
     CH06_03: 'shooting_ch06_03',
     CH06_04: 'shooting_ch06_04',
+
+    CH07_03: 'shooting_ch07_03',
 
     DAILY_MON_INTERMEDIATE: 'shooting_daily_mon_intermediate',
     DAILY_MON_ADVANCED: 'shooting_daily_mon_advanced',
@@ -753,6 +755,31 @@
       get name(){return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch06_04?.stageTitle || '道しるべ';},
       type:'normal', background:'images/battle_bg_01.webp', enemyIds:Object.freeze([]),
       mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'2枚の紙の紋様をつなぐ'}),playable:true
+    }),
+
+    // ============================================================
+    // CHAPTER 07 — 道中（※7-1/7-2/7-4は物語の骨組みが決まってから追加）
+    // 7-3 灰の夜：群がる強化個体。大3体の撃破でクリア。
+    // ============================================================
+    [SHOOTING_STAGE_ID.CH07_03]: Object.freeze({
+      id:SHOOTING_STAGE_ID.CH07_03, chapter:7, stageNo:3,
+      get name(){return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch07_03?.stageTitle || '灰の夜';},
+      type:'normal', background:'images/battle_bg_ch07_03.webp',
+      enemyIds:Object.freeze([SHOOTING_ENEMY_ID.SWARM_SPIDER_LARGE]),
+      swarmBattle:Object.freeze({
+        largeEnemyId:SHOOTING_ENEMY_ID.SWARM_SPIDER_LARGE,
+        smallEnemyId:SHOOTING_ENEMY_ID.SWARM_SPIDER_SMALL,
+        largeCount:3,              // 勝利条件：この数の大を撃破
+        broodIntervalMs:5000,      // 大1体あたり、5秒に1体ずつ小を生む
+        broodMaxPerLarge:3,        // 大1体あたり、小は同時3体まで
+        largeTrapHitsToKill:3,     // TRAP爆発3回で大を撃破
+        largeMaxYRate:.58,         // 大は画面の58%より下へは降りない（逃げ場を残す）
+        objectContactDps:60,       // デコイへ群がったときの毎秒ダメージ（1体あたり）
+      }),
+      normalBattle:Object.freeze({
+        totalEnemies:3, maxActive:99, itemDropRate:0,
+      }),
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'群れを生む強化個体3体を撃破'}),playable:true
     }),
 
     // ============================================================

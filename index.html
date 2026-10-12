@@ -417,7 +417,7 @@
 #detail-modal.is-gacha-pickup-preview #detail-name{display:none!important}
 </style>
   <link rel="stylesheet" href="css/resonance_tower.css?v=1344-tower-label-colors">
-  <link rel="stylesheet" href="css/shooting_event.css?v=1381-hao-wood-charge">
+  <link rel="stylesheet" href="css/shooting_event.css?v=1409-ch07-swarm">
   <link rel="stylesheet" href="css/daily_stage_select.css?v=1388-shared-card">
   <link rel="stylesheet" href="css/raid_event.css?v=852-raid-glass-canonical">
   <link rel="stylesheet" href="css/item_management.css?v=1071-flower-owned-layout">
@@ -9091,10 +9091,31 @@ startTitleBgm();
     if(!fragmentStatus.error) localStorage.setItem('zeraphia_memory_fragment_claim_keys_v1', JSON.stringify(fragmentStatus.data?.claimed_keys || []));
   } catch(e) { console.warn('[memory fragments] startup sync failed',e); }
 
-  // Backfill chapter rewards for returning players with verified clears.
+  // build1411: CH06-03までクリア済みの復帰プレイヤーも未所持キャラを正式加入させる。
+  // 初期読込後の付与なので、ログイン当日にBOXへ反映する（次回起動待ちを避ける）。
   try {
     var storySync = await sb.rpc('claim_story_chapter_characters');
-    if(storySync.error) console.warn('[story grant] sync unavailable',storySync.error);
+    if(storySync.error){
+      console.warn('[story grant] sync unavailable',storySync.error);
+    } else {
+      var storyNewIds = (storySync.data && Array.isArray(storySync.data.characters) ? storySync.data.characters : [])
+        .map(function(entry){ return Number(entry && entry.id); })
+        .filter(function(id){ return [25,37,17,22].includes(id); });
+      if(storyNewIds.length){
+        var storyRows = await sb.from('collected_characters')
+          .select('*').eq('user_id', userId).in('character_id', storyNewIds);
+        if(storyRows.error) throw storyRows.error;
+        (storyRows.data || []).forEach(function(row){
+          var characterId = Number(row.character_id);
+          if(box.some(function(entry){ return Number(entry && entry.id) === characterId; })) return;
+          var chara = CHARACTERS.find(function(entry){ return Number(entry.id) === characterId; });
+          if(!chara) return;
+          var owned = buildOwnedEntryFromChara(chara,row);
+          box.push(owned);
+          if(!collected[characterId]) collected[characterId] = owned;
+        });
+      }
+    }
   } catch(e) { console.warn('[story grant] sync failed',e); }
 
 
@@ -19055,7 +19076,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1408-stage-gimmicks"></script>
+<script src="js/shooting_event.js?v=1411-ch06-03-story-character-grants"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
 <script src="js/skin_system.js?v=1076-home-canvas-normalize"></script>

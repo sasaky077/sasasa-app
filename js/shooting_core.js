@@ -968,7 +968,8 @@
   }
 
   function isChapter07Stage() {
-    return !!(selectedStage && /^shooting_(?:beginner_)?ch07_0[1-3]$/i.test(String(selectedStage.id || '')));
+    // 旧CH07案（仮面・鳥居・分身）のフック。新CH07のステージには ch07 設定が無いので発火しない。
+    return !!(selectedStage && selectedStage.ch07 && /^shooting_(?:beginner_)?ch07_0[1-3]$/i.test(String(selectedStage.id || '')));
   }
 
   function getChapter07Config() {
@@ -2645,9 +2646,22 @@
     return key === 'shooting_ch04_04' && !isStoryReplayBattle();
   }
 
+  // build1410: CH06-03のベロニカは初回・再挑戦とも無凸Lv30のゲストとして扱う。
+  // 所持キャラのLv・限界突破値を変更せず、このステージの戦闘プロファイルだけに適用。
+  function isChapter06VeronicaGuest(id) {
+    if (Number(id) !== 22 || !selectedStage || !isStoryShootingStage()) return false;
+    const key = String(selectedStage.baseStageId || selectedStage.id || '')
+      .toLowerCase().replace(/^shooting_beginner_/, 'shooting_');
+    return key === 'shooting_ch06_03';
+  }
+
+  function isStoryLevel30Guest(id) {
+    return isChapter04LyuneGuest(id) || isChapter06VeronicaGuest(id);
+  }
+
   function getShootingResonanceLevel(id) {
-    // build1247: CH04-04のリュネは所持状況に関係なく無凸Lv30のSTORYゲストとして扱う。
-    if (isChapter04LyuneGuest(id)) return 0;
+    // CH04-04リュネ・CH06-03ベロニカは無凸Lv30で貸し出す。
+    if (isStoryLevel30Guest(id)) return 0;
     try {
       const owned = typeof getOwnedShootingInstance === 'function'
         ? getOwnedShootingInstance(Number(id))
@@ -2691,10 +2705,11 @@
       const owned = typeof getOwnedShootingInstance === 'function'
         ? getOwnedShootingInstance(numericId)
         : null;
-      const level = isChapter04LyuneGuest(numericId)
+      const isLevel30Guest = isStoryLevel30Guest(numericId);
+      const level = isLevel30Guest
         ? 30
         : Math.max(1, Number(owned && (owned.characterLevel != null ? owned.characterLevel : owned.character_level) || 1));
-      const rarity = isChapter04LyuneGuest(numericId)
+      const rarity = isLevel30Guest
         ? (profile.rarity || base.rarity || 'r')
         : ((owned && owned.rarity) || profile.rarity || base.rarity || 'r');
       if (window.CharacterLeveling && typeof window.CharacterLeveling.applyToProfile === 'function') {
@@ -2873,6 +2888,7 @@
       totalHitsTaken: Number(state.totalHitsTaken || 0),
       normalDefeated: Number(state.normalDefeated || 0),
       normalSpawned: Number(state.normalSpawned || 0),
+      swarmLargeDefeated: Number(state.swarmLargeDefeated || 0),
       facelessWave: Number(state.facelessWave || 0),
       raidInitialHp: Number(state.raidInitialHp || 0),
       raidDamageDealt: Number(state.raidDamageDealt || 0),
@@ -2974,6 +2990,7 @@
     state.normalDefeated = Math.max(0, Number(snapshot.normalDefeated || 0));
     // 画面上の敵は安全のため復元しない。倒した数を起点に残り敵を再スポーンする。
     state.normalSpawned = state.normalDefeated;
+    state.swarmLargeDefeated = Math.max(0, Number(snapshot.swarmLargeDefeated || 0));
     state.facelessWave = Math.max(state.facelessWave || 0, Number(snapshot.facelessWave || 0));
 
     if (snapshot.boss && state.boss) {
@@ -3830,6 +3847,8 @@
       normalSpawned: 0,
       normalDefeated: 0,
       normalLastSpawnAt: -9999,
+      swarmLargeSpawned: false,
+      swarmLargeDefeated: 0,
       normalEnemyStunUntil: 0,
       angeEnemyFreezeUntil: 0,
       ch101TutorialPhase: '',
@@ -4471,6 +4490,8 @@
           missionProgress.textContent = `TIME ${formatBattleTimer(getBattleTimeLeft(nowMission))}`;
         } else if (isScoreAttackStage()) {
           missionProgress.textContent = `TIME ${formatBattleTimer(getBattleTimeLeft(nowMission))}`;
+        } else if (isSwarmBattle()) {
+          missionProgress.textContent = `ENEMY ${Number(state.swarmLargeDefeated || 0)}/${getSwarmLargeTotal()}`;
         } else if (m.type === SHOOTING_MISSION_TYPE.COLLECT_ITEM) {
           missionProgress.textContent = `ITEM ${state.collectedItems}/${Number(m.target || 3)}`;
         } else if (m.type === SHOOTING_MISSION_TYPE.CLEAR_TIME) {
@@ -7409,8 +7430,15 @@
     return null;
   }
 
-  function applyRemnaTrapDamageToTarget(target, rawDamage, attackElement, now) {
+  function applyRemnaTrapDamageToTarget(target, rawDamage, attackElement, now, fromExplosion = false) {
     if (!target || !target.ref || rawDamage <= 0) return 0;
+    // CH07-3：TRAPの爆発は、群れの大を3回・小を1回で倒す（火力に依存しない攻略手段）
+    if (fromExplosion && target.kind === 'normal' && target.ref.swarmRole) {
+      const e = target.ref;
+      const hits = Math.max(1, Math.floor(Number(getSwarmBattleConfig()?.largeTrapHitsToKill || 3)));
+      const share = e.swarmRole === 'large' ? Math.ceil(Number(e.hpMax || e.hp) / hits) : Number(e.hp || 0);
+      return Math.max(0, Number(damageNormalEnemy(e, share, now, true, '') || 0));
+    }
     const targetElement = getCombatTargetElement(target.ref, state?.boss?.element);
     const finalDamage = applyElementDamage(rawDamage, attackElement, targetElement);
     if (target.kind === 'normal') {
@@ -7462,7 +7490,7 @@
     (state.normalEnemies || []).slice().forEach(enemy => {
       if (!enemy || !enemy.el || enemy.hp <= 0) return;
       if (Math.hypot(Number(enemy.x || 0) - x, Number(enemy.y || 0) - y) > radius) return;
-      if (applyRemnaTrapDamageToTarget({kind:'normal',ref:enemy}, damage, attackElement, now) > 0) hits++;
+      if (applyRemnaTrapDamageToTarget({kind:'normal',ref:enemy}, damage, attackElement, now, true) > 0) hits++;
     });
     (state.facelessObjects || []).slice().forEach(obj => {
       if (!obj || !obj.el || obj.hp <= 0) return;
@@ -11247,6 +11275,155 @@
     return isSelectedBaseStage(SHOOTING_STAGE_ID.CH04_04);
   }
 
+  // ============================================================
+  // CH07-3 群がる強化個体（swarmBattle）
+  // 弾は撃たない。一番近い味方オブジェクト（TRAP設置済み / デコイ / ミト召喚獣 / 自機）へ這い寄る。
+  // 自機・召喚獣へは既存の接触判定でダメージ。デコイには群がって削る。TRAPは3秒後に爆発する囮。
+  // ============================================================
+  function getSwarmBattleConfig() {
+    return (selectedStage && selectedStage.swarmBattle) || null;
+  }
+
+  function isSwarmBattle() {
+    return !!(isNormalBattle() && getSwarmBattleConfig());
+  }
+
+  function getSwarmLargeTotal() {
+    return Math.max(1, Math.floor(Number(getSwarmBattleConfig()?.largeCount || 3)));
+  }
+
+  function spawnSwarmEnemy(enemyId, x, y, now, extra) {
+    const base = getShootingEnemy(enemyId);
+    if (!base || !base.implemented) return null;
+    const enemy = createNormalEnemy(Object.assign({}, base, { ch404Hp: base.hp, ch404Image: base.image }), now);
+    if (!enemy) return null;
+    enemy.swarmRole = base.swarmRole || 'small';
+    enemy.x = enemy.baseX = x;
+    enemy.y = enemy.baseY = y;
+    Object.assign(enemy, extra || {});
+    if (enemy.el) enemy.el.classList.add('shooting-swarm-spider', 'swarm-' + enemy.swarmRole);
+    positionUnit(enemy.el, enemy.x, enemy.y);
+    positionMiniEnemyHp(enemy);
+    state.normalEnemies.push(enemy);
+    state.normalSpawned++;
+    return enemy;
+  }
+
+  function spawnSwarmEnemies(now) {
+    const cfg = getSwarmBattleConfig();
+    const arena = document.getElementById('shooting-arena');
+    if (!cfg || !arena) return;
+    const w = arena.clientWidth, h = arena.clientHeight;
+
+    // 開幕：大を横一列に配置（中断復帰時は、撃破済みの数だけ減らす）
+    if (!state.swarmLargeSpawned) {
+      state.swarmLargeSpawned = true;
+      const total = getSwarmLargeTotal();
+      const remain = Math.max(0, total - Number(state.swarmLargeDefeated || 0));
+      const rates = total === 1 ? [.5] : Array.from({length: total}, (_, i) => .2 + .6 * i / (total - 1));
+      for (let i = 0; i < remain; i++) {
+        const interval = Math.max(500, Number(cfg.broodIntervalMs || 5000));
+        spawnSwarmEnemy(cfg.largeEnemyId, w * rates[i], Math.max(96, h * .17), now, {
+          // 3体が同時に産まないよう、最初の産卵タイミングをずらす
+          swarmNextBroodAt: now + interval * (0.45 + 0.3 * i),
+        });
+      }
+      return;
+    }
+
+    // 大は5秒に1体ずつ小を生む（1体につき同時 broodMaxPerLarge 体まで）
+    const interval = Math.max(500, Number(cfg.broodIntervalMs || 5000));
+    const maxBrood = Math.max(1, Math.floor(Number(cfg.broodMaxPerLarge || 3)));
+    (state.normalEnemies || []).slice().forEach(parent => {
+      if (!parent || parent.hp <= 0 || parent.swarmRole !== 'large') return;
+      if (now < Number(parent.swarmNextBroodAt || 0)) return;
+      parent.swarmNextBroodAt = now + interval;
+      const alive = state.normalEnemies.filter(e => e && e.hp > 0 && e.swarmRole === 'small' && e.swarmParent === parent.uid).length;
+      if (alive >= maxBrood) return;
+      const a = Math.random() * Math.PI * 2;
+      spawnSwarmEnemy(cfg.smallEnemyId,
+        clamp(parent.x + Math.cos(a) * 18, 24, w - 24),
+        clamp(parent.y + 26 + Math.sin(a) * 10, 40, h - 40),
+        now, { swarmParent: parent.uid });
+      if (parent.el) {
+        parent.el.classList.remove('swarm-brooding');
+        void parent.el.offsetWidth;
+        parent.el.classList.add('swarm-brooding');
+      }
+    });
+  }
+
+  // 一番近い味方オブジェクト。自機はアイナの気配遮断中、偽の位置になる。
+  function getSwarmLureTargets(now) {
+    const targets = [];
+    (state.bullets || []).forEach(p => {
+      if (p && p.kind === 'remna_trap' && p.trapState === 'armed' && !p.trapExploded && p.el) {
+        targets.push({ kind: 'trap', x: Number(p.x || 0), y: Number(p.y || 0) });
+      }
+    });
+    (state.clarineDecoys || []).forEach(d => {
+      if (d && d.el && Number(d.hp || 0) > 0) targets.push({ kind: 'decoy', x: Number(d.x || 0), y: Number(d.y || 0), ref: d });
+    });
+    if (state.mitoSummonActive) {
+      targets.push({ kind: 'summon', x: Number(state.mitoSummonX || 0), y: Number(state.mitoSummonY || 0) });
+    }
+    const aim = getEnemyAimPosition();
+    targets.push({ kind: 'player', x: Number(aim.x || 0), y: Number(aim.y || 0) });
+    return targets;
+  }
+
+  function updateSwarmEnemy(enemy, dt, now, w, h, targets) {
+    const cfg = getSwarmBattleConfig() || {};
+    const def = enemy.def || {};
+    let best = null, bestD = Infinity;
+    targets.forEach(t => {
+      const d = Math.hypot(t.x - enemy.x, t.y - enemy.y);
+      if (d < bestD) { bestD = d; best = t; }
+    });
+    if (!best) return;
+
+    // 小は標的の周りを取り囲むように群がる（全員が一点に重ならない）
+    const age = (now - enemy.spawnedAt) / 1000;
+    const ring = enemy.swarmRole === 'small' ? 16 + (enemy.phaseSeed % 1) * 10 : 0;
+    const tx = best.x + Math.cos(enemy.phaseSeed * 3 + age * 1.6) * ring;
+    const ty = best.y + Math.sin(enemy.phaseSeed * 3 + age * 1.6) * ring * .7;
+    const dx = tx - enemy.x, dy = ty - enemy.y, dist = Math.hypot(dx, dy);
+    const speed = Math.max(10, Number(def.moveSpeed || 60));
+    if (dist > 1) {
+      const step = Math.min(dist, speed * dt);
+      // 這い寄る揺らぎ
+      const wob = Math.sin(age * 9 + enemy.phaseSeed) * (enemy.swarmRole === 'small' ? 0.35 : 0.15);
+      const nx = dx / dist, ny = dy / dist;
+      enemy.x += (nx - ny * wob) * step;
+      enemy.y += (ny + nx * wob) * step;
+    }
+    // 群れ同士で押し合い、一点に重ならないようにする（大どうしは特に間隔を空ける）
+    (state.normalEnemies || []).forEach(o => {
+      if (!o || o === enemy || o.hp <= 0 || !o.swarmRole || !o.el) return;
+      const minD = (enemy.swarmRole === 'large' && o.swarmRole === 'large') ? 128
+        : (enemy.swarmRole === 'large' || o.swarmRole === 'large') ? 40 : 15;
+      const ox = enemy.x - o.x, oy = enemy.y - o.y, od = Math.hypot(ox, oy);
+      if (od >= minD) return;
+      const push = (minD - od) * (enemy.swarmRole === 'large' && o.swarmRole !== 'large' ? .15 : .5);
+      if (od < .01) { enemy.x += (Math.random() - .5) * 2; return; }
+      enemy.x += ox / od * push;
+      enemy.y += oy / od * push;
+    });
+    const maxY = enemy.swarmRole === 'large' ? h * Number(cfg.largeMaxYRate || .58) : h - 40;
+    enemy.x = clamp(enemy.x, 24, w - 24);
+    enemy.y = clamp(enemy.y, 60, Math.max(70, maxY));
+
+    // デコイには群がって削る（自機・召喚獣は既存の接触判定でダメージ）
+    if (best.kind === 'decoy' && best.ref && bestD < 34) {
+      const decoy = best.ref;
+      decoy.hp = Math.max(0, Number(decoy.hp || 0) - Number(cfg.objectContactDps || 60) * dt * (enemy.swarmRole === 'large' ? 2 : 1));
+      if (decoy.hp <= 0 && decoy.el) {
+        breakClarineDecoy(decoy, getClarineDecoyConfig());
+        state.clarineDecoys = (state.clarineDecoys || []).filter(d => d && d.el);
+      }
+    }
+  }
+
   function isNormalBattle() {
     return !!(state && state.battleType === 'normal');
   }
@@ -11529,6 +11706,7 @@
   function spawnNormalEnemies(now) {
     if (!isNormalBattle() || state.finishing || state.ended) return;
     if (isCh404SummonerBattle()) { spawnCh404Enemies(now); return; }
+    if (isSwarmBattle()) { spawnSwarmEnemies(now); return; }
     if (isChapter101TutorialStage() || isChapter102TutorialStage()) return;
     const cfg = getNormalBattleConfig();
 
@@ -12430,6 +12608,7 @@
     if (!arena) return;
     const w = arena.clientWidth;
     const h = arena.clientHeight;
+    let swarmTargets = null;
 
     state.normalEnemies.forEach(enemy => {
       if (!enemy || !enemy.el) return;
@@ -12493,6 +12672,15 @@
       // global stunではなく、命中した敵だけ7秒間停止。
       if (now < Number(enemy.ayaneGrabUntil || 0)) {
         freezeNormalEnemyAction(enemy, Number(enemy.ayaneGrabUntil || now));
+        positionUnit(enemy.el, enemy.x, enemy.y);
+        positionMiniEnemyHp(enemy);
+        return;
+      }
+
+      // CH07-3 群がる強化個体：弾は撃たず、一番近い味方オブジェクトへ這い寄る
+      if (enemy.swarmRole) {
+        if (!swarmTargets) swarmTargets = getSwarmLureTargets(now);
+        updateSwarmEnemy(enemy, dt, now, w, h, swarmTargets);
         positionUnit(enemy.el, enemy.x, enemy.y);
         positionMiniEnemyHp(enemy);
         return;
@@ -12782,6 +12970,9 @@
       state.ch404Phase = Math.min(3, Number(state.ch404Phase || 0) + 1);
       // Summoned normal enemies are deliberately not removed.
     }
+    if (enemy.swarmRole === 'large') {
+      state.swarmLargeDefeated = Math.max(0, Number(state.swarmLargeDefeated || 0)) + 1;
+    }
     state.normalDefeated++;
     state.score += Number(enemy.def?.scoreValue || 650);
     handleChapter101TutorialEnemyDefeat();
@@ -12835,6 +13026,8 @@
     const total = Number(cfg.totalEnemies || 0);
     const allDefeated = isCh404SummonerBattle()
       ? Number(state.ch404Phase || 0) >= 3 && !(state.normalEnemies || []).some(e => e && e.hp > 0)
+      : isSwarmBattle()
+      ? Number(state.swarmLargeDefeated || 0) >= getSwarmLargeTotal()
       : total > 0 && state.normalDefeated >= total && state.normalSpawned >= total;
 
     if (isChapter101TutorialStage() && allDefeated && !state.ch101TutorialUltTriggered) {
@@ -16833,7 +17026,12 @@
         return rectsHit(playerRect, getUnitRect(enemy, arenaRectForContact), 14, 9);
       });
       if (hitEnemy) {
-        damagePlayer(now, Number(hitEnemy.def && (hitEnemy.def.contactDamage || hitEnemy.def.bulletDamage)) || 85, 'normal', getCombatTargetElement(hitEnemy));
+        // CH07-3の群れは、固定ダメージ(110)ではなく個体ごとの接触ダメージ（小55・大140）を使う
+        if (hitEnemy.swarmRole) {
+          damagePlayer(now, Math.max(1, Number(hitEnemy.def?.contactDamage) || 60), 'raw', getCombatTargetElement(hitEnemy), 'swarm-contact');
+        } else {
+          damagePlayer(now, Number(hitEnemy.def && (hitEnemy.def.contactDamage || hitEnemy.def.bulletDamage)) || 85, 'normal', getCombatTargetElement(hitEnemy));
+        }
       }
       return;
     }
@@ -20835,7 +21033,8 @@
           } catch(e) { console.warn('[story memory fragments] reward sync failed',e); }
         })();
       }
-    if (win && ['shooting_ch04_04','shooting_ch06_04'].includes(storyStageId)) {
+    // build1411: CH06-03クリアでトイフェル・アイナ・ベロニカを加入させる。サーバーで初回クリア実績を検証し、未所持分のみLv1付与。
+    if (win && ['shooting_ch04_04','shooting_ch06_03'].includes(storyStageId)) {
       void (async () => {
         try {
           await (state.secureFinalizePromise || Promise.resolve());
@@ -20846,7 +21045,7 @@
           const grants = (reply.data && reply.data.characters) || [];
           if (!grants.length) return;
           const names = {25:'リュネ',37:'トイフェル',22:'ベロニカ',17:'アイナ'};
-          const message = grants.map(c => `${c.rarity}キャラ[${names[c.id]}]を入手しました。`).join('\n') + '\n\n育成して強化しましょう。';
+          const message = grants.map(c => `${c.rarity}キャラ[${names[c.id]}]（Lv.1）を入手しました。`).join('\n') + '\n\n育成して強化しましょう。';
           const overlay = document.createElement('div');
           overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#17131bc9;display:flex;align-items:center;justify-content:center;padding:20px';
           const panel = document.createElement('div');

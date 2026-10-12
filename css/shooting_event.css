@@ -12663,3 +12663,24 @@ html body:not(.ui-immersive) .shooting-daily-stage-select .shooting-daily-stage-
   box-shadow:none !important;
   opacity:.92 !important;
 }
+
+/* =========================================================
+   CH07-3 灰の夜：群がる強化個体（クモ型）
+   ========================================================= */
+#shooting-event-root:is([data-shooting-stage="shooting_ch07_03"],[data-shooting-stage="shooting_beginner_ch07_03"]) .shooting-bg{
+  background-image:url('../images/battle_bg_ch07_03.webp');
+  filter:brightness(.82) saturate(.9);
+  opacity:1;
+}
+/* 夜の聖堂で白い体が浮かぶよう、淡い光をまとわせる */
+.shooting-mini-enemy.shooting-swarm-spider{
+  filter:drop-shadow(0 0 6px rgba(255,236,190,.55)) drop-shadow(0 4px 6px rgba(20,10,40,.45));
+}
+.shooting-mini-enemy.shooting-swarm-spider.swarm-brooding{
+  animation:swarmBrood .55s ease-out;
+}
+@keyframes swarmBrood{
+  0%{filter:drop-shadow(0 0 6px rgba(255,236,190,.55)) brightness(1)}
+  35%{filter:drop-shadow(0 0 18px rgba(255,220,140,.95)) brightness(1.35)}
+  100%{filter:drop-shadow(0 0 6px rgba(255,236,190,.55)) brightness(1)}
+}

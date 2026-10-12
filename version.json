@@ -1,4 +1,4 @@
 {
-  "build": 1408,
-  "note": "Stage GIMMICK: 属性バリア→バリア; add 遮断壁 for DAILY advanced and stages with chapter6Barriers. Gameplay unchanged."
+  "build": 1411,
+  "note": "CH06-03 clear: grant Teufel (ID37), Aina (ID17), Veronica (ID22) as new Lv1 / LB0 owned characters; secure server first-clear verified and idempotent."
 }

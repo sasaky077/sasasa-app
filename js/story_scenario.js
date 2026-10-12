@@ -420,7 +420,7 @@
       },
       {
         "speaker": "",
-        "text": "雲が裂け、神殿の柱ほどもある、\n巨大な神像のようなものが姿を現す。",
+        "text": "雲が裂け、その隙間から巨大な身体のドラゴンが顔を出す。",
         "location": "scene_remnant_01_battle.webp",
         "narration": true
       },
@@ -435,13 +435,13 @@
     "chapter": 1,
     "stageNo": 4,
     "chapterTitle": "白の戦線",
-    "stageTitle": "巨像",
+    "stageTitle": "白竜",
     "pre": [
       {
         "speaker": "",
         "left": "",
         "right": "",
-        "text": "エリ、ジグ、アウラは目の前に聳える巨大な神像を見上げていた。",
+        "text": "エリ、ジグ、アウラは目の前に聳える巨躯を見上げていた。",
         "location": "scene_remnant_01_battle.webp",
         "narration": true
       },
@@ -449,7 +449,7 @@
         "speaker": "アウラ",
         "left": "アウラ",
         "right": "エリ",
-        "text": "……なに、あれ。天使…？",
+        "text": "……なに、あれ…竜？",
         "location": "scene_remnant_01_battle.webp"
       },
       {
@@ -738,7 +738,7 @@
         "speaker": "エリ",
         "left": "",
         "right": "",
-        "text": "あったかい…",
+        "text": "あたたかい…",
         "location": "scene_outside_road.webp",
         "itemImage": "item_memory.webp?v=1200",
         "itemImagePosition": "above-dialogue"
@@ -772,7 +772,7 @@
       },
       {
         "speaker": "エリ",
-        "text": "すごく大きなレムナントが、\n消えるときに残したの。",
+        "text": "大きな竜のレムナントが、\n消えるときに残したの。",
         "location": "scene_workbench.webp",
         "itemImage": "item_memory.webp?v=1200",
         "itemImagePosition": "above-dialogue"
@@ -1050,7 +1050,7 @@
       },
       {
         "speaker": "ジグ",
-        "text": "そういや…大型のレムナントに、攻撃が通らなかった…",
+        "text": "そういや…竜のレムナントに、攻撃が通らなかった…",
         "location": "scene_workbench.webp"
       },
       {
@@ -1065,7 +1065,7 @@
       },
       {
         "speaker": "ミモザ",
-        "text": "この間の大型レムナント…あれは木の属性だった。だから火のアルノは攻撃が通った。",
+        "text": "この間の竜型レムナント…あれは木の属性だった。だから火のアルノは攻撃が通った。",
         "location": "scene_workbench.webp"
       },
       {
@@ -1132,7 +1132,7 @@
     "pre": [
       {
         "speaker": "",
-        "text": "アルノが大型レムナントを倒した場所。\n地面が円く抉れている。エリ、アウラ、ミモザ、アルノの四人がそれを囲んでいる。",
+        "text": "アルノが竜型レムナントを倒した場所。\n地面が円く抉れている。エリ、アウラ、ミモザ、アルノの四人がそれを囲んでいる。",
         "location": "scene_enemy_site.webp",
         "narration": true
       },
@@ -1154,7 +1154,7 @@
       },
       {
         "speaker": "エリ",
-        "text": "これ、こないだの大きなレムナントがつけたの？",
+        "text": "これ、こないだの竜のレムナントがつけたの？",
         "location": "scene_enemy_site.webp"
       },
       {
@@ -1630,7 +1630,7 @@
       },
       {
         "speaker": "",
-        "text": "少し遠くに、巨大な天使のようなシルエットが浮かぶ。",
+        "text": "少し遠くに、大きな白い影が浮かぶのが見える。",
         "location": "scene_many_tower.webp",
         "narration": true
       },
@@ -1642,13 +1642,13 @@
       },
       {
         "speaker": "",
-        "text": "遠くに見えたその巨体が少し姿勢を下げたのが分かった。\n次の瞬間…",
+        "text": "遠くに見えた白い影は、フッと消えた。\n次の瞬間…",
         "location": "scene_many_tower.webp",
         "narration": true
       },
       {
         "speaker": "",
-        "text": "激しい衝撃音とともに、その巨体が3人のいる場所目掛けて飛び込んでくる。",
+        "text": "激しい衝撃音とともに、白い影が3人のいる場所目掛けて飛び込んでくる。",
         "location": "scene_many_tower.webp",
         "narration": true
       },
@@ -1667,7 +1667,7 @@
     "pre": [
       {
         "speaker": "",
-        "text": "地鳴りとともに次々と塔が崩れてゆく。土煙の中から、巨大な天使の影が現れる。",
+        "text": "地鳴りとともに次々と塔が崩れてゆく。土煙の中から、白装束の大型レムナントが現れる。",
         "location": "scene_remnant_02_battle.webp",
         "narration": true
       },
@@ -1704,7 +1704,7 @@
     "post": [
       {
         "speaker": "",
-        "text": "激しい攻防の末、巨体が崩れ落ちる。\n舞い上がる灰とともに、その身体が天に昇っていく。",
+        "text": "激しい攻防の末、白い身体が崩れ落ちる。\n舞い上がる灰とともに、その身体が天に昇っていく。",
         "location": "scene_remnant_02_rip.webp",
         "narration": true
       },
@@ -1813,6 +1813,12 @@
         "text": "増えている。\n観測装置でも、この周辺のボクたち以外のエネルギー反応が爆発的に増えてることが確認できている。",
         "location": "scene_workbench.webp"
       },
+            {
+        "speaker": "レオナクロス",
+        "text": "それに、大型の…強化個体も出現している。",
+        "location": "scene_workbench.webp"
+      },
+
       {
         "speaker": "ミモザ",
         "text": "そう。これを考慮すると…\n私たち6人では、圧倒的に戦力が足りない。数の問題ね。",
