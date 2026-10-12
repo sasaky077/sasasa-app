@@ -221,7 +221,7 @@
           <div class="resonance-tower-seal-kicker">ECHO TOWER / SORTIE</div>
           <h2 id="tower-seal-title">封印対象の確認</h2>
           <div class="resonance-tower-seal-floor"></div>
-          <p id="tower-seal-message">この編成で勝利すると、以下の仲間は<strong>今週の残響の塔で封印</strong>されます。</p>
+          <p id="tower-seal-message">この編成で勝利すると、以下の仲間は<br><strong>今週の残響の塔で封印</strong>されます。</p>
           <div class="resonance-tower-seal-party" aria-label="勝利時の封印対象キャラクター"></div>
           <p class="resonance-tower-seal-note">敗北・中断した場合は封印されません。<br>封印が確定するのはクリア時のみです。</p>
           <div class="resonance-tower-seal-actions">

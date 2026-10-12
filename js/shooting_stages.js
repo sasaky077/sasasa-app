@@ -114,7 +114,7 @@
   //   赤コアを意識して避ける被弾管理
   //
   // 04 旅立ち:
-  //   オーバーシアBOSS
+  //   竜型レムナントBOSS
   //
   function makeDailyStage(config) {
     const level = config.level === 'advanced' ? 'advanced' : 'intermediate';
@@ -146,7 +146,57 @@
     });
   }
 
+
+  // build1417 — 残響の塔：10層は既存シューティングの敵AIを再利用する。
+  // 進行とキャラ封印はSupabaseでのみ確定。ここには付与型の報酬を設定しない。
+  const TOWER_ENEMY_POOLS = [
+    [SHOOTING_ENEMY_ID.MINI_01],
+    [SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT, SHOOTING_ENEMY_ID.ZAKO_WOOD_SHOT],
+    [SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT, SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT, SHOOTING_ENEMY_ID.ZAKO_WOOD_SHOT],
+    [SHOOTING_ENEMY_ID.MINI_02],
+    [SHOOTING_ENEMY_ID.ZAKO_DARK_SHOT, SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT],
+    [SHOOTING_ENEMY_ID.ZAKO_AQUA_LASER, SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT],
+    [SHOOTING_ENEMY_ID.ZAKO_WOOD_LASER, SHOOTING_ENEMY_ID.ZAKO_DARK_SHOT],
+    [SHOOTING_ENEMY_ID.MINI_03],
+    [SHOOTING_ENEMY_ID.ZAKO_LIGHT_LASER, SHOOTING_ENEMY_ID.ZAKO_DARK_LASER],
+  ];
+  function makeResonanceTowerStage(floor) {
+    const difficult = floor === 3 || floor === 6 || floor === 9;
+    if (floor === 10) return Object.freeze({
+      id:'shooting_tower_10', chapter:0, stageNo:10,
+      eventId:'resonance_tower', eventTitle:'残響の塔', difficultyLabel:'10F / 最深部',
+      name:'第十層', type:'boss', background:'images/battle_bg_01.webp',
+      enemyIds:Object.freeze([SHOOTING_ENEMY_ID.REMNANT_05]),
+      bossVisualScale:1.0,
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.BOSS_CLEAR,text:'最深部の守護者を撃破'}),
+      playable:true
+    });
+    const totalEnemies=[5,6,7,7,8,8,9,9,10][floor-1];
+    const battle={
+      totalEnemies, maxActive:difficult?3:2, spawnIntervalMs:difficult?1100:1350,
+      enemyHp:Math.round(520+floor*255+(difficult?350:0)),
+      enemyBulletDamage:Math.round(65+floor*11),
+      enemyBulletSpeed:145+floor*8,
+      enemyFireRate:Math.max(920,1920-floor*80),
+      barrageLevel:Math.min(5,1+Math.floor(floor/2)),itemDropRate:0
+    };
+    const barriers=floor===6?Object.freeze([Object.freeze({
+      xRate:.5,yRate:.44,widthRate:.58,height:22,moveRangeRate:.12,moveSpeed:.25,contactDamage:80
+    })]):null;
+    return Object.freeze({
+      id:'shooting_tower_'+String(floor).padStart(2,'0'),chapter:0,stageNo:floor,
+      eventId:'resonance_tower',eventTitle:'残響の塔',
+      difficultyLabel:String(floor).padStart(2,'0')+'F'+(difficult?' / 難関':''),
+      name:'第'+floor+'層',type:'normal',background:'images/battle_bg_01.webp',
+      enemyIds:Object.freeze(TOWER_ENEMY_POOLS[floor-1]),normalBattle:Object.freeze(battle),
+      ...(barriers?{chapter6Barriers:barriers}:{}),
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'敵をすべて撃破'}),
+      playable:true
+    });
+  }
+
   const SHOOTING_STAGES = Object.freeze({
+    ...Object.fromEntries(Array.from({length:10},(_,i)=>{const n=i+1;return ['shooting_tower_'+String(n).padStart(2,'0'),makeResonanceTowerStage(n)];})),
     // 本編の敵・ショット・ULT・操作系を共用するが、通常ステージには登録しない試遊専用ステージ。
     [SHOOTING_STAGE_ID.GACHA_TRIAL]: Object.freeze({
       id: SHOOTING_STAGE_ID.GACHA_TRIAL,
@@ -276,12 +326,18 @@
         SHOOTING_ENEMY_ID.REMNANT_01,
       ]),
 
+      // build1415: このステージだけ戦闘用BOSS画像を差し替え。AI / HP / 弾幕は従来通り。
+      bossBattleImage: 'images/enemy_mini_03_battle.webp',
+      introImage: 'images/remnant_01_battle_start.webp',
+      // build1416: build1415比で約16%小さく表示（BOSS行動・HPは変更しない）。
+      bossVisualScale: 1.30,
+
       // build1168: 負けイベント～アルノ戦まで最初から2ゲージ設計。
       bossGauges: 2,
 
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
-        text: 'オーバーシアを撃破',
+        text: '竜型レムナントを撃破',
       }),
 
       playable: true,
@@ -400,6 +456,12 @@
         SHOOTING_ENEMY_ID.REMNANT_02,
       ]),
 
+      // build1415: BOSS画像だけ置換し、ボス戦闘ロジックは変更しない。
+      bossBattleImage: 'images/enemy_remmaster.webp',
+      introImage: 'images/remnant_02_battle_start.webp',
+      // build1416: build1415比で16%小さく表示（BOSS行動・HPは変更しない）。
+      bossVisualScale: 1.05,
+
       // build1190: CH02-04 boss battle uses two HP gauges.
       bossGauges: 2,
 
@@ -408,18 +470,18 @@
         enemyIds: Object.freeze([
           SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT,
         ]),
-        // build1214: CH02-04 イリシュ戦は突進(ATACK)雑魚を出さない。
-        // 援軍は通常射撃タイプのみ。
-        enemyVariants: Object.freeze(['normal', 'normal', 'normal', 'normal']),
-        totalEnemies: 4,
-        maxActive: 1,
-        startDelayMs: 4500,
-        spawnIntervalMs: 7000,
+        // build1415: LIGHT属性の遠隔1体と突進1体を各1回のみ出現させる。
+        // 合計2体上限なので、撃破後に蘇生・補充されない。
+        enemyVariants: Object.freeze(['normal', 'atack']),
+        totalEnemies: 2,
+        maxActive: 2,
+        startDelayMs: 3500,
+        spawnIntervalMs: 2500,
       }),
 
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
-        text: 'イリシュを撃破',
+        text: '白い影を撃破',
       }),
 
       // ボス画像 images/remnant_02_battle.webp を配置すればそのまま遊べる。

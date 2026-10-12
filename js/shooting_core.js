@@ -963,6 +963,10 @@
   }
 
 
+  function isResonanceTowerStage() {
+    return !!(selectedStage && selectedStage.eventId === 'resonance_tower');
+  }
+
   function isFacelessStage() {
     return !!(selectedStage && selectedStage.eventId === 'faceless' && selectedStage.faceless);
   }
@@ -1080,8 +1084,9 @@
 
   function isResponsiveBossStage() {
     // BOSS対象:
-    // フェイスレス / 各種レムナント / ノア / オーバーシア(???) / すこあちゃん
-    if (isFacelessStage() || isNoahStage() || isAmbushStage() || isScoreAttackStage()) {
+    // フェイスレス / 各種レムナント / ノア / すこあちゃん
+    if (isFacelessStage() || isNoahStage() || isAmbushStage() || isScoreAttackStage() ||
+        isSelectedBaseStage(SHOOTING_STAGE_ID.CH01_04) || isSelectedBaseStage(SHOOTING_STAGE_ID.CH02_04)) {
       return true;
     }
 
@@ -1094,8 +1099,10 @@
       image.includes('enemy_sakiel') ||
       image.includes('overseer') ||
       bossName.includes('レムナント') ||
-      bossName.includes('オーバーシア') ||
-      bossName.includes('イリシュ') ||
+      bossName.includes('竜型レムナント') ||
+      bossName.includes('白い影') ||
+      bossName.includes('オーバーシア') || // 亜種は従来名のまま
+      bossName.includes('イリシュ') ||  // 旧データ互換
       bossName.includes('リヴィア') ||
       bossName.includes('サキエル')
     );
@@ -1131,9 +1138,11 @@
   }
 
   function getResponsiveBossDisplayScale() {
+    // CH01-04 / CH02-04 はステージごとのBOSS表示倍率を使用する。攻撃定義は変更しない。
     const base = Math.max(0.1, Number(BOSS && BOSS.uiScale || 1));
-    if (!isResponsiveBossStage()) return base;
-    return base * getResponsiveCombatScaleProfile().boss;
+    const stageVisualScale = Math.max(0.1, Number(selectedStage?.bossVisualScale || 1));
+    if (!isResponsiveBossStage()) return base * stageVisualScale;
+    return base * stageVisualScale * getResponsiveCombatScaleProfile().boss;
   }
 
   function refreshResponsiveCombatUnitScales() {
@@ -2112,6 +2121,7 @@
     if (isGachaTrialStage() && id === gachaTrialCharacterId) return true;
     const cfg = getSelectedStorySelectablePartyConfig();
     if (cfg && cfg.allowedIds.includes(id)) return true;
+    if (isResonanceTowerStage() && !(window.ResonanceTower && window.ResonanceTower.isCharacterAvailable(id))) return false;
     return isShootingCharacterOwned(id);
   }
 
@@ -2222,6 +2232,8 @@
     }
 
     if (!selectedPartyIds.every(isShootingCharacterOwned)) return false;
+    if (isResonanceTowerStage() && !selectedPartyIds.every(id =>
+      window.ResonanceTower && window.ResonanceTower.isCharacterAvailable(id))) return false;
 
     return true;
   }
@@ -2322,6 +2334,17 @@
       }
     });
 
+    if (isResonanceTowerStage()) {
+      roster.querySelectorAll('[data-character-id]').forEach(el => {
+        const id=Number(el.getAttribute('data-character-id'));
+        const sealed=!(window.ResonanceTower && window.ResonanceTower.isCharacterAvailable(id));
+        const wrap=el.closest('.shooting-character-option-wrap');
+        if (wrap) wrap.classList.toggle('tower-sealed-character',sealed);
+        el.disabled=sealed;
+        el.setAttribute('aria-disabled',sealed?'true':'false');
+        if (sealed) el.setAttribute('title','今週は封印済み');
+      });
+    }
     selectedPartyIds = selectedPartyIds.filter(id =>
       isShootingCharacterAvailableForCurrentParty(id) &&
       (!selectableStoryParty || selectableStoryParty.allowedIds.includes(Number(id)))
@@ -2467,6 +2490,7 @@
     const stageId = selectedStage?.id || state?.stageId || '';
     const scoreValue = Math.max(0, Math.floor(Number(value || 0)));
     if (!stageId) return null;
+    if (isResonanceTowerStage()) return window.ResonanceTower.finishRun(!!win);
 
     // Local display remains responsive; cloud ranking is server-confirmed below.
     if (scoreValue > getLocalShootingHighScore(stageId)) writeLocalShootingHighScore(stageId, scoreValue);
@@ -3721,7 +3745,9 @@
 
     const ruleText = document.getElementById('shooting-party-rule-text');
     if (ruleText) {
-      if (fixedStoryParty) {
+      if (isResonanceTowerStage()) {
+        ruleText.textContent = '残響の塔 · 最大3人 / 勝利すると使用キャラは週内封印';
+      } else if (fixedStoryParty) {
         const names = fixedStoryParty
           .map(id => buildResonatedCharacterProfile(id)?.name || '')
           .filter(Boolean)
@@ -11535,6 +11561,11 @@
         telegraphMs: 760,
         chargeSpeed: Number(variantConfig?.chargeSpeed || base.chargeSpeed || 500),
         chargeDurationMs: 620,
+        // CH02-04専用: 攻撃弾なし。予告後に味方ユニットへ6秒周期で突進。
+        ...(stageId === 'shooting_ch02_04' ? {
+          chargeIntervalMs: 6000,
+          contactDamage: 180,
+        } : {}),
       });
     }
 
@@ -11543,7 +11574,9 @@
       image: 'images/zako_enemy_01_normal_light.webp',
       element: 'light',
       behavior: 'generic_element_shot_v1',
-      fireRate: Number(base.fireRate || 1280),
+      shotPattern: stageId === 'shooting_ch02_04' ? 'spread5' : '',
+      // CH02-04専用: 3秒毎、光属性の5WAY spread。
+      fireRate: stageId === 'shooting_ch02_04' ? 3000 : Number(base.fireRate || 1280),
       bulletSpeed: Number(base.bulletSpeed || 215),
       bulletDamage: Number(base.bulletDamage || 90),
     });
@@ -12151,13 +12184,18 @@
       const dy = getEnemyAimPosition().y - enemy.y;
       const angle = Math.atan2(dy, dx);
       const element = normalizeCombatElement(def.element);
-      shootNormalEnemyProjectile(
+      // CH02-04専用: NORMALの移動AIを維持しつつ、3秒に1回だけ5発SPREAD。
+      // 他ステージのNORMALは従来通り単発を撃つ。
+      const offsets = def.shotPattern === 'spread5'
+        ? [-0.36, -0.18, 0, 0.18, 0.36]
+        : [0];
+      offsets.forEach(offset => shootNormalEnemyProjectile(
         enemy,
-        angle,
+        angle + offset,
         Number(def.bulletSpeed || 215),
         Number(def.bulletDamage || 90),
         `shooting-enemy-bullet shooting-mini-enemy-bullet shooting-generic-zako-shot shooting-enemy-element-${element || 'neutral'}`
-      );
+      ));
       return;
     }
 
@@ -12200,6 +12238,8 @@
         enemy.dashVx = (dx / len) * speed;
         enemy.dashVy = (dy / len) * speed;
         enemy.dashUntil = now + Math.max(280, Number(def.chargeDurationMs || 620));
+        // CH02-04専用: この突進開始時刻を記録し、次の突進との間隔を6秒に保つ。
+        if (Number(def.chargeIntervalMs || 0) > 0) enemy.lastDashStartedAt = now;
         enemy.attackState = 'dash';
         enemy.el.classList.add('generic-charge-dash');
         return;
@@ -12710,7 +12750,11 @@
           enemy.attackState = 'idle';
           enemy.dashVx = 0;
           enemy.dashVy = 0;
-          enemy.nextActionAt = now + Math.max(700, Number(def.fireRate || 1650));
+          // CH02-04のみ、予告時間を含めて突進開始から次の突進開始まで6秒。
+          const repeatMs = Number(def.chargeIntervalMs || 0);
+          enemy.nextActionAt = repeatMs > 0
+            ? Math.max(now, Number(enemy.lastDashStartedAt || now) + repeatMs - Math.max(350, Number(def.telegraphMs || 760)))
+            : now + Math.max(700, Number(def.fireRate || 1650));
           enemy.baseX = enemy.x;
           enemy.baseY = clamp(enemy.y, 78, Math.max(90, h * .40));
           enemy.el.classList.remove('generic-charge-dash');
@@ -18877,6 +18921,9 @@
     // SCORE ATTACKだけ専用ボス画像に差し替える。
     // 同じenemyIdを使う他ステージ（楽園 -ノア-等）の画像は変更しない。
     if (isScoreAttackStage()) return 'images/scoata_boss.webp';
+    // build1415: CH01-04 / CH02-04はそのステージで表示するBOSS画像だけ置換。
+    // BOSSマスターの攻撃・HP・行動定義には触れない。
+    if (selectedStage?.bossBattleImage) return String(selectedStage.bossBattleImage);
     return String(BOSS && BOSS.image || '');
   }
 
@@ -18923,14 +18970,14 @@
       meta.title = '理想郷：ノア';
       meta.sub = '楽園 -ノア-';
       meta.image = selectedStage.introImage || 'images/noah_battle_start.webp';
-    } else if (lower.includes('remnant_01')) {
+    } else if (isSelectedBaseStage(SHOOTING_STAGE_ID.CH01_04) || lower.includes('remnant_01')) {
       meta.kicker = 'REMNANT 01';
-      meta.title = 'オーバーシア';
-      meta.sub = 'OVERSEER';
-    } else if (lower.includes('remnant_02')) {
+      meta.title = '竜型レムナント';
+      meta.sub = 'DRAGON REMNANT';
+    } else if (isSelectedBaseStage(SHOOTING_STAGE_ID.CH02_04) || lower.includes('remnant_02')) {
       meta.kicker = 'REMNANT 02';
-      meta.title = 'イリシュ';
-      meta.sub = 'IRISH';
+      meta.title = '白い影';
+      meta.sub = 'WHITE SHADOW';
     } else if (lower.includes('remnant_03')) {
       meta.kicker = 'REMNANT 03';
       meta.title = 'リヴィア';
@@ -20337,7 +20384,7 @@
   // v163: first-clear gem reward must be tied to a server-issued shooting run.
   // A stage_id alone is no longer enough to claim gems from the console.
   async function beginSecureShootingRun() {
-    if (!state || !state.stageId || isDailyQuestStage()) return null;
+    if (!state || !state.stageId || isDailyQuestStage() || isResonanceTowerStage()) return null;
     if (state.secureRunToken) return state.secureRunToken;
     if (state.secureRunPromise) return state.secureRunPromise;
 
@@ -20445,6 +20492,7 @@
   }
 
   function buildAndGrantShootingClearRewards() {
+    if (isResonanceTowerStage()) return [];
     if (!state || state.clearRewardsGranted) return Array.isArray(state && state.clearRewards) ? state.clearRewards : [];
     state.clearRewardsGranted = true;
 
@@ -20612,6 +20660,7 @@
     const list = document.getElementById('shooting-result-reward-list');
     const note = document.getElementById('shooting-result-reward-note');
     if (!section || !list) return;
+    if (isResonanceTowerStage()) {section.style.display='none';list.innerHTML='';return;}
 
     if (!win) {
       section.style.display = 'none';
@@ -20908,6 +20957,9 @@
     const rankLetter = getResultRank(state.score, win);
 
     if (dailyQuestAtResult) {
+      if (raidRow) raidRow.style.display = 'none';
+      if (retryBtn) retryBtn.style.display = 'none';
+    } else if (isResonanceTowerStage()) {
       if (raidRow) raidRow.style.display = 'none';
       if (retryBtn) retryBtn.style.display = 'none';
     } else if (isRaidStage()) {
@@ -22529,6 +22581,7 @@
     overlay.setAttribute('aria-hidden','false');
   }
 
+  let towerBattleStartPending=false;
   window.startSelectedShootingCharacter = async function (options = {}) {
     if (isGachaTrialStage()) return; // 試遊の開始は下記の専用経路からのみ
     if (isNoahStage() && !options.noahTicketConfirmed) {
@@ -22539,6 +22592,34 @@
     }
     if (isStoryShootingStage()) ensureStoryEriLeader();
     if (!isShootingPartyReady()) return;
+    const towerBattleStart=isResonanceTowerStage();
+    if (towerBattleStart && towerBattleStartPending) return;
+    if (towerBattleStart) towerBattleStartPending=true;
+    try {
+
+    // build1418: 塔は編成確定後・出撃トークン発行前に封印対象を必ず表示する。
+    // 戻る／ESCでは出撃なし。選択編成やステージが変更された場合も出撃しない。
+    if (isResonanceTowerStage()) {
+      if (!window.ResonanceTower || typeof window.ResonanceTower.confirmSealParty !== 'function') {
+        if (typeof window.showToast==='function') window.showToast('封印確認画面を準備できませんでした');
+        return;
+      }
+      const confirmedStageId=String(selectedStage?.id||'');
+      const confirmedPartyIds=selectedPartyIds.map(Number);
+      const confirmedMembers=confirmedPartyIds.map(id=>{
+        const character=SHOOTING_CHARACTERS[id]||{};
+        return {id,name:character.name||'キャラクター',image:character.panelImage||character.image||''};
+      });
+      let accepted=false;
+      try {
+        accepted=await window.ResonanceTower.confirmSealParty(Number(selectedStage.stageNo),confirmedMembers);
+      } catch(err) {
+        console.warn('[tower] seal confirmation failed',err);
+      }
+      if (!accepted || String(selectedStage?.id||'')!==confirmedStageId ||
+          confirmedPartyIds.join(',')!==selectedPartyIds.map(Number).join(',') ||
+          !isShootingPartyReady() || !document.getElementById(ROOT_ID)?.classList.contains('open')) return;
+    }
 
     // build776: ユーザーの「戦闘開始」操作中に対象BGMをprimeして、
     // iOS/PWAでもカウントダウン開始時に再生しやすくする。
@@ -22561,6 +22642,11 @@
     if (isScoreAttackStage() && window.ScoreAttack && typeof window.ScoreAttack.beginAttemptForParty === 'function') {
       const scoreAttackAttemptOk = await window.ScoreAttack.beginAttemptForParty(selectedPartyIds);
       if (!scoreAttackAttemptOk) return;
+    }
+
+    if (isResonanceTowerStage()) {
+      const accepted=await window.ResonanceTower.prepareBattle(Number(selectedStage.stageNo),selectedPartyIds);
+      if (!accepted) return;
     }
 
     // 使用キャラランキング用。編成された各キャラを1出撃として記録。
@@ -22613,6 +22699,9 @@
     requestAnimationFrame(() => {
       playBossStageIntro(runStartCountdown);
     });
+    } finally {
+      if (towerBattleStart) towerBattleStartPending=false;
+    }
   };
 
   // 壁の描画スタイルも試遊中のオリビアだけに適用する。通常CSSは変更しない。
@@ -22890,6 +22979,10 @@
 
     // build812: DAILY巡行はRESULTから直接RETRYさせない。
     // UI表示が何らかの理由で崩れても、処理側で二重出撃を必ず止める。
+    if (isResonanceTowerStage()) {
+      if (typeof window.showToast==='function') window.showToast('残響の塔は階層画面から再出撃してください');
+      return;
+    }
     if (isDailyQuestStage()) {
       if (typeof window.syncDailyAttemptStateFromServer === 'function') {
         try { await window.syncDailyAttemptStateFromServer(); } catch (_) {}
@@ -23003,6 +23096,8 @@
   };
 
   window.closeShootingEvent = async function () {
+    // 塔の確認中にゲーム画面を閉じても、出撃に進まない。
+    if (window.ResonanceTower?.cancelSealConfirmation) window.ResonanceTower.cancelSealConfirmation();
     const leavingGachaTrial = isGachaTrialStage();
     // RESULT画面から戻る時だけ、1秒かけて白へフェードしてから前画面へ戻す。
     // 戦闘中の退出・編成画面のキャンセルには適用しない。
@@ -23042,6 +23137,9 @@
     // 先に退避してからクリアし、古い戻り先が次回起動へ残らないようにする。
     const returnContext = window.__shootingReturnContext || null;
     window.__shootingReturnContext = null;
+    if (returnContext && returnContext.type === 'resonanceTower' && resultWasVisible) {
+      try { await (state?.secureFinalizePromise || Promise.resolve()); } catch (err) { console.warn('[tower] finalization not confirmed',err); }
+    }
 
     const returningToFacelessStageSelect = !!(
       returnContext && returnContext.type === 'facelessStageSelect'
@@ -23146,6 +23244,11 @@
     }
 
     selectedRaidContext = null;
+    if (returnContext && returnContext.type === 'resonanceTower') {
+      if (typeof window.openResonanceTower==='function') window.openResonanceTower();
+      clearShootingResultExitFade();
+      return;
+    }
     if (returnContext && returnContext.type === 'storyChapter') {
       const chapter = Number(returnContext.chapter || 1);
       const mode = returnContext.mode === 'beginner' ? 'beginner' : 'normal';
