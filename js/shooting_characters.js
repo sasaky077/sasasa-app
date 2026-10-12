@@ -2709,7 +2709,17 @@
   // 既存UI互換ビュー
   // ============================================================
   // build1282: 恒常R 5体。既存ショット/ULTエンジンを再利用する。
-  SHOOTING_CHARACTERS[42] = buildShootingCharacter({ ...SHOOTING_CHARACTERS[22], id:42, name:getShootingCharacterMaster(42).name, effectKey:'kyou', ultType:'veronica_brass_punch', description:'真正面の超近接打撃。ULTは狭い射程へ一撃を叩き込み、命中時ATK×7.0のダメージを与える。' });
+  // build1436: キョウはベロニカの戦闘性能（SHOT/ULT）を流用するが、
+  // 完成済みのベロニカをそのまま展開すると画像・属性・HP/ATK・表示倍率までベロニカになり、
+  // さらにHP/ATKへR倍率(0.8)が二重に掛かっていた。
+  // マスター由来の項目は取り除き、buildShootingCharacter()でキョウ自身のマスターから付け直す。
+  const {
+    image: _veronicaImage, panelImage: _veronicaPanel, cutinImage: _veronicaCutin,
+    element: _veronicaElement, hp: _veronicaHp, atk: _veronicaAtk, rarity: _veronicaRarity,
+    uiScale: _veronicaUiScale, name: _veronicaName,
+    ...VERONICA_BATTLE_PROFILE
+  } = SHOOTING_CHARACTERS[22];
+  SHOOTING_CHARACTERS[42] = buildShootingCharacter({ ...VERONICA_BATTLE_PROFILE, id:42, name:getShootingCharacterMaster(42).name, effectKey:'kyou', ultType:'veronica_brass_punch', description:'真正面の超近接打撃。ULTは狭い射程へ一撃を叩き込み、命中時ATK×7.0のダメージを与える。' });
   SHOOTING_CHARACTERS[45] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:45, effectKey:'kirimaru', shotType:'spread', shotCount:5, fireRate:500, bulletSpeed:650, shotPowerRate:0.20, ultType:'jig_scramble_ray', ultName:'水鏡乱反射', ultDescription:'水属性の反射レーザーを5秒間展開する。', jigUltDurationMs:5000, jigUltBeamCount:6, jigUltBeamSpeed:520, jigUltBeamLength:280, jigUltBeamWidth:2, jigUltDamageAtkRate:0.12, jigUltHitIntervalMs:200 });
   SHOOTING_CHARACTERS[43] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:43, effectKey:'suzu', shotType:'parallel', shotCount:2, shotSpacing:28, fireRate:500, bulletSpeed:640, shotPowerRate:0.14, ultType:'suzu_bullet_silence', suzuBulletSilenceMs:3500, ultName:'静寂の森', ultDescription:'敵弾を全消去し、3.5秒間新たな敵弾を封じる。敵の移動は継続。' });
   SHOOTING_CHARACTERS[46] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:46, effectKey:'airena', shotType:'charge', shotStyle:'kaina-charge', fireRate:0, bulletSpeed:760, shotPowerRate:0.90, shotCount:1, chargeMinMs:120, chargeMaxMs:1200, chargeMinSize:28, chargeMaxSize:72, ultType:'airena_atk_item', ultName:'光の祝福', ultDescription:'ATK1.5倍・5秒のアイテムを1個出現させる。', itemAtkMultiplier:1.5, itemAtkDurationMs:5000 });
