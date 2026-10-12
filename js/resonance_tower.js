@@ -177,6 +177,7 @@
     const dismiss=layer.querySelector('.resonance-tower-panel-dismiss');
     if(dismiss) dismiss.hidden=(kind==='rewards');
     layer.classList.toggle('is-reward-overview',kind==='rewards');
+    layer.classList.toggle('is-floor-challenge',kind==='floor');
     kicker.textContent=kind==='floor'?'ECHO TOWER / FLOOR':'ECHO TOWER';
     start.hidden=kind!=='floor'||!available(number)||busy;
     start.dataset.floor=String(number||0);
