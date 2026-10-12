@@ -386,6 +386,20 @@
     roguelite: 'rgba(140,80,255,.85)',  // ← 追加
   };
 
+  // build1384: CHAPTER選択中は巡行トップの前景だけを消し、背景は維持する。
+  // ステージ選択モーダルは body 直下なので、親画面の background をそのまま使える。
+  let stageSelectCloseTimer = null;
+  function setQuestForegroundHidden(hidden) {
+    const quest = document.getElementById('screen-ninmu');
+    if (quest) quest.classList.toggle('story-stage-select-open', !!hidden);
+  }
+  function cancelStageSelectClose() {
+    if (stageSelectCloseTimer !== null) {
+      clearTimeout(stageSelectCloseTimer);
+      stageSelectCloseTimer = null;
+    }
+  }
+
   // ============================================================
   // モーダル構築
   // ============================================================
@@ -539,12 +553,14 @@
   function playNovelOnlyStoryStage(stage, mode = 'normal') {
     if (!stage || !stage.id || !window.StoryNovel || typeof window.StoryNovel.playPre !== 'function') return false;
 
+    cancelStageSelectClose();
     const modal = document.getElementById('stage-select-modal');
     if (modal) {
       modal.style.transition = 'none';
       modal.style.opacity = '0';
       modal.style.display = 'none';
     }
+    setQuestForegroundHidden(false);
 
     const chapter = Number(stage.chapter || 1);
     const storyMode = mode === 'beginner' ? 'beginner' : 'normal';
@@ -742,12 +758,14 @@
       getStoryShootingRecord(normalizedStoryId).cleared;
 
     const hideStageSelect = () => {
+      cancelStageSelectClose();
       const modal = document.getElementById('stage-select-modal');
       if (modal) {
         modal.style.transition = 'none';
         modal.style.opacity = '0';
         modal.style.display = 'none';
       }
+      setQuestForegroundHidden(false);
     };
 
     const setReturnContext = () => {
@@ -902,6 +920,7 @@
   }
 
   buildModal();
+  cancelStageSelectClose();
 
     const el = document.getElementById('stage-select-modal');
     const title = document.getElementById('ss-title');
@@ -913,6 +932,9 @@
     el.dataset.chapter = String(chapter);
     el.dataset.storyMode = mode === 'beginner' ? 'beginner' : 'normal';
 
+    // 背景画像は #screen-ninmu に残し、画面①のパーツだけ非表示。
+    setQuestForegroundHidden(true);
+    el.style.transition = 'opacity .24s ease';
     el.style.display = 'flex';
     void el.offsetWidth;
     el.style.opacity = '1';
@@ -931,12 +953,19 @@ if (guf) {
   };
 
   window.closeStageSelect = function () {
+    cancelStageSelectClose();
     const el = document.getElementById('stage-select-modal');
-    if (!el) return;
+    if (!el) {
+      setQuestForegroundHidden(false);
+      return;
+    }
+    el.style.transition = 'opacity .24s ease';
     el.style.opacity = '0';
-    setTimeout(() => {
+    stageSelectCloseTimer = setTimeout(() => {
+      stageSelectCloseTimer = null;
       el.style.display = 'none';
-      // ボトムナビを戻す
+      // ②のフェードアウト後に①のカード・メニューを復帰させる。
+      setQuestForegroundHidden(false);
       const nav = document.getElementById('bottom-nav-shared');
       if (nav) nav.style.display = '';
       const guf = document.getElementById('global-user-frame');

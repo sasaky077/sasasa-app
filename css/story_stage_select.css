@@ -1,3 +1,4 @@
+/* build1388: shared CHAPTER + DAILY zss stage card classes; one canonical card design. */
 /* ZERAPHIA build1364 — STORY STAGE SELECT: dedicated isolated skin.
    No reused .ss-* classes. Existing game logic & #stage-select-modal stay unchanged.
    Old style.css includes many !important overrides for .ss-card; none match .zss-*.
@@ -73,7 +74,7 @@
 }
 #stage-select-modal.zss-root .zss-scroll::-webkit-scrollbar {display:none}
 #stage-select-modal.zss-root .zss-list {display:flex; flex-direction:column; gap:8px; margin:0; padding:0}
-#stage-select-modal.zss-root .zss-card {
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card {
   flex:0 0 auto;
   width:100%;
   height:clamp(102px,17vh,138px);
@@ -91,14 +92,14 @@
   overflow:hidden;
   cursor:pointer;
 }
-#stage-select-modal.zss-root .zss-card::before {
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card::before {
   content:'';
   position:absolute;inset:3px;
   border:1px solid rgba(216,186,130,.5);
   border-radius:5px;pointer-events:none;
 }
-#stage-select-modal.zss-root .zss-card.locked {filter:saturate(.55); opacity:.66; cursor:default}
-#stage-select-modal.zss-root .zss-card-no {
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card.locked {filter:saturate(.55); opacity:.66; cursor:default}
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card-no {
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:9px; margin:6px 0;
   border-right:1px solid rgba(190,153,95,.42);
@@ -106,9 +107,9 @@
   color:#1e3465;
   min-width:0;
 }
-#stage-select-modal.zss-root .zss-card-no b {font:inherit; font-size:27px}
-#stage-select-modal.zss-root .zss-card-no span {font-size:11px;color:#b68b47}
-#stage-select-modal.zss-root .zss-card-body {
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card-no b {font:inherit; font-size:27px}
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card-no span {font-size:11px;color:#b68b47}
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card-body {
   min-width:0;
   display:flex;
   flex-direction:column;
@@ -116,8 +117,8 @@
   gap:2px;
   padding:9px 5px 8px 9px;
 }
-#stage-select-modal.zss-root .zss-card-name-row {display:flex;align-items:center;gap:6px;min-width:0;flex-wrap:nowrap}
-#stage-select-modal.zss-root .zss-card-name {flex:0 0 auto;white-space:nowrap;font:700 16px/1.2 "Noto Serif JP",serif;color:#1c3267}
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card-name-row {display:flex;align-items:center;gap:6px;min-width:0;flex-wrap:nowrap}
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card-name {flex:0 0 auto;white-space:nowrap;font:700 16px/1.2 "Noto Serif JP",serif;color:#1c3267}
 #stage-select-modal.zss-root .zss-clear-badge {
   flex:0 0 auto;
   padding:3px 5px 4px;
@@ -128,7 +129,7 @@
   letter-spacing:.03em;
   white-space:nowrap;
 }
-#stage-select-modal.zss-root .zss-mission {
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-mission {
   font:500 11.2px/1.3 "Noto Serif JP",serif;
   color:#2b3c62;
   min-width:0;
@@ -139,10 +140,10 @@
   line-clamp:2;
   overflow-wrap:anywhere;
 }
-#stage-select-modal.zss-root .zss-card-row {
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card-row {
   display:flex;align-items:center;gap:6px;min-width:0;
 }
-#stage-select-modal.zss-root .zss-card-label {
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card-label {
   flex:none;
   display:inline-flex;align-items:center;justify-content:center;
   padding:3px 5px;
@@ -153,12 +154,12 @@
   white-space:nowrap;
   font:600 10px/1.1 "Cinzel","Noto Serif JP",serif;
 }
-#stage-select-modal.zss-root .zss-card-row-reward {
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card-row-reward {
   align-items:center;
   border-top:1px dotted rgba(190,154,100,.36);
   padding-top:3px;
 }
-#stage-select-modal.zss-root .zss-card-row-reward .zss-card-label {
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card-row-reward .zss-card-label {
   font-family:"Noto Serif JP",serif;
   font-size:8.2px;
   white-space:normal;
@@ -170,14 +171,14 @@
   padding:0;
   color:#8c6330;
 }
-#stage-select-modal.zss-root .zss-gimmicks {display:flex;align-items:center;gap:3px;min-width:0;overflow:hidden;white-space:nowrap}
-#stage-select-modal.zss-root .zss-gimmick-chip {display:inline-flex;align-items:center;gap:2px;font:600 10px/1.1 "Noto Serif JP",serif;color:#524a37;white-space:nowrap}
-#stage-select-modal.zss-root .zss-gimmick-chip b {font-weight:600}
-#stage-select-modal.zss-root .zss-gimmick-chip small {font-size:9px}
-#stage-select-modal.zss-root .zss-gimmick-elements {display:inline-flex;align-items:center;gap:2px}
-#stage-select-modal.zss-root .zss-gimmick-elements img {width:16px;height:16px;object-fit:contain;flex:none}
-#stage-select-modal.zss-root .zss-rewards {display:flex;align-items:center;min-width:0;gap:4px;flex-wrap:nowrap}
-#stage-select-modal.zss-root .zss-reward-chip {
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-gimmicks {display:flex;align-items:center;gap:3px;min-width:0;overflow:hidden;white-space:nowrap}
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-gimmick-chip {display:inline-flex;align-items:center;gap:2px;font:600 10px/1.1 "Noto Serif JP",serif;color:#524a37;white-space:nowrap}
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-gimmick-chip b {font-weight:600}
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-gimmick-chip small {font-size:9px}
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-gimmick-elements {display:inline-flex;align-items:center;gap:2px}
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-gimmick-elements img {width:16px;height:16px;object-fit:contain;flex:none}
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-rewards {display:flex;align-items:center;min-width:0;gap:4px;flex-wrap:nowrap}
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-reward-chip {
   flex:0 1 auto;
   width:44px;
   min-width:0;
@@ -191,11 +192,11 @@
   border-radius:2px;
   padding:1px;
 }
-#stage-select-modal.zss-root .zss-reward-icon {display:flex;align-items:center;justify-content:center;height:22px;width:100%}
-#stage-select-modal.zss-root .zss-reward-icon img {width:21px;height:21px;object-fit:contain}
-#stage-select-modal.zss-root .zss-reward-count {font:600 9px/1 "Noto Serif JP",serif;color:#76512c;white-space:nowrap}
-#stage-select-modal.zss-root .zss-reward-note {font:500 8px/1.2 "Noto Serif JP",serif;color:#76512c;max-height:none;overflow:visible}
-#stage-select-modal.zss-root .zss-record {
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-reward-icon {display:flex;align-items:center;justify-content:center;height:22px;width:100%}
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-reward-icon img {width:21px;height:21px;object-fit:contain}
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-reward-count {font:600 9px/1 "Noto Serif JP",serif;color:#76512c;white-space:nowrap}
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-reward-note {font:500 8px/1.2 "Noto Serif JP",serif;color:#76512c;max-height:none;overflow:visible}
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-record {
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -208,42 +209,42 @@
   color:#8c6032;
   text-align:center;
 }
-#stage-select-modal.zss-root .zss-record-rank,
-#stage-select-modal.zss-root .zss-record-score {display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;width:100%}
-#stage-select-modal.zss-root .zss-record-rank {padding-bottom:7px;border-bottom:1px solid rgba(185,144,77,.4)}
-#stage-select-modal.zss-root .zss-record span {font:600 9px/1 "Cinzel",serif;letter-spacing:.08em;color:#81582d}
-#stage-select-modal.zss-root .zss-record-rank b {font:700 28px/1 "Cinzel",serif;color:#ac771b}
-#stage-select-modal.zss-root .zss-record-rank.rank-none b {color:#b0a18c}
-#stage-select-modal.zss-root .zss-record-score b {font:600 13px/1 "Cinzel",serif;color:#203464;letter-spacing:.01em}
-#stage-select-modal.zss-root .zss-arrow,
-#stage-select-modal.zss-root .zss-lock {display:flex;align-items:center;justify-content:center;color:#9e6c29;font:500 28px/1 Georgia,serif}
-#stage-select-modal.zss-root .zss-lock {font-size:11px}
-#stage-select-modal.zss-root .zss-card:active:not(.locked) {transform:translateY(1px);filter:brightness(.98)}
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-record-rank,
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-record-score {display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;width:100%}
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-record-rank {padding-bottom:7px;border-bottom:1px solid rgba(185,144,77,.4)}
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-record span {font:600 9px/1 "Cinzel",serif;letter-spacing:.08em;color:#81582d}
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-record-rank b {font:700 28px/1 "Cinzel",serif;color:#ac771b}
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-record-rank.rank-none b {color:#b0a18c}
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-record-score b {font:600 13px/1 "Cinzel",serif;color:#203464;letter-spacing:.01em}
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-arrow,
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-lock {display:flex;align-items:center;justify-content:center;color:#9e6c29;font:500 28px/1 Georgia,serif}
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-lock {font-size:11px}
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card:active:not(.locked) {transform:translateY(1px);filter:brightness(.98)}
 #stage-select-modal.zss-root .zss-preparing {padding:40px 12px;text-align:center;color:#80643f}
 #stage-select-modal.zss-root .zss-preparing-en {font-size:12px;letter-spacing:.25em}
 #stage-select-modal.zss-root .zss-preparing-main {font-size:15px;margin-top:8px}
 #stage-select-modal.zss-root .zss-preparing-sub {font-size:10px;margin-top:6px}
 @media(max-width:359px){
   #stage-select-modal.zss-root .zss-shell {padding-inline:5px}
-  #stage-select-modal.zss-root .zss-card {grid-template-columns:40px minmax(0,1fr) 57px 10px}
-  #stage-select-modal.zss-root .zss-card-body {padding:7px 3px 6px 6px}
-  #stage-select-modal.zss-root .zss-card-no b {font-size:24px}
-  #stage-select-modal.zss-root .zss-card-name {font-size:14px}
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card {grid-template-columns:40px minmax(0,1fr) 57px 10px}
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card-body {padding:7px 3px 6px 6px}
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card-no b {font-size:24px}
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card-name {font-size:14px}
   #stage-select-modal.zss-root .zss-clear-badge {font-size:8px;padding:2px 3px}
-  #stage-select-modal.zss-root .zss-mission {font-size:10px}
-  #stage-select-modal.zss-root .zss-card-label {font-size:8px}
-  #stage-select-modal.zss-root .zss-card-row-reward .zss-card-label {flex-basis:48px;width:48px;font-size:7px}
-  #stage-select-modal.zss-root .zss-reward-chip {width:34px}
-  #stage-select-modal.zss-root .zss-record-score b {font-size:11px}
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-mission {font-size:10px}
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card-label {font-size:8px}
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card-row-reward .zss-card-label {flex-basis:48px;width:48px;font-size:7px}
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-reward-chip {width:34px}
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-record-score b {font-size:11px}
 }
 @media(min-height:810px){
-  #stage-select-modal.zss-root .zss-card{height:clamp(126px,16.4vh,152px)}
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card{height:clamp(126px,16.4vh,152px)}
   #stage-select-modal.zss-root .zss-list{gap:11px}
-  #stage-select-modal.zss-root .zss-card-body{padding:12px 8px 10px}
-  #stage-select-modal.zss-root .zss-mission{font-size:12px}
-  #stage-select-modal.zss-root .zss-card-name{font-size:18px}
-  #stage-select-modal.zss-root .zss-reward-chip{height:42px}
-  #stage-select-modal.zss-root .zss-reward-icon img{width:25px;height:25px}
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card-body{padding:12px 8px 10px}
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-mission{font-size:12px}
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card-name{font-size:18px}
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-reward-chip{height:42px}
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-reward-icon img{width:25px;height:25px}
 }
 
 /* Compact-height devices: fit all four CH stages between shared HUD and bottom nav. */
@@ -251,58 +252,58 @@
   #stage-select-modal.zss-root .zss-shell {padding-top:4px;padding-bottom:5px}
   #stage-select-modal.zss-root .zss-page-head {min-height:70px;padding-top:2px;padding-bottom:5px}
   #stage-select-modal.zss-root .zss-list {gap:6px}
-  #stage-select-modal.zss-root .zss-card {
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card {
     height:clamp(96px, calc((100dvh - var(--header-h,82px) - var(--bottom-nav-h,76px) - 116px)/4), 110px);
   }
-  #stage-select-modal.zss-root .zss-card-body {padding-top:7px;padding-bottom:6px}
-  #stage-select-modal.zss-root .zss-reward-chip{height:31px}
-  #stage-select-modal.zss-root .zss-reward-icon{height:19px}
-  #stage-select-modal.zss-root .zss-reward-icon img{width:19px;height:19px}
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card-body {padding-top:7px;padding-bottom:6px}
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-reward-chip{height:31px}
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-reward-icon{height:19px}
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-reward-icon img{width:19px;height:19px}
 }
 
 /* Reward notes (e.g. chapter-clear memory fragments) must remain readable. */
-#stage-select-modal.zss-root .zss-card:has(.zss-reward-note){
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card:has(.zss-reward-note){
   height:auto;
   min-height:clamp(110px,17vh,150px);
 }
 @media (min-height:630px) and (max-height:760px){
-  #stage-select-modal.zss-root .zss-card:has(.zss-reward-note){min-height:104px}
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card:has(.zss-reward-note){min-height:104px}
 }
 
 /* Densify only the chapter-clear reward card, preserving full notes. */
 @media(max-height:760px){
-  #stage-select-modal.zss-root .zss-card:has(.zss-reward-note) .zss-card-body{padding-top:4px;padding-bottom:4px;gap:0}
-  #stage-select-modal.zss-root .zss-card:has(.zss-reward-note) .zss-card-name{font-size:14px}
-  #stage-select-modal.zss-root .zss-card:has(.zss-reward-note) .zss-mission{font-size:10.2px;line-height:1.24}
-  #stage-select-modal.zss-root .zss-card:has(.zss-reward-note) .zss-reward-chip{height:29px}
-  #stage-select-modal.zss-root .zss-card:has(.zss-reward-note) .zss-reward-icon{height:18px}
-  #stage-select-modal.zss-root .zss-card:has(.zss-reward-note) .zss-reward-icon img{width:18px;height:18px}
-  #stage-select-modal.zss-root .zss-card:has(.zss-reward-note) .zss-reward-note{font-size:7.5px;line-height:1.15}
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card:has(.zss-reward-note) .zss-card-body{padding-top:4px;padding-bottom:4px;gap:0}
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card:has(.zss-reward-note) .zss-card-name{font-size:14px}
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card:has(.zss-reward-note) .zss-mission{font-size:10.2px;line-height:1.24}
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card:has(.zss-reward-note) .zss-reward-chip{height:29px}
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card:has(.zss-reward-note) .zss-reward-icon{height:18px}
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card:has(.zss-reward-note) .zss-reward-icon img{width:18px;height:18px}
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card:has(.zss-reward-note) .zss-reward-note{font-size:7.5px;line-height:1.15}
 }
 
 
 /* build1365: stage 4's compact reward presentation shared by all story stages. */
-#stage-select-modal.zss-root .zss-card{
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card{
   grid-template-rows:minmax(0,1fr);
 }
-#stage-select-modal.zss-root .zss-card-body{
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card-body{
   justify-content:flex-start;
   min-height:0;
   gap:2px;
   padding-top:5px;
   padding-bottom:4px;
 }
-#stage-select-modal.zss-root .zss-card-row{
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card-row{
   flex:0 0 auto;
   min-height:0;
 }
-#stage-select-modal.zss-root .zss-mission{
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-mission{
   flex:0 0 auto;
   font-size:10.5px;
   line-height:1.2;
 }
 /* GIMMICK: plain text label; no rectangular frame. */
-#stage-select-modal.zss-root .zss-card-row-gimmick > .zss-card-label{
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card-row-gimmick > .zss-card-label{
   border:0;
   border-radius:0;
   background:none;
@@ -311,20 +312,20 @@
   min-height:0;
   color:#916638;
 }
-#stage-select-modal.zss-root .zss-card-row-reward{
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card-row-reward{
   flex:0 0 auto;
   min-height:0;
   margin:0;
   padding-top:2px;
 }
-#stage-select-modal.zss-root .zss-card-row-reward > .zss-card-label{
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card-row-reward > .zss-card-label{
   font-size:9px;
   flex-basis:49px;
   width:49px;
   line-height:1.15;
   overflow-wrap:normal;
 }
-#stage-select-modal.zss-root .zss-rewards{
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-rewards{
   flex:0 0 auto;
   align-items:center;
   gap:4px;
@@ -332,7 +333,7 @@
   overflow:visible;
 }
 /* Explicit 2-row grid keeps quantities INSIDE each reward tile. */
-#stage-select-modal.zss-root .zss-reward-chip{
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-reward-chip{
   flex:0 0 39px;
   width:39px;
   min-width:39px;
@@ -347,7 +348,7 @@
   padding:1px 1px 2px;
   overflow:hidden;
 }
-#stage-select-modal.zss-root .zss-reward-icon{
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-reward-icon{
   display:flex;
   width:100%;
   min-width:0;
@@ -356,13 +357,13 @@
   align-items:center;
   justify-content:center;
 }
-#stage-select-modal.zss-root .zss-reward-icon img{
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-reward-icon img{
   width:20px;
   height:20px;
   max-width:100%;
   object-fit:contain;
 }
-#stage-select-modal.zss-root .zss-reward-count{
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-reward-count{
   display:block;
   width:100%;
   height:9px;
@@ -372,41 +373,225 @@
   white-space:nowrap;
   align-self:end;
 }
-#stage-select-modal.zss-root .zss-reward-note{
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-reward-note{
   flex:0 0 auto;
   line-height:1.1;
 }
 /* Override previous special stage-4 shrink styles with same chip layout. */
 @media(max-height:760px){
-  #stage-select-modal.zss-root .zss-card:has(.zss-reward-note) .zss-card-body{
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card:has(.zss-reward-note) .zss-card-body{
     justify-content:flex-start;
     gap:2px;
   }
-  #stage-select-modal.zss-root .zss-card:has(.zss-reward-note) .zss-reward-chip{
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card:has(.zss-reward-note) .zss-reward-chip{
     height:34px;
   }
-  #stage-select-modal.zss-root .zss-card:has(.zss-reward-note) .zss-reward-icon{
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card:has(.zss-reward-note) .zss-reward-icon{
     height:100%;
   }
-  #stage-select-modal.zss-root .zss-card:has(.zss-reward-note) .zss-reward-icon img{
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card:has(.zss-reward-note) .zss-reward-icon img{
     width:20px;
     height:20px;
   }
 }
 @media(max-width:359px){
-  #stage-select-modal.zss-root .zss-card-row-reward > .zss-card-label{
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-card-row-reward > .zss-card-label{
     flex-basis:43px;
     width:43px;
     font-size:8px;
   }
-  #stage-select-modal.zss-root .zss-reward-chip{
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-reward-chip{
     flex-basis:33px;
     width:33px;
     min-width:33px;
   }
-  #stage-select-modal.zss-root .zss-reward-icon img{
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-reward-icon img{
     width:18px;
     height:18px;
   }
-  #stage-select-modal.zss-root .zss-rewards{gap:3px}
+  :is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen) .zss-rewards{gap:3px}
+}
+
+/* =============================================================
+   build1384 — STORY CHAPTER: foreground swap, preserve backdrop
+   While the stage selector is open, keep the Quest screen's own
+   background image and global HUD/nav; hide only the old page UI.
+   visibility (instead of display:none) keeps the layout anchors.
+   ============================================================= */
+html body:not(.ui-immersive) #screen-ninmu.junkou-rebuilt.story-stage-select-open > .junkou-page-header,
+html body:not(.ui-immersive) #screen-ninmu.junkou-rebuilt.story-stage-select-open > .junkou-workspace {
+  visibility:hidden !important;
+  pointer-events:none !important;
+}
+/* No translucent wash or blur between the shared Quest artwork and
+   CHAPTER cards — the original bg_junkou.webp remains unobstructed. */
+html body #stage-select-modal.zss-root {
+  background:transparent !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+
+/* =============================================================
+   build1389 — STORY / DAILY preview rewards: icons only.
+   Quantity text remains in source data, but is not displayed in
+   the preview; actual stage reward calculation is unchanged.
+   Scoped to the “主な報酬” row only.
+   ============================================================= */
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen)
+.zss-card-row-reward .zss-reward-count {
+  display:none !important;
+}
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen)
+.zss-card-row-reward .zss-reward-chip {
+  grid-template-rows:minmax(0,1fr) !important;
+  align-content:center !important;
+  padding:1px !important;
+}
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen)
+.zss-card-row-reward .zss-reward-icon {
+  grid-row:1 !important;
+  height:100% !important;
+  min-height:0 !important;
+  align-self:center !important;
+  justify-self:center !important;
+}
+:is(#stage-select-modal.zss-root, #shooting-daily-stage-select.zds-screen, #shooting-faceless-stage-select.zfs-screen)
+.zss-card-row-reward .zss-reward-icon img {
+  width:24px !important;
+  height:24px !important;
+  max-width:100% !important;
+  max-height:100% !important;
+  object-fit:contain !important;
+}
+@media (max-height:620px) {
+  #shooting-daily-stage-select.zds-screen .zss-card-row-reward .zss-reward-icon img {
+    width:19px !important;
+    height:19px !important;
+  }
+}
+
+/* =============================================================
+   build1390 — STORY CHAPTER: four stages, full-height, no scrolling.
+   Only the CHAPTER view is affected; DAILY shares card styling but
+   keeps its independent 2-section layout.
+   ============================================================= */
+#stage-select-modal.zss-root .zss-shell {
+  height:100% !important;
+  min-height:0 !important;
+  padding:4px 9px 5px;
+  overflow:hidden;
+}
+#stage-select-modal.zss-root .zss-page-head {
+  flex:0 0 clamp(76px, 12.8dvh, 88px);
+  min-height:0;
+  padding:3px 0 6px;
+}
+#stage-select-modal.zss-root .zss-scroll {
+  display:flex;
+  flex:1 1 0;
+  min-height:0;
+  padding:1px 0 1px;
+  overflow-x:hidden !important;
+  overflow-y:hidden !important;
+  overscroll-behavior:none;
+  scrollbar-width:none;
+}
+#stage-select-modal.zss-root .zss-list {
+  flex:1 1 0;
+  min-height:0;
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  grid-template-rows:repeat(4,minmax(0,1fr));
+  align-content:stretch;
+  gap:clamp(3px,.9dvh,8px);
+  margin:0;
+  padding:0;
+  overflow:hidden;
+}
+/* Four fixed rows, not the old viewport-based card heights. */
+#stage-select-modal.zss-root .zss-list > .zss-card,
+#stage-select-modal.zss-root .zss-list > .zss-card:has(.zss-reward-note) {
+  height:100% !important;
+  min-height:0 !important;
+  max-height:none !important;
+  margin:0 !important;
+  flex:none !important;
+  align-self:stretch;
+}
+/* Keep all display rows inside their allocated cell; never hide the
+   4th card by growing it beyond its grid row. */
+#stage-select-modal.zss-root .zss-card-body {
+  min-height:0;
+  padding:clamp(3px,.55dvh,6px) 5px 3px 9px;
+  gap:1px;
+}
+#stage-select-modal.zss-root .zss-card:has(.zss-reward-note) .zss-card-body {
+  padding-top:3px;
+  padding-bottom:2px;
+  gap:0;
+}
+#stage-select-modal.zss-root .zss-reward-note {
+  font-size:clamp(6.5px,.94dvh,8px);
+  line-height:1.12;
+}
+#stage-select-modal.zss-root .zss-card-row-reward {padding-top:1px}
+#stage-select-modal.zss-root .zss-record {margin:5px 0;gap:5px}
+#stage-select-modal.zss-root .zss-record-rank {padding-bottom:4px}
+
+@media (max-height:760px) {
+  #stage-select-modal.zss-root .zss-shell {padding-top:2px;padding-bottom:3px}
+  #stage-select-modal.zss-root .zss-page-head {
+    flex-basis:clamp(76px,12.8dvh,88px);
+    min-height:0;
+    padding:2px 0 3px;
+  }
+  #stage-select-modal.zss-root .zss-list {gap:clamp(3px,.8dvh,6px)}
+  #stage-select-modal.zss-root .zss-card-body {padding:3px 4px 2px 7px;gap:1px}
+  #stage-select-modal.zss-root .zss-card-name {font-size:15px;line-height:1.1}
+  #stage-select-modal.zss-root .zss-mission {font-size:9.5px;line-height:1.16}
+  #stage-select-modal.zss-root .zss-gimmick-chip {font-size:9px}
+  #stage-select-modal.zss-root .zss-reward-chip,
+  #stage-select-modal.zss-root .zss-card:has(.zss-reward-note) .zss-reward-chip {height:29px}
+  #stage-select-modal.zss-root .zss-reward-icon img,
+  #stage-select-modal.zss-root .zss-card:has(.zss-reward-note) .zss-reward-icon img {width:20px;height:20px}
+  #stage-select-modal.zss-root .zss-record {margin:4px 0;gap:4px}
+  #stage-select-modal.zss-root .zss-record-rank {padding-bottom:3px}
+  #stage-select-modal.zss-root .zss-record-rank b {font-size:24px}
+  #stage-select-modal.zss-root .zss-record-score b {font-size:11px}
+  #stage-select-modal.zss-root .zss-card-no {gap:6px;margin:4px 0}
+}
+@media (max-height:620px) {
+  #stage-select-modal.zss-root .zss-shell {padding-top:1px;padding-bottom:2px}
+  #stage-select-modal.zss-root .zss-page-head {flex-basis:66px; padding:0 0 2px}
+  #stage-select-modal.zss-root .zss-title {font-size:clamp(18px,6.3vw,24px);line-height:1.1;margin-top:0}
+  #stage-select-modal.zss-root .zss-title-rule {margin-top:4px}
+  #stage-select-modal.zss-root .zss-back {font-size:11px;padding:2px 2px}
+  #stage-select-modal.zss-root .zss-list {gap:3px}
+  #stage-select-modal.zss-root .zss-card {grid-template-columns:38px minmax(0,1fr) 54px 10px}
+  #stage-select-modal.zss-root .zss-card-body,
+  #stage-select-modal.zss-root .zss-card:has(.zss-reward-note) .zss-card-body {padding:2px 2px 1px 5px;gap:0}
+  #stage-select-modal.zss-root .zss-card-name {font-size:12.5px}
+  #stage-select-modal.zss-root .zss-clear-badge {font-size:7px;padding:2px 3px}
+  #stage-select-modal.zss-root .zss-mission,
+  #stage-select-modal.zss-root .zss-card:has(.zss-reward-note) .zss-mission {font-size:8.3px;line-height:1.12}
+  #stage-select-modal.zss-root .zss-card-label {font-size:7.5px}
+  #stage-select-modal.zss-root .zss-card-row {gap:3px}
+  #stage-select-modal.zss-root .zss-card-row-reward > .zss-card-label {flex-basis:39px;width:39px;font-size:7px}
+  #stage-select-modal.zss-root .zss-gimmick-chip {font-size:8px}
+  #stage-select-modal.zss-root .zss-gimmick-elements img {width:12px;height:12px}
+  #stage-select-modal.zss-root .zss-rewards {gap:3px}
+  #stage-select-modal.zss-root .zss-reward-chip,
+  #stage-select-modal.zss-root .zss-card:has(.zss-reward-note) .zss-reward-chip {flex-basis:28px;width:28px;min-width:28px;height:24px}
+  #stage-select-modal.zss-root .zss-reward-icon img,
+  #stage-select-modal.zss-root .zss-card:has(.zss-reward-note) .zss-reward-icon img {width:17px !important;height:17px !important}
+  #stage-select-modal.zss-root .zss-reward-note {font-size:6.5px;line-height:1.08}
+  #stage-select-modal.zss-root .zss-card-no {gap:3px;margin:3px 0}
+  #stage-select-modal.zss-root .zss-card-no b {font-size:22px}
+  #stage-select-modal.zss-root .zss-card-no span {font-size:9px}
+  #stage-select-modal.zss-root .zss-record {margin:3px 0;gap:2px;padding:0 2px}
+  #stage-select-modal.zss-root .zss-record-rank {padding-bottom:2px}
+  #stage-select-modal.zss-root .zss-record span {font-size:7px}
+  #stage-select-modal.zss-root .zss-record-rank b {font-size:20px}
+  #stage-select-modal.zss-root .zss-record-score b {font-size:9px}
+  #stage-select-modal.zss-root .zss-arrow {font-size:20px}
 }

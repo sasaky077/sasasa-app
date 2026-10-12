@@ -1,0 +1,151 @@
+/* build1391 — FACELESS STAGE SELECT: shared CHAPTER/DAILY card component.
+   All .zss-card skin declarations come from story_stage_select.css; this file
+   only defines the full-screen page layout and its two-card arrangement.
+   NO legacy .shooting-faceless-stage-select classes are used. */
+#shooting-faceless-stage-select.zfs-screen {
+  position:fixed !important;
+  inset:0 !important;
+  z-index:210 !important;
+  box-sizing:border-box !important;
+  display:block !important;
+  padding:0 !important;
+  margin:0 !important;
+  overflow:hidden !important;
+  isolation:isolate;
+  background:linear-gradient(180deg,rgba(255,255,255,.40),rgba(255,253,249,.52)),
+    url('../images/bg_dairy.webp') center center/cover no-repeat !important;
+  color:#293c6a;
+  font-family:'Noto Serif JP','Yu Mincho',serif;
+  opacity:0;
+  transition:opacity 200ms ease;
+}
+#shooting-faceless-stage-select.zfs-screen.show {opacity:1}
+#shooting-faceless-stage-select.zfs-screen *,
+#shooting-faceless-stage-select.zfs-screen *::before,
+#shooting-faceless-stage-select.zfs-screen *::after {box-sizing:border-box}
+#shooting-faceless-stage-select .zfs-surface {
+  position:absolute;
+  top:var(--header-h,80px);
+  bottom:var(--bottom-nav-h,76px);
+  left:50%;
+  transform:translateX(-50%);
+  width:100%;max-width:430px;min-height:0;
+  display:flex;flex-direction:column;
+}
+#shooting-faceless-stage-select .zfs-pagehead {
+  position:relative;
+  flex:0 0 74px;
+  min-height:0;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:1px 10px 0;
+}
+#shooting-faceless-stage-select .zfs-back {
+  position:absolute !important;
+  top:8px !important;
+  left:12px !important;
+  box-sizing:border-box !important;
+  display:block !important;
+  width:82px !important;
+  min-width:82px !important;
+  height:35px !important;
+  min-height:35px !important;
+  padding:0 !important;
+  margin:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  appearance:none !important;
+  background:transparent url('../images/button_back.webp') center/100% 100% no-repeat !important;
+  font-size:0 !important;
+  color:transparent !important;
+  -webkit-text-fill-color:transparent !important;
+  text-indent:-9999px !important;
+  cursor:pointer;
+  z-index:2;
+}
+#shooting-faceless-stage-select .zfs-heading {
+  display:block;
+  max-width:100%;
+  margin:8px 0 0 0;
+  padding:0;
+  font:600 clamp(21px,5.9vw,27px)/1.2 'Noto Serif JP',serif;
+  letter-spacing:.1em;
+  color:#683d1b;
+  text-align:center;
+  text-shadow:0 1px 0 #fffefb;
+}
+#shooting-faceless-stage-select .zfs-ornament {
+  display:flex;align-items:center;justify-content:center;
+  width:90%;height:10px;margin-top:6px;
+  color:#bd944f;font-size:11px;line-height:1;
+}
+#shooting-faceless-stage-select .zfs-ornament::before,
+#shooting-faceless-stage-select .zfs-ornament::after {
+  content:'';height:1px;flex:1;
+  background:linear-gradient(90deg,transparent,rgba(177,131,67,.65));
+}
+#shooting-faceless-stage-select .zfs-ornament::after {transform:scaleX(-1)}
+#shooting-faceless-stage-select .zfs-ornament span {margin:0 11px}
+#shooting-faceless-stage-select .zfs-scroll {
+  flex:1 1 auto;min-height:0;
+  overflow:hidden;
+  padding:2px 9px 8px;
+}
+#shooting-faceless-stage-select .zfs-list {
+  display:flex;flex-direction:column;gap:8px;
+  min-height:0;width:100%;margin:0;padding:0;
+}
+#shooting-faceless-stage-select.zfs-screen .zfs-list > .zss-card {
+  width:100%;height:clamp(102px,17vh,138px);max-height:none;min-height:0;
+  flex:0 0 auto;
+  text-align:left;
+}
+#shooting-faceless-stage-select.zfs-screen .zss-card-row-reward .zss-reward-count {display:none !important}
+#shooting-faceless-stage-select.zfs-screen .zss-card-row-reward .zss-reward-chip {
+  grid-template-rows:minmax(0,1fr);
+  align-content:center;
+  padding:1px;
+}
+#shooting-faceless-stage-select.zfs-screen .zss-card-row-reward .zss-reward-icon {
+  height:100%;min-height:0;align-self:center;justify-self:center;
+}
+#shooting-faceless-stage-select.zfs-screen .zss-card-row-reward .zss-reward-icon img {
+  width:24px;height:24px;max-width:100%;max-height:100%;object-fit:contain;
+}
+#shooting-faceless-stage-select .zfs-attributes {
+  min-height:0;overflow:hidden;
+  font-size:9px;line-height:1.12;
+  color:#75623d;
+}
+#shooting-faceless-stage-select .zfs-record .zss-record-rank b {font-size:25px}
+#shooting-faceless-stage-select .zfs-record .zss-record-score b {font-size:11px}
+#shooting-faceless-stage-select .zfs-record .zss-record span {font-size:8px}
+#shooting-faceless-stage-select .zfs-card:focus-visible {outline:2px solid #b59867;outline-offset:-4px}
+@media(max-width:359px){
+  #shooting-faceless-stage-select .zfs-back {width:75px !important;min-width:75px !important;height:32px !important;min-height:32px !important}
+  #shooting-faceless-stage-select .zfs-heading {font-size:20px}
+  #shooting-faceless-stage-select.zfs-screen .zfs-list > .zss-card {grid-template-columns:40px minmax(0,1fr) 57px 10px}
+  #shooting-faceless-stage-select.zfs-screen .zss-card-body {padding-left:6px;padding-right:3px}
+  #shooting-faceless-stage-select.zfs-screen .zss-card-row-reward > .zss-card-label {width:43px;flex-basis:43px;font-size:8px}
+  #shooting-faceless-stage-select.zfs-screen .zss-card-row-reward .zss-reward-chip {flex-basis:33px;width:33px;min-width:33px}
+}
+@media(max-height:760px){
+  #shooting-faceless-stage-select .zfs-pagehead {flex-basis:67px}
+  #shooting-faceless-stage-select .zfs-heading {margin-top:6px}
+  #shooting-faceless-stage-select .zfs-ornament {margin-top:3px}
+  #shooting-faceless-stage-select.zfs-screen .zfs-list > .zss-card {height:clamp(96px,16.3dvh,116px)}
+  #shooting-faceless-stage-select.zfs-screen .zss-card-body {padding:5px 5px 4px 9px;gap:2px}
+}
+@media(max-height:620px){
+  #shooting-faceless-stage-select .zfs-pagehead {flex-basis:54px}
+  #shooting-faceless-stage-select .zfs-back {top:5px !important}
+  #shooting-faceless-stage-select .zfs-heading {font-size:20px;margin-top:3px}
+  #shooting-faceless-stage-select .zfs-ornament {margin-top:1px;height:7px}
+  #shooting-faceless-stage-select.zfs-screen .zfs-list > .zss-card {height:95px;grid-template-columns:38px minmax(0,1fr) 54px 10px}
+  #shooting-faceless-stage-select.zfs-screen .zss-card-body {padding:3px 4px 3px 6px;gap:1px}
+  #shooting-faceless-stage-select.zfs-screen .zss-card-name {font-size:13px}
+  #shooting-faceless-stage-select.zfs-screen .zss-mission {font-size:9px}
+  #shooting-faceless-stage-select.zfs-screen .zss-reward-chip {height:27px}
+  #shooting-faceless-stage-select.zfs-screen .zss-card-row-reward .zss-reward-icon img {width:18px;height:18px}
+}

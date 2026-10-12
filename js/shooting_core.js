@@ -18929,8 +18929,9 @@
               ];
           materialSlot.classList.add('is-random-list','is-exp-daily');
           materialSlot.innerHTML = expItems.map(item => `
-            <span class="shooting-daily-stage-random-item" title="${item.name}">
-              <img src="${item.img}" alt="${item.name}">
+            <span class="zss-reward-chip shooting-daily-stage-random-item" title="${item.name}">
+              <span class="zss-reward-icon"><img src="${item.img}" alt="${item.name}"></span>
+              <span class="zss-reward-count"></span>
             </span>
           `).join('');
           materialSlot.setAttribute('aria-label', level === 'advanced'
@@ -18941,8 +18942,9 @@
           materialSlot.classList.add('is-random-list');
           materialSlot.classList.remove('is-exp-daily');
           materialSlot.innerHTML = info.rewards.map(item => `
-            <span class="shooting-daily-stage-random-item" title="${item.name || ''}">
-              <img src="${item.img || ''}" alt="${item.name || ''}">
+            <span class="zss-reward-chip shooting-daily-stage-random-item" title="${item.name || ''}">
+              <span class="zss-reward-icon"><img src="${item.img || ''}" alt="${item.name || ''}"></span>
+              <span class="zss-reward-count"></span>
             </span>
           `).join('');
           materialSlot.setAttribute(
@@ -18953,14 +18955,16 @@
           const amount = level === 'advanced' ? 2 : 1;
           materialSlot.classList.remove('is-random-list','is-exp-daily');
           materialSlot.innerHTML = `
-            <img src="${reward.img || 'images/item_kyoumeistone.webp'}" alt="${reward.name || 'デイリー報酬'}">
-            <b>×${amount}</b>
+            <span class="zss-reward-chip" title="${reward.name || 'デイリー報酬'}">
+              <span class="zss-reward-icon"><img src="${reward.img || 'images/item_kyoumeistone.webp'}" alt="${reward.name || 'デイリー報酬'}"></span>
+              <span class="zss-reward-count">×${amount}</span>
+            </span>
           `;
           materialSlot.setAttribute('aria-label', `${reward.name || 'デイリー報酬'} ${amount}個`);
         }
       }
 
-      if (remaining) remaining.textContent = `残り ${Math.max(0, Number(attempt.remaining || 0))} / ${Math.max(1, Number(attempt.max || 1))}`;
+      if (remaining) remaining.textContent = `${Math.max(0, Number(attempt.remaining || 0))} / ${Math.max(1, Number(attempt.max || 1))}`;
       const exhausted = Number(attempt.remaining || 0) <= 0;
       row.classList.toggle('is-exhausted', exhausted);
       row.setAttribute('aria-disabled', exhausted ? 'true' : 'false');
@@ -19153,31 +19157,43 @@
   }
 
 
-  // build1350: DAILYは旧巡行共通CSSから独立した画面。
-  // 戦闘・回数・報酬・GIMMICKの既存関数だけを再利用する。
+  // build1388: DAILYもCHAPTERと同一zss-card構造・同一CSSで描画する。
+  // DAILY固有の挑戦回数のみ、RANK/HIGH SCOREの代わりに右側へ表示。
   function buildDailyStageCard(indexNo, levelLabel, mission, kind, level, gimmicks, hasCoin) {
+    const missionText = String(mission || '').replace(/^クリア条件：?\s*/, '').trim() || '敵をすべて撃破';
     return `
-      <button type="button" class="zds-card" data-daily-kind="${kind}" data-daily-level="${level}"
-              onclick="openDailyStage('${level}','${kind}')">
-        <div class="zds-art" aria-hidden="true">
-          <img src="images/icon_dairy.webp" alt="" draggable="false" loading="eager">
-          <span class="zds-number">${indexNo}</span>
-        </div>
-        <div class="zds-card-content">
-          <div class="zds-card-titleline">
-            <strong>${levelLabel}</strong>
-            <span class="zds-count" data-daily-remaining>残り 1/1</span>
+      <div class="zss-card zss-story-shooting-card zds-card" role="button" tabindex="0"
+           data-daily-kind="${kind}" data-daily-level="${level}"
+           onclick="openDailyStage('${level}','${kind}')"
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDailyStage('${level}','${kind}')}">
+        <div class="zss-card-no" aria-hidden="true"><span>✧</span><b>${indexNo}</b><span>✧</span></div>
+        <div class="zss-card-body">
+          <div class="zss-card-name-row">
+            <span class="zss-card-name">${levelLabel}</span>
           </div>
-          <div class="zds-condition"><span class="zds-swords" aria-hidden="true">⚔</span>${mission}</div>
-          <div class="zds-gimmick">${gimmicks}</div>
-          <div class="zds-rewards">
-            <span class="zds-reward-caption">報酬</span>
-            ${hasCoin ? `<span class="zds-coin"><img src="images/icon_coin.webp" alt="コイン"><b>×10,000</b></span>` : ''}
-            <span class="zds-materials" data-daily-material-slot></span>
+          <div class="zss-mission">クリア条件：${missionText}</div>
+          <div class="zss-card-row zss-card-row-gimmick">
+            <span class="zss-card-label">GIMMICK</span>
+            <span class="zss-gimmicks">${gimmicks}</span>
+          </div>
+          <div class="zss-card-row zss-card-row-reward">
+            <span class="zss-card-label">主な報酬</span>
+            <span class="zss-rewards">
+              ${hasCoin ? `<span class="zss-reward-chip"><span class="zss-reward-icon"><img src="images/icon_coin.webp" alt="コイン"></span><span class="zss-reward-count">×10,000</span></span>` : ''}
+              <span class="zds-materials" data-daily-material-slot></span>
+            </span>
           </div>
         </div>
-        <span class="zds-chevron" aria-hidden="true">›</span>
-      </button>`;
+        <div class="zss-record zds-record" aria-label="挑戦回数">
+          <div class="zss-record-rank">
+            <span>挑戦回数</span><b class="zds-record-state">残り</b>
+          </div>
+          <div class="zss-record-score">
+            <span>DAILY</span><b data-daily-remaining>1 / 1</b>
+          </div>
+        </div>
+        <span class="zss-arrow" aria-hidden="true">›</span>
+      </div>`;
   }
 
   function showDailyStageSelect(options = {}) {
@@ -19255,65 +19271,86 @@
     window.openShootingEvent({ stageId: String(stageId || '') });
   }
 
+  // build1391: STORY / DAILY / FACELESS all use one canonical zss-card DOM/CSS.
+  // This selector intentionally DOES NOT use legacy shooting-faceless-stage-select
+  // or shooting-special-stage-select classes (old shooting_event.css overrides).
+  function buildFacelessGimmickHtml(stageId) {
+    const gimmicks = getStageGimmickInfo(stageId);
+    if (!gimmicks.length) return '<span class="zss-gimmick-chip is-none"><b>なし</b></span>';
+    return gimmicks.map(item => {
+      let extra = '';
+      if (item.id === 'elementBarrier' && Array.isArray(item.elements)) {
+        extra = `<span class="zss-gimmick-elements">${item.elements.map(element => {
+          const src = getCombatElementIcon(element);
+          return src ? `<img src="${src}" alt="${element}" draggable="false">` : '';
+        }).join('')}</span>`;
+      } else if (item.id === 'timeLimit' && item.seconds) {
+        extra = `<small>${item.seconds}秒</small>`;
+      }
+      return `<span class="zss-gimmick-chip gimmick-${item.id}"><b>${item.label}</b>${extra}</span>`;
+    }).join('');
+  }
+
+  function buildFacelessStageCard(stageId, number, title) {
+    const stage = getShootingStage(stageId);
+    const mission = stage?.mission?.text || 'フェイスレスを撃破';
+    const waveCount = stage?.faceless?.waveHp?.length || 2;
+    const attrs = buildStageSelectAttributePreview(stageId);
+    return `
+      <div class="zss-card zss-story-shooting-card zfs-card" role="button" tabindex="0"
+           onclick="openFacelessStage('${stageId}')"
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openFacelessStage('${stageId}');}">
+        <div class="zss-card-no" aria-hidden="true"><span>✧</span><b>${number}</b><span>✧</span></div>
+        <div class="zss-card-body">
+          <div class="zss-card-name-row"><span class="zss-card-name">${title}</span></div>
+          <div class="zss-mission">クリア条件：${mission}</div>
+          <div class="zss-card-row zss-card-row-gimmick">
+            <span class="zss-card-label">GIMMICK</span>
+            <span class="zss-gimmicks">${buildFacelessGimmickHtml(stageId)}</span>
+          </div>
+          ${attrs ? `<div class="zfs-attributes">${attrs}</div>` : ''}
+          <div class="zss-card-row zss-card-row-reward">
+            <span class="zss-card-label">主な報酬</span>
+            <span class="zss-rewards">
+              <span class="zss-reward-chip" title="プレイヤーEXP"><span class="zss-reward-icon"><img src="images/icon_exp.webp" alt="プレイヤーEXP"></span></span>
+              <span class="zss-reward-chip" title="コイン"><span class="zss-reward-icon"><img src="images/icon_coin.webp" alt="コイン"></span></span>
+            </span>
+          </div>
+        </div>
+        <div class="zss-record zfs-record" aria-label="全${waveCount}WAVE">
+          <div class="zss-record-rank"><span>TOTAL WAVE</span><b>${waveCount}</b></div>
+          <div class="zss-record-score"><span>SPECIAL</span><b>BOSS</b></div>
+        </div>
+        <span class="zss-arrow" aria-hidden="true">›</span>
+      </div>`;
+  }
+
   function showFacelessStageSelect(options = {}) {
     if (typeof window.requireChapter03ContentUnlock === 'function' && !window.requireChapter03ContentUnlock()) return false;
     closeFacelessStageSelect();
     const immediate = !!(options && options.immediate);
     const overlay = document.createElement('div');
     overlay.id = 'shooting-faceless-stage-select';
-    overlay.className = 'shooting-special-stage-select shooting-faceless-stage-select';
-    if (immediate) {
-      // 編成画面から戻る時は、下層の「特別巡行」が1フレームでも露出しないよう
-      // DOMへ載せる前から完全表示状態にしておく。
-      overlay.classList.add('show');
-      overlay.style.transition = 'none';
-    }
-    const facelessAdvancedAttributeHtml = buildStageSelectAttributePreview(SHOOTING_STAGE_ID.FACELESS_ADVANCED);
-    const facelessSuperAttributeHtml = buildStageSelectAttributePreview(SHOOTING_STAGE_ID.FACELESS_SUPER);
-    const facelessAdvancedGimmickHtml = buildStageGimmickPreview(SHOOTING_STAGE_ID.FACELESS_ADVANCED);
-    const facelessSuperGimmickHtml = buildStageGimmickPreview(SHOOTING_STAGE_ID.FACELESS_SUPER);
+    overlay.className = 'zfs-screen';
+    if (immediate) { overlay.classList.add('show'); overlay.style.transition = 'none'; }
     overlay.innerHTML = `
-      <div class="shooting-special-stage-page shooting-faceless-stage-page">
-        <div class="shooting-special-stage-header shooting-faceless-stage-header">
-          <button type="button" class="shooting-special-stage-back shooting-faceless-stage-back" onclick="closeFacelessStageSelect()" aria-label="戻る">＜戻る</button>
-          <div class="shooting-special-stage-title shooting-faceless-stage-title">無貌の天使</div>
+      <div class="zfs-surface">
+        <div class="zfs-pagehead">
+          <button type="button" class="zfs-back" onclick="closeFacelessStageSelect()" aria-label="戻る">〈 戻る</button>
+          <h2 class="zfs-heading">無貌の天使</h2>
+          <div class="zfs-ornament" aria-hidden="true"><span>✦</span></div>
         </div>
-
-        <div class="shooting-special-stage-list shooting-faceless-stage-list">
-          <button type="button" class="shooting-special-stage-row shooting-faceless-stage-row" onclick="openFacelessStage('${SHOOTING_STAGE_ID.FACELESS_ADVANCED}')">
-            <div class="shooting-special-stage-no shooting-faceless-stage-no">01</div>
-            <div class="shooting-special-stage-main shooting-faceless-stage-main">
-              <div class="shooting-special-stage-name-row shooting-faceless-stage-name-row">
-                <strong>上級</strong>
-              </div>
-              <div class="shooting-special-stage-condition shooting-faceless-stage-condition">クリア条件：フェイスレスを撃破</div>
-              ${facelessAdvancedAttributeHtml}
-              ${facelessAdvancedGimmickHtml}
-              <div class="shooting-special-stage-wave shooting-faceless-stage-wave">総WAVE2</div>
-            </div>
-          </button>
-
-          <button type="button" class="shooting-special-stage-row shooting-faceless-stage-row" onclick="openFacelessStage('${SHOOTING_STAGE_ID.FACELESS_SUPER}')">
-            <div class="shooting-special-stage-no shooting-faceless-stage-no">02</div>
-            <div class="shooting-special-stage-main shooting-faceless-stage-main">
-              <div class="shooting-special-stage-name-row shooting-faceless-stage-name-row">
-                <strong>最上級</strong>
-              </div>
-              <div class="shooting-special-stage-condition shooting-faceless-stage-condition">クリア条件：フェイスレスを撃破</div>
-              ${facelessSuperAttributeHtml}
-              ${facelessSuperGimmickHtml}
-              <div class="shooting-special-stage-wave shooting-faceless-stage-wave">総WAVE2</div>
-            </div>
-          </button>
+        <div class="zfs-scroll">
+          <div class="zfs-list" aria-label="無貌の天使・難易度選択">
+            ${buildFacelessStageCard(SHOOTING_STAGE_ID.FACELESS_ADVANCED, '01', '上級')}
+            ${buildFacelessStageCard(SHOOTING_STAGE_ID.FACELESS_SUPER, '02', '最上級')}
+          </div>
         </div>
       </div>`;
     document.body.appendChild(overlay);
-    if (!immediate) {
-      requestAnimationFrame(() => overlay.classList.add('show'));
-    } else {
-      // 次フレーム以降は通常のtransition定義へ戻す。
-      requestAnimationFrame(() => { if (overlay.isConnected) overlay.style.transition = ''; });
-    }
+    if (!immediate) requestAnimationFrame(() => overlay.classList.add('show'));
+    else requestAnimationFrame(() => { if (overlay.isConnected) overlay.style.transition = ''; });
+    return true;
   }
 
   window.closeFacelessStageSelect = closeFacelessStageSelect;

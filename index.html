@@ -418,14 +418,15 @@
 </style>
   <link rel="stylesheet" href="css/resonance_tower.css?v=1344-tower-label-colors">
   <link rel="stylesheet" href="css/shooting_event.css?v=1381-hao-wood-charge">
-  <link rel="stylesheet" href="css/daily_stage_select.css?v=1352-frameless-back">
+  <link rel="stylesheet" href="css/daily_stage_select.css?v=1388-shared-card">
   <link rel="stylesheet" href="css/raid_event.css?v=852-raid-glass-canonical">
   <link rel="stylesheet" href="css/item_management.css?v=1071-flower-owned-layout">
   <link rel="stylesheet" href="css/skin_system.css?v=1069-skin-controls-fullscreen">
   <link rel="stylesheet" href="css/score_attack_chrome.css?v=696-score-self-badge-corner">
   <link rel="stylesheet" href="css/app_chrome.css?v=693-score-ranking-nav-v2">
   <link rel="stylesheet" href="css/junkou_top.css?v=1357-story-title-six">
-  <link rel="stylesheet" href="css/story_stage_select.css?v=1365-reward-tile">
+  <link rel="stylesheet" href="css/story_stage_select.css?v=1391-faceless-shared">
+  <link rel="stylesheet" href="css/faceless_stage_select.css?v=1391-canonical">
   <link rel="stylesheet" href="css/character_list.css?v=1368-translucent-header">
   <link rel="stylesheet" href="css/character_filter.css?v=1373-filter-size-close">
   <link rel="stylesheet" href="css/character_detail_shot.css?v=1372-fixed-icons">
@@ -3274,7 +3275,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
   #shooting-event-root[data-gacha-trial="1"] .shooting-pause-action:not(.shooting-pause-close):not(.shooting-pause-bgm-toggle) { display:none; }
 </style>
   <!-- build1379: universal image-based back button for quest/story/roster pages -->
-  <link rel="stylesheet" href="css/common_back_button.css?v=1379-button-back">
+  <link rel="stylesheet" href="css/common_back_button.css?v=1383-back-alignment">
 </head>
 <body>
   <div class="global-user-frame" id="global-user-frame">
@@ -10897,6 +10898,9 @@ function goHome(){
       stageSelectModal.style.opacity = '0';
       stageSelectModal.style.display = 'none';
     }
+    // build1384: タブ切替でモーダルを閉じた場合も、巡行の前景を必ず復元。
+    var questLanding = document.getElementById('screen-ninmu');
+    if(questLanding) questLanding.classList.remove('story-stage-select-open');
 
     // build826: DAILY / FACELESSの独自ステージ一覧も共通ボトムナビ遷移時に破棄する。
     // 一覧overlayはbody直下に生成されるため、残したまま画面だけ切り替えると
@@ -18871,7 +18875,7 @@ function fadeOutOpeningBgm(){
 <script src="js/shooting_characters.js?v=1381-hao-wood-shot"></script>
 <script src="js/story_scenario.js?v=1380-ch04-kobigoe"></script>
 <script src="js/story_novel.js?v=1333-cast-sides"></script>
-<script src="js/stage_select.js?v=1365-reward-tile"></script>
+<script src="js/stage_select.js?v=1384-story-background"></script>
 
 <script>
 (function(){
@@ -19047,7 +19051,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1381-hao-sigil-origin"></script>
+<script src="js/shooting_event.js?v=1391-faceless-canonical"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
 <script src="js/skin_system.js?v=1076-home-canvas-normalize"></script>
