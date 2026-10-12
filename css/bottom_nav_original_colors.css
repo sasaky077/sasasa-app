@@ -1,0 +1,62 @@
+/* ZERAPHIA build1413: bottom navigation image-first sizing and original artwork colors.
+   This stylesheet is intentionally loaded last: old style.css and RAID rules
+   contain !important color filters (grayscale/sepia/brightness/etc.). */
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item > img,
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active > img,
+html body.raid-shell-active #bottom-nav-shared.bottom-nav .bottom-nav-item > img,
+html body.raid-shell-active #bottom-nav-shared.bottom-nav .bottom-nav-item.active > img,
+html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom-nav-item > img,
+html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom-nav-item.active > img {
+  display:block !important;
+  position:relative !important;
+  z-index:2 !important;
+  box-sizing:border-box !important;
+  width:56px !important;
+  height:56px !important;
+  min-width:56px !important;
+  min-height:56px !important;
+  flex:0 0 56px !important;
+  object-fit:contain !important;
+  filter:none !important;
+  -webkit-filter:none !important;
+  opacity:1 !important;
+  mix-blend-mode:normal !important;
+  transform-origin:center bottom !important;
+  transition:transform .18s ease !important;
+}
+
+/* A single stable layout slot for each icon; active stays larger. */
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item:not(.active) > img {
+  transform:scale(.875) !important; /* 49px visual */
+}
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active > img {
+  transform:scale(1) !important; /* 56px visual */
+}
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item:not(.active):active > img {
+  transform:scale(.91) !important;
+}
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active:active > img {
+  transform:scale(1.035) !important;
+}
+
+/* iPhone SE / compact widths: enlarge without exceeding the five-column nav. */
+@media (max-width:360px) {
+  html body #bottom-nav-shared.bottom-nav .bottom-nav-item > img,
+  html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active > img,
+  html body.raid-shell-active #bottom-nav-shared.bottom-nav .bottom-nav-item > img,
+  html body.raid-shell-active #bottom-nav-shared.bottom-nav .bottom-nav-item.active > img,
+  html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom-nav-item > img,
+  html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom-nav-item.active > img {
+    width:54px !important;
+    height:54px !important;
+    min-width:54px !important;
+    min-height:54px !important;
+    flex-basis:54px !important;
+  }
+  html body #bottom-nav-shared.bottom-nav .bottom-nav-item:not(.active) > img {
+    transform:scale(.851852) !important; /* 46px visual */
+  }
+  html body #bottom-nav-shared.bottom-nav .bottom-nav-item:not(.active):active > img {
+    transform:scale(.89) !important;
+  }
+}
