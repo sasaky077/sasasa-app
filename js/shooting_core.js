@@ -2349,6 +2349,8 @@
       isShootingCharacterAvailableForCurrentParty(id) &&
       (!selectableStoryParty || selectableStoryParty.allowedIds.includes(Number(id)))
     );
+    // build1430: Display-only filters; selection / sealing is managed above.
+    window.ShootingPartyFilter?.refresh();
   }
 
   let selectedCharacterId = CHARACTER_ID.ERI;
@@ -3742,6 +3744,7 @@
     const fixedStoryParty = getSelectedStoryFixedPartyIds();
     const roster = document.querySelector('#shooting-character-select .shooting-party-roster');
     if (roster) roster.style.display = fixedStoryParty ? 'none' : '';
+    window.ShootingPartyFilter?.refresh();
 
     const ruleText = document.getElementById('shooting-party-rule-text');
     if (ruleText) {
@@ -13394,7 +13397,7 @@
         }
       }
 
-      // build1038: WAVE1を追加緩和。闇属性の直進弾はWAVE1=7%、WAVE2=12.5%、WAVE3=15%。
+      // build1429: 直進弾も光属性。WAVE1=7%、WAVE2=12.5%、WAVE3=15%。
       // 追加数は小数予算を累積して決めるため、短い区間で偏らず長期的に約15%増となる。
       // makeProjectile() はノア通常弾へS字移動を自動付与するため、追加弾だけ明示的に解除する。
       const companionCount = spawnCompanionLane ? Math.max(0, normalOffsets.length - 1) : 0;
@@ -13426,8 +13429,8 @@
           // S字挙動を解除し、発射時のベクトルのまま完全直進させる。
           darkP.noahNormalWave = false;
           darkP.noahDarkStraight = true;
-          darkP.attackElement = 'dark';
-          darkP.element = 'dark';
+          darkP.attackElement = 'light';
+          darkP.element = 'light';
           darkP.canvasRadius = phase === 3 ? 6.3 : 5.8;
           darkP.canvasHalfWidth = darkP.canvasRadius;
           darkP.canvasHalfHeight = darkP.canvasRadius;
@@ -22914,6 +22917,7 @@
     void loadShootingHighScore();
     ensureShootingPauseMenu();
     refreshShootingRoster();
+    window.ShootingPartyFilter?.open();
 
     const firstOwned = Object.keys(SHOOTING_CHARACTERS).map(Number).find(id => isPublicShootingCharacterId(id) && isShootingCharacterOwned(id));
     if (applySelectedStoryFixedParty()) {

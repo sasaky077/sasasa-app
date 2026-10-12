@@ -451,7 +451,8 @@
       implemented: true,
       name: '理想郷：ノア',
       displayName: 'SPECIAL STAGE　理想郷：ノア',
-      image: 'images/nore_battle.webp',
+      image: 'images/noah_battle.webp',
+      element: 'light', // 光属性：本体と発射弾の共通属性
 
       gaugeHp: 5000,
       gauges: 3,
@@ -461,7 +462,7 @@
       bulletDamage: 180,
 
       behavior: 'bullet_hell_test_v1',
-      uiScale: 1.12,
+      uiScale: 1.0,
     }),
 
     [SHOOTING_ENEMY_ID.REMNANT_04]: Object.freeze({

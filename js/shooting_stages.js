@@ -1085,7 +1085,9 @@
       difficultyLabel: 'STRESS TEST',
       type: 'boss',
       background: 'images/battle_bg_01.webp',
-      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.BULLET_HELL_TEST]),
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.NOAH]),
+      bossElement: 'light',
+      enemyElement: 'light',
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
         text: '理想郷 -ノア-を耐えきれ',

@@ -1,0 +1,381 @@
+/* build1431 — place party filter modal above the fullscreen shooting layer. */
+/* ZERAPHIA build1369 — completely isolated filter dialog. No legacy zukan-filter classes.
+   Modal is mounted directly under body and preserves game UI / filter logic. */
+#shooting-party-filter-layer.zcf-overlay,
+#shooting-party-filter-layer.zcf-overlay *{box-sizing:border-box;}
+#shooting-party-filter-layer.zcf-overlay{
+  position:fixed !important;
+  inset:0 !important;
+  z-index:300000 !important; /* above #shooting-event-root (240000): build1431 */
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:16px !important;
+  background:rgba(32,28,25,.51) !important;
+  -webkit-tap-highlight-color:transparent;
+}
+#shooting-party-filter-layer .zcf-dialog{
+  position:relative !important;
+  display:flex !important;
+  flex-direction:column !important;
+  width:min(100%,570px) !important;
+  height:auto !important;
+  max-height:min(92dvh,960px) !important;
+  margin:auto !important;
+  padding:15px clamp(13px,3.5vw,26px) 15px !important;
+  overflow:hidden !important;
+  border:3px double #c19b5c !important;
+  border-radius:0 !important;
+  background:
+    radial-gradient(ellipse at 7% 5%,rgba(236,216,179,.39),transparent 23%),
+    radial-gradient(ellipse at 96% 4%,rgba(203,218,236,.32),transparent 25%),
+    radial-gradient(ellipse at 2% 98%,rgba(209,206,200,.27),transparent 24%),
+    linear-gradient(150deg,rgba(255,253,248,.99),rgba(250,245,235,.985) 58%,rgba(253,249,243,.99)) !important;
+  box-shadow:0 14px 45px rgba(38,27,18,.29),inset 0 0 0 2px rgba(255,254,247,.94),inset 0 0 0 5px rgba(195,165,113,.17) !important;
+  color:#4e3024 !important;
+  font-family:"Noto Serif JP","Yu Mincho",serif !important;
+  isolation:isolate;
+}
+#shooting-party-filter-layer .zcf-dialog::before{
+  content:'✧';position:absolute;top:2px;left:7px;color:#b89559;font-size:19px;line-height:1;pointer-events:none;
+}
+#shooting-party-filter-layer .zcf-dialog::after{
+  content:'✧';position:absolute;bottom:2px;right:7px;color:#b89559;font-size:19px;line-height:1;pointer-events:none;
+}
+#shooting-party-filter-layer .zcf-header{
+  position:relative;
+  flex:0 0 auto;
+  text-align:center;
+  padding:0 38px 8px;
+}
+#shooting-party-filter-layer .zcf-title{
+  padding:0 !important; margin:0 !important;
+  color:#582d1d !important;
+  font-size:clamp(19px,5.2vw,28px) !important;
+  font-weight:700 !important;
+  line-height:1.35 !important;
+  letter-spacing:.13em !important;
+  font-family:"Noto Serif JP","Yu Mincho",serif !important;
+}
+#shooting-party-filter-layer .zcf-heading-rule{
+  position:relative;
+  display:block;
+  margin-top:8px;
+  width:100%;
+  height:10px;
+  line-height:10px;
+  color:#97683a;
+  font-size:12px;
+}
+#shooting-party-filter-layer .zcf-heading-rule::before,
+#shooting-party-filter-layer .zcf-heading-rule::after{
+  content:"";position:absolute;top:50%;width:calc(50% - 22px);height:1px;background:linear-gradient(90deg,transparent,#c1a06e);
+}
+#shooting-party-filter-layer .zcf-heading-rule::before{left:0;}
+#shooting-party-filter-layer .zcf-heading-rule::after{right:0;transform:scaleX(-1);}
+#shooting-party-filter-layer .zcf-close{
+  position:absolute;
+  top:-4px;right:-4px;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:38px !important;
+  height:38px !important;
+  min-width:38px !important;
+  min-height:38px !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  cursor:pointer;
+  -webkit-appearance:none !important;
+  appearance:none !important;
+}
+#shooting-party-filter-layer .zcf-close img{
+  display:block !important;
+  width:100% !important;
+  height:100% !important;
+  max-width:100% !important;
+  max-height:100% !important;
+  object-fit:contain !important;
+  pointer-events:none !important;
+}
+#shooting-party-filter-layer .zcf-scroll{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+  padding:0 2px 4px;
+}
+#shooting-party-filter-layer .zcf-section{
+  margin:0 !important;
+  padding:9px 0 0 !important;
+}
+#shooting-party-filter-layer .zcf-section + .zcf-section{
+  margin-top:7px !important;
+  border-top:1px solid rgba(168,139,96,.20);
+}
+#shooting-party-filter-layer .zcf-section-title{
+  position:relative;
+  margin:0 0 8px !important;
+  padding:0 0 0 20px !important;
+  color:#5d3523 !important;
+  font-size:clamp(12px,3.1vw,17px) !important;
+  font-family:"Noto Serif JP","Yu Mincho",serif !important;
+  line-height:1.25 !important;
+  font-weight:700 !important;
+  letter-spacing:.055em;
+}
+#shooting-party-filter-layer .zcf-section-title::before{
+  content:'❖';position:absolute;left:0;top:0;color:#8c5f34;font-size:.89em;
+}
+#shooting-party-filter-layer .zcf-grid{
+  display:grid !important;
+  gap:6px !important;
+  min-width:0 !important;
+}
+#shooting-party-filter-layer .zcf-grid-attr-top{grid-template-columns:repeat(4,minmax(0,1fr));}
+#shooting-party-filter-layer .zcf-grid-attr-bottom{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:6px;}
+#shooting-party-filter-layer .zcf-grid-rarity{grid-template-columns:repeat(3,minmax(0,1fr));}
+#shooting-party-filter-layer .zcf-grid-shots{grid-template-columns:repeat(3,minmax(0,1fr));}
+#shooting-party-filter-layer .zcf-grid-sort{grid-template-columns:repeat(4,minmax(0,1fr));}
+#shooting-party-filter-layer .zcf-choice{
+  appearance:none !important;-webkit-appearance:none !important;
+  display:flex !important;
+  justify-content:center !important;
+  align-items:center !important;
+  gap:5px !important;
+  min-width:0 !important;
+  min-height:37px !important;
+  height:auto !important;
+  margin:0 !important;
+  padding:4px 5px !important;
+  border:1px solid rgba(166,128,81,.44) !important;
+  border-radius:0 !important;
+  background:rgba(255,255,255,.59) !important;
+  color:#543b2f !important;
+  font:600 clamp(10px,2.55vw,14px)/1.15 "Cinzel","Noto Serif JP",serif !important;
+  text-align:center !important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.51) !important;
+  cursor:pointer;
+  white-space:nowrap;
+}
+#shooting-party-filter-layer .zcf-choice.is-selected{
+  border:1px solid #bc8734 !important;
+  background:linear-gradient(145deg,rgba(254,247,226,.98),rgba(247,228,183,.76),rgba(255,251,236,.98)) !important;
+  color:#654024 !important;
+  box-shadow:0 1px 4px rgba(155,105,45,.12) !important;
+  padding:4px 5px !important;
+}
+#shooting-party-filter-layer .zcf-choice:active{filter:brightness(.93);}
+#shooting-party-filter-layer .zcf-attribute-icon{
+  flex:0 0 auto;
+  display:block !important;
+  width:22px !important;
+  height:22px !important;
+  object-fit:contain;
+}
+#shooting-party-filter-layer .zcf-grid-attr-bottom .zcf-choice{min-height:37px;}
+#shooting-party-filter-layer .zcf-rarity-sr .zcf-choice-label{font-size:18px;color:#a66b22;}
+#shooting-party-filter-layer .zcf-rarity-r .zcf-choice-label{font-size:18px;color:#637596;}
+/* build1370: shot icons stay on the left; names center within each button. */
+#shooting-party-filter-layer .zcf-grid-shots .zcf-choice{
+  display:grid !important;
+  grid-template-columns:24px minmax(0,1fr) 24px !important;
+  justify-content:stretch !important;
+  justify-items:center !important;
+  align-items:center !important;
+  gap:0 !important;
+  min-height:36px !important;
+  font-size:clamp(9px,2.2vw,13px) !important;
+  letter-spacing:0;
+}
+#shooting-party-filter-layer .zcf-grid-shots .zcf-choice .zcf-shot-icon{
+  grid-column:1;
+  grid-row:1;
+}
+#shooting-party-filter-layer .zcf-grid-shots .zcf-choice .zcf-choice-label{
+  grid-column:2;
+  grid-row:1;
+  min-width:0;
+  width:100%;
+  display:block;
+  text-align:center !important;
+  white-space:nowrap;
+}
+#shooting-party-filter-layer .zcf-shot-icon{
+  flex:0 0 auto;
+  display:block !important;
+  width:24px !important;
+  height:24px !important;
+  object-fit:contain;
+}
+#shooting-party-filter-layer .zcf-grid-sort .zcf-choice{
+  min-height:37px !important;
+  font-size:clamp(10px,2.45vw,14px) !important;
+}
+#shooting-party-filter-layer .zcf-footer{
+  flex:0 0 auto;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  padding:13px 10px 0;
+}
+#shooting-party-filter-layer .zcf-footer-button{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:43px;
+  margin:0 !important;
+  border-radius:0 !important;
+  font:700 clamp(14px,3.4vw,18px)/1 "Noto Serif JP",serif !important;
+  letter-spacing:.1em;
+  cursor:pointer;
+}
+#shooting-party-filter-layer .zcf-reset{
+  color:#5d3626 !important;
+  background:linear-gradient(180deg,#fffdf8,#f9efe1) !important;
+  border:2px solid #dcc29c !important;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.8) !important;
+}
+#shooting-party-filter-layer .zcf-apply{
+  color:#fff5e8 !important;
+  background:linear-gradient(150deg,#3a2a25,#654834 52%,#2d2726) !important;
+  border:2px solid #b98b4b !important;
+  box-shadow:inset 0 0 0 2px rgba(222,173,97,.33) !important;
+}
+@media(max-width:430px){
+  #shooting-party-filter-layer.zcf-overlay{padding:13px !important;}
+  #shooting-party-filter-layer .zcf-dialog{max-height:calc(100dvh - 74px) !important;padding:11px 11px 12px !important;}
+  #shooting-party-filter-layer .zcf-header{padding-bottom:5px;}
+  #shooting-party-filter-layer .zcf-title{font-size:20px !important;}
+  #shooting-party-filter-layer .zcf-section{padding-top:7px !important;}
+  #shooting-party-filter-layer .zcf-section + .zcf-section{margin-top:5px !important;}
+  #shooting-party-filter-layer .zcf-section-title{margin-bottom:6px !important;font-size:12.5px !important;}
+  #shooting-party-filter-layer .zcf-grid{gap:5px !important;}
+  #shooting-party-filter-layer .zcf-grid-attr-bottom{margin-top:5px;}
+  #shooting-party-filter-layer .zcf-choice{min-height:33px !important;font-size:10px !important;}
+  #shooting-party-filter-layer .zcf-attribute-icon{width:20px !important;height:20px !important;}
+  #shooting-party-filter-layer .zcf-grid-shots .zcf-choice{min-height:34px !important;grid-template-columns:20px minmax(0,1fr) 20px !important;font-size:9px !important;gap:0 !important;}
+  #shooting-party-filter-layer .zcf-shot-icon{width:20px !important;height:20px !important;}
+  #shooting-party-filter-layer .zcf-grid-sort .zcf-choice{min-height:33px !important;}
+  #shooting-party-filter-layer .zcf-footer{padding-top:10px;gap:12px;}
+  #shooting-party-filter-layer .zcf-footer-button{min-height:38px;}
+}
+@media(max-width:340px){
+  #shooting-party-filter-layer.zcf-overlay{padding:8px !important;}
+  #shooting-party-filter-layer .zcf-dialog{padding:10px 8px 9px !important;}
+  #shooting-party-filter-layer .zcf-grid{gap:4px !important;}
+  #shooting-party-filter-layer .zcf-grid-shots .zcf-choice{font-size:8.4px !important;grid-template-columns:18px minmax(0,1fr) 18px !important;}
+  #shooting-party-filter-layer .zcf-shot-icon{width:18px !important;height:18px !important;}
+  #shooting-party-filter-layer .zcf-attribute-icon{width:17px !important;height:17px !important;}
+}
+
+/* In the party formation screen only: narrow search + filter toolbar. */
+#shooting-event-root #shooting-character-select .zpf-filter-toolbar{
+  flex:0 0 auto!important;display:flex!important;align-items:center!important;
+  gap:7px!important;min-height:42px!important;padding:5px 10px!important;
+  background:rgba(255,253,247,.94)!important;border-block:1px solid rgba(178,148,94,.20)!important;
+  font-family:"Noto Serif JP",serif!important;box-sizing:border-box!important;
+}
+#shooting-event-root #shooting-character-select .zpf-filter-toolbar[hidden]{display:none!important}
+#shooting-event-root #shooting-character-select .zpf-search{
+  flex:1 1 auto;min-width:0;min-height:32px;display:flex;align-items:center;gap:5px;
+  padding:0 7px;border:1px solid rgba(176,146,95,.48);background:rgba(255,255,255,.94);
+}
+#shooting-event-root #shooting-character-select .zpf-search-icon{color:#ad8652;font-size:22px;line-height:1}
+#shooting-event-root #shooting-character-select .zpf-search input{
+  width:100%;min-width:0;flex:1 1 auto;border:0!important;outline:none!important;
+  background:transparent!important;color:#533c29!important;font:500 16px/1.2 "Noto Serif JP",serif!important;
+}
+#shooting-event-root #shooting-character-select .zpf-search input::placeholder{color:#9b8975;opacity:1}
+#shooting-event-root #shooting-character-select .zpf-search-clear{
+  border:0!important;background:transparent!important;color:#806d54!important;font-size:18px!important;
+  padding:0 4px!important;min-width:25px!important;min-height:25px!important;cursor:pointer;
+}
+#shooting-event-root #shooting-character-select .zpf-search-clear[hidden]{display:none!important}
+#shooting-event-root #shooting-character-select .zpf-filter-button{
+  flex:0 0 auto;min-height:32px!important;padding:2px 8px!important;
+  border:1px solid rgba(172,132,67,.52)!important;border-radius:0!important;
+  background:linear-gradient(#fffcf5,#f5ebdc)!important;color:#725335!important;
+  font:600 11px/1.2 "Noto Serif JP",serif!important;white-space:nowrap!important;
+}
+#shooting-event-root #shooting-character-select .zpf-filter-button.is-filtered{
+  border-color:#b38430!important;background:#eddbb3!important;color:#563a19!important;
+}
+#shooting-event-root #shooting-character-select .zpf-filter-count{
+  font:600 10px/1 "Cinzel","Noto Serif JP",serif!important;
+  color:#957e60!important;min-width:27px;text-align:right;white-space:nowrap;
+}
+html body #shooting-event-root #shooting-character-select.zpf-screen .zpf-roster .zpf-filtered-out{display:none!important}
+html body #shooting-event-root #shooting-character-select.zpf-screen .zpf-roster .zpf-filter-empty{
+  grid-column:1/-1;display:block;text-align:center;margin:18px 0;padding:16px 4px;
+  color:#8f775b;font:500 12px/1.6 "Noto Serif JP",serif;
+}
+html body #shooting-event-root #shooting-character-select.zpf-screen .zpf-roster .zpf-filter-empty[hidden]{display:none!important}
+@media (max-width:360px){
+ #shooting-event-root #shooting-character-select .zpf-filter-toolbar{gap:5px!important;padding:4px 7px!important}
+ #shooting-event-root #shooting-character-select .zpf-filter-button{padding:2px 6px!important;font-size:10px!important}
+}
+
+/* build1432: hard bounds on actual <img> nodes (works with or without class).
+   The build1430 template forgot zcf-attribute-icon/zcf-shot-icon classes;
+   never allow full-size artwork to expand the button or its grid row. */
+#shooting-party-filter-layer .zcf-choice > img{
+  display:block !important;
+  flex:0 0 auto !important;
+  position:static !important;
+  transform:none !important;
+  object-fit:contain !important;
+  box-sizing:border-box !important;
+  min-width:0 !important;
+  min-height:0 !important;
+  max-width:24px !important;
+  max-height:24px !important;
+  overflow:hidden !important;
+}
+#shooting-party-filter-layer .zcf-grid-attr-top .zcf-choice > img,
+#shooting-party-filter-layer .zcf-grid-attr-bottom .zcf-choice > img{
+  width:22px !important;
+  height:22px !important;
+  max-width:22px !important;
+  max-height:22px !important;
+}
+#shooting-party-filter-layer .zcf-grid-shots .zcf-choice > img{
+  width:24px !important;
+  height:24px !important;
+  max-width:24px !important;
+  max-height:24px !important;
+  grid-column:1 !important;
+  grid-row:1 !important;
+}
+#shooting-party-filter-layer .zcf-choice > .zcf-choice-label{
+  min-width:0;
+  position:static !important;
+}
+@media(max-width:430px){
+  #shooting-party-filter-layer .zcf-grid-attr-top .zcf-choice > img,
+  #shooting-party-filter-layer .zcf-grid-attr-bottom .zcf-choice > img,
+  #shooting-party-filter-layer .zcf-grid-shots .zcf-choice > img{
+    width:20px !important;
+    height:20px !important;
+    max-width:20px !important;
+    max-height:20px !important;
+  }
+}
+@media(max-width:340px){
+  #shooting-party-filter-layer .zcf-grid-attr-top .zcf-choice > img,
+  #shooting-party-filter-layer .zcf-grid-attr-bottom .zcf-choice > img{
+    width:17px !important;height:17px !important;
+    max-width:17px !important;max-height:17px !important;
+  }
+  #shooting-party-filter-layer .zcf-grid-shots .zcf-choice > img{
+    width:18px !important;height:18px !important;
+    max-width:18px !important;max-height:18px !important;
+  }
+}
