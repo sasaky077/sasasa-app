@@ -82,7 +82,7 @@
 
     document.body.appendChild(root);
 
-    if(!document.getElementById('login-bonus-mixed-style-v106')){
+    if(!document.getElementById('login-bonus-mixed-style-v107')){
       var style = document.createElement('style');
       style.id = 'login-bonus-mixed-style-v107';
       style.textContent = [
@@ -103,27 +103,10 @@
         '.login-bonus-today-copy b{font-family:"Cinzel","Noto Serif JP",serif;font-size:28px;line-height:1;color:#9b6a18}',
         '.login-bonus-today-copy span{margin-top:4px}',
         '.login-bonus-today-note{margin-top:4px;font-size:9px;letter-spacing:.04em;color:#a98955;white-space:nowrap}',
-        '.bonus-mixed-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:136px;gap:8px;align-items:stretch}',
-        '.bonus-mixed-day{height:136px;min-height:136px;padding:9px 6px 9px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;border:1px solid rgba(214,194,156,.9);border-radius:12px;background:linear-gradient(180deg,rgba(255,252,247,.96),rgba(250,244,231,.92));overflow:hidden;box-sizing:border-box}',
-        '.bonus-mixed-day.is-current{box-shadow:0 0 0 2px rgba(212,178,111,.35) inset}',
-        '.bonus-mixed-day.is-claimed{opacity:.72}',
-        '.bonus-mixed-day.is-special{grid-column:span 2;height:136px;min-height:136px}',
-        '.bonus-mixed-day > span{font-size:10px;letter-spacing:.12em;color:#b29461}',
-        '.bonus-mixed-reward{width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;margin-top:7px}',
-        '.bonus-mixed-reward img.material{display:block!important;width:45px!important;height:45px!important;max-width:45px!important;object-fit:contain!important;margin:0!important}',
-        '.bonus-mixed-reward img.ticket{display:block!important;width:120px!important;height:auto!important;max-width:none!important;object-fit:contain!important;margin:0!important}',
-        '.bonus-mixed-reward b{font-family:"Cinzel","Noto Serif JP",serif;font-size:13px;line-height:1;color:#9b6a18;font-weight:600}',
-        '.bonus-mixed-reward small{display:block;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;font-size:7.5px;line-height:1.3;color:#9c8767}',
-        '/* build900: DAY7 ticket fit inside the same fixed row height */',
         '#login-bonus-modal .login-bonus-day.is-special .login-bonus-mixed-reward{margin-top:2px!important;gap:1px!important}',
         '#login-bonus-modal .login-bonus-day.is-special img.login-bonus-ticket-thumb{width:96px!important;max-width:96px!important}',
         '#login-bonus-modal .login-bonus-day.is-special .login-bonus-mixed-count{margin-top:0!important;line-height:1!important}',
         '#login-bonus-modal .login-bonus-day.is-special .login-bonus-mixed-name{line-height:1.15!important;font-size:7px!important;overflow:visible!important;text-overflow:clip!important}',
-        '#screen-bonus .bonus-mixed-day.is-special .bonus-mixed-reward{margin-top:2px!important;gap:1px!important}',
-        '#screen-bonus .bonus-mixed-day.is-special .bonus-mixed-reward img.ticket{width:96px!important;max-width:96px!important}',
-        '#screen-bonus .bonus-mixed-day.is-special .bonus-mixed-reward b{margin-top:0!important;line-height:1!important}',
-        '#screen-bonus .bonus-mixed-day.is-special .bonus-mixed-reward small{line-height:1.15!important;font-size:7px!important;overflow:visible!important;text-overflow:clip!important}',
-        '/* build897: login bonus square / cool UI */',
         '#login-bonus-modal .login-bonus-sheet{border-radius:0!important}',
         '#login-bonus-modal .login-bonus-day{border-radius:0!important}',
         '#login-bonus-modal .login-bonus-today{border-radius:0!important}',
@@ -133,20 +116,10 @@
         '#login-bonus-modal .login-bonus-day.is-claimed{background:rgba(239,238,235,.76)!important;border-color:rgba(142,136,126,.24)!important;box-shadow:none!important}',
         '#login-bonus-modal .login-bonus-day.is-claimed .login-bonus-day-num,#login-bonus-modal .login-bonus-day.is-claimed .login-bonus-mixed-reward{opacity:.48!important;filter:grayscale(.72) saturate(.22)!important}',
         '#login-bonus-modal .login-bonus-day.is-claimed .login-bonus-check{opacity:.88!important;filter:none!important;background:rgba(156,148,136,.72)!important;color:#fffdf8!important}',
-        '#screen-bonus .bonus-page-card{border-radius:0!important}',
-        '#screen-bonus .bonus-card-head{border-radius:0!important}',
-        '#screen-bonus .bonus-mixed-day{position:relative!important;border-radius:0!important}',
-        '#screen-bonus .bonus-card-state{border-radius:0!important}',
-        '#screen-bonus .bonus-day-mark{border-radius:0!important}',
-        '#screen-bonus .bonus-card-action{border-radius:0!important}',
-        '#screen-bonus .bonus-day-mark-claimed,#screen-bonus .bonus-day-mark-next{position:absolute!important;top:7px!important;right:7px!important;left:auto!important;bottom:auto!important;min-width:38px!important;height:18px!important;line-height:18px!important;padding:0 6px!important;margin:0!important;text-align:center!important;font-size:7px!important;letter-spacing:.04em!important;z-index:5!important}',
-        '#screen-bonus .bonus-mixed-day.is-claimed{opacity:1!important;background:rgba(239,238,235,.78)!important;border-color:rgba(142,136,126,.24)!important;box-shadow:none!important}',
-        '#screen-bonus .bonus-mixed-day.is-claimed .bonus-day-head,#screen-bonus .bonus-mixed-day.is-claimed .bonus-mixed-reward{opacity:.46!important;filter:grayscale(.78) saturate(.18)!important}',
-        '#screen-bonus .bonus-mixed-day.is-claimed .bonus-day-mark-claimed{opacity:.88!important;filter:none!important;background:rgba(156,148,136,.72)!important;color:#fffdf8!important}',
         '@media(max-width:360px){',
-        '  .login-bonus-sheet-mixed-v106 .login-bonus-day,.bonus-mixed-day{height:126px;min-height:126px;padding:8px 5px}',
-        '  .login-bonus-sheet-mixed-v106 .login-bonus-day img.login-bonus-material-thumb,.bonus-mixed-reward img.material{width:40px!important;height:40px!important;max-width:40px!important}',
-        '  .login-bonus-sheet-mixed-v106 .login-bonus-day img.login-bonus-ticket-thumb,.bonus-mixed-reward img.ticket{width:90px!important}',
+        '  .login-bonus-sheet-mixed-v106 .login-bonus-day{height:126px;min-height:126px;padding:8px 5px}',
+        '  .login-bonus-sheet-mixed-v106 .login-bonus-day img.login-bonus-material-thumb{width:40px!important;height:40px!important;max-width:40px!important}',
+        '  .login-bonus-sheet-mixed-v106 .login-bonus-day img.login-bonus-ticket-thumb{width:90px!important}',
         '  .login-bonus-sheet-mixed-v106 .login-bonus-today img.login-bonus-today-reward-image.is-ticket{width:136px!important}',
         '}'
       ].join('');
@@ -360,8 +333,6 @@
   }
 
   async function renderBonusPage(){
-    // bonus一覧でも、modal用に定義しているmixed reward CSSを必ず先に生成する。
-    // これが無いと、受取済み等でmodalを一度も開かなかった端末では画像が原寸表示になりレイアウトが崩れる。
     ensureModal();
     var list = document.getElementById('bonus-page-list');
     if(!list) return;
@@ -372,41 +343,44 @@
       var today = getJstDateString();
       var claimedToday = state.last_login_bonus_date === today;
       var lastDay = Math.max(0, Math.min(7, Number(state.login_bonus_day || 0)));
-      var nextDay = claimedToday ? ((lastDay % 7) + 1) : ((lastDay % 7) + 1);
+      var cycleDay = ((lastDay % 7) + 1);
+      var nextDay = cycleDay;
       var claimedThrough = getClaimedThrough(state);
       var html = '';
       html += '<section class="bonus-page-card">';
       html +=   '<div class="bonus-card-head">';
-      html +=     '<div class="bonus-card-title-wrap"><small>DAILY RESONANCE</small><h3>ログインボーナス</h3></div>';
-      html +=     '<div class="bonus-card-state' + (claimedToday ? ' is-claimed' : '') + '">' + (claimedToday ? '受取済み' : '受取可能') + '</div>';
+      html +=     '<div class="bonus-card-title-wrap">';
+      html +=       '<small>DAILY RESONANCE</small>';
+      html +=       '<h3>ログインボーナス</h3>';
+      html +=       '<p class="bonus-card-sub">— 今日も、世界のどこかで、きっと誰かが祈っている —</p>';
+      html +=     '</div>';
+      html +=     '<button type="button" class="bonus-archive-btn" aria-label="受取済み一覧">受取済み一覧</button>';
       html +=   '</div>';
       html +=   '<div class="bonus-mixed-row">';
       for(var i = 1; i <= 7; i++){
         var reward = getReward(i);
         var cls = ['bonus-mixed-day'];
-        var isNext = (i === nextDay);
         var isClaimed = (i <= claimedThrough);
-
-        if(isNext) cls.push('is-next');
-        if(isClaimed) cls.push('is-claimed');
+        var isNext = (i === nextDay);
+        var isTodayClaimed = claimedToday && i === lastDay;
         if(i === 7) cls.push('is-special');
-
-        html += '<div class="' + cls.join(' ') + '">'
-          + '<div class="bonus-day-head">'
-            + '<span class="bonus-day-label"><em>DAY</em><b>' + i + '</b></span>'
-          + '</div>'
-          + (isClaimed ? '<i class="bonus-day-mark bonus-day-mark-claimed" aria-hidden="true">受取済み</i>' : '')
-          + (isNext ? '<i class="bonus-day-mark bonus-day-mark-next" aria-hidden="true">NEXT</i>' : '')
-          + '<div class="bonus-mixed-reward">'
-            + '<img src="' + reward.image + '" alt="' + reward.name + '" class="' + (reward.type === 'ticket' ? 'ticket' : 'material') + '">'
-            + '<b>×' + reward.qty + '</b>'
-            + '<small>' + reward.name + '</small>'
-          + '</div>'
-          + '</div>';
+        if(isClaimed) cls.push('is-claimed');
+        if(isNext) cls.push('is-next');
+        if(isTodayClaimed) cls.push('is-today-claimed');
+        html += '<div class="' + cls.join(' ') + '">';
+        html +=   '<div class="bonus-day-head"><span class="bonus-day-label"><em>DAY</em><b>' + i + '</b></span></div>';
+        if(isClaimed) html += '<i class="bonus-day-mark bonus-day-mark-claimed" aria-hidden="true">受取済み</i>';
+        if(isNext) html += '<i class="bonus-day-mark bonus-day-mark-next" aria-hidden="true">NEXT</i>';
+        html +=   '<div class="bonus-mixed-reward">';
+        html +=     '<img src="' + reward.image + '" alt="' + reward.name + '" class="' + (reward.type === 'ticket' ? 'ticket' : 'material') + '">';
+        html +=     '<b>×' + reward.qty + '</b>';
+        html +=     '<small>' + reward.name + '</small>';
+        html +=   '</div>';
+        html += '</div>';
       }
       html +=   '</div>';
       html +=   '<div class="bonus-card-foot">';
-      html +=     '<div class="bonus-card-note">毎日 0:00（JST）更新<br>DAY 1〜6：育成素材<br>DAY 7：SPECIAL TICKET -ノア- ×1</div>';
+      html +=     '<div class="bonus-card-note">毎日 0:00（JST）に更新されます<br>DAY 1〜6：育成素材（結晶）<br>DAY 7：SPECIAL TICKET -ノア- ×1</div>';
       html +=     '<button type="button" class="bonus-card-action" onclick="openLoginBonusFromBonusPage()"' + (claimedToday ? ' disabled' : '') + '>' + (claimedToday ? '受取済み' : '受け取る') + '</button>';
       html +=   '</div>';
       html += '</section>';

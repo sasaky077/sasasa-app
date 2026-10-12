@@ -1,4 +1,4 @@
 {
-  "build": 1395,
-  "note": "Shared button_back left-edge alpha fade; existing back actions and positions unchanged."
+  "build": 1400,
+  "note": "Fix login bonus background bg_bonus, grayscale all previously claimed day cards, and center DAY7 ticket."
 }

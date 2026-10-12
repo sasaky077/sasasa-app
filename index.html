@@ -3280,6 +3280,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
   <link rel="stylesheet" href="css/gacha_swipe_nav.css?v=1392">
   <!-- build1393: settings artwork + item-card design, placed last to override legacy styling -->
   <link rel="stylesheet" href="css/setting_redesign.css?v=1395-left-edge-fade">
+  <link rel="stylesheet" href="css/bonus_redesign.css?v=1400-bonus-visual-correct">
 </head>
 <body>
   <div class="global-user-frame" id="global-user-frame">
@@ -3709,8 +3710,8 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 <!-- ボーナス一覧 -->
 <div id="screen-bonus" class="screen app-page app-page--standard bonus-screen">
   <header class="app-page-header">
-    <button type="button" class="app-page-back" onclick="showMainTab('main')">＜戻る</button>
-    <div class="app-page-heading"><h1 class="app-page-title">ボーナス</h1></div>
+    <button type="button" class="app-page-back bonus-back-button" onclick="showMainTab('main')" aria-label="戻る">戻る</button>
+    <div class="app-page-heading bonus-page-heading"><h1 class="app-page-title">ボーナス</h1></div>
     <div class="app-page-action"></div>
   </header>
 
@@ -3730,7 +3731,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 <!-- アイテム管理 -->
 <div id="screen-item" class="screen app-page app-page--standard item-screen">
   <header class="app-page-header">
-    <button type="button" class="app-page-back" onclick="showMainTab('main')">＜戻る</button>
+    <button type="button" class="app-page-back bonus-back-button" onclick="showMainTab('main')" aria-label="戻る">戻る</button>
     <div class="app-page-heading"><h1 class="app-page-title">アイテム</h1></div>
     <div class="app-page-action"></div>
   </header>
@@ -3940,7 +3941,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 <!-- フレンド画面 -->
 <div id="screen-friend" class="screen app-page app-page--standard">
   <header class="app-page-header">
-    <button type="button" class="app-page-back" onclick="showMainTab('main')">＜戻る</button>
+    <button type="button" class="app-page-back bonus-back-button" onclick="showMainTab('main')" aria-label="戻る">戻る</button>
     <div class="app-page-heading"><h1 class="app-page-title">フレンド</h1></div>
     <div class="app-page-action"></div>
   </header>
@@ -18857,7 +18858,7 @@ function fadeOutOpeningBgm(){
   - 画像はService Workerで全面管理しない
 -->
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=898-claimed-gray-badge-right"></script>
+<script src="js/login_bonus.js?v=1399-bonus-next-fix"></script>
 
 
 

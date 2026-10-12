@@ -1,0 +1,673 @@
+/* build1396 — login bonus page redesign */
+#screen-bonus.bonus-screen{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.64) 0%, rgba(255,255,255,.84) 26%, rgba(255,253,249,.92) 100%),
+    url('../images/bg_bonus.webp') center top/cover no-repeat !important;
+  color:#5b3d18;
+}
+#screen-bonus .app-page-header{
+  flex:0 0 108px;
+  height:108px;
+  min-height:108px;
+  grid-template-columns:174px 1fr 24px;
+  align-items:end;
+  padding:12px 18px 0;
+}
+#screen-bonus .app-page-header::after{content:none;}
+#screen-bonus .app-page-heading{
+  align-self:end;
+  padding-bottom:10px;
+}
+#screen-bonus .app-page-title{
+  position:relative;
+  font-family:'Noto Serif JP','Yu Mincho',serif;
+  font-size:30px;
+  font-weight:700;
+  letter-spacing:.12em;
+  color:#684117;
+  text-shadow:0 1px 0 rgba(255,255,255,.7);
+}
+#screen-bonus .app-page-title::before,
+#screen-bonus .app-page-title::after{
+  content:'';
+  position:absolute;
+  top:50%;
+  width:92px;
+  height:2px;
+  background:linear-gradient(90deg, rgba(212,175,96,0), rgba(212,175,96,.95), rgba(212,175,96,0));
+}
+#screen-bonus .app-page-title::before{right:100%; margin-right:16px;}
+#screen-bonus .app-page-title::after{left:100%; margin-left:16px;}
+#screen-bonus .bonus-back-button{
+  width:164px;
+  min-width:164px;
+  height:58px;
+  justify-self:start;
+  align-self:end;
+  margin-bottom:5px;
+  border:0 !important;
+  background:transparent url('../images/button_back.webp') center/100% 100% no-repeat !important;
+  color:transparent !important;
+  text-indent:-9999px;
+  overflow:hidden;
+  box-shadow:none !important;
+  padding:0 !important;
+}
+#screen-bonus .bonus-back-button::before,
+#screen-bonus .bonus-back-button::after{display:none!important;content:none!important;}
+#screen-bonus .bonus-back-button:active{transform:translateY(1px);opacity:.94;}
+#screen-bonus .app-page-action{display:none;}
+#screen-bonus .bonus-screen-scroll.app-page-content{
+  flex:1 1 auto;
+  min-height:0;
+  overflow:hidden;
+  padding:0 18px 16px;
+}
+#screen-bonus .bonus-page-intro{display:none !important;}
+#screen-bonus .bonus-page-list{
+  height:100%;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+}
+#screen-bonus .bonus-page-card{
+  width:100%;
+  max-width:394px;
+  min-height:100%;
+  position:relative;
+  padding:22px 18px 18px;
+  border:2px solid rgba(205,165,88,.88);
+  border-radius:20px;
+  background:linear-gradient(180deg, rgba(255,255,255,.93), rgba(251,248,241,.96));
+  box-shadow:0 12px 28px rgba(133,101,52,.14), inset 0 0 0 1px rgba(255,255,255,.88);
+  box-sizing:border-box;
+}
+#screen-bonus .bonus-page-card::before{
+  content:'';
+  position:absolute;
+  inset:10px;
+  border:1px solid rgba(216,189,138,.72);
+  border-radius:14px;
+  pointer-events:none;
+}
+#screen-bonus .bonus-page-card::after{
+  content:'';
+  position:absolute;
+  top:-16px;
+  left:50%;
+  transform:translateX(-50%);
+  width:54px;
+  height:32px;
+  background:radial-gradient(circle at center, rgba(255,231,165,.95) 0%, rgba(229,191,95,.92) 35%, rgba(205,158,56,0) 72%);
+  clip-path:polygon(50% 0, 60% 34%, 100% 50%, 60% 66%, 50% 100%, 40% 66%, 0 50%, 40% 34%);
+  filter:drop-shadow(0 4px 8px rgba(162,119,49,.25));
+}
+#screen-bonus .bonus-card-head{
+  position:relative;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:14px;
+  align-items:start;
+  padding-bottom:16px;
+  margin-bottom:16px;
+  border-bottom:1px solid rgba(212,188,145,.64);
+}
+#screen-bonus .bonus-card-head::after{
+  content:'';
+  position:absolute;
+  right:110px;
+  top:16px;
+  width:52px;
+  height:52px;
+  border-radius:50%;
+  border:1px solid rgba(215,184,107,.62);
+  opacity:.42;
+  background:
+    radial-gradient(circle at center, rgba(255,255,255,.72) 0%, rgba(255,255,255,0) 64%),
+    conic-gradient(from 0deg, rgba(214,183,104,.9) 0 8deg, transparent 8deg 45deg, rgba(214,183,104,.8) 45deg 53deg, transparent 53deg 90deg, rgba(214,183,104,.8) 90deg 98deg, transparent 98deg 135deg, rgba(214,183,104,.8) 135deg 143deg, transparent 143deg 180deg, rgba(214,183,104,.8) 180deg 188deg, transparent 188deg 225deg, rgba(214,183,104,.8) 225deg 233deg, transparent 233deg 270deg, rgba(214,183,104,.8) 270deg 278deg, transparent 278deg 315deg, rgba(214,183,104,.8) 315deg 323deg, transparent 323deg 360deg);
+}
+#screen-bonus .bonus-card-title-wrap small{
+  display:block;
+  font-family:'Cinzel','Noto Serif JP',serif;
+  font-size:11px;
+  letter-spacing:.24em;
+  color:#9e7b43;
+  margin-bottom:10px;
+}
+#screen-bonus .bonus-card-title-wrap h3{
+  margin:0;
+  font-family:'Noto Serif JP','Yu Mincho',serif;
+  font-size:28px;
+  line-height:1.14;
+  font-weight:700;
+  color:#52300c;
+  letter-spacing:.05em;
+}
+#screen-bonus .bonus-card-title-wrap p,
+#screen-bonus .bonus-card-sub{
+  margin:8px 0 0;
+  font-size:11px;
+  color:#8c775d;
+  letter-spacing:.08em;
+}
+#screen-bonus .bonus-card-state{display:none !important;}
+#screen-bonus .bonus-archive-btn{
+  appearance:none;
+  align-self:center;
+  padding:0 18px;
+  height:44px;
+  border:1px solid rgba(204,168,100,.86);
+  border-radius:8px;
+  background:linear-gradient(180deg, rgba(255,255,255,.95), rgba(244,236,224,.95));
+  color:#6b4919;
+  font-family:'Noto Serif JP','Yu Mincho',serif;
+  font-size:14px;
+  font-weight:700;
+  letter-spacing:.03em;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.85), 0 4px 8px rgba(143,112,58,.10);
+}
+#screen-bonus .bonus-archive-btn::after{content:'›'; margin-left:8px; font-size:18px; vertical-align:-1px;}
+#screen-bonus .bonus-mixed-row{
+  display:grid;
+  grid-template-columns:repeat(4, minmax(0,1fr));
+  grid-auto-rows:155px;
+  gap:10px;
+  margin:0 0 14px;
+}
+#screen-bonus .bonus-mixed-day{
+  position:relative;
+  padding:12px 10px 10px;
+  border:1px solid rgba(218,197,160,.96);
+  border-radius:2px;
+  background:linear-gradient(180deg, rgba(255,255,255,.90), rgba(247,242,234,.95));
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.75);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  overflow:hidden;
+}
+#screen-bonus .bonus-mixed-day::before{
+  content:'';
+  position:absolute;
+  inset:6px;
+  border:1px solid rgba(230,221,205,.84);
+  pointer-events:none;
+}
+#screen-bonus .bonus-mixed-day.is-special{
+  grid-column:span 2;
+  padding-inline:14px;
+}
+#screen-bonus .bonus-day-head{
+  position:relative;
+  z-index:2;
+  width:100%;
+  display:flex;
+  justify-content:center;
+  margin-bottom:10px;
+}
+#screen-bonus .bonus-day-label{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:2px;
+  color:#9c6e1d;
+}
+#screen-bonus .bonus-day-label em{
+  font-style:normal;
+  font-family:'Cinzel','Noto Serif JP',serif;
+  font-size:11px;
+  letter-spacing:.16em;
+  color:#907458;
+}
+#screen-bonus .bonus-day-label b{
+  font-family:'Cinzel','Noto Serif JP',serif;
+  font-size:23px;
+  line-height:1;
+  color:#9c6a18;
+  font-weight:600;
+}
+#screen-bonus .bonus-day-mark{
+  position:absolute;
+  left:50%;
+  top:42px;
+  transform:translateX(-50%);
+  z-index:3;
+  height:28px;
+  min-width:90px;
+  padding:0 16px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:6px;
+  background:linear-gradient(180deg, rgba(166,160,152,.95), rgba(132,126,119,.92));
+  box-shadow:0 3px 8px rgba(88,74,54,.18);
+  color:#fff;
+  font-size:11px;
+  letter-spacing:.08em;
+  font-weight:700;
+}
+#screen-bonus .bonus-day-mark-next{
+  top:10px;
+  left:auto;
+  right:10px;
+  transform:none;
+  min-width:74px;
+  height:36px;
+  padding:0 14px;
+  background:linear-gradient(180deg, #e8ba57 0%, #b87912 100%);
+  box-shadow:0 5px 12px rgba(172,119,22,.28), inset 0 1px 0 rgba(255,252,240,.62);
+  border:1px solid rgba(177,111,14,.82);
+  font-size:13px;
+}
+#screen-bonus .bonus-mixed-reward,
+#screen-bonus .bonus-mixed-day.is-special .bonus-mixed-reward{
+  position:relative;
+  z-index:2;
+  margin-top:auto;
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+}
+#screen-bonus .bonus-mixed-reward img.material{
+  width:70px !important;
+  height:70px !important;
+  max-width:70px !important;
+  max-height:70px !important;
+  object-fit:contain;
+  filter:drop-shadow(0 8px 12px rgba(123,102,63,.16));
+}
+#screen-bonus .bonus-mixed-reward img.ticket{
+  width:172px !important;
+  max-width:100% !important;
+  height:auto !important;
+  object-fit:contain;
+  filter:drop-shadow(0 10px 18px rgba(103,85,53,.18));
+}
+#screen-bonus .bonus-mixed-reward b{
+  font-family:'Cinzel','Noto Serif JP',serif;
+  font-size:24px;
+  line-height:1;
+  color:#6d4110;
+  font-weight:600;
+}
+#screen-bonus .bonus-mixed-reward small{
+  font-family:'Noto Serif JP','Yu Mincho',serif;
+  font-size:14px;
+  line-height:1.18;
+  color:#6f5532;
+  text-align:center;
+}
+#screen-bonus .bonus-mixed-day.is-claimed{
+  background:linear-gradient(180deg, rgba(249,247,243,.92), rgba(236,232,226,.95));
+}
+#screen-bonus .bonus-mixed-day.is-claimed .bonus-mixed-reward,
+#screen-bonus .bonus-mixed-day.is-claimed .bonus-day-head{
+  opacity:.70;
+  filter:grayscale(.22);
+}
+#screen-bonus .bonus-mixed-day.is-next{
+  border-color:rgba(226,183,79,.98);
+  background:linear-gradient(180deg, rgba(255,246,215,.98), rgba(251,232,173,.96));
+  box-shadow:0 0 0 2px rgba(238,196,91,.34), inset 0 0 0 1px rgba(255,255,255,.78), 0 10px 18px rgba(209,168,79,.20);
+}
+#screen-bonus .bonus-mixed-day.is-next::before{
+  border-color:rgba(226,188,103,.92);
+}
+#screen-bonus .bonus-mixed-day.is-next .bonus-mixed-reward img.material{
+  width:78px !important; height:78px !important; max-width:78px !important; max-height:78px !important;
+  filter:drop-shadow(0 10px 16px rgba(194,151,46,.25));
+}
+#screen-bonus .bonus-mixed-day.is-special{
+  background:
+    radial-gradient(circle at 70% 18%, rgba(231,243,255,.96) 0%, rgba(250,250,250,0) 28%),
+    linear-gradient(180deg, rgba(255,255,255,.94), rgba(246,243,237,.96));
+}
+#screen-bonus .bonus-mixed-day.is-special::after{
+  content:'';
+  position:absolute;
+  inset:12px 14px 28px;
+  border-radius:50%;
+  border:1px solid rgba(217,193,142,.46);
+  opacity:.8;
+  pointer-events:none;
+}
+#screen-bonus .bonus-mixed-day.is-special .bonus-day-head{margin-bottom:2px;}
+#screen-bonus .bonus-mixed-day.is-special .bonus-day-mark-claimed{top:50px;}
+#screen-bonus .bonus-card-foot{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 190px;
+  gap:18px;
+  align-items:end;
+  padding-top:16px;
+  border-top:1px solid rgba(212,188,145,.64);
+}
+#screen-bonus .bonus-card-note{
+  font-family:'Noto Serif JP','Yu Mincho',serif;
+  font-size:13px;
+  line-height:1.65;
+  color:#6e5740;
+}
+#screen-bonus .bonus-card-action{
+  appearance:none;
+  height:72px;
+  border:1px solid rgba(212,196,171,.96);
+  border-radius:12px;
+  background:linear-gradient(180deg, rgba(255,255,255,.98), rgba(235,230,223,.98));
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.92), 0 6px 12px rgba(124,103,72,.10);
+  color:#7a5b35;
+  font-family:'Noto Serif JP','Yu Mincho',serif;
+  font-size:22px;
+  font-weight:700;
+  letter-spacing:.06em;
+}
+#screen-bonus .bonus-card-action:disabled{
+  opacity:1;
+  color:#8d8377;
+  background:linear-gradient(180deg, rgba(250,249,247,.98), rgba(232,227,220,.98));
+}
+#screen-bonus .bonus-page-loading,
+#screen-bonus .bonus-page-error{
+  margin-top:22px;
+  text-align:center;
+  color:#6f5532;
+}
+@media (max-width:390px){
+  #screen-bonus .app-page-header{flex-basis:96px;height:96px;min-height:96px;padding:8px 12px 0;grid-template-columns:152px 1fr 8px;}
+  #screen-bonus .bonus-back-button{width:148px;min-width:148px;height:52px;}
+  #screen-bonus .app-page-title{font-size:27px;}
+  #screen-bonus .app-page-title::before,#screen-bonus .app-page-title::after{width:56px;}
+  #screen-bonus .bonus-screen-scroll.app-page-content{padding:0 12px 12px;}
+  #screen-bonus .bonus-page-card{padding:18px 14px 14px;border-radius:18px;}
+  #screen-bonus .bonus-card-title-wrap h3{font-size:24px;}
+  #screen-bonus .bonus-card-sub{font-size:10px;}
+  #screen-bonus .bonus-archive-btn{height:40px;padding:0 14px;font-size:12px;}
+  #screen-bonus .bonus-mixed-row{grid-auto-rows:142px;gap:8px;}
+  #screen-bonus .bonus-day-mark{top:40px;min-width:82px;height:26px;font-size:10px;}
+  #screen-bonus .bonus-day-mark-next{height:34px;min-width:68px;font-size:12px;right:8px;top:8px;}
+  #screen-bonus .bonus-mixed-reward img.material{width:62px!important;height:62px!important;max-width:62px!important;max-height:62px!important;}
+  #screen-bonus .bonus-mixed-day.is-next .bonus-mixed-reward img.material{width:70px!important;height:70px!important;max-width:70px!important;max-height:70px!important;}
+  #screen-bonus .bonus-mixed-reward img.ticket{width:146px!important;}
+  #screen-bonus .bonus-mixed-reward b{font-size:18px;}
+  #screen-bonus .bonus-mixed-reward small{font-size:12px;}
+  #screen-bonus .bonus-card-foot{grid-template-columns:minmax(0,1fr) 160px;gap:12px;}
+  #screen-bonus .bonus-card-action{height:64px;font-size:18px;}
+  #screen-bonus .bonus-card-note{font-size:12px;line-height:1.55;}
+}
+@media (max-width:360px){
+  #screen-bonus .app-page-header{flex-basis:92px;height:92px;min-height:92px;grid-template-columns:136px 1fr 0;}
+  #screen-bonus .bonus-back-button{width:132px;min-width:132px;height:46px;margin-bottom:3px;}
+  #screen-bonus .app-page-title{font-size:24px;}
+  #screen-bonus .app-page-title::before,#screen-bonus .app-page-title::after{width:40px;}
+  #screen-bonus .bonus-page-card{padding:16px 12px 12px;}
+  #screen-bonus .bonus-card-head{gap:10px;padding-bottom:12px;margin-bottom:12px;}
+  #screen-bonus .bonus-card-head::after{right:92px;top:12px;width:42px;height:42px;}
+  #screen-bonus .bonus-card-title-wrap small{font-size:10px;margin-bottom:7px;}
+  #screen-bonus .bonus-card-title-wrap h3{font-size:22px;}
+  #screen-bonus .bonus-archive-btn{height:36px;padding:0 10px;font-size:11px;}
+  #screen-bonus .bonus-mixed-row{grid-auto-rows:126px;gap:7px;}
+  #screen-bonus .bonus-mixed-day{padding:10px 7px 8px;}
+  #screen-bonus .bonus-day-label em{font-size:10px;}
+  #screen-bonus .bonus-day-label b{font-size:19px;}
+  #screen-bonus .bonus-day-mark{top:36px;min-width:70px;height:22px;padding:0 10px;font-size:9px;}
+  #screen-bonus .bonus-day-mark-next{top:7px;right:6px;height:28px;min-width:58px;font-size:10px;padding:0 10px;}
+  #screen-bonus .bonus-mixed-reward{gap:4px;}
+  #screen-bonus .bonus-mixed-reward img.material{width:52px!important;height:52px!important;max-width:52px!important;max-height:52px!important;}
+  #screen-bonus .bonus-mixed-day.is-next .bonus-mixed-reward img.material{width:58px!important;height:58px!important;max-width:58px!important;max-height:58px!important;}
+  #screen-bonus .bonus-mixed-reward img.ticket{width:120px!important;}
+  #screen-bonus .bonus-mixed-reward b{font-size:16px;}
+  #screen-bonus .bonus-mixed-reward small{font-size:10.5px;}
+  #screen-bonus .bonus-card-foot{grid-template-columns:minmax(0,1fr) 144px;gap:10px;padding-top:12px;}
+  #screen-bonus .bonus-card-note{font-size:11px;line-height:1.45;}
+  #screen-bonus .bonus-card-action{height:56px;font-size:16px;border-radius:10px;}
+}
+
+/* =========================================================
+   build1400 — correct the three regressions after legacy CSS
+   1. Real bg_bonus artwork behind the page (not the old paper).
+   2. Every previously claimed day remains visibly grayscale.
+   3. DAY7 ticket sits centrally, not pushed down by v126 margins.
+   Scoped entirely to the bonus page; popup reward logic unchanged.
+   ========================================================= */
+html body:not(.ui-immersive) #screen-bonus.bonus-screen {
+  position:fixed !important;
+  isolation:isolate !important;
+  background-color:#eef0f3 !important;
+  background-image:url('../images/bg_bonus.webp') !important;
+  background-size:cover !important;
+  background-position:center center !important;
+  background-repeat:no-repeat !important;
+}
+/* The legacy screen backgrounds / overlays cannot hide the real artwork. */
+html body #screen-bonus.bonus-screen::before {
+  content:"" !important;
+  position:absolute !important;
+  inset:0 !important;
+  display:block !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+  background:url('../images/bg_bonus.webp') center center/cover no-repeat !important;
+  opacity:1 !important;
+}
+html body #screen-bonus.bonus-screen > .app-page-header,
+html body #screen-bonus.bonus-screen > .bonus-screen-scroll {
+  position:relative !important;
+  z-index:1 !important;
+  background:transparent !important;
+}
+html body #screen-bonus .bonus-page-card {
+  background:linear-gradient(180deg, rgba(255,253,248,.91) 0%, rgba(255,251,244,.94) 100%) !important;
+}
+
+/* Claimed means washed-out card AND desaturated gem, not simply a small badge. */
+html body #screen-bonus .bonus-mixed-row .bonus-mixed-day.is-claimed:not(.is-next) {
+  opacity:1 !important;
+  background:linear-gradient(180deg,rgba(244,242,240,.96),rgba(232,229,226,.97)) !important;
+  border-color:rgba(166,159,149,.46) !important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.78) !important;
+  filter:none !important;
+}
+html body #screen-bonus .bonus-mixed-row .bonus-mixed-day.is-claimed:not(.is-next) .bonus-day-head,
+html body #screen-bonus .bonus-mixed-row .bonus-mixed-day.is-claimed:not(.is-next) .bonus-mixed-reward {
+  opacity:.53 !important;
+  filter:grayscale(1) saturate(0) !important;
+  -webkit-filter:grayscale(1) saturate(0) !important;
+}
+html body #screen-bonus .bonus-mixed-row .bonus-mixed-day.is-claimed:not(.is-next) .bonus-mixed-reward img.material,
+html body #screen-bonus .bonus-mixed-row .bonus-mixed-day.is-claimed:not(.is-next) .bonus-mixed-reward img.ticket {
+  filter:grayscale(1) saturate(0) brightness(1.08) !important;
+  -webkit-filter:grayscale(1) saturate(0) brightness(1.08) !important;
+}
+html body #screen-bonus .bonus-mixed-row .bonus-mixed-day.is-claimed:not(.is-next) .bonus-day-mark-claimed {
+  opacity:1 !important;
+  filter:none !important;
+  -webkit-filter:none !important;
+  background:linear-gradient(180deg,#aea9a3,#817b73) !important;
+  color:#fffdf9 !important;
+  border:1px solid rgba(242,240,235,.72) !important;
+}
+html body #screen-bonus .bonus-mixed-row .bonus-mixed-day.is-next {
+  opacity:1 !important;
+  filter:none !important;
+  -webkit-filter:none !important;
+}
+
+/* DAY7: override legacy forced top margins and flex push-down. */
+html body #screen-bonus .bonus-mixed-row .bonus-mixed-day.is-special {
+  position:relative !important;
+  overflow:hidden !important;
+}
+html body #screen-bonus .bonus-mixed-row .bonus-mixed-day.is-special .bonus-mixed-reward {
+  position:absolute !important;
+  top:26px !important;
+  right:6px !important;
+  bottom:5px !important;
+  left:6px !important;
+  width:auto !important;
+  height:auto !important;
+  box-sizing:border-box !important;
+  margin:0 !important;
+  padding:0 !important;
+  gap:2px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+  align-items:center !important;
+  transform:translateY(-4px) !important;
+}
+html body #screen-bonus .bonus-mixed-row .bonus-mixed-day.is-special .bonus-mixed-reward img.ticket {
+  display:block !important;
+  flex:0 1 auto !important;
+  width:min(83%, 170px) !important;
+  max-width:170px !important;
+  max-height:63% !important;
+  height:auto !important;
+  min-height:0 !important;
+  margin:0 auto !important;
+  object-fit:contain !important;
+}
+html body #screen-bonus .bonus-mixed-row .bonus-mixed-day.is-special .bonus-mixed-reward b,
+html body #screen-bonus .bonus-mixed-row .bonus-mixed-day.is-special .bonus-mixed-reward small {
+  display:block !important;
+  flex:0 0 auto !important;
+  margin:0 !important;
+  line-height:1.2 !important;
+  text-align:center !important;
+}
+html body #screen-bonus .bonus-mixed-row .bonus-mixed-day.is-special .bonus-mixed-reward small {
+  max-width:100% !important;
+  white-space:normal !important;
+  overflow-wrap:anywhere !important;
+}
+@media(max-width:390px){
+  html body #screen-bonus .bonus-mixed-row .bonus-mixed-day.is-special .bonus-mixed-reward {
+    top:24px !important;
+    bottom:4px !important;
+    transform:translateY(-5px) !important;
+  }
+  html body #screen-bonus .bonus-mixed-row .bonus-mixed-day.is-special .bonus-mixed-reward img.ticket {
+    max-height:60% !important;
+  }
+}
+
+/* build1400: keep the seven-day grid AND the footer within the usable screen. */
+html body #screen-bonus .bonus-page-list {
+  height:100% !important;
+  min-height:0 !important;
+  align-items:stretch !important;
+  justify-content:stretch !important;
+}
+html body #screen-bonus .bonus-page-card {
+  flex:1 1 0 !important;
+  height:100% !important;
+  min-height:0 !important;
+  max-height:100% !important;
+  overflow:hidden !important;
+  display:flex !important;
+  flex-direction:column !important;
+  padding:clamp(9px,1.1dvh,14px) clamp(9px,2.7vw,15px) clamp(7px,1dvh,12px) !important;
+}
+html body #screen-bonus .bonus-card-head {
+  position:relative !important;
+  flex:0 0 clamp(64px,9.5dvh,94px) !important;
+  min-height:0 !important;
+  margin:0 0 clamp(4px,.6dvh,8px) !important;
+  padding:0 0 12px !important;
+  align-items:start !important;
+}
+html body #screen-bonus .bonus-card-title-wrap small {
+  margin-bottom:4px !important;
+}
+html body #screen-bonus .bonus-card-title-wrap h3 {
+  font-size:clamp(18px,3.3vw,28px) !important;
+  white-space:nowrap !important;
+}
+html body #screen-bonus .bonus-card-sub {
+  position:absolute !important;
+  bottom:5px !important;
+  left:0 !important;
+  right:0 !important;
+  width:100% !important;
+  margin:0 !important;
+  font-size:clamp(8px,1.3vw,10px) !important;
+  line-height:1.2 !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+html body #screen-bonus .bonus-archive-btn {
+  align-self:start !important;
+  margin-top:12px !important;
+  max-width:132px !important;
+  padding:0 8px !important;
+  height:clamp(27px,4dvh,37px) !important;
+  font-size:clamp(9px,2.5vw,12px) !important;
+  white-space:nowrap !important;
+}
+html body #screen-bonus .bonus-mixed-row {
+  flex:1 1 0 !important;
+  min-height:0 !important;
+  display:grid !important;
+  grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+  grid-template-rows:repeat(2,minmax(0,1fr)) !important;
+  grid-auto-rows:minmax(0,1fr) !important;
+  gap:clamp(4px,1.1vw,8px) !important;
+  margin:0 !important;
+}
+html body #screen-bonus .bonus-mixed-row .bonus-mixed-day {
+  min-height:0 !important;
+  height:auto !important;
+  box-sizing:border-box !important;
+}
+html body #screen-bonus .bonus-card-foot {
+  flex:0 0 clamp(40px,6.2dvh,64px) !important;
+  min-height:0 !important;
+  height:auto !important;
+  box-sizing:border-box !important;
+  margin:clamp(3px,.5dvh,6px) 0 0 !important;
+  padding-top:clamp(3px,.6dvh,7px) !important;
+  grid-template-columns:minmax(0,1fr) minmax(100px,32%) !important;
+  gap:7px !important;
+  align-items:center !important;
+}
+html body #screen-bonus .bonus-card-note {
+  font-size:clamp(7px,1.35vw,10px) !important;
+  line-height:1.4 !important;
+}
+html body #screen-bonus .bonus-card-action {
+  width:100% !important;
+  min-width:0 !important;
+  height:clamp(32px,4.5dvh,51px) !important;
+  padding:3px 5px !important;
+  font-size:clamp(12px,3vw,17px) !important;
+}
+@media(max-height:700px){
+  html body #screen-bonus .bonus-card-head {
+    flex-basis:clamp(62px,10dvh,70px) !important;
+  }
+  html body #screen-bonus .bonus-mixed-row .bonus-mixed-day {
+    padding:5px 4px 4px !important;
+  }
+  html body #screen-bonus .bonus-mixed-row .bonus-mixed-day .bonus-mixed-reward:not(.ignore) img.material {
+    width:clamp(27px,6dvh,38px) !important;
+    height:clamp(27px,6dvh,38px) !important;
+    max-width:38px !important;
+    max-height:38px !important;
+  }
+  html body #screen-bonus .bonus-mixed-row .bonus-mixed-day .bonus-mixed-reward b {
+    font-size:clamp(9px,1.8dvh,12px) !important;
+  }
+  html body #screen-bonus .bonus-mixed-row .bonus-mixed-day .bonus-mixed-reward small {
+    font-size:clamp(6px,1.25dvh,8px) !important;
+  }
+  html body #screen-bonus .bonus-mixed-row .bonus-mixed-day.is-special .bonus-mixed-reward {
+    top:19px !important;
+    bottom:2px !important;
+    transform:translateY(-3px) !important;
+  }
+  html body #screen-bonus .bonus-card-foot {flex-basis:44px !important;}
+  html body #screen-bonus .bonus-page-card {padding-top:8px !important;padding-bottom:6px !important;}
+}
