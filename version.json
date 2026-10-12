@@ -1,4 +1,4 @@
 {
-  "build": 1416,
-  "note": "CH01-04: 竜型レムナント + remnant_01_battle_start intro; CH02-04: 白い影 + remnant_02_battle_start intro; both boss visuals reduced ~16% from build1415, boss combat unchanged."
+  "build": 1425,
+  "note": "残響の塔：報酬一覧のアイテム画像・報酬名・個数を拡大。ウィンドウ高さとスクロール仕様は維持。"
 }

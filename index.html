@@ -416,7 +416,7 @@
 .gacha-resonance-overview-missing{padding:9px 3px;font-size:11px;color:#8f7354}
 #detail-modal.is-gacha-pickup-preview #detail-name{display:none!important}
 </style>
-  <link rel="stylesheet" href="css/resonance_tower.css?v=1344-tower-label-colors">
+  <link rel="stylesheet" href="css/resonance_tower.css?v=1425-reward-readability">
   <link rel="stylesheet" href="css/shooting_event.css?v=1414-ch07">
   <link rel="stylesheet" href="css/daily_stage_select.css?v=1388-shared-card">
   <link rel="stylesheet" href="css/raid_event.css?v=852-raid-glass-canonical">
@@ -3688,13 +3688,15 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 
     <div class="resonance-tower-floor-list" id="resonance-tower-floor-list" aria-label="第十層から第一層までの階層一覧"></div>
 
-    <aside class="resonance-tower-oath" aria-label="挑戦の掟">
-      <div class="resonance-tower-oath-star" aria-hidden="true">✧</div>
-      <h2><span>—</span> 挑戦の掟 <span>—</span></h2>
-      <p>階層をクリアしたキャラは、<br>その週の残りの挑戦では使用不可。<br>同じキャラの再挑戦もできません。</p>
-      <div class="resonance-tower-week-note"><span aria-hidden="true">♜</span> 今週の状況 <small>月曜 05:00 更新予定</small></div>
-    </aside>
-    <span class="resonance-tower-availability">各階層の戦闘・週次進捗は開発中</span>
+    <div class="resonance-tower-oath-stack">
+      <aside class="resonance-tower-oath" aria-label="挑戦の掟">
+        <div class="resonance-tower-oath-star" aria-hidden="true">✧</div>
+        <h2><span>—</span> 挑戦の掟 <span>—</span></h2>
+        <p>階層をクリアしたキャラは、<br>その週の残りの挑戦では使用不可。<br>同じキャラの再挑戦もできません。</p>
+        <div class="resonance-tower-week-note"><span aria-hidden="true">♜</span> 今週の状況 <small>月曜 05:00 更新予定</small></div>
+      </aside>
+      <div class="resonance-tower-availability" aria-live="polite">サーバーと同期しています…</div>
+    </div>
   </main>
   <div class="resonance-tower-panel-layer" id="resonance-tower-panel-layer" hidden>
     <div class="resonance-tower-panel-shade" data-tower-close></div>
@@ -3703,7 +3705,8 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
       <div class="resonance-tower-panel-kicker" id="resonance-tower-panel-kicker">ECHO TOWER</div>
       <h2 id="resonance-tower-panel-title"></h2>
       <p id="resonance-tower-panel-description"></p>
-      <p class="resonance-tower-panel-foot">このコンテンツは現在準備中です。</p>
+      <p class="resonance-tower-panel-foot">使用した仲間は勝利時に封印されます。敗北時は封印されません。</p>
+      <button type="button" class="resonance-tower-panel-start" id="resonance-tower-panel-start" hidden>この階層に挑戦</button>
       <button type="button" class="resonance-tower-panel-dismiss" data-tower-close>閉じる</button>
     </section>
   </div>
@@ -7038,6 +7041,28 @@ document.addEventListener('touchend', function (e) {
     }
   });
 
+
+  // v1420: tower reward ticket is usable ONLY for limited pickup 10-pulls.
+  var towerLimitedTicketDraw=false;
+  async function refreshTowerLimitedTicketButton(){
+    const btns=document.getElementById('summon-detail-btns');
+    const currentId=currentGachaId;
+    if(!btns || !['gacha_03','gacha_05'].includes(currentId))return;
+    try{
+      const response=await sb.rpc('get_tower_limited_ticket_balance');
+      if(response.error)throw response.error;
+      if(currentGachaId!==currentId || !btns.isConnected)return;
+      btns.querySelector('.tower-limited-ticket-draw')?.remove();
+      const amount=Math.max(0,Math.floor(Number(response.data)||0));
+      if(amount===0)return;
+      const button=document.createElement('button');button.type='button';
+      button.className='btn-gacha tower-limited-ticket-draw';
+      button.textContent='限定10連無料TICKET ×'+amount+' を使う';
+      button.addEventListener('click',()=>summonAction(10,true));
+      btns.appendChild(button);
+    }catch(err){console.warn('[tower] ticket status unavailable:',err);}
+  }
+
   function renderSummonBanners(){
     visibleGachaBanners = getVisibleGachaBanners();
 
@@ -7160,6 +7185,7 @@ document.addEventListener('touchend', function (e) {
 
     renderSummonBannerPager();
     updatePityUI();
+    void refreshTowerLimitedTicketButton();
   }
 
 
@@ -11029,8 +11055,9 @@ function goHome(){
     }
   }
 
-   function summonAction(count){
+   function summonAction(count,useTowerTicket){
   currentSummonCount = count || 1;
+  towerLimitedTicketDraw=useTowerTicket===true && currentSummonCount===10 && ['gacha_03','gacha_05'].includes(currentGachaId);
 
   userProfile.used_gachas = userProfile.used_gachas || [];
 
@@ -11055,11 +11082,12 @@ function goHome(){
     isGachaTutorialFreeDraw(currentGacha, currentSummonCount)
   );
 
-  document.getElementById('summon-confirm-text').textContent = tutorialFreeDraw
-    ? '初回無料で通常邂逅の10連を回します。'
+  document.getElementById('summon-confirm-text').textContent = towerLimitedTicketDraw
+    ? '限定邂逅10連無料TICKETを1枚使用して10連を回します。結晶は消費しません。'
+    : tutorialFreeDraw ? '初回無料で通常邂逅の10連を回します。'
     : ('結晶を ' + cost + ' 個消費してガチャを回します。');
 
-  if(!tutorialFreeDraw && userProfile.gem < cost){
+  if(!tutorialFreeDraw && !towerLimitedTicketDraw && userProfile.gem < cost){
   isSummoning = false;
 
   var standby = document.getElementById('summon-standby');
@@ -11081,6 +11109,7 @@ function goHome(){
 }
 
   function confirmSummonNo(){
+   towerLimitedTicketDraw=false;
    document.getElementById('summon-confirm-modal').classList.remove('active');
    if(
      gachaTutorialStage === 'confirming' &&
@@ -11107,6 +11136,7 @@ function goHome(){
 var isSummoning = false;
 
 function recoverSummonUI(message){
+  towerLimitedTicketDraw=false;
   hideGachaRuntimeLoadingOverlay(true);
   fadeOutTenResultWhiteoutOverlay(0);
   isSummoning = false;
@@ -11416,7 +11446,7 @@ Promise.resolve(normalSummon(currentSummonCount)).catch(function(error){
     isGachaTutorialFreeDraw(currentGacha, count)
   );
 
-  if(!tutorialFreeDraw && userProfile.gem < cost){
+  if(!tutorialFreeDraw && !towerLimitedTicketDraw && userProfile.gem < cost){
     recoverSummonUI();
     document.getElementById('paywall-modal').classList.add('active');
     return;
@@ -11426,10 +11456,13 @@ Promise.resolve(normalSummon(currentSummonCount)).catch(function(error){
   // 無料判定・CH03-04クリア確認・一度きり制御はサーバー側を正とする。
   var drawResult = tutorialFreeDraw
     ? await sb.rpc('draw_gacha_tutorial_free')
-    : await sb.rpc('draw_gacha', {
-        p_gacha_id: currentGacha.id,
-        p_count: count
-      });
+    : towerLimitedTicketDraw
+      ? await sb.rpc('redeem_tower_limited_ten_ticket',{p_gacha_id:currentGacha.id})
+      : await sb.rpc('draw_gacha', {
+          p_gacha_id: currentGacha.id,
+          p_count: count
+        });
+  if(!drawResult?.error){towerLimitedTicketDraw=false;}
 
   if(drawResult && drawResult.error){
     var drawMessage = String(drawResult.error.message || '');
@@ -19078,11 +19111,11 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1416-boss-names-intro-size"></script>
+<script src="js/shooting_event.js?v=1418-tower-seal-confirm"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
 <script src="js/skin_system.js?v=1076-home-canvas-normalize"></script>
-<script src="js/item_management.js?v=1070-arno-box-skin"></script>
+<script src="js/item_management.js?v=1420-tower-limited-ticket"></script>
 
 <script id="zeraphia-service-worker-register-v1">
 (function(){
@@ -19104,7 +19137,7 @@ window.returnToTitleScreen = function(){
 </script>
 
 <script src="js/score_attack.js?v=759-score-resume-attempt-fix"></script>
-<script src="js/resonance_tower.js?v=1342-tower-visual"></script>
+<script src="js/resonance_tower.js?v=1424-reward-scroll"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){

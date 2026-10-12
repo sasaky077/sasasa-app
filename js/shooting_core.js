@@ -1080,9 +1080,8 @@
 
   function isResponsiveBossStage() {
     // BOSS対象:
-    // フェイスレス / 各種レムナント / ノア / すこあちゃん
-    if (isFacelessStage() || isNoahStage() || isAmbushStage() || isScoreAttackStage() ||
-        isSelectedBaseStage(SHOOTING_STAGE_ID.CH01_04) || isSelectedBaseStage(SHOOTING_STAGE_ID.CH02_04)) {
+    // フェイスレス / 各種レムナント / ノア / オーバーシア(???) / すこあちゃん
+    if (isFacelessStage() || isNoahStage() || isAmbushStage() || isScoreAttackStage()) {
       return true;
     }
 
@@ -1095,10 +1094,8 @@
       image.includes('enemy_sakiel') ||
       image.includes('overseer') ||
       bossName.includes('レムナント') ||
-      bossName.includes('竜型レムナント') ||
-      bossName.includes('白い影') ||
-      bossName.includes('オーバーシア') || // 亜種は従来名のまま
-      bossName.includes('イリシュ') ||  // 旧データ互換
+      bossName.includes('オーバーシア') ||
+      bossName.includes('イリシュ') ||
       bossName.includes('リヴィア') ||
       bossName.includes('サキエル')
     );
@@ -1134,11 +1131,9 @@
   }
 
   function getResponsiveBossDisplayScale() {
-    // CH01-04 / CH02-04 はステージごとのBOSS表示倍率を使用する。攻撃定義は変更しない。
     const base = Math.max(0.1, Number(BOSS && BOSS.uiScale || 1));
-    const stageVisualScale = Math.max(0.1, Number(selectedStage?.bossVisualScale || 1));
-    if (!isResponsiveBossStage()) return base * stageVisualScale;
-    return base * stageVisualScale * getResponsiveCombatScaleProfile().boss;
+    if (!isResponsiveBossStage()) return base;
+    return base * getResponsiveCombatScaleProfile().boss;
   }
 
   function refreshResponsiveCombatUnitScales() {
@@ -11540,11 +11535,6 @@
         telegraphMs: 760,
         chargeSpeed: Number(variantConfig?.chargeSpeed || base.chargeSpeed || 500),
         chargeDurationMs: 620,
-        // CH02-04専用: 攻撃弾なし。予告後に味方ユニットへ6秒周期で突進。
-        ...(stageId === 'shooting_ch02_04' ? {
-          chargeIntervalMs: 6000,
-          contactDamage: 180,
-        } : {}),
       });
     }
 
@@ -11553,9 +11543,7 @@
       image: 'images/zako_enemy_01_normal_light.webp',
       element: 'light',
       behavior: 'generic_element_shot_v1',
-      shotPattern: stageId === 'shooting_ch02_04' ? 'spread5' : '',
-      // CH02-04専用: 3秒毎、光属性の5WAY spread。
-      fireRate: stageId === 'shooting_ch02_04' ? 3000 : Number(base.fireRate || 1280),
+      fireRate: Number(base.fireRate || 1280),
       bulletSpeed: Number(base.bulletSpeed || 215),
       bulletDamage: Number(base.bulletDamage || 90),
     });
@@ -12163,18 +12151,13 @@
       const dy = getEnemyAimPosition().y - enemy.y;
       const angle = Math.atan2(dy, dx);
       const element = normalizeCombatElement(def.element);
-      // CH02-04専用: NORMALの移動AIを維持しつつ、3秒に1回だけ5発SPREAD。
-      // 他ステージのNORMALは従来通り単発を撃つ。
-      const offsets = def.shotPattern === 'spread5'
-        ? [-0.36, -0.18, 0, 0.18, 0.36]
-        : [0];
-      offsets.forEach(offset => shootNormalEnemyProjectile(
+      shootNormalEnemyProjectile(
         enemy,
-        angle + offset,
+        angle,
         Number(def.bulletSpeed || 215),
         Number(def.bulletDamage || 90),
         `shooting-enemy-bullet shooting-mini-enemy-bullet shooting-generic-zako-shot shooting-enemy-element-${element || 'neutral'}`
-      ));
+      );
       return;
     }
 
@@ -12217,8 +12200,6 @@
         enemy.dashVx = (dx / len) * speed;
         enemy.dashVy = (dy / len) * speed;
         enemy.dashUntil = now + Math.max(280, Number(def.chargeDurationMs || 620));
-        // CH02-04専用: この突進開始時刻を記録し、次の突進との間隔を6秒に保つ。
-        if (Number(def.chargeIntervalMs || 0) > 0) enemy.lastDashStartedAt = now;
         enemy.attackState = 'dash';
         enemy.el.classList.add('generic-charge-dash');
         return;
@@ -12729,11 +12710,7 @@
           enemy.attackState = 'idle';
           enemy.dashVx = 0;
           enemy.dashVy = 0;
-          // CH02-04のみ、予告時間を含めて突進開始から次の突進開始まで6秒。
-          const repeatMs = Number(def.chargeIntervalMs || 0);
-          enemy.nextActionAt = repeatMs > 0
-            ? Math.max(now, Number(enemy.lastDashStartedAt || now) + repeatMs - Math.max(350, Number(def.telegraphMs || 760)))
-            : now + Math.max(700, Number(def.fireRate || 1650));
+          enemy.nextActionAt = now + Math.max(700, Number(def.fireRate || 1650));
           enemy.baseX = enemy.x;
           enemy.baseY = clamp(enemy.y, 78, Math.max(90, h * .40));
           enemy.el.classList.remove('generic-charge-dash');
@@ -18900,9 +18877,6 @@
     // SCORE ATTACKだけ専用ボス画像に差し替える。
     // 同じenemyIdを使う他ステージ（楽園 -ノア-等）の画像は変更しない。
     if (isScoreAttackStage()) return 'images/scoata_boss.webp';
-    // build1415: CH01-04 / CH02-04はそのステージで表示するBOSS画像だけ置換。
-    // BOSSマスターの攻撃・HP・行動定義には触れない。
-    if (selectedStage?.bossBattleImage) return String(selectedStage.bossBattleImage);
     return String(BOSS && BOSS.image || '');
   }
 
@@ -18949,14 +18923,14 @@
       meta.title = '理想郷：ノア';
       meta.sub = '楽園 -ノア-';
       meta.image = selectedStage.introImage || 'images/noah_battle_start.webp';
-    } else if (isSelectedBaseStage(SHOOTING_STAGE_ID.CH01_04) || lower.includes('remnant_01')) {
+    } else if (lower.includes('remnant_01')) {
       meta.kicker = 'REMNANT 01';
-      meta.title = '竜型レムナント';
-      meta.sub = 'DRAGON REMNANT';
-    } else if (isSelectedBaseStage(SHOOTING_STAGE_ID.CH02_04) || lower.includes('remnant_02')) {
+      meta.title = 'オーバーシア';
+      meta.sub = 'OVERSEER';
+    } else if (lower.includes('remnant_02')) {
       meta.kicker = 'REMNANT 02';
-      meta.title = '白い影';
-      meta.sub = 'WHITE SHADOW';
+      meta.title = 'イリシュ';
+      meta.sub = 'IRISH';
     } else if (lower.includes('remnant_03')) {
       meta.kicker = 'REMNANT 03';
       meta.title = 'リヴィア';
