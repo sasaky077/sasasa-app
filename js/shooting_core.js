@@ -1072,6 +1072,11 @@
     return !!(selectedStage && selectedStage.id === SHOOTING_STAGE_ID.BULLET_HELL_TEST);
   }
 
+  // 15F reuses Noah's combat patterns but MUST NOT consume Noah special tickets.
+  function isNoahPatternStage() {
+    return isNoahStage() || !!(isResonanceTowerStage() && selectedStage?.towerNoahPattern);
+  }
+
   function isAmbushStage() {
     return !!(selectedStage && selectedStage.eventId === 'random_ambush' && selectedStage.ambush);
   }
@@ -5074,7 +5079,7 @@
     // ノアは弾数が多いため1x固定、その他Canvas弾幕も最大1.25xに制限する。
     // UI/キャラ画像には影響せず、敵弾Canvasだけを軽量化する。
     const nativeDpr = Math.max(1, Number(window.devicePixelRatio || 1));
-    const dpr = isNoahStage() ? 1 : Math.min(1.25, nativeDpr);
+    const dpr = isNoahPatternStage() ? 1 : Math.min(1.25, nativeDpr);
     const pixelWidth = Math.round(cssWidth * dpr);
     const pixelHeight = Math.round(cssHeight * dpr);
     if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
@@ -5115,7 +5120,7 @@
     // build943: ノアは専用の高速描画ルートを使う。
     // 汎用rendererは全ステージ種別を毎フレーム走査するため、ノアでは大きな無駄になる。
     // ここでは noah / danger だけを一度分類し、必要なレイヤーだけ描いて即returnする。
-    if (isNoahStage()) {
+    if (isNoahPatternStage()) {
       const noahByElement = {
         neutral: [], fire: [], aqua: [], wood: [], light: [], dark: []
       };
@@ -5552,7 +5557,7 @@
               ? 'raid-laser'
               : (isRaidBullet
                 ? 'raid'
-                : (isNoahStage()
+                : (isNoahPatternStage()
                   ? 'noah'
                   : ((isFacelessStage() || isFacelessBullet)
                     ? 'faceless'
@@ -5630,7 +5635,7 @@
     // build959 Noah: 旧58/42では、古い弾（=プレイヤー側へ進んだ弾）から
     // 安全装置に消され、壁際まで届く前に弾幕が薄くなっていた。
     // 上限を引き上げつつ、超過時は後述で「新しい弾」から間引く。
-    const noahLimits = !scoreAttackLimits && isNoahStage() ? { hard: 96, recovery: 84 } : null;
+    const noahLimits = !scoreAttackLimits && isNoahPatternStage() ? { hard: 96, recovery: 84 } : null;
     const raidLimits = !scoreAttackLimits && !noahLimits && isRaidStage() ? getRaidEnemyBulletLimits() : null;
     const ch03BossLimits = !scoreAttackLimits && !noahLimits && !raidLimits && isChapter03BossStage() ? getChapter03BossEnemyBulletLimits() : null;
     const hardLimit = scoreAttackLimits ? scoreAttackLimits.hard : (noahLimits ? noahLimits.hard : (raidLimits ? raidLimits.hard : (ch03BossLimits ? ch03BossLimits.hard : ENEMY_BULLET_HARD_LIMIT)));
@@ -11471,6 +11476,22 @@
       const total = getSwarmLargeTotal();
       const remain = Math.max(0, total - Number(state.swarmLargeDefeated || 0));
       const rates = total === 1 ? [.5] : Array.from({length: total}, (_, i) => .2 + .6 * i / (total - 1));
+      if (cfg.guardEnemyId) {
+        const guardBase = getShootingEnemy(cfg.guardEnemyId);
+        if (guardBase) {
+          const guardHp = Math.max(1, Number(cfg.guardHp || guardBase.hp || 5000));
+          const guard = createNormalEnemy(Object.assign({}, guardBase, {hp:guardHp,ch404Hp:guardHp}), now);
+          if (guard) {
+            guard.swarmRole = 'guard';
+            guard.x = guard.baseX = w * .5;
+            guard.y = guard.baseY = Math.max(82, h*.29);
+            positionUnit(guard.el, guard.x, guard.y);
+            positionMiniEnemyHp(guard);
+            state.normalEnemies.push(guard);
+            state.normalSpawned++;
+          }
+        }
+      }
       for (let i = 0; i < remain; i++) {
         const interval = Math.max(500, Number(cfg.broodIntervalMs || 5000));
         spawnSwarmEnemy(cfg.largeEnemyId, w * rates[i], Math.max(96, h * .17), now, {
@@ -11924,6 +11945,7 @@
       if (!baseDef || !baseDef.implemented) return false;
 
       let def = resolveChapter02ZakoVariant(baseDef, state.normalSpawned, cfg);
+      if (cfg.tower11Spread) def = Object.assign({}, def, {shotPattern:'tower11_spread7',fireRate:1280,bulletSpeed:188,bulletDamage:185});
 
       // ニーナ試遊専用: ミニ敵の属性と敵弾を闇へ。オリビア・通常ステージは元定義のまま。
       if (isGachaTrialStage() && gachaTrialCharacterId === 36) {
@@ -12009,6 +12031,31 @@
     state.normalLastSpawnAt = now;
   }
 
+  // 12F: threatening light/dark WARNING bullets, drawn in the existing enemy Canvas.
+  function fireTower12LethalVolley(now) {
+    const cfg = selectedStage?.towerLethalVolley;
+    if (!cfg || !state || state.ended || state.finishing) return;
+    if (now - Number(state.tower12LastLethalAt || 0) < Number(cfg.intervalMs || 2900)) return;
+    state.tower12LastLethalAt = now;
+    const enemies = state.normalEnemies.filter(e => e && e.hp > 0).slice(0, Number(cfg.maxEnemyCount || 2));
+    if (!enemies.length || state.enemyBullets.length > 95) return;
+    const aim = getEnemyAimPosition();
+    enemies.forEach(enemy => {
+      const angle = Math.atan2(aim.y - enemy.y, aim.x - enemy.x);
+      const offsets = Number(cfg.shotsPerEnemy || 2) >= 3 ? [-.22,0,.22] : [-.16,.16];
+      offsets.forEach(offset => {
+        const a = angle + offset;
+        const p = makeProjectile('shooting-enemy-bullet shooting-danger-bullet',enemy.x,enemy.y+22,
+          Math.cos(a)*218,Math.sin(a)*218,999999);
+        if (p) {
+          p.attackElement = getCombatTargetElement(enemy, enemy?.def?.element);
+          p.element = p.attackElement;
+          state.enemyBullets.push(p);
+        }
+      });
+    });
+  }
+
   function shootNormalEnemyProjectile(enemy, angle, speed, damage, className) {
     const projectile = makeProjectile(
       className || 'shooting-enemy-bullet shooting-mini-enemy-bullet',
@@ -12035,6 +12082,14 @@
     // 試遊専用の壁はオリビア(ID40)だけ。CH06/DAILYの判定には一切影響させない。
     if (isGachaTrialStage()) return gachaTrialCharacterId === 40 ? GACHA_TRIAL_OLIVIA_WALL : [];
     if (selectedStage && Array.isArray(selectedStage.chapter6Barriers) && selectedStage.chapter6Barriers.length) {
+      const timedWall = selectedStage.towerTimedWall;
+      if (timedWall && state) {
+        const elapsed = Math.max(0, performance.now() - Number(state.startedAt || performance.now()));
+        const first = Math.max(0, Number(timedWall.firstAtMs || 20000));
+        const interval = Math.max(1000, Number(timedWall.intervalMs || 20000));
+        const duration = Math.min(interval, Math.max(0, Number(timedWall.durationMs || 10000)));
+        if (elapsed < first || ((elapsed - first) % interval) >= duration) return [];
+      }
       // build1038: ノアの移動壁はWAVE2以降、かつHP50%未満でのみ出現。
       // 条件未達時は空配列を返すため、既に壁が出ていて条件外になった場合も
       // ensureChapter6Barriers() 側で即時クリアされる。
@@ -12468,9 +12523,9 @@
       const element = normalizeCombatElement(def.element);
       // CH02-04専用: NORMALの移動AIを維持しつつ、3秒に1回だけ5発SPREAD。
       // 他ステージのNORMALは従来通り単発を撃つ。
-      const offsets = def.shotPattern === 'spread5'
-        ? [-0.36, -0.18, 0, 0.18, 0.36]
-        : [0];
+      const offsets = def.shotPattern === 'tower11_spread7'
+        ? [-.69,-.46,-.23,0,.23,.46,.69]
+        : (def.shotPattern === 'spread5' ? [-0.36,-0.18,0,0.18,0.36] : [0]);
       offsets.forEach(offset => shootNormalEnemyProjectile(
         enemy,
         angle + offset,
@@ -13358,7 +13413,8 @@
     const allDefeated = isCh404SummonerBattle()
       ? Number(state.ch404Phase || 0) >= 3 && !(state.normalEnemies || []).some(e => e && e.hp > 0)
       : isSwarmBattle()
-      ? Number(state.swarmLargeDefeated || 0) >= getSwarmLargeTotal()
+      ? (Number(state.swarmLargeDefeated || 0) >= getSwarmLargeTotal() &&
+         !(getSwarmBattleConfig()?.guardEnemyId && state.normalEnemies.some(e=>e&&e.hp>0&&e.swarmRole==='guard')))
       : total > 0 && state.normalDefeated >= total && state.normalSpawned >= total;
 
     if (isChapter101TutorialStage() && allDefeated && !state.ch101TutorialUltTriggered) {
@@ -13577,7 +13633,7 @@
 
     // 理想郷：ノア専用。
     // build946: 軽量優先。通常弾は固定テーブルで左右対称、追従弾だけ例外。
-    if (isNoahStage()) {
+    if (isNoahPatternStage()) {
       const interval = phase === 1 ? 420 : (phase === 2 ? 300 : 225);
 
       // ステージ開始直後はCanvas生成・BOSS表示・各画像decodeと重なるため、
@@ -15552,7 +15608,7 @@
   }
 
   function isChapter03BossStage() {
-    return !!(selectedStage && selectedStage.id === SHOOTING_STAGE_ID.CH03_04);
+    return !!(selectedStage && (selectedStage.id === SHOOTING_STAGE_ID.CH03_04 || selectedStage.towerLiviaBoss));
   }
 
 
@@ -15639,7 +15695,7 @@
       return Math.max(1000, every - Number(cfg?.warningTelegraphMs || 700));
     }
     if (isChapter04BossStage()) return Math.max(1000, Number(selectedStage?.dangerEveryMs || 10000) - 700); // WARNING表示0.7秒を含め弾発射は10秒周期
-    if (isNoahStage()) {
+    if (isNoahPatternStage()) {
       if (phase >= 3) return 5600;
       if (phase === 2) return 6900;
       return 8200;
@@ -15726,7 +15782,7 @@
           projectile.sakielWarningExpireAt = now + 5000;
           state.enemyBullets.push(projectile);
         });
-      } else if (isNoahStage()) {
+      } else if (isNoahPatternStage()) {
         // ノア: WARNINGも左右対称を基本にする。少しだけ本数を増やし、曲線的に漂わせる。
         const noahPhase = Math.max(1, Number(state.boss.phase || 1));
         const warningSpeed = Math.max(150, Number(BOSS.bulletSpeed || 230) * (noahPhase >= 3 ? 0.64 : 0.58));
@@ -16512,7 +16568,7 @@
     // これを止めないとフェイスレス等のAIが毎フレーム座標を上書きして
     // 吸引が見た目上ほぼ無効になっていた。
     if (!isNormalBattle() && !bossGrabbed && !bossStunned && !bossBlackHolePulled) {
-      if (isNoahStage()) {
+      if (isNoahPatternStage()) {
         // 理想郷：ノアは敵側センターライン上に鎮座し、一切巡回しない。
         state.boss.x = w * 0.5;
         state.boss.y = Math.max(70, h * 0.18);
@@ -16597,7 +16653,7 @@
     }
 
     // ノアだけは掴み/スタン/吸引の状態に関係なく座標を最終固定する。
-    if (isNoahStage() && !isNormalBattle()) {
+    if (isNoahPatternStage() && !isNormalBattle()) {
       state.boss.x = w * 0.5;
       state.boss.y = Math.max(70, h * 0.18);
     }
@@ -19187,6 +19243,7 @@
       if (isNormalBattle()) {
         spawnNormalEnemies(ts);
         updateNormalEnemies(dt, ts);
+        fireTower12LethalVolley(ts);
       } else {
         if (hasBossAdds()) {
           spawnBossAdds(ts);
@@ -22189,7 +22246,7 @@
   let shootingBattleBgmFadeRaf = 0;
 
   function getShootingBattleBgmTrack() {
-    const id = isNoahStage()
+    const id = isNoahPatternStage()
       ? SHOOTING_BGM_BOSS_02_ID
       : (selectedStage && selectedStage.type === 'normal'
         ? SHOOTING_BGM_NORMAL_ID

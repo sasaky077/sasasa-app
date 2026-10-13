@@ -1144,3 +1144,20 @@ html body #screen-resonance-tower .resonance-tower-panel-layer.is-floor-challeng
   transform:translateY(1px);
   filter:brightness(.97);
 }
+
+/* build1473 — 15 floors. Preserve readable 10-row height and scroll rather than squeezing 15 labels. */
+html body #screen-resonance-tower .resonance-tower-floor-list{
+  grid-template-rows:repeat(15,minmax(39px,39px));
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  touch-action:pan-y;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(241,219,173,.44) transparent;
+  padding:2px 2px 5px;
+}
+html body #screen-resonance-tower .resonance-tower-floor-list .resonance-tower-floor{
+  min-height:39px;
+  height:39px;
+}

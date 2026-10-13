@@ -12,9 +12,14 @@
     '上層への道。敵の数も攻撃密度も増す。',
     '最深部を目前にした試練。ここで戦力を温存したい。',
     '第三の難関。火・水の属性バリアを突破せよ。',
-    '最深部の守護者。PHASE2・3のHP半減時に5秒間左右反転。'
+    '第十層の守護者。PHASE2・3のHP半減時に5秒間左右反転。',
+    '五属性の天使が一体ずつ出現。濃密な弾幕を突破せよ。',
+    '光と闇の属性バリア。周期的な即死弾に警戒せよ。',
+    '蜘蛛の群れと白い三頭狼の強敵を撃破せよ。',
+    '強化リヴィア。20秒おきに10秒間だけ遮断壁が出現。',
+    '理想郷・ノア。特別巡行と同じ攻撃、HPは本家の70%。'
   ];
-  const numerals=['第一層','第二層','第三層','第四層','第五層','第六層','第七層','第八層','第九層','第十層'];
+  const numerals=['第一層','第二層','第三層','第四層','第五層','第六層','第七層','第八層','第九層','第十層','第十一層','第十二層','第十三層','第十四層','第十五層'];
 
   // v1420: tower rewards; the database RPC is authoritative for grants.
   const TOWER_REWARDS=Object.freeze([
@@ -30,7 +35,8 @@
     [{id:'tower_limited_ten_ticket',name:'限定邂逅10連無料TICKET',qty:1,img:'images/gacha_ticket_10.webp',symbol:'10連',ticket:true}],
     [{id:'gem',name:'結晶',qty:10,img:'images/icon_gem.webp'}],
     [{id:'special_stage_ticket',name:'Special Ticket -ノア-',qty:1,img:'images/special_stage_ticket.webp'}],
-    [{id:'gem',name:'結晶',qty:30,img:'images/icon_gem.webp'}]
+    [{id:'gem',name:'結晶',qty:30,img:'images/icon_gem.webp'}],
+    ...Array.from({length:5},()=>[{id:'flower_r',name:'聖霊花(R)',qty:1,img:'images/item_flower_r.webp'}])
   ]);
   function createTowerRewardList(floors){
     const out=document.createElement('div');out.className='resonance-tower-reward-list';
@@ -100,8 +106,8 @@
   function render(){
     const list=$('resonance-tower-floor-list'); if(!list) return;
     list.textContent='';
-    for(let n=10;n>=1;n--){
-      const isTrial=[3,6,9].includes(n),isFinal=n===10;
+    for(let n=15;n>=1;n--){
+      const isTrial=[3,6,9].includes(n),isFinal=n===15;
       const done=cleared(n), isCurrent=available(n), locked=!done&&!isCurrent;
       const btn=document.createElement('button');btn.type='button';
       btn.className='resonance-tower-floor'+(isFinal?' is-final':isTrial?' is-trial':'')+(n===selected?' is-selected':'')+(done?' is-cleared':locked?' is-locked':' is-current');
@@ -117,6 +123,12 @@
       copy.append(name,label);btn.append(num,copy);
       if(isTrial){const tag=document.createElement('span');tag.className='resonance-tower-trial-tag';tag.textContent='難関';btn.append(tag);}
       list.append(btn);
+    }
+    // Render rebuilds list nodes; ensure the active floor remains in view on phones.
+    const activeRow=list.querySelector('button[data-floor="'+String(selected)+'"]');
+    if(activeRow){
+      const wanted=Math.max(0,activeRow.offsetTop+activeRow.offsetHeight-list.clientHeight+4);
+      list.scrollTop=wanted;
     }
     const availability=$('screen-resonance-tower')?.querySelector('.resonance-tower-availability');
     if(availability){
@@ -149,7 +161,7 @@
       if(!data || !Array.isArray(data.clearedFloors)||!Array.isArray(data.sealedCharacterIds)) throw new Error('塔の進行データが不正です');
       progress=data;
       syncTowerWallet();
-      selected=progress.completed?10:currentFloor();
+      selected=progress.completed?15:currentFloor();
     }catch(err){
       progress=null;
       console.warn('[tower] status unavailable:',err);
@@ -178,7 +190,7 @@
     let rewardList=layer.querySelector('.resonance-tower-reward-list');
     if(rewardList)rewardList.remove();
     if(kind==='rewards'||kind==='floor'){
-      rewardList=createTowerRewardList(kind==='floor'?[number]:Array.from({length:10},(_,i)=>i+1));
+      rewardList=createTowerRewardList(kind==='floor'?[number]:Array.from({length:15},(_,i)=>i+1));
       desc.insertAdjacentElement('afterend',rewardList);
     }
     layer.querySelector('.resonance-tower-panel-foot').hidden=(kind==='rewards');
@@ -316,7 +328,7 @@
     });
     return finishPromise;
   }
-  window.ResonanceTower=Object.freeze({isTowerStageId:id=>/^shooting_tower_(?:0[1-9]|10)$/.test(String(id||'')),isCharacterAvailable,confirmSealParty,cancelSealConfirmation,prepareBattle,finishRun,refresh});
+  window.ResonanceTower=Object.freeze({isTowerStageId:id=>/^shooting_tower_(?:0[1-9]|1[0-5])$/.test(String(id||'')),isCharacterAvailable,confirmSealParty,cancelSealConfirmation,prepareBattle,finishRun,refresh});
   window.openResonanceTower=function(){
     if(typeof window.requireChapter03ContentUnlock!=='function'||!window.requireChapter03ContentUnlock())return;
     closePanel();
@@ -332,7 +344,7 @@
     screen.dataset.towerBound='true';
     list.addEventListener('click',e=>{
       const btn=e.target.closest('button[data-floor]');if(!btn||!list.contains(btn))return;
-      const floor=Number(btn.dataset.floor);if(!Number.isInteger(floor)||floor<1||floor>10)return;
+      const floor=Number(btn.dataset.floor);if(!Number.isInteger(floor)||floor<1||floor>15)return;
       selected=floor;render();openPanel('floor',floor);
     });
     screen.querySelector('.resonance-tower-actions')?.addEventListener('click',e=>{

@@ -162,6 +162,53 @@
   ];
   function makeResonanceTowerStage(floor) {
     const difficult = floor === 3 || floor === 6 || floor === 9;
+    // build1473 — 11F–15F. All effects use existing Canvas / elemental barriers / CH06 walls.
+    if (floor === 11) return Object.freeze({
+      id:'shooting_tower_11',chapter:0,stageNo:11,eventId:'resonance_tower',eventTitle:'残響の塔',
+      difficultyLabel:'11F / 超弾幕',name:'第十一層',type:'normal',background:'images/battle_bg_01.webp',
+      enemyIds:Object.freeze([SHOOTING_ENEMY_ID.ZAKO_FIRE_SHOT,SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT,
+        SHOOTING_ENEMY_ID.ZAKO_WOOD_SHOT,SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT,SHOOTING_ENEMY_ID.ZAKO_DARK_SHOT]),
+      normalBattle:Object.freeze({totalEnemies:5,maxActive:3,spawnIntervalMs:1550,enemyHp:3400,
+        enemyBulletDamage:185,enemyBulletSpeed:188,enemyFireRate:1280,tower11Spread:true,itemDropRate:0}),
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'5属性の超弾幕を突破'}),playable:true
+    });
+    if (floor === 12) return Object.freeze({
+      id:'shooting_tower_12',chapter:0,stageNo:12,eventId:'resonance_tower',eventTitle:'残響の塔',
+      difficultyLabel:'12F / 属性試練',name:'第十二層',type:'normal',background:'images/battle_bg_01.webp',
+      enemyIds:Object.freeze([SHOOTING_ENEMY_ID.ZAKO_DARK_SHOT,SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT]),
+      normalBattle:Object.freeze({totalEnemies:8,maxActive:2,spawnIntervalMs:1320,enemyHp:3800,
+        enemyBulletDamage:180,enemyBulletSpeed:210,enemyFireRate:1160,enemyElementSequence:Object.freeze(['dark','light']),itemDropRate:0}),
+      weaknessOnlyEnemies:true,towerLethalVolley:Object.freeze({intervalMs:2900,shotsPerEnemy:2,maxEnemyCount:2}),
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'光・闇のバリアと即死弾を突破'}),playable:true
+    });
+    if (floor === 13) return Object.freeze({
+      id:'shooting_tower_13',chapter:0,stageNo:13,eventId:'resonance_tower',eventTitle:'残響の塔',
+      difficultyLabel:'13F / 群生',name:'第十三層',type:'normal',background:'images/battle_bg_01.webp',
+      enemyIds:Object.freeze([SHOOTING_ENEMY_ID.SWARM_SPIDER_LARGE,SHOOTING_ENEMY_ID.STRONG_CH07_02]),
+      normalBattle:Object.freeze({totalEnemies:3,maxActive:3,spawnIntervalMs:1300,itemDropRate:0}),
+      swarmBattle:Object.freeze({largeCount:2,largeEnemyId:SHOOTING_ENEMY_ID.SWARM_SPIDER_LARGE,
+        smallEnemyId:SHOOTING_ENEMY_ID.SWARM_SPIDER_SMALL,broodIntervalMs:5200,broodMaxPerLarge:2,
+        guardEnemyId:SHOOTING_ENEMY_ID.STRONG_CH07_02,guardHp:7200}),
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'群がる蜘蛛と強敵を撃破'}),playable:true
+    });
+    if (floor === 14) return Object.freeze({
+      id:'shooting_tower_14',chapter:0,stageNo:14,eventId:'resonance_tower',eventTitle:'残響の塔',
+      difficultyLabel:'14F / 守護者',name:'第十四層',type:'boss',background:'images/battle_bg_01.webp',
+      enemyIds:Object.freeze([SHOOTING_ENEMY_ID.REMNANT_03]),towerLiviaBoss:true,
+      bossGaugeHps:Object.freeze([6750,6750,6750]),bossVisualScale:1.03,
+      chapter6Barriers:Object.freeze([Object.freeze({xRate:.5,yRate:.47,widthRate:.62,height:23,
+        moveRangeRate:.08,moveSpeed:.28,contactDamage:100})]),
+      towerTimedWall:Object.freeze({firstAtMs:20000,intervalMs:20000,durationMs:10000}),
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.BOSS_CLEAR,text:'強化リヴィアを撃破'}),playable:true
+    });
+    if (floor === 15) return Object.freeze({
+      id:'shooting_tower_15',chapter:0,stageNo:15,eventId:'resonance_tower',eventTitle:'残響の塔',
+      difficultyLabel:'15F / 最深部',name:'第十五層',type:'boss',background:'images/battle_bg_01.webp',
+      enemyIds:Object.freeze([SHOOTING_ENEMY_ID.NOAH]),towerNoahPattern:true,
+      bossGaugeHp:3500,bossGauges:3,bossElement:'light',enemyElement:'light',bossVisualScale:1.0,
+      // Tower challenge has no special-ticket cost: ticket RPC is special-proc only.
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.BOSS_CLEAR,text:'理想郷・ノアを撃破'}),playable:true
+    });
     if (floor === 10) return Object.freeze({
       id:'shooting_tower_10', chapter:0, stageNo:10,
       eventId:'resonance_tower', eventTitle:'残響の塔', difficultyLabel:'10F / 最深部',
@@ -207,7 +254,7 @@
   }
 
   const SHOOTING_STAGES = Object.freeze({
-    ...Object.fromEntries(Array.from({length:10},(_,i)=>{const n=i+1;return ['shooting_tower_'+String(n).padStart(2,'0'),makeResonanceTowerStage(n)];})),
+    ...Object.fromEntries(Array.from({length:15},(_,i)=>{const n=i+1;return ['shooting_tower_'+String(n).padStart(2,'0'),makeResonanceTowerStage(n)];})),
     // 本編の敵・ショット・ULT・操作系を共用するが、通常ステージには登録しない試遊専用ステージ。
     [SHOOTING_STAGE_ID.GACHA_TRIAL]: Object.freeze({
       id: SHOOTING_STAGE_ID.GACHA_TRIAL,
