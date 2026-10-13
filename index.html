@@ -9539,6 +9539,7 @@ startTitleBgm();
     var chara = favorite.chara;
     var fav = favorite.favData || {};
     var data = Object.assign({}, chara, fav, {
+      __friendDetail: true,
       id: chara.id,
       name: chara.name,
       img: chara.img,
@@ -9573,8 +9574,12 @@ startTitleBgm();
 
     // build1464: 相手が限定衣装を装備していれば、立ち絵もその衣装にする。
     try{
-      if(window.CharacterSkins && typeof window.CharacterSkins.getPublicHomeImage === 'function'){
-        var skinImg = await window.CharacterSkins.getPublicHomeImage(fid, chara.id, '');
+      var skinApi = window.CharacterSkins;
+      var portraitFn = skinApi && (typeof skinApi.getPublicPortraitImage === 'function' ? skinApi.getPublicPortraitImage
+        : (typeof skinApi.getPublicHomeImage === 'function' ? skinApi.getPublicHomeImage : null));
+      if(portraitFn){
+        // build1465: 限定衣装の立ち絵（chara_XX_b.webp）を表示
+        var skinImg = await portraitFn(fid, chara.id, '');
         var stillOpen = modal.classList.contains('active') && modal.classList.contains('is-friend-character-detail') &&
           window.currentDetailData && Number(window.currentDetailData.id) === Number(chara.id);
         if(skinImg && stillOpen){
@@ -9582,6 +9587,16 @@ startTitleBgm();
           var mainImg = visual && visual.querySelector('.detail-main-img');
           var wrap = visual && visual.querySelector('.detail-visual-wrap');
           if(mainImg){
+            // 立ち絵がまだ置かれていない場合は、衣装のホーム用画像に自動で切り替える
+            var homeFallback = (skinApi && typeof skinApi.getPublicHomeImage === 'function')
+              ? await skinApi.getPublicHomeImage(fid, chara.id, '') : '';
+            mainImg.onerror = function(){
+              this.onerror = null;
+              if(homeFallback && this.getAttribute('src') !== homeFallback){
+                this.src = homeFallback;
+                if(wrap) wrap.setAttribute('onclick', 'openCharaImageViewer(' + JSON.stringify(homeFallback).replace(/"/g, "'") + ')');
+              }
+            };
             mainImg.src = skinImg;
             mainImg.classList.add('is-skin-image');
           }
@@ -16520,6 +16535,21 @@ function buildCharacterDetailHTML(data, options){
 
   var chara = getDetailCharaDef(data);
   var imgSrc = (chara && chara.img) ? chara.img : data.img;
+  var defaultImgSrc = imgSrc;
+  var skinHomeSrc = '';
+  // build1466: 自分のキャラ詳細は、装備中の限定衣装の立ち絵（chara_XX_b.webp）で表示する。
+  // ガチャ結果から開いた詳細と、フレンドのキャラ詳細（別処理で相手の衣装を表示）は対象外。
+  if(!fromTenResult && !(data && data.__friendDetail) && window.CharacterSkins &&
+     typeof window.CharacterSkins.getPortraitImage === 'function'){
+    try{
+      var skinPortrait = window.CharacterSkins.getPortraitImage(chara ? chara.id : data.id, '');
+      if(skinPortrait){
+        imgSrc = skinPortrait;
+        skinHomeSrc = typeof window.CharacterSkins.getHomeImage === 'function'
+          ? window.CharacterSkins.getHomeImage(chara ? chara.id : data.id, '') : '';
+      }
+    }catch(_){}
+  }
   var detailElementData = Object.assign({}, chara || {}, data || {});
   // 10連ガチャ結果から開いた詳細では、キャラ画像左上の属性アイコンを表示しない
   var elementIconHtml = fromTenResult ? '' : getElementCornerIconHTML(detailElementData, 'detail-element-img');
@@ -16530,6 +16560,22 @@ function buildCharacterDetailHTML(data, options){
     '<img class="detail-main-img" src="' + imgSrc + '">' +
     elementIconHtml +
   '</div>';
+  // 立ち絵が未配置なら、衣装のホーム用画像 → 通常の立ち絵の順に切り替える
+  if(imgSrc !== defaultImgSrc){
+    (function(){
+      var visual = document.getElementById('detail-chara-visual');
+      var mainImg = visual && visual.querySelector('.detail-main-img');
+      var wrap = visual && visual.querySelector('.detail-visual-wrap');
+      if(!mainImg) return;
+      var chain = [skinHomeSrc, defaultImgSrc].filter(function(src){ return src && src !== imgSrc; });
+      mainImg.onerror = function(){
+        var next = chain.shift();
+        if(!next){ this.onerror = null; return; }
+        this.src = next;
+        if(wrap) wrap.setAttribute('onclick', 'openCharaImageViewer(' + JSON.stringify(next).replace(/"/g, "'") + ')');
+      };
+    })();
+  }
 
   // キャラ名
   document.getElementById('detail-name').textContent = (chara && chara.name) ? chara.name : data.name;
@@ -19230,7 +19276,7 @@ window.returnToTitleScreen = function(){
 <script src="js/shooting_party_filter.js?v=1432-icon-bounds"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
-<script src="js/skin_system.js?v=1464-friend-skin"></script>
+<script src="js/skin_system.js?v=1466-own-skin-portrait"></script>
 <script src="js/item_management.js?v=1451-ticket-image"></script>
 
 <script id="zeraphia-service-worker-register-v1">

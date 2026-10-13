@@ -6,6 +6,7 @@
       limited_01: {
         id:'limited_01',
         name:'限定衣装',
+        img:'images/chara_03_b.webp',   // build1465: 限定衣装の立ち絵（キャラ詳細用）
         home:'images/chara_03_b_cut.webp',
         panel:'images/chara_03_b_panel.webp',
         exchangeCost:10
@@ -15,6 +16,7 @@
       limited_01: {
         id:'limited_01',
         name:'限定衣装',
+        img:'images/chara_09_b.webp',   // build1465: 限定衣装の立ち絵（キャラ詳細用）
         home:'images/chara_09_b_cut.webp',
         panel:'images/chara_09_b_panel.webp',
         exchangeCost:10
@@ -24,6 +26,7 @@
       limited_01: {
         id:'limited_01',
         name:'限定衣装',
+        img:'images/chara_20_b.webp',   // build1465: 限定衣装の立ち絵（キャラ詳細用）
         home:'images/chara_20_b_cut.webp',
         panel:'images/chara_20_b_panel.webp',
         exchangeCost:10
@@ -33,6 +36,7 @@
       limited_01: {
         id:'limited_01',
         name:'限定衣装',
+        img:'images/chara_36_b.webp',   // build1465: 限定衣装の立ち絵（キャラ詳細用）
         home:'images/chara_36_b_cut.webp',
         panel:'images/chara_36_b_panel.webp',
         exchangeCost:10
@@ -292,6 +296,13 @@
       '</div>';
   }
 
+  // build1466: 自分のキャラ詳細の立ち絵。装備中かつ所持中の衣装があれば立ち絵（無ければhome）、なければ fallback。
+  function getPortraitImage(characterId, fallback){
+    const skinId=getEquippedSkinId(characterId);
+    const skin=getSkin(characterId,skinId);
+    return skin && isOwned(characterId,skinId) ? (skin.img || skin.home) : String(fallback||'');
+  }
+
   async function getPublicEquippedSkinId(userId, characterId){
     const uid=String(userId||'').trim().toLowerCase();
     const charId=Number(characterId||0);
@@ -331,12 +342,20 @@
     return skin ? skin.panel : defaultPanel(charId,fallback);
   }
 
-  // build1464: フレンドのキャラ詳細用。相手が装備中の衣装の立ち絵（home）を返す。未装備なら fallback。
+  // build1464: フレンドのキャラ詳細用。相手が装備中の衣装のホーム用画像（home）を返す。未装備なら fallback。
   async function getPublicHomeImage(userId, characterId, fallback){
     const charId=Number(characterId||0);
     const skinId=await getPublicEquippedSkinId(userId,charId);
     const skin=getSkin(charId,skinId);
     return skin ? skin.home : String(fallback||'');
+  }
+
+  // build1465: キャラ詳細の立ち絵。衣装の立ち絵（img: chara_XX_b.webp）を優先し、無ければ home。未装備なら fallback。
+  async function getPublicPortraitImage(userId, characterId, fallback){
+    const charId=Number(characterId||0);
+    const skinId=await getPublicEquippedSkinId(userId,charId);
+    const skin=getSkin(charId,skinId);
+    return skin ? (skin.img || skin.home) : String(fallback||'');
   }
 
   function notifySkinAcquired(characterId, skinId){
@@ -360,8 +379,10 @@
     getEquippedSkinId,
     getHomeImage,
     getPanelImage,
+    getPortraitImage,
     getPublicPanelImage,
     getPublicHomeImage,
+    getPublicPortraitImage,
     getPublicEquippedSkinId,
     buildSelectorHTML,
     buildFullscreenControlsHTML,
