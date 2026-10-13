@@ -14012,6 +14012,8 @@ function showTenResult(results){
     var zukanScreen = document.getElementById('screen-zukan');
     if(zukanScreen && zukanScreen.classList.contains('active')){
       resetZukanListReturnPosition(true);
+      // build1472: only a real screen exit clears the character-index filters.
+      if(typeof resetZukanFiltersOnScreenExit === 'function') resetZukanFiltersOnScreenExit();
     }
   }
 
@@ -14301,6 +14303,28 @@ function showTenResult(results){
   };
   var isZukanFilterMenuOpen = false;
   var isZukanNameSearchOpen = false;
+
+  // Called when navigating to another top-level screen; opening/closing
+  // an individual character detail within the index must NOT clear the search.
+  function resetZukanFiltersOnScreenExit(){
+    zukanIndexFilter.query = '';
+    zukanIndexFilter.elements = [];
+    zukanIndexFilter.rarities = [];
+    zukanIndexFilter.shotTypes = [];
+    zukanIndexFilter.sort = 'id';
+    isZukanFilterMenuOpen = false;
+    isZukanNameSearchOpen = false;
+    var layer = document.getElementById('zukan-filter-menu-layer');
+    if(layer) layer.remove();
+    var input = document.getElementById('zukan-name-search-input');
+    if(input){
+      input.value = '';
+      if(document.activeElement === input) input.blur();
+    }
+    var clear = document.getElementById('zukan-name-search-clear');
+    if(clear) clear.classList.remove('show');
+    updateZukanHeaderForMode();
+  }
 
   var ZUKAN_ELEMENT_ORDER = ['fire','aqua','wood','light','dark'];
   var ZUKAN_ELEMENT_LABELS = {
@@ -19307,8 +19331,8 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1470-bomb-cluster-distinct"></script>
-<script src="js/shooting_party_filter.js?v=1471-trap-filter"></script>
+<script src="js/shooting_event.js?v=1472-filter-screen-exit-reset"></script>
+<script src="js/shooting_party_filter.js?v=1472-filter-screen-exit-reset"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
 <script src="js/skin_system.js?v=1466-own-skin-portrait"></script>

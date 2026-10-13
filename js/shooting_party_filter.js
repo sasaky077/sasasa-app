@@ -159,9 +159,16 @@
   }
   function closeDialog(){document.getElementById('shooting-party-filter-layer')?.remove();}
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('shooting-party-filter-layer')){e.stopPropagation();closeDialog();}});
+  function reset(){
+    closeDialog();
+    state.query='';state.elements=[];state.rarities=[];state.shotTypes=[];state.sort='id';
+    const input=document.querySelector('#zpf-filter-toolbar input');
+    if(input&&document.activeElement===input)input.blur();
+    syncToolbar();
+  }
   function open(){
-    closeDialog();state.query='';state.elements=[];state.rarities=[];state.shotTypes=[];state.sort='id';
+    reset();
     mount();syncToolbar();
   }
-  window.ShootingPartyFilter=Object.freeze({open,refresh:apply,close:closeDialog,getState:()=>({...state})});
+  window.ShootingPartyFilter=Object.freeze({open,refresh:apply,close:closeDialog,reset,getState:()=>({...state})});
 })();

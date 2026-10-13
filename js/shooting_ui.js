@@ -548,6 +548,8 @@
     if (!panel) return;
     panel.classList.toggle('show', visible);
     panel.setAttribute('aria-hidden', visible ? 'false' : 'true');
+    // build1472: clear party search/filters only when leaving formation.
+    if (!visible) window.ShootingPartyFilter?.reset?.();
     const root = document.getElementById(rootId);
     if (root) root.classList.toggle('zpf-party-open', !!visible);
     if (visible) setBattleHudVisible(rootId, false);
@@ -564,6 +566,8 @@
     } else {
       if (nav) nav.style.display = savedNavDisplay == null ? '' : savedNavDisplay;
       if (frame) frame.style.display = savedFrameDisplay == null ? '' : savedFrameDisplay;
+      // Battle/formation screen closed without necessarily hiding the panel first.
+      window.ShootingPartyFilter?.reset?.();
     }
   }
 
