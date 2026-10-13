@@ -1520,11 +1520,11 @@
   SHOOTING_CHARACTERS[CHARACTER_ID.PATRA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, id: CHARACTER_ID.PATRA, effectKey:'patra',
     label:'PARALLEL / SLOW RING',
-    description:'2連射型。ULTで自機の周囲に7秒間、敵弾の速度を半減する円環を展開する。',
+    description:'2連射型。ULTで自機の周囲に7秒間、敵弾の速度を8割減する円環を展開する。',
     ultName:'砂時計の円環',
-    ultDescription:'自身を中心に円環を7秒間展開する。円環内に入った敵弾は移動速度が50%に低下し、外へ出ると元の速度へ戻る。',
+    ultDescription:'自身を中心に円環を7秒間展開する。円環内に入った敵弾は移動速度が20%に低下し、外へ出ると元の速度へ戻る。',
     ultType:'shiina_light_ring', ultBaseType:'field', ultAddons:['enemy_bullet_slow'],
-    lightRingDurationMs:7000, lightRingRadius:190, lightRingBulletSpeedMultiplier:0.5,
+    lightRingDurationMs:7000, lightRingRadius:190, lightRingBulletSpeedMultiplier:0.2,
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.ERI] = buildShootingCharacter({
@@ -2096,13 +2096,13 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.SERA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.SERA, effectKey: 'sera',
-    label: 'ORBIT / SLOW RING', description: '2発の円環軌道ショット。ULTで7秒間、敵弾の速度を半減する円環を展開する。',
+    label: 'ORBIT / SLOW RING', description: '2発の円環軌道ショット。ULTで7秒間、敵弾の速度を8割減する円環を展開する。',
     shotType: 'orbit', shotCount: 2, shotSpacing: 28, fireRate: 450, bulletSpeed: 520, shotPowerRate: 0.165,
     orbitRadius: 30, orbitAngularSpeed: 12.0, orbitForwardLoopRate: 0.29, orbitPhaseStep: Math.PI,
     ultName: '静寂の円環',
-    ultDescription: '自身を中心に円環を7秒間展開する。円環内に入った敵弾は移動速度が50%に低下し、外へ出ると元の速度へ戻る。',
+    ultDescription: '自身を中心に円環を7秒間展開する。円環内に入った敵弾は移動速度が20%に低下し、外へ出ると元の速度へ戻る。',
     ultBaseType:'field', ultAddons:['enemy_bullet_slow'], ultType:'shiina_light_ring',
-    lightRingDurationMs:7000, lightRingRadius:190, lightRingBulletSpeedMultiplier:0.5,
+    lightRingDurationMs:7000, lightRingRadius:190, lightRingBulletSpeedMultiplier:0.2,
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.RYUNE] = buildShootingCharacter({
@@ -2164,15 +2164,15 @@
   SHOOTING_CHARACTERS[CHARACTER_ID.ELSIA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.ELSIA, effectKey: 'elsia',
     label: 'ORBIT / BULLET SLOW FIELD',
-    description: '2発の円環軌道ショット。ULTは自身を中心に大きな光の円環を7秒間展開し、円内へ入った敵弾の速度を半減する。',
+    description: '2発の円環軌道ショット。ULTは自身を中心に大きな光の円環を7秒間展開し、円内へ入った敵弾の速度を8割減する。',
     ultName: '術式・光の円環',
-    ultDescription: '自身を中心に円環を7秒間展開する。円環内に入った敵弾は移動速度が50%に低下し、外へ出ると元の速度へ戻る。',
+    ultDescription: '自身を中心に円環を7秒間展開する。円環内に入った敵弾は移動速度が20%に低下し、外へ出ると元の速度へ戻る。',
     shotType: 'orbit', shotCount: 2, shotSpacing: 28, fireRate: 450, bulletSpeed: 520, shotPowerRate: 0.165,
     orbitRadius: 32, orbitAngularSpeed: 11.8, orbitForwardLoopRate: 0.29, orbitPhaseStep: Math.PI,
     ultBaseType: 'field', ultAddons: ['enemy_bullet_slow'], ultType: 'shiina_light_ring',
     lightRingDurationMs: 7000,
     lightRingRadius: 190,
-    lightRingBulletSpeedMultiplier: 0.5,
+    lightRingBulletSpeedMultiplier: 0.2,
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.FIA] = buildShootingCharacter({
@@ -2783,9 +2783,9 @@
     shotType:'cluster', clusterSize:'M', clusterSplitCount:4, clusterFragmentDamageRate:0.5,
     shotCount:1, fireRate:550, bulletSpeed:650, shotPowerRate:0.27,
     ultName:'アビス・マレディクション',
-    ultDescription:'自身を中心に円環を7秒間展開する。円環内に入った敵弾は移動速度が50%に低下し、外へ出ると元の速度へ戻る。',
+    ultDescription:'自身を中心に円環を7秒間展開する。円環内に入った敵弾は移動速度が20%に低下し、外へ出ると元の速度へ戻る。',
     ultType:'shiina_light_ring', ultBaseType:'field', ultAddons:['enemy_bullet_slow'],
-    lightRingDurationMs:7000, lightRingRadius:190, lightRingBulletSpeedMultiplier:0.5,
+    lightRingDurationMs:7000, lightRingRadius:190, lightRingBulletSpeedMultiplier:0.2,
   });
 
   // build1312: ハオ / 木属性・恒常SR。CHARGEと5段階の接触起動ULT。
@@ -2927,7 +2927,7 @@
       case 'testchan_black_ship':
         return '正面へ極太レーザーを' + formatUltSeconds(c.ultBeamDurationMs ?? 5000) + '秒間連続照射する。' + formatUltSeconds(c.ultBeamTickMs ?? 250) + '秒ごとに' + damage(c.ultBeamTickAtkMultiplier ?? 0.35) + 'のダメージを与える。敵弾消去・スタン・無敵は発生しない。';
       case 'shiina_light_ring':
-        return '自身を中心に円環を' + formatUltSeconds(c.lightRingDurationMs ?? 7000) + '秒間展開する。円環内に入った敵弾は移動速度が' + String(Math.round(100 * (c.lightRingBulletSpeedMultiplier ?? 0.5))) + '%に低下し、外へ出ると元の速度へ戻る。';
+        return '自身を中心に円環を' + formatUltSeconds(c.lightRingDurationMs ?? 7000) + '秒間展開する。円環内に入った敵弾は移動速度が' + String(Math.round(100 * (c.lightRingBulletSpeedMultiplier ?? 0.2))) + '%に低下し、外へ出ると元の速度へ戻る。';
       case 'ryune_absolute_lethe':
         return '盤面の敵全員の属性バリアを解除し、敵全体へ' + damage(c.ultDamageAtkMultiplier ?? 2.0) + 'のダメージを与える。';
       case 'veronica_brass_punch':

@@ -14568,3 +14568,20 @@ html body #shooting-event-root .shooting-footer-v1436 .shooting-ui-layout-btn{
 @media (max-width:360px){
   html body #shooting-event-root .shooting-footer.shooting-footer-v1436::before{display:none !important;}
 }
+
+/* build1458: 敵画像の準備ができるまで、属性バリア・HPバー・属性アイコンを出さない（本体と同時に表示） */
+#shooting-event-root .shooting-normal-enemy-layer .awaiting-enemy-image{
+  opacity:0 !important;
+  visibility:hidden !important;
+}
+#shooting-event-root .shooting-boss-weakness-barrier.awaiting-enemy-image{
+  opacity:0 !important;
+  visibility:hidden !important;
+}
+/* 本体のフェードイン（.18s）に合わせて、バリア・HPバー・属性アイコンもふわっと出す */
+#shooting-event-root .shooting-normal-enemy-layer .shooting-mini-enemy-weakness-barrier:not(.defeated),
+#shooting-event-root .shooting-normal-enemy-layer .shooting-mini-enemy-hp,
+#shooting-event-root .shooting-normal-enemy-layer .shooting-mini-enemy-element-icon,
+#shooting-event-root .shooting-boss-weakness-barrier{
+  transition:opacity .18s ease,visibility 0s linear 0s;
+}

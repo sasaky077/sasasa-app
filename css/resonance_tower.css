@@ -1046,3 +1046,101 @@ html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overvie
 html body #screen-resonance-tower .resonance-tower-panel-layer.is-floor-challenge .resonance-tower-reward-item.is-ticket img{
   width:48px;height:32px;object-fit:cover;
 }
+
+/* ============================================================
+   build1460: 限定10連無料TICKETボタンで邂逅のボタン群が上へずれる問題の対策
+   チケットボタンを「お試し」と同じ2行目に並べ、行を増やさない。
+     お試しあり：2行目 = [お試し][無料10連]
+     お試しなし：2行目 = 中央に[無料10連]（お試しと同じ予約高さ）
+   ============================================================ */
+#screen-summon:has(#summon-detail-btns > .tower-limited-ticket-draw){
+  --gacha-actions-h:104px;
+}
+#screen-summon #summon-detail-btns:has(> .tower-limited-ticket-draw){
+  left:50% !important;
+  right:auto !important;
+  bottom:var(--gacha-actions-bottom) !important;
+  transform:translateX(-50%) !important;
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:7px !important;
+  width:min(86vw,350px) !important;
+}
+/* お試しありの時：お試しは左、チケットは右（同じ行） */
+#screen-summon #summon-detail-btns:has(> .tower-limited-ticket-draw) > .gacha-trial-entry{
+  grid-column:1 / 2 !important;
+  grid-row:2 !important;
+  width:100% !important;
+  justify-self:stretch !important;
+}
+#screen-summon #summon-detail-btns > .tower-limited-ticket-draw{
+  grid-column:2 / 3 !important;
+  grid-row:2 !important;
+  width:100% !important;
+  min-width:0 !important;
+  height:40px !important;
+  min-height:40px !important;
+  max-height:40px !important;
+  margin:0 !important;
+  padding:0 8px 0 4px !important;
+  display:flex !important;
+  flex-direction:row !important;
+  flex-wrap:nowrap !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:6px !important;
+  line-height:1 !important;
+  border:1px solid rgba(169,132,71,.85) !important;
+  border-radius:3px !important;
+  background:
+    radial-gradient(ellipse at 50% 15%,rgba(255,246,220,.65),rgba(255,246,220,0) 60%),
+    linear-gradient(180deg,#f3e3b8 0%,#dcbd7c 55%,#c9a35f 100%) !important;
+  box-shadow:inset 0 0 0 1px rgba(255,248,226,.8),0 2px 5px rgba(110,80,30,.25) !important;
+  color:#3a2814 !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+}
+/* お試しなしの時：中央に半分幅で置く */
+#screen-summon #summon-detail-btns:not(:has(> .gacha-trial-entry)) > .tower-limited-ticket-draw{
+  grid-column:1 / -1 !important;
+  width:calc(50% - 4px) !important;
+  justify-self:center !important;
+}
+#screen-summon #summon-detail-btns > .tower-limited-ticket-draw .tower-limited-ticket-icon{
+  flex:0 0 auto;
+  display:block;
+  width:44px;
+  height:30px;
+  margin:0;
+  object-fit:cover;
+  transform:rotate(-6deg);
+  filter:drop-shadow(0 1px 2px rgba(60,40,15,.35));
+}
+#screen-summon #summon-detail-btns > .tower-limited-ticket-draw .tower-limited-ticket-text{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:center;
+  line-height:1.05;
+  min-width:0;
+  margin:0;
+}
+#screen-summon #summon-detail-btns > .tower-limited-ticket-draw .tower-limited-ticket-text b,
+#screen-summon #summon-detail-btns > .tower-limited-ticket-draw .tower-limited-ticket-text small{
+  display:block;
+  margin:0;
+  white-space:nowrap;
+}
+#screen-summon #summon-detail-btns > .tower-limited-ticket-draw .tower-limited-ticket-text b{
+  font:700 14px/1.1 'Noto Serif JP',serif;
+  letter-spacing:.06em;
+}
+#screen-summon #summon-detail-btns > .tower-limited-ticket-draw .tower-limited-ticket-text small{
+  font:700 9px/1.2 'Cinzel','Noto Serif JP',serif;
+  letter-spacing:.08em;
+  color:#5a4020;
+}
+#screen-summon #summon-detail-btns > .tower-limited-ticket-draw:active{
+  transform:translateY(1px);
+  filter:brightness(.97);
+}

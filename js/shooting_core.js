@@ -920,7 +920,32 @@
     selectedStage = stage;
     if (Array.isArray(stage.enemyIds) && stage.enemyIds.length) selectedEnemyId = stage.enemyIds[0];
     if (options && options.enemyId) selectedEnemyId = String(options.enemyId);
+    preloadStageEnemyImages(stage);
     return stage;
+  }
+
+  // build1458: パーティ編成を開いた時点でステージの敵画像を先読み・デコードしておく。
+  // 開戦直後の敵の出現で「属性バリアだけ先に見える」状態を作らないため。
+  const preloadedEnemyImages = new Map();
+  function preloadStageEnemyImages(stage) {
+    try {
+      const urls = new Set();
+      const ids = Array.isArray(stage && stage.enemyIds) ? stage.enemyIds : [];
+      ids.forEach(id => {
+        const def = typeof getShootingEnemy === 'function' ? getShootingEnemy(id) : null;
+        if (def && def.image) urls.add(String(def.image));
+        if (def && def.ch404Image) urls.add(String(def.ch404Image));
+      });
+      if (stage && stage.normalBattle && stage.normalBattle.enemyImage) urls.add(String(stage.normalBattle.enemyImage));
+      urls.forEach(url => {
+        if (!url || preloadedEnemyImages.has(url)) return;
+        const img = new Image();
+        img.decoding = 'async';
+        img.src = url;
+        if (typeof img.decode === 'function') img.decode().catch(() => {});
+        preloadedEnemyImages.set(url, img);
+      });
+    } catch (_) {}
   }
 
   function getCurrentShootingEnemy() {
@@ -7807,7 +7832,11 @@
       arena.appendChild(barrier);
     }
 
-    barrier.className = `shooting-boss-weakness-barrier element-${enemyElement}`;
+    // build1458: BOSS画像の読み込みが終わるまでバリアを出さない（本体と同時に表示）。
+    const bossEl = document.getElementById(BOSS_ID);
+    const bossImg = bossEl && (bossEl.tagName === 'IMG' ? bossEl : bossEl.querySelector('img'));
+    const bossImageReady = !bossImg || (bossImg.complete && bossImg.naturalWidth > 0);
+    barrier.className = `shooting-boss-weakness-barrier element-${enemyElement}` + (bossImageReady ? '' : ' awaiting-enemy-image');
     barrier.dataset.element = enemyElement;
     return barrier;
   }
@@ -11785,14 +11814,39 @@
     positionUnit(el, x, y);
     positionMiniEnemyHp(enemy);
     renderMiniEnemyHp(enemy);
-    requestAnimationFrame(() => {
-      el.classList.remove('spawning');
-      // spawningクラス除去後(最終的な--enemy-scale込みの見た目)でサイズを実測してキャッシュする。
-      // ここでのgetBoundingClientRect呼び出しは生成時に1回だけなので、毎フレームのコストにはならない。
-      measureUnitSize(enemy);
-      // 実測した敵サイズで属性バリアを即座に再フィットする。
-      positionMiniEnemyHp(enemy);
-    });
+    // build1458: 敵画像の読み込み（デコード）完了を待ってから、本体と
+    // 属性バリア・HPバー・属性アイコンを同時に表示する。
+    // 以前は画像が未デコードのまま spawning を外していたため、
+    // バリアの輪だけが先に出て、少し遅れて敵本体が出ていた。
+    const companions = [weaknessBarrierEl, hpWrap, elementEl].filter(Boolean);
+    companions.forEach(node => node.classList.add('awaiting-enemy-image'));
+    let revealed = false;
+    const reveal = () => {
+      if (revealed) return;
+      revealed = true;
+      requestAnimationFrame(() => {
+        el.classList.remove('spawning');
+        companions.forEach(node => node.classList.remove('awaiting-enemy-image'));
+        // spawningクラス除去後(最終的な--enemy-scale込みの見た目)でサイズを実測してキャッシュする。
+        // ここでのgetBoundingClientRect呼び出しは生成時に1回だけなので、毎フレームのコストにはならない。
+        measureUnitSize(enemy);
+        // 実測した敵サイズで属性バリアを即座に再フィットする。
+        positionMiniEnemyHp(enemy);
+      });
+    };
+    if (el.complete && el.naturalWidth > 0) {
+      reveal();
+    } else {
+      const decodeOrLoad = typeof el.decode === 'function'
+        ? el.decode().catch(() => {})
+        : new Promise(resolve => {
+            el.addEventListener('load', resolve, { once:true });
+            el.addEventListener('error', resolve, { once:true });
+          });
+      decodeOrLoad.then(reveal);
+      // 画像が遅い・失敗した場合でも、最長1.5秒で必ず表示する。
+      setTimeout(reveal, 1500);
+    }
     return enemy;
   }
 
@@ -26901,7 +26955,7 @@
     const dx = Number(p.x || 0) - Number(state.player?.x || 0);
     const dy = Number(p.y || 0) - Number(state.player?.y || 0);
     if (dx * dx + dy * dy > radius * radius) return 1;
-    return Math.max(0.05, Math.min(1, Number(state.shiinaLightRingSlowMultiplier || 0.5)));
+    return Math.max(0.05, Math.min(1, Number(state.shiinaLightRingSlowMultiplier || 0.2)));
   }
 
   function syncShiinaLightRingVisual(now = performance.now()) {
@@ -26956,7 +27010,7 @@
     showUltCut(c.ultName || '術式・光の円環', c.effectKey);
     state.shiinaLightRingUntil = now + duration;
     state.shiinaLightRingRadius = Math.max(80, Number(c.lightRingRadius || 190));
-    state.shiinaLightRingSlowMultiplier = Math.max(0.05, Math.min(1, Number(c.lightRingBulletSpeedMultiplier || 0.5)));
+    state.shiinaLightRingSlowMultiplier = Math.max(0.05, Math.min(1, Number(c.lightRingBulletSpeedMultiplier || 0.2)));
     state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), now + 260);
     syncShiinaLightRingVisual(now);
     renderHud();
