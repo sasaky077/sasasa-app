@@ -14313,13 +14313,14 @@ function showTenResult(results){
   };
 
   // build686: キャラ一覧をMAINショットタイプでも絞り込めるようにする。
-  var ZUKAN_SHOT_TYPE_ORDER = ['parallel','homing','cluster','spread','laser','piercing','orbit','charge','lightning','strike','conjure'];
+  var ZUKAN_SHOT_TYPE_ORDER = ['parallel','homing','cluster','bomb','spread','laser','piercing','orbit','charge','lightning','strike','conjure'];
   var ZUKAN_SHOT_TYPE_LABELS = {
     all: 'すべて',
     parallel: 'PARALLEL',
     homing: 'HOMING',
     conjure: 'CONJURE',
     cluster: 'CLUSTER',
+    bomb: 'BOMB',
     spread: 'SPREAD',
     laser: 'LASER',
     piercing: 'PIERCING',
@@ -14346,8 +14347,7 @@ function showTenResult(results){
       charge_release: 'charge',
       precision: 'piercing',
       shotgun: 'piercing',
-      bomb: 'cluster',
-      splash: 'cluster',
+      splash: 'bomb',
       melee_slash: 'strike',
       wolf_j_homing: 'homing',
       rose_seed_splash: 'spread',
@@ -14539,7 +14539,7 @@ function showTenResult(results){
     }
     function shotBtn(key){
       var iconKey = key === 'lightning' ? 'plasma' : key;
-      var img = key === 'all' ? '' : '<img class="zcf-shot-icon" src="images/shot_' + iconKey + '.webp" alt="" decoding="async">';
+      var img = key === 'all' ? '' : '<img class="zcf-shot-icon" src="images/shot_' + iconKey + '.webp" alt="" decoding="async" onerror="this.style.visibility=\'hidden\'">';
       return button(ZUKAN_SHOT_TYPE_LABELS[key], isZukanShotTypeSelected(key),
         "setZukanShotTypeFilter('"+key+"')", 'zcf-shot-'+iconKey, img);
     }
@@ -16258,20 +16258,21 @@ function getShootingShotTypeLabel(type, c, slot){
     var laserSize = String(shot.size || (c && c.laserSize) || 'M').toUpperCase() === 'L' ? 'L' : 'M';
     return 'Laser ' + laserSize;
   }
-  if(normalized === 'cluster' || normalized === 'bomb'){
+  if(normalized === 'bomb' || normalized === 'splash'){
+    // BOMB is an AoE explosion at impact; size represents explosion radius (M/L).
+    var bombSize = String(shot.size || (c && c.bombSize) || 'M').toUpperCase() === 'L' ? 'L' : 'M';
+    return 'BOMB ' + bombSize;
+  }
+  if(normalized === 'cluster'){
+    // CLUSTER is independent: impact emits 4/6/8 fragment projectiles.
     var rawClusterCount = Math.floor(Number(
-      shot.count ||
-      (c && (c.clusterSplitCount || c.bombSplitCount)) ||
-      0
+      shot.count || (c && c.clusterSplitCount) || 0
     ));
-    var legacyClusterSize = String(
-      shot.size ||
-      (c && (c.clusterSize || c.bombSize)) ||
-      'M'
+    var clusterSize = String(
+      shot.size || (c && c.clusterSize) || 'M'
     ).toUpperCase() === 'L' ? 'L' : 'M';
     var clusterCount = (rawClusterCount === 4 || rawClusterCount === 6 || rawClusterCount === 8)
-      ? rawClusterCount
-      : (legacyClusterSize === 'L' ? 8 : 4);
+      ? rawClusterCount : (clusterSize === 'L' ? 8 : 4);
     return 'CLUSTER ' + clusterCount;
   }
   var labels = {
@@ -16366,10 +16367,10 @@ function getDetailShotElement(c, shot, isMain){
 // MAIN/SUBとも当該スロットのショット・発数を参照し、戦闘設定は変更しない。
 function buildShootingShotTypeValue(c, shot, isMain){
   var rawType = String((isMain ? c.shotType : shot && shot.type) || 'parallel').toLowerCase();
-  var shotType = ({ bomb:'cluster', splash:'cluster', lightning:'plasma',
+  var shotType = ({ splash:'bomb', lightning:'plasma',
     shotgun:'piercing', precision:'piercing', melee_slash:'strike',
     charge_release:'charge', orbit_forward:'orbit', wolf_j_homing:'homing' })[rawType] || rawType;
-  var supported = ['parallel','spread','laser','cluster','orbit','charge','piercing',
+  var supported = ['parallel','spread','laser','cluster','bomb','orbit','charge','piercing',
     'strike','homing','conjure','plasma'];
   var hasShotIcon = supported.indexOf(shotType) !== -1;
   var element = getDetailShotElement(c, shot, isMain);
@@ -16384,6 +16385,9 @@ function buildShootingShotTypeValue(c, shot, isMain){
     // LASERのM/Lは幅規格。連続照射であるため発数と混同しない。
     countText = String((shot && shot.size) || (isMain && c.laserSize) ||
       (isMain && Number(c.laserWidth) >= 11 ? 'L' : 'M')).toUpperCase() === 'L' ? 'L' : 'M';
+  }else if(shotType === 'bomb'){
+    // BOMBのM/Lは範囲爆発のサイズ。CLUSTERの分裂弾数ではない。
+    countText = String((shot && shot.size) || (isMain && c.bombSize) || 'M').toUpperCase() === 'L' ? 'L' : 'M';
   }else if(shotType === 'cluster'){
     // CLUSTERの数字は着弾時の分裂弾数（既存表記に合わせる）。
     var oldLabel = getShootingShotTypeLabel(rawType, c, shot);
@@ -19302,8 +19306,8 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1468-srank-bonus"></script>
-<script src="js/shooting_party_filter.js?v=1432-icon-bounds"></script>
+<script src="js/shooting_event.js?v=1470-bomb-cluster-distinct"></script>
+<script src="js/shooting_party_filter.js?v=1470-bomb-cluster-distinct"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
 <script src="js/skin_system.js?v=1466-own-skin-portrait"></script>

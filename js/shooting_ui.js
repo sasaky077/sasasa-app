@@ -585,6 +585,8 @@
       spread: '拡散射撃',
       orbit_forward: '円環軌道射撃',
       laser: '連続レーザー',
+      bomb: 'BOMB（着弾時に範囲爆発）',
+      cluster: 'CLUSTER（着弾時に分裂）',
       rose_seed_splash: '種子拡散射撃',
       piercing: '貫通射撃',
       shotgun: '貫通射撃',
