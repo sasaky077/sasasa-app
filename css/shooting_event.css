@@ -14522,3 +14522,49 @@ html body #shooting-event-root #shooting-result #shooting-result-survivor-detail
   z-index:24!important;pointer-events:none!important;
   background:none!important;transform:none!important;
 }
+
+/* ============================================================
+   build1457: 下部バーを低く（84px → 52px）。
+   待機キャラの丸は上半分がバーの上（盤面側）へはみ出す形にし、
+   CHANGE札だけバーの中に収める。盤面は下に +32px 広がる。
+   ============================================================ */
+html body #shooting-event-root .shooting-footer.shooting-footer-v1436{
+  --zf-h:52px;
+  height:calc(var(--zf-h) + env(safe-area-inset-bottom, 0px)) !important;
+  padding-top:0 !important;
+  padding-bottom:env(safe-area-inset-bottom, 0px) !important;
+  align-items:center !important;
+  overflow:visible !important;
+  z-index:26 !important;
+}
+html body #shooting-event-root:has(.shooting-footer-v1436) .shooting-arena{
+  bottom:calc(52px + env(safe-area-inset-bottom, 0px)) !important;
+}
+/* 丸：中心をバー上端の少し下に置く（上半分＋αが盤面側に出る） */
+html body #shooting-event-root .shooting-footer-v1436 .shooting-switch-rail{
+  align-self:flex-start !important;
+  height:auto !important;
+  margin-top:-24px !important;
+}
+/* はみ出した上半分にも縁の影を付けて、盤面から浮いて見せる */
+html body #shooting-event-root .shooting-footer-v1436 .shooting-switch-btn{
+  box-shadow:
+    0 0 0 2px #fff7e4,
+    0 0 0 4px var(--zb-gold),
+    0 0 0 5px var(--zb-gold-deep),
+    0 -2px 10px rgba(60,40,15,.22),
+    0 4px 10px rgba(60,40,15,.28) !important;
+}
+/* CHANGE札：丸の下端に重ねて、バーの中に収める */
+html body #shooting-event-root .shooting-footer-v1436 .shooting-switch-status{
+  bottom:-13px !important;
+}
+/* MENU / UI切替：バーの高さに合わせて少し低く */
+html body #shooting-event-root .shooting-footer-v1436 .shooting-battle-menu-btn,
+html body #shooting-event-root .shooting-footer-v1436 .shooting-ui-layout-btn{
+  height:40px !important;
+}
+/* 狭い端末では中央の✦が丸と重なるので消す */
+@media (max-width:360px){
+  html body #shooting-event-root .shooting-footer.shooting-footer-v1436::before{display:none !important;}
+}
