@@ -4925,7 +4925,7 @@ window.NOTICE_ITEMS = [
         <div class="notice-head">
           <div>
             <div class="notice-title">お知らせ</div>
-            <div class="notice-sub">Notice</div>
+            <div class="notice-sub">NOTICE</div>
           </div>
         </div>
 
@@ -5194,7 +5194,7 @@ window.NOTICE_ITEMS = [
             class="notice-reward-btn${claimed ? ' claimed' : ''}"
             data-notice-claim="${escapeHtml(item.id || '')}"
             ${claimed ? 'disabled' : ''}
-          >${claimed ? '受取済み' : '受け取る'}</button>
+          >${claimed ? '受け取り済み' : '受け取る'}</button>
         </div>
       `;
     }
@@ -5233,7 +5233,7 @@ window.NOTICE_ITEMS = [
             class="notice-reward-btn${claimed ? ' claimed' : ''}"
             data-notice-claim="${escapeHtml(item.id || '')}"
             ${claimed ? 'disabled' : ''}
-          >${claimed ? '受取済み' : '受け取る'}</button>
+          >${claimed ? '受け取り済み' : '受け取る'}</button>
         </div>
       `;
     }
@@ -5282,7 +5282,7 @@ window.NOTICE_ITEMS = [
             class="notice-reward-btn${claimed ? ' claimed' : ''}"
             data-notice-claim="${escapeHtml(item.id || '')}"
             ${claimed ? 'disabled' : ''}
-          >${claimed ? '受取済み' : '受け取る'}</button>
+          >${claimed ? '受け取り済み' : '受け取る'}</button>
         </div>
       `;
     }
@@ -5314,7 +5314,7 @@ window.NOTICE_ITEMS = [
             class="notice-reward-btn${claimed ? ' claimed' : ''}"
             data-notice-claim="${escapeHtml(item.id || '')}"
             ${claimed ? 'disabled' : ''}
-          >${claimed ? '受取済み' : '受け取る'}</button>
+          >${claimed ? '受け取り済み' : '受け取る'}</button>
         </div>
       `;
     }
@@ -5335,7 +5335,7 @@ window.NOTICE_ITEMS = [
             class="notice-reward-btn${claimed ? ' claimed' : ''}"
             data-notice-claim="${escapeHtml(item.id || '')}"
             ${claimed ? 'disabled' : ''}
-          >${claimed ? '受取済み' : '受け取る'}</button>
+          >${claimed ? '受け取り済み' : '受け取る'}</button>
         </div>
       `;
     }
@@ -5356,7 +5356,7 @@ window.NOTICE_ITEMS = [
           class="notice-reward-btn${claimed ? ' claimed' : ''}"
           data-notice-claim="${escapeHtml(item.id || '')}"
           ${claimed ? 'disabled' : ''}
-        >${claimed ? '受取済み' : '受け取る'}</button>
+        >${claimed ? '受け取り済み' : '受け取る'}</button>
       </div>
     `;
   }
@@ -5774,8 +5774,10 @@ window.NOTICE_ITEMS = [
           aria-label="${escapeHtml(item.title || 'お知らせ')}${noticeStateLabel}"
         >
           ${hasAttention ? '<span class="notice-unread-dot" aria-hidden="true"></span>' : ''}
-          <div class="notice-date">${escapeHtml(item.date || '')}</div>
-          <div class="notice-item-title">${escapeHtml(item.title || '')}</div>
+          <div class="notice-item-head">
+            <div class="notice-date">${escapeHtml(item.date || '')}</div>
+            <div class="notice-item-title">${escapeHtml(item.title || '')}</div>
+          </div>
           <div class="notice-body">${escapeHtml(item.body || '')}</div>
           ${renderReward(item)}
         </div>
@@ -19052,6 +19054,7 @@ function fadeOutOpeningBgm(){
 <link rel="stylesheet" href="css/battle_32_ui.css?v=593">
   <link rel="stylesheet" href="css/score_attack_redesign.css?v=1447-score-attack-mock">
   <link rel="stylesheet" href="css/home_menu_redesign.css?v=1449-tower-blur">
+  <link rel="stylesheet" href="css/notice_redesign.css?v=1453-notice-mock">
 <script src="js/remnant_blessings.js?v=1416-names"></script>
 <!-- ローグライト（新規追加） -->
 <script src="js/shinju.js?v=1416-boss-name"></script>
