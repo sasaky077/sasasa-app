@@ -793,7 +793,12 @@
       normalBattle:Object.freeze({totalEnemies:3,maxActive:3,spawnIntervalMs:0,spawnAllAtStart:true,
         itemDropRate:0,enemyElementSequence:Object.freeze(['dark','dark','dark']),
         enemyHp:1600,enemyBulletDamage:115,enemyBulletSpeed:250,enemyFireRate:780,barrageLevel:4}),
-      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'闇属性レムナント3体を撃破'}),playable:true
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'闇属性レムナント3体を撃破'}),
+      // build1468: Sランククリアのたびに追加でもらえる報酬（通常モードのみ）
+      sRankBonusRewards:Object.freeze([
+        Object.freeze({ id:'level_exp_large', name:'強化素材・金', image:'images/item_exp_gold.webp', count:1, rewardType:'level_exp' })
+      ]),
+      playable:true
     }),
 
     // ============================================================

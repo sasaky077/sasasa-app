@@ -191,6 +191,13 @@
     if (category === 's' && isChapterFinal && isStoryMemoryFragmentChapter(chapter)) {
       return [{ name:'Sランククリア：記憶の欠片 ×1', image:'images/item_memory.webp' }];
     }
+    // build1468: ステージ定義の sRankBonusRewards（Sランククリアで毎回もらえる報酬）。通常モードのみ。
+    if (category === 's' && mode === 'normal' && stageDef && Array.isArray(stageDef.sRankBonusRewards) && stageDef.sRankBonusRewards.length) {
+      return stageDef.sRankBonusRewards.map(function(reward){
+        var count = Math.max(1, Math.floor(Number(reward && reward.count || 1)));
+        return { name:'Sランククリア：' + String(reward && reward.name || '報酬') + ' ×' + count, image:String(reward && reward.image || ''), amount:'×' + count };
+      });
+    }
     return [];
   }
 

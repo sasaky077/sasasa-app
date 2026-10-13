@@ -20818,6 +20818,25 @@
     `;
   }
 
+  // build1468: Sランククリア報酬。ステージ定義の sRankBonusRewards を、通常モードのSTORYでSランク勝利時のみ返す。
+  function getStorySRankBonusDrops(excluded) {
+    if (excluded || !state || !selectedStage) return [];
+    if (selectedStage.beginnerMode) return [];
+    if (typeof isStoryShootingStage === 'function' && !isStoryShootingStage()) return [];
+    const list = Array.isArray(selectedStage.sRankBonusRewards) ? selectedStage.sRankBonusRewards : [];
+    if (!list.length) return [];
+    if (getResultRank(state.score, true) !== 'S') return [];
+    return list.map(reward => ({
+      material: {
+        id: String(reward && reward.id || ''),
+        name: String(reward && reward.name || '報酬'),
+        image: String(reward && reward.image || ''),
+        rewardType: String(reward && reward.rewardType || 'level_exp'),
+      },
+      count: Math.max(1, Math.floor(Number(reward && reward.count || 1))),
+    })).filter(row => row.material.id);
+  }
+
   function buildAndGrantShootingClearRewards() {
     if (isResonanceTowerStage()) return [];
     if (!state || state.clearRewardsGranted) return Array.isArray(state && state.clearRewards) ? state.clearRewards : [];
@@ -20905,6 +20924,10 @@
       itemDrops = itemDrops.concat(pickStoryLevelExpMaterialDrops());
     }
 
+    // build1468: Sランククリア報酬（ステージ定義 sRankBonusRewards）。通常モードのSTORYのみ。
+    // 周回でも毎回付与。RESULTでは「Sランクボーナス」として別行で表示する。
+    const sRankBonusDrops = getStorySRankBonusDrops(dailyQuestReward || scoreAttackFixedReward);
+
     // ステージ固有の確定報酬は既存仕様を維持。
     const guaranteedRewards = Array.isArray(selectedStage && selectedStage.guaranteedRewards)
       ? selectedStage.guaranteedRewards.map(reward => ({
@@ -20952,6 +20975,15 @@
         image: reward.image,
         materialId: reward.id,
       })),
+      ...sRankBonusDrops.map(({ material, count }) => ({
+        type: 'material',
+        name: material.name,
+        amount: count,
+        detail: 'Sランクボーナス',
+        image: material.image,
+        materialId: material.id,
+        sRankBonus: true,
+      })),
     ];
 
     // v287:
@@ -20962,7 +20994,15 @@
     // DAILYはcoin/EXP/素材すべてfinish_daily_quest_runで確定済み。
     // 通常シューティングだけ既存の追加素材付与処理を使用する。
     if (!dailyQuestReward) {
-      itemDrops.forEach(({ material, count }) => {
+      // secure reward RPCは同一run・同一素材の重複claimを受け付けないため、
+      // Sランクボーナスは通常ドロップと同じ素材なら個数を合算して1回で付与する。
+      const grantDrops = itemDrops.map(({ material, count }) => ({ material, count }));
+      sRankBonusDrops.forEach(({ material, count }) => {
+        const same = grantDrops.find(row => row.material && row.material.id === material.id);
+        if (same) same.count += count;
+        else grantDrops.push({ material, count });
+      });
+      grantDrops.forEach(({ material, count }) => {
         if (material.rewardType === 'shinju') {
           grantShinjuNutrition(rewardPlan.nutritionExp, count);
         } else if (material.rewardType === 'level_exp') {

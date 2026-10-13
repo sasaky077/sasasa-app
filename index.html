@@ -14868,7 +14868,35 @@ function showTenResult(results){
     var owned = getOwnedInstancesByCharaId(id).length > 0;
     if(!owned) return;
 
-    var src = chara.img || chara.upImg || chara.panelImg || 'images/unknown.webp';
+    var defaultSrc = chara.img || chara.upImg || chara.panelImg || 'images/unknown.webp';
+    // build1467: 装備中の限定衣装があれば、その立ち絵（chara_XX_b.webp）を表示。
+    // 立ち絵が未配置なら 衣装のホーム用画像 → 通常の立ち絵 の順に切り替える。
+    function getFullscreenSrcChain(){
+      var chain = [];
+      try{
+        var skins = window.CharacterSkins;
+        if(skins && typeof skins.getPortraitImage === 'function'){
+          var portrait = skins.getPortraitImage(id, '');
+          if(portrait){
+            chain.push(portrait);
+            if(typeof skins.getHomeImage === 'function') chain.push(skins.getHomeImage(id, ''));
+          }
+        }
+      }catch(_){}
+      chain.push(defaultSrc);
+      return chain.filter(function(v, i, a){ return v && a.indexOf(v) === i; });
+    }
+    function applyFullscreenImage(imgEl){
+      if(!imgEl) return;
+      var chain = getFullscreenSrcChain();
+      imgEl.onerror = function(){
+        var next = chain.shift();
+        if(!next){ this.onerror = null; return; }
+        this.src = next;
+      };
+      imgEl.src = chain.shift() || defaultSrc;
+    }
+    var src = defaultSrc;
     var name = chara.name || '';
 
     var old = document.getElementById('primor-fullscreen-viewer');
@@ -14918,7 +14946,8 @@ function showTenResult(results){
         var ok = await window.CharacterSkins.equip(id, skinId);
         if(!ok) return;
 
-        // 再描画せず、その場で選択状態だけ切り替える。
+        // 再描画せず、その場で選択状態と立ち絵だけ切り替える。
+        applyFullscreenImage(ov.querySelector('.primor-fullscreen-img'));
         ov.querySelectorAll('[data-skin-choice]').forEach(function(x){
           x.classList.toggle('is-selected', String(x.getAttribute('data-skin-choice')) === skinId);
           var stateLabel = x.querySelector('.primor-skin-choice-state');
@@ -14932,6 +14961,7 @@ function showTenResult(results){
 
     document.addEventListener('keydown', onKeyDown);
 
+    applyFullscreenImage(ov.querySelector('.primor-fullscreen-img'));
     document.body.appendChild(ov);
   }
 
@@ -19093,7 +19123,7 @@ function fadeOutOpeningBgm(){
 <script src="js/shooting_characters.js?v=1381-hao-wood-shot"></script>
 <script src="js/story_scenario.js?v=1414-ch07-wolf"></script>
 <script src="js/story_novel.js?v=1333-cast-sides"></script>
-<script src="js/stage_select.js?v=1461-nonbattle-noreward"></script>
+<script src="js/stage_select.js?v=1468-srank-bonus"></script>
 
 <script>
 (function(){
@@ -19272,7 +19302,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1459-slow-ring-80"></script>
+<script src="js/shooting_event.js?v=1468-srank-bonus"></script>
 <script src="js/shooting_party_filter.js?v=1432-icon-bounds"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>

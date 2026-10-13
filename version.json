@@ -1,4 +1,4 @@
 {
-  "build": 1466,
-  "note": "自分のキャラ詳細も、装備中の限定衣装の立ち絵 chara_XX_b.webp で表示（未配置時は衣装のホーム用画像→通常立ち絵へ自動フォールバック）。ガチャ結果から開く詳細は従来どおり通常立ち絵。フレンド詳細は相手の衣装（build1465）。skin_system.js に getPortraitImage を追加。build1455〜1465を含む。"
+  "build": 1468,
+  "note": "STORYにSランククリア報酬を追加（まずCH05-04のみ）：通常モードでSランク勝利するたびに強化素材・金×1を追加付与（周回でも毎回）。RESULTに『Sランクボーナス』行で表示、ステージ選択の『Sランク』枠にも表示。付与は既存のsecure RPC（claim_shooting_material_reward_secure）経由で、通常ドロップと同じ素材なら個数を合算して1回で受取。ステージ定義 sRankBonusRewards を追加すれば他ステージにも拡張可能。build1455〜1467を含む。"
 }
