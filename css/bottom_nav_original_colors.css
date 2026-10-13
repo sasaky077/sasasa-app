@@ -60,3 +60,18 @@ html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active:active > img {
     transform:scale(.89) !important;
   }
 }
+
+/* build1450: アイコンの白金を少し落ち着かせる（全体をやや暗く・締める）。
+   選択中だけ少し明るさを残して区別する。 */
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item > img,
+html body.raid-shell-active #bottom-nav-shared.bottom-nav .bottom-nav-item > img,
+html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom-nav-item > img {
+  filter:brightness(.78) contrast(1.12) saturate(.92) !important;
+  -webkit-filter:brightness(.78) contrast(1.12) saturate(.92) !important;
+}
+html body #bottom-nav-shared.bottom-nav .bottom-nav-item.active > img,
+html body.raid-shell-active #bottom-nav-shared.bottom-nav .bottom-nav-item.active > img,
+html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom-nav-item.active > img {
+  filter:brightness(.88) contrast(1.1) saturate(.96) !important;
+  -webkit-filter:brightness(.88) contrast(1.1) saturate(.96) !important;
+}

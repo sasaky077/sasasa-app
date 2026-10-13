@@ -1,4 +1,4 @@
 {
-  "build": 1449,
-  "note": "ホーム『残響の塔』の背景を赤い帯からぼかした赤い煙（輪郭なし・radial-gradient＋blur）に変更。css/home_menu_redesign.css のみ変更、index.html はCSSのキャッシュ番号のみ更新。build1448を含む。"
+  "build": 1450,
+  "note": "ボトムナビのアイコン画像を少し暗く（brightness .78 / contrast 1.12 / saturate .92、選択中は .88 で少し明るさを残す）。css/bottom_nav_original_colors.css 末尾に追記、index.html はキャッシュ番号のみ。build1448/1449を含む。"
 }
