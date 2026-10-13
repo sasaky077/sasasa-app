@@ -326,9 +326,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=1342-tower-visual"
+        href="css/style.css?v=1443-noah-chrome"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=1342-tower-visual"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=1443-noah-chrome"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -3276,7 +3276,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
   #shooting-event-root[data-gacha-trial="1"] .shooting-pause-action:not(.shooting-pause-close):not(.shooting-pause-bgm-toggle) { display:none; }
 </style>
   <!-- build1379: universal image-based back button for quest/story/roster pages -->
-  <link rel="stylesheet" href="css/common_back_button.css?v=1395-left-edge-fade">
+  <link rel="stylesheet" href="css/common_back_button.css?v=1446-setting-summon-back">
   <!-- build1392: supplied gold gacha navigation icons, once-per-second pulse -->
   <link rel="stylesheet" href="css/gacha_swipe_nav.css?v=1392">
   <!-- build1393: settings artwork + item-card design, placed last to override legacy styling -->
@@ -3827,6 +3827,8 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 </div>
 
 <div id="screen-summon" class="screen">
+  <!-- build1446: 他画面と同じ位置・同じアートの戻るボタン（ホームへ） -->
+  <button type="button" class="app-page-back summon-page-back" onclick="showMainTab('main')" aria-label="戻る" title="戻る">戻る</button>
   <!-- v415: 邂逅は画面内のガチャ見出し自体が主タイトルになるため、
        共通ページヘッダー「邂逅」は置かない。 -->
 
@@ -10965,6 +10967,12 @@ function goHome(){
     if(facelessStageSelect) facelessStageSelect.remove();
     var noahStageSelect = document.getElementById('noah-stage-select');
     if(noahStageSelect) noahStageSelect.remove();
+    // build1443: ノア画面はボトムナビを表示したままなので、ナビで移動したら閉じる。
+    var noahPieceOverlay = document.getElementById('noah-piece-overlay');
+    if(noahPieceOverlay){
+      noahPieceOverlay.classList.remove('active');
+      noahPieceOverlay.setAttribute('aria-hidden','true');
+    }
 
     if(isSummoning){
       console.log('ガチャ中のため画面遷移をブロック:', name);
@@ -19042,6 +19050,8 @@ function fadeOutOpeningBgm(){
 
 <!-- 32マス共有盤面バトル（新規追加） -->
 <link rel="stylesheet" href="css/battle_32_ui.css?v=593">
+  <link rel="stylesheet" href="css/score_attack_redesign.css?v=1447-score-attack-mock">
+  <link rel="stylesheet" href="css/home_menu_redesign.css?v=1449-tower-blur">
 <script src="js/remnant_blessings.js?v=1416-names"></script>
 <!-- ローグライト（新規追加） -->
 <script src="js/shinju.js?v=1416-boss-name"></script>
@@ -19140,7 +19150,7 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=759-score-resume-attempt-fix"></script>
+<script src="js/score_attack.js?v=1447-score-attack-mock"></script>
 <script src="js/resonance_tower.js?v=1435-tower-floor-gimmick-hints"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
@@ -20625,6 +20635,9 @@ html body #global-user-frame .hud-sweep-line-player::after{
   }
 })();
 </script>
+
+<!-- build1448: ホーム左右メニュー（アイコン＋文字＋金線） -->
+<script src="js/home_menu_redesign.js?v=1448-home-menu-icons"></script>
 
 <script id="sasaphia-root-scroll-guard-build752">
 (function(){

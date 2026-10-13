@@ -41447,3 +41447,567 @@ html body #screen-summon .summon-banner-arrow-next{
 #screen-resonance-tower .resonance-tower-detail button{font:12px "Noto Serif JP",serif;border:1px solid #c8b69a;background:#eae3d7;color:#9a8d79;min-width:175px;padding:12px;border-radius:0;opacity:1;cursor:not-allowed}
 #screen-resonance-tower .resonance-tower-dev-note{font-size:10px!important;color:#a0927e!important;margin-top:15px!important}
 @media(max-width:365px){#screen-resonance-tower .resonance-tower-scroll{padding-left:12px;padding-right:12px}#screen-resonance-tower .resonance-tower-floor{gap:6px;padding:12px 7px}#screen-resonance-tower .resonance-tower-floor-no{font-size:16px;min-width:31px;flex-basis:31px}#screen-resonance-tower .resonance-tower-floor-name{font-size:11px}}
+
+
+/* ============================================================
+   build1442: 楽園 -ノア- コンテンツ画面（欠片パズル）リニューアル
+   - 背景: images/bg_noah.webp
+   - 金の装飾枠＋大理石タイルの3×3パズル、鍵アイコン
+   - 長円形の金縁「ノアに挑戦する」ボタン
+   DOMは従来の #noah-piece-overlay のまま。CSSのみ。
+   ============================================================ */
+html body #noah-piece-overlay.noah-piece-overlay{
+  --zn-lock:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Cpath d='M30 3 L57 30 L30 57 L3 30Z' fill='rgba(250,248,244,.85)' stroke='%239c958b' stroke-width='1.6'/%3E%3Cpath d='M30 9 L51 30 L30 51 L9 30Z' fill='none' stroke='%23b9b2a7' stroke-width='.8'/%3E%3Crect x='21' y='27' width='18' height='14' rx='2' fill='%238f887e'/%3E%3Cpath d='M24.5 27 v-4 a5.5 5.5 0 0 1 11 0 v4' fill='none' stroke='%238f887e' stroke-width='2.6'/%3E%3Ccircle cx='30' cy='33' r='2' fill='%23f4f1ec'/%3E%3Crect x='29.2' y='33' width='1.6' height='4.5' fill='%23f4f1ec'/%3E%3C/svg%3E");
+  --zn-flourish:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Cg fill='none' stroke='%23c9a35a' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M4 56 V18 Q4 4 18 4 H56'/%3E%3Cpath d='M10 56 V22 Q10 10 22 10 H56' stroke-width='.8'/%3E%3Cpath d='M4 30 Q16 28 18 18 Q28 16 30 4' stroke-width='1.1'/%3E%3C/g%3E%3Cpath d='M18 18 l3 -7 l3 7 l7 3 l-7 3 l-3 7 l-3 -7 l-7 -3z' fill='%23d1ad62'/%3E%3C/svg%3E");
+  --zn-star:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M20 1 L23 17 L39 20 L23 23 L20 39 L17 23 L1 20 L17 17Z' fill='%23c9a35a'/%3E%3Cpath d='M20 9 L21.5 18.5 L31 20 L21.5 21.5 L20 31 L18.5 21.5 L9 20 L18.5 18.5Z' fill='%23f3dfaa' opacity='.9'/%3E%3C/svg%3E");
+  --zn-gold:#c9a35a;
+  --zn-gold-deep:#9c7634;
+  --zn-ink:#3b2e1d;
+  background:#f6f1e6 url("../images/bg_noah.webp") center top/cover no-repeat !important;
+}
+html body #noah-piece-overlay.noah-piece-overlay::before,
+html body #noah-piece-overlay.noah-piece-overlay::after{
+  content:none !important;
+}
+html body #noah-piece-overlay.noah-piece-overlay .noah-piece-screen{
+  position:relative !important;
+  box-sizing:border-box !important;
+  display:flex !important;
+  flex-direction:column !important;
+  width:100% !important;
+  max-width:460px !important;
+  height:100% !important;
+  margin:0 auto !important;
+  padding:max(10px,env(safe-area-inset-top,0px)) 16px max(14px,env(safe-area-inset-bottom,0px)) !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  background:
+    radial-gradient(ellipse 85% 34% at 50% 14%,rgba(255,253,246,.78),rgba(255,253,246,0) 75%),
+    radial-gradient(ellipse 70% 20% at 50% 78%,rgba(255,253,246,.55),rgba(255,253,246,0) 80%) !important;
+  border:0 !important;
+  box-shadow:none !important;
+  color:var(--zn-ink) !important;
+}
+
+/* ---------- ヘッダー ---------- */
+html body #noah-piece-overlay .noah-piece-head{
+  position:relative !important;
+  display:flex !important;
+  justify-content:center !important;
+  align-items:center !important;
+  min-height:64px !important;
+  margin:0 !important;
+  padding:6px 0 0 !important;
+  background:none !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+html body #noah-piece-overlay .noah-piece-head::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:-4px;
+  width:22px;
+  height:22px;
+  transform:translateX(-50%);
+  background:var(--zn-star) center/contain no-repeat;
+}
+html body #noah-piece-overlay .noah-piece-back{
+  position:absolute !important;
+  left:0 !important;
+  top:10px !important;
+  width:auto !important;
+  height:auto !important;
+  padding:6px 4px !important;
+  border:0 !important;
+  background:none !important;
+  box-shadow:none !important;
+  font:500 15px/1 "Noto Serif JP","Yu Mincho",serif !important;
+  letter-spacing:.06em !important;
+  color:var(--zn-ink) !important;
+  text-shadow:0 0 6px rgba(255,255,255,.95),0 0 2px #fff !important;
+}
+html body #noah-piece-overlay .noah-piece-head-spacer{display:none !important}
+html body #noah-piece-overlay .noah-piece-title{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  gap:6px !important;
+  margin:18px 0 0 !important;
+}
+html body #noah-piece-overlay .noah-piece-title small{
+  font:600 10px/1 "Cinzel",serif !important;
+  letter-spacing:.3em !important;
+  text-indent:.3em !important;
+  color:#6e5530 !important;
+  text-shadow:0 0 6px #fff !important;
+}
+html body #noah-piece-overlay .noah-piece-title strong{
+  font:600 27px/1.15 "Noto Serif JP","Yu Mincho",serif !important;
+  letter-spacing:.1em !important;
+  color:var(--zn-ink) !important;
+  text-shadow:0 0 10px rgba(255,255,255,.95),0 0 3px #fff !important;
+}
+
+/* ---------- リード ---------- */
+html body #noah-piece-overlay .noah-piece-body{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  flex:1 1 auto !important;
+  gap:10px !important;
+  margin:0 !important;
+  padding:0 !important;
+  background:none !important;
+}
+html body #noah-piece-overlay .noah-piece-lead{
+  margin:16px 0 0 !important;
+  padding:0 !important;
+  text-align:center !important;
+  background:none !important;
+}
+html body #noah-piece-overlay .noah-piece-lead .en{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:8px !important;
+  font:600 9.5px/1 "Cinzel",serif !important;
+  letter-spacing:.3em !important;
+  color:#6e5530 !important;
+  text-shadow:0 0 6px #fff !important;
+}
+html body #noah-piece-overlay .noah-piece-lead .en::before,
+html body #noah-piece-overlay .noah-piece-lead .en::after{
+  content:"";
+  width:44px;
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(156,118,52,.8));
+}
+html body #noah-piece-overlay .noah-piece-lead .en::after{transform:scaleX(-1)}
+html body #noah-piece-overlay .noah-piece-lead h2{
+  margin:8px 0 0 !important;
+  font:600 25px/1.25 "Noto Serif JP","Yu Mincho",serif !important;
+  letter-spacing:.08em !important;
+  color:var(--zn-ink) !important;
+  text-shadow:0 0 10px rgba(255,255,255,.95),0 0 3px #fff !important;
+}
+/* モックに合わせて説明文は出さない（同じ内容は下の注記にある） */
+html body #noah-piece-overlay .noah-piece-lead p{display:none !important}
+
+/* ---------- 完成状況 ---------- */
+html body #noah-piece-overlay .noah-piece-progress{
+  position:relative !important;
+  display:flex !important;
+  align-items:baseline !important;
+  justify-content:center !important;
+  gap:10px !important;
+  margin:2px 0 0 !important;
+  padding:12px 60px 0 !important;
+  background:none !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+html body #noah-piece-overlay .noah-piece-progress::before{
+  content:"✦";
+  position:absolute;
+  left:0;
+  right:0;
+  top:-2px;
+  font-size:9px;
+  line-height:10px;
+  text-align:center;
+  color:var(--zn-gold-deep);
+}
+html body #noah-piece-overlay .noah-piece-progress::after{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:12px;
+  height:1px;
+  background:
+    linear-gradient(90deg,transparent,rgba(156,118,52,.75)) left/52px 1px no-repeat,
+    linear-gradient(270deg,transparent,rgba(156,118,52,.75)) right/52px 1px no-repeat;
+  pointer-events:none;
+}
+html body #noah-piece-overlay .noah-piece-progress-label{
+  font:600 15px/1 "Noto Serif JP","Yu Mincho",serif !important;
+  letter-spacing:.08em !important;
+  color:var(--zn-ink) !important;
+  text-shadow:0 0 6px #fff !important;
+}
+html body #noah-piece-overlay #noah-piece-progress-now{
+  font:600 42px/1 "Cinzel","Noto Serif JP",serif !important;
+  background:linear-gradient(180deg,#f0d89a 0%,#c99a45 50%,#9c7330 100%);
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 1px 0 rgba(255,255,255,.9));
+}
+html body #noah-piece-overlay .noah-piece-progress > span:last-child{
+  font:500 20px/1 "Cinzel",serif !important;
+  color:var(--zn-ink) !important;
+}
+
+/* ---------- パズル枠 ---------- */
+html body #noah-piece-overlay .noah-puzzle-frame{
+  position:relative !important;
+  box-sizing:border-box !important;
+  width:min(82%,318px) !important;
+  aspect-ratio:1/1 !important;
+  height:auto !important;
+  margin:6px auto 0 !important;
+  padding:12px !important;
+  overflow:visible !important;
+  background:rgba(255,253,248,.35) !important;
+  border:0 !important;
+  border-radius:2px !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.85),
+    0 0 0 2px var(--zn-gold),
+    0 0 0 4px rgba(255,251,238,.9),
+    0 0 0 5px rgba(201,163,90,.75),
+    0 8px 26px rgba(120,90,40,.22) !important;
+}
+/* 四隅の唐草（左上の飾りを回転して4隅へ） */
+html body #noah-piece-overlay .noah-puzzle-frame::before{
+  content:"";
+  position:absolute;
+  inset:-14px;
+  pointer-events:none;
+  z-index:3;
+  background:
+    var(--zn-flourish) 0 0/38px 38px no-repeat,
+    var(--zn-flourish) 100% 0/38px 38px no-repeat,
+    var(--zn-flourish) 0 100%/38px 38px no-repeat,
+    var(--zn-flourish) 100% 100%/38px 38px no-repeat;
+  -webkit-mask:none;
+}
+/* 上下左右中央の星飾り */
+html body #noah-piece-overlay .noah-puzzle-frame::after{
+  content:"";
+  position:absolute;
+  inset:-15px;
+  pointer-events:none;
+  z-index:3;
+  background:
+    var(--zn-star) 50% 0/26px 26px no-repeat,
+    var(--zn-star) 50% 100%/26px 26px no-repeat,
+    var(--zn-star) 0 50%/26px 26px no-repeat,
+    var(--zn-star) 100% 50%/26px 26px no-repeat;
+}
+html body #noah-piece-overlay .noah-puzzle-grid{
+  position:relative !important;
+  display:grid !important;
+  grid-template-columns:repeat(3,1fr) !important;
+  grid-template-rows:repeat(3,1fr) !important;
+  gap:5px !important;
+  width:100% !important;
+  height:100% !important;
+  background:none !important;
+  box-shadow:none !important;
+}
+html body #noah-piece-overlay .noah-puzzle-piece{
+  position:relative !important;
+  overflow:hidden !important;
+  border:0 !important;
+  border-radius:3px !important;
+  filter:none !important;
+  opacity:1 !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.9),
+    0 0 0 1px rgba(190,180,165,.7),
+    0 2px 5px rgba(90,70,40,.14) !important;
+}
+
+/* ---- 案A：ロゴ(noah_logo_puzzle.webp)は盤面全体に1枚で敷く ----
+   9分割せずに敷くので、マスの境目でロゴの線が切れたりずれたりしない。
+   未獲得のマスは細い線で区切るだけ。獲得したマスだけノアの一枚絵で覆う。 */
+html body #noah-piece-overlay .noah-puzzle-grid{
+  isolation:isolate !important;
+  overflow:hidden !important;
+  gap:2px !important;
+  border-radius:3px !important;
+  background:none !important;
+}
+html body #noah-piece-overlay .noah-puzzle-grid::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  inset:0 !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+  background:
+    linear-gradient(118deg,rgba(255,255,255,0) 28%,rgba(255,255,255,.7) 40%,rgba(255,255,255,0) 50%),
+    linear-gradient(62deg,rgba(226,221,214,0) 52%,rgba(226,221,214,.45) 58%,rgba(226,221,214,0) 63%),
+    linear-gradient(160deg,#fdfcfa,#f3f0eb 55%,#faf8f5) !important;
+  opacity:1 !important;
+}
+html body #noah-piece-overlay .noah-puzzle-grid::after{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  inset:0 !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+  background:url("../images/noah_logo_puzzle.webp") center/100% 100% no-repeat !important;
+  mix-blend-mode:multiply;
+  opacity:.62 !important;
+}
+/* 9枚そろったらロゴは不要 */
+html body #noah-piece-overlay .noah-puzzle-grid:not(:has(.noah-puzzle-piece.locked))::after{
+  content:none !important;
+  display:none !important;
+}
+
+/* ---- 未獲得：透明なマス（細い区切り線＋淡い光沢）、上下段に鍵 ---- */
+html body #noah-piece-overlay .noah-puzzle-piece.locked{
+  z-index:1 !important;
+  background:linear-gradient(150deg,rgba(255,255,255,.28),rgba(255,255,255,0) 60%) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.75),
+    0 0 0 1px rgba(196,186,170,.6) !important;
+}
+html body #noah-piece-overlay .noah-puzzle-piece.locked::before{
+  content:none !important;
+  display:none !important;
+}
+html body #noah-piece-overlay .noah-puzzle-piece.locked::after{
+  content:"" !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  z-index:2 !important;
+  display:block !important;
+  width:32px !important;
+  height:32px !important;
+  transform:translate(-50%,-50%) !important;
+  background:var(--zn-lock) center/contain no-repeat !important;
+  opacity:.9 !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+html body #noah-piece-overlay .noah-puzzle-piece:nth-child(n+4):nth-child(-n+6).locked::after{
+  content:none !important;
+  display:none !important;
+}
+
+/* ---- 獲得済み：ノアの一枚絵(noah.webp)の同じ位置 ----
+   すき間2pxも計算に入れて切り出すので、隣のマスと絵がずれない */
+html body #noah-piece-overlay .noah-puzzle-piece.open{
+  z-index:1 !important;
+  background-image:none !important;
+  background-color:#f8f6f1 !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,248,226,.5),
+    0 0 0 1px rgba(201,163,90,.8) !important;
+}
+html body #noah-piece-overlay .noah-puzzle-piece.open::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  z-index:0 !important;
+  right:auto !important;
+  bottom:auto !important;
+  width:calc(300% + 4px) !important;
+  height:calc(300% + 4px) !important;
+  pointer-events:none !important;
+  background:url("../images/noah.webp") center/100% 100% no-repeat !important;
+  opacity:1 !important;
+}
+html body #noah-piece-overlay .noah-puzzle-piece.open::after{
+  content:none !important;
+  display:none !important;
+}
+html body #noah-piece-overlay .noah-puzzle-piece:nth-child(3n+1).open::before{left:0 !important}
+html body #noah-piece-overlay .noah-puzzle-piece:nth-child(3n+2).open::before{left:calc(-100% - 2px) !important}
+html body #noah-piece-overlay .noah-puzzle-piece:nth-child(3n).open::before{left:calc(-200% - 4px) !important}
+html body #noah-piece-overlay .noah-puzzle-piece:nth-child(-n+3).open::before{top:0 !important}
+html body #noah-piece-overlay .noah-puzzle-piece:nth-child(n+4):nth-child(-n+6).open::before{top:calc(-100% - 2px) !important}
+html body #noah-piece-overlay .noah-puzzle-piece:nth-child(n+7).open::before{top:calc(-200% - 4px) !important}
+
+/* 9枚そろったら継ぎ目をなくし、一枚絵として見せる */
+html body #noah-piece-overlay .noah-puzzle-grid:not(:has(.noah-puzzle-piece.locked)){
+  gap:0 !important;
+}
+html body #noah-piece-overlay .noah-puzzle-grid:not(:has(.noah-puzzle-piece.locked)) .noah-puzzle-piece{
+  border-radius:0 !important;
+  box-shadow:none !important;
+}
+html body #noah-piece-overlay .noah-puzzle-grid:not(:has(.noah-puzzle-piece.locked)) .noah-puzzle-piece.open::before{
+  width:300% !important;
+  height:300% !important;
+}
+html body #noah-piece-overlay .noah-puzzle-grid:not(:has(.noah-puzzle-piece.locked)) .noah-puzzle-piece:nth-child(3n+2).open::before{left:-100% !important}
+html body #noah-piece-overlay .noah-puzzle-grid:not(:has(.noah-puzzle-piece.locked)) .noah-puzzle-piece:nth-child(3n).open::before{left:-200% !important}
+html body #noah-piece-overlay .noah-puzzle-grid:not(:has(.noah-puzzle-piece.locked)) .noah-puzzle-piece:nth-child(n+4):nth-child(-n+6).open::before{top:-100% !important}
+html body #noah-piece-overlay .noah-puzzle-grid:not(:has(.noah-puzzle-piece.locked)) .noah-puzzle-piece:nth-child(n+7).open::before{top:-200% !important}
+
+/* ---------- 注記・ボタン ---------- */
+html body #noah-piece-overlay .noah-piece-note{
+  position:relative !important;
+  margin:14px 0 0 !important;
+  padding:0 0 14px !important;
+  font:500 12.5px/1.5 "Noto Serif JP","Yu Mincho",serif !important;
+  letter-spacing:.02em !important;
+  white-space:nowrap !important;
+  color:var(--zn-ink) !important;
+  text-align:center !important;
+  text-shadow:0 0 8px #fff,0 0 3px #fff !important;
+  background:none !important;
+}
+html body #noah-piece-overlay .noah-piece-note::after{
+  content:"✦";
+  position:absolute;
+  left:50%;
+  bottom:0;
+  width:200px;
+  transform:translateX(-50%);
+  font-size:9px;
+  line-height:10px;
+  color:var(--zn-gold-deep);
+  text-align:center;
+  background:
+    linear-gradient(90deg,transparent,rgba(156,118,52,.75)) left center/88px 1px no-repeat,
+    linear-gradient(270deg,transparent,rgba(156,118,52,.75)) right center/88px 1px no-repeat;
+}
+html body #noah-piece-overlay .noah-piece-actions{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  gap:6px !important;
+  width:100% !important;
+  margin:6px 0 0 !important;
+  padding:6px 0 4px !important;
+  background:none !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+html body #noah-piece-overlay .noah-piece-challenge{
+  position:relative !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:min(84%,300px) !important;
+  height:62px !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:999px !important;
+  background:
+    radial-gradient(ellipse 70% 90% at 50% 0%,rgba(255,255,255,.95),rgba(255,255,255,0) 70%),
+    linear-gradient(180deg,#fffdf7 0%,#f7eedb 60%,#efe1c3 100%) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.95),
+    inset 0 0 0 4px rgba(255,251,240,.9),
+    inset 0 0 0 5px rgba(201,163,90,.8),
+    0 0 0 2px var(--zn-gold),
+    0 0 0 4px rgba(255,250,236,.9),
+    0 0 0 5px rgba(156,118,52,.7),
+    0 6px 18px rgba(120,90,40,.25) !important;
+  font:600 21px/1 "Noto Serif JP","Yu Mincho",serif !important;
+  letter-spacing:.14em !important;
+  text-indent:.14em !important;
+  color:var(--zn-ink) !important;
+  text-shadow:0 1px 0 #fff !important;
+  cursor:pointer;
+}
+html body #noah-piece-overlay .noah-piece-challenge::before,
+html body #noah-piece-overlay .noah-piece-challenge::after{
+  content:"" !important;
+  position:absolute !important;
+  top:50% !important;
+  width:20px !important;
+  height:20px !important;
+  transform:translateY(-50%) !important;
+  background:var(--zn-star) center/contain no-repeat !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+html body #noah-piece-overlay .noah-piece-challenge::before{left:22px !important}
+html body #noah-piece-overlay .noah-piece-challenge::after{right:22px !important}
+html body #noah-piece-overlay .noah-piece-challenge:active{transform:translateY(1px);filter:brightness(.97)}
+html body #noah-piece-overlay .noah-piece-challenge:disabled{filter:grayscale(.6);opacity:.7}
+/* 所持チケットはボタンの下に小さく */
+html body #noah-piece-overlay .noah-piece-ticket-status{
+  display:flex !important;
+  gap:8px !important;
+  margin:6px 0 0 !important;
+  font:500 11px/1.2 "Noto Serif JP",serif !important;
+  color:#5b4527 !important;
+  text-shadow:0 0 6px #fff,0 0 2px #fff !important;
+  background:none !important;
+}
+html body #noah-piece-overlay .noah-piece-ticket-status b{font-weight:700 !important;color:#7a5420 !important}
+html body #noah-piece-overlay .noah-piece-complete{
+  font:600 13px/1.4 "Noto Serif JP",serif !important;
+  color:#7a5420 !important;
+  text-shadow:0 0 6px #fff !important;
+}
+
+@media (max-height:740px){
+  html body #noah-piece-overlay .noah-piece-head{min-height:52px !important}
+  html body #noah-piece-overlay .noah-piece-title strong{font-size:23px !important}
+  html body #noah-piece-overlay .noah-piece-lead h2{font-size:20px !important;margin-top:5px !important}
+  html body #noah-piece-overlay #noah-piece-progress-now{font-size:34px !important}
+  html body #noah-piece-overlay .noah-puzzle-frame{width:min(100%,286px) !important;padding:9px !important}
+  html body #noah-piece-overlay .noah-puzzle-piece.locked::after{width:26px !important;height:26px !important}
+  html body #noah-piece-overlay .noah-piece-note{margin-top:10px !important;font-size:12px !important}
+  html body #noah-piece-overlay .noah-piece-challenge{height:52px !important;font-size:18px !important}
+}
+
+/* ============================================================
+   build1443: ノア画面でも上部ユーザーフレーム／下部ボトムナビを表示
+   無貌の天使・DAILYのステージ選択(z-index:210)と同じ扱いにする。
+   背景は全面に敷き、中身はフレームとナビの間に収める。
+   ============================================================ */
+html body #noah-piece-overlay.noah-piece-overlay{
+  z-index:210 !important;
+}
+html body #noah-piece-overlay.noah-piece-overlay .noah-piece-screen{
+  position:absolute !important;
+  top:var(--header-h,72px) !important;
+  bottom:var(--bottom-nav-h,76px) !important;
+  left:50% !important;
+  transform:translateX(-50%) !important;
+  width:100% !important;
+  max-width:460px !important;
+  height:auto !important;
+  padding:2px 16px 10px !important;
+  overflow-y:auto !important;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+html body #noah-piece-overlay .noah-piece-screen::-webkit-scrollbar{display:none}
+/* フレームとナビの間に収めるため、全体を一段コンパクトに */
+html body #noah-piece-overlay .noah-piece-head{min-height:46px !important;padding-top:2px !important}
+html body #noah-piece-overlay .noah-piece-head::before{top:-2px;width:16px;height:16px}
+html body #noah-piece-overlay .noah-piece-back{top:6px !important;font-size:14px !important}
+html body #noah-piece-overlay .noah-piece-title{margin-top:10px !important;gap:3px !important}
+html body #noah-piece-overlay .noah-piece-title strong{font-size:22px !important}
+html body #noah-piece-overlay .noah-piece-body{gap:6px !important}
+html body #noah-piece-overlay .noah-piece-lead{margin-top:8px !important}
+html body #noah-piece-overlay .noah-piece-lead h2{font-size:20px !important;margin-top:5px !important}
+html body #noah-piece-overlay .noah-piece-progress{padding-top:9px !important}
+html body #noah-piece-overlay #noah-piece-progress-now{font-size:34px !important}
+html body #noah-piece-overlay .noah-piece-progress-label{font-size:13px !important}
+html body #noah-piece-overlay .noah-puzzle-frame{
+  width:min(76%,290px) !important;
+  padding:10px !important;
+  margin-top:4px !important;
+}
+html body #noah-piece-overlay .noah-puzzle-piece.locked::after{width:28px !important;height:28px !important}
+html body #noah-piece-overlay .noah-piece-note{margin-top:10px !important;padding-bottom:12px !important;font-size:12px !important}
+html body #noah-piece-overlay .noah-piece-actions{margin-top:2px !important;padding-top:4px !important}
+html body #noah-piece-overlay .noah-piece-challenge{height:52px !important;font-size:18px !important}
+@media (max-height:740px){
+  html body #noah-piece-overlay .noah-piece-head{min-height:40px !important}
+  html body #noah-piece-overlay .noah-piece-title{margin-top:6px !important}
+  html body #noah-piece-overlay .noah-piece-title strong{font-size:19px !important}
+  html body #noah-piece-overlay .noah-piece-lead{margin-top:4px !important}
+  html body #noah-piece-overlay .noah-piece-lead h2{font-size:17px !important}
+  html body #noah-piece-overlay #noah-piece-progress-now{font-size:28px !important}
+  html body #noah-piece-overlay .noah-puzzle-frame{width:min(66%,240px) !important;padding:8px !important;margin-top:14px !important}
+  html body #noah-piece-overlay .noah-puzzle-piece.locked::after{width:22px !important;height:22px !important}
+  html body #noah-piece-overlay .noah-piece-challenge{height:46px !important;font-size:16px !important}
+}

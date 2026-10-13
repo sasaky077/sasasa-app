@@ -88,7 +88,7 @@ function panelSrc(id){
 }
 function partyHtml(ids,large){const a=Array.isArray(ids)?ids.slice(0,3):[];while(a.length<3)a.push(0);return '<div class="score-attack-party'+(large?' is-large':'')+'">'+a.map(id=>{const src=panelSrc(id);return src?'<span><img src="'+esc(src)+'" alt="" draggable="false"></span>':'<span class="empty"></span>';}).join('')+'</div>';}
 function ensureRoot(){
- if(root && root.isConnected && root.dataset.scoreAttackUi==='694')return root;
+ if(root && root.isConnected && root.dataset.scoreAttackUi==='1447')return root;
  // build694: if an older SCORE ATTACK DOM survived an asset update/BFCache restore,
  // discard it before rendering the current markup. This prevents old FRIEND/全国
  // controls from mixing with the new navigation CSS.
@@ -97,7 +97,7 @@ function ensureRoot(){
  root=document.createElement('div');
  root.id='score-attack-root';
  root.className='app-page app-page--overlay score-attack-app-page';
- root.dataset.scoreAttackUi='694';
+ root.dataset.scoreAttackUi='1447';
  root.setAttribute('aria-hidden','true');
  root.innerHTML=`<div class="score-attack-page app-page-surface">
  <div class="score-attack-bg-deco score-attack-bg-deco-a" aria-hidden="true"></div>
@@ -109,6 +109,7 @@ function ensureRoot(){
      <small class="app-page-eyebrow">SCORE ATTACK</small>
      <h1 class="app-page-title">スコアアタック</h1>
    </div>
+   <div class="score-attack-head-rule" aria-hidden="true"></div>
    <div class="app-page-action score-attack-head-mark" aria-hidden="true"></div>
  </header>
 
@@ -118,6 +119,7 @@ function ensureRoot(){
     <div class="score-attack-ranking-nav" aria-label="ランキング切替">
       <button id="score-attack-swipe-prev" type="button" class="score-attack-swipe-cue is-prev" aria-label="フレンドランキングへ" onclick="setScoreAttackRankingScope('friends')">‹</button>
       <strong id="score-attack-ranking-title">フレンドランキング</strong>
+      <i class="score-attack-ranking-rule" aria-hidden="true"></i>
       <button id="score-attack-swipe-next" type="button" class="score-attack-swipe-cue is-next" aria-label="全国ランキングへ" onclick="setScoreAttackRankingScope('national')">›</button>
     </div>
     <div id="score-attack-list" class="score-attack-list"><div class="score-attack-loading">読み込み中...</div></div>
@@ -129,20 +131,21 @@ function ensureRoot(){
         <small>DIFFICULTY</small>
         <strong>難易度を選択</strong>
       </div>
+      <i class="score-attack-mode-rule" aria-hidden="true"></i>
     </div>
     <div class="score-attack-tabs">
       <button id="score-attack-tab-normal" class="active" onclick="setScoreAttackDifficulty('normal')">
-        <small>NORMAL</small>
+        <i class="score-attack-tab-spark" aria-hidden="true"></i><small>NORMAL</small><i class="score-attack-tab-spark" aria-hidden="true"></i>
       </button>
       <button id="score-attack-tab-hard" onclick="setScoreAttackDifficulty('hard')">
-        <small>HARD</small>
+        <i class="score-attack-tab-spark" aria-hidden="true"></i><small>HARD</small><i class="score-attack-tab-spark" aria-hidden="true"></i>
       </button>
     </div>
   </section>
 
   <section class="score-attack-me score-attack-start-only">
     <button type="button" class="score-attack-start" onclick="startScoreAttack()">
-      <span>挑戦する</span>
+      <span><i class="score-attack-start-spark" aria-hidden="true"></i>挑戦する<i class="score-attack-start-spark" aria-hidden="true"></i></span>
     </button>
   </section>
 
@@ -218,13 +221,14 @@ function renderRows(rows,scope){
    const me=String(row.user_id||'').toLowerCase()===myId;
    const rank=Number(row.rank_no||i+1);
    const extra=(!isNational&&i>=TOP_COUNT)?' score-attack-row-extra':'';
-   return '<div class="score-attack-row'+(me?' is-me':'')+extra+'">'+
-     '<span class="score-attack-rank-no">'+rank+'</span>'+
+   const rankCls=rank===1?' rank-1':rank===2?' rank-2':rank===3?' rank-3':'';
+   return '<div class="score-attack-row'+(me?' is-me':'')+extra+rankCls+'">'+
+     '<span class="score-attack-rank-no'+rankCls+'"><i class="score-attack-crown" aria-hidden="true"></i><span>'+rank+'</span></span>'+
      '<div class="score-attack-row-main">'+
        '<b title="'+esc(row.display_name||row.user_id||'Player')+'"><span class="score-attack-player-name">'+esc(playerName7(row.display_name||row.user_id||'Player'))+'</span>'+(me?'<em>自分</em>':'')+'</b>'+
        partyHtml(row.party_ids,false)+
      '</div>'+
-     '<strong>'+Number(row.best_score||0).toLocaleString('ja-JP')+'</strong>'+
+     '<div class="score-attack-score"><small class="score-attack-best-label">'+(me?'自己ベスト':'ベスト')+'</small><strong>'+Number(row.best_score||0).toLocaleString('ja-JP')+'</strong></div>'+
    '</div>';
  }).join('');
 

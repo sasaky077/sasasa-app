@@ -1,0 +1,306 @@
+/* =========================================================
+   build1448 — HOME SIDE MENU redesign
+   モック準拠：アイコン → 文字＋「›」 → 金の細線。
+   左列：ボーナス／フレンド／レイドバトル／残響の塔（赤い帯）
+   右列：メッセージ／神聖樹／アイテム／スコアアタック（右列は半段下げる）
+   縦位置はイベントバナー下端（--home-banner-bottom, 既存JSが実寸から算出）
+   〜ボトムナビ上端の空きに比率で並べる。
+   このファイルは最後に読み込み、既存の home-type-entry 指定を上書きする。
+   ========================================================= */
+
+#screen-main.hm2-ready{
+  --hm2-ink:#2e231b;
+  --hm2-gold:#a8853f;
+  --hm2-item-h:80px;
+  --hm2-icon:37px;
+  --hm2-font:17px;
+  --hm2-w:128px;
+  --hm2-edge:14px;
+  --hm2-top:calc(var(--home-banner-bottom, 200px) + 6px);
+  --hm2-avail:min(430px, max(200px, calc(100dvh - var(--bottom-nav-h, 76px) - var(--hm2-top) - var(--hm2-item-h) - 14px)));
+}
+
+/* ---------- button reset ---------- */
+html body #screen-main > button.home-type-entry.hm2.hm2{
+  position:absolute !important;
+  display:block !important;
+  width:var(--hm2-w) !important;
+  min-width:0 !important;
+  max-width:none !important;
+  height:var(--hm2-item-h) !important;
+  min-height:0 !important;
+  max-height:none !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:none !important;
+  box-shadow:none !important;
+  filter:none !important;
+  -webkit-filter:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  opacity:1 !important;
+  transform:none !important;
+  animation:none !important;
+  overflow:visible !important;
+  z-index:30 !important;
+  font-size:0 !important;
+  color:transparent !important;
+  text-shadow:none !important;
+  cursor:pointer !important;
+  -webkit-tap-highlight-color:transparent !important;
+  bottom:auto !important;
+}
+html body #screen-main > button.home-type-entry.hm2.hm2::before,
+html body #screen-main > button.home-type-entry.hm2.hm2::after{
+  content:none !important;
+  display:none !important;
+}
+html body #screen-main > button.home-type-entry.hm2.hm2 > .home-type-letter-layer,
+html body #screen-main > button.home-type-entry.hm2.hm2 > img,
+html body #screen-main > button.home-type-entry.hm2.hm2 > .home-type-logo{
+  display:none !important;
+}
+
+/* ---------- placement ---------- */
+html body #screen-main > button.home-type-entry.hm2--left.hm2--left{
+  left:var(--hm2-edge) !important;
+  right:auto !important;
+}
+html body #screen-main > button.home-type-entry.hm2--right.hm2--right{
+  right:var(--hm2-edge) !important;
+  left:auto !important;
+}
+html body #screen-main > button.home-type-entry.hm2--bonus.hm2{  top:calc(var(--hm2-top) + var(--hm2-avail) * 0.00) !important; }
+html body #screen-main > button.home-type-entry.hm2--friend.hm2{ top:calc(var(--hm2-top) + var(--hm2-avail) * 0.27) !important; }
+html body #screen-main > button.home-type-entry.hm2--raid.hm2{   top:calc(var(--hm2-top) + var(--hm2-avail) * 0.54) !important; }
+html body #screen-main > button.home-type-entry.hm2--tower.hm2{  top:calc(var(--hm2-top) + var(--hm2-avail) * 0.83) !important; }
+html body #screen-main > button.home-type-entry.hm2--message.hm2{top:calc(var(--hm2-top) + var(--hm2-avail) * 0.12) !important; }
+html body #screen-main > button.home-type-entry.hm2--tree.hm2{   top:calc(var(--hm2-top) + var(--hm2-avail) * 0.40) !important; }
+html body #screen-main > button.home-type-entry.hm2--item.hm2{   top:calc(var(--hm2-top) + var(--hm2-avail) * 0.68) !important; }
+html body #screen-main > button.home-type-entry.hm2--score.hm2{  top:calc(var(--hm2-top) + var(--hm2-avail) * 0.97) !important; }
+
+/* ---------- body layout ---------- */
+html body #screen-main > button.home-type-entry.hm2 > .hm2-body{
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  gap:3px;
+  pointer-events:none;
+  transition:transform .12s ease;
+}
+html body #screen-main > button.home-type-entry.hm2--left > .hm2-body{ align-items:flex-start; }
+html body #screen-main > button.home-type-entry.hm2--right > .hm2-body{ align-items:flex-end; }
+
+/* soft white haze for legibility on any background */
+html body #screen-main > button.home-type-entry.hm2 > .hm2-body::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  inset:-6px -14px -4px -14px;
+  background:radial-gradient(ellipse at 50% 60%,rgba(255,255,255,.62) 0%,rgba(255,255,255,.38) 45%,rgba(255,255,255,0) 72%);
+  pointer-events:none;
+}
+html body #screen-main > button.home-type-entry.hm2--tower > .hm2-body::before{ content:none; }
+
+/* icon */
+html body #screen-main > button.home-type-entry.hm2 .hm2-icon{
+  display:block;
+  width:calc(var(--hm2-icon) * 1.3);
+  height:var(--hm2-icon);
+  margin:0 2px 1px;
+  background:center bottom / contain no-repeat;
+  filter:drop-shadow(0 0 3px rgba(255,255,255,.95)) drop-shadow(0 0 6px rgba(255,255,255,.7));
+}
+html body #screen-main > button.home-type-entry.hm2--bonus   .hm2-icon{ background-image:url('../images/icon_home_bonus.webp?v=1448'); }
+html body #screen-main > button.home-type-entry.hm2--friend  .hm2-icon{ background-image:url('../images/icon_home_friend.webp?v=1448'); }
+html body #screen-main > button.home-type-entry.hm2--raid    .hm2-icon{ background-image:url('../images/icon_home_raid.webp?v=1448'); }
+html body #screen-main > button.home-type-entry.hm2--message .hm2-icon{ background-image:url('../images/icon_home_message.webp?v=1448'); }
+html body #screen-main > button.home-type-entry.hm2--tree    .hm2-icon{ background-image:url('../images/icon_home_tree.webp?v=1448'); height:calc(var(--hm2-icon) + 4px); }
+html body #screen-main > button.home-type-entry.hm2--item    .hm2-icon{ background-image:url('../images/icon_home_item.webp?v=1448'); }
+html body #screen-main > button.home-type-entry.hm2--score   .hm2-icon{ background-image:url('../images/icon_home_score.webp?v=1448'); height:calc(var(--hm2-icon) + 4px); }
+
+html body #screen-main > button.home-type-entry.hm2--left  .hm2-icon{ background-position:left bottom; }
+html body #screen-main > button.home-type-entry.hm2--right .hm2-icon{ background-position:right bottom; }
+
+/* label row */
+html body #screen-main > button.home-type-entry.hm2 .hm2-row{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:0 2px;
+  white-space:nowrap;
+}
+html body #screen-main > button.home-type-entry.hm2 .hm2-label{
+  display:block;
+  color:var(--hm2-ink);
+  font-family:"Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;
+  font-size:var(--hm2-font);
+  font-weight:700;
+  letter-spacing:.06em;
+  line-height:1.15;
+  text-shadow:
+    0 0 2px rgba(255,255,255,1),
+    0 0 6px rgba(255,255,255,.95),
+    0 0 12px rgba(255,255,255,.75);
+}
+html body #screen-main > button.home-type-entry.hm2 .hm2-chev{
+  display:block;
+  flex:0 0 auto;
+  width:7px;
+  height:7px;
+  margin-right:3px;
+  border-top:2px solid #5a4430;
+  border-right:2px solid #5a4430;
+  transform:rotate(45deg);
+  filter:drop-shadow(0 0 2px rgba(255,255,255,.95));
+}
+
+/* gold rule with a small diamond on the inner end */
+html body #screen-main > button.home-type-entry.hm2 .hm2-rule{
+  position:relative;
+  display:block;
+  width:100%;
+  height:1px;
+  margin-top:3px;
+}
+html body #screen-main > button.home-type-entry.hm2--left .hm2-rule{
+  background:linear-gradient(90deg,rgba(168,133,63,.95) 0%,rgba(168,133,63,.85) 70%,rgba(168,133,63,0) 100%);
+}
+html body #screen-main > button.home-type-entry.hm2--right .hm2-rule{
+  background:linear-gradient(270deg,rgba(168,133,63,.95) 0%,rgba(168,133,63,.85) 70%,rgba(168,133,63,0) 100%);
+}
+html body #screen-main > button.home-type-entry.hm2 .hm2-rule::after{
+  content:"";
+  position:absolute;
+  top:-3px;
+  width:5px;
+  height:5px;
+  background:var(--hm2-gold);
+  transform:rotate(45deg);
+}
+html body #screen-main > button.home-type-entry.hm2--left .hm2-rule::after{ left:-1px; }
+html body #screen-main > button.home-type-entry.hm2--right .hm2-rule::after{ right:-1px; }
+
+/* ---------- 残響の塔：赤い帯 ---------- */
+html body #screen-main > button.home-type-entry.hm2--tower.hm2{
+  width:calc(var(--hm2-w) + 22px) !important;
+}
+html body #screen-main > button.home-type-entry.hm2--tower > .hm2-body{
+  justify-content:flex-end;
+  gap:0;
+}
+html body #screen-main > button.home-type-entry.hm2--tower .hm2-icon{
+  position:absolute;
+  left:-6px;
+  bottom:14px;
+  width:86px;
+  height:86px;
+  margin:0;
+  background-image:url('../images/icon_home_tower.webp?v=1448');
+  background-position:center bottom;
+  opacity:.92;
+  filter:drop-shadow(0 0 4px rgba(255,255,255,.55));
+  z-index:0;
+}
+html body #screen-main > button.home-type-entry.hm2--tower .hm2-row{
+  position:relative;
+  z-index:1;
+  width:100%;
+  box-sizing:border-box;
+  padding:4px 10px 5px 8px;
+  margin-left:-4px;
+  background:none;
+}
+/* build1448b: 赤い帯 → ぼかした赤い煙（輪郭なし） */
+html body #screen-main > button.home-type-entry.hm2--tower .hm2-row::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  left:-10px;
+  right:-18px;
+  top:-10px;
+  bottom:-10px;
+  background:
+    radial-gradient(ellipse 34% 60% at 18% 52%,rgba(120,10,18,.95) 0%,rgba(120,10,18,0) 100%),
+    radial-gradient(ellipse 62% 54% at 38% 50%,rgba(84,8,14,.88) 0%,rgba(84,8,14,.55) 45%,rgba(84,8,14,0) 100%),
+    radial-gradient(ellipse 50% 40% at 70% 56%,rgba(150,20,28,.45) 0%,rgba(150,20,28,0) 100%);
+  filter:blur(6px);
+  pointer-events:none;
+}
+html body #screen-main > button.home-type-entry.hm2--tower .hm2-label{
+  color:#fff6ee;
+  font-size:calc(var(--hm2-font) + 1px);
+  letter-spacing:.1em;
+  text-shadow:0 1px 3px rgba(0,0,0,.6);
+}
+html body #screen-main > button.home-type-entry.hm2--tower .hm2-label-head{
+  display:inline-block;
+  margin-right:3px;
+  color:#e2343e;
+  font-size:1.6em;
+  font-weight:700;
+  line-height:1;
+  vertical-align:-.12em;
+  text-shadow:0 0 1px #fff2ea,0 0 6px rgba(255,120,120,.45),0 1px 2px rgba(0,0,0,.5);
+}
+html body #screen-main > button.home-type-entry.hm2--tower .hm2-chev{
+  border-color:#fff2e8;
+  filter:none;
+}
+html body #screen-main > button.home-type-entry.hm2--tower .hm2-rule{
+  z-index:1;
+  margin-top:2px;
+}
+
+/* ---------- press ---------- */
+html body #screen-main > button.home-type-entry.hm2:active > .hm2-body{
+  transform:scale(.95);
+}
+
+/* ---------- notice dots: icon top-outer corner ---------- */
+html body #screen-main > button.home-type-entry.hm2 > .home-menu-notice-anchor{
+  inset:0 !important;
+}
+html body #screen-main > button.hm2--left .home-menu-notice-anchor > *{
+  top:calc(var(--hm2-item-h) - var(--hm2-icon) - var(--hm2-font) - 16px) !important;
+  left:calc(var(--hm2-icon) - 2px) !important;
+  right:auto !important;
+}
+html body #screen-main > button.hm2--right .home-menu-notice-anchor > *{
+  top:calc(var(--hm2-item-h) - var(--hm2-icon) - var(--hm2-font) - 16px) !important;
+  right:-6px !important;
+  left:auto !important;
+}
+
+/* ---------- lock overlay: over the icon/label block ---------- */
+html body #screen-main > button.home-type-entry.hm2 > .content-lock-overlay{
+  width:44px !important;
+  height:44px !important;
+  top:46% !important;
+}
+
+/* ---------- compact phones ---------- */
+@media (max-width:380px), (max-height:700px){
+  #screen-main.hm2-ready{
+    --hm2-item-h:70px;
+    --hm2-icon:31px;
+    --hm2-font:15.5px;
+    --hm2-w:118px;
+    --hm2-edge:12px;
+  }
+  html body #screen-main > button.home-type-entry.hm2--tower .hm2-icon{ width:72px; height:72px; }
+}
+@media (max-height:600px){
+  #screen-main.hm2-ready{
+    --hm2-item-h:60px;
+    --hm2-icon:26px;
+    --hm2-font:14px;
+    --hm2-w:110px;
+  }
+  html body #screen-main > button.home-type-entry.hm2 > .hm2-body{ gap:2px; }
+  html body #screen-main > button.home-type-entry.hm2--tower .hm2-icon{ width:60px; height:60px; bottom:10px; }
+}

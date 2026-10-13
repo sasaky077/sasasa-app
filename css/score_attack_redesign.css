@@ -1,0 +1,639 @@
+/* =========================================================
+   SCORE ATTACK build1447 — mock redesign
+   - 共通背景（bg_dairy）＋白いヴェール
+   - 見出し：大きめ明朝＋装飾ライン
+   - ランキング：金枠パネル／順位バンド（王冠）／自己ベスト表示
+   - 難易度：金のNORMAL・白のHARD（✦装飾）
+   - 挑戦する：六角形の金ボタン（外枠なし）
+   このファイルは最後に読み込む。既存の score_attack_chrome.css /
+   app_chrome.css / style.css の SCORE ATTACK 指定を上書きする。
+   ========================================================= */
+
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page{
+  --sa-gold:#b98a3c;
+  --sa-gold-d:#8a6326;
+  --sa-gold-l:#e6cf98;
+  --sa-ink:#3d2c1c;
+  --sa-ink-2:#6b5236;
+  background:#f7f2e8 !important;
+}
+
+/* ---------- page background ---------- */
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page > .score-attack-page{
+  display:flex !important;
+  flex-direction:column !important;
+  background:
+    linear-gradient(180deg,rgba(255,253,248,.52) 0%,rgba(255,252,246,.40) 45%,rgba(255,252,246,.60) 100%),
+    url('../images/bg_dairy.webp') center center / cover no-repeat,
+    linear-gradient(180deg,#fdfaf3,#f4ede0) !important;
+}
+html body:not(.ui-immersive) #score-attack-root .score-attack-bg-deco{display:none !important;}
+
+/* ---------- header ---------- */
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-head{
+  position:relative !important;
+  flex:0 0 76px !important;
+  height:76px !important;
+  min-height:76px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:0 14px 12px !important;
+  box-sizing:border-box !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-head .app-page-heading{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  gap:2px !important;
+  margin:0 !important;
+  padding:0 !important;
+  transform:none !important;
+  text-align:center !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-head .app-page-eyebrow{
+  display:block !important;
+  margin:0 !important;
+  color:#8f7348 !important;
+  font-family:"Cinzel","Noto Serif JP",serif !important;
+  font-size:8px !important;
+  font-weight:600 !important;
+  letter-spacing:.42em !important;
+  line-height:1 !important;
+  opacity:1 !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-head .app-page-title{
+  display:block !important;
+  margin:0 !important;
+  color:var(--sa-ink) !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:24px !important;
+  font-weight:700 !important;
+  letter-spacing:.12em !important;
+  line-height:1.2 !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.9),0 0 10px rgba(255,255,255,.85) !important;
+  white-space:nowrap !important;
+}
+/* 戻るボタン：他画面と同じ基本位置に固定（build1445 と同じ変数） */
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-head > button.app-page-back{
+  position:fixed !important;
+  left:var(--zb-back-x) !important;
+  top:var(--zb-back-y) !important;
+  right:auto !important;
+  bottom:auto !important;
+  margin:0 !important;
+  transform:none !important;
+  z-index:6 !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-head > button.app-page-back:active{
+  transform:translateY(1px) !important;
+}
+html body:not(.ui-immersive) #score-attack-root .score-attack-head-rule{
+  position:absolute !important;
+  left:40px !important;
+  right:40px !important;
+  bottom:4px !important;
+  height:14px !important;
+  pointer-events:none !important;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 20'%3E%3Cpath d='M2 10 L8 7 L14 10 L8 13Z M66 10 L72 7 L78 10 L72 13Z' fill='%23b98a3c'/%3E%3Cpath d='M40 1 C40.6 7.4 42.6 9.4 49 10 C42.6 10.6 40.6 12.6 40 19 C39.4 12.6 37.4 10.6 31 10 C37.4 9.4 39.4 7.4 40 1Z' fill='%23b98a3c'/%3E%3Ccircle cx='40' cy='10' r='1.6' fill='%23fff8e6'/%3E%3Cpath d='M14 10H31M49 10H66' stroke='%23b98a3c' stroke-width='.8'/%3E%3C/svg%3E") center center / 62px 14px no-repeat,
+    linear-gradient(90deg,rgba(185,138,60,0),rgba(185,138,60,.75) 30%,rgba(185,138,60,.75) 70%,rgba(185,138,60,0)) center center / 100% 1px no-repeat !important;
+}
+
+/* ---------- content column ---------- */
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-scroll{
+  display:flex !important;
+  flex-direction:column !important;
+  gap:10px !important;
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  padding:2px 12px 10px !important;
+  box-sizing:border-box !important;
+  overflow:hidden !important;
+}
+
+/* shared ornate panel */
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-ranking,
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-mode-card{
+  position:relative !important;
+  margin:0 !important;
+  border:1px solid rgba(201,163,95,.85) !important;
+  border-radius:12px !important;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg transform='' fill='none' stroke='%23b98a3c' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M3 38 V12 Q3 3 12 3 H38'/%3E%3Cpath d='M8 30 V14 Q8 8 14 8 H30' stroke-width='.8' opacity='.8'/%3E%3Cpath d='M3 12 Q10 12 12 3' stroke-width='1'/%3E%3C/g%3E%3Cg transform=''%3E%3Cpath d='M8 8 L11 5 L14 8 L11 11Z' fill='%23b98a3c'/%3E%3C/g%3E%3C/svg%3E") left 3px top 3px / 26px 26px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg transform='translate(40 0) scale(-1 1)' fill='none' stroke='%23b98a3c' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M3 38 V12 Q3 3 12 3 H38'/%3E%3Cpath d='M8 30 V14 Q8 8 14 8 H30' stroke-width='.8' opacity='.8'/%3E%3Cpath d='M3 12 Q10 12 12 3' stroke-width='1'/%3E%3C/g%3E%3Cg transform='translate(40 0) scale(-1 1)'%3E%3Cpath d='M8 8 L11 5 L14 8 L11 11Z' fill='%23b98a3c'/%3E%3C/g%3E%3C/svg%3E") right 3px top 3px / 26px 26px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg transform='translate(0 40) scale(1 -1)' fill='none' stroke='%23b98a3c' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M3 38 V12 Q3 3 12 3 H38'/%3E%3Cpath d='M8 30 V14 Q8 8 14 8 H30' stroke-width='.8' opacity='.8'/%3E%3Cpath d='M3 12 Q10 12 12 3' stroke-width='1'/%3E%3C/g%3E%3Cg transform='translate(0 40) scale(1 -1)'%3E%3Cpath d='M8 8 L11 5 L14 8 L11 11Z' fill='%23b98a3c'/%3E%3C/g%3E%3C/svg%3E") left 3px bottom 3px / 26px 26px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg transform='translate(40 40) scale(-1 -1)' fill='none' stroke='%23b98a3c' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M3 38 V12 Q3 3 12 3 H38'/%3E%3Cpath d='M8 30 V14 Q8 8 14 8 H30' stroke-width='.8' opacity='.8'/%3E%3Cpath d='M3 12 Q10 12 12 3' stroke-width='1'/%3E%3C/g%3E%3Cg transform='translate(40 40) scale(-1 -1)'%3E%3Cpath d='M8 8 L11 5 L14 8 L11 11Z' fill='%23b98a3c'/%3E%3C/g%3E%3C/svg%3E") right 3px bottom 3px / 26px 26px no-repeat,
+    linear-gradient(180deg,rgba(255,255,253,.80),rgba(253,250,243,.70)) !important;
+  box-shadow:
+    inset 0 0 0 4px rgba(255,255,255,.55),
+    inset 0 0 0 5px rgba(214,184,124,.55),
+    0 6px 18px rgba(120,90,40,.12),
+    0 1px 0 rgba(255,255,255,.9) !important;
+  backdrop-filter:blur(1.5px) !important;
+  -webkit-backdrop-filter:blur(1.5px) !important;
+  box-sizing:border-box !important;
+}
+
+/* ---------- ranking panel ---------- */
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-ranking{
+  flex:1 1 auto !important;
+  min-height:150px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  padding:10px 12px 12px !important;
+  overflow:hidden !important;
+}
+/* faint compass star in the empty lower half */
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-ranking::after{
+  content:"" !important;
+  position:absolute !important;
+  left:50% !important;
+  bottom:12% !important;
+  width:150px !important;
+  height:150px !important;
+  transform:translateX(-50%) !important;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cg fill='none' stroke='%23b98a3c' stroke-width='.8'%3E%3Ccircle cx='100' cy='100' r='46'/%3E%3Ccircle cx='100' cy='100' r='30'/%3E%3C/g%3E%3Cpath d='M100 10 L106 94 L190 100 L106 106 L100 190 L94 106 L10 100 L94 94Z' fill='%23b98a3c'/%3E%3Cpath d='M100 50 L103 97 L150 100 L103 103 L100 150 L97 103 L50 100 L97 97Z' fill='%23b98a3c' transform='rotate(45 100 100)'/%3E%3C/svg%3E") center/contain no-repeat !important;
+  opacity:.10 !important;
+  pointer-events:none !important;
+  z-index:0 !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-ranking > *{
+  position:relative;
+  z-index:1;
+}
+
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-ranking-nav{
+  flex:0 0 auto !important;
+  min-height:44px !important;
+  margin:0 0 8px !important;
+  padding:0 46px 12px !important;
+  box-sizing:border-box !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page #score-attack-ranking-title{
+  color:var(--sa-ink) !important;
+  font-size:18px !important;
+  font-weight:700 !important;
+  letter-spacing:.14em !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-ranking-rule{
+  position:absolute !important;
+  left:50% !important;
+  bottom:0 !important;
+  width:180px !important;
+  height:12px !important;
+  transform:translateX(-50%) !important;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 20'%3E%3Cpath d='M2 10 L8 7 L14 10 L8 13Z M66 10 L72 7 L78 10 L72 13Z' fill='%23b98a3c'/%3E%3Cpath d='M40 1 C40.6 7.4 42.6 9.4 49 10 C42.6 10.6 40.6 12.6 40 19 C39.4 12.6 37.4 10.6 31 10 C37.4 9.4 39.4 7.4 40 1Z' fill='%23b98a3c'/%3E%3Ccircle cx='40' cy='10' r='1.6' fill='%23fff8e6'/%3E%3Cpath d='M14 10H31M49 10H66' stroke='%23b98a3c' stroke-width='.8'/%3E%3C/svg%3E") center/50px 12px no-repeat,
+    linear-gradient(90deg,rgba(185,138,60,0),rgba(185,138,60,.7) 25%,rgba(185,138,60,.7) 75%,rgba(185,138,60,0)) center/100% 1px no-repeat !important;
+  pointer-events:none !important;
+}
+/* gold chevrons */
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-swipe-cue{
+  top:calc(50% - 6px) !important;
+  width:30px !important;
+  height:30px !important;
+  padding:0 !important;
+  font-size:0 !important;
+  color:transparent !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-swipe-cue::before{
+  content:"" !important;
+  display:block !important;
+  width:11px !important;
+  height:11px !important;
+  border-left:3px solid var(--sa-gold) !important;
+  border-bottom:3px solid var(--sa-gold) !important;
+  border-radius:1px !important;
+  transform:rotate(45deg) !important;
+  margin-left:5px !important;
+  filter:drop-shadow(0 1px 0 rgba(255,255,255,.8)) !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-swipe-cue.is-next::before{
+  transform:rotate(-135deg) !important;
+  margin-left:-5px !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-swipe-cue.is-prev{left:6px !important;}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-swipe-cue.is-next{right:6px !important;}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-swipe-cue:disabled::before{
+  border-color:rgba(185,138,60,.25) !important;
+}
+
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-list{
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  display:flex !important;
+  flex-direction:column !important;
+  gap:7px !important;
+  padding:2px 0 8px !important;
+  background:none !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+
+/* ---------- ranking row ---------- */
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-row{
+  flex:0 0 auto !important;
+  display:grid !important;
+  grid-template-columns:34px minmax(0,1fr) auto !important;
+  align-items:stretch !important;
+  gap:0 !important;
+  min-height:66px !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:1px solid rgba(201,163,95,.75) !important;
+  border-radius:6px !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.94),rgba(252,248,239,.92)) !important;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.8),inset 0 0 0 3px rgba(222,198,148,.45),0 2px 6px rgba(120,90,40,.10) !important;
+  overflow:hidden !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-row.is-me{
+  border-color:rgba(185,138,60,.95) !important;
+  background:linear-gradient(180deg,#fffdf6,#fbf3df) !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-row::before,
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-row::after{
+  content:none !important;
+  display:none !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-row-extra{display:none !important;}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-list.show-all .score-attack-row-extra{display:grid !important;}
+
+/* rank band */
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-rank-no{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:1px !important;
+  width:auto !important;
+  height:auto !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-right:1px solid rgba(201,163,95,.55) !important;
+  border-radius:0 !important;
+  background:linear-gradient(180deg,#f3ead6,#e7d8b8) !important;
+  color:var(--sa-ink-2) !important;
+  font-family:"Cinzel","Noto Serif JP",serif !important;
+  font-size:17px !important;
+  font-weight:700 !important;
+  line-height:1 !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.7) !important;
+  box-shadow:none !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-rank-no > span{display:block !important;}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-crown{display:none !important;}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-rank-no.rank-1,
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-rank-no.rank-2,
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-rank-no.rank-3{
+  color:#fffaf0 !important;
+  font-size:20px !important;
+  text-shadow:0 1px 2px rgba(80,50,10,.45) !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-rank-no.rank-1{
+  background:linear-gradient(160deg,#e9c977 0%,#c69a45 45%,#a77a2c 100%) !important;
+  border-right-color:#9b7230 !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-rank-no.rank-2{
+  background:linear-gradient(160deg,#e3e3e3 0%,#b5b7bb 50%,#8f9399 100%) !important;
+  border-right-color:#868a90 !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-rank-no.rank-3{
+  background:linear-gradient(160deg,#e6b98f 0%,#bf8556 50%,#996237 100%) !important;
+  border-right-color:#8d5a33 !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-rank-no.rank-1 .score-attack-crown,
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-rank-no.rank-2 .score-attack-crown,
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-rank-no.rank-3 .score-attack-crown{
+  display:block !important;
+  width:16px !important;
+  height:11px !important;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 16'%3E%3Cpath d='M2 5 L7 9 L12 2 L17 9 L22 5 L20 14 H4Z' fill='%23fff6d8'/%3E%3Ccircle cx='2' cy='4.5' r='1.6' fill='%23fff6d8'/%3E%3Ccircle cx='12' cy='1.8' r='1.6' fill='%23fff6d8'/%3E%3Ccircle cx='22' cy='4.5' r='1.6' fill='%23fff6d8'/%3E%3C/svg%3E") center/contain no-repeat !important;
+  filter:drop-shadow(0 1px 1px rgba(80,50,10,.35)) !important;
+}
+
+/* name + party */
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-row-main{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto !important;
+  align-items:center !important;
+  gap:6px !important;
+  min-width:0 !important;
+  padding:0 8px 0 10px !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-row-main > b{
+  color:var(--sa-ink) !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:13px !important;
+  font-weight:700 !important;
+  letter-spacing:.06em !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-row-main em{display:none !important;}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-party{
+  display:flex !important;
+  gap:4px !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-row-main .score-attack-party span{
+  flex:0 0 38px !important;
+  width:38px !important;
+  height:38px !important;
+  border:1.5px solid #c9a35f !important;
+  border-radius:3px !important;
+  box-shadow:0 0 0 1px rgba(255,255,255,.9),0 1px 3px rgba(90,60,20,.25) !important;
+  background:#efe6d2 !important;
+  overflow:hidden !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-row-main .score-attack-party span img{
+  width:100% !important;
+  height:100% !important;
+  object-fit:cover !important;
+  border-radius:0 !important;
+}
+
+/* score cell */
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-score{
+  position:relative !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:4px !important;
+  min-width:86px !important;
+  padding:6px 10px 8px 10px !important;
+  border-left:1px dashed rgba(201,163,95,.6) !important;
+  margin:8px 0 !important;
+  box-sizing:border-box !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-best-label{
+  display:inline-block !important;
+  padding:2px 9px !important;
+  color:#fffaf0 !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:9px !important;
+  font-weight:700 !important;
+  letter-spacing:.08em !important;
+  line-height:1.3 !important;
+  background:linear-gradient(180deg,#d4ad5e,#b08436) !important;
+  clip-path:polygon(7px 0,calc(100% - 7px) 0,100% 50%,calc(100% - 7px) 100%,7px 100%,0 50%) !important;
+  white-space:nowrap !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-row:not(.is-me) .score-attack-best-label{
+  background:linear-gradient(180deg,#e9dcc0,#d6c39b) !important;
+  color:#6b5236 !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-score > strong{
+  display:block !important;
+  min-width:0 !important;
+  margin:0 !important;
+  padding:0 !important;
+  color:var(--sa-ink) !important;
+  font-family:"Cinzel","Noto Serif JP",serif !important;
+  font-size:16px !important;
+  font-weight:700 !important;
+  letter-spacing:.02em !important;
+  line-height:1 !important;
+  text-align:center !important;
+  white-space:nowrap !important;
+}
+
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-more{
+  align-self:center !important;
+  margin:2px auto 0 !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-empty,
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-loading{
+  margin:auto !important;
+  color:#8a7253 !important;
+  font-size:12px !important;
+  text-align:center !important;
+}
+
+/* ---------- difficulty ---------- */
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-mode-card{
+  flex:0 0 auto !important;
+  padding:12px 14px 14px !important;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg transform='' fill='none' stroke='%23b98a3c' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M3 38 V12 Q3 3 12 3 H38'/%3E%3Cpath d='M8 30 V14 Q8 8 14 8 H30' stroke-width='.8' opacity='.8'/%3E%3Cpath d='M3 12 Q10 12 12 3' stroke-width='1'/%3E%3C/g%3E%3Cg transform=''%3E%3Cpath d='M8 8 L11 5 L14 8 L11 11Z' fill='%23b98a3c'/%3E%3C/g%3E%3C/svg%3E") left 3px top 3px / 22px 22px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg transform='translate(40 0) scale(-1 1)' fill='none' stroke='%23b98a3c' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M3 38 V12 Q3 3 12 3 H38'/%3E%3Cpath d='M8 30 V14 Q8 8 14 8 H30' stroke-width='.8' opacity='.8'/%3E%3Cpath d='M3 12 Q10 12 12 3' stroke-width='1'/%3E%3C/g%3E%3Cg transform='translate(40 0) scale(-1 1)'%3E%3Cpath d='M8 8 L11 5 L14 8 L11 11Z' fill='%23b98a3c'/%3E%3C/g%3E%3C/svg%3E") right 3px top 3px / 22px 22px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg transform='translate(0 40) scale(1 -1)' fill='none' stroke='%23b98a3c' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M3 38 V12 Q3 3 12 3 H38'/%3E%3Cpath d='M8 30 V14 Q8 8 14 8 H30' stroke-width='.8' opacity='.8'/%3E%3Cpath d='M3 12 Q10 12 12 3' stroke-width='1'/%3E%3C/g%3E%3Cg transform='translate(0 40) scale(1 -1)'%3E%3Cpath d='M8 8 L11 5 L14 8 L11 11Z' fill='%23b98a3c'/%3E%3C/g%3E%3C/svg%3E") left 3px bottom 3px / 22px 22px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg transform='translate(40 40) scale(-1 -1)' fill='none' stroke='%23b98a3c' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M3 38 V12 Q3 3 12 3 H38'/%3E%3Cpath d='M8 30 V14 Q8 8 14 8 H30' stroke-width='.8' opacity='.8'/%3E%3Cpath d='M3 12 Q10 12 12 3' stroke-width='1'/%3E%3C/g%3E%3Cg transform='translate(40 40) scale(-1 -1)'%3E%3Cpath d='M8 8 L11 5 L14 8 L11 11Z' fill='%23b98a3c'/%3E%3C/g%3E%3C/svg%3E") right 3px bottom 3px / 22px 22px no-repeat,
+    linear-gradient(180deg,rgba(255,255,253,.84),rgba(253,250,243,.78)) !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-mode-head{
+  display:flex !important;
+  align-items:flex-end !important;
+  gap:10px !important;
+  margin:0 0 10px !important;
+  padding:0 2px !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-mode-head small{
+  display:block !important;
+  color:#7b6444 !important;
+  font-family:"Cinzel",serif !important;
+  font-size:8px !important;
+  font-weight:600 !important;
+  letter-spacing:.38em !important;
+  line-height:1 !important;
+  margin:0 0 4px !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-mode-head strong{
+  display:block !important;
+  color:var(--sa-ink) !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:16px !important;
+  font-weight:700 !important;
+  letter-spacing:.12em !important;
+  line-height:1.2 !important;
+  margin:0 !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-mode-rule{
+  flex:1 1 auto !important;
+  height:12px !important;
+  margin-bottom:4px !important;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10 0 C10.8 7 13 9.2 20 10 C13 10.8 10.8 13 10 20 C9.2 13 7 10.8 0 10 C7 9.2 9.2 7 10 0Z' fill='%23b98a3c'/%3E%3C/svg%3E") 42% center / 11px 11px no-repeat,
+    linear-gradient(90deg,rgba(185,138,60,.75),rgba(185,138,60,.55) 70%,rgba(185,138,60,0)) center/100% 1px no-repeat !important;
+}
+
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-tabs{
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:10px !important;
+  margin:0 !important;
+  padding:0 !important;
+  background:none !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-tabs > button{
+  appearance:none !important;
+  -webkit-appearance:none !important;
+  position:relative !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:12px !important;
+  height:48px !important;
+  min-height:0 !important;
+  margin:0 !important;
+  padding:0 8px !important;
+  border:1px solid rgba(201,163,95,.8) !important;
+  border-radius:4px !important;
+  background:linear-gradient(180deg,#ffffff,#f6f1e6) !important;
+  box-shadow:inset 0 0 0 3px rgba(255,255,255,.9),inset 0 0 0 4px rgba(214,190,140,.55),0 1px 3px rgba(120,90,40,.10) !important;
+  color:#6b5236 !important;
+  transform:none !important;
+  transition:transform .12s ease,filter .12s ease !important;
+  -webkit-tap-highlight-color:transparent !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-tabs > button::before,
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-tabs > button::after{
+  content:none !important;
+  display:none !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-tabs > button small{
+  display:block !important;
+  margin:0 !important;
+  color:inherit !important;
+  font-family:"Cinzel","Noto Serif JP",serif !important;
+  font-size:17px !important;
+  font-weight:700 !important;
+  letter-spacing:.12em !important;
+  line-height:1 !important;
+  opacity:1 !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-tab-spark{
+  display:block !important;
+  flex:0 0 auto !important;
+  width:12px !important;
+  height:12px !important;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10 0 C10.8 7 13 9.2 20 10 C13 10.8 10.8 13 10 20 C9.2 13 7 10.8 0 10 C7 9.2 9.2 7 10 0Z' fill='%23cdb07a'/%3E%3C/svg%3E") center/contain no-repeat !important;
+  opacity:.75 !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-tabs > button.active{
+  border-color:#8f6a2c !important;
+  background:
+    radial-gradient(ellipse at 30% 20%,rgba(255,240,200,.55),rgba(255,240,200,0) 55%),
+    linear-gradient(180deg,#d9b465 0%,#bf9443 48%,#a57a2f 100%) !important;
+  box-shadow:inset 0 0 0 3px rgba(255,236,190,.35),inset 0 0 0 4px rgba(255,240,205,.75),0 2px 6px rgba(120,80,20,.28) !important;
+  color:#fffaf0 !important;
+  text-shadow:0 1px 2px rgba(80,50,10,.5) !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-tabs > button.active .score-attack-tab-spark{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10 0 C10.8 7 13 9.2 20 10 C13 10.8 10.8 13 10 20 C9.2 13 7 10.8 0 10 C7 9.2 9.2 7 10 0Z' fill='%23fffaf0'/%3E%3C/svg%3E") !important;
+  opacity:1 !important;
+  width:14px !important;
+  height:14px !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-tabs > button:active{
+  transform:scale(.97) !important;
+}
+
+/* ---------- 挑戦する ---------- */
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-me.score-attack-start-only{
+  flex:0 0 auto !important;
+  display:flex !important;
+  justify-content:center !important;
+  margin:0 !important;
+  padding:2px 0 0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:none !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  filter:drop-shadow(0 4px 8px rgba(110,75,20,.28)) !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-me.score-attack-start-only::before,
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-me.score-attack-start-only::after{
+  content:none !important;
+  display:none !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page button.score-attack-start{
+  appearance:none !important;
+  -webkit-appearance:none !important;
+  position:relative !important;
+  display:block !important;
+  width:250px !important;
+  max-width:calc(100vw - 80px) !important;
+  height:58px !important;
+  min-height:0 !important;
+  margin:0 !important;
+  padding:3px !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:linear-gradient(180deg,#f6e2a6 0%,#c99c48 45%,#8f6629 100%) !important;
+  clip-path:polygon(22px 0,calc(100% - 22px) 0,100% 50%,calc(100% - 22px) 100%,22px 100%,0 50%) !important;
+  box-shadow:none !important;
+  color:#fffaf0 !important;
+  transform:none !important;
+  transition:transform .12s ease,filter .12s ease !important;
+  -webkit-tap-highlight-color:transparent !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page button.score-attack-start::before,
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page button.score-attack-start::after{
+  content:none !important;
+  display:none !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page button.score-attack-start > span{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:22px !important;
+  width:100% !important;
+  height:100% !important;
+  margin:0 !important;
+  padding:0 !important;
+  clip-path:polygon(20px 0,calc(100% - 20px) 0,100% 50%,calc(100% - 20px) 100%,20px 100%,0 50%) !important;
+  background:
+    radial-gradient(ellipse at 50% 0%,rgba(255,226,160,.45),rgba(255,226,160,0) 60%),
+    linear-gradient(180deg,#9c7434 0%,#7a5622 52%,#5e3f15 100%) !important;
+  box-shadow:inset 0 0 0 1px rgba(255,228,170,.5) !important;
+  color:#fffaf0 !important;
+  font-family:"Noto Serif JP",serif !important;
+  font-size:21px !important;
+  font-weight:700 !important;
+  letter-spacing:.2em !important;
+  line-height:1 !important;
+  text-shadow:0 1px 3px rgba(40,20,0,.55) !important;
+  border:0 !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-start-spark{
+  display:block !important;
+  width:14px !important;
+  height:14px !important;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10 0 C10.8 7 13 9.2 20 10 C13 10.8 10.8 13 10 20 C9.2 13 7 10.8 0 10 C7 9.2 9.2 7 10 0Z' fill='%23fffaf0'/%3E%3C/svg%3E") center/contain no-repeat !important;
+  filter:drop-shadow(0 0 3px rgba(255,230,170,.9)) !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page button.score-attack-start:active{
+  transform:scale(.97) !important;
+  filter:brightness(1.06) !important;
+}
+
+/* ---------- small / short screens ---------- */
+@media (max-width:365px){
+  html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-head .app-page-title{font-size:21px !important;}
+  html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-head .app-page-heading{margin-left:72px !important;}
+  html body:not(.ui-immersive) #score-attack-root.score-attack-app-page #score-attack-ranking-title{font-size:16px !important;}
+  html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-row{grid-template-columns:28px minmax(0,1fr) auto !important;min-height:58px !important;}
+  html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-row-main{padding:0 5px 0 7px !important;gap:4px !important;}
+  html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-row-main > b{font-size:11.5px !important;}
+  html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-row-main .score-attack-party span{flex-basis:28px !important;width:28px !important;height:28px !important;}
+  html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-party{gap:2px !important;}
+  html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-party{gap:3px !important;}
+  html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-score{min-width:72px !important;padding:4px 6px 6px !important;}
+  html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-score > strong{font-size:13.5px !important;}
+  html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-tabs > button small{font-size:15px !important;}
+  html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-tabs > button{gap:8px !important;}
+}
+@media (max-height:700px){
+  html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-head{flex-basis:66px !important;height:66px !important;min-height:66px !important;padding-bottom:10px !important;}
+  html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-head .app-page-title{font-size:21px !important;}
+  html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-scroll{gap:8px !important;padding-bottom:8px !important;}
+  html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-mode-card{padding:9px 12px 11px !important;}
+  html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-mode-head{margin-bottom:7px !important;}
+  html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-tabs > button{height:42px !important;}
+  html body:not(.ui-immersive) #score-attack-root.score-attack-app-page button.score-attack-start{height:50px !important;}
+  html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-ranking-nav{min-height:38px !important;margin-bottom:6px !important;}
+}

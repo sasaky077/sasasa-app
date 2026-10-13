@@ -1,4 +1,4 @@
 {
-  "build": 1441,
-  "note": "RESULT survivor row is icon-only: survivors show the normal portrait, downed characters are grayed out with a large red ×. 生存/LOST text stays for screen readers only. Portrait columns in 総被弾回数 and 生存キャラ rows are aligned on a 3-column grid. Includes build1440 RESULT skin."
+  "build": 1449,
+  "note": "ホーム『残響の塔』の背景を赤い帯からぼかした赤い煙（輪郭なし・radial-gradient＋blur）に変更。css/home_menu_redesign.css のみ変更、index.html はCSSのキャッシュ番号のみ更新。build1448を含む。"
 }

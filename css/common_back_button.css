@@ -139,3 +139,247 @@ html body #stage-select-modal.zss-root button.zss-back {
   left:calc(3px + (100vw - 430px)/2) !important;
  }
 }
+
+/* ============================================================
+   build1444: 戻るボタンを全画面で同じアート(button_back.webp)に統一
+   これまで文字やCSS矢印で描いていた画面にも、同じ画像ボタンを当てる。
+   位置は各画面の既存指定のまま、見た目（大きさ・画像・文字の非表示）だけ揃える。
+   文字はDOMに残すので、読み上げ用のボタン名は変わらない。
+   ============================================================ */
+html body #noah-piece-overlay .noah-piece-back,
+html body #shooting-event-root .zpf-header .zpf-header-back,
+html body #screen-resonance-tower.screen .resonance-tower-back,
+html body #daily-raid-root #daily-raid-back,
+html body #score-attack-root .score-attack-head .app-page-back,
+html body #detail-modal > .detail-modal-back-btn,
+html body #detail-modal.is-gacha-pool-preview > .detail-modal-back-btn,
+html body #detail-modal.is-gacha-result-detail .detail-modal-back-btn,
+html body .friend-profile-detail-back,
+html body #primor-fullscreen-viewer .primor-fullscreen-back,
+html body #shinju-overlay .shinju-close{
+  box-sizing:border-box !important;
+  display:inline-block !important;
+  flex:0 0 82px !important;
+  width:82px !important;
+  min-width:82px !important;
+  max-width:82px !important;
+  height:35px !important;
+  min-height:35px !important;
+  max-height:35px !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  background:transparent url('../images/button_back.webp?v=1444-unified') center/100% 100% no-repeat !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  font-size:0 !important;
+  line-height:0 !important;
+  letter-spacing:0 !important;
+  color:transparent !important;
+  -webkit-text-fill-color:transparent !important;
+  text-shadow:none !important;
+  text-indent:-9999px !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  cursor:pointer !important;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+html body #noah-piece-overlay .noah-piece-back > *,
+html body #shooting-event-root .zpf-header .zpf-header-back > *{
+  display:none !important;
+}
+html body #noah-piece-overlay .noah-piece-back::before,
+html body #noah-piece-overlay .noah-piece-back::after,
+html body #shooting-event-root .zpf-header .zpf-header-back::before,
+html body #shooting-event-root .zpf-header .zpf-header-back::after,
+html body #screen-resonance-tower.screen .resonance-tower-back::before,
+html body #screen-resonance-tower.screen .resonance-tower-back::after,
+html body #daily-raid-root #daily-raid-back::before,
+html body #daily-raid-root #daily-raid-back::after,
+html body #score-attack-root .score-attack-head .app-page-back::before,
+html body #score-attack-root .score-attack-head .app-page-back::after,
+html body #detail-modal > .detail-modal-back-btn::before,
+html body #detail-modal > .detail-modal-back-btn::after,
+html body #detail-modal.is-gacha-pool-preview > .detail-modal-back-btn::before,
+html body .friend-profile-detail-back::before,
+html body .friend-profile-detail-back::after,
+html body #primor-fullscreen-viewer .primor-fullscreen-back::before,
+html body #primor-fullscreen-viewer .primor-fullscreen-back::after,
+html body #shinju-overlay .shinju-close::before,
+html body #shinju-overlay .shinju-close::after{
+  content:none !important;
+  display:none !important;
+}
+/* 押した感触（全画面共通） */
+html body #noah-piece-overlay .noah-piece-back:active,
+html body #shooting-event-root .zpf-header .zpf-header-back:active,
+html body #screen-resonance-tower.screen .resonance-tower-back:active,
+html body #daily-raid-root #daily-raid-back:active,
+html body #score-attack-root .score-attack-head .app-page-back:active,
+html body #detail-modal > .detail-modal-back-btn:active,
+html body .friend-profile-detail-back:active,
+html body #primor-fullscreen-viewer .primor-fullscreen-back:active,
+html body #shinju-overlay .shinju-close:active{
+  transform:translateY(1px) !important;
+  filter:brightness(.96) !important;
+}
+/* ノア画面：見出しと重ならない位置に */
+html body #noah-piece-overlay .noah-piece-back{
+  position:absolute !important;
+  left:0 !important;
+  top:4px !important;
+  z-index:3 !important;
+}
+@media(max-width:365px){
+  html body #noah-piece-overlay .noah-piece-back,
+  html body #shooting-event-root .zpf-header .zpf-header-back,
+  html body #screen-resonance-tower.screen .resonance-tower-back,
+  html body #daily-raid-root #daily-raid-back,
+  html body #score-attack-root .score-attack-head .app-page-back,
+  html body #detail-modal > .detail-modal-back-btn,
+  html body .friend-profile-detail-back,
+  html body #primor-fullscreen-viewer .primor-fullscreen-back,
+  html body #shinju-overlay .shinju-close{
+    flex-basis:75px !important;
+    width:75px !important;
+    min-width:75px !important;
+    max-width:75px !important;
+    height:32px !important;
+    min-height:32px !important;
+    max-height:32px !important;
+  }
+}
+
+/* ============================================================
+   build1445: 戻るボタンの位置を全画面で固定
+   ユーザーフレーム・ボトムナビと同じく画面(viewport)基準で配置する。
+     x = ゲーム画面（最大幅430px・中央寄せ）の左端 + 12px
+     y = ユーザーフレームの下端(--header-h) + 8px
+   画面ごとのヘッダー構造に左右されず、どの画面でも同じ場所に出る。
+   （没入画面＝バトル前のパーティ編成などユーザーフレームが無い画面は対象外）
+   ============================================================ */
+html body{
+  --zb-back-x:calc(max(0px, (100vw - 430px) / 2) + 12px);
+  --zb-back-y:calc(var(--header-h, 72px) + 8px);
+}
+html body:not(.ui-immersive) .screen.app-page > .app-page-header > button.app-page-back,
+html body:not(.ui-immersive) #screen-ninmu.junkou-rebuilt > .junkou-page-header > button.junkou-page-back,
+html body:not(.ui-immersive) #screen-zukan.zchar-redesign > .app-page-header > button#zukan-detail-back,
+html body:not(.ui-immersive) #screen-resonance-tower.screen .resonance-tower-back,
+html body #shooting-daily-stage-select.zds-screen button.zds-back,
+html body #stage-select-modal.zss-root button.zss-back,
+html body :is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zfs-back,
+html body #noah-piece-overlay .noah-piece-back{
+  position:fixed !important;
+  left:var(--zb-back-x) !important;
+  top:var(--zb-back-y) !important;
+  right:auto !important;
+  bottom:auto !important;
+  inset-block-end:auto !important;
+  margin:0 !important;
+  transform:none !important;
+  z-index:6 !important;
+}
+/* position:fixed は、transform の掛かった親の中では画面基準にならない。
+   中央寄せを transform ではなく margin で行うように置き換える。 */
+html body #shooting-daily-stage-select .zds-surface,
+html body :is(#shooting-faceless-stage-select,#noah-stage-select) .zfs-surface,
+html body #noah-piece-overlay.noah-piece-overlay .noah-piece-screen{
+  left:0 !important;
+  right:0 !important;
+  margin-left:auto !important;
+  margin-right:auto !important;
+  transform:none !important;
+}
+/* STORYのステージ選択は戻るボタンが見出しの上に積まれていたため、
+   ボタンが抜けた分の高さを空けて、章見出しの位置を変えない。 */
+html body #stage-select-modal.zss-root .zss-page-head::before{
+  content:"";
+  display:block;
+  height:35px;
+}
+@media(max-width:365px){
+  html body #stage-select-modal.zss-root .zss-page-head::before{height:32px}
+}
+/* 幅500px以上では body 自体が幅430pxで中央寄せ（transform）されるため、
+   position:fixed の基準は body になる。その場合は body の左端 + 12px。 */
+@media (min-width:500px){
+  html body{ --zb-back-x:12px; }
+}
+
+/* ============================================================
+   build1446: 設定・邂逅にも基本位置の戻るボタン
+   - 設定：既存の戻るボタンがプロフィール欄の裏に隠れていたので、基本位置へ固定
+   - 邂逅：戻るボタンを新設（ホームへ戻る）
+   ============================================================ */
+html body:not(.ui-immersive) #screen-setting.settings-premium.screen.app-page > .setting-premium-header.app-page-header > button.app-page-back[type="button"],
+html body:not(.ui-immersive) #screen-summon.screen > button.summon-page-back[type="button"]{
+  box-sizing:border-box !important;
+  display:block !important;
+  position:fixed !important;
+  left:var(--zb-back-x) !important;
+  top:var(--zb-back-y) !important;
+  right:auto !important;
+  bottom:auto !important;
+  z-index:40 !important;
+  flex:0 0 82px !important;
+  width:82px !important;
+  min-width:82px !important;
+  max-width:82px !important;
+  height:35px !important;
+  min-height:35px !important;
+  max-height:35px !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  transform:none !important;
+  opacity:1 !important;
+  visibility:visible !important;
+  background:transparent url('../images/button_back.webp?v=1444-unified') center/100% 100% no-repeat !important;
+  font-size:0 !important;
+  line-height:0 !important;
+  letter-spacing:0 !important;
+  color:transparent !important;
+  -webkit-text-fill-color:transparent !important;
+  text-shadow:none !important;
+  text-indent:-9999px !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  cursor:pointer !important;
+  -webkit-tap-highlight-color:transparent;
+}
+html body:not(.ui-immersive) #screen-setting.settings-premium.screen.app-page > .setting-premium-header.app-page-header > button.app-page-back[type="button"] > *{
+  display:none !important;
+}
+html body:not(.ui-immersive) #screen-setting.settings-premium.screen.app-page > .setting-premium-header.app-page-header > button.app-page-back[type="button"]::before,
+html body:not(.ui-immersive) #screen-setting.settings-premium.screen.app-page > .setting-premium-header.app-page-header > button.app-page-back[type="button"]::after,
+html body:not(.ui-immersive) #screen-summon.screen > button.summon-page-back[type="button"]::before,
+html body:not(.ui-immersive) #screen-summon.screen > button.summon-page-back[type="button"]::after{
+  content:none !important;
+  display:none !important;
+}
+html body:not(.ui-immersive) #screen-setting.settings-premium.screen.app-page > .setting-premium-header.app-page-header > button.app-page-back[type="button"]:active,
+html body:not(.ui-immersive) #screen-summon.screen > button.summon-page-back[type="button"]:active{
+  transform:translateY(1px) !important;
+  filter:brightness(.96) !important;
+}
+/* 邂逅は画面が非表示のときボタンも出さない（fixedなので親の外に出ないよう明示） */
+html body #screen-summon.screen:not(.active) > button.summon-page-back{
+  display:none !important;
+}
+@media(max-width:365px){
+  html body:not(.ui-immersive) #screen-setting.settings-premium.screen.app-page > .setting-premium-header.app-page-header > button.app-page-back[type="button"],
+  html body:not(.ui-immersive) #screen-summon.screen > button.summon-page-back[type="button"]{
+    flex-basis:75px !important;
+    width:75px !important;
+    min-width:75px !important;
+    max-width:75px !important;
+    height:32px !important;
+    min-height:32px !important;
+    max-height:32px !important;
+  }
+}
