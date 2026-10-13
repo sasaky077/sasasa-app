@@ -6,8 +6,8 @@
   const state = { query:'', elements:[], rarities:[], shotTypes:[], sort:'id' };
   const elementOrder = ['fire','aqua','wood','light','dark'];
   const elementLabels = {fire:'FIRE',aqua:'AQUA',wood:'WOOD',light:'LIGHT',dark:'DARK'};
-  const shotOrder = ['parallel','homing','cluster','bomb','spread','laser','piercing','orbit','charge','lightning','strike','conjure'];
-  const shotLabels = {parallel:'PARALLEL',homing:'HOMING',cluster:'CLUSTER',bomb:'BOMB',spread:'SPREAD',laser:'LASER',piercing:'PIERCING',orbit:'ORBIT',charge:'CHARGE',lightning:'PLASMA',strike:'STRIKE',conjure:'CONJURE'};
+  const shotOrder = ['parallel','homing','cluster','bomb','spread','laser','piercing','orbit','charge','lightning','strike','conjure','trap'];
+  const shotLabels = {parallel:'PARALLEL',homing:'HOMING',cluster:'CLUSTER',bomb:'BOMB',spread:'SPREAD',laser:'LASER',piercing:'PIERCING',orbit:'ORBIT',charge:'CHARGE',lightning:'PLASMA',strike:'STRIKE',conjure:'CONJURE',trap:'TRAP'};
   const shotAliases = {plasma:'lightning',orbit_forward:'orbit',charge_release:'charge',precision:'piercing',shotgun:'piercing',splash:'bomb',melee_slash:'strike',wolf_j_homing:'homing',rose_seed_splash:'spread',noah_hybrid:'laser'};
   let currentRoot = null;
 
