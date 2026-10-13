@@ -1,4 +1,4 @@
 {
-  "build": 1450,
-  "note": "ボトムナビのアイコン画像を少し暗く（brightness .78 / contrast 1.12 / saturate .92、選択中は .88 で少し明るさを残す）。css/bottom_nav_original_colors.css 末尾に追記、index.html はキャッシュ番号のみ。build1448/1449を含む。"
+  "build": 1452,
+  "note": "残響の塔『報酬一覧』：7F（10連）行の金色強調を削除し、全行同じ見た目に。build1451（報酬一覧刷新・gacha_ticket_10画像）を含む。"
 }

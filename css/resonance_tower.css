@@ -776,3 +776,273 @@ html body #screen-resonance-tower.resonance-tower-screen .resonance-tower-floor.
     padding:7px 5px;
   }
 }
+
+
+/* =========================================================
+   build1451 — ECHO TOWER 報酬一覧（is-reward-overview）刷新
+   - 羊皮紙＋金の細枠／四隅の飾り
+   - 見出し：ECHO TOWER（左右に線）＋大きい「報酬一覧」＋飾り線
+   - 各行：大きい階数「05F」＋縦の区切り（◆）＋大きいアイコン＋名称×数
+   - 突破済みは CLEAR 印
+   ========================================================= */
+/* ユーザーフレームとボトムナビの間に収める */
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview{
+  padding:calc(var(--header-h,72px) + clamp(6px,7dvh,64px)) 12px calc(var(--bottom-nav-h,76px) + 10px);
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-panel{
+  width:min(100%,392px);
+  height:min(100%,600px);
+  max-height:none;
+  padding:22px 14px 14px;
+  transform:none;
+  border:1px solid #c9a868;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg transform='' fill='none' stroke='%23b98a3c' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M3 38 V12 Q3 3 12 3 H38'/%3E%3Cpath d='M8 30 V14 Q8 8 14 8 H30' stroke-width='.8' opacity='.8'/%3E%3Cpath d='M3 12 Q10 12 12 3' stroke-width='1'/%3E%3C/g%3E%3Cg transform=''%3E%3Cpath d='M8 8 L11 5 L14 8 L11 11Z' fill='%23b98a3c'/%3E%3C/g%3E%3C/svg%3E") left 5px top 5px / 30px 30px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg transform='translate(40 0) scale(-1 1)' fill='none' stroke='%23b98a3c' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M3 38 V12 Q3 3 12 3 H38'/%3E%3Cpath d='M8 30 V14 Q8 8 14 8 H30' stroke-width='.8' opacity='.8'/%3E%3Cpath d='M3 12 Q10 12 12 3' stroke-width='1'/%3E%3C/g%3E%3Cg transform='translate(40 0) scale(-1 1)'%3E%3Cpath d='M8 8 L11 5 L14 8 L11 11Z' fill='%23b98a3c'/%3E%3C/g%3E%3C/svg%3E") right 5px top 5px / 30px 30px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg transform='translate(0 40) scale(1 -1)' fill='none' stroke='%23b98a3c' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M3 38 V12 Q3 3 12 3 H38'/%3E%3Cpath d='M8 30 V14 Q8 8 14 8 H30' stroke-width='.8' opacity='.8'/%3E%3Cpath d='M3 12 Q10 12 12 3' stroke-width='1'/%3E%3C/g%3E%3Cg transform='translate(0 40) scale(1 -1)'%3E%3Cpath d='M8 8 L11 5 L14 8 L11 11Z' fill='%23b98a3c'/%3E%3C/g%3E%3C/svg%3E") left 5px bottom 5px / 30px 30px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg transform='translate(40 40) scale(-1 -1)' fill='none' stroke='%23b98a3c' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M3 38 V12 Q3 3 12 3 H38'/%3E%3Cpath d='M8 30 V14 Q8 8 14 8 H30' stroke-width='.8' opacity='.8'/%3E%3Cpath d='M3 12 Q10 12 12 3' stroke-width='1'/%3E%3C/g%3E%3Cg transform='translate(40 40) scale(-1 -1)'%3E%3Cpath d='M8 8 L11 5 L14 8 L11 11Z' fill='%23b98a3c'/%3E%3C/g%3E%3C/svg%3E") right 5px bottom 5px / 30px 30px no-repeat,
+    radial-gradient(ellipse at 50% 0%,rgba(255,255,255,.65),rgba(255,255,255,0) 60%),
+    linear-gradient(170deg,#fbf7ec 0%,#f3ecdc 60%,#ebe1cc 100%);
+  box-shadow:
+    inset 0 0 0 4px rgba(255,253,246,.7),
+    inset 0 0 0 5px rgba(201,168,104,.55),
+    0 10px 34px rgba(0,0,0,.45);
+  color:#33271c;
+  overflow:visible;
+}
+/* top-center ornament */
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-panel::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:-9px;
+  width:56px;
+  height:18px;
+  transform:translateX(-50%);
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 20'%3E%3Cpath d='M2 10 L8 7 L14 10 L8 13Z M66 10 L72 7 L78 10 L72 13Z' fill='%23b98a3c'/%3E%3Cpath d='M40 1 C40.6 7.4 42.6 9.4 49 10 C42.6 10.6 40.6 12.6 40 19 C39.4 12.6 37.4 10.6 31 10 C37.4 9.4 39.4 7.4 40 1Z' fill='%23b98a3c'/%3E%3Ccircle cx='40' cy='10' r='1.6' fill='%23fff8e6'/%3E%3Cpath d='M14 10H31M49 10H66' stroke='%23b98a3c' stroke-width='.8'/%3E%3C/svg%3E") center/contain no-repeat;
+  pointer-events:none;
+}
+/* close × */
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-panel-close{
+  right:12px;
+  top:12px;
+  width:34px;
+  height:34px;
+  padding:0;
+  font:300 30px/1 'Noto Serif JP',serif;
+  color:#6b5032;
+  z-index:3;
+  outline:none;
+  border-radius:50%;
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-panel-close:focus-visible{
+  box-shadow:0 0 0 1px rgba(184,149,90,.45);
+}
+/* kicker with side rules */
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-panel-kicker{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  font:600 10px/1.3 'Cinzel',serif;
+  letter-spacing:.32em;
+  color:#8d6f45;
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-panel-kicker::before,
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-panel-kicker::after{
+  content:"";
+  width:54px;
+  height:7px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 0L10 5L5 10L0 5Z' fill='%23b8955a'/%3E%3C/svg%3E") right center/7px 7px no-repeat,
+    linear-gradient(90deg,rgba(184,149,90,0),rgba(184,149,90,.85)) left center/calc(100% - 9px) 1px no-repeat;
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-panel-kicker::after{
+  transform:scaleX(-1);
+}
+/* title + divider */
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview #resonance-tower-panel-title{
+  position:relative;
+  margin:4px 0 0;
+  padding-bottom:12px;
+  font:700 clamp(22px,6.4vw,27px)/1.3 'Noto Serif JP',serif;
+  letter-spacing:.14em;
+  color:#2f2318;
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview #resonance-tower-panel-title::after{
+  content:"";
+  position:absolute;
+  left:12%;
+  right:12%;
+  bottom:2px;
+  height:10px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 20'%3E%3Cpath d='M2 10 L8 7 L14 10 L8 13Z M66 10 L72 7 L78 10 L72 13Z' fill='%23b98a3c'/%3E%3Cpath d='M40 1 C40.6 7.4 42.6 9.4 49 10 C42.6 10.6 40.6 12.6 40 19 C39.4 12.6 37.4 10.6 31 10 C37.4 9.4 39.4 7.4 40 1Z' fill='%23b98a3c'/%3E%3Ccircle cx='40' cy='10' r='1.6' fill='%23fff8e6'/%3E%3Cpath d='M14 10H31M49 10H66' stroke='%23b98a3c' stroke-width='.8'/%3E%3C/svg%3E") center/44px 10px no-repeat,
+    linear-gradient(90deg,rgba(184,149,90,0),rgba(184,149,90,.75) 25%,rgba(184,149,90,.75) 75%,rgba(184,149,90,0)) center/100% 1px no-repeat;
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview #resonance-tower-panel-description{
+  margin:8px 0 10px;
+  font:500 clamp(11.5px,3.3vw,13px)/1.7 'Noto Serif JP',serif;
+  letter-spacing:.06em;
+  color:#4a3a2b;
+}
+
+/* ---------- list ---------- */
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-list{
+  padding:2px 2px 6px;
+  border-top:1px solid rgba(160,128,78,.35);
+  -webkit-mask-image:linear-gradient(to bottom,#000 0,#000 calc(100% - 16px),transparent 100%);
+  mask-image:linear-gradient(to bottom,#000 0,#000 calc(100% - 16px),transparent 100%);
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-row{
+  position:relative;
+  min-height:72px;
+  grid-template-columns:62px 18px minmax(0,1fr) auto;
+  gap:0 6px;
+  padding:8px 6px 8px 4px;
+  border-bottom:1px solid rgba(160,128,78,.30);
+  background:none;
+}
+/* floor number with a small sparkle below */
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-floor{
+  grid-column:1;
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  font:700 clamp(21px,6vw,25px)/1 'Noto Serif JP','Cinzel',serif;
+  letter-spacing:.01em;
+  color:#3a2a1b;
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-floor::after{
+  content:"";
+  display:block;
+  width:11px;
+  height:11px;
+  margin-top:7px;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10 0 C10.8 7 13 9.2 20 10 C13 10.8 10.8 13 10 20 C9.2 13 7 10.8 0 10 C7 9.2 9.2 7 10 0Z' fill='%23cdb07a'/%3E%3C/svg%3E") center/contain no-repeat;
+  opacity:.85;
+}
+/* vertical divider with a diamond (drawn on the items cell) */
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-row::before{
+  content:"";
+  grid-column:2;
+  grid-row:1;
+  justify-self:center;
+  align-self:stretch;
+  width:9px;
+  margin:4px 0;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 0L10 5L5 10L0 5Z' fill='%23b8955a'/%3E%3C/svg%3E") center/8px 8px no-repeat,
+    linear-gradient(180deg,rgba(184,149,90,0),rgba(184,149,90,.8) 30%,rgba(184,149,90,.8) 70%,rgba(184,149,90,0)) center/1px 100% no-repeat;
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-items{
+  grid-column:3;
+  grid-row:1;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px 12px;
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-item{
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  min-width:0;
+  font:700 clamp(12.5px,3.6vw,14.5px)/1.35 'Noto Serif JP',serif;
+  letter-spacing:.02em;
+  color:#2f2419;
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-item img{
+  flex:none;
+  width:clamp(40px,11.5vw,48px);
+  height:clamp(40px,11.5vw,48px);
+  object-fit:contain;
+  filter:drop-shadow(0 2px 3px rgba(60,40,15,.22));
+}
+/* 10連チケット：横長スロット（画像の上下余白を切って大きく見せる） */
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-item.is-ticket img{
+  width:clamp(64px,18vw,78px);
+  height:clamp(42px,12vw,50px);
+  object-fit:cover;
+  transform:rotate(-4deg);
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-name{
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-name b{
+  margin-left:.45em;
+  font:700 1em/1 'Noto Serif JP',serif;
+  color:#3a2a1b;
+  white-space:nowrap;
+}
+/* 複数アイテムの行：アイコンの下に名前を置いたタイルを横に並べる */
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-row.is-multi .resonance-tower-reward-items{
+  flex-wrap:nowrap;
+  gap:4px;
+  justify-content:flex-start;
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-row.is-multi .resonance-tower-reward-item{
+  flex:0 1 33.3%;
+  flex-direction:column;
+  gap:3px;
+  text-align:center;
+  font-size:clamp(10.5px,3vw,12px);
+  line-height:1.25;
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-row.is-multi .resonance-tower-reward-name b{
+  display:inline-block;
+  margin-left:.25em;
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-row.is-multi .resonance-tower-reward-item img{
+  width:clamp(38px,10.5vw,44px);
+  height:clamp(38px,10.5vw,44px);
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-symbol{
+  width:44px;
+  height:34px;
+  font-size:13px;
+}
+
+/* ---------- cleared ---------- */
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-row.is-cleared .resonance-tower-reward-items,
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-row.is-cleared .resonance-tower-reward-floor{
+  opacity:.5;
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-claimed{
+  grid-column:4;
+  grid-row:1;
+  align-self:center;
+  padding:4px 7px 3px;
+  font:700 10px/1 'Cinzel',serif;
+  letter-spacing:.12em;
+  color:#fff !important;
+  background:linear-gradient(180deg,#4d7a62,#33584a);
+  border:1px solid #2a4a3d;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.22),0 1px 2px rgba(30,45,25,.25);
+  transform:rotate(-6deg);
+}
+
+/* ---------- compact ---------- */
+@media(max-width:365px){
+  html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-panel{padding:20px 10px 12px;}
+  html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-row{
+    grid-template-columns:50px 14px minmax(0,1fr) auto;
+    gap:0 4px;
+    min-height:62px;
+  }
+  html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-floor{font-size:19px;}
+  html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-items{gap:6px 8px;}
+}
+@media(max-height:620px){
+  html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-panel{padding-top:16px;}
+  html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview #resonance-tower-panel-title{font-size:21px;padding-bottom:9px;}
+  html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview #resonance-tower-panel-description{margin:5px 0 7px;}
+  html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-row{min-height:60px;padding-top:6px;padding-bottom:6px;}
+}
+}
+/* build1451: 階層詳細（1行表示）でも10連チケットは横長で見せる */
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-floor-challenge .resonance-tower-reward-item.is-ticket img{
+  width:48px;height:32px;object-fit:cover;
+}

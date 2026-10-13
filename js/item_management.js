@@ -50,7 +50,7 @@
       id:'tower_limited_ten_ticket',
       source:'inventory',
       name:'限定邂逅10連無料TICKET',
-      img:'images/gacha_banner_03.webp',
+      img:'images/gacha_ticket_10.webp',
       kicker:'LIMITED ENCOUNTER TICKET',
       desc:'残響の塔7Fの報酬。限定邂逅（ニーナ／オリビア）で10連を1回無料で引けます。',
       tag:'ガチャ'

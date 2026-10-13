@@ -27,7 +27,7 @@
     [{id:'soul_vessel_dark',name:'魂の器(闇)',qty:1,img:'images/item_soul_vessel_dark.webp'},
      {id:'soul_vessel_light',name:'魂の器(光)',qty:1,img:'images/item_soul_vessel_light.webp'}],
     [{id:'gem',name:'結晶',qty:5,img:'images/icon_gem.webp'}],
-    [{id:'tower_limited_ten_ticket',name:'限定邂逅10連無料TICKET',qty:1,img:'',symbol:'10連'}],
+    [{id:'tower_limited_ten_ticket',name:'限定邂逅10連無料TICKET',qty:1,img:'images/gacha_ticket_10.webp',symbol:'10連',ticket:true}],
     [{id:'gem',name:'結晶',qty:10,img:'images/icon_gem.webp'}],
     [{id:'special_stage_ticket',name:'Special Ticket -ノア-',qty:1,img:'images/special_stage_ticket.webp'}],
     [{id:'gem',name:'結晶',qty:30,img:'images/icon_gem.webp'}]
@@ -37,17 +37,26 @@
     out.setAttribute('aria-label','残響の塔クリア報酬');
     out.tabIndex=0;
     floors.forEach(floor=>{
-      const row=document.createElement('div');row.className='resonance-tower-reward-row';
+      const list=TOWER_REWARDS[floor-1];
+      // build1451: 突破済みの行を区別
+      const row=document.createElement('div');
+      row.className='resonance-tower-reward-row'+(cleared(floor)?' is-cleared':'')+(list.length>1?' is-multi':'');
       const index=document.createElement('span');index.className='resonance-tower-reward-floor';
       index.textContent=String(floor).padStart(2,'0')+'F';row.append(index);
       const items=document.createElement('span');items.className='resonance-tower-reward-items';
-      TOWER_REWARDS[floor-1].forEach(item=>{
-        const box=document.createElement('span');box.className='resonance-tower-reward-item';
-        if(item.img){const img=document.createElement('img');img.src=item.img;img.alt='';box.append(img);}
+      list.forEach(item=>{
+        const box=document.createElement('span');box.className='resonance-tower-reward-item'+(item.ticket?' is-ticket':'');
+        if(item.img){
+          const img=document.createElement('img');img.src=item.img;img.alt='';img.decoding='async';
+          // 画像が無い環境では従来の文字アイコンに戻す
+          img.addEventListener('error',()=>{const symbol=document.createElement('span');symbol.className='resonance-tower-reward-symbol';symbol.textContent=item.symbol||'券';img.replaceWith(symbol);},{once:true});
+          box.append(img);
+        }
         else {const symbol=document.createElement('span');symbol.className='resonance-tower-reward-symbol';symbol.textContent=item.symbol||'券';box.append(symbol);}
-        const label=document.createElement('span');label.textContent=item.name;
+        const label=document.createElement('span');label.className='resonance-tower-reward-name';label.textContent=item.name;
         const count=document.createElement('b');count.textContent='×'+item.qty;
-        box.append(label,count);items.append(box);
+        label.append(count);
+        box.append(label);items.append(box);
       });
       row.append(items);
       if(cleared(floor)){
