@@ -19672,7 +19672,7 @@ window.returnToTitleScreen = function(){
             '<span class="zss-card-label">主な報酬</span>' +
             '<span class="zss-rewards">' +
               '<span class="zss-reward-chip zns-piece-reward" title="ノアの欠片 ×1" aria-label="ノアの欠片 1個">' +
-                '<span class="zss-reward-icon zns-piece-icon" aria-hidden="true"></span>' +
+                '<img class="zss-reward-icon zns-piece-icon" src="images/item_noah_piece.webp" alt="" aria-hidden="true">' +
                 '<span class="zns-piece-count">×1</span>' +
               '</span>' +
             '</span>' +
@@ -19698,16 +19698,20 @@ window.returnToTitleScreen = function(){
       }
       #noah-stage-select.zfs-screen .zns-piece-icon{
         display:block !important;
-        width:28px !important;
-        height:28px !important;
-        background:url("images/noah_logo_puzzle.webp") 0 0/300% 300% no-repeat;
-        border:1px solid rgba(181,145,82,.55);
-        box-shadow:0 1px 2px rgba(110,80,30,.18);
+        flex:0 0 auto !important;
+        width:30px !important;
+        height:30px !important;
+        max-width:100% !important;
+        max-height:100% !important;
+        object-fit:contain !important;
+        background:transparent !important;
+        border:0 !important;
+        box-shadow:none !important;
       }
       #noah-stage-select.zfs-screen .zns-piece-count{
         position:absolute;
-        top:1px;
-        right:1px;
+        bottom:0;
+        right:0;
         min-width:14px;
         padding:1px;
         background:rgba(255,252,246,.96);
@@ -19723,7 +19727,7 @@ window.returnToTitleScreen = function(){
         color:#a5473a;
       }
       @media(max-height:620px){
-        #noah-stage-select.zfs-screen .zns-piece-icon{width:24px !important;height:24px !important}
+        #noah-stage-select.zfs-screen .zns-piece-icon{width:27px !important;height:27px !important}
       }
     `;
     document.head.appendChild(style);
