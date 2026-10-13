@@ -2442,6 +2442,21 @@
     return String(Math.max(0, Math.floor(Number(value || 0)))).padStart(6, '0');
   }
 
+  // build1438: 戦闘中のSCORE札は「SCORE」ラベルと数値を別要素にして装飾する。
+  // 毎フレーム呼ばれるため、構造は1回だけ作り、以後は変化した文字だけ差し替える。
+  function setBattleScorePlate(el, label, value) {
+    if (!el) return;
+    let labelEl = el.querySelector(':scope > .shooting-score-label');
+    let valueEl = el.querySelector(':scope > .shooting-score-value');
+    if (!labelEl || !valueEl) {
+      el.innerHTML = '<small class="shooting-score-label"></small><b class="shooting-score-value"></b>';
+      labelEl = el.firstChild;
+      valueEl = el.lastChild;
+    }
+    if (labelEl.textContent !== label) labelEl.textContent = label;
+    if (valueEl.textContent !== value) valueEl.textContent = value;
+  }
+
   function setShootingStageHeader(inBattle) {
     const title = document.getElementById('shooting-hud-stage-title');
     const difficulty = document.getElementById('shooting-hud-difficulty');
@@ -2488,9 +2503,9 @@
         if (isRaidStage() && state?.boss) {
           const raidHp = Math.max(0, Math.floor(Number(state.boss.hp || 0)));
           const raidMaxHp = Math.max(1, Math.floor(Number(state.boss.hpMax || selectedRaidContext?.maxHp || 100000)));
-          score.textContent = `HP ${raidHp.toLocaleString('ja-JP')} / ${raidMaxHp.toLocaleString('ja-JP')}`;
+          setBattleScorePlate(score, 'BOSS HP', `${raidHp.toLocaleString('ja-JP')} / ${raidMaxHp.toLocaleString('ja-JP')}`);
         } else {
-          score.textContent = `SCORE ${formatShootingScore(state?.score || 0)}`;
+          setBattleScorePlate(score, 'SCORE', formatShootingScore(state?.score || 0));
         }
       } else {
         score.innerHTML = `<span class="shooting-high-score-label">HIGH SCORE</span><strong class="shooting-high-score-value">${formatShootingScore(selectedStageHighScore)}</strong>`;
@@ -4157,6 +4172,7 @@
           <span class="shooting-switch-ult-ring" aria-hidden="true"></span>
           <img src="${c.panelImage || c.image}" alt="${c.name}" draggable="false">
           <span class="shooting-switch-buff-badge" aria-hidden="true"></span>
+          ${getCombatElementIcon(c.element) ? `<img class="shooting-switch-element" src="${getCombatElementIcon(c.element)}" alt="" aria-hidden="true" draggable="false">` : ''}
           <span class="shooting-switch-name">${c.name}</span>
           <span class="shooting-switch-hp"><i></i></span>
           <small class="shooting-switch-status"></small>
@@ -4518,9 +4534,9 @@
         if (isRaidStage()) {
           const raidHp = Math.max(0, Math.floor(Number(state.boss?.hp || 0)));
           const raidMaxHp = Math.max(1, Math.floor(Number(state.boss?.hpMax || selectedRaidContext?.maxHp || 100000)));
-          score.textContent = `HP ${raidHp.toLocaleString('ja-JP')} / ${raidMaxHp.toLocaleString('ja-JP')}`;
+          setBattleScorePlate(score, 'BOSS HP', `${raidHp.toLocaleString('ja-JP')} / ${raidMaxHp.toLocaleString('ja-JP')}`);
         } else {
-          score.textContent = `SCORE ${formatShootingScore(state.score)}`;
+          setBattleScorePlate(score, 'SCORE', formatShootingScore(state.score));
         }
         score.classList.remove('is-high-score');
       }
@@ -4553,7 +4569,8 @@
         } else if (selectedStage.eventId) {
           stageLabel.textContent = 'SPECIAL EVENT';
         } else {
-          stageLabel.textContent = `CHAPTER ${String(selectedStage.chapter).padStart(2,'0')}　${String(selectedStage.stageNo).padStart(2,'0')}`;
+          // build1438: 章・ステージ番号は上のステージ名プレートに出ているため、帯は種別だけにして本文の幅を確保する。
+          stageLabel.textContent = 'STORY';
         }
       }
 
@@ -19689,6 +19706,9 @@
 
   window.closeFacelessStageSelect = closeFacelessStageSelect;
   window.openFacelessStage = openFacelessStage;
+  // build1437: 楽園 -ノア- のステージ選択(index.html)も共通zss-cardで描画するため公開。
+  window.buildShootingStageSelectGimmickChips = buildFacelessGimmickHtml;
+  window.buildShootingStageSelectAttributes = buildStageSelectAttributePreview;
 
   function stopCountdownMovementLoop() {
     if (countdownMoveRafId) {
@@ -23255,6 +23275,11 @@
       returnContext && returnContext.type === 'dailyStageSelect'
     );
     const returningToRaidLobby = !!(returnContext && returnContext.type === 'raidLobby');
+    // build1437: 楽園 -ノア- も、編成/RESULTから戻ったら直前のステージ選択へ戻す。
+    const returningToNoahStageSelect = !!(
+      returnContext && returnContext.type === 'noahStageSelect' &&
+      typeof window.openNoahStageSelect === 'function'
+    );
 
     // 戦闘途中で戻った場合も、その日の挑戦は消費済み。
     // そこまでに与えたダメージだけを確定してリトライ抜けを防ぐ。
@@ -23279,6 +23304,10 @@
     } else if (returningToDailyStageSelect) {
       showDailyStageSelect({ immediate: true });
       closeFacelessStageSelect();
+    } else if (returningToNoahStageSelect) {
+      try { window.openNoahStageSelect({ immediate: true }); } catch (err) { console.warn('[noah] stage select restore failed', err); }
+      closeFacelessStageSelect();
+      closeDailyStageSelect();
     } else {
       closeFacelessStageSelect();
       closeDailyStageSelect();
@@ -23326,7 +23355,7 @@
     if (leavingGachaTrial) gachaTrialCharacterId = 0;
 
     // 直前画面を復元する。
-    if (returningToFacelessStageSelect || returningToDailyStageSelect) {
+    if (returningToFacelessStageSelect || returningToDailyStageSelect || returningToNoahStageSelect) {
       // ステージ選択画面はroot削除前にすでに描画済み。
       selectedRaidContext = null;
       clearShootingResultExitFade();

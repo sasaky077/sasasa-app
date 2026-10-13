@@ -1,8 +1,9 @@
-/* build1391 — FACELESS STAGE SELECT: shared CHAPTER/DAILY card component.
+/* build1437: 楽園 -ノア- のステージ選択(#noah-stage-select)も同じレイアウトを共用する。
+   build1391 — FACELESS STAGE SELECT: shared CHAPTER/DAILY card component.
    All .zss-card skin declarations come from story_stage_select.css; this file
    only defines the full-screen page layout and its two-card arrangement.
    NO legacy .shooting-faceless-stage-select classes are used. */
-#shooting-faceless-stage-select.zfs-screen {
+:is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen {
   position:fixed !important;
   inset:0 !important;
   z-index:210 !important;
@@ -19,11 +20,11 @@
   opacity:0;
   transition:opacity 200ms ease;
 }
-#shooting-faceless-stage-select.zfs-screen.show {opacity:1}
-#shooting-faceless-stage-select.zfs-screen *,
-#shooting-faceless-stage-select.zfs-screen *::before,
-#shooting-faceless-stage-select.zfs-screen *::after {box-sizing:border-box}
-#shooting-faceless-stage-select .zfs-surface {
+:is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen.show {opacity:1}
+:is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen *,
+:is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen *::before,
+:is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen *::after {box-sizing:border-box}
+:is(#shooting-faceless-stage-select,#noah-stage-select) .zfs-surface {
   position:absolute;
   top:var(--header-h,80px);
   bottom:var(--bottom-nav-h,76px);
@@ -32,7 +33,7 @@
   width:100%;max-width:430px;min-height:0;
   display:flex;flex-direction:column;
 }
-#shooting-faceless-stage-select .zfs-pagehead {
+:is(#shooting-faceless-stage-select,#noah-stage-select) .zfs-pagehead {
   position:relative;
   flex:0 0 74px;
   min-height:0;
@@ -40,7 +41,7 @@
   align-items:center;justify-content:center;
   padding:1px 10px 0;
 }
-#shooting-faceless-stage-select .zfs-back {
+:is(#shooting-faceless-stage-select,#noah-stage-select) .zfs-back {
   position:absolute !important;
   top:8px !important;
   left:12px !important;
@@ -64,7 +65,7 @@
   cursor:pointer;
   z-index:2;
 }
-#shooting-faceless-stage-select .zfs-heading {
+:is(#shooting-faceless-stage-select,#noah-stage-select) .zfs-heading {
   display:block;
   max-width:100%;
   margin:8px 0 0 0;
@@ -75,83 +76,83 @@
   text-align:center;
   text-shadow:0 1px 0 #fffefb;
 }
-#shooting-faceless-stage-select .zfs-ornament {
+:is(#shooting-faceless-stage-select,#noah-stage-select) .zfs-ornament {
   display:flex;align-items:center;justify-content:center;
   width:90%;height:10px;margin-top:6px;
   color:#bd944f;font-size:11px;line-height:1;
 }
-#shooting-faceless-stage-select .zfs-ornament::before,
-#shooting-faceless-stage-select .zfs-ornament::after {
+:is(#shooting-faceless-stage-select,#noah-stage-select) .zfs-ornament::before,
+:is(#shooting-faceless-stage-select,#noah-stage-select) .zfs-ornament::after {
   content:'';height:1px;flex:1;
   background:linear-gradient(90deg,transparent,rgba(177,131,67,.65));
 }
-#shooting-faceless-stage-select .zfs-ornament::after {transform:scaleX(-1)}
-#shooting-faceless-stage-select .zfs-ornament span {margin:0 11px}
-#shooting-faceless-stage-select .zfs-scroll {
+:is(#shooting-faceless-stage-select,#noah-stage-select) .zfs-ornament::after {transform:scaleX(-1)}
+:is(#shooting-faceless-stage-select,#noah-stage-select) .zfs-ornament span {margin:0 11px}
+:is(#shooting-faceless-stage-select,#noah-stage-select) .zfs-scroll {
   flex:1 1 auto;min-height:0;
   overflow:hidden;
   padding:2px 9px 8px;
 }
-#shooting-faceless-stage-select .zfs-list {
+:is(#shooting-faceless-stage-select,#noah-stage-select) .zfs-list {
   display:flex;flex-direction:column;gap:8px;
   min-height:0;width:100%;margin:0;padding:0;
 }
-#shooting-faceless-stage-select.zfs-screen .zfs-list > .zss-card {
+:is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zfs-list > .zss-card {
   width:100%;height:clamp(102px,17vh,138px);max-height:none;min-height:0;
   flex:0 0 auto;
   text-align:left;
 }
-#shooting-faceless-stage-select.zfs-screen .zss-card-row-reward .zss-reward-count {display:none !important}
-#shooting-faceless-stage-select.zfs-screen .zss-card-row-reward .zss-reward-chip {
+:is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zss-card-row-reward .zss-reward-count {display:none !important}
+:is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zss-card-row-reward .zss-reward-chip {
   grid-template-rows:minmax(0,1fr);
   align-content:center;
   padding:1px;
 }
-#shooting-faceless-stage-select.zfs-screen .zss-card-row-reward .zss-reward-icon {
+:is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zss-card-row-reward .zss-reward-icon {
   height:100%;min-height:0;align-self:center;justify-self:center;
 }
-#shooting-faceless-stage-select.zfs-screen .zss-card-row-reward .zss-reward-icon img {
+:is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zss-card-row-reward .zss-reward-icon img {
   width:24px;height:24px;max-width:100%;max-height:100%;object-fit:contain;
 }
-#shooting-faceless-stage-select .zfs-attributes {
+:is(#shooting-faceless-stage-select,#noah-stage-select) .zfs-attributes {
   min-height:0;overflow:hidden;
   font-size:9px;line-height:1.12;
   color:#75623d;
 }
-#shooting-faceless-stage-select .zfs-record .zss-record-rank b {font-size:25px}
-#shooting-faceless-stage-select .zfs-record .zss-record-score b {font-size:11px}
-#shooting-faceless-stage-select .zfs-record .zss-record span {font-size:8px}
-#shooting-faceless-stage-select .zfs-card:focus-visible {outline:2px solid #b59867;outline-offset:-4px}
+:is(#shooting-faceless-stage-select,#noah-stage-select) .zfs-record .zss-record-rank b {font-size:25px}
+:is(#shooting-faceless-stage-select,#noah-stage-select) .zfs-record .zss-record-score b {font-size:11px}
+:is(#shooting-faceless-stage-select,#noah-stage-select) .zfs-record .zss-record span {font-size:8px}
+:is(#shooting-faceless-stage-select,#noah-stage-select) .zfs-card:focus-visible {outline:2px solid #b59867;outline-offset:-4px}
 @media(max-width:359px){
-  #shooting-faceless-stage-select .zfs-back {width:75px !important;min-width:75px !important;height:32px !important;min-height:32px !important}
-  #shooting-faceless-stage-select .zfs-heading {font-size:20px}
-  #shooting-faceless-stage-select.zfs-screen .zfs-list > .zss-card {grid-template-columns:40px minmax(0,1fr) 57px 10px}
-  #shooting-faceless-stage-select.zfs-screen .zss-card-body {padding-left:6px;padding-right:3px}
-  #shooting-faceless-stage-select.zfs-screen .zss-card-row-reward > .zss-card-label {width:43px;flex-basis:43px;font-size:8px}
-  #shooting-faceless-stage-select.zfs-screen .zss-card-row-reward .zss-reward-chip {flex-basis:33px;width:33px;min-width:33px}
+  :is(#shooting-faceless-stage-select,#noah-stage-select) .zfs-back {width:75px !important;min-width:75px !important;height:32px !important;min-height:32px !important}
+  :is(#shooting-faceless-stage-select,#noah-stage-select) .zfs-heading {font-size:20px}
+  :is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zfs-list > .zss-card {grid-template-columns:40px minmax(0,1fr) 57px 10px}
+  :is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zss-card-body {padding-left:6px;padding-right:3px}
+  :is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zss-card-row-reward > .zss-card-label {width:43px;flex-basis:43px;font-size:8px}
+  :is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zss-card-row-reward .zss-reward-chip {flex-basis:33px;width:33px;min-width:33px}
 }
 @media(max-height:760px){
-  #shooting-faceless-stage-select .zfs-pagehead {flex-basis:67px}
-  #shooting-faceless-stage-select .zfs-heading {margin-top:6px}
-  #shooting-faceless-stage-select .zfs-ornament {margin-top:3px}
-  #shooting-faceless-stage-select.zfs-screen .zfs-list > .zss-card {height:clamp(96px,16.3dvh,116px)}
-  #shooting-faceless-stage-select.zfs-screen .zss-card-body {padding:5px 5px 4px 9px;gap:2px}
+  :is(#shooting-faceless-stage-select,#noah-stage-select) .zfs-pagehead {flex-basis:67px}
+  :is(#shooting-faceless-stage-select,#noah-stage-select) .zfs-heading {margin-top:6px}
+  :is(#shooting-faceless-stage-select,#noah-stage-select) .zfs-ornament {margin-top:3px}
+  :is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zfs-list > .zss-card {height:clamp(96px,16.3dvh,116px)}
+  :is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zss-card-body {padding:5px 5px 4px 9px;gap:2px}
 }
 @media(max-height:620px){
-  #shooting-faceless-stage-select .zfs-pagehead {flex-basis:54px}
-  #shooting-faceless-stage-select .zfs-back {top:5px !important}
-  #shooting-faceless-stage-select .zfs-heading {font-size:20px;margin-top:3px}
-  #shooting-faceless-stage-select .zfs-ornament {margin-top:1px;height:7px}
-  #shooting-faceless-stage-select.zfs-screen .zfs-list > .zss-card {height:95px;grid-template-columns:38px minmax(0,1fr) 54px 10px}
-  #shooting-faceless-stage-select.zfs-screen .zss-card-body {padding:3px 4px 3px 6px;gap:1px}
-  #shooting-faceless-stage-select.zfs-screen .zss-card-name {font-size:13px}
-  #shooting-faceless-stage-select.zfs-screen .zss-mission {font-size:9px}
-  #shooting-faceless-stage-select.zfs-screen .zss-reward-chip {height:27px}
-  #shooting-faceless-stage-select.zfs-screen .zss-card-row-reward .zss-reward-icon img {width:18px;height:18px}
+  :is(#shooting-faceless-stage-select,#noah-stage-select) .zfs-pagehead {flex-basis:54px}
+  :is(#shooting-faceless-stage-select,#noah-stage-select) .zfs-back {top:5px !important}
+  :is(#shooting-faceless-stage-select,#noah-stage-select) .zfs-heading {font-size:20px;margin-top:3px}
+  :is(#shooting-faceless-stage-select,#noah-stage-select) .zfs-ornament {margin-top:1px;height:7px}
+  :is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zfs-list > .zss-card {height:95px;grid-template-columns:38px minmax(0,1fr) 54px 10px}
+  :is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zss-card-body {padding:3px 4px 3px 6px;gap:1px}
+  :is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zss-card-name {font-size:13px}
+  :is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zss-mission {font-size:9px}
+  :is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zss-reward-chip {height:27px}
+  :is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zss-card-row-reward .zss-reward-icon img {width:18px;height:18px}
 }
 
 /* build1405: FACELESS first-clear gems. One reward per frame, label under icon. */
-#shooting-faceless-stage-select.zfs-screen .zss-card-row-reward .zss-reward-chip.zfs-first-clear-gem {
+:is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zss-card-row-reward .zss-reward-chip.zfs-first-clear-gem {
   position:relative;
   display:grid;
   grid-template-columns:minmax(0,1fr);
@@ -165,16 +166,16 @@
   padding:1px 1px 2px !important;
   overflow:hidden;
 }
-#shooting-faceless-stage-select.zfs-screen .zfs-first-clear-gem .zss-reward-icon {
+:is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zfs-first-clear-gem .zss-reward-icon {
   grid-row:1 !important;
   height:100% !important;
   min-height:0;
 }
-#shooting-faceless-stage-select.zfs-screen .zfs-first-clear-gem .zss-reward-icon img {
+:is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zfs-first-clear-gem .zss-reward-icon img {
   width:19px !important;
   height:19px !important;
 }
-#shooting-faceless-stage-select.zfs-screen .zfs-first-clear-gem .zfs-first-label {
+:is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zfs-first-clear-gem .zfs-first-label {
   grid-row:2;
   display:block;
   font:600 7px/9px 'Noto Serif JP',serif;
@@ -182,7 +183,7 @@
   text-align:center;
   white-space:nowrap;
 }
-#shooting-faceless-stage-select.zfs-screen .zfs-first-clear-gem .zfs-gem-count {
+:is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zfs-first-clear-gem .zfs-gem-count {
   display:block;
   position:absolute;
   top:1px;
@@ -195,7 +196,7 @@
   font:600 8px/1 'Noto Serif JP',serif;
 }
 @media(max-width:359px){
-  #shooting-faceless-stage-select.zfs-screen .zss-card-row-reward .zss-reward-chip.zfs-first-clear-gem {
+  :is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zss-card-row-reward .zss-reward-chip.zfs-first-clear-gem {
     width:38px;
     min-width:38px;
     flex-basis:38px;
@@ -206,11 +207,11 @@
    build1406 — FACELESS: first-clear label BELOW its item frame.
    Keep ×5 / ×10 inside the image frame as a corner counter.
    ============================================================= */
-#shooting-faceless-stage-select.zfs-screen .zss-card-row-reward .zss-rewards {
+:is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zss-card-row-reward .zss-rewards {
   align-items:start !important;
   padding-bottom:11px !important;
 }
-#shooting-faceless-stage-select.zfs-screen .zss-card-row-reward .zss-reward-chip.zfs-first-clear-gem {
+:is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zss-card-row-reward .zss-reward-chip.zfs-first-clear-gem {
   position:relative !important;
   height:36px !important;
   display:grid !important;
@@ -219,19 +220,19 @@
   overflow:visible !important;
 }
 /* Reclaim the space formerly occupied by text for all reward artwork. */
-#shooting-faceless-stage-select.zfs-screen .zss-card-row-reward .zss-reward-chip:not(.zfs-first-clear-gem) .zss-reward-icon img {
+:is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zss-card-row-reward .zss-reward-chip:not(.zfs-first-clear-gem) .zss-reward-icon img {
   width:28px !important;
   height:28px !important;
   max-width:100% !important;
   max-height:100% !important;
 }
-#shooting-faceless-stage-select.zfs-screen .zfs-first-clear-gem .zss-reward-icon img {
+:is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zfs-first-clear-gem .zss-reward-icon img {
   width:30px !important;
   height:30px !important;
   max-width:100% !important;
   max-height:100% !important;
 }
-#shooting-faceless-stage-select.zfs-screen .zfs-first-clear-gem .zfs-first-label {
+:is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zfs-first-clear-gem .zfs-first-label {
   position:absolute !important;
   top:calc(100% + 2px) !important;
   left:0 !important;
@@ -244,21 +245,21 @@
   pointer-events:none !important;
 }
 @media(max-height:620px) {
-  #shooting-faceless-stage-select.zfs-screen .zss-card-row-reward .zss-rewards {
+  :is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zss-card-row-reward .zss-rewards {
     padding-bottom:9px !important;
   }
-  #shooting-faceless-stage-select.zfs-screen .zss-card-row-reward .zss-reward-chip:not(.zfs-first-clear-gem) .zss-reward-icon img {
+  :is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zss-card-row-reward .zss-reward-chip:not(.zfs-first-clear-gem) .zss-reward-icon img {
     width:24px !important;
     height:24px !important;
   }
-  #shooting-faceless-stage-select.zfs-screen .zss-card-row-reward .zss-reward-chip.zfs-first-clear-gem {
+  :is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zss-card-row-reward .zss-reward-chip.zfs-first-clear-gem {
     height:30px !important;
   }
-  #shooting-faceless-stage-select.zfs-screen .zfs-first-clear-gem .zss-reward-icon img {
+  :is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zfs-first-clear-gem .zss-reward-icon img {
     width:26px !important;
     height:26px !important;
   }
-  #shooting-faceless-stage-select.zfs-screen .zfs-first-clear-gem .zfs-first-label {
+  :is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zfs-first-clear-gem .zfs-first-label {
     top:calc(100% + 1px) !important;
     height:8px !important;
     line-height:8px !important;

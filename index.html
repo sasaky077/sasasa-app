@@ -417,7 +417,7 @@
 #detail-modal.is-gacha-pickup-preview #detail-name{display:none!important}
 </style>
   <link rel="stylesheet" href="css/resonance_tower.css?v=1426-floor-challenge-readability">
-  <link rel="stylesheet" href="css/shooting_event.css?v=1436-battle-footer-switch">
+  <link rel="stylesheet" href="css/shooting_event.css?v=1441-result-survivor-icons">
   <link rel="stylesheet" href="css/daily_stage_select.css?v=1388-shared-card">
   <link rel="stylesheet" href="css/raid_event.css?v=852-raid-glass-canonical">
   <link rel="stylesheet" href="css/item_management.css?v=1071-flower-owned-layout">
@@ -425,8 +425,8 @@
   <link rel="stylesheet" href="css/score_attack_chrome.css?v=696-score-self-badge-corner">
   <link rel="stylesheet" href="css/app_chrome.css?v=693-score-ranking-nav-v2">
   <link rel="stylesheet" href="css/junkou_top.css?v=1357-story-title-six">
-  <link rel="stylesheet" href="css/story_stage_select.css?v=1407-story-first-count">
-  <link rel="stylesheet" href="css/faceless_stage_select.css?v=1406-outside-labels">
+  <link rel="stylesheet" href="css/story_stage_select.css?v=1437-noah-shared-card">
+  <link rel="stylesheet" href="css/faceless_stage_select.css?v=1437-noah-shared-card">
   <link rel="stylesheet" href="css/character_list.css?v=1368-translucent-header">
   <link rel="stylesheet" href="css/character_filter.css?v=1373-filter-size-close">
   <link rel="stylesheet" href="css/character_detail_shot.css?v=1372-fixed-icons">
@@ -10963,6 +10963,8 @@ function goHome(){
     if(dailyStageSelect) dailyStageSelect.remove();
     var facelessStageSelect = document.getElementById('shooting-faceless-stage-select');
     if(facelessStageSelect) facelessStageSelect.remove();
+    var noahStageSelect = document.getElementById('noah-stage-select');
+    if(noahStageSelect) noahStageSelect.remove();
 
     if(isSummoning){
       console.log('ガチャ中のため画面遷移をブロック:', name);
@@ -19112,7 +19114,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1436-battle-footer-switch"></script>
+<script src="js/shooting_event.js?v=1439-compact-hud"></script>
 <script src="js/shooting_party_filter.js?v=1432-icon-bounds"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
@@ -19445,64 +19447,124 @@ window.returnToTitleScreen = function(){
     dialog.setAttribute('aria-hidden','false');
   }
 
-  function buildNoahStageSelect(){
-    let overlay = document.getElementById('noah-stage-select');
-    if (overlay) return overlay;
-
-    overlay = document.createElement('div');
-    overlay.id = 'noah-stage-select';
-    overlay.className = 'noah-stage-select shooting-special-stage-select';
-    overlay.setAttribute('aria-hidden','true');
+  // build1437: 楽園 -ノア- のステージ選択を、STORY / DAILY / 無貌の天使と同じ
+  // 共通ステージ選択デザイン（zfs-screen + zss-card）で描画する。
+  // 旧 .noah-stage-select 系クラスは使わない（shooting_event.cssの旧スタイルを当てないため）。
+  function buildNoahStageSelectCard(){
+    let gimmickHtml = '';
+    try {
+      if (typeof window.buildShootingStageSelectGimmickChips === 'function') {
+        gimmickHtml = window.buildShootingStageSelectGimmickChips(STAGE_ID) || '';
+      }
+    } catch (_) {}
+    if (!gimmickHtml) gimmickHtml = '<span class="zss-gimmick-chip is-none"><b>なし</b></span>';
 
     let attributeHtml = '';
     try {
-      const preview = window.ShootingStageAttributePreview;
-      if (preview && typeof preview.buildHtml === 'function') {
-        attributeHtml = preview.buildHtml(STAGE_ID) || '';
+      if (typeof window.buildShootingStageSelectAttributes === 'function') {
+        attributeHtml = window.buildShootingStageSelectAttributes(STAGE_ID) || '';
       }
     } catch (_) {}
 
-    let gimmickHtml = '';
-    try {
-      if (typeof window.buildShootingStageGimmickPreview === 'function') {
-        gimmickHtml = window.buildShootingStageGimmickPreview(STAGE_ID) || '';
-      }
-    } catch (_) {}
-    if (!gimmickHtml) {
-      gimmickHtml =
-        '<div class="shooting-stage-gimmicks is-none" aria-label="ステージギミック：なし">' +
-          '<span class="shooting-stage-gimmick-label">GIMMICK</span>' +
-          '<span class="shooting-stage-gimmick-list">' +
-            '<span class="shooting-stage-gimmick-chip gimmick-none"><b>なし</b></span>' +
-          '</span>' +
-        '</div>';
-    }
-
-    overlay.innerHTML =
-      '<div class="noah-stage-select-page">' +
-        '<header class="noah-stage-select-header">' +
-          '<button type="button" class="noah-stage-select-back" onclick="closeNoahStageSelect(true)">＜戻る</button>' +
-          '<div class="noah-stage-select-title">' +
-            '<small>SPECIAL STAGE</small>' +
-            '<strong>楽園 -ノア-</strong>' +
+    const ticket = Math.max(0, Math.floor(Number(getSpecialTicketCount() || 0)));
+    return (
+      '<div class="zss-card zss-story-shooting-card zfs-card zns-card' + (ticket < 1 ? ' is-no-ticket' : '') + '" role="button" tabindex="0"' +
+        ' onclick="selectNoahSpecialStage()"' +
+        ' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();selectNoahSpecialStage();}">' +
+        '<div class="zss-card-no" aria-hidden="true"><span>✧</span><b>01</b><span>✧</span></div>' +
+        '<div class="zss-card-body">' +
+          '<div class="zss-card-name-row"><span class="zss-card-name">SPECIAL</span></div>' +
+          '<div class="zss-mission">クリア条件：ノアを撃破</div>' +
+          '<div class="zss-card-row zss-card-row-gimmick">' +
+            '<span class="zss-card-label">GIMMICK</span>' +
+            '<span class="zss-gimmicks">' + gimmickHtml + '</span>' +
           '</div>' +
-        '</header>' +
-        '<div class="noah-stage-select-list">' +
-          '<button type="button" class="noah-stage-select-row" onclick="selectNoahSpecialStage()">' +
-            '<span class="noah-stage-select-no">01</span>' +
-            '<span class="noah-stage-select-main">' +
-              '<span class="noah-stage-select-name-row">' +
-                '<strong>楽園 -ノア-</strong>' +
-                '<em>SPECIAL</em>' +
-              '</span>' +
-              '<span class="noah-stage-select-condition">クリア条件：ノアを撃破</span>' +
-              attributeHtml +
-              gimmickHtml +
-              '<span class="noah-stage-select-cost">' +
-                '<span>SPECIAL TICKET -ノア-</span><b>×1</b>' +
+          (attributeHtml ? '<div class="zfs-attributes">' + attributeHtml + '</div>' : '') +
+          '<div class="zss-card-row zss-card-row-reward">' +
+            '<span class="zss-card-label">主な報酬</span>' +
+            '<span class="zss-rewards">' +
+              '<span class="zss-reward-chip zns-piece-reward" title="ノアの欠片 ×1" aria-label="ノアの欠片 1個">' +
+                '<span class="zss-reward-icon zns-piece-icon" aria-hidden="true"></span>' +
+                '<span class="zns-piece-count">×1</span>' +
               '</span>' +
             '</span>' +
-          '</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="zss-record zfs-record zns-record" aria-label="SPECIAL TICKET 所持' + ticket + '枚 / 1枚消費">' +
+          '<div class="zss-record-rank"><span>所持TICKET</span><b>' + ticket + '</b></div>' +
+          '<div class="zss-record-score"><span>消費</span><b>×1</b></div>' +
+        '</div>' +
+        '<span class="zss-arrow" aria-hidden="true">›</span>' +
+      '</div>'
+    );
+  }
+
+  function ensureNoahStageSelectStyle(){
+    if (document.getElementById('noah-stage-select-style-v1437')) return;
+    const style = document.createElement('style');
+    style.id = 'noah-stage-select-style-v1437';
+    style.textContent = `
+      #noah-stage-select.zfs-screen .zns-piece-reward{
+        position:relative !important;
+        overflow:visible !important;
+      }
+      #noah-stage-select.zfs-screen .zns-piece-icon{
+        display:block !important;
+        width:28px !important;
+        height:28px !important;
+        background:url("images/noah_logo_puzzle.webp") 0 0/300% 300% no-repeat;
+        border:1px solid rgba(181,145,82,.55);
+        box-shadow:0 1px 2px rgba(110,80,30,.18);
+      }
+      #noah-stage-select.zfs-screen .zns-piece-count{
+        position:absolute;
+        top:1px;
+        right:1px;
+        min-width:14px;
+        padding:1px;
+        background:rgba(255,252,246,.96);
+        color:#7b4f32;
+        text-align:right;
+        font:600 8px/1 'Noto Serif JP',serif;
+      }
+      #noah-stage-select.zfs-screen .zns-record .zss-record-rank span,
+      #noah-stage-select.zfs-screen .zns-record .zss-record-score span{
+        white-space:nowrap;
+      }
+      #noah-stage-select.zfs-screen .zns-card.is-no-ticket .zns-record .zss-record-rank b{
+        color:#a5473a;
+      }
+      @media(max-height:620px){
+        #noah-stage-select.zfs-screen .zns-piece-icon{width:24px !important;height:24px !important}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function buildNoahStageSelect(options){
+    // 所持チケット数を毎回反映するため、開くたびに作り直す。
+    const old = document.getElementById('noah-stage-select');
+    if (old) old.remove();
+    ensureNoahStageSelectStyle();
+
+    const immediate = !!(options && options.immediate);
+    const overlay = document.createElement('div');
+    overlay.id = 'noah-stage-select';
+    overlay.className = 'zfs-screen';
+    overlay.setAttribute('aria-hidden','true');
+    if (immediate) { overlay.classList.add('show'); overlay.style.transition = 'none'; }
+
+    overlay.innerHTML =
+      '<div class="zfs-surface">' +
+        '<div class="zfs-pagehead">' +
+          '<button type="button" class="zfs-back" onclick="closeNoahStageSelect(true)" aria-label="戻る">〈 戻る</button>' +
+          '<h2 class="zfs-heading">楽園 -ノア-</h2>' +
+          '<div class="zfs-ornament" aria-hidden="true"><span>✦</span></div>' +
+        '</div>' +
+        '<div class="zfs-scroll">' +
+          '<div class="zfs-list" aria-label="楽園 -ノア-・ステージ選択">' +
+            buildNoahStageSelectCard() +
+          '</div>' +
         '</div>' +
       '</div>';
 
@@ -19510,19 +19572,34 @@ window.returnToTitleScreen = function(){
     return overlay;
   }
 
-  function openNoahStageSelect(){
-    const overlay = buildNoahStageSelect();
+  function openNoahStageSelect(options){
+    const immediate = !!(options && options.immediate);
+    const overlay = buildNoahStageSelect({ immediate: immediate });
     closeNoahPiecePanel();
-    overlay.classList.add('show');
     overlay.setAttribute('aria-hidden','false');
+    if (immediate) {
+      requestAnimationFrame(function(){ if (overlay.isConnected) overlay.style.transition = ''; });
+    } else {
+      requestAnimationFrame(function(){ overlay.classList.add('show'); });
+    }
+    // チケット数をサーバー値で取り直し、カードの表示を更新する。
+    if (typeof window.refreshSpecialTicketUI === 'function') {
+      try {
+        const p = window.refreshSpecialTicketUI();
+        if (p && typeof p.then === 'function') {
+          p.then(function(){
+            const current = document.getElementById('noah-stage-select');
+            const list = current && current.querySelector('.zfs-list');
+            if (list) list.innerHTML = buildNoahStageSelectCard();
+          }).catch(function(){});
+        }
+      } catch (_) {}
+    }
   }
 
   function closeNoahStageSelect(returnToPiece){
     const overlay = document.getElementById('noah-stage-select');
-    if (overlay) {
-      overlay.classList.remove('show');
-      overlay.setAttribute('aria-hidden','true');
-    }
+    if (overlay) overlay.remove();
     if (returnToPiece) openNoahPiecePanel();
   }
 
@@ -19533,6 +19610,8 @@ window.returnToTitleScreen = function(){
 
     // チケット消費そのものは既存の戦闘開始処理に委ねる。
     if (typeof window.openShootingEvent === 'function') {
+      // build1437: 編成画面/RESULTの「戻る」は、このステージ選択へ戻す。
+      window.__shootingReturnContext = { type: 'noahStageSelect' };
       window.openShootingEvent({ stageId: STAGE_ID });
     } else {
       console.error('[NoahPiece] openShootingEvent is not available');

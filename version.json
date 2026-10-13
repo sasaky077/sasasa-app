@@ -1,4 +1,4 @@
 {
-  "build": 1436,
-  "note": "Battle HUD re-layout: bench switch buttons (62px) moved off the battlefield into an 86px bottom bar ordered [MENU][UI切替] bench1 bench2 (mirrored by UI切替); larger vertical HP gauge opposite ULT; drags from the bottom bar move the player and switching fires only on a short tap. HUD text enlarged/darkened; player outline + ground shadow. Enemy bullets now always render above the player, and all stages (story, tower 01-10F, daily, events, ambush, Noah, faceless, score attack, raid, gacha trial) draw enemy bullets on the Canvas layer."
+  "build": 1441,
+  "note": "RESULT survivor row is icon-only: survivors show the normal portrait, downed characters are grayed out with a large red ×. 生存/LOST text stays for screen readers only. Portrait columns in 総被弾回数 and 生存キャラ rows are aligned on a 3-column grid. Includes build1440 RESULT skin."
 }
