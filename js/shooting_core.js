@@ -12009,6 +12009,7 @@
     state.chapter6Barriers = [];
     const arena = document.getElementById('shooting-arena');
     if (arena) arena.querySelectorAll('.shooting-ch06-barrier').forEach(el => el.remove());
+    clearBarrierSparks();
   }
 
   function ensureChapter6Barriers() {
@@ -12093,7 +12094,143 @@
     }) || null;
   }
 
-  function pulseChapter6Barrier(barrier) {
+  // ============================================================
+  // build1455: 遮断壁の被弾で「光の粒」を飛ばす
+  // 壁専用の小さなCanvasを1枚だけ arena に重ね、粒がある間だけ描画ループを回す。
+  // 粒は最大90個のプール。視差効果を減らす設定の端末では出さない。
+  // ============================================================
+  const barrierSparkFx = { canvas:null, ctx:null, parts:[], raf:0, last:0, dpr:1, w:0, h:0 };
+  const BARRIER_SPARK_MAX = 90;
+  const barrierSparkReducedMotion = (() => {
+    try { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+    catch (_) { return false; }
+  })();
+
+  function ensureBarrierSparkCanvas() {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return null;
+    let canvas = barrierSparkFx.canvas;
+    if (!canvas || !canvas.isConnected || canvas.parentElement !== arena) {
+      canvas = document.createElement('canvas');
+      canvas.className = 'shooting-barrier-sparks';
+      canvas.setAttribute('aria-hidden', 'true');
+      arena.appendChild(canvas);
+      barrierSparkFx.canvas = canvas;
+      barrierSparkFx.ctx = canvas.getContext('2d');
+      barrierSparkFx.w = 0;
+      barrierSparkFx.h = 0;
+    }
+    const w = Number(arena.clientWidth || 0);
+    const h = Number(arena.clientHeight || 0);
+    if (w !== barrierSparkFx.w || h !== barrierSparkFx.h) {
+      const dpr = Math.min(2, Math.max(1, Number(window.devicePixelRatio || 1)));
+      barrierSparkFx.dpr = dpr;
+      barrierSparkFx.w = w;
+      barrierSparkFx.h = h;
+      canvas.width = Math.max(1, Math.round(w * dpr));
+      canvas.height = Math.max(1, Math.round(h * dpr));
+    }
+    return canvas;
+  }
+
+  function stepBarrierSparks(ts) {
+    const fx = barrierSparkFx;
+    const ctx = fx.ctx;
+    if (!ctx || !fx.canvas || !fx.canvas.isConnected) { fx.parts.length = 0; fx.raf = 0; return; }
+    const dt = Math.min(48, Math.max(0, ts - (fx.last || ts)));
+    fx.last = ts;
+    ctx.setTransform(fx.dpr, 0, 0, fx.dpr, 0, 0);
+    ctx.clearRect(0, 0, fx.w, fx.h);
+    // 明るい背景でも見えるよう通常合成＋金の縁取り（加算合成だと白背景で消える）
+    ctx.globalCompositeOperation = 'source-over';
+    const k = dt / 1000;
+    let alive = 0;
+    for (let i = 0; i < fx.parts.length; i++) {
+      const q = fx.parts[i];
+      q.age += dt;
+      if (q.age >= q.life) continue;
+      q.vx *= Math.pow(.12, k);
+      q.vy = q.vy * Math.pow(.12, k) - 22 * k; // ゆっくり上へ漂う
+      q.x += q.vx * k;
+      q.y += q.vy * k;
+      const t = q.age / q.life;
+      const a = t < .12 ? t / .12 : 1 - (t - .12) / .88;
+      const r = q.size * (1 - t * .4);
+      // 外側のにじみ（金）
+      ctx.globalAlpha = a * .42;
+      ctx.fillStyle = q.gold ? '#f2b546' : '#f7cf78';
+      ctx.beginPath(); ctx.arc(q.x, q.y, r * 2.4, 0, 6.2832); ctx.fill();
+      // 金の縁
+      ctx.globalAlpha = a * .95;
+      ctx.fillStyle = '#e5a73a';
+      ctx.beginPath(); ctx.arc(q.x, q.y, r * 1.25, 0, 6.2832); ctx.fill();
+      // 芯（白）
+      ctx.fillStyle = '#fffdf3';
+      ctx.beginPath(); ctx.arc(q.x, q.y, r * .8, 0, 6.2832); ctx.fill();
+      // 一部の粒は十字にきらめく
+      if (q.star) {
+        const L = r * 4.4 * (1 - t * .55);
+        ctx.globalAlpha = a * .9;
+        ctx.fillStyle = '#f1b84c';
+        ctx.fillRect(q.x - L, q.y - .8, L * 2, 1.6);
+        ctx.fillRect(q.x - .8, q.y - L, 1.6, L * 2);
+        ctx.fillStyle = '#fffdf3';
+        ctx.fillRect(q.x - L * .7, q.y - .4, L * 1.4, .8);
+        ctx.fillRect(q.x - .4, q.y - L * .7, .8, L * 1.4);
+      }
+      fx.parts[alive++] = q;
+    }
+    fx.parts.length = alive;
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+    if (alive) fx.raf = requestAnimationFrame(stepBarrierSparks);
+    else { ctx.clearRect(0, 0, fx.w, fx.h); fx.raf = 0; fx.last = 0; }
+  }
+
+  function spawnBarrierSparks(barrier, hitX, hitY) {
+    if (barrierSparkReducedMotion || !barrier) return;
+    if (!ensureBarrierSparkCanvas()) return;
+    const fx = barrierSparkFx;
+    const halfW = Number(barrier.width || 0) * .5;
+    const cx = Number(barrier.x || 0);
+    const cy = Number(barrier.y || 0);
+    // 着弾点が分からない場合は壁の中央付近。x は壁の範囲内に収める。
+    let x = Number.isFinite(Number(hitX)) ? Number(hitX) : cx + (Math.random() - .5) * halfW;
+    x = Math.max(cx - halfW + 6, Math.min(cx + halfW - 6, x));
+    // 下から当たった弾は下側へ、上からは上側へ散らす
+    const fromBelow = !Number.isFinite(Number(hitY)) || Number(hitY) >= cy;
+    const y = cy + (fromBelow ? 3 : -3);
+    const count = 7 + Math.floor(Math.random() * 4);
+    for (let i = 0; i < count; i++) {
+      if (fx.parts.length >= BARRIER_SPARK_MAX) fx.parts.shift();
+      const spread = (Math.random() - .5) * Math.PI * .95;
+      const base = fromBelow ? Math.PI / 2 : -Math.PI / 2;
+      const ang = base + spread;
+      const sp = 60 + Math.random() * 110;
+      fx.parts.push({
+        x: x + (Math.random() - .5) * 10,
+        y,
+        vx: Math.cos(ang) * sp * 1.35,
+        vy: Math.sin(ang) * sp,
+        age: 0,
+        life: 420 + Math.random() * 380,
+        size: 1.5 + Math.random() * 1.8,
+        gold: Math.random() < .55,
+        star: Math.random() < .35,
+      });
+    }
+    if (!fx.raf) { fx.last = 0; fx.raf = requestAnimationFrame(stepBarrierSparks); }
+  }
+
+  function clearBarrierSparks() {
+    const fx = barrierSparkFx;
+    if (fx.raf) cancelAnimationFrame(fx.raf);
+    fx.raf = 0; fx.last = 0; fx.parts.length = 0;
+    if (fx.canvas) fx.canvas.remove();
+    fx.canvas = null; fx.ctx = null; fx.w = 0; fx.h = 0;
+  }
+
+  function pulseChapter6Barrier(barrier, hitX, hitY) {
     if (!barrier || !barrier.el) return false;
 
     // build551: 高速多弾が壁へ当たるたびoffsetWidthを読むと、
@@ -12102,6 +12239,7 @@
     const now = performance.now();
     if (now < Number(barrier._hitFxUntil || 0)) return false;
     barrier._hitFxUntil = now + 96;
+    spawnBarrierSparks(barrier, hitX, hitY);
 
     barrier.el.classList.add('hit');
     if (barrier._hitFxTimer) clearTimeout(barrier._hitFxTimer);
@@ -16512,7 +16650,7 @@
       // CH06遮断壁：通常Projectileはここで止まる。Shotgun(pierce)だけはそのまま奥へ進む。
       const chapter6BarrierTarget = findChapter6BarrierCollision(r, arenaRect, p);
       if (chapter6BarrierTarget) {
-        const renderBarrierImpact = pulseChapter6Barrier(chapter6BarrierTarget);
+        const renderBarrierImpact = pulseChapter6Barrier(chapter6BarrierTarget, Number(p.x), Number(p.y));
         if (p.pierce) {
           if (p.piercedTargets) p.piercedTargets.add(chapter6BarrierTarget);
         } else {
@@ -23985,7 +24123,7 @@
         );
       });
       if (blocked) {
-        pulseChapter6Barrier(blocked);
+        pulseChapter6Barrier(blocked, currentX, currentY);
         releaseAsMiss(currentX, currentY);
         return;
       }
@@ -26963,7 +27101,7 @@
     }
 
     if (target.kind === 'barrier') {
-      pulseChapter6Barrier(target.ref);
+      pulseChapter6Barrier(target.ref, target.x, target.y);
       createHit(target.x, target.y, true);
       shakeVeronicaPunchImpact();
       state.shotsHit = Number(state.shotsHit || 0) + 1;

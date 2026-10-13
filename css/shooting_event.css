@@ -14364,3 +14364,161 @@ html body #shooting-event-root #shooting-result #shooting-result-survivor-detail
   gap:4px !important;
   justify-items:start !important;
 }
+
+/* ============================================================
+   build1455 — 遮断壁を「神聖な光の妨害壁」に（画像素材なし・CSSのみ）
+   対象：CH06 / DAILY上級 / ノア / 残響の塔04・06 / 試遊オリビア（同じ .shooting-ch06-barrier）
+   当たり判定・位置・幅・高さは一切変更しない（見た目だけ）。
+   構成：
+     本体        … 光の帯（金の霞＋外側のグロー）
+     i           … 帯の中身：刻印の目盛り＋中心の白い光芯(::before)＋流れる光(::after)
+     b           … 中央の聖印：ひし形の結晶＋回る光輪(::before)＋十字の閃光(::after)
+     ::before/::after … 両端の光柱（縦に伸びる光＋結晶）
+   アニメーションは transform / opacity のみ（再描画が軽い）。
+   ============================================================ */
+#shooting-event-root .shooting-ch06-barrier.shooting-ch06-barrier{
+  --hb-gold:255,214,128;
+  --hb-core:255,252,238;
+  position:absolute!important;left:0!important;top:0!important;z-index:23!important;
+  pointer-events:none!important;box-sizing:border-box!important;
+  border:0!important;border-radius:999px!important;
+  background:
+    linear-gradient(180deg,
+      rgba(var(--hb-gold),0) 0%,
+      rgba(var(--hb-gold),.42) 20%,
+      rgba(var(--hb-core),.86) 50%,
+      rgba(var(--hb-gold),.42) 80%,
+      rgba(var(--hb-gold),0) 100%)!important;
+  box-shadow:
+    inset 0 0 0 1px rgba(214,168,76,.55),
+    0 0 10px 1px rgba(var(--hb-gold),.55),
+    0 0 26px 6px rgba(255,236,190,.34),
+    0 6px 18px rgba(120,86,20,.18)!important;
+  opacity:1!important;visibility:visible!important;filter:none!important;
+  overflow:visible!important;
+  animation:hbBreath 2.6s ease-in-out infinite!important;
+}
+
+/* ---- band content ---- */
+#shooting-event-root .shooting-ch06-barrier.shooting-ch06-barrier > i{
+  position:absolute!important;left:10px!important;right:10px!important;top:0!important;bottom:0!important;
+  height:auto!important;transform:none!important;
+  overflow:hidden!important;border-radius:999px!important;
+  /* 刻印：細い縦目盛り（神殿の帯のような模様） */
+  background:
+    repeating-linear-gradient(90deg,
+      rgba(176,132,48,0) 0 7px,
+      rgba(176,132,48,.38) 7px 8px,
+      rgba(176,132,48,0) 8px 14px,
+      rgba(176,132,48,.22) 14px 15px,
+      rgba(176,132,48,0) 15px 22px)!important;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 9%,#000 91%,transparent 100%),
+                     linear-gradient(180deg,transparent 18%,#000 34%,#000 66%,transparent 82%)!important;
+  -webkit-mask-composite:source-in!important;
+  mask-image:linear-gradient(90deg,transparent 0,#000 9%,#000 91%,transparent 100%),
+             linear-gradient(180deg,transparent 18%,#000 34%,#000 66%,transparent 82%)!important;
+  mask-composite:intersect!important;
+}
+/* 白い光芯（当たり判定の中心線を示す） */
+#shooting-event-root .shooting-ch06-barrier.shooting-ch06-barrier > i::before{
+  content:""!important;position:absolute!important;left:0!important;right:0!important;top:50%!important;
+  height:3px!important;margin-top:-1.5px!important;border-radius:2px!important;
+  background:linear-gradient(90deg,rgba(var(--hb-core),.0),rgba(var(--hb-core),1) 12%,#fff 50%,rgba(var(--hb-core),1) 88%,rgba(var(--hb-core),0))!important;
+  box-shadow:0 0 4px #fff,0 0 9px rgba(var(--hb-gold),.95),0 0 16px rgba(var(--hb-gold),.6)!important;
+}
+/* 帯の上を流れる光 */
+#shooting-event-root .shooting-ch06-barrier.shooting-ch06-barrier > i::after{
+  content:""!important;position:absolute!important;top:0!important;bottom:0!important;left:-100%!important;width:200%!important;
+  background:repeating-linear-gradient(90deg,
+    rgba(255,255,255,0) 0 46px,
+    rgba(255,255,255,.75) 58px,
+    rgba(255,255,255,0) 70px,
+    rgba(255,255,255,0) 120px)!important;
+  will-change:transform!important;
+  animation:hbFlow 1.9s linear infinite!important;
+}
+
+/* ---- center sigil ---- */
+#shooting-event-root .shooting-ch06-barrier.shooting-ch06-barrier > b{
+  position:absolute!important;left:50%!important;top:50%!important;
+  width:12px!important;height:12px!important;margin:0!important;
+  transform:translate(-50%,-50%) rotate(45deg)!important;
+  border:1px solid rgba(196,150,62,.95)!important;border-radius:1px!important;
+  background:radial-gradient(circle at 50% 50%,#fff 0 30%,rgba(255,240,196,1) 55%,rgba(232,190,100,1) 100%)!important;
+  box-shadow:0 0 6px #fff,0 0 12px rgba(var(--hb-gold),.95),0 0 22px rgba(var(--hb-gold),.55)!important;
+}
+/* 光輪：点線の円がゆっくり回る（b自体が45°回っているので内側で回転） */
+#shooting-event-root .shooting-ch06-barrier.shooting-ch06-barrier > b::before{
+  content:""!important;position:absolute!important;left:50%!important;top:50%!important;
+  width:30px!important;height:30px!important;margin:-15px 0 0 -15px!important;border-radius:50%!important;
+  border:1px dashed rgba(206,160,70,.75)!important;
+  box-shadow:0 0 0 3px rgba(255,236,190,.18),0 0 10px rgba(var(--hb-gold),.35)!important;
+  animation:hbSpin 9s linear infinite!important;
+}
+/* 十字の閃光（縦横の細い光） */
+#shooting-event-root .shooting-ch06-barrier.shooting-ch06-barrier > b::after{
+  content:""!important;position:absolute!important;left:50%!important;top:50%!important;
+  width:46px!important;height:46px!important;margin:-23px 0 0 -23px!important;
+  transform:rotate(-45deg)!important;
+  background:
+    linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.95) 50%,rgba(255,255,255,0)) center/100% 1.5px no-repeat,
+    linear-gradient(180deg,rgba(255,255,255,0),rgba(255,255,255,.95) 50%,rgba(255,255,255,0)) center/1.5px 100% no-repeat!important;
+  filter:drop-shadow(0 0 3px rgba(var(--hb-gold),.9))!important;
+  animation:hbTwinkle 2.6s ease-in-out infinite!important;
+}
+
+/* ---- end pillars ---- */
+#shooting-event-root .shooting-ch06-barrier.shooting-ch06-barrier::before,
+#shooting-event-root .shooting-ch06-barrier.shooting-ch06-barrier::after{
+  content:""!important;position:absolute!important;top:50%!important;
+  width:14px!important;height:56px!important;margin-top:-28px!important;
+  border:0!important;border-radius:0!important;
+  transform:none!important;
+  background:
+    radial-gradient(circle at 50% 50%,#fff 0 2.5px,rgba(255,240,196,.95) 3.5px,rgba(var(--hb-gold),0) 7px),
+    linear-gradient(180deg,rgba(var(--hb-gold),0) 0%,rgba(255,250,232,.95) 50%,rgba(var(--hb-gold),0) 100%) center/2px 100% no-repeat,
+    radial-gradient(ellipse 50% 50% at 50% 50%,rgba(var(--hb-gold),.45),rgba(var(--hb-gold),0) 100%)!important;
+  box-shadow:none!important;
+  filter:drop-shadow(0 0 4px rgba(var(--hb-gold),.9))!important;
+  animation:hbPillar 2.6s ease-in-out infinite!important;
+}
+#shooting-event-root .shooting-ch06-barrier.shooting-ch06-barrier::before{left:-7px!important;right:auto!important;}
+#shooting-event-root .shooting-ch06-barrier.shooting-ch06-barrier::after{right:-7px!important;left:auto!important;animation-delay:-1.3s!important;}
+
+/* ---- hit: 白く強く光る ---- */
+#shooting-event-root .shooting-ch06-barrier.shooting-ch06-barrier.hit{
+  box-shadow:
+    inset 0 0 0 1px rgba(255,236,190,.9),
+    0 0 14px 3px rgba(255,255,255,.85),
+    0 0 30px 10px rgba(var(--hb-gold),.55),
+    0 6px 18px rgba(120,86,20,.18)!important;
+}
+#shooting-event-root .shooting-ch06-barrier.shooting-ch06-barrier.hit > i::before{
+  height:5px!important;margin-top:-2.5px!important;
+  box-shadow:0 0 6px #fff,0 0 14px #fff,0 0 22px rgba(var(--hb-gold),1)!important;
+}
+
+@keyframes hbFlow{from{transform:translateX(0)}to{transform:translateX(120px)}}
+@keyframes hbSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes hbBreath{0%,100%{opacity:.92}50%{opacity:1}}
+@keyframes hbTwinkle{0%,100%{opacity:.55;transform:rotate(-45deg) scale(.82)}50%{opacity:1;transform:rotate(-45deg) scale(1.08)}}
+@keyframes hbPillar{0%,100%{opacity:.75;transform:scaleY(.86)}50%{opacity:1;transform:scaleY(1.08)}}
+
+/* 端末の「視差効果を減らす」設定ではアニメを止める */
+@media (prefers-reduced-motion:reduce){
+  #shooting-event-root .shooting-ch06-barrier.shooting-ch06-barrier,
+  #shooting-event-root .shooting-ch06-barrier.shooting-ch06-barrier *,
+  #shooting-event-root .shooting-ch06-barrier.shooting-ch06-barrier::before,
+  #shooting-event-root .shooting-ch06-barrier.shooting-ch06-barrier::after,
+  #shooting-event-root .shooting-ch06-barrier.shooting-ch06-barrier > i::after,
+  #shooting-event-root .shooting-ch06-barrier.shooting-ch06-barrier > b::before,
+  #shooting-event-root .shooting-ch06-barrier.shooting-ch06-barrier > b::after{animation:none!important;}
+}
+
+/* build1455: 遮断壁被弾時の光の粒（JSが描くCanvas）。壁の1つ上の層。 */
+#shooting-event-root #shooting-arena > canvas.shooting-barrier-sparks{
+  position:absolute!important;left:0!important;top:0!important;
+  width:100%!important;height:100%!important;
+  z-index:24!important;pointer-events:none!important;
+  background:none!important;transform:none!important;
+}
