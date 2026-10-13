@@ -4425,6 +4425,22 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 
 window.NOTICE_ITEMS = [
   {
+    id: 'notice_noah_boss_display_apology_20261013',
+    date: '2026.10.13',
+    title: '【お詫び】ノアのBOSS表示不具合について',
+    body: 'ノアのBOSS表示に不具合がありました。ご迷惑をおかけしましたことをお詫び申し上げます。お詫びとして、SPECIAL TICKET -ノア- を2枚プレゼントいたします。',
+    reward: {
+      type: 'special_stage_ticket',
+      claimId: 'notice_noah_boss_display_apology_20261013_v1',
+      rpcName: 'claim_noah_boss_display_apology_20261013',
+      statusRpcName: 'is_noah_boss_display_apology_20261013_claimed',
+      label: '不具合のお詫び',
+      amount: 2,
+      image: 'images/special_stage_ticket.webp'
+    },
+    hidden: false
+  },
+  {
     id: 'notice_noah_guerrilla_bonus_20260923',
     date: '2026.09.23',
     title: 'ゲリラボーナス',
@@ -5140,13 +5156,17 @@ window.NOTICE_ITEMS = [
         } else if (item.reward.type === 'test_growth_bundle') {
           res = await client.rpc('is_test_growth_bundle_claimed');
         } else if (item.reward.type === 'special_stage_ticket') {
-          res = await client.rpc('is_noah_guerrilla_bonus_claimed');
+          res = await client.rpc(String(item.reward.statusRpcName || 'is_noah_guerrilla_bonus_claimed'));
         } else {
           res = await client.rpc('is_notice_reward_claimed', {
             p_claim_id: item.reward.claimId
           });
         }
         if (res && res.error) throw res.error;
+        // 新しい専用配布はアカウント別のDB判定を優先する。
+        if (item.reward.type === 'special_stage_ticket' && item.reward.statusRpcName && typeof (res && res.data) === 'boolean') {
+          item.reward.claimed = res.data;
+        }
         if (res && res.data === true) {
           item.reward.claimed = true;
           markNoticeRewardClaimedLocally(item.reward.claimId);
@@ -5162,6 +5182,8 @@ window.NOTICE_ITEMS = [
     if (!item || !item.reward) return false;
     if (item.reward.type === 'character') return item.reward.claimed === true;
     if (!item.reward.claimId) return false;
+    // ノアお詫び配布は端末共有のlocalStorageを信用せず、ユーザー個別のDB判定を利用。
+    if (item.reward.type === 'special_stage_ticket' && item.reward.statusRpcName) return item.reward.claimed === true;
     if (item.reward.claimed === true) return true;
 
     const locallyClaimed = getLocallyClaimedNoticeIds();
@@ -5326,7 +5348,7 @@ window.NOTICE_ITEMS = [
           <div class="notice-reward-main">
             <img class="notice-reward-item-icon" src="${escapeHtml(reward.image || 'images/special_stage_ticket.webp')}" alt="">
             <div class="notice-reward-copy">
-              <span class="notice-reward-label">ゲリラボーナス</span>
+              <span class="notice-reward-label">${escapeHtml(reward.label || 'ゲリラボーナス')}</span>
               <strong>SPECIAL TICKET -ノア- ×${ticketAmount}</strong>
             </div>
           </div>
@@ -5428,8 +5450,8 @@ window.NOTICE_ITEMS = [
 
         if (!noticeBulkClaimActive && typeof window.showToast === 'function') {
           window.showToast(result.already_claimed
-            ? 'ゲリラボーナスは受取済みです'
-            : 'SPECIAL TICKET -ノア- ×1 を受け取りました！');
+            ? (reward.label || 'ゲリラボーナス') + 'は受取済みです'
+            : 'SPECIAL TICKET -ノア- ×' + Math.max(1, Math.floor(Number(reward.amount || 1))) + ' を受け取りました！');
         }
 
         renderNoticeList();
@@ -9673,7 +9695,7 @@ startTitleBgm();
 
   // EXP設定：ここだけ変えればLvアップ条件を変更できる
   var EXP_PER_LEVEL = 1000;
-  var MAX_LEVEL = 100;
+  var MAX_LEVEL = 150;
 
   // 巡行ノードEXP設定
   var EXP_BY_NODE = { easy: 100, normal: 250, hard: 500, boss: 1000 };
