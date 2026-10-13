@@ -16410,6 +16410,7 @@
         state.player.y += dy / l * c.moveSpeed * dt;
       }
     }
+    applyBarrierKnock(dt, minY, maxY);
     state.player.x = clamp(state.player.x, dynamicMinX, Math.max(dynamicMinX, dynamicMaxX));
     state.player.y = clamp(state.player.y, minY, maxY);
 
@@ -17266,8 +17267,46 @@
     });
   }
 
+  // build1456: 遮断壁に触れたら、ダメージとは別に「光の結界に弾かれる」演出。
+  // 自機を壁の外側へ最大10pxだけ押し返す（0.18秒かけて滑らかに）。
+  // タッチ操作は指の移動量を足していく方式なので、押し返した分は指との差としてそのまま残る（1:1追従は維持）。
+  const BARRIER_KNOCK_DISTANCE = 10;
+  const BARRIER_KNOCK_MS = 180;
+  function findBarrierTouchingPlayer(layout) {
+    if (!layout || !layout.playerRect) return null;
+    return (state.chapter6Barriers || []).find(barrier => {
+      if (!barrier || !barrier.el) return false;
+      const barrierRect = getChapter6BarrierRect(barrier, layout.arenaRect);
+      return !!barrierRect && rectsHit(layout.playerRect, barrierRect, 12, 1);
+    }) || null;
+  }
+  function startBarrierKnock(barrier, now) {
+    if (!state || !state.player || !barrier) return;
+    const dir = Number(state.player.y || 0) >= Number(barrier.y || 0) ? 1 : -1;
+    state.barrierKnock = { dir, remaining: BARRIER_KNOCK_DISTANCE, until: now + BARRIER_KNOCK_MS };
+    // 自機側へ光の粒をはじく（パルス自体は約10fpsに間引かれる）
+    pulseChapter6Barrier(barrier, Number(state.player.x), Number(state.player.y));
+  }
+  function applyBarrierKnock(dt, minY, maxY) {
+    const knock = state && state.barrierKnock;
+    if (!knock || !(knock.remaining > .05)) return;
+    const step = Math.min(knock.remaining, Math.max(.5, knock.remaining * Math.min(1, dt * 22)));
+    knock.remaining -= step;
+    state.player.y += knock.dir * step;
+    if (pointerActive) pointerY = clamp(pointerY + knock.dir * step, minY, maxY);
+  }
+
   function updateEnemyContactCollisions(now, frameLayout = null) {
     if (!state || state.ended || state.finishing || state.koTransition || state.countdown) return;
+    // 弾かれ演出は無敵時間中でも出す（ダメージは下の従来処理のみ）。
+    if ((state.chapter6Barriers || []).length && !(state.barrierKnock && now < state.barrierKnock.until)) {
+      const knockLayout = frameLayout || captureCombatFrameLayout();
+      if (knockLayout) {
+        frameLayout = knockLayout;
+        const touching = findBarrierTouchingPlayer(knockLayout);
+        if (touching) startBarrierKnock(touching, now);
+      }
+    }
     if (now < (state.player.invulnUntil || 0)) return;
 
     // ハヤテの月光中は弾と同様、接触ダメージも無効。
