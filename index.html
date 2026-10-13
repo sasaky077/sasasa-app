@@ -326,9 +326,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=1443-noah-chrome"
+        href="css/style.css?v=1463-friend-chara-detail"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=1443-noah-chrome"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=1463-friend-chara-detail"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -425,7 +425,7 @@
   <link rel="stylesheet" href="css/score_attack_chrome.css?v=696-score-self-badge-corner">
   <link rel="stylesheet" href="css/app_chrome.css?v=693-score-ranking-nav-v2">
   <link rel="stylesheet" href="css/junkou_top.css?v=1357-story-title-six">
-  <link rel="stylesheet" href="css/story_stage_select.css?v=1437-noah-shared-card">
+  <link rel="stylesheet" href="css/story_stage_select.css?v=1461-nonbattle-noreward">
   <link rel="stylesheet" href="css/faceless_stage_select.css?v=1437-noah-shared-card">
   <link rel="stylesheet" href="css/character_list.css?v=1368-translucent-header">
   <link rel="stylesheet" href="css/character_filter.css?v=1373-filter-size-close">
@@ -9499,10 +9499,10 @@ startTitleBgm();
     var favorite = await getFriendFavoriteCharacter(profile);
     var chara = favorite.chara;
     var panelSrc = favorite.panelSrc;
-    var highScore = await getFriendHighScoreSummary(fid);
-    var highScoreLabel = highScore.score
-      ? ('HIGH SCORE ' + formatFriendScore(highScore.score) + ' / ' + getFriendStageLabel(highScore.stageId))
-      : 'HIGH SCORE --';
+    // build1463: フレンド一覧のハイスコア表示は廃止（取得もしない）。
+    // ホーム設定キャラの詳細表示用に、相手の所持個体（レベル・共鳴）を保持しておく。
+    window.__friendFavoriteDetail = window.__friendFavoriteDetail || {};
+    window.__friendFavoriteDetail[fid] = { favorite: favorite, ownerName: name };
 
     var div = document.createElement('div');
     div.className = 'friend-card friend-card-compact';
@@ -9512,7 +9512,7 @@ startTitleBgm();
       : '<div class="friend-card-panel-empty">—</div>';
 
     div.innerHTML =
-      '<span class="friend-card-panel">' + panelHtml + '</span>' +
+      '<span class="friend-card-panel friend-card-panel-tappable" role="button" tabindex="0" aria-label="' + detailEscapeHTML(name) + 'のホームキャラを見る" onclick="event.stopPropagation();openFriendFavoriteCharacterDetail(\'' + detailEscapeHTML(fid) + '\')">' + panelHtml + '</span>' +
       '<span class="friend-card-body">' +
         '<span class="friend-card-topline">' +
           '<strong class="friend-card-name" title="' + detailEscapeHTML(name) + '">' + detailEscapeHTML(limitPlayerDisplayName(name)) + '</strong>' +
@@ -9520,13 +9520,83 @@ startTitleBgm();
         '</span>' +
         '<span class="friend-card-bottomline">' +
           '<span class="friend-card-login">' + detailEscapeHTML(loginText) + '</span>' +
-          '<span class="friend-card-highscore">' + detailEscapeHTML(highScoreLabel) + '</span>' +
         '</span>' +
       '</span>' +
       '<button type="button" class="friend-remove-btn" onclick="event.stopPropagation();confirmRemoveFriend(\'' + detailEscapeHTML(fid) + '\')">解除</button>';
 
     return div;
   }
+
+  // build1463: フレンドのホーム設定キャラを、相手の実際の育成状況（レベル・共鳴）で表示する。
+  // 閲覧専用：強化・衣装変更・ホーム設定・削除は出さない。
+  async function openFriendFavoriteCharacterDetail(fid){
+    var entry = window.__friendFavoriteDetail && window.__friendFavoriteDetail[fid];
+    var favorite = entry && entry.favorite;
+    if(!favorite || !favorite.chara){
+      if(typeof showToast === 'function') showToast('キャラクター情報を取得できませんでした');
+      return;
+    }
+    var chara = favorite.chara;
+    var fav = favorite.favData || {};
+    var data = Object.assign({}, chara, fav, {
+      id: chara.id,
+      name: chara.name,
+      img: chara.img,
+      cutImg: chara.cutImg,
+      panelImg: chara.panelImg,
+      rarity: fav.rarity || chara.rarity,
+      limitBreak: Math.max(0, Number(fav.limit_break != null ? fav.limit_break : (fav.limitBreak || 0))),
+      characterLevel: Math.max(1, Number(fav.character_level != null ? fav.character_level : (fav.characterLevel || 1))),
+      characterExp: Math.max(0, Number(fav.character_exp != null ? fav.character_exp : (fav.characterExp || 0)))
+    });
+
+    showDetail(data, false);
+
+    var modal = document.getElementById('detail-modal');
+    if(!modal) return;
+    modal.classList.add('is-friend-character-detail');
+
+    // 強化ボタン・衣装選択なしで中身を作り直す（相手の個体なので操作は不可）
+    var opts = document.getElementById('detail-opts');
+    if(opts) opts.innerHTML = buildCharacterDetailHTML(data, { showLimitBreakButton:false, showSkinSelector:false });
+
+    // 持ち主の名前を、未使用の detail-rank 欄に表示
+    var owner = document.getElementById('detail-rank');
+    if(owner) owner.textContent = (entry.ownerName ? limitPlayerDisplayName(entry.ownerName) + ' のキャラクター' : 'フレンドのキャラクター');
+
+    var favBtn = modal.querySelector('.btn-set-fav');
+    if(favBtn) favBtn.style.display = 'none';
+    var delBtn = modal.querySelector('.btn-delete-chara');
+    if(delBtn) delBtn.style.display = 'none';
+    var closeBtn = document.getElementById('btn-detail-close');
+    if(closeBtn) closeBtn.style.display = 'block';
+
+    // build1464: 相手が限定衣装を装備していれば、立ち絵もその衣装にする。
+    try{
+      if(window.CharacterSkins && typeof window.CharacterSkins.getPublicHomeImage === 'function'){
+        var skinImg = await window.CharacterSkins.getPublicHomeImage(fid, chara.id, '');
+        var stillOpen = modal.classList.contains('active') && modal.classList.contains('is-friend-character-detail') &&
+          window.currentDetailData && Number(window.currentDetailData.id) === Number(chara.id);
+        if(skinImg && stillOpen){
+          var visual = document.getElementById('detail-chara-visual');
+          var mainImg = visual && visual.querySelector('.detail-main-img');
+          var wrap = visual && visual.querySelector('.detail-visual-wrap');
+          if(mainImg){
+            mainImg.src = skinImg;
+            mainImg.classList.add('is-skin-image');
+          }
+          if(wrap){
+            wrap.setAttribute('onclick', 'openCharaImageViewer(' + JSON.stringify(skinImg).replace(/"/g, "'") + ')');
+          }
+          var owner2 = document.getElementById('detail-rank');
+          if(owner2 && owner2.textContent && owner2.textContent.indexOf('限定衣装') === -1){
+            owner2.textContent = owner2.textContent + '（限定衣装）';
+          }
+        }
+      }
+    }catch(_){}
+  }
+  window.openFriendFavoriteCharacterDetail = openFriendFavoriteCharacterDetail;
 
   function closeRemoveFriendConfirm(){
     var ov = document.getElementById('friend-remove-confirm');
@@ -9615,6 +9685,8 @@ startTitleBgm();
     }
     var profile = check.data[0];
     var name = profile.display_name || targetId;
+    // build1462: 検索結果にもRANKを表示（フレンド一覧と同じ計算：total_scoreから算出）
+    var searchRank = typeof calcRank === 'function' ? calcRank(profile.total_score || 0) : (profile.rank || 1);
     var favorite = await getFriendFavoriteCharacter(profile);
     var searchPanelHtml = favorite.panelSrc
       ? '<img class="friend-search-panel-img" src="' + favorite.panelSrc + '" alt="">'
@@ -9640,6 +9712,7 @@ startTitleBgm();
         '<div class="friend-search-panel">' + searchPanelHtml + '</div>' +
         '<div class="friend-search-main">' +
           '<div class="friend-search-card-name">' + detailEscapeHTML(limitPlayerDisplayName(name)) + '</div>' +
+          '<div class="friend-search-card-rank">RANK <b>' + Number(searchRank || 1) + '</b></div>' +
           '<div class="friend-search-card-id">ID: ' + detailEscapeHTML(targetId) + '</div>' +
         '</div>' +
         '<button class="friend-search-send-btn" '+(btnDisabled?'disabled':'')+' onclick="sendFriendRequest(\'' + targetId + '\')">'+btnLabel+'</button>' +
@@ -16771,6 +16844,7 @@ async function deleteCurrentChara(){
       modal.classList.remove('is-gacha-pickup-preview');
       modal.classList.remove('is-gacha-pool-preview');
       modal.classList.remove('is-shooting-party-detail');
+      modal.classList.remove('is-friend-character-detail');
       modal.classList.remove('is-gacha-result-detail');
       modal.classList.remove('is-gacha-material-result');
       modal.style.removeProperty('z-index');
@@ -18973,7 +19047,7 @@ function fadeOutOpeningBgm(){
 <script src="js/shooting_characters.js?v=1381-hao-wood-shot"></script>
 <script src="js/story_scenario.js?v=1414-ch07-wolf"></script>
 <script src="js/story_novel.js?v=1333-cast-sides"></script>
-<script src="js/stage_select.js?v=1407-story-first-count"></script>
+<script src="js/stage_select.js?v=1461-nonbattle-noreward"></script>
 
 <script>
 (function(){
@@ -19156,7 +19230,7 @@ window.returnToTitleScreen = function(){
 <script src="js/shooting_party_filter.js?v=1432-icon-bounds"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
-<script src="js/skin_system.js?v=1076-home-canvas-normalize"></script>
+<script src="js/skin_system.js?v=1464-friend-skin"></script>
 <script src="js/item_management.js?v=1451-ticket-image"></script>
 
 <script id="zeraphia-service-worker-register-v1">

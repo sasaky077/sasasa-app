@@ -492,7 +492,17 @@
         const isNovelOnly = !!(storyScenario && String(storyScenario.stageType || '').toLowerCase() === 'novel');
         const displayCondition = isNovelOnly ? 'ストーリーを読む' : missionText;
         const gimmickHtml = buildStoryGimmickHtml(stageDef);
-        const rewardHtml = buildStoryRewardPreviewHtml(stageDef, mode);
+        // build1461: バトルではないステージ（物語・パズル・ミニゲーム）は報酬を付与しないため、報酬欄を出さない。
+        const nonBattleKind = getStoryNonBattleKind(storyScenario);
+        const rewardRowHtml = nonBattleKind
+          ? `<div class="zss-card-row zss-card-row-reward zss-card-row-noreward">
+              <span class="zss-card-label">主な報酬</span>
+              <span class="zss-noreward"><span class="zss-kind-tag">${nonBattleKind}</span><small>報酬なし</small></span>
+            </div>`
+          : `<div class="zss-card-row zss-card-row-reward">
+              <span class="zss-card-label">主な報酬</span>
+              <span class="zss-rewards">${buildStoryRewardPreviewHtml(stageDef, mode)}</span>
+            </div>`;
 
         card.innerHTML = `
           <div class="zss-card-no" aria-hidden="true"><span>✧</span><b>${String(stageNo).padStart(2, '0')}</b><span>✧</span></div>
@@ -506,10 +516,7 @@
               <span class="zss-card-label">GIMMICK</span>
               <span class="zss-gimmicks">${gimmickHtml}</span>
             </div>
-            <div class="zss-card-row zss-card-row-reward">
-              <span class="zss-card-label">主な報酬</span>
-              <span class="zss-rewards">${rewardHtml}</span>
-            </div>
+            ${rewardRowHtml}
           </div>
           ${buildStoryRecordHtml(record)}
           ${unlocked ? '<span class="zss-arrow" aria-hidden="true">›</span>' : '<span class="zss-lock" aria-hidden="true">🔒</span>'}
@@ -548,6 +555,15 @@
       }
     } catch (_) {}
     return null;
+  }
+
+  // build1461: バトルではないステージの種類（報酬なし表示用）。バトルなら空文字。
+  function getStoryNonBattleKind(scenario) {
+    const type = String(scenario && scenario.stageType || '').toLowerCase();
+    if (type === 'novel') return 'STORY';
+    if (type === 'puzzle') return 'PUZZLE';
+    if (type === 'minigame') return 'MINI GAME';
+    return '';
   }
 
   function isNovelOnlyStoryStage(stage) {

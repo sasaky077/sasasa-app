@@ -331,6 +331,14 @@
     return skin ? skin.panel : defaultPanel(charId,fallback);
   }
 
+  // build1464: フレンドのキャラ詳細用。相手が装備中の衣装の立ち絵（home）を返す。未装備なら fallback。
+  async function getPublicHomeImage(userId, characterId, fallback){
+    const charId=Number(characterId||0);
+    const skinId=await getPublicEquippedSkinId(userId,charId);
+    const skin=getSkin(charId,skinId);
+    return skin ? skin.home : String(fallback||'');
+  }
+
   function notifySkinAcquired(characterId, skinId){
     const charId=Number(characterId||0);
     const id=String(skinId||'');
@@ -353,6 +361,8 @@
     getHomeImage,
     getPanelImage,
     getPublicPanelImage,
+    getPublicHomeImage,
+    getPublicEquippedSkinId,
     buildSelectorHTML,
     buildFullscreenControlsHTML,
     equip,

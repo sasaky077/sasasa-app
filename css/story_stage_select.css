@@ -776,3 +776,31 @@ html body #stage-select-modal.zss-root {
     min-width:10px !important;
   }
 }
+
+/* build1461: バトルではないステージ（物語・パズル・ミニゲーム）は報酬なし表示 */
+#stage-select-modal.zss-root .zss-card-row-noreward .zss-noreward{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+  min-height:var(--zss-reward-row-h,30px);
+}
+#stage-select-modal.zss-root .zss-card-row-noreward .zss-kind-tag{
+  display:inline-flex;
+  align-items:center;
+  height:18px;
+  padding:0 9px;
+  border:1px solid rgba(179,132,63,.72);
+  border-radius:2px;
+  background:linear-gradient(180deg,#fffaf0,#f3e6c8);
+  color:#7a5428;
+  font:700 10px/1 "Cinzel","Noto Serif JP",serif;
+  letter-spacing:.14em;
+  white-space:nowrap;
+}
+#stage-select-modal.zss-root .zss-card-row-noreward small{
+  font:500 10.5px/1.2 "Noto Serif JP",serif;
+  color:#8a7656;
+  letter-spacing:.06em;
+  white-space:nowrap;
+}
