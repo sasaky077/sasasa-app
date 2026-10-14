@@ -9,6 +9,7 @@
         img:'images/chara_03_b.webp',   // build1465: 限定衣装の立ち絵（キャラ詳細用）
         home:'images/chara_03_b_cut.webp',
         panel:'images/chara_03_b_panel.webp',
+        battle:'images/chara_03_b_battle_back.webp', // build1477: 限定衣装のバトルユニット（背面）
         exchangeCost:10
       }
     },
@@ -19,6 +20,7 @@
         img:'images/chara_09_b.webp',   // build1465: 限定衣装の立ち絵（キャラ詳細用）
         home:'images/chara_09_b_cut.webp',
         panel:'images/chara_09_b_panel.webp',
+        battle:'images/chara_09_b_battle_back.webp', // build1477: 限定衣装のバトルユニット（背面）
         exchangeCost:10
       }
     },
@@ -29,6 +31,7 @@
         img:'images/chara_20_b.webp',   // build1465: 限定衣装の立ち絵（キャラ詳細用）
         home:'images/chara_20_b_cut.webp',
         panel:'images/chara_20_b_panel.webp',
+        battle:'images/chara_20_b_battle_back.webp', // build1477: 限定衣装のバトルユニット（背面）
         exchangeCost:10
       }
     },
@@ -39,6 +42,7 @@
         img:'images/chara_36_b.webp',   // build1465: 限定衣装の立ち絵（キャラ詳細用）
         home:'images/chara_36_b_cut.webp',
         panel:'images/chara_36_b_panel.webp',
+        battle:'images/chara_36_b_battle_back.webp', // build1477: 限定衣装のバトルユニット（背面）
         exchangeCost:10
       }
     }
@@ -303,6 +307,13 @@
     return skin && isOwned(characterId,skinId) ? (skin.img || skin.home) : String(fallback||'');
   }
 
+  // build1477: バトルユニット（背面）画像。装備中かつ所持中の衣装があればその画像、なければ fallback。
+  function getBattleImage(characterId, fallback){
+    const skinId=getEquippedSkinId(characterId);
+    const skin=getSkin(characterId,skinId);
+    return skin && skin.battle && isOwned(characterId,skinId) ? skin.battle : String(fallback||'');
+  }
+
   async function getPublicEquippedSkinId(userId, characterId){
     const uid=String(userId||'').trim().toLowerCase();
     const charId=Number(characterId||0);
@@ -380,6 +391,7 @@
     getHomeImage,
     getPanelImage,
     getPortraitImage,
+    getBattleImage,
     getPublicPanelImage,
     getPublicHomeImage,
     getPublicPortraitImage,

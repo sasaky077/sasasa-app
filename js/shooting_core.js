@@ -3801,6 +3801,32 @@
     applySelectedCharacterToUi();
   };
 
+  // build1477: 限定衣装を装備中なら、バトルユニット（背面）画像も衣装版にする。
+  // 衣装版の画像がまだ無い（読込失敗）場合は通常の画像へ戻し、以後そのURLは使わない。
+  const failedSkinBattleImages = new Set();
+  function getCharacterBattleImage(c) {
+    const base = String((c && c.image) || '');
+    try {
+      const skins = window.CharacterSkins;
+      if (!c || isGachaTrialStage() || !skins || typeof skins.getBattleImage !== 'function') return base;
+      const skinImage = String(skins.getBattleImage(c.id, base) || base);
+      return failedSkinBattleImages.has(skinImage) ? base : skinImage;
+    } catch (_) {
+      return base;
+    }
+  }
+  function setPlayerBattleImage(img, c, src) {
+    if (!img) return;
+    const base = String((c && c.image) || '');
+    const target = String(src || base);
+    img.onerror = target !== base ? function () {
+      failedSkinBattleImages.add(target);
+      img.onerror = null;
+      img.src = base;
+    } : null;
+    img.src = target;
+  }
+
   function applySelectedCharacterToUi() {
     if (isStoryShootingStage()) ensureStoryEriLeader();
     const c = getCurrentCharacter();
@@ -3821,7 +3847,8 @@
       player.style.setProperty('--unit-scale', String(battleBackScale));
     }
     if (img) {
-      img.src = (c.id === CHARACTER_ID.HAYATE && state && performance.now() < (state.hayateMoonlightUntil || 0)) ? (c.moonlightImage || c.image) : c.image;
+      const moonlight = c.id === CHARACTER_ID.HAYATE && state && performance.now() < (state.hayateMoonlightUntil || 0);
+      setPlayerBattleImage(img, c, moonlight ? (c.moonlightImage || c.image) : getCharacterBattleImage(c));
       img.alt = c.name;
     }
     if (core) core.style.setProperty('--core-top', c.coreTop || '38%');
@@ -24085,7 +24112,7 @@
       if (player) player.classList.remove('hayate-moonlight');
       const playerImg = document.getElementById('shooting-player-image');
       if (playerImg && getCurrentCharacter().id === CHARACTER_ID.HAYATE) {
-        playerImg.src = getCurrentCharacter().image;
+        setPlayerBattleImage(playerImg, getCurrentCharacter(), getCharacterBattleImage(getCurrentCharacter()));
       }
       renderHud();
     }, MODE_DURATION);
