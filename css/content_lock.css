@@ -1,0 +1,104 @@
+/* ============================================================
+   ZERAPHIA build1484 — 未開放コンテンツの鍵（画像素材なし・CSSのみ）
+   ・紺の丸メダリオン＋金の縁取り＋金の南京錠（ツル＝::before／本体＝::after）
+   ・鍵穴は本体の背景グラデーションで描く
+   ・対象の中身（アイコン・文字）は彩度と明るさを落として「使えない」ことを示す
+   位置は既存JS（ホーム＝アイコン中心／ボトムナビ＝アイコン中心）が left/top を設定する。
+   ============================================================ */
+html body .content-lock-overlay{
+  --lk:30px;
+  position:absolute !important;
+  display:block !important;
+  width:var(--lk) !important;
+  height:var(--lk) !important;
+  max-width:none !important;
+  max-height:none !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:1.5px solid #d6b36a !important;
+  border-radius:50% !important;
+  background:
+    radial-gradient(circle at 50% 30%,rgba(255,255,255,.16),rgba(255,255,255,0) 55%),
+    radial-gradient(circle at 50% 50%,#33405e 0%,#1d253a 70%,#151b2b 100%) !important;
+  box-shadow:
+    0 0 0 1px rgba(40,30,12,.35),
+    inset 0 0 0 1.5px rgba(255,240,200,.18),
+    0 2px 6px rgba(20,14,6,.35),
+    0 0 10px rgba(214,179,106,.35) !important;
+  filter:none !important;
+  opacity:1 !important;
+  transform:translate(-50%,-50%) !important;
+  pointer-events:none !important;
+  user-select:none !important;
+  -webkit-user-select:none !important;
+  box-sizing:border-box !important;
+  z-index:30 !important;
+}
+/* ツル（U字） */
+html body .content-lock-overlay::before{
+  content:"" !important;
+  position:absolute !important;
+  left:50% !important;
+  top:17% !important;
+  width:36% !important;
+  height:36% !important;
+  transform:translateX(-50%) !important;
+  box-sizing:border-box !important;
+  border:calc(var(--lk) * .085) solid #e7c77f !important;
+  border-bottom:0 !important;
+  border-radius:999px 999px 0 0 !important;
+  filter:drop-shadow(0 0 1px rgba(0,0,0,.35)) !important;
+}
+/* 本体＋鍵穴 */
+html body .content-lock-overlay::after{
+  content:"" !important;
+  position:absolute !important;
+  left:50% !important;
+  top:43% !important;
+  width:52% !important;
+  height:38% !important;
+  transform:translateX(-50%) !important;
+  border-radius:calc(var(--lk) * .07) !important;
+  background:
+    radial-gradient(circle at 50% 40%,#1d253a 0 calc(var(--lk) * .045),transparent calc(var(--lk) * .05)),
+    linear-gradient(#1d253a,#1d253a) 50% 72% / calc(var(--lk) * .05) 34% no-repeat,
+    linear-gradient(180deg,#f6dc96 0%,#d7b064 55%,#b0843a 100%) !important;
+  box-shadow:inset 0 1px 0 rgba(255,250,230,.75),inset 0 -1px 0 rgba(90,60,15,.45),0 1px 2px rgba(0,0,0,.35) !important;
+}
+
+/* ---------- ホーム：右側メニュー ---------- */
+html body #screen-main > button.home-type-entry.hm2 > .content-lock-overlay,
+html body #screen-main .home-type-entry > .content-lock-overlay{
+  --lk:32px;
+  width:var(--lk) !important;
+  height:var(--lk) !important;
+  max-width:none !important;
+  max-height:none !important;
+  transform:translate(-50%,-50%) !important;
+  z-index:30 !important;
+}
+/* 鍵が付いている項目はアイコン・文字を沈ませる（タップ時の案内は従来どおり） */
+html body #screen-main > button.home-type-entry.hm2.locked-visual > .hm2-body{
+  filter:grayscale(.85) brightness(.92) !important;
+  opacity:.55 !important;
+}
+html body #screen-main > button.home-type-entry.hm2.locked-visual .hm2-chev{opacity:0 !important;}
+
+/* ---------- ボトムナビ ---------- */
+html body #bottom-nav-shared .bottom-nav-item > .content-lock-overlay{
+  --lk:26px;
+  transform:translate(-50%,-50%) !important;
+  z-index:6 !important;
+}
+html body #bottom-nav-shared .bottom-nav-item.locked-visual > img{
+  opacity:.45 !important;
+  filter:grayscale(.8) !important;
+}
+html body #bottom-nav-shared .bottom-nav-item.locked-visual > .bottom-nav-label{
+  opacity:.6 !important;
+}
+
+@media (max-width:380px),(max-height:700px){
+  html body #screen-main > button.home-type-entry.hm2 > .content-lock-overlay,
+  html body #screen-main .home-type-entry > .content-lock-overlay{ --lk:28px; }
+}

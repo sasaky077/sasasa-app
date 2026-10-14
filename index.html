@@ -10887,7 +10887,7 @@ startTitleBgm();
 
     var centerX = iconRect.left - targetRect.left + iconRect.width / 2;
     var centerY = iconRect.top - targetRect.top + iconRect.height / 2;
-    var size = Math.max(32, Math.min(40, Math.min(iconRect.width, iconRect.height) * 0.90));
+    var size = Math.max(24, Math.min(28, Math.min(iconRect.width, iconRect.height) * 0.72));
 
     overlay.style.left = centerX + 'px';
     overlay.style.top = centerY + 'px';
@@ -10917,6 +10917,24 @@ startTitleBgm();
     });
   }
 
+  // build1484: ホームメニューの鍵はアイコンの中心に重ねる（アイコン位置は画面サイズで変わるため実寸から算出）。
+  function positionHomeMenuLock(target, overlay){
+    if(!target || !overlay) return;
+    var icon = target.querySelector('.hm2-icon');
+    if(!icon) return;
+    var targetRect = target.getBoundingClientRect();
+    var iconRect = icon.getBoundingClientRect();
+    if(!targetRect.width || !iconRect.width || !iconRect.height) return;
+    // アイコン画像は左右寄せ表示なので、見た目の中心（高さ基準の正方形）に合わせる。
+    var side = Math.min(iconRect.width, iconRect.height);
+    var cx = target.classList.contains('hm2--right')
+      ? (iconRect.right - targetRect.left - side / 2)
+      : (iconRect.left - targetRect.left + side / 2);
+    var cy = iconRect.top - targetRect.top + iconRect.height / 2;
+    overlay.style.setProperty('left', cx + 'px', 'important');
+    overlay.style.setProperty('top', cy + 'px', 'important');
+  }
+
   function setHomeMenuLock(id, locked, message){
     var target = document.getElementById(id);
     if(!target) return;
@@ -10929,7 +10947,13 @@ startTitleBgm();
       return;
     }
 
-    ensureLockOverlay(target);
+    overlay = ensureLockOverlay(target);
+    positionHomeMenuLock(target, overlay);
+    requestAnimationFrame(function(){
+      if(target.classList.contains('locked-visual') && overlay.isConnected){
+        positionHomeMenuLock(target, overlay);
+      }
+    });
   }
 
   function syncLockedContentVisuals(){
@@ -19395,6 +19419,7 @@ function fadeOutOpeningBgm(){
 <link rel="stylesheet" href="css/battle_32_ui.css?v=593">
   <link rel="stylesheet" href="css/score_attack_redesign.css?v=1447-score-attack-mock">
   <link rel="stylesheet" href="css/home_menu_redesign.css?v=1449-tower-blur">
+  <link rel="stylesheet" href="css/content_lock.css?v=1484-css-lock">
   <link rel="stylesheet" href="css/notice_redesign.css?v=1453-notice-mock">
   <link rel="stylesheet" href="css/item_redesign.css?v=1475-exchange-mock">
   <link rel="stylesheet" href="css/friend_redesign.css?v=1476-friend-mock">
