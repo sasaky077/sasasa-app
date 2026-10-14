@@ -221,7 +221,7 @@ function getLimitBreakRecipe(target, preferredSoulVesselId){
 
   return {
     nextLb: nextLb,
-    // エリも通常の光属性キャラと同レート。重複キャラ1体の代わりに「原初の翼環」を1個使用する。
+    // ストーリー加入キャラ（エリを含む）は、重複キャラの代わりに「記憶の欠片」を1個使用する。
     sameChara: isStoryLimitBreakCharacter(target) ? 0 : 1,
     specialMaterialId: isStoryLimitBreakCharacter(target) ? 'memory_fragment' : '',
     specialMaterialCount: isStoryLimitBreakCharacter(target) ? 1 : 0,

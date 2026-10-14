@@ -11,6 +11,9 @@
     'soul_vessel_light'
   ];
 
+  // 廃止済みの素材は所持データを消さず、画面からのみ除外する。
+  const RETIRED_EVOLUTION_ITEMS = new Set(['soul_vessel_logos', 'eri_origin_wing']);
+
   const LEGACY_LABELS = {
     soul_vessel_mystis:'魂の器(MYSTIS)',
     soul_vessel_chaos:'魂の器(CHAOS)'
@@ -23,7 +26,6 @@
     soul_vessel_wood:{name:'魂の器(木)',img:'images/item_soul_vessel_wood.webp',desc:'木属性の魂を受け止める神具。'},
     soul_vessel_dark:{name:'魂の器(闇)',img:'images/item_soul_vessel_dark.webp',desc:'闇属性の魂を受け止める神具。'},
     soul_vessel_light:{name:'魂の器(光)',img:'images/item_soul_vessel_light.webp',desc:'光属性の魂を受け止める神具。'},
-    eri_origin_wing:{name:'原初の翼',img:'images/item_wing.webp',desc:'エリ専用の進化素材。ストーリー進行で入手できるよう実装予定。'},
     seihai:{name:'聖なる盃',img:'images/item_seihai.webp',desc:'神聖な力を湛えた進化用素材。'},
     overseer_blk_core:{name:'オーバーシア亜種の心核',img:'images/item_overseer_blk_core.webp',desc:'特殊強化に使用する異質な心核。'},
     soul_vessel_mystis:{name:'魂の器(MYSTIS)',img:'',desc:'旧式の進化素材。'},
@@ -332,11 +334,12 @@
     Object.keys(state.items).forEach(id=>{
       if(id.startsWith('level_exp_')) return;
       if(id==='flower_r' || id==='flower_sr') return;
-      if(id==='soul_vessel_logos') return; // 廃止アイテム: UIには出さない
+      if(RETIRED_EVOLUTION_ITEMS.has(id)) return; // 廃止アイテム: UIには出さない
       if(!seen.has(id)){seen.add(id);ids.push(id);}
     });
 
     Object.keys(master).forEach(id=>{
+      if(RETIRED_EVOLUTION_ITEMS.has(id)) return;
       if((state.items[id]||0)>0 && !seen.has(id)){seen.add(id);ids.push(id);}
     });
     return ids;
@@ -447,10 +450,8 @@
     list.innerHTML=evoIds.map(id=>{
       const meta=evoMaster[id]||{name:id,img:'',desc:'進化素材。'};
       const qty=Math.max(0,Number(state.items[id]||0));
-      const price=id==='eri_origin_wing'
-        ? 0
-        : Math.max(0,Number(state.sellPrices[id]||0));
-      const sellable=id!=='eri_origin_wing' && price>0 && qty>0;
+      const price=Math.max(0,Number(state.sellPrices[id]||0));
+      const sellable=price>0 && qty>0;
       return ''+
         '<article class="item-row'+(qty<=0?' is-zero':'')+'">'+
           renderIcon(meta,'evolution')+
@@ -463,9 +464,7 @@
           '<div class="item-row-actions">'+
             '<button class="item-sell-btn" type="button" data-sell-item="'+escapeHtml(id)+'" '+(sellable?'':'disabled')+'>売却</button>'+
             '<div class="item-row-price">'+
-              (id==='eri_origin_wing'
-                ? '売却不可'
-                : (price>0?'<img src="images/icon_coin.webp" alt=""> '+fmt(price)+' / 個':'売却対象外'))+
+              (price>0?'<img src="images/icon_coin.webp" alt=""> '+fmt(price)+' / 個':'売却対象外')+
             '</div>'+
           '</div>'+
         '</article>';
@@ -510,7 +509,7 @@
       id,
       meta,
       owned:Math.max(0,Math.floor(Number(state.items[id]||0))),
-      price:id==='eri_origin_wing'
+      price:RETIRED_EVOLUTION_ITEMS.has(id)
         ? 0
         : Math.max(0,Math.floor(Number(state.sellPrices[id]||0)))
     };

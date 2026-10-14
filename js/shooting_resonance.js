@@ -15,14 +15,6 @@
       img: 'images/item_wing.webp',
       desc: 'ストーリーで仲間になるキャラクター共通の限界突破素材。'
     }),
-    eri_origin_wing: Object.freeze({
-      id: 'eri_origin_wing',
-      name: '原初の翼',
-      shortName: '原初の翼',
-      img: 'images/item_wing.webp',
-      exclusiveCharaId: 1,
-      desc: 'エリの魂と世界の残響を結び直す、特別な限界突破素材。'
-    }),
     kyoumei_stone: Object.freeze({
       id: 'kyoumei_stone',
       name: '共鳴石',

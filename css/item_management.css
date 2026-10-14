@@ -837,7 +837,7 @@ html body:not(.ui-immersive) #screen-item.screen.active{
 }
 
 /* =========================================================
-   ITEM v114 — Origin Wing / obsolete LOGOS cleanup
+   ITEM — 記憶の欠片アイコン（旧画像アセットを共用）
    ========================================================= */
 
 #screen-item .item-row img[src$="item_wing.webp"]{
@@ -846,23 +846,6 @@ html body:not(.ui-immersive) #screen-item.screen.active{
   object-fit:contain !important;
   filter:drop-shadow(0 5px 10px rgba(107,82,35,.14)) !important;
 }
-
-/* =========================================================
-   ITEM v115 — Origin Wing is unsellable
-   ========================================================= */
-
-#screen-item .item-row:has(img[src$="item_wing.webp"]) .item-sell-btn{
-  opacity:.46 !important;
-  border-color:rgba(150,140,123,.18) !important;
-  color:#9c9488 !important;
-  background:rgba(255,255,255,.17) !important;
-}
-
-#screen-item .item-row:has(img[src$="item_wing.webp"]) .item-row-price{
-  color:#8f8577 !important;
-  font-weight:600 !important;
-}
-
 
 /* =========================================================
    ITEM build685 — OTHER typography parity
