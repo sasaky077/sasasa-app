@@ -640,8 +640,10 @@
         typeof window.CharacterSkins.isOwned==='function' &&
         window.CharacterSkins.isOwned(item.characterId,skinId));
       const canExchange=!item.disabled && !skinOwned && owned>=item.cost && !state.exchanging;
+      // build1489: 限定衣装は画像タップで衣装の立ち絵をプレビューできる。
+      const previewAttr=item.characterId ? ' data-skin-preview="'+Number(item.characterId)+'" role="button" tabindex="0" aria-label="限定衣装をプレビュー"' : '';
       const icon=item.img
-        ? '<div class="item-exchange-reward-icon"><img src="'+escapeHtml(item.img)+'" alt="" onerror="this.style.display=\'none\'"></div>'
+        ? '<div class="item-exchange-reward-icon'+(item.characterId?' is-previewable':'')+'"'+previewAttr+'><img src="'+escapeHtml(item.img)+'" alt="" onerror="this.style.display=\'none\'"></div>'
         : '<div class="item-exchange-reward-icon is-placeholder"><span>?</span></div>';
 
       let displayName=item.name;
@@ -757,6 +759,46 @@
     }
   }
 
+  // build1489: 限定衣装プレビュー（chara_XX_b_cut.webp）。画像が無ければ衣装パネル画像を表示。
+  function openSkinPreview(characterId){
+    const id=Number(characterId||0);
+    if(!id) return;
+    const pad=String(id).padStart(2,'0');
+    const skin=window.CharacterSkins && typeof window.CharacterSkins.getSkin==='function'
+      ? window.CharacterSkins.getSkin(id,'limited_01') : null;
+    const chain=['images/chara_'+pad+'_b_cut.webp', skin&&skin.home, skin&&skin.panel, 'images/chara_'+pad+'_b_panel.webp']
+      .filter((v,i,a)=>v && a.indexOf(v)===i);
+    const c=(Array.isArray(window.CHARACTERS)?window.CHARACTERS:[]).find(x=>x&&Number(x.id)===id);
+    const name=(c&&c.name)||'';
+
+    closeSkinPreview();
+    const ov=document.createElement('div');
+    ov.id='item-skin-preview';
+    ov.setAttribute('role','dialog');
+    ov.setAttribute('aria-modal','true');
+    ov.setAttribute('aria-label',(name?name+' ':'')+'限定衣装');
+    ov.innerHTML=
+      '<div class="item-skin-preview-frame">'+
+        '<img class="item-skin-preview-img" alt="">'+
+        '<div class="item-skin-preview-caption"><small>LIMITED OUTFIT</small><strong>'+escapeHtml(name)+'</strong><span>限定衣装</span></div>'+
+      '</div>'+
+      '<button type="button" class="item-skin-preview-close" aria-label="閉じる">×</button>'+
+      '<p class="item-skin-preview-hint">タップで閉じる</p>';
+    const img=ov.querySelector('.item-skin-preview-img');
+    img.onerror=function(){ const next=chain.shift(); if(next) this.src=next; else this.onerror=null; };
+    img.src=chain.shift();
+    ov.addEventListener('click',closeSkinPreview);
+    document.addEventListener('keydown',onSkinPreviewKey);
+    document.body.appendChild(ov);
+    ov.querySelector('.item-skin-preview-close').focus();
+  }
+  function onSkinPreviewKey(e){ if(e.key==='Escape') closeSkinPreview(); }
+  function closeSkinPreview(){
+    const old=document.getElementById('item-skin-preview');
+    if(old) old.remove();
+    document.removeEventListener('keydown',onSkinPreviewKey);
+  }
+
   function bind(){
     document.querySelectorAll('#screen-item .item-category-tab').forEach(btn=>{
       btn.addEventListener('click',()=>{
@@ -786,8 +828,15 @@
     const exchangeList=document.getElementById('spirit-flower-exchange-list');
     if(exchangeList){
       exchangeList.addEventListener('click',e=>{
+        const preview=e.target.closest('[data-skin-preview]');
+        if(preview){ openSkinPreview(Number(preview.dataset.skinPreview)); return; }
         const btn=e.target.closest('[data-flower-exchange-id]');
         if(btn && !btn.disabled) exchangeFlowerR(btn.dataset.flowerExchangeId);
+      });
+      exchangeList.addEventListener('keydown',e=>{
+        if(e.key!=='Enter' && e.key!==' ') return;
+        const preview=e.target.closest('[data-skin-preview]');
+        if(preview){ e.preventDefault(); openSkinPreview(Number(preview.dataset.skinPreview)); }
       });
     }
 
