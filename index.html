@@ -4299,7 +4299,9 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 <div class="modal-overlay" id="limitbreak-modal">
   <div class="modal">
     <div class="modal-inner">
+      <div class="lb-modal-kicker" aria-hidden="true">LIMIT BREAK</div>
       <h2>限界突破</h2>
+      <div id="lb-head-status" class="lb-head-status"></div>
       <p class="lb-modal-desc">強化には、強化用素材が必要です。<br>素材にしたアイテムは消去されます。</p>
       <div id="lb-material-list" class="lb-material-list"></div>
       <button class="btn-cancel-txt" onclick="closeLimitBreakModal()" style="margin-top:12px">キャンセル</button>
@@ -4343,6 +4345,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
       <h2 data-levelup-name>キャラクター</h2>
       <div class="character-levelup-level" data-levelup-level>Lv.1 / 30</div>
       <div class="character-levelup-exp" data-levelup-exp>EXP 0 / 100</div>
+      <div class="character-levelup-expbar" data-levelup-expbar aria-hidden="true"><b></b><i></i></div>
     </div>
     <div class="character-levelup-materials" data-levelup-materials></div>
     <button class="character-levelup-max-btn" type="button" data-levelup-max onclick="CharacterLeveling.selectToLimit()">上限まで</button>
@@ -5970,8 +5973,8 @@ window.NOTICE_ITEMS = [
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
 <script src="js/shooting_resonance.js?v=1321-gacha-preview-master"></script>
 <script src="js/resonance_system.js?v=1335-atomic-gacha-secure"></script>
-<script src="js/resonance_ui.js?v=1335-cloud-verify-all"></script>
-<script src="js/character_levelup.js?v=693-score-ranking-nav-v2"></script>
+<script src="js/resonance_ui.js?v=1479-growth-rich"></script>
+<script src="js/character_levelup.js?v=1479-growth-rich"></script>
 <script>
   /* ===== ピンチ/ダブルタップズーム抑制（特にiOS Safari対策） ===== */
   (function preventZoom() {
@@ -19283,6 +19286,7 @@ function fadeOutOpeningBgm(){
   <link rel="stylesheet" href="css/item_redesign.css?v=1475-exchange-mock">
   <link rel="stylesheet" href="css/friend_redesign.css?v=1476-friend-mock">
   <link rel="stylesheet" href="css/chara_detail_redesign.css?v=1478-chara-detail">
+  <link rel="stylesheet" href="css/growth_modal_redesign.css?v=1479-growth-rich">
 <script src="js/remnant_blessings.js?v=1416-names"></script>
 <!-- ローグライト（新規追加） -->
 <script src="js/shinju.js?v=1416-boss-name"></script>

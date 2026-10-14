@@ -114,7 +114,7 @@ function buildLimitBreakRecipeHTML(target){
       '<div class="lb-recipe-name">' + escapeHtml(name) +
         (!ok ? '<span class="lb-recipe-shortage-label">あと ' + lack + ' 個必要</span>' : '') +
       '</div>' +
-      '<div class="lb-recipe-count">' + ownedNum + ' / ' + needNum + '</div>' +
+      '<div class="lb-recipe-count"><b>' + ownedNum + '</b><small>/ ' + needNum + '</small></div>' +
     '</div>';
   }
 
@@ -419,6 +419,28 @@ async function openLimitBreakModal(target){
   selectedLimitBreakTargetKey = targetKey;
 
   var status = getLimitBreakMaterialStatus(target, selectedLimitBreakSoulVesselId);
+  // build1479: 対象キャラと「共鳴Lv 現在 → 次」をヘッダーに表示
+  var headEl = document.getElementById('lb-head-status');
+  if(headEl){
+    var curLb = Math.max(0, Number(target.limitBreak || 0));
+    var nextLb = Math.min(curLb + 1, MAX_LIMIT_BREAK);
+    var pips = '';
+    for(var pi = 1; pi <= MAX_LIMIT_BREAK; pi++){
+      pips += '<i class="' + (pi <= curLb ? 'on' : (pi === nextLb && curLb < MAX_LIMIT_BREAK ? 'next' : '')) + '"></i>';
+    }
+    var headImg = target.panelImg || ('images/chara_' + String(Number(target.id || 0)).padStart(2, '0') + '_panel.webp');
+    headEl.innerHTML =
+      '<span class="lb-head-face"><img src="' + headImg + '" alt="" onerror="this.style.visibility=\'hidden\'"></span>' +
+      '<span class="lb-head-body">' +
+        '<strong>' + escapeHtml(target.name || '') + '</strong>' +
+        '<span class="lb-head-pips" aria-label="共鳴Lv ' + curLb + '">' + pips + '</span>' +
+      '</span>' +
+      '<span class="lb-head-level">' +
+        (curLb >= MAX_LIMIT_BREAK
+          ? '<b class="is-max">MAX</b>'
+          : '<small>共鳴Lv</small><b>' + curLb + '</b><em aria-hidden="true">→</em><b class="is-next">' + nextLb + '</b>') +
+      '</span>';
+  }
   var recipeHtml = buildLimitBreakRecipeHTML(target);
   listEl.innerHTML = recipeHtml;
 

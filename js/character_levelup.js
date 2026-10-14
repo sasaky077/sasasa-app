@@ -344,11 +344,11 @@
         '<div class="chara-level-material-icon tone-' + mat.tone + '"><img src="' + mat.img + '" alt=""></div>' +
         '<div class="chara-level-material-info">' +
           '<strong>' + mat.name + '</strong>' +
-          '<span>EXP +' + mat.exp.toLocaleString() + '　所持 ' + owned.toLocaleString() + '</span>' +
+          '<span class="chara-level-material-meta"><em>EXP +' + mat.exp.toLocaleString() + '</em><i>所持 <b>' + owned.toLocaleString() + '</b></i></span>' +
         '</div>' +
         '<div class="chara-level-material-stepper">' +
           '<button type="button" onclick="CharacterLeveling.stepMaterial(\'' + mat.id + '\',-1)" ' + (count<=0?'disabled':'') + '>−</button>' +
-          '<span>' + count + '</span>' +
+          '<span class="' + (count > 0 ? 'is-picked' : '') + '">' + count + '</span>' +
           '<button type="button" onclick="CharacterLeveling.stepMaterial(\'' + mat.id + '\',1)" ' + (count>=owned?'disabled':'') + '>＋</button>' +
         '</div>' +
       '</div>';
@@ -377,11 +377,26 @@
     if(title) title.textContent = target.name || 'キャラクター';
     if(level) level.textContent = 'Lv.' + st.level + ' / ' + st.cap + (st.level >= st.cap ? '　MAX' : '');
     if(exp) exp.textContent = st.level >= st.cap ? 'EXP　MAX' : ('EXP　' + st.exp.toLocaleString() + ' / ' + currentNeed.toLocaleString());
+    // build1479: EXPバー（現在値＋今回選択分のプレビュー）
+    const expbar = modal.querySelector('[data-levelup-expbar]');
+    if(expbar){
+      const isMax = st.level >= st.cap;
+      const nowPct = isMax ? 100 : Math.max(0, Math.min(100, currentNeed > 0 ? st.exp / currentNeed * 100 : 0));
+      const gainPct = isMax ? 0 : (result.level > st.level ? 100 - nowPct : Math.max(0, Math.min(100 - nowPct, currentNeed > 0 ? addExp / currentNeed * 100 : 0)));
+      const bar = expbar.querySelector('b');
+      const gain = expbar.querySelector('i');
+      if(bar) bar.style.width = nowPct.toFixed(1) + '%';
+      if(gain){ gain.style.left = nowPct.toFixed(1) + '%'; gain.style.width = gainPct.toFixed(1) + '%'; }
+      expbar.classList.toggle('is-max', isMax);
+    }
     if(materials) materials.innerHTML = MATERIALS.map(materialRow).join('');
-    if(targetLevel) targetLevel.innerHTML = '<span>強化後</span><strong>Lv.' + st.level + ' → Lv.' + result.level + '</strong>' +
+    const levelGain = result.level - st.level;
+    modal.classList.toggle('is-level-gain', levelGain > 0);
+    if(targetLevel) targetLevel.innerHTML = '<span>強化後</span><strong>Lv.' + st.level + ' <em aria-hidden="true">→</em> <ins>Lv.' + result.level + '</ins>' +
+      (levelGain > 0 ? '<sup>+' + levelGain + '</sup>' : '') + '</strong>' +
       (result.wastedExp > 0 ? '<small>上限超過 EXP ' + result.wastedExp.toLocaleString() + ' は消失</small>' : '');
-    if(cost) cost.innerHTML = '<span>獲得EXP <b>+' + addExp.toLocaleString() + '</b></span>' +
-      '<span>必要コイン <b>' + coin.toLocaleString() + '</b> / ' + getCoin().toLocaleString() + '</span>';
+    if(cost) cost.innerHTML = '<span class="lv-cost-exp">獲得EXP <b>+' + addExp.toLocaleString() + '</b></span>' +
+      '<span class="lv-cost-coin' + (enoughCoin ? '' : ' is-short') + '"><img src="images/icon_coin.webp" alt="" onerror="this.style.display=\'none\'">必要 <b>' + coin.toLocaleString() + '</b><small>/ ' + getCoin().toLocaleString() + '</small></span>';
     if(button){
       button.disabled = !canExecute;
       button.textContent = busy ? '強化中…' : (st.level >= st.cap ? 'MAX' : '強化する');
