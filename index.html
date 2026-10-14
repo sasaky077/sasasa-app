@@ -3738,7 +3738,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 <div id="screen-item" class="screen app-page app-page--standard item-screen">
   <header class="app-page-header">
     <button type="button" class="app-page-back bonus-back-button" onclick="showMainTab('main')" aria-label="戻る">戻る</button>
-    <div class="app-page-heading"><h1 class="app-page-title">アイテム</h1></div>
+    <div class="app-page-heading"><h1 class="app-page-title">アイテム</h1><span class="item-title-en" aria-hidden="true">ITEM</span></div>
     <div class="app-page-action"></div>
   </header>
 
@@ -3746,20 +3746,20 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
     <section class="item-page-intro">
       <div>
         <small>INVENTORY</small>
-        <h2>所有アイテム</h2>
+        <h2>所持アイテム</h2>
         <p>育成素材の所持数確認、進化素材の売却、交換素材の交換ができます。</p>
       </div>
     </section>
 
     <nav class="item-category-tabs" aria-label="アイテムカテゴリ">
       <button type="button" class="item-category-tab is-active" data-item-tab="evolution">
-        <span>進化素材</span>
+        <i class="item-tab-icon"><svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="itabg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9b56a"/><stop offset=".55" stop-color="#a77a34"/><stop offset="1" stop-color="#7d5a26"/></linearGradient></defs><path d="M26 4C15 5 8 12 7.5 21.5L5 27l1.6.8 2.5-5C18.5 22 25.5 15 26 4Z" fill="url(#itabg1)"/><path d="M8.5 24.5C12 17 17 11.5 23 7" stroke="#fff6df" stroke-width="1" fill="none" opacity=".75"/><path d="M12 18.5l-3-1.6M14.5 15.5l-2.6-2.3M17.2 12.6l-1.9-2.6M13.8 20l3.2-.5M16.6 16.8l3.5-.4M19.4 13.6l3.3-.8" stroke="#fff6df" stroke-width=".8" opacity=".7"/></svg></i><span>進化素材</span>
       </button>
       <button type="button" class="item-category-tab" data-item-tab="level">
-        <span>強化素材</span>
+        <i class="item-tab-icon"><svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="itabg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9b56a"/><stop offset=".55" stop-color="#a77a34"/><stop offset="1" stop-color="#7d5a26"/></linearGradient></defs><path d="M15 3l4.5 7-1.2 18H12L10.6 10Z" fill="url(#itabg2)"/><path d="M8 12l3 4.5-.8 11.5H6.5L4.6 16.5Z" fill="url(#itabg2)" opacity=".85"/><path d="M23.5 10l3.6 5.5-1.6 12.5h-4.4l-.6-13Z" fill="url(#itabg2)" opacity=".9"/><path d="M15 3l.6 25M8 12l.7 16M23.5 10l-.6 18" stroke="#fff6df" stroke-width=".8" opacity=".7"/><path d="M4 28.5h24" stroke="#a77a34" stroke-width="1.2"/></svg></i><span>強化素材</span>
       </button>
       <button type="button" class="item-category-tab" data-item-tab="other">
-        <span>その他</span>
+        <i class="item-tab-icon"><svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="itabg3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9b56a"/><stop offset=".55" stop-color="#a77a34"/><stop offset="1" stop-color="#7d5a26"/></linearGradient></defs><path d="M4 13c0-5 3.5-8 12-8s12 3 12 8v1H4Z" fill="url(#itabg3)"/><rect x="4" y="14" width="24" height="13" rx="1" fill="url(#itabg3)"/><path d="M4 14h24M4 19h24M9 6.8V27M23 6.8V27" stroke="#4d3412" stroke-width="1.1" opacity=".75"/><rect x="13.6" y="16" width="4.8" height="6" rx=".8" fill="#fff1c9" stroke="#4d3412" stroke-width=".9"/><circle cx="16" cy="18.6" r=".9" fill="#4d3412"/></svg></i><span>その他</span>
       </button>
     </nav>
 
@@ -3769,7 +3769,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
           <small id="item-panel-kicker">EVOLUTION MATERIAL</small>
           <strong id="item-panel-title">進化素材</strong>
         </div>
-        <button type="button" class="item-refresh-btn" id="item-refresh-btn" aria-label="アイテム情報を更新">更新</button>
+        <button type="button" class="item-refresh-btn" id="item-refresh-btn" aria-label="アイテム情報を更新"><svg class="item-refresh-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 9.5A8 8 0 0 0 5.2 7.6M4.5 14.5a8 8 0 0 0 14.3 1.9" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/><path d="M20.4 3.8v6.1h-6.1M3.6 20.2v-6.1h6.1" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg><span>更新</span></button>
       </div>
       <div id="item-management-list" class="item-management-list" aria-live="polite">
         <div class="item-management-loading">読み込み中...</div>
@@ -19259,6 +19259,7 @@ function fadeOutOpeningBgm(){
   <link rel="stylesheet" href="css/score_attack_redesign.css?v=1447-score-attack-mock">
   <link rel="stylesheet" href="css/home_menu_redesign.css?v=1449-tower-blur">
   <link rel="stylesheet" href="css/notice_redesign.css?v=1453-notice-mock">
+  <link rel="stylesheet" href="css/item_redesign.css?v=1474-item-mock">
 <script src="js/remnant_blessings.js?v=1416-names"></script>
 <!-- ローグライト（新規追加） -->
 <script src="js/shinju.js?v=1416-boss-name"></script>
@@ -19336,7 +19337,7 @@ window.returnToTitleScreen = function(){
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
 <script src="js/skin_system.js?v=1466-own-skin-portrait"></script>
-<script src="js/item_management.js?v=1451-ticket-image"></script>
+<script src="js/item_management.js?v=1474-item-mock"></script>
 
 <script id="zeraphia-service-worker-register-v1">
 (function(){

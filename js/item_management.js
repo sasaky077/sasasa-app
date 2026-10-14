@@ -395,7 +395,7 @@
               '<div class="item-row-kicker">'+escapeHtml(meta.kicker||'OTHER ITEM')+'</div>'+
               '<div class="item-row-name">'+escapeHtml(meta.name)+'</div>'+
               '<div class="item-row-desc">'+escapeHtml(meta.desc||'')+'</div>'+
-              '<div class="item-row-count item-row-count-other"><span>OWNED</span><strong>'+fmt(qty)+'</strong></div>'+
+              '<div class="item-row-count item-row-count-other"><span>OWNED</span><strong>'+(isFlowerSR&&qty<=0?'—':fmt(qty))+'</strong></div>'+
             '</div>'+
             actionHtml+
           '</article>';
