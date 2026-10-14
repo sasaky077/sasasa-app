@@ -493,3 +493,9 @@ html body #box-grid.primoa-detail-page .box-carousel-detail::after{content:none 
 }
 /* 拡大ヒントはSRバッジ（右下）と重ならないよう左下へ */
 html body #box-grid.box-carousel.primoa-detail-page .box-carousel-zoom-hint{left:12px !important;transform:none !important;}
+
+/* build1481: 理論値の注記 */
+html body #box-grid.primoa-detail-page .box-carousel-detail .detail-shooting-note,
+#detail-modal .detail-shooting-note{
+  margin:6px 2px 0;color:#8a7a64;font:500 9.5px/1.55 "Noto Serif JP",serif;
+}

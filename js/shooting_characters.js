@@ -2913,32 +2913,118 @@
   function formatUltSeconds(value) {
     return String(Number((Number(value) / 1000).toFixed(2)));
   }
+  // build1482: ULT説明の統一テンプレート。
+  // 「同じ効果は同じ書き方」にし、キャラごとの違いは数値（時間・威力・個数）だけ。
+  // 用語：敵弾を全消去／敵全体／スタン（行動停止）／吸い寄せて拘束／n秒間／ATK×n／
+  //       アイテムをn個出現。拾うと〜／通常ショット。制限事項は末尾に「※」で1行。
+  // 属性はULT欄の属性アイコンで示すため、本文には書かない（属性を変える効果のみ例外）。
+  // 戦闘処理・数値は変更しない（数値は各キャラのパラメータ／戦闘側の既定値から生成）。
   function getCanonicalUltDescription(c) {
-    const damage = rate => 'ATK×' + formatUltNumber(rate);
+    const num = (v, d) => { const n = Number(v); return Number.isFinite(n) ? n : d; };
+    const fmtNum = v => { const n = Math.round(num(v, 0) * 100) / 100; return n.toFixed(Number.isInteger(n * 10) ? 1 : 2); };
+    const atk = (v, d) => 'ATK×' + fmtNum(num(v, d));
+    const sec = (ms, d) => String(Number((num(ms, d) / 1000).toFixed(2))) + '秒';
+    const pct = (rate, d) => Math.round(num(rate, d) * 100) + '%';
+    const mul = (v, d) => String(Number(num(v, d).toFixed(2))) + '倍';
+    const CLEAR = '敵弾を全消去し、';
+    const note = text => '※' + text;
+    const join = parts => parts.filter(Boolean).join('');
+
     switch (c.ultType) {
+      // --- 弾消し＋全体スタン＋全体ダメージ（基本型） ---
       case 'balance_flash':
-        return '発動時に画面内の敵弾をすべて消去し、敵を約1.4秒間停止。約0.84秒後に敵全体へ' + damage(c.ultDamageAtkMultiplier ?? 2.8) + 'のダメージを与える。';
-      case 'arno_thousand_slash':
-        return '発動時に盤面の敵弾を全消去して時間停止。最も近い敵の目前へ接近し、' + formatUltSeconds(c.arnoSlashDurationMs ?? 4000) + '秒間、タップするたびに' + damage(c.arnoSlashDamageAtkRate ?? 0.35) + 'の斬撃を放つ。終了時は発動前の位置へ戻って戦闘を再開する。';
-      case 'wolf_atk_field':
-        return '発動時に画面内の敵弾をすべて消去。フィールド中央へ円形のATK強化領域を' + formatUltSeconds(c.ultFieldDurationMs ?? 10000) + '秒間展開し、領域内の操作キャラのATKを' + formatUltNumber(c.ultFieldAtkMultiplier ?? 1.5) + '倍にする。';
-      case 'jig_scramble_ray':
-        return '発動時に画面内の敵弾をすべて消去。自身を起点に' + String(c.jigUltBeamCount ?? 6) + '本のレーザーを射出。' + formatUltSeconds(c.jigUltDurationMs ?? 5000) + '秒間、画面端で反射しながら敵を貫通し、命中時に' + damage(c.jigUltDamageAtkRate ?? 0.12) + 'のダメージを与える。';
-      case 'testchan_black_ship':
-        return '正面へ極太レーザーを' + formatUltSeconds(c.ultBeamDurationMs ?? 5000) + '秒間連続照射する。' + formatUltSeconds(c.ultBeamTickMs ?? 250) + '秒ごとに' + damage(c.ultBeamTickAtkMultiplier ?? 0.35) + 'のダメージを与える。敵弾消去・スタン・無敵は発生しない。';
-      case 'shiina_light_ring':
-        return '自身を中心に円環を' + formatUltSeconds(c.lightRingDurationMs ?? 7000) + '秒間展開する。円環内に入った敵弾は移動速度が' + String(Math.round(100 * (c.lightRingBulletSpeedMultiplier ?? 0.2))) + '%に低下し、外へ出ると元の速度へ戻る。';
+      case 'prototype_generic':
+        return CLEAR + '敵全体を1.4秒間スタン。0.84秒後、敵全体に' + atk(c.ultDamageAtkMultiplier, 3.0) + 'のダメージ。';
+
+      // --- 全体ダメージ ---
       case 'ryune_absolute_lethe':
-        return '盤面の敵全員の属性バリアを解除し、敵全体へ' + damage(c.ultDamageAtkMultiplier ?? 2.0) + 'のダメージを与える。';
+        return '敵全体の属性バリアを解除し、敵全体に' + atk(c.ultDamageAtkMultiplier, 2.0) + 'のダメージ。';
+      case 'shion_delayed_curse':
+        return '敵全体に呪印を刻み、' + sec(c.ultDelayMs, 1200) + '後に' + atk(c.ultDamageAtkMultiplier, 2.8) + 'のダメージ。その後' + sec(c.ultDebuffDurationMs, 6000) + '間、受けるダメージを' + pct(1 - num(c.ultEnemyDamageMultiplier, 0.7), 0.3) + '軽減。' + note('即死攻撃は軽減しない');
+      case 'sui_clock_burst':
+        return sec(c.clockDelayMs, 4000) + '後に発動。操作キャラのHPを全回復し、さらに敵弾を全消去して敵全体に' + atk(c.ultDamageAtkMultiplier, 3.0) + 'のダメージ。';
+      case 'meloria_stun':
+        return '敵全体を' + sec(c.ultStunMs, 5000) + '間スタン。さらに各敵に' + pct(c.meloriaPercentChance, 0.2) + 'の確率で最大HPの' + pct(c.meloriaMaxHpDamageRate, 0.5) + 'のダメージ。';
+
+      // --- 単体・範囲攻撃 ---
       case 'veronica_brass_punch':
-        return '真正面の超狭範囲へ一撃を放つ。命中時は' + damage(c.ultDamageAtkMultiplier ?? 7) + 'のダメージを与える。敵を追尾せず、攻撃範囲外ならMISSとなる。';
-      case 'eltena_black_hole': {
-        const base = '敵陣へブラックホールを射出し、' + formatUltSeconds(c.blackHoleDurationMs ?? 8000) + '秒間展開。通常敵・大型敵・ボスを中心へ吸引・拘束する。';
-        const continuousRate = Number(c.blackHoleDamageAtkMultiplier || 0);
-        return base + (continuousRate > 0
-          ? '展開中に合計' + damage(continuousRate) + 'の継続ダメージを与える。'
-          : 'ULT自体のダメージはない。');
+        return '真正面のごく狭い範囲に一撃を放ち、命中した敵に' + atk(c.ultDamageAtkMultiplier, 7) + 'のダメージ。' + note('追尾しない。範囲外ならMISS');
+      case 'arno_thousand_slash':
+        return CLEAR + '時間を止めて最も近い敵の目前へ移動。' + sec(c.arnoSlashDurationMs, 4000) + '間、タップするたびに' + atk(c.arnoSlashDamageAtkRate, 0.35) + 'の斬撃。終了後は元の位置に戻る。';
+      case 'precision_beam':
+        return CLEAR + '前方に黒い手を伸ばして射線上の敵を7秒間拘束。拘束中に合計' + atk(c.ultDamageAtkMultiplier, 3.5) + 'のダメージ。';
+      case 'jig_scramble_ray':
+        return CLEAR + '反射レーザーを' + String(num(c.jigUltBeamCount, 6)) + '本射出。' + sec(c.jigUltDurationMs, 5000) + '間、画面端で反射しながら敵を貫通し、命中ごとに' + atk(c.jigUltDamageAtkRate, 0.12) + 'のダメージ。';
+      case 'testchan_black_ship': {
+        const dur = num(c.ultBeamDurationMs, 5000), tick = Math.max(1, num(c.ultBeamTickMs, 250)), rate = num(c.ultBeamTickAtkMultiplier, 0.35);
+        return '正面に極太レーザーを' + sec(dur) + '間照射し、' + sec(tick) + 'ごとに' + atk(rate) + 'のダメージ（最大' + atk(rate * Math.floor(dur / tick)) + '）。';
       }
+      case 'forbidden_shock':
+        return sec(c.ninaUltDurationMs, 8000) + '間に最大' + String(num(c.ninaUltHitCount, 16)) + '回の落雷。1発ごとに' + atk(c.ninaUltHitAtkMultiplier, 2.8) + 'のダメージを与え、命中した敵を' + sec(c.ninaUltParalyzeMs, 3000) + '間スタン。';
+      case 'noah_time_homing':
+        return CLEAR + '敵全体の動きを止める。ランダムな敵に' + String(num(c.noahUltHitCount, 16)) + '回の落雷（1発' + atk(c.noahUltHitAtkMultiplier, 0.35) + 'のダメージ）。終了後、落雷を受けた敵を' + sec(c.noahUltParalyzeMs, 1500) + '間スタン。';
+      case 'hao_fivefold_trigger': {
+        const m = Array.isArray(c.haoTriggerMultipliers) && c.haoTriggerMultipliers.length ? c.haoTriggerMultipliers : [1, 1.8, 3, 4, 5];
+        return CLEAR + '前方に紋様を設置。敵が触れると敵全体に落雷のダメージ。威力は' + sec(c.haoTriggerUpgradeMs, 2000) + 'ごとに成長（ATK×' + m.map(v => fmtNum(v)).join('→') + '）。' + note('設置後' + sec(c.haoTriggerSafetyMs, 500) + 'は反応しない');
+      }
+      case 'painter_rainbow_world':
+      case 'painter_element_spread':
+        return '6属性の弾を同時に発射。弾は敵を貫通し、命中ごとに' + atk(c.paintSpreadDamageAtkMultiplier, 1.75) + 'のダメージを与え、敵の属性をその弾の属性に変える。';
+
+      // --- 持続ダメージ・フィールド ---
+      case 'ignis_fire_wheel': {
+        const tick = Math.max(1, num(c.burnTickMs, 1000)), dur = num(c.burnDurationMs, 5000), rate = num(c.burnDamageAtkRate, 0.3);
+        return '火炎車を' + sec(c.fireWheelDurationMs, 3500) + '間展開。触れた敵を' + sec(dur) + '間燃焼させ、' + sec(tick) + 'ごとに' + atk(rate) + 'のダメージ（合計' + atk(rate * Math.floor(dur / tick)) + '）。';
+      }
+      case 'gresha_burn_field':
+        return '敵陣に燃焼エリアを' + sec(c.burnFieldDurationMs, 6000) + '間展開。エリア内の敵に' + sec(c.burnFieldTickMs, 1000) + 'ごとに' + atk(c.burnFieldAtkMultiplier, 1.5) + 'のダメージ。';
+      case 'eltena_black_hole': {
+        const total = num(c.blackHoleDamageAtkMultiplier, 0);
+        return '敵陣にブラックホールを' + sec(c.blackHoleDurationMs, 8000) + '間展開し、敵全体（ボスを含む）を吸い寄せて拘束。' +
+          (total > 0 ? '効果中に合計' + atk(total) + 'のダメージ。' : note('ULT自体のダメージなし'));
+      }
+      case 'kureha_fire_black_hole':
+        return '敵陣にブラックホールを' + sec(c.blackHoleDurationMs, 5000) + '間展開し、敵を吸い寄せる。効果中に合計' + atk(c.blackHoleDamageAtkMultiplier, 3.0) + 'のダメージ。' + note('ボスは吸い寄せない。効果中も通常ショット可');
+      case 'gojo_purple':
+        return '大鎌を正面に投げ、最初に当たった敵の位置で' + sec(c.gojoPurpleDurationMs, 7000) + '間停止。周囲の敵を吸い寄せて拘束（移動・攻撃も停止）。' + note('敵弾は消去しない。正面に敵がいなければMISS');
+
+      // --- 行動妨害・防御 ---
+      case 'nem_stun':
+        return '敵全体を' + sec(c.ultStunMs, 5000) + '間スタン。' + note('ULT自体のダメージなし');
+      case 'suzu_bullet_silence':
+        return CLEAR + sec(c.suzuBulletSilenceMs, 3500) + '間、敵の射撃を封じる。' + note('敵の移動は止まらない');
+      case 'shiina_light_ring':
+        return '自身の周りに円環を' + sec(c.lightRingDurationMs, 7000) + '間展開。円環内の敵弾を' + pct(1 - num(c.lightRingBulletSpeedMultiplier, 0.2), 0.8) + '減速。';
+      case 'toyfel_double_black_hole':
+        return '画面の左右端にブラックホールを2つ、' + sec(c.toyfelBlackHoleDurationMs, 7000) + '間展開。近くの敵弾を吸い込んで消す。';
+      case 'rose_fortress':
+        return '前方に画面幅の防御壁を' + sec(c.fortressDurationMs, 5000) + '間設置。通常の敵弾を防ぐたび操作キャラの最大HPの' + pct(c.fortressBulletHealMaxHpRate, 0.03) + 'を回復し、触れた敵に' + sec(c.fortressContactIntervalMs, 250) + 'ごとに' + atk(c.fortressContactDamageAtkRate, 1.0) + 'のダメージ。' + note('WARNING・HEAVY・レーザーは防げない。展開中は通常ショット停止');
+      case 'aina_stealth':
+        return sec(c.ainaStealthDurationMs, 10000) + '間、敵に狙われなくなる（発動時の位置を狙わせる）。効果中は通常ショットの威力が' + mul(c.ainaStealthShotMultiplier, 1.3) + '。' + note('敵弾は消えず、無敵にもならない');
+
+      // --- 強化 ---
+      case 'speed_storm':
+        return CLEAR + '3.5秒間無敵。効果中は通常ショットの連射速度が' + mul(1 / Math.max(0.01, num(c.moonlightFireRateMultiplier, 0.6))) + '、威力が' + mul(c.moonlightPowerMultiplier, 2.47) + '。';
+      case 'wolf_atk_field':
+        return CLEAR + 'フィールド中央にATK強化エリアを' + sec(c.ultFieldDurationMs, 10000) + '間展開。エリア内の操作キャラのATKが' + mul(c.ultFieldAtkMultiplier, 1.5) + '。';
+      case 'nina_output_max':
+        return sec(c.ninaOutputMaxDurationMs, 7000) + '間、通常ショットの威力が' + mul(c.ninaOutputMaxPowerMultiplier, 1.5) + '、射程が' + mul(c.ninaOutputMaxRangeMultiplier, 2) + '。' + note('連鎖数と発射速度は変わらない');
+
+      // --- 回復・アイテム ---
+      case 'ange_healing_hearts':
+        return CLEAR + sec(c.ultInvincibleDurationMs, 3500) + '間無敵。回復ハートを' + String(num(c.ultHeartCount, 3)) + '個出現。拾うと最大HPの' + pct(c.ultHeartHealPercent, 0.3) + 'を回復。';
+      case 'mimosa_item_spawn':
+        return '赤・青・緑のアイテムを1個ずつ出現。拾うと、赤：' + sec(c.itemAtkDurationMs, 10000) + '間ATKが' + mul(c.itemAtkMultiplier, 1.3) + '／青：' + sec(c.itemInvincibleDurationMs, 3000) + '間無敵／緑：最大HPの' + pct(c.itemHealPercent, 0.3) + 'を回復。' + note('効果は拾ったキャラのみ');
+      case 'airena_atk_item':
+        return 'アイテムを1個出現。拾うと' + sec(c.itemAtkDurationMs, 5000) + '間ATKが' + mul(c.itemAtkMultiplier, 1.5) + '。' + note('効果は拾ったキャラのみ');
+
+      // --- 召喚 ---
+      case 'mito_summon_double':
+        return '自身のHP・ATK・通常ショットを引き継ぐ召喚獣を' + sec(c.summonDurationMs, 8000) + '間召喚。召喚獣は自動で移動・射撃し、最後まで耐えると残りHP分だけ本体を回復。' + note('召喚獣の攻撃ではULTゲージが増えない');
+      case 'clarine_decoy':
+        return 'HP' + String(num(c.decoyHp, 520)) + 'のデコイを' + String(num(c.decoyCount, 2)) + '体、' + sec(c.decoyDurationMs, 6000) + '間召喚。デコイは' + sec(c.decoyFireIntervalMs, 210) + 'ごとに全方位へ' + String(num(c.decoyShotsPerBurst, 4)) + '発撃つ（1発' + fmtNum(c.decoyBulletDamage) + 'ダメージ）。敵弾で壊されると周囲に' + atk(c.decoyExplosionDamageMultiplier, 2.2) + 'のダメージ。';
+      case 'conjure_homing_battery':
+        return '左右に追従砲台を' + sec(c.conjureUltDurationMs, 5000) + '間召喚。各砲台が' + sec(c.conjureUltShotIntervalMs, 200) + 'ごとにホーミング弾を撃つ（各' + String(num(c.conjureUltShotsPerSide, 25)) + '発・1発' + atk(c.conjureUltDamageAtkMultiplier, 0.3) + 'のダメージ）。' + note('ULT中も通常の砲台は使える');
       default: return null;
     }
   }

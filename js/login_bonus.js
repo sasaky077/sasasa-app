@@ -244,6 +244,7 @@
     } catch(_) {}
   }
 
+  // build1483: 0時以降の初回ログインとホームの［ボーナス］は同じ画面へ。
   async function openLoginBonusIfNeeded(){
     if(window._profileLoadState !== 'ready') return false;
     var state = await fetchState();
@@ -251,20 +252,20 @@
     var today = getJstDateString();
     updateBonusHomeNotice(state.last_login_bonus_date !== today);
     if(state.last_login_bonus_date === today) return false;
-    var lastDay = Math.max(0, Math.min(7, Number(state.login_bonus_day || 0)));
-    showModal((lastDay % 7) + 1, getClaimedThrough(state));
+    await openBonusScreen();
     return true;
   }
 
+  // 受け取り処理もボーナス画面内で完結させる（旧モーダルを表示しない）。
+  // 報酬の重複付与防止・日付確定は従来どおりSupabase RPCが担当。
   async function claimLoginBonus(){
     if(isClaiming) return;
     isClaiming = true;
-    var root = ensureModal();
-    var btn = root.querySelector('#login-bonus-claim-btn');
-    var status = root.querySelector('#login-bonus-status');
-    btn.disabled = true;
-    btn.textContent = '受け取り中...';
-    status.textContent = '';
+    var btn = document.querySelector('#screen-bonus .bonus-card-action');
+    if(btn){
+      btn.disabled = true;
+      btn.textContent = '受け取り中...';
+    }
 
     try {
       var sb = window.zsSupabase;
@@ -279,13 +280,9 @@
       var day = Math.max(1, Math.min(7, Number(row.claim_day || 1)));
       var reward = getReward(day);
       if(!row.claimed){
-        status.textContent = 'ログインボーナスは受取済みです。';
-        btn.textContent = '受取済み';
-        renderDays(day, day);
-        applyTodayReward(day);
         updateBonusHomeNotice(false);
-        if(document.getElementById('screen-bonus') && document.getElementById('screen-bonus').classList.contains('active')) renderBonusPage();
-        setTimeout(closeModal, 1200);
+        await renderBonusPage();
+        if(typeof window.showToast === 'function') window.showToast('ログインボーナスは受取済みです。');
         return;
       }
 
@@ -307,33 +304,22 @@
 
       if(typeof window.updateMainUI === 'function') window.updateMainUI();
       updateBonusHomeNotice(false);
-      if(document.getElementById('screen-bonus') && document.getElementById('screen-bonus').classList.contains('active')) renderBonusPage();
+      await renderBonusPage();
       if(typeof window.refreshSpecialTicketUI === 'function') window.refreshSpecialTicketUI();
-
-      renderDays(day, day);
-      applyTodayReward(day, rewardQty);
-      status.textContent = reward.name + ' ×' + rewardQty + ' を獲得しました';
-      btn.textContent = '受取済み';
-      root.querySelector('.login-bonus-sheet').classList.add('is-received');
       if(typeof window.showToast === 'function') window.showToast('ログインボーナス：' + reward.name + ' ×' + rewardQty);
-
-      setTimeout(function(){
-        var sheet = root.querySelector('.login-bonus-sheet');
-        if(sheet) sheet.classList.remove('is-received');
-        closeModal();
-      }, 1700);
     } catch(error) {
       console.error('[LoginBonus] claim failed:', error);
-      status.textContent = '受け取りに失敗しました。通信状況またはSupabase設定を確認してください。';
-      btn.disabled = false;
-      btn.textContent = 'もう一度試す';
+      if(btn){
+        btn.disabled = false;
+        btn.textContent = 'もう一度試す';
+      }
+      if(typeof window.showToast === 'function') window.showToast('受け取りに失敗しました。通信状況をご確認ください。');
     } finally {
       isClaiming = false;
     }
   }
 
   async function renderBonusPage(){
-    ensureModal();
     var list = document.getElementById('bonus-page-list');
     if(!list) return;
     list.innerHTML = '<div class="bonus-page-loading">読み込み中...</div>';
@@ -430,12 +416,8 @@
   }
 
   async function openLoginBonusFromBonusPage(){
-    var state = await fetchState();
-    if(!state) return;
-    var today = getJstDateString();
-    if(state.last_login_bonus_date === today){ await renderBonusPage(); return; }
-    var lastDay = Math.max(0, Math.min(7, Number(state.login_bonus_day || 0)));
-    showModal((lastDay % 7) + 1, getClaimedThrough(state));
+    // ［受け取る］でも旧ポップアップへ遷移せず、この画面で確定する。
+    await claimLoginBonus();
   }
 
   async function getSpecialTicketBalance(){

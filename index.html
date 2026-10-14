@@ -16529,6 +16529,80 @@ function buildShootingStatusRowHTML(label, valueHtml){
   '</div>';
 }
 
+// build1481: キャラ詳細の「ULT獲得/1Hit」「ULT回収理論値」「理論DPS」。
+// ULT獲得量は shooting_core.js の getUltGainAmountPerHit と同じ式（戦闘処理は未変更）。
+//   gain = max(ultGainPerHit × 0.5, 「全弾命中で20秒以内に満タン」になる下限)
+//   CHARGEはMAXチャージ時間、LASER/LIGHTNING/貫通/STRIKE/CLUSTER/BOMBは1サイクル1Hit、他は全弾Hitで計算。
+// 理論DPS：単体の敵へ通常ショットが全弾命中し続けた場合。ULT・爆風・分裂弾・バフは含まない。
+function computeDetailShotStats(c){
+  var out = { gainPerHit:0, theorySeconds:NaN, theoryHits:NaN, dps:NaN };
+  if(!c) return out;
+  var shotType = String(c.shotType || '');
+  var burstNeed = Math.max(1, Number(c.burstNeed || 30));
+  var shotCount = Math.max(1, Math.floor(Number(c.shotCount || 1)));
+  var conjurerId = (window.ShootingCharacters && window.ShootingCharacters.CHARACTER_ID && window.ShootingCharacters.CHARACTER_ID.CONJURER) || 40;
+
+  // --- ULT獲得量／回収時間 ---
+  var cycleMs = Math.max(0, Number(c.fireRate || 0));
+  var hitsPerCycle = shotCount;
+  if(shotType === 'charge'){
+    cycleMs = Math.max(1, Number(c.chargeMaxMs || 1000));
+    hitsPerCycle = 1;
+  } else if(['laser','lightning','piercing','shotgun','precision','strike','cluster','bomb'].indexOf(shotType) >= 0){
+    hitsPerCycle = 1;
+  }
+  if(Number(c.id) === Number(conjurerId) && shotType === 'conjure'){
+    out.gainPerHit = 0.40;
+    out.theoryHits = Math.ceil(burstNeed / 0.40);
+  } else {
+    var base = Number.isFinite(Number(c.ultGainPerHit)) ? Number(c.ultGainPerHit) : 1;
+    var gain = base * 0.5;
+    if(cycleMs > 0 && hitsPerCycle > 0){
+      gain = Math.max(gain, burstNeed * cycleMs / (20 * 1000 * hitsPerCycle));
+    }
+    out.gainPerHit = Math.max(0, gain);
+    if(out.gainPerHit > 0){
+      out.theoryHits = Math.ceil(burstNeed / out.gainPerHit - 1e-9);
+      if(cycleMs > 0) out.theorySeconds = (burstNeed / (out.gainPerHit * hitsPerCycle)) * cycleMs / 1000;
+    }
+  }
+
+  // TRAPは設置→爆発でHitするため、射撃間隔からの理論値は出さない。
+  if(shotType === 'trap'){ out.theorySeconds = NaN; out.theoryHits = out.gainPerHit > 0 ? Math.ceil(burstNeed / out.gainPerHit - 1e-9) : NaN; }
+
+  // --- 理論DPS（単体・全弾命中） ---
+  var atk = Math.max(0, Number(c.atk || 0));
+  var dps = NaN;
+  if(atk > 0){
+    if(shotType === 'charge'){
+      dps = atk * Number(c.shotPowerRate || 1.24) / (Math.max(1, Number(c.chargeMaxMs || 1000)) / 1000);
+    } else if(shotType === 'laser'){
+      var fr = Number(c.fireRate || 0);
+      if(fr > 0) dps = atk * Number(c.laserDamageAtkRate || 0.105) / (fr / 1000);
+    } else if(shotType !== 'conjure' && shotType !== 'trap'){
+      var fr2 = Number(c.fireRate || 0);
+      if(fr2 > 0){
+        var per = atk * Number(c.shotPowerRate || 0.095);
+        var count = (['strike','lightning','bomb','cluster'].indexOf(shotType) >= 0) ? 1 : shotCount;
+        var chargedEvery = Math.max(0, Math.floor(Number(c.chargedEvery || 0)));
+        var avgMul = (chargedEvery > 0 && ['piercing','shotgun','precision'].indexOf(shotType) >= 0)
+          ? ((chargedEvery - 1) + Number(c.chargedPowerMultiplier || 1)) / chargedEvery
+          : 1;
+        dps = per * count * avgMul / (fr2 / 1000);
+      }
+    }
+    // SUBショット（MAINと独立した射撃間隔）
+    var sub = c.subShot;
+    if(Number.isFinite(dps) && sub && typeof sub === 'object'){
+      var subFr = Math.max(1, Number(sub.fireRate || 300));
+      var subCount = Math.max(1, Math.floor(Number(sub.count || 1)));
+      dps += atk * Number(sub.shotPowerRate != null ? sub.shotPowerRate : (c.shotPowerRate || 0.095)) * subCount / (subFr / 1000);
+    }
+  }
+  out.dps = dps;
+  return out;
+}
+
 function buildCharacterDetailHTML(data, options){
   options = options || {};
   var c = resolveDetailShootingProfile(data);
@@ -16579,20 +16653,19 @@ function buildCharacterDetailHTML(data, options){
   var fireInterval = formatShootingSeconds(c.fireRate || 0, Number(c.fireRate || 0) < 100 ? 3 : 2);
 
   // build822: 実戦ロジックと同じ補正後のULT獲得量と、理論満タン時間を表示。
-  var ultNeed = Math.max(0, Number(c.burstNeed || 0));
-  var shootingApi = window.ShootingCharacters || null;
-  var ultGainPerHit = shootingApi && typeof shootingApi.getShootingUltGainPerHitEffective === 'function'
-    ? Math.max(0, Number(shootingApi.getShootingUltGainPerHitEffective(c) || 0))
-    : Math.max(0, Number(c.ultGainPerHit || 0) * 0.5);
+  var ultNeed = Math.max(0, Number(c.burstNeed || 30));
+  var shotStats = computeDetailShotStats(c);
+  var ultGainPerHit = shotStats.gainPerHit;
   var ultGainPercent = ultNeed > 0 ? (ultGainPerHit / ultNeed * 100) : 0;
   var ultGainPercentText = ultNeed > 0
     ? (ultGainPercent.toFixed(2).replace(/0+$/,'').replace(/\.$/,'') + '%')
     : '-';
-  var ultTheorySeconds = shootingApi && typeof shootingApi.getShootingUltTheoreticalSeconds === 'function'
-    ? Number(shootingApi.getShootingUltTheoreticalSeconds(c))
-    : NaN;
+  var ultTheorySeconds = shotStats.theorySeconds;
   var ultTheoryText = Number.isFinite(ultTheorySeconds) && ultTheorySeconds > 0
-    ? (ultTheorySeconds.toFixed(1) + '秒')
+    ? (ultTheorySeconds.toFixed(1) + '秒' + (Number.isFinite(shotStats.theoryHits) ? '（' + shotStats.theoryHits + 'Hit）' : ''))
+    : (Number.isFinite(shotStats.theoryHits) ? (shotStats.theoryHits + 'Hit') : '-');
+  var dpsText = Number.isFinite(shotStats.dps) && shotStats.dps > 0
+    ? Math.round(shotStats.dps).toLocaleString('ja-JP')
     : '-';
 
   var html =
@@ -16622,10 +16695,12 @@ function buildCharacterDetailHTML(data, options){
           buildShootingStatusRow('射撃間隔', fireInterval) +
           buildShootingStatusRow(c.shotType === 'charge' ? 'ULT獲得/MAX' : 'ULT獲得/1Hit', ultGainPercentText) +
           buildShootingStatusRow('ULT回収理論値', ultTheoryText) +
+          buildShootingStatusRow('理論DPS', dpsText) +
         '</div>' +
       '</div>' +
     '</div>' +
 
+    '<div class="detail-shooting-note">※理論値は単体の敵へ通常ショットが全弾命中し続けた場合（ULT・爆風・分裂弾・バフは含まない）。</div>' +
     '<div class="detail-shooting-section">' +
       '<div class="detail-section-title">ULT</div>' +
       '<div class="detail-shooting-card detail-shooting-ult">' +
@@ -18060,11 +18135,9 @@ async function resumeHomeAfterTestplayGuide(){
       return;
     }
 
-    // 実際にモーダルが開いた場合だけ、閉じたタイミングでHOME状態を再確定。
-    window.addEventListener('zeraphia-login-bonus-closed', function onLoginBonusClosed(){
-      window.removeEventListener('zeraphia-login-bonus-closed', onLoginBonusClosed);
-      finalizeHomeAfterOpeningSequence();
-    }, { once:true });
+    // build1483: 初回ログインもホームの［ボーナス］と同じ画面へ遷移する。
+    // 旧ポップアップのcloseイベント待ちは不要（［戻る］は既存のshowMainTabが処理）。
+    finalizeHomeAfterOpeningSequence();
   }catch(error){
     console.error('[LoginBonus] open after testplay failed:', error);
     finalizeHomeAfterOpeningSequence();
@@ -19209,11 +19282,11 @@ function fadeOutOpeningBgm(){
   - 画像はService Workerで全面管理しない
 -->
 <!-- 7日周期ログインボーナス -->
-<script src="js/login_bonus.js?v=1399-bonus-next-fix"></script>
+<script src="js/login_bonus.js?v=1483-bonus-unified"></script>
 
 
 
-<script src="js/shooting_characters.js?v=1381-hao-wood-shot"></script>
+<script src="js/shooting_characters.js?v=1482-ult-desc"></script>
 <script src="js/story_scenario.js?v=1414-ch07-wolf"></script>
 <script src="js/story_novel.js?v=1333-cast-sides"></script>
 <script src="js/stage_select.js?v=1468-srank-bonus"></script>
@@ -19325,7 +19398,7 @@ function fadeOutOpeningBgm(){
   <link rel="stylesheet" href="css/notice_redesign.css?v=1453-notice-mock">
   <link rel="stylesheet" href="css/item_redesign.css?v=1475-exchange-mock">
   <link rel="stylesheet" href="css/friend_redesign.css?v=1476-friend-mock">
-  <link rel="stylesheet" href="css/chara_detail_redesign.css?v=1478-chara-detail">
+  <link rel="stylesheet" href="css/chara_detail_redesign.css?v=1481-dps">
   <link rel="stylesheet" href="css/growth_modal_redesign.css?v=1479-growth-rich">
 <script src="js/remnant_blessings.js?v=1416-names"></script>
 <!-- ローグライト（新規追加） -->
