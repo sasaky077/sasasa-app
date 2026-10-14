@@ -47,6 +47,8 @@
     BULLET_HELL_TEST: 'shooting_bullet_hell_test',
     NOAH: 'shooting_noah',
     OVERSEER_AMBUSH: 'shooting_overseer_ambush',
+    // build1485: 残響の塔15F BOSS
+    TOWER15_BOSS: 'shooting_tower15_boss',
   });
 
   // ============================================================
@@ -445,6 +447,24 @@
     // スコアアタック用テスト敵とは分離した専用BOSS。
     // 弾幕ロジックは既存 bullet_hell_test_v1 を流用する。
     // ------------------------------------------------------------
+    // build1485: 残響の塔15F BOSS。PHASE2構成・WARNING常駐・暗転。
+    [SHOOTING_ENEMY_ID.TOWER15_BOSS]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.TOWER15_BOSS,
+      kind: 'boss',
+      implemented: true,
+      name: '？？？',
+      displayName: 'ECHO TOWER 15F　？？？',
+      image: 'images/tower15_boss_battle.webp',
+      element: 'dark',
+      gaugeHps: Object.freeze([11000, 13000]),
+      gauges: 2,
+      bulletSpeed: 180,
+      fireRate: 140,
+      bulletDamage: 240,
+      behavior: 'tower15_echo_v1',
+      uiScale: 1.1,
+    }),
+
     [SHOOTING_ENEMY_ID.NOAH]: Object.freeze({
       id: SHOOTING_ENEMY_ID.NOAH,
       kind: 'boss',

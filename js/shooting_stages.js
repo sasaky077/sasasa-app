@@ -204,10 +204,21 @@
     if (floor === 15) return Object.freeze({
       id:'shooting_tower_15',chapter:0,stageNo:15,eventId:'resonance_tower',eventTitle:'残響の塔',
       difficultyLabel:'15F / 最深部',name:'第十五層',type:'boss',background:'images/battle_bg_01.webp',
-      enemyIds:Object.freeze([SHOOTING_ENEMY_ID.NOAH]),towerNoahPattern:true,
-      bossGaugeHp:3500,bossGauges:3,bossElement:'light',enemyElement:'light',bossVisualScale:1.0,
-      // Tower challenge has no special-ticket cost: ticket RPC is special-proc only.
-      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.BOSS_CLEAR,text:'理想郷・ノアを撃破'}),playable:true
+      // build1485: 15Fは専用BOSS（1体のみ）。PHASE2構成。
+      //   WARNING（即死弾）が常に3つ浮遊し壁で反射し続ける。
+      //   定期的に「暗転」：弾幕と自キャラ以外が見えなくなる。
+      enemyIds:Object.freeze([SHOOTING_ENEMY_ID.TOWER15_BOSS]),
+      bossElement:'dark',enemyElement:'dark',bossVisualScale:1.0,
+      introImage:'images/tower15_boss_battle_start.webp',
+      tower15Echo:Object.freeze({
+        warningCount:3, warningSpeed:118, warningRespawnMs:2200,
+        blackout:Object.freeze({
+          firstAtMs:9000,
+          1:Object.freeze({everyMs:16000, durationMs:4000}),
+          2:Object.freeze({everyMs:11000, durationMs:5200})
+        })
+      }),
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.BOSS_CLEAR,text:'最深部の主を撃破'}),playable:true
     });
     if (floor === 10) return Object.freeze({
       id:'shooting_tower_10', chapter:0, stageNo:10,

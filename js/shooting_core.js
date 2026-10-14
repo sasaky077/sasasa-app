@@ -5140,372 +5140,245 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
-    ctx.imageSmoothingEnabled = false;
+    ctx.imageSmoothingEnabled = true;
 
     const bullets = (state && state.enemyBullets) || [];
+    if (!bullets.length) return;
 
-    // build943: ノアは専用の高速描画ルートを使う。
-    // 汎用rendererは全ステージ種別を毎フレーム走査するため、ノアでは大きな無駄になる。
-    // ここでは noah / danger だけを一度分類し、必要なレイヤーだけ描いて即returnする。
-    if (isNoahPatternStage()) {
-      const noahByElement = {
-        neutral: [], fire: [], aqua: [], wood: [], light: [], dark: []
-      };
-      const dangerBullets = [];
-      for (const p of bullets) {
-        if (!p || !p.canvasRendered) continue;
-        if (p.canvasKind === 'danger') {
-          dangerBullets.push(p);
-          continue;
-        }
-        if (p.canvasKind !== 'noah' || p.canvasCurtain) continue;
-        const key = getEnemyProjectileElement(p);
-        (noahByElement[key] || noahByElement.neutral).push(p);
-      }
-
-      const TAU = Math.PI * 2;
-      const drawNoahLayer = (role, scale) => {
-        for (const key of ['neutral','fire','aqua','wood','light','dark']) {
-          const list = noahByElement[key];
-          if (!list.length) continue;
-          const palette = ENEMY_PROJECTILE_ELEMENT_VISUAL[key] || ENEMY_PROJECTILE_ELEMENT_VISUAL.neutral;
-          ctx.fillStyle = palette[role];
-          ctx.beginPath();
-          for (const p of list) {
-            const r = Number(p.canvasRadius || 5.5) * scale;
-            const x = Number(p.x || 0), y = Number(p.y || 0);
-            ctx.moveTo(x + r, y);
-            ctx.arc(x, y, r, 0, TAU);
-          }
-          ctx.fill();
-        }
-      };
-      const drawNoahRing = (scale, width, alphaScale=1) => {
-        ctx.lineWidth = width;
-        for (const key of ['neutral','fire','aqua','wood','light','dark']) {
-          const list = noahByElement[key];
-          if (!list.length) continue;
-          const palette = ENEMY_PROJECTILE_ELEMENT_VISUAL[key] || ENEMY_PROJECTILE_ELEMENT_VISUAL.neutral;
-          ctx.strokeStyle = palette.ring;
-          ctx.globalAlpha = alphaScale;
-          ctx.beginPath();
-          for (const p of list) {
-            const r = Number(p.canvasRadius || 5.5) * scale;
-            const x = Number(p.x || 0), y = Number(p.y || 0);
-            ctx.moveTo(x + r, y);
-            ctx.arc(x, y, r, 0, TAU);
-          }
-          ctx.stroke();
-        }
-        ctx.globalAlpha = 1;
-      };
-
-      // 元の多層感をほぼ維持。5レイヤー→4レイヤーにして走査数を削減。
-      drawNoahLayer('halo', 1.66);
-      drawNoahLayer('main', 1.04);
-      drawNoahLayer('core', .43);
-      drawNoahRing(1.12, .9, .92);
-
-      // WARNINGは属性を一切参照せず、赤紫で固定。
-      if (dangerBullets.length) {
-        const drawDangerFill = (fill, scale) => {
-          ctx.fillStyle = fill;
-          ctx.beginPath();
-          for (const p of dangerBullets) {
-            const r = Number(p.canvasRadius || 17) * scale;
-            const x = Number(p.x || 0), y = Number(p.y || 0);
-            ctx.moveTo(x + r, y);
-            ctx.arc(x, y, r, 0, TAU);
-          }
-          ctx.fill();
-        };
-        drawDangerFill('rgba(75,0,64,.42)', 1.34);
-        drawDangerFill('rgba(181,22,119,.99)', 1.00);
-        drawDangerFill('rgba(255,221,242,.99)', .31);
-        ctx.strokeStyle = 'rgba(255,89,181,.98)';
-        ctx.lineWidth = 1.15;
-        ctx.beginPath();
-        for (const p of dangerBullets) {
-          const r = Number(p.canvasRadius || 17) * 1.08;
-          const x = Number(p.x || 0), y = Number(p.y || 0);
-          ctx.moveTo(x + r, y);
-          ctx.arc(x, y, r, 0, TAU);
-        }
-        ctx.stroke();
-      }
-      return;
-    }
-
-    function drawCircleLayer(kind, color, scale) {
-      // build930: Canvas弾もchapter固有色ではなく発射元属性色で描画する。
-      const role = scale >= 1.28 ? 'halo' : (scale >= .80 ? 'main' : 'core');
-      for (const element of ['neutral','fire','aqua','wood','light','dark']) {
-        const palette = ENEMY_PROJECTILE_ELEMENT_VISUAL[element];
-        ctx.fillStyle = palette[role];
-        ctx.beginPath();
-        for (const p of bullets) {
-          if (!p || !p.canvasRendered || p.canvasKind !== kind || p.canvasCurtain) continue;
-          if (getEnemyProjectileElement(p) !== element) continue;
-          const radius = Number(p.canvasRadius || 5.5) * scale;
-          const x = Number(p.x || 0);
-          const y = Number(p.y || 0);
-          ctx.moveTo(x + radius, y);
-          ctx.arc(x, y, radius, 0, Math.PI * 2);
-        }
-        ctx.fill();
+    // ============================================================
+    // build1485: 敵弾の描画をスプライト化して刷新＋軽量化。
+    //  ・弾の見た目（外光・立体的な本体・暗い縁取り・明るいリング・ハイライト）は
+    //    属性×半径ごとに一度だけオフスクリーンへ描き、以後は drawImage で貼るだけ。
+    //  ・旧実装は「弾の種類×属性×層」ごとに全弾を走査していた（毎フレーム数百回）。
+    //    新実装は1回の走査で振り分け、まとめて描く。
+    //  ・進行方向へ短い残光を付けて、弾の向きと速さを読みやすくする。
+    //  ・WARNING（即死弾）は属性に関係なく赤紫の専用デザイン＋回転する紋章リング。
+    // ============================================================
+    const TAU = Math.PI * 2;
+    const ELEMENTS = ['neutral','fire','aqua','wood','light','dark'];
+    const orbs = {}, trails = {}, lasers = [], dangers = [], curtains = [];
+    for (const k of ELEMENTS) { orbs[k] = []; trails[k] = []; }
+    for (const p of bullets) {
+      if (!p || !p.canvasRendered) continue;
+      const kind = p.canvasKind;
+      if (kind === 'danger') { dangers.push(p); continue; }
+      if (kind === 'raid-laser') { lasers.push(p); continue; }
+      const el = getEnemyProjectileElement(p);
+      const key = orbs[el] ? el : 'neutral';
+      orbs[key].push(p);
+      if (kind === 'ch04') {
+        trails[key].push(p);
+        if (p.canvasCurtain) curtains.push(p);
+      } else if (kind !== 'noah') {
+        trails[key].push(p);
       }
     }
 
-    function drawRing(kind, color, scale, width) {
-      ctx.lineWidth = width;
-      for (const element of ['neutral','fire','aqua','wood','light','dark']) {
-        const palette = ENEMY_PROJECTILE_ELEMENT_VISUAL[element];
-        ctx.strokeStyle = palette.ring;
-        ctx.beginPath();
-        for (const p of bullets) {
-          if (!p || !p.canvasRendered || p.canvasKind !== kind || p.canvasCurtain) continue;
-          if (getEnemyProjectileElement(p) !== element) continue;
-          const radius = Number(p.canvasRadius || 5.5) * scale;
-          const x = Number(p.x || 0);
-          const y = Number(p.y || 0);
-          ctx.moveTo(x + radius, y);
-          ctx.arc(x, y, radius, 0, Math.PI * 2);
+    // --- 残光（属性ごとに1パス） ---
+    ctx.globalAlpha = 0.7;
+    for (const key of ELEMENTS) {
+      const list = trails[key];
+      if (!list.length) continue;
+      ctx.fillStyle = (ENEMY_PROJECTILE_ELEMENT_VISUAL[key] || ENEMY_PROJECTILE_ELEMENT_VISUAL.neutral).halo;
+      ctx.beginPath();
+      for (const p of list) {
+        const vx = Number(p.vx || 0);
+        const vy = Number(p.vy || (p.canvasCurtain ? 1 : 0));
+        const sp = Math.hypot(vx, vy);
+        if (sp < 30) continue;
+        const ux = vx / sp, uy = vy / sp;
+        const r = Number(p.canvasRadius || 5.5);
+        const len = r * (p.canvasKind === 'ch04' ? 3.6 : Math.min(4.0, 2.0 + sp / 170));
+        const x = Number(p.x || 0), y = Number(p.y || 0);
+        const hw = r * 0.95;
+        ctx.moveTo(x - ux * len, y - uy * len);
+        ctx.lineTo(x - uy * hw, y + ux * hw);
+        ctx.lineTo(x + uy * hw, y - ux * hw);
+        ctx.closePath();
+      }
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // --- 本体（スプライト） ---
+    for (const key of ELEMENTS) {
+      const list = orbs[key];
+      if (!list.length) continue;
+      let lastR = -1, sprite = null, half = 0;
+      for (const p of list) {
+        const r = Math.round(Number(p.canvasRadius || 5.5) * 2) / 2;
+        if (r !== lastR) {
+          sprite = getEnemyBulletSprite(key, r, dpr);
+          half = sprite.__half;
+          lastR = r;
         }
-        ctx.stroke();
+        ctx.drawImage(sprite, Number(p.x || 0) - half, Number(p.y || 0) - half, half * 2, half * 2);
       }
     }
 
-    // CH01: 神聖 / 象牙 + 金。柔らかい外輪と白い芯。
-    drawCircleLayer('ch01', 'rgba(205,164,72,.24)', 1.55);
-    drawCircleLayer('ch01', 'rgba(231,194,103,.97)', 1.00);
-    drawCircleLayer('ch01', 'rgba(255,250,224,.99)', .42);
-    drawRing('ch01', 'rgba(255,238,178,.92)', 1.05, .9);
-
-    // CH02: 暴力 / 深紅 + 灼熱橙。重さが見える太い外殻。
-    drawCircleLayer('ch02', 'rgba(122,24,32,.30)', 1.62);
-    drawCircleLayer('ch02', 'rgba(199,47,48,.98)', 1.00);
-    drawCircleLayer('ch02', 'rgba(255,178,83,.98)', .46);
-    drawRing('ch02', 'rgba(255,218,157,.88)', 1.04, 1.0);
-
-    // CH03: 星護 / 青紫 + 星光。冷たい外輪と白い中心。
-    drawCircleLayer('ch03', 'rgba(71,66,181,.28)', 1.58);
-    drawCircleLayer('ch03', 'rgba(91,119,221,.98)', 1.00);
-    drawCircleLayer('ch03', 'rgba(219,239,255,.99)', .43);
-    drawRing('ch03', 'rgba(170,207,255,.94)', 1.08, .9);
-
-    drawCircleLayer('ch06', 'rgba(64,140,190,.26)', 1.58);
-    drawCircleLayer('ch06', 'rgba(88,168,214,.98)', 1.00);
-    drawCircleLayer('ch06', 'rgba(226,246,255,.99)', .43);
-    drawRing('ch06', 'rgba(170,222,248,.92)', 1.08, .9);
-
-    // CH07: DARK。REMNANT07/分身体などCH07固有弾の描画。
-    drawCircleLayer('ch07', 'rgba(128,84,174,.25)', 1.62);
-    drawCircleLayer('ch07', 'rgba(128,84,174,.98)', 1.08);
-    drawCircleLayer('ch07', 'rgba(92,54,130,1)', .66);
-    drawCircleLayer('ch07', 'rgba(236,221,247,.94)', .20);
-    drawRing('ch07', 'rgba(180,139,212,.96)', 1.10, .95);
-
-    // CH04: 黄色のドロップ / 流星型。
-    // CH04: 黄色のドロップ / 流星型。
-    // DOMは増やさず、Canvas上で「尾 + 丸い芯」を3層描画する軽量モデル。
-    const ch04Bullets = bullets.filter(p => p && p.canvasRendered && p.canvasKind === 'ch04');
-
-    function drawCh04MeteorFill(color, headScale, tailScale, widthScale, headOnly) {
-      const role = headOnly ? 'core' : (headScale >= 1 ? 'halo' : 'main');
-      for (const element of ['neutral','fire','aqua','wood','light','dark']) {
-        ctx.fillStyle = ENEMY_PROJECTILE_ELEMENT_VISUAL[element][role];
-        ctx.beginPath();
-        for (const p of ch04Bullets) {
-          if (getEnemyProjectileElement(p) !== element) continue;
-          const x = Number(p.x || 0);
-          const y = Number(p.y || 0);
-          const base = Number(p.canvasRadius || 6.2);
-          const vx = Number(p.vx || 0);
-          const vy = Number(p.vy || (p.canvasCurtain ? 1 : 0));
-          const len = Math.hypot(vx, vy) || 1;
-          const ux = vx / len;
-          const uy = vy / len || 1;
-          const head = base * headScale;
-
-          if (!headOnly) {
-            const tail = base * (p.canvasCurtain ? tailScale * 1.25 : tailScale);
-            const halfW = base * (p.canvasCurtain ? widthScale * 0.88 : widthScale);
-            const bx = x - ux * head * 0.28;
-            const by = y - uy * head * 0.28;
-            const tx = x - ux * tail;
-            const ty = y - uy * tail;
-            const px = -uy * halfW;
-            const py = ux * halfW;
-
-            ctx.moveTo(tx, ty);
-            ctx.lineTo(bx + px, by + py);
-            ctx.lineTo(bx - px, by - py);
-            ctx.closePath();
-          }
-
-          ctx.moveTo(x + head, y);
-          ctx.arc(x, y, head, 0, Math.PI * 2);
-        }
-        ctx.fill();
-      }
-    }
-
-    function drawCh04MeteorRing(color, headScale, width) {
-      ctx.lineWidth = width;
-      for (const element of ['neutral','fire','aqua','wood','light','dark']) {
-        ctx.strokeStyle = ENEMY_PROJECTILE_ELEMENT_VISUAL[element].ring;
-        ctx.beginPath();
-        for (const p of ch04Bullets) {
-          if (getEnemyProjectileElement(p) !== element) continue;
-          const x = Number(p.x || 0);
-          const y = Number(p.y || 0);
-          const r = Number(p.canvasRadius || 6.2) * headScale;
-          ctx.moveTo(x + r, y);
-          ctx.arc(x, y, r, 0, Math.PI * 2);
-        }
-        ctx.stroke();
-      }
-    }
-
-    // 通常弾・カーテン弾の両方を黄色系の流星ドロップに統一。
-    drawCh04MeteorFill('rgba(158,112,15,.16)', 1.10, 2.18, .72, false);
-    drawCh04MeteorFill('rgba(255,209,74,.98)', .92, 1.55, .54, false);
-    drawCh04MeteorFill('rgba(255,247,199,.98)', .40, .0, .0, true);
-    drawCh04MeteorRing('rgba(255,231,141,.92)', .98, .9);
-
-    // CH04-2/3「弾の壁」は、帯だけ残して「▼」ではなく雨のような流星壁にする。
-    const curtainBullets = ch04Bullets.filter(p => p.canvasCurtain);
-    if (curtainBullets.length) {
-      const ys = [];
-      for (const p of curtainBullets) ys.push(Number(p.y || 0));
-      const avgY = ys.reduce((a,b)=>a+b,0) / Math.max(1, ys.length);
-
+    // CH04「弾の壁」の帯（従来どおり）
+    if (curtains.length) {
+      let sumY = 0;
+      for (const p of curtains) sumY += Number(p.y || 0);
+      const avgY = sumY / curtains.length;
+      const cw = Number(canvas.clientWidth || canvas.width / dpr);
       ctx.strokeStyle = 'rgba(255,215,110,.11)';
       ctx.lineWidth = 6;
-      ctx.beginPath();
-      ctx.moveTo(0, avgY - 3);
-      ctx.lineTo(Number(canvas.clientWidth || canvas.width / dpr), avgY - 3);
-      ctx.stroke();
-
+      ctx.beginPath(); ctx.moveTo(0, avgY - 3); ctx.lineTo(cw, avgY - 3); ctx.stroke();
       ctx.strokeStyle = 'rgba(255,244,196,.20)';
       ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(0, avgY - 3);
-      ctx.lineTo(Number(canvas.clientWidth || canvas.width / dpr), avgY - 3);
-      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, avgY - 3); ctx.lineTo(cw, avgY - 3); ctx.stroke();
     }
 
-    // CH05: 幻影 / 青緑 + 紫。二重輪郭の半透明感。
-    drawCircleLayer('ch05', 'rgba(71,198,195,.20)', 1.72);
-    drawCircleLayer('ch05', 'rgba(101,92,190,.91)', 1.08);
-    drawCircleLayer('ch05', 'rgba(191,249,239,.97)', .41);
-    drawRing('ch05', 'rgba(112,223,216,.80)', 1.38, .8);
-    drawRing('ch05', 'rgba(224,211,255,.86)', .82, .7);
-
-    // SCORE ATTACK: 通常弾はピンク。
-    drawCircleLayer('score', 'rgba(237,63,151,.25)', 1.48);
-    drawCircleLayer('score', 'rgba(244,86,166,.99)', 1.00);
-    drawCircleLayer('score', 'rgba(255,225,243,.99)', .38);
-
-    // NOAH: 薄紫 + 白芯。重いblurは使わず、多層円 + 外輪だけで神秘感を出す。
-    drawCircleLayer('noah', 'rgba(80,56,164,.18)', 1.78);
-    drawCircleLayer('noah', 'rgba(128,103,228,.95)', 1.06);
-    drawCircleLayer('noah', 'rgba(244,239,255,.98)', .44);
-    drawRing('noah', 'rgba(197,184,255,.92)', 1.14, .95);
-    drawRing('noah', 'rgba(255,255,255,.55)', .72, .65);
-
-    // FACELESS: DARK属性カラーを黒ではなく中間紫で明示。
-    // Canvas描画でもDOM弾と同じ紫系に揃え、FIREの赤 / AQUAの青と区別する。
-    drawCircleLayer('faceless', 'rgba(128,84,174,.25)', 1.62);
-    drawCircleLayer('faceless', 'rgba(128,84,174,.98)', 1.08);
-    drawCircleLayer('faceless', 'rgba(92,54,130,1)', .66);
-    drawCircleLayer('faceless', 'rgba(236,221,247,.94)', .20);
-    drawRing('faceless', 'rgba(180,139,212,.96)', 1.10, .95);
-
-    // 仮面オブジェクト由来も同じDARK紫。少し大きく、明るい紫縁を強める。
-    drawCircleLayer('faceless-object', 'rgba(128,84,174,.28)', 1.72);
-    drawCircleLayer('faceless-object', 'rgba(143,96,184,.99)', 1.12);
-    drawCircleLayer('faceless-object', 'rgba(96,56,135,1)', .69);
-    drawCircleLayer('faceless-object', 'rgba(243,231,251,.96)', .19);
-    drawRing('faceless-object', 'rgba(194,157,222,.98)', 1.13, 1.05);
-
-    // その他の通常Canvas弾。
-    drawCircleLayer('normal', 'rgba(78,66,92,.94)', 1.00);
-
-    // RAID: 緑の単色塗りから、軽量な多層エネルギー弾へ。
-    // 影/blurなし、円4層 + 細いリングだけなのでDOMも描画負荷も増やさない。
-    drawCircleLayer('raid', 'rgba(12,82,32,.22)', 1.72);
-    drawCircleLayer('raid', 'rgba(34,190,88,.98)', 1.08);
-    drawCircleLayer('raid', 'rgba(206,255,218,.98)', .44);
-    drawRing('raid', 'rgba(128,241,158,.90)', 1.14, .95);
-
-    // WARNINGは属性色を参照しない。全ステージ共通で禍々しい赤紫に固定。
-    // drawCircleLayer()は属性paletteを使うため、WARNINGだけ専用描画にする。
-    const dangerCanvasBullets = bullets.filter(p => p && p.canvasRendered && p.canvasKind === 'danger');
-    if (dangerCanvasBullets.length) {
-      const TAU = Math.PI * 2;
-      const drawDangerFill = (fill, scale) => {
-        ctx.fillStyle = fill;
-        ctx.beginPath();
-        for (const p of dangerCanvasBullets) {
-          const r = Number(p.canvasRadius || 17) * scale;
-          const x = Number(p.x || 0), y = Number(p.y || 0);
-          ctx.moveTo(x + r, y);
-          ctx.arc(x, y, r, 0, TAU);
-        }
-        ctx.fill();
-      };
-      drawDangerFill('rgba(75,0,64,.42)', 1.34);
-      drawDangerFill('rgba(181,22,119,.99)', 1.00);
-      drawDangerFill('rgba(255,221,242,.99)', .31);
-      ctx.strokeStyle = 'rgba(255,89,181,.98)';
-      ctx.lineWidth = 1.15;
-      ctx.beginPath();
-      for (const p of dangerCanvasBullets) {
-        const r = Number(p.canvasRadius || 17) * 1.08;
+    // --- WARNING（即死弾） ---
+    if (dangers.length) {
+      const nowMs = performance.now();
+      const pulse = 0.88 + 0.12 * Math.sin(nowMs / 140);
+      const rot = (nowMs / 1000) * 1.6;
+      for (const p of dangers) {
+        const r = Math.round(Number(p.canvasRadius || 17) * 2) / 2;
+        const base = getDangerBulletSprite(r, dpr);
+        const ring = getDangerRingSprite(r, dpr);
         const x = Number(p.x || 0), y = Number(p.y || 0);
-        ctx.moveTo(x + r, y);
-        ctx.arc(x, y, r, 0, TAU);
+        ctx.globalAlpha = pulse;
+        ctx.drawImage(base, x - base.__half, y - base.__half, base.__half * 2, base.__half * 2);
+        ctx.globalAlpha = 1;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rot);
+        ctx.drawImage(ring, -ring.__half, -ring.__half, ring.__half * 2, ring.__half * 2);
+        ctx.restore();
       }
-      ctx.stroke();
     }
 
-    // RAID laserもBOSS属性色へ追従。
-    ctx.lineCap = 'round';
-    for (const element of ['neutral','fire','aqua','wood','light','dark']) {
-      const palette = ENEMY_PROJECTILE_ELEMENT_VISUAL[element];
-      ctx.beginPath();
-      for (const p of bullets) {
-        if (!p || !p.canvasRendered || p.canvasKind !== 'raid-laser') continue;
-        if (getEnemyProjectileElement(p) !== element) continue;
-        const angle = Math.atan2(Number(p.vy || 0), Number(p.vx || 0));
-        const dx = Math.cos(angle) * 135;
-        const dy = Math.sin(angle) * 135;
-        const x = Number(p.x || 0), y = Number(p.y || 0);
-        ctx.moveTo(x - dx, y - dy);
-        ctx.lineTo(x + dx, y + dy);
+    // --- RAIDレーザー（BOSS属性色） ---
+    if (lasers.length) {
+      ctx.lineCap = 'round';
+      for (const key of ELEMENTS) {
+        const palette = ENEMY_PROJECTILE_ELEMENT_VISUAL[key];
+        const list = lasers.filter(p => getEnemyProjectileElement(p) === key);
+        if (!list.length) continue;
+        const path = () => {
+          ctx.beginPath();
+          for (const p of list) {
+            const angle = Math.atan2(Number(p.vy || 0), Number(p.vx || 0));
+            const dx = Math.cos(angle) * 135, dy = Math.sin(angle) * 135;
+            const x = Number(p.x || 0), y = Number(p.y || 0);
+            ctx.moveTo(x - dx, y - dy);
+            ctx.lineTo(x + dx, y + dy);
+          }
+        };
+        path(); ctx.strokeStyle = palette.halo; ctx.lineWidth = 9; ctx.stroke();
+        path(); ctx.strokeStyle = palette.main; ctx.lineWidth = 3.4; ctx.stroke();
+        path(); ctx.strokeStyle = palette.core; ctx.lineWidth = 1.4; ctx.stroke();
       }
-      ctx.strokeStyle = palette.halo;
-      ctx.lineWidth = 8;
-      ctx.stroke();
-
-      ctx.beginPath();
-      for (const p of bullets) {
-        if (!p || !p.canvasRendered || p.canvasKind !== 'raid-laser') continue;
-        if (getEnemyProjectileElement(p) !== element) continue;
-        const angle = Math.atan2(Number(p.vy || 0), Number(p.vx || 0));
-        const dx = Math.cos(angle) * 135;
-        const dy = Math.sin(angle) * 135;
-        const x = Number(p.x || 0), y = Number(p.y || 0);
-        ctx.moveTo(x - dx, y - dy);
-        ctx.lineTo(x + dx, y + dy);
-      }
-      ctx.strokeStyle = palette.core;
-      ctx.lineWidth = 2;
-      ctx.stroke();
+      ctx.lineCap = 'butt';
     }
-    ctx.lineCap = 'butt';
   }
+
+  // ---- 敵弾スプライト（属性×半径×DPRごとに1回だけ描画してキャッシュ） ----
+  const ENEMY_BULLET_SPRITE_CACHE = new Map();
+  function makeSpriteCanvas(cssHalf, dpr) {
+    const c = document.createElement('canvas');
+    const px = Math.max(2, Math.ceil(cssHalf * 2 * dpr));
+    c.width = px; c.height = px;
+    c.__half = px / dpr / 2;
+    const g = c.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.translate(c.__half, c.__half);
+    return { c, g };
+  }
+  function getEnemyBulletSprite(element, r, dpr) {
+    const key = 'o|' + element + '|' + r + '|' + dpr;
+    let sprite = ENEMY_BULLET_SPRITE_CACHE.get(key);
+    if (sprite) return sprite;
+    const pal = ENEMY_PROJECTILE_ELEMENT_VISUAL[element] || ENEMY_PROJECTILE_ELEMENT_VISUAL.neutral;
+    const halo = r * 2.05;
+    const { c, g } = makeSpriteCanvas(halo + 1, dpr);
+    // 外光
+    const glow = g.createRadialGradient(0, 0, r * 0.7, 0, 0, halo);
+    glow.addColorStop(0, pal.halo.replace(/[\d.]+\)$/, '0.62)'));
+    glow.addColorStop(1, pal.halo.replace(/[\d.]+\)$/, '0)'));
+    g.fillStyle = glow;
+    g.beginPath(); g.arc(0, 0, halo, 0, TAU_CONST); g.fill();
+    // 背景に負けない暗い縁取り
+    g.fillStyle = 'rgba(22,14,30,.55)';
+    g.beginPath(); g.arc(0, 0, r + 0.9, 0, TAU_CONST); g.fill();
+    // 本体（左上から光が当たる立体感）
+    const body = g.createRadialGradient(-r * 0.32, -r * 0.36, r * 0.08, 0, 0, r);
+    body.addColorStop(0, pal.core);
+    body.addColorStop(0.42, pal.main);
+    body.addColorStop(1, pal.shadow || pal.main);
+    g.fillStyle = body;
+    g.beginPath(); g.arc(0, 0, r, 0, TAU_CONST); g.fill();
+    // 明るいリング
+    g.strokeStyle = pal.ring;
+    g.lineWidth = Math.max(0.8, r * 0.16);
+    g.beginPath(); g.arc(0, 0, r * 0.84, 0, TAU_CONST); g.stroke();
+    // ハイライト
+    g.fillStyle = 'rgba(255,255,255,.85)';
+    g.beginPath(); g.ellipse(-r * 0.34, -r * 0.38, r * 0.26, r * 0.18, -0.6, 0, TAU_CONST); g.fill();
+    ENEMY_BULLET_SPRITE_CACHE.set(key, c);
+    return c;
+  }
+  function getDangerBulletSprite(r, dpr) {
+    const key = 'd|' + r + '|' + dpr;
+    let sprite = ENEMY_BULLET_SPRITE_CACHE.get(key);
+    if (sprite) return sprite;
+    const halo = r * 1.7;
+    const { c, g } = makeSpriteCanvas(halo + 1, dpr);
+    const glow = g.createRadialGradient(0, 0, r * 0.6, 0, 0, halo);
+    glow.addColorStop(0, 'rgba(214,20,110,.55)');
+    glow.addColorStop(1, 'rgba(120,0,70,0)');
+    g.fillStyle = glow;
+    g.beginPath(); g.arc(0, 0, halo, 0, TAU_CONST); g.fill();
+    g.fillStyle = 'rgba(30,0,22,.85)';
+    g.beginPath(); g.arc(0, 0, r + 1.2, 0, TAU_CONST); g.fill();
+    const body = g.createRadialGradient(-r * 0.25, -r * 0.3, r * 0.05, 0, 0, r);
+    body.addColorStop(0, '#ffd2ec');
+    body.addColorStop(0.35, '#e8248f');
+    body.addColorStop(0.8, '#8a0b52');
+    body.addColorStop(1, '#4c0430');
+    g.fillStyle = body;
+    g.beginPath(); g.arc(0, 0, r, 0, TAU_CONST); g.fill();
+    // 中心の「目」
+    g.fillStyle = 'rgba(25,0,18,.92)';
+    g.beginPath(); g.arc(0, 0, r * 0.36, 0, TAU_CONST); g.fill();
+    g.fillStyle = '#fff1f8';
+    g.beginPath(); g.arc(0, 0, r * 0.16, 0, TAU_CONST); g.fill();
+    g.strokeStyle = 'rgba(255,120,195,.95)';
+    g.lineWidth = 1.3;
+    g.beginPath(); g.arc(0, 0, r * 0.92, 0, TAU_CONST); g.stroke();
+    ENEMY_BULLET_SPRITE_CACHE.set(key, c);
+    return c;
+  }
+  function getDangerRingSprite(r, dpr) {
+    const key = 'dr|' + r + '|' + dpr;
+    let sprite = ENEMY_BULLET_SPRITE_CACHE.get(key);
+    if (sprite) return sprite;
+    const R = r * 1.42;
+    const { c, g } = makeSpriteCanvas(R + 4, dpr);
+    g.strokeStyle = 'rgba(255,86,170,.9)';
+    g.lineWidth = 1.2;
+    g.setLineDash([r * 0.32, r * 0.22]);
+    g.beginPath(); g.arc(0, 0, R, 0, TAU_CONST); g.stroke();
+    g.setLineDash([]);
+    g.fillStyle = 'rgba(255,190,225,.95)';
+    for (let i = 0; i < 4; i++) {
+      const a = i * Math.PI / 2;
+      const x = Math.cos(a) * R, y = Math.sin(a) * R, d = Math.max(2.2, r * 0.17);
+      g.beginPath();
+      g.moveTo(x + Math.cos(a) * d, y + Math.sin(a) * d);
+      g.lineTo(x + Math.cos(a + Math.PI / 2) * d * 0.6, y + Math.sin(a + Math.PI / 2) * d * 0.6);
+      g.lineTo(x - Math.cos(a) * d, y - Math.sin(a) * d);
+      g.lineTo(x - Math.cos(a + Math.PI / 2) * d * 0.6, y - Math.sin(a + Math.PI / 2) * d * 0.6);
+      g.closePath();
+      g.fill();
+    }
+    ENEMY_BULLET_SPRITE_CACHE.set(key, c);
+    return c;
+  }
+  const TAU_CONST = Math.PI * 2;
 
   // v178:
   // スタン/時間停止中は敵AI本体だけでなく「新しい敵弾の生成」も止める。
@@ -14100,6 +13973,167 @@
     return Math.min(1.5, Math.max(0.6, value));
   }
 
+  // ============================================================
+  // build1485 — 残響の塔15F BOSS「？？？」
+  //  PHASE1：二重螺旋＋狙い5WAY＋低速リング
+  //  PHASE2：逆回転の三重螺旋×2＋狙い7WAY＋高密度リング
+  //  常時：WARNING（即死）3つが壁で反射しながら浮遊。消えたら少し後に補充。
+  //  暗転：一定間隔で画面が暗くなり、敵弾と自キャラだけが見える。
+  //  弾はすべてCanvas描画（DOMを増やさない）。
+  // ============================================================
+  function getTower15Config() {
+    return (selectedStage && selectedStage.tower15Echo) || null;
+  }
+
+  function spawnTower15Warning(now) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena || !state || !state.boss) return null;
+    const cfg = getTower15Config() || {};
+    const w = arena.clientWidth;
+    // 自機側へは向けすぎない（真下±60°の範囲外へ射出）。
+    const side = Math.random() < 0.5 ? -1 : 1;
+    const angle = Math.PI / 2 + side * (Math.PI / 3 + Math.random() * Math.PI / 4);
+    const speed = Number(cfg.warningSpeed || 118);
+    const x = clamp(Number(state.boss.x || w * 0.5), 30, w - 30);
+    const y = Number(state.boss.y || 80) + 20;
+    const p = makeProjectile(
+      'shooting-enemy-bullet shooting-danger-bullet shooting-tower15-warning',
+      x, y, Math.cos(angle) * speed, Math.sin(angle) * speed, 999999
+    );
+    if (!p) return null;
+    p.ambushBounce = true;       // 既存の壁反射処理を利用
+    p.ambushPersistent = true;   // 反射回数で消えない
+    p.tower15Warning = true;
+    state.enemyBullets.push(p);
+    return p;
+  }
+
+  function ensureTower15Blackout() {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return null;
+    let el = document.getElementById('shooting-tower15-blackout');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'shooting-tower15-blackout';
+      el.setAttribute('aria-hidden', 'true');
+      el.innerHTML = '<span>暗　転</span>';
+      arena.appendChild(el);
+    }
+    return el;
+  }
+
+  function setTower15Blackout(active) {
+    const root = document.getElementById(ROOT_ID);
+    if (!root) return;
+    if (active) ensureTower15Blackout();
+    root.classList.toggle('tower15-blackout', !!active);
+  }
+
+  function updateTower15Mechanics(now) {
+    const cfg = getTower15Config();
+    const root = document.getElementById(ROOT_ID);
+    if (!cfg || !state || !BOSS || BOSS.behavior !== 'tower15_echo_v1') {
+      if (root && root.classList.contains('tower15-blackout')) root.classList.remove('tower15-blackout');
+      return;
+    }
+    const t15 = state.tower15 || (state.tower15 = {
+      angle: 0, lastSpiralAt: 0, lastAimAt: 0, lastRingAt: 0,
+      warningDeficitSince: 0, blackoutUntil: 0, nextBlackoutAt: 0
+    });
+    const running = state.running && !state.ended && !state.finishing && !state.countdown;
+    if (!running) {
+      if (state.ended || state.finishing) setTower15Blackout(false);
+      return;
+    }
+
+    // --- 暗転 ---
+    const bo = cfg.blackout || {};
+    const phase = Math.max(1, Math.min(2, Number(state.boss.phase || 1)));
+    const phaseCfg = bo[phase] || bo[1] || { everyMs: 15000, durationMs: 4000 };
+    if (!t15.nextBlackoutAt) t15.nextBlackoutAt = now + Number(bo.firstAtMs || 9000);
+    if (t15.blackoutUntil && now >= t15.blackoutUntil) {
+      t15.blackoutUntil = 0;
+      setTower15Blackout(false);
+      t15.nextBlackoutAt = now + Number(phaseCfg.everyMs || 15000);
+    } else if (!t15.blackoutUntil && now >= t15.nextBlackoutAt) {
+      t15.blackoutUntil = now + Number(phaseCfg.durationMs || 4000);
+      setTower15Blackout(true);
+    }
+
+    // --- WARNING常駐（3つ） ---
+    let alive = 0;
+    for (const p of state.enemyBullets) if (p && p.tower15Warning) alive++;
+    const want = Math.max(0, Number(cfg.warningCount || 3));
+    if (alive < want) {
+      // 開幕は即配置。撃破／消去で減った分は少し間を置いて補充する。
+      if (!t15.warningsPlaced) {
+        for (let i = alive; i < want; i++) spawnTower15Warning(now);
+        t15.warningsPlaced = true;
+      } else {
+        if (!t15.warningDeficitSince) t15.warningDeficitSince = now;
+        if (now - t15.warningDeficitSince >= Number(cfg.warningRespawnMs || 2200)) {
+          if (spawnTower15Warning(now)) t15.warningDeficitSince = alive + 1 < want ? now : 0;
+        }
+      }
+    } else {
+      t15.warningDeficitSince = 0;
+    }
+  }
+
+  function fireTower15Boss(now) {
+    if (!state || !state.boss) return;
+    const t15 = state.tower15 || (state.tower15 = { angle: 0, lastSpiralAt: 0, lastAimAt: 0, lastRingAt: 0 });
+    const phase = Math.max(1, Math.min(2, Number(state.boss.phase || 1)));
+    const speed = Number(BOSS.bulletSpeed || 180);
+    const damage = Number(BOSS.bulletDamage || 240);
+    const bx = Number(state.boss.x || 0);
+    const by = Number(state.boss.y || 0) + 26;
+    const shoot = (a, sp) => {
+      const p = makeProjectile('shooting-enemy-bullet', bx, by, Math.cos(a) * sp, Math.sin(a) * sp, damage);
+      if (p) state.enemyBullets.push(p);
+    };
+
+    // 通常弾の安全上限（WARNINGは対象外）。超える時は螺旋だけ間引く。
+    let ordinary = 0;
+    for (const p of state.enemyBullets) if (p && !p.tower15Warning) ordinary++;
+    const soft = phase === 1 ? 170 : 230;
+
+    // 螺旋
+    const spiralEvery = getStageAdjustedEnemyFireInterval(phase === 1 ? 150 : 165);
+    if (now - Number(t15.lastSpiralAt || 0) >= spiralEvery && ordinary < soft) {
+      t15.lastSpiralAt = now;
+      t15.angle = Number(t15.angle || 0) + (phase === 1 ? 0.21 : 0.17);
+      if (phase === 1) {
+        for (let k = 0; k < 2; k++) shoot(t15.angle + k * Math.PI, speed * 0.9);
+      } else {
+        for (let k = 0; k < 3; k++) {
+          shoot(t15.angle + k * Math.PI * 2 / 3, speed * 0.92);
+          shoot(-t15.angle * 1.15 + k * Math.PI * 2 / 3 + Math.PI / 3, speed * 0.78);
+        }
+      }
+    }
+
+    // 自機狙いの扇（WARNINGの合間を縫う必要がある）
+    const aimEvery = getStageAdjustedEnemyFireInterval(phase === 1 ? 1650 : 1250);
+    if (now - Number(t15.lastAimAt || 0) >= aimEvery) {
+      t15.lastAimAt = now;
+      const aim = getEnemyAimPosition();
+      const base = Math.atan2(aim.y - by, aim.x - bx);
+      const ways = phase === 1 ? 5 : 7;
+      const step = phase === 1 ? 0.16 : 0.13;
+      for (let i = 0; i < ways; i++) shoot(base + (i - (ways - 1) / 2) * step, speed * 1.32);
+    }
+
+    // リング
+    const ringEvery = getStageAdjustedEnemyFireInterval(phase === 1 ? 3200 : 2300);
+    if (now - Number(t15.lastRingAt || 0) >= ringEvery && ordinary < soft + 20) {
+      t15.lastRingAt = now;
+      const n = phase === 1 ? 16 : 22;
+      const off = Math.random() * Math.PI * 2;
+      for (let i = 0; i < n; i++) shoot(off + i * Math.PI * 2 / n, speed * (phase === 1 ? 0.62 : 0.7));
+    }
+  }
+
   function fireBarrageBoss(now) {
     const phase = state.boss.phase || 1;
 
@@ -16066,6 +16100,11 @@
   }
 
   function fireBoss(now) {
+    // build1485: 塔15F BOSSは専用パターンのみ（汎用WARNING攻撃は使わない）。
+    if (BOSS && BOSS.behavior === 'tower15_echo_v1') {
+      fireTower15Boss(now);
+      return;
+    }
     if (isAmbushStage()) {
       fireAmbushBoss(now);
       return;
@@ -16595,7 +16634,17 @@
     // これを止めないとフェイスレス等のAIが毎フレーム座標を上書きして
     // 吸引が見た目上ほぼ無効になっていた。
     if (!isNormalBattle() && !bossGrabbed && !bossStunned && !bossBlackHolePulled) {
-      if (isNoahPatternStage()) {
+      if (BOSS && BOSS.behavior === 'tower15_echo_v1') {
+        // 塔15F：ゆっくり大きな∞字を描いて漂う。PHASE2は振れ幅と速度が少し増す。
+        const phase15 = Math.max(1, Number(state.boss.phase || 1));
+        const tt = (now - Number(state.startedAt || now)) / 1000;
+        const sp = phase15 >= 2 ? 0.62 : 0.48;
+        const targetX = w * 0.5 + Math.sin(tt * sp) * w * (phase15 >= 2 ? 0.26 : 0.20);
+        const targetY = Math.max(64, h * 0.17 + Math.sin(tt * sp * 2) * (phase15 >= 2 ? 22 : 14));
+        const blended = applyBossStartBlend(targetX, targetY);
+        state.boss.x = blended.x;
+        state.boss.y = blended.y;
+      } else if (isNoahPatternStage()) {
         // 理想郷：ノアは敵側センターライン上に鎮座し、一切巡回しない。
         state.boss.x = w * 0.5;
         state.boss.y = Math.max(70, h * 0.18);
@@ -19305,6 +19354,7 @@
       updateChapter43Mechanics(ts);
       updateFacelessStageMechanics(ts);
       updateChapter4ShrinkWalls(ts);
+      updateTower15Mechanics(ts);
       updateCollectibles(dt);
     }
     updateArnoAura(ts);
@@ -19373,6 +19423,11 @@
       meta.kicker = 'SCORE ATTACK';
       meta.title = 'すこあちゃん';
       meta.sub = selectedStage.difficultyLabel || '';
+    } else if (BOSS && BOSS.behavior === 'tower15_echo_v1') {
+      meta.kicker = 'ECHO TOWER 15F';
+      meta.title = BOSS.name || '？？？';
+      meta.sub = 'THE LAST ECHO';
+      meta.image = selectedStage.introImage || 'images/tower15_boss_battle_start.webp';
     } else if (isNoahStage()) {
       meta.kicker = 'SPECIAL STAGE';
       meta.title = '理想郷：ノア';

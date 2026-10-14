@@ -1,0 +1,48 @@
+/* ============================================================
+   build1485 — 残響の塔15F BOSS：暗転
+   暗転中は「敵弾（Canvas z17）」と「自キャラ」だけを見せる。
+   ボス本体・背景・自機弾は暗幕（z16）の下に沈む。HP表示とフッターは残す。
+   ============================================================ */
+#shooting-tower15-blackout{
+  position:absolute;
+  inset:0;
+  z-index:16;
+  pointer-events:none;
+  opacity:0;
+  visibility:hidden;
+  transition:opacity .45s ease, visibility 0s linear .45s;
+  background:
+    radial-gradient(ellipse 90% 60% at 50% 115%, rgba(60,8,24,.55), rgba(0,0,0,0) 70%),
+    rgba(4,3,8,.965);
+}
+#shooting-tower15-blackout span{
+  position:absolute;
+  left:50%;
+  top:36%;
+  transform:translate(-50%,-50%);
+  color:rgba(214,52,86,.9);
+  font:700 26px/1 "Noto Serif JP",serif;
+  letter-spacing:.6em;
+  text-indent:.6em;
+  text-shadow:0 0 12px rgba(214,40,80,.65);
+  opacity:0;
+}
+#shooting-event-root.tower15-blackout #shooting-tower15-blackout{
+  opacity:1;
+  visibility:visible;
+  transition:opacity .45s ease, visibility 0s;
+}
+#shooting-event-root.tower15-blackout #shooting-tower15-blackout span{
+  animation:tower15BlackoutLabel 1.4s ease-out forwards;
+}
+@keyframes tower15BlackoutLabel{
+  0%{opacity:0;letter-spacing:.9em}
+  25%{opacity:1}
+  100%{opacity:0;letter-spacing:.6em}
+}
+/* 自キャラは暗幕の上へ。ボスは暗幕の下へ。 */
+#shooting-event-root.tower15-blackout #shooting-player{z-index:19 !important;}
+#shooting-event-root.tower15-blackout .shooting-boss{z-index:9 !important;}
+@media (prefers-reduced-motion:reduce){
+  #shooting-event-root.tower15-blackout #shooting-tower15-blackout span{animation:none;opacity:.8;}
+}
