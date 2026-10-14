@@ -38,6 +38,23 @@
     }
   }
 
+  // build1487: 「今日受け取ったか」の判定を一本化。
+  //  ・DBの日付が時刻付き（'2026-10-15T00:00:00' 等）でも先頭10文字で比較する。
+  //  ・サーバーが「今日は受取済み」と返した日は端末に控え、日付表記がずれていても未受取扱いにしない
+  //    （サーバーがUTC日付で記録している場合、JST 0〜9時に通知ドットが消えなくなるため）。
+  var SERVER_CLAIMED_KEY = 'zeraphia_login_bonus_server_claimed_v1';
+  function normalizeDate(v){ return String(v || '').slice(0, 10); }
+  function markServerClaimedToday(){
+    try { localStorage.setItem(SERVER_CLAIMED_KEY, getUserId() + '|' + getJstDateString()); } catch(_){}
+  }
+  function isServerClaimedToday(){
+    try { return localStorage.getItem(SERVER_CLAIMED_KEY) === getUserId() + '|' + getJstDateString(); } catch(_){ return false; }
+  }
+  function isClaimedToday(state){
+    if(isServerClaimedToday()) return true;
+    return normalizeDate(state && state.last_login_bonus_date) === getJstDateString();
+  }
+
   function getReward(day){
     day = Math.max(1, Math.min(7, Number(day || 1)));
     return REWARDS[day - 1];
@@ -47,7 +64,7 @@
     state = state || {};
     var lastDay = Math.max(0, Math.min(7, Number(state.login_bonus_day || 0)));
     if(lastDay <= 0) return 0;
-    var claimedToday = state.last_login_bonus_date === getJstDateString();
+    var claimedToday = isClaimedToday(state);
     // DAY7受取後、翌日は新しい7日サイクルのDAY1。
     if(!claimedToday && lastDay === 7) return 0;
     return lastDay;
@@ -250,8 +267,9 @@
     var state = await fetchState();
     if(!state) return false;
     var today = getJstDateString();
-    updateBonusHomeNotice(state.last_login_bonus_date !== today);
-    if(state.last_login_bonus_date === today) return false;
+    var claimed = isClaimedToday(state);
+    updateBonusHomeNotice(!claimed);
+    if(claimed) return false;
     await openBonusScreen();
     return true;
   }
@@ -280,12 +298,14 @@
       var day = Math.max(1, Math.min(7, Number(row.claim_day || 1)));
       var reward = getReward(day);
       if(!row.claimed){
+        markServerClaimedToday();
         updateBonusHomeNotice(false);
         await renderBonusPage();
         if(typeof window.showToast === 'function') window.showToast('ログインボーナスは受取済みです。');
         return;
       }
 
+      markServerClaimedToday();
       var rewardQty = Math.max(0, Number(row.reward_quantity != null ? row.reward_quantity : reward.qty));
       var refreshedProfile = await fetchState();
       if(window.userProfile){
@@ -327,7 +347,7 @@
       var state = await fetchState();
       if(!state){ list.innerHTML = '<div class="bonus-page-error">ログイン情報を取得できません。</div>'; return; }
       var today = getJstDateString();
-      var claimedToday = state.last_login_bonus_date === today;
+      var claimedToday = isClaimedToday(state);
       var lastDay = Math.max(0, Math.min(7, Number(state.login_bonus_day || 0)));
       var cycleDay = ((lastDay % 7) + 1);
       var nextDay = cycleDay;
@@ -396,7 +416,7 @@
       if(window._profileLoadState !== 'ready') return;
       var state = await fetchState();
       if(!state) return;
-      updateBonusHomeNotice(state.last_login_bonus_date !== getJstDateString());
+      updateBonusHomeNotice(!isClaimedToday(state));
     } catch (_) {}
   }
 

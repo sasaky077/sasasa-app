@@ -1,4 +1,4 @@
 {
-  "build": 1486,
-  "note": "残響の塔15FのBOSS名を『トワ』に（intro・HP表示・ミッション・階層説明）。15F報酬を『トワの記憶』×1に変更（images/item_towa_memory.webp）。アイテム画面［その他］に『トワの記憶』を追加（使い道は今後）。付与はサーバー側（finish_resonance_tower_run／claim_resonance_tower_rewards）の15F報酬を towa_memory ×1 に変更する必要あり。build1485までを含む。"
+  "build": 1487,
+  "note": "ホーム［ボーナス］の通知ドット(1)が受取後も消えない問題の対策。受取判定を一本化：DB日付は先頭10文字で比較、サーバーが『今日は受取済み』と返した日は端末に記録して未受取扱いにしない（サーバーがUTC日付で記録している場合のJST0〜9時のズレ対策）。build1486までを含む。"
 }
