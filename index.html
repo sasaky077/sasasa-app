@@ -5125,6 +5125,35 @@ window.NOTICE_ITEMS = [
     } catch (_) {}
   }
 
+  // build1480: アカウント別DB判定（statusRpcName）の結果をユーザーごとに端末へ控えておく。
+  // 起動直後（DB確認前）に「未受取」と誤判定して通知ドットが一瞬付くのを防ぐ。
+  const NOTICE_DB_STATUS_KEY = 'sasaphia_notice_db_claim_status_v1';
+  // この起動中にサーバーの受取状況を一度でも確認できたか。
+  let noticeClaimSynced = false;
+  function noticeStatusUserId() {
+    return String(localStorage.getItem('zukan_user_id') || '').trim().toLowerCase();
+  }
+  function readNoticeDbStatus() {
+    try {
+      const raw = localStorage.getItem(NOTICE_DB_STATUS_KEY);
+      const parsed = raw ? JSON.parse(raw) : {};
+      const uid = noticeStatusUserId();
+      return (uid && parsed && typeof parsed[uid] === 'object' && parsed[uid]) ? parsed[uid] : {};
+    } catch (_) {
+      return {};
+    }
+  }
+  function writeNoticeDbStatus(claimId, claimed) {
+    const uid = noticeStatusUserId();
+    if (!uid || !claimId) return;
+    try {
+      const raw = localStorage.getItem(NOTICE_DB_STATUS_KEY);
+      const all = raw ? (JSON.parse(raw) || {}) : {};
+      all[uid] = Object.assign({}, all[uid] || {}, { [claimId]: !!claimed });
+      localStorage.setItem(NOTICE_DB_STATUS_KEY, JSON.stringify(all));
+    } catch (_) {}
+  }
+
   async function syncNoticeRewardClaimStatus() {
     const client = window.zsSupabase || null;
     if (!client || typeof client.rpc !== 'function') return;
@@ -5137,7 +5166,7 @@ window.NOTICE_ITEMS = [
          item.reward.type === 'test_growth_bundle' ||
          item.reward.type === 'special_stage_ticket');
     });
-    if (!rewardItems.length) return;
+    if (!rewardItems.length) { noticeClaimSynced = true; return; }
 
     for (const item of rewardItems) {
       try {
@@ -5169,6 +5198,7 @@ window.NOTICE_ITEMS = [
         // 新しい専用配布はアカウント別のDB判定を優先する。
         if (item.reward.type === 'special_stage_ticket' && item.reward.statusRpcName && typeof (res && res.data) === 'boolean') {
           item.reward.claimed = res.data;
+          writeNoticeDbStatus(item.reward.claimId, res.data);
         }
         if (res && res.data === true) {
           item.reward.claimed = true;
@@ -5176,9 +5206,11 @@ window.NOTICE_ITEMS = [
         }
       } catch (error) {
         console.warn('[NoticeReward] claim status sync skipped:', error && (error.message || error));
+        noticeClaimSynced = true;
         return;
       }
     }
+    noticeClaimSynced = true;
   }
 
   function isRewardClaimed(item) {
@@ -5186,7 +5218,12 @@ window.NOTICE_ITEMS = [
     if (item.reward.type === 'character') return item.reward.claimed === true;
     if (!item.reward.claimId) return false;
     // ノアお詫び配布は端末共有のlocalStorageを信用せず、ユーザー個別のDB判定を利用。
-    if (item.reward.type === 'special_stage_ticket' && item.reward.statusRpcName) return item.reward.claimed === true;
+    // DB確認前は、同じアカウントで前回確認した結果を使う。まだ一度も確認していなければ「不明(null)」。
+    if (item.reward.type === 'special_stage_ticket' && item.reward.statusRpcName) {
+      if (typeof item.reward.claimed === 'boolean') return item.reward.claimed;
+      const cached = readNoticeDbStatus()[item.reward.claimId];
+      return typeof cached === 'boolean' ? cached : null;
+    }
     if (item.reward.claimed === true) return true;
 
     const locallyClaimed = getLocallyClaimedNoticeIds();
@@ -5194,7 +5231,9 @@ window.NOTICE_ITEMS = [
 
     const profile = getProfile();
     const used = profile && Array.isArray(profile.used_gachas) ? profile.used_gachas : [];
-    return used.includes(item.reward.claimId);
+    if (used.includes(item.reward.claimId)) return true;
+    // build1480: サーバー確認前は「未受取」と断定しない（起動直後の誤った通知ドット対策）。
+    return noticeClaimSynced ? false : null;
   }
 
   function renderReward(item) {
@@ -5891,7 +5930,8 @@ window.NOTICE_ITEMS = [
     const attentionCount = visibleNotices.reduce(function (count, item) {
       if (!item || !item.id) return count;
       const isUnread = !readIds.has(item.id);
-      const hasUnclaimedReward = !!(item.reward && !isRewardClaimed(item));
+      // 受取状況が「不明(null)」の間はドットを付けない（DB確認後に refreshNoticeBadge で再計算）。
+      const hasUnclaimedReward = !!(item.reward && isRewardClaimed(item) === false);
       return count + ((isUnread || hasUnclaimedReward) ? 1 : 0);
     }, 0);
 
