@@ -3812,12 +3812,13 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
   <div id="spirit-flower-exchange-modal" class="item-exchange-modal" hidden aria-hidden="true">
     <div class="item-exchange-backdrop" data-flower-exchange-close></div>
     <section class="item-exchange-dialog" role="dialog" aria-modal="true" aria-labelledby="spirit-flower-exchange-title">
+      <span class="item-exchange-emblem" aria-hidden="true"></span>
       <button type="button" class="item-exchange-close" data-flower-exchange-close aria-label="閉じる">×</button>
-      <small class="item-exchange-kicker">SPIRIT FLOWER EXCHANGE</small>
       <h2 id="spirit-flower-exchange-title">聖霊花交換所</h2>
+      <small class="item-exchange-kicker">SPIRIT FLOWER EXCHANGE</small>
       <div class="item-exchange-owned">
         <img src="images/item_flower_r.webp" alt="">
-        <span>聖霊花(R)</span>
+        <span><small>所持</small>聖霊花(R)</span>
         <strong id="flower-r-exchange-owned">0</strong>
       </div>
       <div id="spirit-flower-exchange-list" class="item-exchange-list"></div>
@@ -19259,7 +19260,7 @@ function fadeOutOpeningBgm(){
   <link rel="stylesheet" href="css/score_attack_redesign.css?v=1447-score-attack-mock">
   <link rel="stylesheet" href="css/home_menu_redesign.css?v=1449-tower-blur">
   <link rel="stylesheet" href="css/notice_redesign.css?v=1453-notice-mock">
-  <link rel="stylesheet" href="css/item_redesign.css?v=1474-item-mock">
+  <link rel="stylesheet" href="css/item_redesign.css?v=1475-exchange-mock">
 <script src="js/remnant_blessings.js?v=1416-names"></script>
 <!-- ローグライト（新規追加） -->
 <script src="js/shinju.js?v=1416-boss-name"></script>
@@ -19337,7 +19338,7 @@ window.returnToTitleScreen = function(){
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
 <script src="js/skin_system.js?v=1466-own-skin-portrait"></script>
-<script src="js/item_management.js?v=1474-item-mock"></script>
+<script src="js/item_management.js?v=1475-exchange-mock"></script>
 
 <script id="zeraphia-service-worker-register-v1">
 (function(){

@@ -622,12 +622,9 @@
     const owned=Math.max(0,Math.floor(Number(state.items.flower_r||0)));
     if(ownedEl) ownedEl.textContent=fmt(owned);
 
-    let lastGroup='';
+    // build1475: 必要数は各行に表示するため、グループ見出し（R ×1 など）は出さない。
     list.innerHTML=FLOWER_R_EXCHANGES.map(item=>{
-      const groupHead=item.group!==lastGroup
-        ? '<div class="item-exchange-group-title">'+escapeHtml(item.group)+'</div>'
-        : '';
-      lastGroup=item.group;
+      const groupHead='';
 
       const skinId=item.characterId ? 'limited_01' : '';
       const skinOwned=!!(item.characterId && window.CharacterSkins &&
@@ -643,7 +640,7 @@
       if(item.characterId){
         const c=(Array.isArray(window.CHARACTERS)?window.CHARACTERS:[]).find(x=>x&&Number(x.id)===Number(item.characterId));
         displayName=(c&&c.name?c.name+' ':'')+'限定衣装';
-        displayDesc=skinOwned?'取得済み':'聖霊花(R) ×10';
+        displayDesc=skinOwned?'取得済み':'キャラクター衣装を解放';
       }
 
       return groupHead+
@@ -653,9 +650,12 @@
             '<strong>'+escapeHtml(displayName)+'</strong>'+
             '<span>'+escapeHtml(displayDesc)+'</span>'+
           '</div>'+
+          '<div class="item-exchange-cost'+(owned<item.cost?' is-short':'')+'" aria-label="必要数 聖霊花(R) '+fmt(item.cost)+'">'+
+            '<img src="images/item_flower_r.webp" alt="" onerror="this.style.visibility=\'hidden\'"><b>'+fmt(item.cost)+'</b>'+
+          '</div>'+
           '<button type="button" class="item-exchange-btn" data-flower-exchange-id="'+escapeHtml(item.id)+'" '+
             (canExchange?'':'disabled')+'>'+
-            (item.disabled?'COMING SOON':(skinOwned?'取得済み':'交換'))+
+            (item.disabled?'準備中':(skinOwned?'取得済み':'交換'))+
           '</button>'+
         '</article>';
     }).join('');
