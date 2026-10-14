@@ -14938,7 +14938,8 @@ function showTenResult(results){
       '<div class="primor-fullscreen-content">' +
         '<img class="primor-fullscreen-img" src="' + detailEscapeHTML(src) + '" alt="' + detailEscapeHTML(name) + '">' +
         '<div class="primor-fullscreen-name">' + detailEscapeHTML(limitPlayerDisplayName(name)) + '</div>' +
-        '<button class="primor-fullscreen-home-btn" type="button">ホーム画面に設定</button>' +
+        (typeof buildCharaSublineHTML === 'function' ? buildCharaSublineHTML(fullscreenElementKey, (getRepresentativeOwnedInstance(id) || {}).rarity || chara.rarity, (getRepresentativeOwnedInstance(id) || {}).limitBreak || 0, true) : '') +
+        '<button class="primor-fullscreen-home-btn" type="button"><svg class="primor-home-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11.2 12 4l8.5 7.2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10v9.5h4.6v-5.2h2.8v5.2H18V10" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></svg><span>ホーム画面に設定</span></button>' +
         ((window.CharacterSkins && typeof window.CharacterSkins.buildFullscreenControlsHTML === 'function')
           ? window.CharacterSkins.buildFullscreenControlsHTML(chara)
           : '') +
@@ -15396,6 +15397,25 @@ function showTenResult(results){
     appendZukanIndexBatch(zukanIndexRenderGeneration);
   }
 
+  // build1478: キャラ詳細・一枚絵ビューア用のサブ情報（属性・レアリティ・共鳴）。
+  var CD_ELEMENT_LABELS = { fire:'FIRE', aqua:'AQUA', wood:'WOOD', light:'LIGHT', dark:'DARK', neutral:'NEUTRAL' };
+  function buildCharaSublineHTML(elementKey, rarity, limitBreak, showResonance){
+    var el = CD_ELEMENT_LABELS[elementKey] ? elementKey : 'neutral';
+    var r = String(rarity || 'R').trim().toUpperCase();
+    var html = '<div class="cd-subline">' +
+      '<span class="cd-el cd-el-' + el + '"><i aria-hidden="true"></i>' + CD_ELEMENT_LABELS[el] + '</span>' +
+      '<b class="cd-sep" aria-hidden="true"></b>' +
+      '<span class="cd-rarity cd-rarity-' + r.toLowerCase() + '">' + detailEscapeHTML(r) + '</span>';
+    if(showResonance){
+      var max = (typeof MAX_LIMIT_BREAK !== 'undefined') ? MAX_LIMIT_BREAK : 4;
+      var lb = Math.max(0, Math.min(max, Number(limitBreak || 0)));
+      var pips = '';
+      for(var i = 1; i <= max; i++) pips += '<i class="' + (i <= lb ? 'on' : '') + '"></i>';
+      html += '<b class="cd-sep" aria-hidden="true"></b><span class="cd-resonance" aria-label="共鳴 Lv.' + lb + '"><small>共鳴</small>' + pips + '</span>';
+    }
+    return html + '</div>';
+  }
+
   // 2階層目：従来のキャラ詳細。左右矢印と横スワイプ切替は廃止する。
   function renderBoxDetail(charaId){
     var grid = document.getElementById('box-grid');
@@ -15491,6 +15511,7 @@ function showTenResult(results){
         '<div class="box-carousel-fixed">' +
           '<div class="box-carousel-visual-row primoa-detail-single">' + visualHtml + '</div>' +
           '<div class="box-carousel-name">' + detailEscapeHTML(chara.name || '') + '</div>' +
+          buildCharaSublineHTML(detailElementKey, displayData.rarity || chara.rarity, lb, owned) +
           '<div class="box-carousel-separator"></div>' +
           fixedActionsHtml +
         '</div>' +
@@ -19261,6 +19282,7 @@ function fadeOutOpeningBgm(){
   <link rel="stylesheet" href="css/notice_redesign.css?v=1453-notice-mock">
   <link rel="stylesheet" href="css/item_redesign.css?v=1475-exchange-mock">
   <link rel="stylesheet" href="css/friend_redesign.css?v=1476-friend-mock">
+  <link rel="stylesheet" href="css/chara_detail_redesign.css?v=1478-chara-detail">
 <script src="js/remnant_blessings.js?v=1416-names"></script>
 <!-- ローグライト（新規追加） -->
 <script src="js/shinju.js?v=1416-boss-name"></script>

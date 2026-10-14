@@ -1,0 +1,495 @@
+/* ============================================================
+   ZERAPHIA build1478 — キャラ詳細 / 一枚絵ビューア リッチ化
+   アイテム・フレンド・聖霊花交換所と同じ「生成り×金の二重枠×飾り角」で統一。
+   レイアウト（詳細シートのドラッグ・画像サイズのJS制御）は変更しない。見た目のみ。
+   ============================================================ */
+
+/* ---------- 共通：属性・レアリティ・共鳴のサブ行 ---------- */
+.cd-subline{
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  margin:6px auto 0;
+  color:#6b5639;
+  font:600 10px/1 "Cinzel","Noto Serif JP",serif;
+  letter-spacing:.14em;
+  white-space:nowrap;
+}
+.cd-subline .cd-sep{
+  width:5px;height:5px;flex:0 0 5px;
+  background:#c4a065;transform:rotate(45deg);opacity:.85;
+}
+.cd-subline .cd-el{display:inline-flex;align-items:center;gap:5px;color:var(--cd-el,#7b6a52);}
+.cd-subline .cd-el i{
+  width:9px;height:9px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#fff 0 18%,var(--cd-el,#9a8a70) 60%);
+  box-shadow:0 0 0 1px rgba(255,255,255,.9),0 0 6px var(--cd-el,#9a8a70);
+}
+.cd-subline .cd-el-fire{--cd-el:#c2553e;}
+.cd-subline .cd-el-aqua{--cd-el:#3a82b8;}
+.cd-subline .cd-el-wood{--cd-el:#4f8f4a;}
+.cd-subline .cd-el-light{--cd-el:#c09126;}
+.cd-subline .cd-el-dark{--cd-el:#7a52a8;}
+.cd-subline .cd-el-neutral{--cd-el:#8a7d6a;}
+.cd-subline .cd-rarity{
+  padding:3px 7px 2px;
+  border:1px solid rgba(184,138,60,.7);
+  border-radius:2px;
+  background:linear-gradient(180deg,#fffaf0,#f1e3c4);
+  color:#7a5420;
+  font-size:9.5px;letter-spacing:.12em;
+}
+.cd-subline .cd-rarity-sr{
+  background:linear-gradient(180deg,#fff3cf,#e7c675);
+  border-color:#b4862f;color:#5d3d0e;
+  box-shadow:0 0 6px rgba(226,186,92,.45);
+}
+.cd-subline .cd-resonance{display:inline-flex;align-items:center;gap:4px;}
+.cd-subline .cd-resonance small{
+  margin-right:3px;color:#6b5639;
+  font:600 9.5px/1 "Noto Serif JP",serif;letter-spacing:.08em;
+}
+.cd-subline .cd-resonance i{
+  width:7px;height:7px;transform:rotate(45deg);
+  border:1px solid #b88a3c;background:rgba(255,255,255,.6);
+}
+.cd-subline .cd-resonance i.on{
+  background:linear-gradient(135deg,#f6dc96,#b88a3c);
+  box-shadow:0 0 5px rgba(214,170,80,.7);
+}
+
+/* ============================================================
+   キャラ詳細（#box-grid.primoa-detail-page）
+   ============================================================ */
+html body #box-grid.box-carousel.primoa-detail-page .box-carousel-fixed{
+  position:relative;
+}
+/* 画像の背後に属性色の光輪 */
+html body #box-grid.box-carousel.primoa-detail-page .box-carousel-visual-row{
+  position:relative;
+}
+html body #box-grid.box-carousel.primoa-detail-page .box-carousel-visual-row::before{
+  content:"";
+  position:absolute;left:50%;top:50%;
+  width:150%;max-width:420px;aspect-ratio:1/1;
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+  background:
+    radial-gradient(circle,rgba(255,255,255,.95) 0 22%,rgba(255,248,230,.55) 42%,transparent 66%),
+    conic-gradient(from 0deg,transparent 0 6deg,rgba(214,180,110,.16) 6deg 9deg,transparent 9deg 30deg) ;
+  -webkit-mask-image:radial-gradient(circle,#000 30%,transparent 68%);
+  mask-image:radial-gradient(circle,#000 30%,transparent 68%);
+  z-index:0;
+}
+/* 画像フレーム：金の二重枠＋四隅の飾り */
+html body #box-grid.box-carousel.primoa-detail-page .box-carousel-visual{
+  position:relative !important;
+  z-index:1;
+  padding:6px !important;
+  border:1px solid #c6a466 !important;
+  border-radius:2px !important;
+  background:linear-gradient(180deg,#fffdf7,#f3ead7) !important;
+  box-shadow:
+    inset 0 0 0 3px rgba(255,255,255,.9),
+    inset 0 0 0 4px rgba(198,164,102,.5),
+    0 10px 26px rgba(92,66,28,.18),
+    0 2px 6px rgba(92,66,28,.12) !important;
+  overflow:visible !important;
+}
+html body #box-grid.box-carousel.primoa-detail-page .box-carousel-visual::after{
+  content:"" !important;
+  position:absolute !important;inset:-5px !important;
+  pointer-events:none !important;
+  border:0 !important;border-radius:0 !important;
+  box-shadow:none !important;opacity:1 !important;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 26'%3E%3Cpath d='M1 25V8L8 1h17' fill='none' stroke='%23b88a3c' stroke-width='1.5'/%3E%3Cpath d='M5.5 18V9.5L9.5 5.5H18' fill='none' stroke='%23dcc28c' stroke-width='1'/%3E%3Cpath d='M8 4.5l3.5 3.5L8 11.5 4.5 8Z' fill='%23fff7e4' stroke='%23b88a3c' stroke-width='1'/%3E%3C/svg%3E") left top/22px 22px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 26'%3E%3Cpath d='M25 25V8L18 1H1' fill='none' stroke='%23b88a3c' stroke-width='1.5'/%3E%3Cpath d='M20.5 18V9.5L16.5 5.5H8' fill='none' stroke='%23dcc28c' stroke-width='1'/%3E%3Cpath d='M18 4.5l3.5 3.5L18 11.5 14.5 8Z' fill='%23fff7e4' stroke='%23b88a3c' stroke-width='1'/%3E%3C/svg%3E") right top/22px 22px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 26'%3E%3Cpath d='M1 1v17l7 7h17' fill='none' stroke='%23b88a3c' stroke-width='1.5'/%3E%3Cpath d='M5.5 8v8.5l4 4H18' fill='none' stroke='%23dcc28c' stroke-width='1'/%3E%3Cpath d='M8 14.5l3.5 3.5L8 21.5 4.5 18Z' fill='%23fff7e4' stroke='%23b88a3c' stroke-width='1'/%3E%3C/svg%3E") left bottom/22px 22px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 26'%3E%3Cpath d='M25 1v17l-7 7H1' fill='none' stroke='%23b88a3c' stroke-width='1.5'/%3E%3Cpath d='M20.5 8v8.5l-4 4H8' fill='none' stroke='%23dcc28c' stroke-width='1'/%3E%3Cpath d='M18 14.5l3.5 3.5L18 21.5 14.5 18Z' fill='%23fff7e4' stroke='%23b88a3c' stroke-width='1'/%3E%3C/svg%3E") right bottom/22px 22px no-repeat !important;
+  z-index:4 !important;
+}
+html body #box-grid.box-carousel.primoa-detail-page .box-carousel-img{
+  border-radius:1px !important;
+  box-shadow:0 0 0 1px rgba(184,138,60,.35) !important;
+}
+/* タップで拡大のヒント：小さな金縁ピル */
+html body #box-grid.box-carousel.primoa-detail-page .box-carousel-zoom-hint{
+  position:absolute !important;
+  left:50% !important;bottom:-11px !important;top:auto !important;right:auto !important;
+  transform:translateX(-50%) !important;
+  display:inline-flex !important;align-items:center !important;gap:5px !important;
+  width:auto !important;height:20px !important;
+  padding:0 10px 0 8px !important;
+  border:1px solid #c6a466 !important;border-radius:10px !important;
+  background:linear-gradient(180deg,#fffdf7,#f3e7cf) !important;
+  box-shadow:0 2px 5px rgba(92,66,28,.15) !important;
+  color:#6b5132 !important;
+  font:600 8.5px/1 "Noto Serif JP",serif !important;letter-spacing:.08em !important;
+  white-space:nowrap !important;
+  opacity:1 !important;z-index:5 !important;
+  text-shadow:none !important;
+}
+html body #box-grid.box-carousel.primoa-detail-page .box-carousel-zoom-hint::before{
+  content:"";width:11px;height:11px;flex:0 0 11px;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5' fill='none' stroke='%237a5a2c' stroke-width='2.4'/%3E%3Cpath d='M15.4 15.4 21 21M10.5 7.5v6M7.5 10.5h6' stroke='%237a5a2c' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+
+/* 名前：金の装飾線で挟む */
+html body #box-grid.box-carousel.primoa-detail-page .box-carousel-name{
+  display:flex !important;align-items:center !important;justify-content:center !important;gap:12px !important;
+  margin-top:20px !important;
+  color:#2f2116 !important;
+  font:700 clamp(19px,5.6vw,23px)/1.2 "Noto Serif JP",serif !important;
+  letter-spacing:.2em !important;text-indent:.2em !important;
+  text-shadow:0 1px 0 #fff,0 0 10px rgba(255,255,255,.9) !important;
+}
+html body #box-grid.box-carousel.primoa-detail-page .box-carousel-name::before,
+html body #box-grid.box-carousel.primoa-detail-page .box-carousel-name::after{
+  content:"";width:44px;height:8px;flex:0 0 44px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 0 10 5 5 10 0 5Z' fill='%23b88a3c'/%3E%3C/svg%3E") var(--p,right) center/6px 6px no-repeat,
+    linear-gradient(90deg,var(--a,transparent),var(--b,rgba(184,138,60,.8))) center/calc(100% - 8px) 1px no-repeat;
+}
+html body #box-grid.box-carousel.primoa-detail-page .box-carousel-name::after{--p:left;--a:rgba(184,138,60,.8);--b:transparent;}
+html body #box-grid.box-carousel.primoa-detail-page .box-carousel-separator{
+  height:1px !important;margin:10px 16% 10px !important;border:0 !important;
+  background:linear-gradient(90deg,transparent,rgba(184,138,60,.45),transparent) !important;
+}
+
+/* レベルアップ（ブロンズ）・限界突破（金枠） */
+html body #box-grid.box-carousel.primoa-detail-page .box-carousel-fixed-actions{gap:8px !important;}
+html body #box-grid.box-carousel.primoa-detail-page .box-carousel-action-btn{
+  position:relative !important;
+  height:clamp(38px,10.5vw,42px) !important;
+  border-radius:2px !important;
+  font:700 clamp(12.5px,3.6vw,14px)/1 "Noto Serif JP",serif !important;
+  letter-spacing:.12em !important;text-indent:.12em !important;
+  opacity:1 !important;
+}
+html body #box-grid.box-carousel.primoa-detail-page .box-carousel-levelup-btn{
+  border:1px solid #6e4f22 !important;
+  background:linear-gradient(180deg,#b48d55 0%,#93703c 52%,#7c5c2d 100%) !important;
+  box-shadow:inset 0 0 0 1px rgba(255,236,196,.55),inset 0 0 0 3px rgba(122,90,42,.6),inset 0 0 0 4px rgba(244,214,150,.35),0 3px 7px rgba(70,46,14,.25) !important;
+  color:#fffaf0 !important;-webkit-text-fill-color:#fffaf0 !important;
+  text-shadow:0 1px 1px rgba(60,38,10,.6) !important;
+}
+html body #box-grid.box-carousel.primoa-detail-page .box-carousel-limitbreak-btn{
+  border:1px solid #b88a3c !important;
+  background:linear-gradient(180deg,#fffcf3 0%,#f3e5c6 100%) !important;
+  box-shadow:inset 0 0 0 2px rgba(255,253,245,.95),inset 0 0 0 3px rgba(184,138,60,.45),0 3px 7px rgba(110,76,24,.15) !important;
+  color:#4a3016 !important;-webkit-text-fill-color:#4a3016 !important;
+  text-shadow:none !important;
+}
+html body #box-grid.box-carousel.primoa-detail-page .box-carousel-limitbreak-btn.is-ready{
+  background:linear-gradient(180deg,#fff6dc 0%,#ecd18e 100%) !important;
+  box-shadow:inset 0 0 0 2px rgba(255,250,232,.95),inset 0 0 0 3px rgba(184,138,60,.6),0 0 12px rgba(226,186,92,.45),0 3px 7px rgba(110,76,24,.18) !important;
+}
+html body #box-grid.box-carousel.primoa-detail-page .box-carousel-limitbreak-btn.is-disabled,
+html body #box-grid.box-carousel.primoa-detail-page .box-carousel-limitbreak-btn.is-max{
+  border-color:rgba(176,160,132,.8) !important;
+  background:linear-gradient(180deg,#f7f4ee,#e9e3d7) !important;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.7) !important;
+  color:#8f8574 !important;-webkit-text-fill-color:#8f8574 !important;
+}
+
+/* ---------- 詳細シート ---------- */
+html body #box-grid.box-carousel.primoa-detail-page .box-carousel-detail-scroll{
+  border:1px solid rgba(196,166,112,.75) !important;
+  border-radius:3px 3px 0 0 !important;
+  background:linear-gradient(180deg,rgba(255,253,248,.97),rgba(249,244,233,.97)) !important;
+  box-shadow:inset 0 0 0 4px rgba(255,255,255,.75),inset 0 0 0 5px rgba(205,178,128,.35),0 -6px 18px rgba(96,70,30,.10) !important;
+}
+html body #box-grid.box-carousel.primoa-detail-page .box-carousel-sheet-handle span{
+  width:60px !important;height:8px !important;
+  border-radius:0 !important;opacity:1 !important;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 0 10 5 5 10 0 5Z' fill='%23c4a065'/%3E%3C/svg%3E") center/7px 7px no-repeat,
+    linear-gradient(90deg,transparent,rgba(184,138,60,.7) 25%,transparent 44%,transparent 56%,rgba(184,138,60,.7) 75%,transparent) center/100% 1px no-repeat !important;
+}
+/* ステータス行 */
+html body #box-grid.primoa-detail-page .box-carousel-detail .detail-status-row{
+  align-items:center !important;
+  min-height:38px !important;
+  padding:8px 4px !important;
+  border-bottom:1px dashed rgba(184,150,96,.38) !important;
+  background:none !important;
+}
+html body #box-grid.primoa-detail-page .box-carousel-detail .detail-status-row:last-child{border-bottom:0 !important;}
+html body #box-grid.primoa-detail-page .box-carousel-detail .detail-status-label{
+  display:inline-flex !important;align-items:center !important;gap:7px !important;
+  color:#8b6c3a !important;
+  font:600 11px/1.3 "Noto Serif JP","Cinzel",serif !important;
+  letter-spacing:.1em !important;
+}
+html body #box-grid.primoa-detail-page .box-carousel-detail .detail-status-label::before{
+  content:"";width:5px;height:5px;flex:0 0 5px;transform:rotate(45deg);
+  background:#c4a065;
+}
+html body #box-grid.primoa-detail-page .box-carousel-detail .detail-status-val{
+  color:#2b1e13 !important;
+  font:700 clamp(13px,3.7vw,15px)/1.2 "Cinzel","Noto Serif JP",serif !important;
+}
+/* レベル行を強調 */
+html body #box-grid.primoa-detail-page .box-carousel-detail .detail-lb-section .detail-status-row:first-child .detail-status-val{
+  font-size:clamp(15px,4.3vw,17px) !important;
+}
+/* 区切りカード（射撃性能・ULT） */
+html body #box-grid.primoa-detail-page .box-carousel-detail .detail-shooting-card{
+  margin-top:6px !important;
+  padding:4px 10px !important;
+  border:1px solid rgba(200,174,126,.7) !important;
+  border-radius:3px !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.88),rgba(250,245,234,.85)) !important;
+  box-shadow:inset 0 0 0 3px rgba(255,255,255,.8),inset 0 0 0 4px rgba(214,192,148,.3) !important;
+}
+/* セクション見出し（ULT・共鳴）：紋章＋文字＋下線 */
+html body #box-grid.primoa-detail-page .box-carousel-detail .detail-section-title{
+  display:flex !important;align-items:center !important;gap:8px !important;
+  margin:16px 0 4px !important;padding:0 0 6px !important;
+  border:0 !important;
+  background:linear-gradient(90deg,rgba(184,138,60,.65),rgba(184,138,60,.12)) 0 100%/100% 1px no-repeat !important;
+  color:#2f2116 !important;
+  font:700 14px/1.2 "Noto Serif JP","Cinzel",serif !important;
+  letter-spacing:.16em !important;
+}
+html body #box-grid.primoa-detail-page .box-carousel-detail .detail-section-title::before{
+  content:"" !important;display:block !important;
+  width:18px;height:18px;flex:0 0 18px;
+  border:0 !important;transform:none !important;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M20 2 23 17 38 20 23 23 20 38 17 23 2 20 17 17Z' fill='%23c09246'/%3E%3Cpath d='M20 10 21.5 18.5 30 20 21.5 21.5 20 30 18.5 21.5 10 20 18.5 18.5Z' fill='%23fff6e2'/%3E%3C/svg%3E") center/contain no-repeat !important;
+}
+html body #box-grid.primoa-detail-page .box-carousel-detail .detail-section-title::after{content:none !important;}
+/* ULT */
+html body #box-grid.primoa-detail-page .box-carousel-detail .detail-shooting-ult{padding:10px 12px !important;}
+html body #box-grid.primoa-detail-page .box-carousel-detail .detail-shooting-ult-head{
+  display:flex !important;align-items:center !important;justify-content:space-between !important;gap:8px !important;
+  padding-bottom:7px !important;margin-bottom:7px !important;
+  border-bottom:1px dashed rgba(184,150,96,.4) !important;
+}
+html body #box-grid.primoa-detail-page .box-carousel-detail .detail-shooting-ult-head strong{
+  color:#3a2512 !important;
+  font:700 clamp(14px,4vw,16px)/1.3 "Noto Serif JP",serif !important;
+  letter-spacing:.06em !important;
+}
+html body #box-grid.primoa-detail-page .box-carousel-detail .detail-shooting-desc{
+  color:#55473a !important;
+  font:500 clamp(11px,3.1vw,12.5px)/1.75 "Noto Serif JP",serif !important;
+}
+/* 共鳴 */
+html body #box-grid.primoa-detail-page .box-carousel-detail .lb-bonus-box{
+  display:flex !important;flex-direction:column !important;gap:6px !important;
+  margin-top:6px !important;padding:0 !important;border:0 !important;background:none !important;box-shadow:none !important;
+}
+html body #box-grid.primoa-detail-page .box-carousel-detail .lb-bonus-row{
+  display:grid !important;grid-template-columns:auto minmax(0,1fr) auto !important;align-items:center !important;gap:10px !important;
+  min-height:42px !important;margin:0 !important;padding:6px 10px 6px 8px !important;
+  border:1px solid rgba(200,174,126,.6) !important;border-radius:3px !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(250,245,234,.86)) !important;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.75) !important;
+  opacity:1 !important;
+}
+html body #box-grid.primoa-detail-page .box-carousel-detail .lb-bonus-level{
+  display:flex !important;align-items:center !important;justify-content:center !important;
+  min-width:44px !important;height:24px !important;padding:0 6px !important;
+  border:1px solid #b88a3c !important;border-radius:2px !important;
+  background:linear-gradient(180deg,#fffaf0,#efdfbd) !important;
+  color:#5d3d0e !important;
+  font:700 10.5px/1 "Cinzel",serif !important;letter-spacing:.06em !important;
+}
+html body #box-grid.primoa-detail-page .box-carousel-detail .lb-bonus-summary{
+  color:#2f2116 !important;font:600 clamp(11px,3.1vw,12.5px)/1.45 "Noto Serif JP",serif !important;
+}
+html body #box-grid.primoa-detail-page .box-carousel-detail .lb-bonus-state{
+  padding:4px 7px !important;border-radius:2px !important;
+  font:600 9.5px/1 "Noto Serif JP",serif !important;letter-spacing:.04em !important;white-space:nowrap !important;
+  border:1px solid transparent !important;
+}
+html body #box-grid.primoa-detail-page .box-carousel-detail .lb-bonus-row.unlocked{
+  border-color:rgba(184,138,60,.75) !important;
+  background:linear-gradient(180deg,#fffaf0,#f5e9cf) !important;
+}
+html body #box-grid.primoa-detail-page .box-carousel-detail .lb-bonus-row.unlocked .lb-bonus-level{
+  background:linear-gradient(180deg,#f3d58f,#c39443) !important;color:#fffaf0 !important;
+  border-color:#946a28 !important;text-shadow:0 1px 1px rgba(70,44,10,.5) !important;
+}
+html body #box-grid.primoa-detail-page .box-carousel-detail .lb-bonus-row.unlocked .lb-bonus-state{
+  background:rgba(184,138,60,.14) !important;border-color:rgba(184,138,60,.5) !important;color:#7a5420 !important;
+}
+html body #box-grid.primoa-detail-page .box-carousel-detail .lb-bonus-row.next .lb-bonus-state{
+  background:#fff !important;border-color:rgba(166,120,60,.6) !important;color:#8a5a20 !important;
+}
+html body #box-grid.primoa-detail-page .box-carousel-detail .lb-bonus-row.locked .lb-bonus-summary,
+html body #box-grid.primoa-detail-page .box-carousel-detail .lb-bonus-row.locked .lb-bonus-level{opacity:.55 !important;}
+html body #box-grid.primoa-detail-page .box-carousel-detail .lb-bonus-row.locked .lb-bonus-state{
+  background:rgba(150,140,125,.12) !important;color:#8f8574 !important;
+}
+
+/* ============================================================
+   一枚絵ビューア（#primor-fullscreen-viewer）
+   ============================================================ */
+html body #primor-fullscreen-viewer,
+html body #primor-fullscreen-viewer[class*="element-"]{
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 36%,rgba(255,255,255,.98) 0,rgba(255,250,238,.85) 40%,transparent 75%),
+    linear-gradient(180deg,#fbf8f1 0%,#f1e8d6 60%,#e6d8bd 100%) !important;
+}
+/* 背景：放射状の光条（静止・軽量） */
+html body #primor-fullscreen-viewer .primor-fullscreen-bg{
+  background:
+    repeating-conic-gradient(from 0deg at 50% 36%,rgba(214,180,110,.10) 0 2deg,transparent 2deg 12deg) !important;
+  -webkit-mask-image:radial-gradient(ellipse 70% 55% at 50% 36%,#000 10%,transparent 72%);
+  mask-image:radial-gradient(ellipse 70% 55% at 50% 36%,#000 10%,transparent 72%);
+}
+/* 外枠：金の二重枠＋飾り角 */
+html body #primor-fullscreen-viewer .primor-fullscreen-content::before{
+  inset:calc(10px + env(safe-area-inset-top)) 10px calc(10px + env(safe-area-inset-bottom)) !important;
+  border:1px solid rgba(198,164,102,.7) !important;
+  border-radius:3px !important;
+  box-shadow:inset 0 0 0 4px rgba(255,255,255,.6),inset 0 0 0 5px rgba(198,164,102,.35) !important;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Cpath d='M1 29V9L9 1h20' fill='none' stroke='%23c19a55' stroke-width='1.3'/%3E%3Cpath d='M6 22V11.5L11.5 6H22' fill='none' stroke='%23dcc28c' stroke-width='.9'/%3E%3Ccircle cx='9' cy='9' r='1.6' fill='%23c19a55'/%3E%3C/svg%3E") left top/26px 26px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Cpath d='M29 29V9L21 1H1' fill='none' stroke='%23c19a55' stroke-width='1.3'/%3E%3Cpath d='M24 22V11.5L18.5 6H8' fill='none' stroke='%23dcc28c' stroke-width='.9'/%3E%3Ccircle cx='21' cy='9' r='1.6' fill='%23c19a55'/%3E%3C/svg%3E") right top/26px 26px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Cpath d='M1 1v20l8 8h20' fill='none' stroke='%23c19a55' stroke-width='1.3'/%3E%3Cpath d='M6 8v10.5L11.5 24H22' fill='none' stroke='%23dcc28c' stroke-width='.9'/%3E%3Ccircle cx='9' cy='21' r='1.6' fill='%23c19a55'/%3E%3C/svg%3E") left bottom/26px 26px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Cpath d='M29 1v20l-8 8H1' fill='none' stroke='%23c19a55' stroke-width='1.3'/%3E%3Cpath d='M24 8v10.5L18.5 24H8' fill='none' stroke='%23dcc28c' stroke-width='.9'/%3E%3Ccircle cx='21' cy='21' r='1.6' fill='%23c19a55'/%3E%3C/svg%3E") right bottom/26px 26px no-repeat !important;
+}
+/* 一枚絵：額装 */
+html body #primor-fullscreen-viewer .primor-fullscreen-img{
+  padding:7px !important;
+  border:1px solid #c6a466 !important;
+  border-radius:2px !important;
+  background:linear-gradient(180deg,#fffdf7,#f3ead7) !important;
+  box-shadow:
+    inset 0 0 0 3px rgba(255,255,255,.9),
+    inset 0 0 0 4px rgba(198,164,102,.55),
+    0 16px 36px rgba(92,66,28,.22),
+    0 3px 9px rgba(92,66,28,.14) !important;
+}
+/* 名前：金線で挟む */
+html body #primor-fullscreen-viewer .primor-fullscreen-name{
+  display:flex !important;align-items:center !important;justify-content:center !important;gap:12px !important;
+  margin-top:16px !important;
+  color:#2f2116 !important;
+  font:700 clamp(20px,5.8vw,24px)/1.2 "Noto Serif JP",serif !important;
+  letter-spacing:.22em !important;text-indent:.22em !important;
+  text-shadow:0 1px 0 #fff,0 0 10px rgba(255,255,255,.9) !important;
+}
+html body #primor-fullscreen-viewer .primor-fullscreen-name::before,
+html body #primor-fullscreen-viewer .primor-fullscreen-name::after{
+  content:"";width:48px;height:8px;flex:0 0 48px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 0 10 5 5 10 0 5Z' fill='%23b88a3c'/%3E%3C/svg%3E") var(--p,right) center/6px 6px no-repeat,
+    linear-gradient(90deg,var(--a,transparent),var(--b,rgba(184,138,60,.8))) center/calc(100% - 8px) 1px no-repeat;
+}
+html body #primor-fullscreen-viewer .primor-fullscreen-name::after{--p:left;--a:rgba(184,138,60,.8);--b:transparent;}
+html body #primor-fullscreen-viewer .cd-subline{margin-top:8px;}
+/* ホーム画面に設定：ブロンズ */
+html body #primor-fullscreen-viewer .primor-fullscreen-home-btn{
+  display:inline-flex !important;align-items:center !important;justify-content:center !important;gap:8px !important;
+  width:min(76vw,300px) !important;
+  height:44px !important;
+  margin-top:16px !important;
+  border:1px solid #6e4f22 !important;
+  border-radius:2px !important;
+  background:linear-gradient(180deg,#b48d55 0%,#93703c 52%,#7c5c2d 100%) !important;
+  box-shadow:inset 0 0 0 1px rgba(255,236,196,.55),inset 0 0 0 3px rgba(122,90,42,.6),inset 0 0 0 4px rgba(244,214,150,.35),0 4px 10px rgba(70,46,14,.28) !important;
+  color:#fffaf0 !important;-webkit-text-fill-color:#fffaf0 !important;
+  font:700 clamp(13.5px,3.8vw,15px)/1 "Noto Serif JP",serif !important;
+  letter-spacing:.14em !important;
+  text-shadow:0 1px 1px rgba(60,38,10,.6) !important;
+}
+html body #primor-fullscreen-viewer .primor-fullscreen-home-btn:active{transform:translateY(1px) !important;filter:brightness(.96) !important;}
+html body #primor-fullscreen-viewer .primor-home-icon{width:17px;height:17px;flex:0 0 17px;}
+
+/* 衣装セレクタ */
+html body #primor-fullscreen-viewer .primor-skin-controls{
+  width:min(80vw,320px) !important;
+  margin:16px auto 0 !important;
+  padding:0 !important;border:0 !important;background:none !important;
+}
+html body #primor-fullscreen-viewer .primor-skin-controls-label{
+  display:flex !important;align-items:center !important;justify-content:center !important;gap:8px !important;
+  margin:0 0 8px !important;
+  color:#6b5132 !important;
+  font:700 11px/1 "Noto Serif JP",serif !important;letter-spacing:.3em !important;text-indent:.3em !important;
+}
+html body #primor-fullscreen-viewer .primor-skin-controls-label::before,
+html body #primor-fullscreen-viewer .primor-skin-controls-label::after{
+  content:"";flex:1 1 auto;max-width:90px;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(184,138,60,.7));
+}
+html body #primor-fullscreen-viewer .primor-skin-controls-label::after{background:linear-gradient(90deg,rgba(184,138,60,.7),transparent);}
+html body #primor-fullscreen-viewer .primor-skin-controls-buttons{gap:8px !important;}
+html body #primor-fullscreen-viewer .primor-skin-choice{
+  position:relative !important;
+  height:48px !important;
+  border:1px solid rgba(190,166,120,.75) !important;
+  border-radius:2px !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(246,240,229,.9)) !important;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.8),0 2px 5px rgba(90,64,26,.08) !important;
+  opacity:1 !important;
+}
+html body #primor-fullscreen-viewer .primor-skin-choice span{
+  color:#3a2717 !important;font:700 13px/1.2 "Noto Serif JP",serif !important;letter-spacing:.1em !important;
+}
+html body #primor-fullscreen-viewer .primor-skin-choice small{
+  margin-top:4px !important;color:#8b6c3a !important;font:600 9px/1 "Noto Serif JP",serif !important;letter-spacing:.1em !important;
+}
+html body #primor-fullscreen-viewer .primor-skin-choice.is-selected{
+  border-color:#b88a3c !important;
+  background:linear-gradient(180deg,#fff8e6,#efd9a6) !important;
+  box-shadow:inset 0 0 0 2px rgba(255,250,232,.95),inset 0 0 0 3px rgba(184,138,60,.6),0 0 12px rgba(226,186,92,.35) !important;
+}
+/* 装備中のチェックバッジ */
+html body #primor-fullscreen-viewer .primor-skin-choice.is-selected::after{
+  content:"";position:absolute;top:-7px;right:-7px;width:18px;height:18px;border-radius:50%;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 12.5l4 4 8-9' fill='none' stroke='%23fff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/12px 12px no-repeat,linear-gradient(180deg,#c9a057,#8d6526);
+  border:1px solid #fff3d6;box-shadow:0 1px 3px rgba(60,38,10,.35);
+}
+html body #primor-fullscreen-viewer .primor-skin-choice.is-selected small{color:#7a5420 !important;}
+html body #primor-fullscreen-viewer .primor-skin-choice.is-locked,
+html body #primor-fullscreen-viewer .primor-skin-choice:disabled{
+  border-color:rgba(176,160,132,.6) !important;
+  background:linear-gradient(180deg,#f6f3ed,#e8e2d6) !important;
+}
+html body #primor-fullscreen-viewer .primor-skin-choice.is-locked span,
+html body #primor-fullscreen-viewer .primor-skin-choice:disabled span{color:#9a907f !important;}
+html body #primor-fullscreen-viewer .primor-skin-choice.is-locked small,
+html body #primor-fullscreen-viewer .primor-skin-choice:disabled small{color:#a99f8e !important;}
+html body #primor-fullscreen-viewer .primor-skin-choice.is-locked small::before,
+html body #primor-fullscreen-viewer .primor-skin-choice:disabled small::before{
+  content:"";display:inline-block;width:8px;height:9px;margin-right:4px;vertical-align:-1px;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 18'%3E%3Crect x='2' y='8' width='12' height='9' rx='1.5' fill='%23a99f8e'/%3E%3Cpath d='M5 8V5.5a3 3 0 0 1 6 0V8' fill='none' stroke='%23a99f8e' stroke-width='2'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+@media (prefers-reduced-motion:reduce){
+  html body #primor-fullscreen-viewer .primor-fullscreen-home-btn:active{transform:none !important;}
+}
+
+/* 調整：拡大ヒントは画像内の下端に。シート内側の旧フレームは外して二重枠を1つに */
+html body #box-grid.box-carousel.primoa-detail-page .box-carousel-zoom-hint{bottom:12px !important;}
+html body #box-grid.primoa-detail-page .box-carousel-detail,
+html body #box-grid.primoa-detail-page .box-carousel-detail .detail-lb-section{
+  border:0 !important;box-shadow:none !important;background:transparent !important;
+}
+html body #box-grid.primoa-detail-page .box-carousel-detail .detail-lb-section::before,
+html body #box-grid.primoa-detail-page .box-carousel-detail .detail-lb-section::after,
+html body #box-grid.primoa-detail-page .box-carousel-detail::before,
+html body #box-grid.primoa-detail-page .box-carousel-detail::after{content:none !important;display:none !important;}
+/* 低い画面：名前まわりを詰めてボタンを確保 */
+@media (max-height:740px){
+  html body #box-grid.box-carousel.primoa-detail-page .box-carousel-name{margin-top:10px !important;font-size:18px !important;}
+  html body #box-grid.box-carousel.primoa-detail-page .cd-subline{margin-top:4px;}
+  html body #box-grid.box-carousel.primoa-detail-page .box-carousel-separator{margin:6px 16% 6px !important;}
+  html body #box-grid.box-carousel.primoa-detail-page .box-carousel-action-btn{height:36px !important;}
+}
+@media (max-height:640px){
+  html body #box-grid.box-carousel.primoa-detail-page .box-carousel-name{margin-top:6px !important;font-size:16px !important;}
+  html body #box-grid.box-carousel.primoa-detail-page .cd-subline{margin-top:3px;font-size:9px;}
+  html body #box-grid.box-carousel.primoa-detail-page .cd-subline .cd-rarity{padding:2px 6px 1px;}
+  html body #box-grid.box-carousel.primoa-detail-page .box-carousel-separator{display:none !important;}
+  html body #box-grid.box-carousel.primoa-detail-page .box-carousel-fixed-actions{margin-top:6px !important;}
+}
+@media (max-height:600px){
+  html body #box-grid.box-carousel.primoa-detail-page .cd-subline{display:none;}
+  html body #box-grid.box-carousel.primoa-detail-page .box-carousel-action-btn{height:34px !important;}
+}
+/* 拡大ヒントはSRバッジ（右下）と重ならないよう左下へ */
+html body #box-grid.box-carousel.primoa-detail-page .box-carousel-zoom-hint{left:12px !important;transform:none !important;}
