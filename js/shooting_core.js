@@ -19425,7 +19425,7 @@
       meta.sub = selectedStage.difficultyLabel || '';
     } else if (BOSS && BOSS.behavior === 'tower15_echo_v1') {
       meta.kicker = 'ECHO TOWER 15F';
-      meta.title = BOSS.name || '？？？';
+      meta.title = BOSS.name || 'トワ';
       meta.sub = 'THE LAST ECHO';
       meta.image = selectedStage.introImage || 'images/tower15_boss_battle_start.webp';
     } else if (isNoahStage()) {

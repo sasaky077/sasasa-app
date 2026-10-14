@@ -218,7 +218,7 @@
           2:Object.freeze({everyMs:11000, durationMs:5200})
         })
       }),
-      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.BOSS_CLEAR,text:'最深部の主を撃破'}),playable:true
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.BOSS_CLEAR,text:'トワを撃破'}),playable:true
     });
     if (floor === 10) return Object.freeze({
       id:'shooting_tower_10', chapter:0, stageNo:10,

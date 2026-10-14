@@ -38,6 +38,16 @@
 
   const OTHER_ITEMS = [
     {
+      // build1486: 残響の塔15F（トワ）の報酬。使い道は今後実装。
+      id:'towa_memory',
+      source:'inventory',
+      name:'トワの記憶',
+      img:'images/item_towa_memory.webp',
+      kicker:'ECHO MEMORY',
+      desc:'残響の塔の最深部で、トワが遺した記憶の結晶。その使い道はまだ分からない。',
+      tag:'記憶'
+    },
+    {
       id:'special_stage_ticket',
       source:'profile',
       name:'ノア挑戦チケット',

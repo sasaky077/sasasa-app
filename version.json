@@ -1,4 +1,4 @@
 {
-  "build": 1485,
-  "note": "残響の塔15Fを専用BOSS（1体のみ・PHASE2構成）に変更：ユニット画像 tower15_boss_battle.webp／intro tower15_boss_battle_start.webp。PHASE1＝二重螺旋＋自機狙い5WAY＋リング、PHASE2＝逆回転三重螺旋×2＋7WAY＋高密度リング。WARNING（即死）3つが常時浮遊し壁で反射、消えても2.2秒後に補充。一定間隔で『暗転』（敵弾と自キャラ以外が見えなくなる。PHASE1:16秒毎4秒、PHASE2:11秒毎5.2秒）。全バトルの敵弾をスプライト描画に刷新（外光・立体本体・暗い縁取り・ハイライト・進行方向の残光、WARNINGは赤紫の目＋回転紋章）。描画は1回の走査＋キャッシュ画像の貼り付けで軽量化。build1484までを含む。"
+  "build": 1486,
+  "note": "残響の塔15FのBOSS名を『トワ』に（intro・HP表示・ミッション・階層説明）。15F報酬を『トワの記憶』×1に変更（images/item_towa_memory.webp）。アイテム画面［その他］に『トワの記憶』を追加（使い道は今後）。付与はサーバー側（finish_resonance_tower_run／claim_resonance_tower_rewards）の15F報酬を towa_memory ×1 に変更する必要あり。build1485までを含む。"
 }

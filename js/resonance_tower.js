@@ -17,7 +17,7 @@
     '光と闇の属性バリア。周期的な即死弾に警戒せよ。',
     '蜘蛛の群れと白い三頭狼の強敵を撃破せよ。',
     '強化リヴィア。20秒おきに10秒間だけ遮断壁が出現。',
-    '理想郷・ノア。特別巡行と同じ攻撃、HPは本家の70%。'
+    '最深部の主・トワ。即死弾が常に漂い、時おり世界が暗転する。'
   ];
   const numerals=['第一層','第二層','第三層','第四層','第五層','第六層','第七層','第八層','第九層','第十層','第十一層','第十二層','第十三層','第十四層','第十五層'];
 
@@ -36,7 +36,9 @@
     [{id:'gem',name:'結晶',qty:10,img:'images/icon_gem.webp'}],
     [{id:'special_stage_ticket',name:'Special Ticket -ノア-',qty:1,img:'images/special_stage_ticket.webp'}],
     [{id:'gem',name:'結晶',qty:30,img:'images/icon_gem.webp'}],
-    ...Array.from({length:5},()=>[{id:'flower_r',name:'聖霊花(R)',qty:1,img:'images/item_flower_r.webp'}])
+    ...Array.from({length:4},()=>[{id:'flower_r',name:'聖霊花(R)',qty:1,img:'images/item_flower_r.webp'}]),
+    // build1486: 15F（トワ）の報酬。使い道は未定。
+    [{id:'towa_memory',name:'トワの記憶',qty:1,img:'images/item_towa_memory.webp'}]
   ]);
   function createTowerRewardList(floors){
     const out=document.createElement('div');out.className='resonance-tower-reward-list';
