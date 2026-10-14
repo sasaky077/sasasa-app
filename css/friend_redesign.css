@@ -1,0 +1,421 @@
+/* ============================================================
+   ZERAPHIA build1476 — フレンド画面 リデザイン（完成図準拠）
+   すべて #screen-friend.friend-premium 内に限定。既存のID・関数は維持。
+   ============================================================ */
+html body:not(.ui-immersive) #screen-friend.friend-premium.screen.active{
+  background:
+    linear-gradient(180deg,rgba(255,253,248,.18) 0%,rgba(252,249,242,.40) 30%,rgba(250,246,238,.62) 100%),
+    url("../images/bg_setting.webp") center top / cover no-repeat,
+    #f7f2e8 !important;
+}
+#screen-friend.friend-premium{
+  --fr-gold:#b88a3c;
+  --fr-gold-l:#d9bd82;
+  --fr-ink:#2f2116;
+  --fr-sub:#6a5a47;
+  --fr-panel:linear-gradient(180deg,rgba(255,253,248,.93),rgba(249,245,236,.90));
+}
+
+/* ---------- タイトル：上下の金の飾り ---------- */
+html body #screen-friend.friend-premium .app-page-heading{position:relative !important;overflow:visible !important;}
+html body #screen-friend.friend-premium .app-page-title{
+  position:relative !important;overflow:visible !important;
+  color:var(--fr-ink) !important;
+  font-size:clamp(22px,6.4vw,27px) !important;
+  font-weight:700 !important;
+  letter-spacing:.2em !important;text-indent:.2em !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.95),0 0 12px rgba(255,255,255,.9) !important;
+}
+html body #screen-friend.friend-premium .app-page-title::before,
+html body #screen-friend.friend-premium .app-page-title::after{
+  content:"";position:absolute;left:50%;
+  width:150px;height:14px;transform:translateX(-50%);
+  pointer-events:none;
+}
+html body #screen-friend.friend-premium .app-page-title::before{
+  top:-16px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M20 1 22.6 17.4 39 20 22.6 22.6 20 39 17.4 22.6 1 20 17.4 17.4Z' fill='%23b88a3c'/%3E%3Cpath d='M20 9 21.4 18.6 31 20 21.4 21.4 20 31 18.6 21.4 9 20 18.6 18.6Z' fill='%23fff3d6'/%3E%3C/svg%3E") center/14px 14px no-repeat,
+    linear-gradient(90deg,transparent,rgba(184,138,60,.8) 35%,transparent 45%,transparent 55%,rgba(184,138,60,.8) 65%,transparent) center 60%/100% 1px no-repeat;
+}
+html body #screen-friend.friend-premium .app-page-title::after{
+  bottom:-15px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 0 10 5 5 10 0 5Z' fill='%23b88a3c'/%3E%3Cpath d='M5 3 7 5 5 7 3 5Z' fill='%23fff3d6'/%3E%3C/svg%3E") center/8px 8px no-repeat,
+    linear-gradient(90deg,transparent,rgba(184,138,60,.75) 30%,transparent 46%,transparent 54%,rgba(184,138,60,.75) 70%,transparent) center/100% 1px no-repeat;
+}
+
+/* ---------- スクロール領域 ---------- */
+html body #screen-friend.friend-premium > .app-scroll-region{
+  padding:22px 14px 26px !important;
+}
+
+/* ---------- セクションパネル ---------- */
+html body #screen-friend.friend-premium .friend-section{
+  position:relative !important;
+  margin:0 0 14px !important;
+  padding:12px 12px 14px !important;
+  border:1px solid rgba(196,166,112,.75) !important;
+  border-radius:3px !important;
+  background:var(--fr-panel) !important;
+  box-shadow:
+    inset 0 0 0 4px rgba(255,255,255,.75),
+    inset 0 0 0 5px rgba(205,178,128,.38),
+    0 4px 14px rgba(96,70,30,.10) !important;
+  backdrop-filter:none !important;-webkit-backdrop-filter:none !important;
+}
+html body #screen-friend.friend-premium .friend-section::before{
+  content:"";position:absolute;inset:-1px;pointer-events:none;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cpath d='M1 21V7L7 1h14' fill='none' stroke='%23b88a3c' stroke-width='1.4'/%3E%3Cpath d='M5 15V8.5L8.5 5H15' fill='none' stroke='%23dcc28c' stroke-width='.9'/%3E%3Ccircle cx='7' cy='7' r='1.3' fill='%23b88a3c'/%3E%3C/svg%3E") left top/18px 18px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cpath d='M21 21V7L15 1H1' fill='none' stroke='%23b88a3c' stroke-width='1.4'/%3E%3Cpath d='M17 15V8.5L13.5 5H7' fill='none' stroke='%23dcc28c' stroke-width='.9'/%3E%3Ccircle cx='15' cy='7' r='1.3' fill='%23b88a3c'/%3E%3C/svg%3E") right top/18px 18px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cpath d='M1 1v14l6 6h14' fill='none' stroke='%23b88a3c' stroke-width='1.4'/%3E%3Cpath d='M5 7v6.5L8.5 17H15' fill='none' stroke='%23dcc28c' stroke-width='.9'/%3E%3Ccircle cx='7' cy='15' r='1.3' fill='%23b88a3c'/%3E%3C/svg%3E") left bottom/18px 18px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cpath d='M21 1v14l-6 6H1' fill='none' stroke='%23b88a3c' stroke-width='1.4'/%3E%3Cpath d='M17 7v6.5L13.5 17H7' fill='none' stroke='%23dcc28c' stroke-width='.9'/%3E%3Ccircle cx='15' cy='15' r='1.3' fill='%23b88a3c'/%3E%3C/svg%3E") right bottom/18px 18px no-repeat;
+}
+
+/* セクション見出し：紋章＋文字＋下線 */
+html body #screen-friend.friend-premium .friend-section-title{
+  position:relative !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  gap:8px !important;
+  margin:0 0 10px !important;
+  padding:0 26px 6px 2px !important;
+  border:0 !important;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 0 10 5 5 10 0 5Z' fill='%23c4a065'/%3E%3C/svg%3E") right bottom/6px 6px no-repeat,
+    linear-gradient(90deg,rgba(184,138,60,.75),rgba(184,138,60,.35)) 30px calc(100% - 2.5px)/calc(100% - 38px) 1px no-repeat !important;
+  color:var(--fr-ink) !important;
+  font:700 clamp(15px,4.3vw,17px)/1.2 "Noto Serif JP",serif !important;
+  letter-spacing:.12em !important;
+  text-shadow:0 1px 0 #fff !important;
+}
+html body #screen-friend.friend-premium .friend-section-title::before,
+html body #screen-friend.friend-premium .friend-section-title::after{content:none !important;display:none !important;}
+html body #screen-friend.friend-premium .friend-title-emblem{
+  flex:0 0 26px;width:26px;height:26px;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23f1d58f'/%3E%3Cstop offset='.5' stop-color='%23bb8b3d'/%3E%3Cstop offset='1' stop-color='%23866026'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M20 2c3 7 6 11 13 13-7 2-10 6-13 13-3-7-6-11-13-13 7-2 10-6 13-13Z' fill='none' stroke='url(%23g)' stroke-width='1.6'/%3E%3Cpath d='M20 9c1.6 3.6 3.4 5.4 7 7-3.6 1.6-5.4 3.4-7 7-1.6-3.6-3.4-5.4-7-7 3.6-1.6 5.4-3.4 7-7Z' fill='url(%23g)'/%3E%3Cpath d='M20 28v10M14 34h12M2 15h4M34 15h4' stroke='%23bb8b3d' stroke-width='1.2'/%3E%3Ccircle cx='20' cy='16' r='1.6' fill='%23fff6e2'/%3E%3C/svg%3E") center/contain no-repeat;
+  filter:drop-shadow(0 1px 1px rgba(110,74,22,.22));
+}
+
+/* 内側の枠（空表示・検索ボックス・カード共通の見た目） */
+html body #screen-friend.friend-premium .friend-list-empty,
+html body #screen-friend.friend-premium .friend-add-box,
+html body #screen-friend.friend-premium .friend-card,
+html body #screen-friend.friend-premium .friend-card-compact,
+html body #screen-friend.friend-premium .friend-req-card,
+html body #screen-friend.friend-premium .friend-search-card{
+  border:1px solid rgba(200,174,126,.7) !important;
+  border-radius:3px !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(250,246,238,.88)) !important;
+  box-shadow:inset 0 0 0 3px rgba(255,255,255,.8),inset 0 0 0 4px rgba(214,192,148,.32),0 2px 6px rgba(90,64,26,.07) !important;
+  backdrop-filter:none !important;-webkit-backdrop-filter:none !important;
+}
+
+/* ---------- 空表示（申請なし／フレンドなし） ---------- */
+html body #screen-friend.friend-premium .friend-list-empty{
+  margin:0 !important;
+  padding:12px 10px !important;
+  color:var(--fr-sub) !important;
+  text-align:center !important;
+  font:500 12px/1.6 "Noto Serif JP",serif !important;
+}
+html body #screen-friend.friend-premium .friend-empty-rich{
+  display:grid !important;
+  grid-template-columns:44% minmax(0,1fr) !important;
+  align-items:center !important;
+  gap:6px !important;
+  min-height:clamp(106px,30vw,124px) !important;
+  padding:10px 12px 10px 6px !important;
+}
+/* 線画のゴシックアーチと花（画像素材なし） */
+html body #screen-friend.friend-premium .friend-empty-art{
+  display:block;
+  width:100%;height:clamp(88px,25vw,104px);
+  opacity:.9;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 110'%3E%3Cdefs%3E%3ClinearGradient id='s' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23fffaf0'/%3E%3Cstop offset='1' stop-color='%23efe4cf'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cellipse cx='80' cy='100' rx='70' ry='7' fill='%23e9dcc2' opacity='.6'/%3E%3Cpath d='M48 100V48c0-20 14-32 32-40 18 8 32 20 32 40v52h-12V52c0-14-9-24-20-30-11 6-20 16-20 30v48Z' fill='url(%23s)' stroke='%23c6a466' stroke-width='1.2'/%3E%3Cpath d='M60 100V52c0-14 9-24 20-30 11 6 20 16 20 30v48' fill='none' stroke='%23dcc597' stroke-width='.9'/%3E%3Cpath d='M80 8V2M76 4h8M48 48l-6 6v46M112 48l6 6v46' stroke='%23c6a466' stroke-width='1.1' fill='none'/%3E%3Cpath d='M36 100V70l6-8 6 8M124 100V70l-6-8-6 8' fill='none' stroke='%23d2b578' stroke-width='1'/%3E%3Cg fill='%23fff' stroke='%23c9ab6c' stroke-width='.8'%3E%3Cpath d='M30 96c-4-6-2-10 2-10 2-4 8-3 8 1 4 0 6 6 1 8-1 4-8 5-11 1Z'/%3E%3Cpath d='M46 101c-3-4-1-7 2-7 1-3 6-2 6 1 3 0 4 4 1 6-1 3-6 3-9 0Z'/%3E%3Cpath d='M118 98c-3-5-1-8 2-8 2-3 7-2 7 1 3 0 5 5 1 7-1 3-7 4-10 0Z'/%3E%3Cpath d='M131 101c-2-4 0-6 2-6 1-2 5-2 5 1 3 0 3 4 0 5-1 2-5 3-7 0Z'/%3E%3C/g%3E%3Cg fill='%23d9bd82'%3E%3Ccircle cx='35' cy='91' r='1.6'/%3E%3Ccircle cx='50' cy='97' r='1.3'/%3E%3Ccircle cx='123' cy='94' r='1.4'/%3E%3Ccircle cx='135' cy='98' r='1.1'/%3E%3C/g%3E%3Cg fill='%23a9b98a' opacity='.7'%3E%3Cpath d='M22 98c4-6 8-7 12-6-3 4-7 6-12 6ZM140 100c-3-5-7-7-11-6 3 4 6 6 11 6Z'/%3E%3C/g%3E%3Cg fill='%23d9bd82' opacity='.8'%3E%3Cpath d='M22 30l3 2-3 2-3-2Z'/%3E%3Cpath d='M136 22l2.4 1.6-2.4 1.6-2.4-1.6Z'/%3E%3Cpath d='M128 46l2 1.4-2 1.4-2-1.4Z'/%3E%3C/g%3E%3C/svg%3E") center/contain no-repeat;
+}
+html body #screen-friend.friend-premium .friend-empty-copy{
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  text-align:center;
+}
+html body #screen-friend.friend-premium .friend-empty-copy strong{
+  color:#3f2f21;
+  font:600 clamp(13px,3.8vw,15px)/1.4 "Noto Serif JP",serif;
+  letter-spacing:.14em;
+}
+html body #screen-friend.friend-premium .friend-empty-copy i{
+  display:block;width:96px;height:8px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 0 10 5 5 10 0 5Z' fill='none' stroke='%23b88a3c' stroke-width='1.3'/%3E%3Ccircle cx='5' cy='5' r='1.3' fill='%23b88a3c'/%3E%3C/svg%3E") center/8px 8px no-repeat,
+    linear-gradient(90deg,transparent,rgba(184,138,60,.7) 30%,transparent 44%,transparent 56%,rgba(184,138,60,.7) 70%,transparent) center/100% 1px no-repeat;
+}
+html body #screen-friend.friend-premium .friend-empty-copy small{
+  color:var(--fr-sub);
+  font:500 clamp(9px,2.6vw,10.5px)/1.75 "Noto Serif JP",serif;
+  letter-spacing:.1em;
+}
+
+/* ---------- IDで検索 ---------- */
+html body #screen-friend.friend-premium .friend-add-box{
+  display:flex !important;
+  align-items:center !important;
+  gap:8px !important;
+  margin:0 0 10px !important;
+  padding:10px !important;
+}
+html body #screen-friend.friend-premium .friend-add-input{
+  flex:1 1 auto !important;min-width:0 !important;
+  height:clamp(36px,10vw,40px) !important;
+  margin:0 !important;
+  padding:0 12px !important;
+  border:1px solid rgba(186,170,140,.75) !important;
+  border-radius:3px !important;
+  background:linear-gradient(180deg,#fff,#fbf8f2) !important;
+  box-shadow:inset 0 1px 3px rgba(80,60,30,.08) !important;
+  color:var(--fr-ink) !important;
+  font:500 clamp(12px,3.4vw,14px)/1 "Noto Serif JP",serif !important;
+}
+html body #screen-friend.friend-premium .friend-add-input::placeholder{color:#a69a88 !important;opacity:1 !important;}
+html body #screen-friend.friend-premium .friend-add-input:focus{outline:none !important;border-color:var(--fr-gold) !important;box-shadow:0 0 0 2px rgba(184,138,60,.18),inset 0 1px 3px rgba(80,60,30,.08) !important;}
+/* ブロンズの検索ボタン（交換ボタンと同じ質感） */
+html body #screen-friend.friend-premium .friend-add-btn,
+html body #screen-friend.friend-premium .friend-req-accept,
+html body #screen-friend.friend-premium .friend-search-send-btn{
+  display:inline-flex !important;align-items:center !important;justify-content:center !important;gap:6px !important;
+  flex:0 0 auto !important;
+  border:1px solid #6e4f22 !important;
+  border-radius:2px !important;
+  background:linear-gradient(180deg,#b48d55 0%,#93703c 52%,#7c5c2d 100%) !important;
+  box-shadow:inset 0 0 0 1px rgba(255,236,196,.55),inset 0 0 0 3px rgba(122,90,42,.6),inset 0 0 0 4px rgba(244,214,150,.35),0 2px 4px rgba(70,46,14,.25) !important;
+  color:#fffaf0 !important;
+  font:600 clamp(12px,3.4vw,14px)/1 "Noto Serif JP",serif !important;
+  letter-spacing:.12em !important;
+  text-shadow:0 1px 1px rgba(60,38,10,.6) !important;
+  opacity:1 !important;
+}
+html body #screen-friend.friend-premium .friend-add-btn{
+  width:clamp(74px,21vw,88px) !important;
+  height:clamp(36px,10vw,40px) !important;
+  padding:0 !important;
+}
+html body #screen-friend.friend-premium .friend-add-btn-icon{width:16px;height:16px;flex:0 0 16px;}
+html body #screen-friend.friend-premium .friend-search-send-btn:disabled,
+html body #screen-friend.friend-premium .friend-req-accept:disabled{
+  border-color:rgba(160,150,135,.8) !important;
+  background:linear-gradient(180deg,#e8e4dc,#d5cfc4) !important;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.55) !important;
+  color:#857c70 !important;text-shadow:none !important;letter-spacing:.02em !important;
+}
+/* 自分のID */
+html body #screen-friend.friend-premium .friend-my-id-row{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  padding:0 4px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 8'%3E%3Cpath d='M0 4h30' stroke='%23c4a065' stroke-width='.8'/%3E%3Cpath d='M34 1l3 3-3 3-3-3Z' fill='none' stroke='%23c4a065' stroke-width='.9'/%3E%3C/svg%3E") left center/40px 8px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 8'%3E%3Cpath d='M10 4h30' stroke='%23c4a065' stroke-width='.8'/%3E%3Cpath d='M6 1l3 3-3 3-3-3Z' fill='none' stroke='%23c4a065' stroke-width='.9'/%3E%3C/svg%3E") right center/40px 8px no-repeat;
+}
+html body #screen-friend.friend-premium .friend-my-id-label{
+  color:var(--fr-sub);
+  font:600 clamp(11px,3.1vw,12.5px)/1 "Noto Serif JP",serif;
+  letter-spacing:.04em;white-space:nowrap;
+}
+html body #screen-friend.friend-premium .friend-my-id-pill{
+  position:relative;
+  display:inline-flex;align-items:center;gap:10px;
+  max-width:62%;
+  height:30px;
+  padding:0 16px 0 18px;
+  border:1px solid rgba(196,166,112,.75);
+  border-radius:15px;
+  background:linear-gradient(180deg,#fffdf8,#f6efe1);
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.8),0 1px 3px rgba(90,64,26,.08);
+  color:var(--fr-ink);
+  font:600 clamp(12px,3.4vw,14px)/1 "Noto Serif JP","Cinzel",serif;
+  cursor:pointer;
+}
+html body #screen-friend.friend-premium .friend-my-id-pill > span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+html body #screen-friend.friend-premium .friend-copy-icon{width:15px;height:15px;flex:0 0 15px;color:#5f4a30;}
+html body #screen-friend.friend-premium .friend-my-id-pill:active{transform:scale(.97);}
+html body #screen-friend.friend-premium #friend-search-result{margin-top:10px;}
+
+/* ---------- フレンドカード ---------- */
+html body #screen-friend.friend-premium .friend-card-compact{
+  position:relative !important;
+  display:grid !important;
+  grid-template-columns:clamp(58px,16.5vw,66px) minmax(0,1fr) auto auto !important;
+  align-items:center !important;
+  gap:0 10px !important;
+  min-height:clamp(76px,21vw,84px) !important;
+  margin:0 0 8px !important;
+  padding:8px 10px 8px 8px !important;
+  transform:none;
+}
+html body #screen-friend.friend-premium .friend-card-compact:last-child{margin-bottom:0 !important;}
+html body #screen-friend.friend-premium .friend-card-panel{
+  position:relative !important;
+  width:100% !important;height:auto !important;aspect-ratio:1/1 !important;
+  margin:0 !important;
+  border:1px solid rgba(196,166,112,.85) !important;
+  border-radius:2px !important;
+  background:radial-gradient(circle at 50% 40%,#fff,#f1e8d6) !important;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.85),0 1px 3px rgba(90,64,26,.12) !important;
+  overflow:visible !important;
+}
+html body #screen-friend.friend-premium .friend-card-panel-img{
+  width:100% !important;height:100% !important;object-fit:cover !important;border-radius:1px !important;display:block !important;
+}
+/* キャラ詳細を開けることを示す小さな拡大バッジ */
+html body #screen-friend.friend-premium .friend-card-zoom{
+  position:absolute;right:-5px;bottom:-5px;
+  width:20px;height:20px;border-radius:50%;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='10.5' cy='10.5' r='6' fill='none' stroke='%23fff' stroke-width='2.2'/%3E%3Cpath d='M15 15l4.5 4.5M10.5 7.8v5.4M7.8 10.5h5.4' stroke='%23fff' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E") center/13px 13px no-repeat,
+    linear-gradient(180deg,#8f7350,#5e4528);
+  border:1px solid #e6cf9c;
+  box-shadow:0 1px 3px rgba(40,26,8,.35);
+}
+html body #screen-friend.friend-premium .friend-card-body{
+  display:flex !important;flex-direction:column !important;justify-content:center !important;gap:6px !important;
+  min-width:0 !important;
+}
+html body #screen-friend.friend-premium .friend-card-topline,
+html body #screen-friend.friend-premium .friend-card-bottomline{display:block !important;min-width:0 !important;}
+html body #screen-friend.friend-premium .friend-card-name{
+  display:block !important;
+  color:var(--fr-ink) !important;
+  font:700 clamp(15px,4.4vw,18px)/1.2 "Noto Serif JP","Cinzel",serif !important;
+  letter-spacing:.04em !important;
+  overflow:hidden !important;text-overflow:ellipsis !important;white-space:nowrap !important;
+}
+html body #screen-friend.friend-premium .friend-card-login{
+  color:var(--fr-sub) !important;
+  font:500 clamp(9.5px,2.7vw,11px)/1.3 "Noto Serif JP",serif !important;
+  letter-spacing:.04em !important;
+}
+html body #screen-friend.friend-premium .friend-card-rank{display:none !important;}
+html body #screen-friend.friend-premium .friend-card-rankbox{
+  display:flex;align-items:baseline;gap:5px;
+  padding:6px 4px 6px 12px;
+  border-left:1px solid rgba(190,166,120,.55);
+  white-space:nowrap;
+}
+html body #screen-friend.friend-premium .friend-card-rankbox small{
+  color:#8b6c3a;font:600 8.5px/1 "Cinzel",serif;letter-spacing:.1em;
+}
+html body #screen-friend.friend-premium .friend-card-rankbox b{
+  color:var(--fr-ink);font:600 clamp(13px,3.8vw,15.5px)/1 "Cinzel","Noto Serif JP",serif;
+}
+/* 解除・拒否：淡いローズの枠ボタン */
+html body #screen-friend.friend-premium .friend-remove-btn,
+html body #screen-friend.friend-premium .friend-req-decline{
+  display:inline-flex !important;align-items:center !important;justify-content:center !important;
+  width:clamp(50px,14.5vw,58px) !important;
+  height:clamp(30px,8.5vw,34px) !important;
+  margin:0 !important;padding:0 !important;
+  border:1px solid rgba(196,140,140,.75) !important;
+  border-radius:2px !important;
+  background:linear-gradient(180deg,#fff7f6,#f6e6e4) !important;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.8),inset 0 0 0 3px rgba(200,150,150,.25) !important;
+  color:#8e4a4a !important;
+  font:600 clamp(12px,3.4vw,14px)/1 "Noto Serif JP",serif !important;
+  letter-spacing:.12em !important;text-indent:.12em !important;
+  opacity:1 !important;
+}
+
+/* ---------- 申請カード ---------- */
+html body #screen-friend.friend-premium .friend-req-card{
+  display:flex !important;align-items:center !important;justify-content:space-between !important;gap:10px !important;
+  margin:0 0 8px !important;
+  padding:8px 10px 8px 8px !important;
+}
+html body #screen-friend.friend-premium .friend-req-card:last-child{margin-bottom:0 !important;}
+html body #screen-friend.friend-premium .friend-req-summary{display:flex !important;align-items:center !important;gap:10px !important;min-width:0 !important;flex:1 1 auto !important;}
+html body #screen-friend.friend-premium .friend-req-avatar{
+  flex:0 0 clamp(52px,15vw,60px) !important;width:clamp(52px,15vw,60px) !important;height:clamp(52px,15vw,60px) !important;
+  border:1px solid rgba(196,166,112,.85) !important;border-radius:2px !important;overflow:hidden !important;
+  background:radial-gradient(circle at 50% 40%,#fff,#f1e8d6) !important;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.85) !important;
+}
+html body #screen-friend.friend-premium .friend-req-avatar-img{width:100% !important;height:100% !important;object-fit:cover !important;display:block !important;}
+html body #screen-friend.friend-premium .friend-req-name{
+  color:var(--fr-ink) !important;
+  font:700 clamp(14px,4vw,16px)/1.25 "Noto Serif JP",serif !important;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+html body #screen-friend.friend-premium .friend-req-rank{
+  margin-top:4px;color:#8b6c3a !important;font:600 10px/1 "Cinzel",serif !important;letter-spacing:.08em !important;
+}
+html body #screen-friend.friend-premium .friend-req-btns{display:flex !important;gap:6px !important;flex:0 0 auto !important;margin:0 !important;}
+html body #screen-friend.friend-premium .friend-req-accept{
+  width:clamp(50px,14.5vw,58px) !important;height:clamp(30px,8.5vw,34px) !important;padding:0 !important;margin:0 !important;
+}
+
+/* ---------- 検索結果カード ---------- */
+html body #screen-friend.friend-premium .friend-search-card{
+  display:flex !important;align-items:center !important;gap:10px !important;
+  margin:0 !important;padding:8px 10px 8px 8px !important;
+}
+html body #screen-friend.friend-premium .friend-search-panel{
+  flex:0 0 clamp(52px,15vw,60px) !important;width:clamp(52px,15vw,60px) !important;height:clamp(52px,15vw,60px) !important;
+  border:1px solid rgba(196,166,112,.85) !important;border-radius:2px !important;overflow:hidden !important;
+  background:radial-gradient(circle at 50% 40%,#fff,#f1e8d6) !important;
+}
+html body #screen-friend.friend-premium .friend-search-panel-img{width:100% !important;height:100% !important;object-fit:cover !important;display:block !important;}
+html body #screen-friend.friend-premium .friend-search-main{flex:1 1 auto !important;min-width:0 !important;}
+html body #screen-friend.friend-premium .friend-search-card-name{
+  color:var(--fr-ink) !important;font:700 clamp(14px,4vw,16px)/1.25 "Noto Serif JP",serif !important;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+html body #screen-friend.friend-premium .friend-search-card-rank{margin-top:3px;color:#8b6c3a !important;font:600 10px/1.2 "Cinzel",serif !important;}
+html body #screen-friend.friend-premium .friend-search-card-rank b{color:var(--fr-ink);font-size:12px;}
+html body #screen-friend.friend-premium .friend-search-card-id{margin-top:3px;color:var(--fr-sub) !important;font:500 9.5px/1.3 "Noto Serif JP",serif !important;}
+html body #screen-friend.friend-premium .friend-search-send-btn{
+  min-width:clamp(70px,20vw,84px) !important;height:clamp(32px,9vw,36px) !important;
+  padding:0 8px !important;margin:0 !important;
+  font-size:clamp(10.5px,3vw,12.5px) !important;letter-spacing:.06em !important;
+}
+html body #screen-friend.friend-premium #friend-search-result > .friend-list-empty{padding:10px !important;}
+
+@media (max-width:360px){
+  html body #screen-friend.friend-premium > .app-scroll-region{padding-left:10px !important;padding-right:10px !important;}
+  html body #screen-friend.friend-premium .friend-section{padding:10px 9px 12px !important;}
+  html body #screen-friend.friend-premium .friend-card-compact{gap:0 7px !important;}
+  html body #screen-friend.friend-premium .friend-card-rankbox{padding-left:8px;}
+  html body #screen-friend.friend-premium .friend-my-id-row{background:none;}
+}
+
+/* ---------- 旧スタイルの打ち消し ---------- */
+html body #screen-friend.friend-premium .friend-add-btn,
+html body #screen-friend.friend-premium .friend-req-accept,
+html body #screen-friend.friend-premium .friend-search-send-btn{
+  -webkit-text-fill-color:#fffaf0 !important;
+}
+html body #screen-friend.friend-premium .friend-add-btn{
+  flex:0 0 clamp(74px,21vw,88px) !important;
+  min-width:0 !important;max-width:none !important;
+  background-image:linear-gradient(180deg,#b48d55 0%,#93703c 52%,#7c5c2d 100%) !important;
+}
+html body #screen-friend.friend-premium .friend-search-send-btn:disabled,
+html body #screen-friend.friend-premium .friend-req-accept:disabled{-webkit-text-fill-color:#857c70 !important;}
+html body #screen-friend.friend-premium .friend-add-input{-webkit-text-fill-color:var(--fr-ink) !important;}
+html body #screen-friend.friend-premium .friend-add-input::placeholder{-webkit-text-fill-color:#a69a88 !important;}
+html body #screen-friend.friend-premium #friend-my-id{
+  display:inline !important;padding:0 !important;border:0 !important;border-radius:0 !important;
+  background:none !important;color:inherit !important;text-decoration:none !important;
+  -webkit-text-fill-color:currentColor !important;
+}
+html body #screen-friend.friend-premium .friend-card-compact{
+  height:auto !important;width:auto !important;overflow:visible !important;
+}
+html body #screen-friend.friend-premium .friend-card-compact::before,
+html body #screen-friend.friend-premium .friend-card-compact::after{content:none !important;display:none !important;}
+html body #screen-friend.friend-premium .friend-my-id-pill{
+  height:30px !important;min-height:0 !important;width:auto !important;
+  padding:0 16px 0 18px !important;margin:0 !important;
+  border:1px solid rgba(196,166,112,.75) !important;
+  border-radius:15px !important;
+  background:linear-gradient(180deg,#fffdf8,#f6efe1) !important;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.8),0 1px 3px rgba(90,64,26,.08) !important;
+  color:var(--fr-ink) !important;-webkit-text-fill-color:var(--fr-ink) !important;
+}

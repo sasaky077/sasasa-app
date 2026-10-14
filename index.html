@@ -3948,7 +3948,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 </div>
 
 <!-- フレンド画面 -->
-<div id="screen-friend" class="screen app-page app-page--standard">
+<div id="screen-friend" class="screen app-page app-page--standard friend-premium">
   <header class="app-page-header">
     <button type="button" class="app-page-back bonus-back-button" onclick="showMainTab('main')" aria-label="戻る">戻る</button>
     <div class="app-page-heading"><h1 class="app-page-title">フレンド</h1></div>
@@ -3957,34 +3957,33 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
   <div class="app-page-content app-scroll-region friend-screen-scroll">
 
     <!-- 申請受信 -->
-    <div class="friend-section">
-      <div class="friend-section-title">フレンド申請</div>
+    <div class="friend-section friend-section-requests">
+      <div class="friend-section-title"><i class="friend-title-emblem" aria-hidden="true"></i><span>フレンド申請</span></div>
       <div id="friend-requests-list">
-        <div class="friend-list-empty">申請はありません</div>
+        <div class="friend-list-empty friend-empty-rich is-requests"><span class="friend-empty-art" aria-hidden="true"></span><span class="friend-empty-copy"><strong>申請はありません</strong><i aria-hidden="true"></i><small>フレンド申請が届くと<br>ここに表示されます</small></span></div>
       </div>
     </div>
 
     <!-- フレンド検索 -->
-    <div class="friend-section">
-      <div class="friend-section-title">IDで検索</div>
+    <div class="friend-section friend-section-search">
+      <div class="friend-section-title"><i class="friend-title-emblem" aria-hidden="true"></i><span>IDで検索</span></div>
       <div class="friend-add-box">
-        <input class="friend-add-input" id="friend-add-input" type="text" placeholder="相手のユーザーIDを入力">
-        <button class="friend-add-btn" onclick="searchFriendById()">検索</button>
+        <input class="friend-add-input" id="friend-add-input" type="text" placeholder="相手のユーザーIDを入力" onkeydown="if(event.key==='Enter'){event.preventDefault();searchFriendById()}">
+        <button class="friend-add-btn" onclick="searchFriendById()"><svg class="friend-add-btn-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M15.4 15.4 21 21" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg><span>検索</span></button>
       </div>
-      <div style="font-size:11px;color:#555;margin-top:-4px;margin-bottom:8px;padding:0 4px">
-        自分のID: <span id="friend-my-id" onclick="copyId()" style="cursor:pointer">
-  -
-</span>
+      <div class="friend-my-id-row">
+        <span class="friend-my-id-label">自分のID:</span>
+        <button type="button" class="friend-my-id-pill" onclick="copyId()" aria-label="自分のIDをコピー"><span id="friend-my-id">-</span><svg class="friend-copy-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 5V4.5A1.5 1.5 0 0 0 14.5 3h-9A1.5 1.5 0 0 0 4 4.5v11A1.5 1.5 0 0 0 5.5 17H6" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
       </div>
       <!-- 検索結果 -->
       <div id="friend-search-result" style="display:none"></div>
     </div>
 
     <!-- フレンド一覧 -->
-    <div class="friend-section">
-      <div class="friend-section-title">フレンド一覧</div>
+    <div class="friend-section friend-section-list">
+      <div class="friend-section-title"><i class="friend-title-emblem" aria-hidden="true"></i><span>フレンド一覧</span></div>
       <div id="friend-list">
-        <div class="friend-list-empty">フレンドがいません</div>
+        <div class="friend-list-empty friend-empty-rich is-friends"><span class="friend-empty-art" aria-hidden="true"></span><span class="friend-empty-copy"><strong>フレンドがいません</strong><i aria-hidden="true"></i><small>IDで検索して<br>フレンド申請を送りましょう</small></span></div>
       </div>
     </div>
 
@@ -9277,7 +9276,7 @@ startTitleBgm();
         reqList.appendChild(div);
       }
     } else {
-      reqList.innerHTML = '<div class="friend-list-empty">申請はありません</div>';
+      reqList.innerHTML = '<div class="friend-list-empty friend-empty-rich is-requests"><span class="friend-empty-art" aria-hidden="true"></span><span class="friend-empty-copy"><strong>申請はありません</strong><i aria-hidden="true"></i><small>フレンド申請が届くと<br>ここに表示されます</small></span></div>';
     }
 
     // フレンド一覧（accepted）
@@ -9289,7 +9288,7 @@ startTitleBgm();
 
     var frList = document.getElementById('friend-list');
     if(friends.length === 0){
-      frList.innerHTML = '<div class="friend-list-empty">フレンドがいません</div>';
+      frList.innerHTML = '<div class="friend-list-empty friend-empty-rich is-friends"><span class="friend-empty-art" aria-hidden="true"></span><span class="friend-empty-copy"><strong>フレンドがいません</strong><i aria-hidden="true"></i><small>IDで検索して<br>フレンド申請を送りましょう</small></span></div>';
       return;
     }
     frList.innerHTML = '';
@@ -9513,16 +9512,16 @@ startTitleBgm();
       : '<div class="friend-card-panel-empty">—</div>';
 
     div.innerHTML =
-      '<span class="friend-card-panel friend-card-panel-tappable" role="button" tabindex="0" aria-label="' + detailEscapeHTML(name) + 'のホームキャラを見る" onclick="event.stopPropagation();openFriendFavoriteCharacterDetail(\'' + detailEscapeHTML(fid) + '\')">' + panelHtml + '</span>' +
+      '<span class="friend-card-panel friend-card-panel-tappable" role="button" tabindex="0" aria-label="' + detailEscapeHTML(name) + 'のホームキャラを見る" onclick="event.stopPropagation();openFriendFavoriteCharacterDetail(\'' + detailEscapeHTML(fid) + '\')">' + panelHtml + '<i class="friend-card-zoom" aria-hidden="true"></i></span>' +
       '<span class="friend-card-body">' +
         '<span class="friend-card-topline">' +
           '<strong class="friend-card-name" title="' + detailEscapeHTML(name) + '">' + detailEscapeHTML(limitPlayerDisplayName(name)) + '</strong>' +
-          '<b class="friend-card-rank">RANK ' + Number(rank || 1) + '</b>' +
         '</span>' +
         '<span class="friend-card-bottomline">' +
           '<span class="friend-card-login">' + detailEscapeHTML(loginText) + '</span>' +
         '</span>' +
       '</span>' +
+      '<span class="friend-card-rankbox"><small>RANK</small><b>' + Number(rank || 1) + '</b></span>' +
       '<button type="button" class="friend-remove-btn" onclick="event.stopPropagation();confirmRemoveFriend(\'' + detailEscapeHTML(fid) + '\')">解除</button>';
 
     return div;
@@ -19261,6 +19260,7 @@ function fadeOutOpeningBgm(){
   <link rel="stylesheet" href="css/home_menu_redesign.css?v=1449-tower-blur">
   <link rel="stylesheet" href="css/notice_redesign.css?v=1453-notice-mock">
   <link rel="stylesheet" href="css/item_redesign.css?v=1475-exchange-mock">
+  <link rel="stylesheet" href="css/friend_redesign.css?v=1476-friend-mock">
 <script src="js/remnant_blessings.js?v=1416-names"></script>
 <!-- ローグライト（新規追加） -->
 <script src="js/shinju.js?v=1416-boss-name"></script>
