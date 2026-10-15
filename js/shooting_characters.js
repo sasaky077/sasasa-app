@@ -1377,6 +1377,9 @@
       const fallbackSize = Number(profile.laserWidth || 0) >= 11 ? 'L' : 'M';
       out.size = String(source.size || (isMain ? profile.laserSize : '') || fallbackSize).toUpperCase() === 'L' ? 'L' : 'M';
     }
+    if (type === 'charge') {
+      out.size = String(source.size || (isMain ? profile.chargeSize : '') || 'M').toUpperCase() === 'L' ? 'L' : 'M';
+    }
     if (type === 'bomb') {
       const fallbackSize = Number(profile.splashRadius || 0) >= 80 ? 'L' : 'M';
       out.size = String(source.size || (isMain ? profile.bombSize : '') || fallbackSize).toUpperCase() === 'L' ? 'L' : 'M';
@@ -1384,7 +1387,37 @@
     return Object.freeze(out);
   }
 
+  // ============================================================
+  // build1496: CHARGE の規格（M / L）
+  // 威力はチャージ時間に比例（MAX＝shotPowerRate×ATK）。MAX到達は1.0秒。
+  // 着弾すると破裂し、半径内の他の敵へ「本体ダメージ×burstRate」を与える（MAX溜めは maxRate・範囲×maxRadiusBonus）。
+  // 理論DPS（単体）：M＝ATK×1.10/秒、L＝ATK×1.25/秒。
+  // ============================================================
+  const CHARGE_SIZE_PRESETS = Object.freeze({
+    M: Object.freeze({
+      shotPowerRate: 1.10, chargeMaxMs: 1000, chargeMinSize: 28, chargeMaxSize: 66,
+      chargeBurstRadiusMin: 36, chargeBurstRadiusMax: 70, chargeBurstMaxRadiusBonus: 1.10,
+      chargeBurstRate: 0.30, chargeBurstMaxRate: 0.40, chargeHomingTurnRate: 2.6,
+    }),
+    L: Object.freeze({
+      shotPowerRate: 1.25, chargeMaxMs: 1000, chargeMinSize: 32, chargeMaxSize: 82,
+      chargeBurstRadiusMin: 52, chargeBurstRadiusMax: 96, chargeBurstMaxRadiusBonus: 1.12,
+      chargeBurstRate: 0.40, chargeBurstMaxRate: 0.50, chargeHomingTurnRate: 3.0,
+    }),
+  });
+  function applyChargeSizePreset(profile) {
+    if (normalizeShotType(profile.shotType) !== 'charge') return profile;
+    const size = String(profile.chargeSize || profile.mainShot?.size || 'M').toUpperCase() === 'L' ? 'L' : 'M';
+    return {
+      ...profile,
+      ...CHARGE_SIZE_PRESETS[size],
+      chargeSize: size,
+      mainShot: { ...(profile.mainShot && typeof profile.mainShot === 'object' ? profile.mainShot : {}), type: 'charge', size },
+    };
+  }
+
   function buildShootingCharacter(profile) {
+    profile = applyChargeSizePreset(profile);
     const master = getShootingCharacterMaster(profile.id);
     if (!master) return null;
 
@@ -1883,21 +1916,19 @@
     id: CHARACTER_ID.MIA,
     effectKey: 'mia',
     label: 'CHARGE / RELEASE',
-    description: '指を押している間チャージし、離した瞬間に肉球弾を発射する一撃型。最大1秒。威力はチャージ時間に比例するため、理論DPSは他キャラと同程度。',
+    description: '指を押している間チャージし、離した瞬間に水の波動を放つCHARGE M型。最大1秒。威力はチャージ時間に比例し、着弾すると破裂して周囲の敵も巻き込む。',
     moveSpeed: 400,
 
     // ---- 通常ショット：リリース式チャージ ----
+    // build1496: CHARGE M（威力・溜め時間・破裂範囲は CHARGE_SIZE_PRESETS.M）
     shotType: 'charge',
+    chargeSize: 'M',
     shotStyle: 'mia-charge',
     fireRate: 0,                 // 自動射撃は使用しない
     bulletSpeed: 760,
-    shotPowerRate: 1.24,         // MAX1秒で約ATK×124%。R補正後でも約293ダメージ/秒相当
     shotCount: 1,
     shotOffsetY: 44,
     chargeMinMs: 120,            // 誤タップ対策。これ未満は不発
-    chargeMaxMs: 1000,
-    chargeMinSize: 30,
-    chargeMaxSize: 76,
 
     // ULTは今回未実装。既存の暫定挙動には触れない。
     coreTop: '38%',
@@ -2120,8 +2151,9 @@
     description: '長押しで力を蓄えるRチャージ型。ULTで10秒間敵の認識から姿を消し、射撃威力を強化する。',
     ultDescription: '10秒間、敵からのターゲッティングを無効化し、発動時の最後に感知された位置を狙わせる。通常射撃ダメージ×1.3。敵弾は消去されず、無敵にもならない。固定弾幕・既存の敵弾・接触ダメージは通常どおり。',
     ultName: '気配遮断',
-    shotType: 'charge', shotStyle: 'kaina-charge', fireRate: 0, bulletSpeed: 760, shotPowerRate: 0.90, shotCount: 1,
-    chargeMinMs: 120, chargeMaxMs: 1200, chargeMinSize: 28, chargeMaxSize: 72,
+    // build1496: CHARGE M（威力・破裂範囲は CHARGE_SIZE_PRESETS.M）
+    shotType: 'charge', chargeSize: 'M', shotStyle: 'kaina-charge', fireRate: 0, bulletSpeed: 760, shotCount: 1,
+    chargeMinMs: 120,
     ultBaseType: 'buff', ultAddons: ['enemy_aim_block','shot_power_up'], ultType: 'aina_stealth',
     ainaStealthDurationMs: 10000,
     ainaStealthShotMultiplier: 1.3,
@@ -2722,7 +2754,7 @@
   SHOOTING_CHARACTERS[42] = buildShootingCharacter({ ...VERONICA_BATTLE_PROFILE, id:42, name:getShootingCharacterMaster(42).name, effectKey:'kyou', ultType:'veronica_brass_punch', ultName:'一天突破', description:'真正面の超近接打撃。ULTは狭い射程へ一撃を叩き込み、命中時ATK×7.0のダメージを与える。' });
   SHOOTING_CHARACTERS[45] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:45, effectKey:'kirimaru', shotType:'spread', shotCount:5, fireRate:500, bulletSpeed:650, shotPowerRate:0.20, ultType:'jig_scramble_ray', ultName:'水鏡乱反射', ultDescription:'水属性の反射レーザーを5秒間展開する。', jigUltDurationMs:5000, jigUltBeamCount:6, jigUltBeamSpeed:520, jigUltBeamLength:280, jigUltBeamWidth:2, jigUltDamageAtkRate:0.12, jigUltHitIntervalMs:200 });
   SHOOTING_CHARACTERS[43] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:43, effectKey:'suzu', shotType:'parallel', shotCount:2, shotSpacing:28, fireRate:500, bulletSpeed:640, shotPowerRate:0.14, ultType:'suzu_bullet_silence', suzuBulletSilenceMs:3500, ultName:'静寂の森', ultDescription:'敵弾を全消去し、3.5秒間新たな敵弾を封じる。敵の移動は継続。' });
-  SHOOTING_CHARACTERS[46] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:46, effectKey:'airena', shotType:'charge', shotStyle:'kaina-charge', fireRate:0, bulletSpeed:760, shotPowerRate:0.90, shotCount:1, chargeMinMs:120, chargeMaxMs:1200, chargeMinSize:28, chargeMaxSize:72, ultType:'airena_atk_item', ultName:'光の祝福', ultDescription:'ATK1.5倍・5秒のアイテムを1個出現させる。', itemAtkMultiplier:1.5, itemAtkDurationMs:5000 });
+  SHOOTING_CHARACTERS[46] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:46, effectKey:'airena', shotType:'charge', chargeSize:'M', shotStyle:'kaina-charge', fireRate:0, bulletSpeed:760, shotCount:1, chargeMinMs:120, ultType:'airena_atk_item', ultName:'光の祝福', ultDescription:'ATK1.5倍・5秒のアイテムを1個出現させる。', itemAtkMultiplier:1.5, itemAtkDurationMs:5000 });
   SHOOTING_CHARACTERS[44] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:44, effectKey:'meloria', shotType:'piercing', shotCount:1, fireRate:530, bulletSpeed:720, shotPowerRate:0.28, ultType:'meloria_stun', ultName:'冥府の宣告', ultDescription:'敵全員を5秒スタン。各敵に20%の確率で最大HP50%のダメージ。', ultStunMs:5000, meloriaPercentChance:0.20, meloriaMaxHpDamageRate:0.50 });
 
   // build1308 — 恒常R 5体。属性・画像・R倍率は上の共通マスターが正本。
@@ -2793,15 +2825,10 @@
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON,
     id: CHARACTER_ID.HAO, effectKey: 'hao',
     label: 'CHARGE / FUTURE TRIGGER',
-    description: '木属性のCHARGE型。溜めた波動は敵へゆるく向かって飛び、着弾すると破裂して周囲の敵も巻き込む。ULTで敵弾を全消去し、前方へ5段階の起動紋様を設置。触れた時点の強さで全敵へ落雷を与える。',
-    shotType: 'charge', shotStyle: 'kaina-charge', shotElement: 'wood', shotCount: 1,
-    // build1495: CHARGE強化。ATK×0.90/1.2秒 → ATK×1.50/1.0秒（理論DPS 約2倍）。
-    fireRate: 0, bulletSpeed: 760, shotPowerRate: 1.50,
-    chargeMinMs: 120, chargeMaxMs: 1000, chargeMinSize: 32, chargeMaxSize: 84,
-    // 着弾時の破裂：半径56〜110px（MAXはさらに×1.12）、周囲の敵へ本体ダメージの45%（MAXは60%）。
-    haoBurstRadiusMin: 56, haoBurstRadiusMax: 110, haoBurstMaxRadiusBonus: 1.12,
-    haoBurstRate: 0.45, haoBurstMaxRate: 0.60,
-    haoWaveTurnRate: 3.2,   // 緩ホーミングの曲がりやすさ（0で直進）
+    description: '木属性のCHARGE L型。溜めた大きな波動は敵へゆるく向かって飛び、着弾すると広く破裂して周囲の敵も巻き込む。ULTで敵弾を全消去し、前方へ5段階の起動紋様を設置。触れた時点の強さで全敵へ落雷を与える。',
+    // build1496: CHARGE L（威力・破裂範囲は CHARGE_SIZE_PRESETS.L）
+    shotType: 'charge', chargeSize: 'L', shotStyle: 'kaina-charge', shotElement: 'wood', shotCount: 1,
+    fireRate: 0, bulletSpeed: 760, chargeMinMs: 120,
     ultName: '天機・五刻の雷',
     ultDescription: '発動時に敵弾を全消去し、前方へ起動紋様を設置。接触時に全敵へ木属性落雷。0/2/4/6/8秒でLV1〜5に成長（ATK×1.0/1.8/3.0/4.0/5.0）。LV5は維持、設置後0.5秒間は接触判定なし。',
     ultType: 'hao_fivefold_trigger', ultBaseType: 'trap', ultAddons: ['bullet_clear', 'damage'],

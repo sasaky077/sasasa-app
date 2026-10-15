@@ -16377,6 +16377,11 @@ function getShootingShotTypeLabel(type, c, slot){
     var bombSize = String(shot.size || (c && c.bombSize) || 'M').toUpperCase() === 'L' ? 'L' : 'M';
     return 'BOMB ' + bombSize;
   }
+  if(normalized === 'charge'){
+    // build1496: CHARGE M / L
+    var chargeSize = String(shot.size || (c && c.chargeSize) || 'M').toUpperCase() === 'L' ? 'L' : 'M';
+    return 'Charge ' + chargeSize;
+  }
   if(normalized === 'cluster'){
     // CLUSTER is independent: impact emits 4/6/8 fragment projectiles.
     var rawClusterCount = Math.floor(Number(
@@ -16502,6 +16507,9 @@ function buildShootingShotTypeValue(c, shot, isMain){
   }else if(shotType === 'bomb'){
     // BOMBのM/Lは範囲爆発のサイズ。CLUSTERの分裂弾数ではない。
     countText = String((shot && shot.size) || (isMain && c.bombSize) || 'M').toUpperCase() === 'L' ? 'L' : 'M';
+  }else if(shotType === 'charge'){
+    // build1496: CHARGEのM/Lは波動の規格（威力・破裂範囲）。
+    countText = String((shot && shot.size) || (isMain && c.chargeSize) || 'M').toUpperCase() === 'L' ? 'L' : 'M';
   }else if(shotType === 'cluster'){
     // CLUSTERの数字は着弾時の分裂弾数（既存表記に合わせる）。
     var oldLabel = getShootingShotTypeLabel(rawType, c, shot);
@@ -19313,8 +19321,7 @@ function fadeOutOpeningBgm(){
 
 <script src="js/shooting_characters.js?v=1482-ult-desc"></script>
 <script src="js/story_scenario.js?v=1414-ch07-wolf"></script>
-<link rel="stylesheet" href="css/story_novel_polish.css?v=1494-portrait-natural">
-<script src="js/story_novel.js?v=1494-portrait-natural"></script>
+<script src="js/story_novel.js?v=1333-cast-sides"></script>
 <script src="js/stage_select.js?v=1468-srank-bonus"></script>
 
 <script>
@@ -19423,7 +19430,7 @@ function fadeOutOpeningBgm(){
   <link rel="stylesheet" href="css/home_menu_redesign.css?v=1449-tower-blur">
   <link rel="stylesheet" href="css/content_lock.css?v=1484-css-lock">
   <link rel="stylesheet" href="css/notice_redesign.css?v=1453-notice-mock">
-  <link rel="stylesheet" href="css/item_redesign.css?v=1489-skin-preview">
+  <link rel="stylesheet" href="css/item_redesign.css?v=1475-exchange-mock">
   <link rel="stylesheet" href="css/friend_redesign.css?v=1476-friend-mock">
   <link rel="stylesheet" href="css/chara_detail_redesign.css?v=1481-dps">
   <link rel="stylesheet" href="css/growth_modal_redesign.css?v=1479-growth-rich">
@@ -19499,12 +19506,12 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1486-towa"></script>
+<script src="js/shooting_event.js?v=1496-charge-wave"></script>
 <script src="js/shooting_party_filter.js?v=1472-filter-screen-exit-reset"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
 <script src="js/skin_system.js?v=1477-skin-battle"></script>
-<script src="js/item_management.js?v=1489-skin-preview"></script>
+<script src="js/item_management.js?v=1488-retired-origin-wing"></script>
 
 <script id="zeraphia-service-worker-register-v1">
 (function(){

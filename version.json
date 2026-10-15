@@ -1,4 +1,4 @@
 {
-  "build": 1495,
-  "note": "ハオ(ID54) CHARGE強化と波動演出の刷新：威力 ATK×0.90/1.2秒 → ATK×1.50/1.0秒（理論DPS約2倍）。波動は敵へゆるく向かって飛び、着弾で破裂して周囲の敵へ本体の45%（MAX溜めは60%・範囲拡大）の範囲ダメージ。演出は css/hao_charge.css（shooting_core.js が自動読込）。index.html の shooting_event.js の ?v= を 1495-hao-wave に更新すること。"
+  "build": 1496,
+  "note": "CHARGE全般を規格化（M/L）＋波動演出を全CHARGEキャラへ。M（ミア／アイナ／アイレナ）：MAX1.0秒でATK×1.10、破裂半径36〜70px・周囲へ30%（MAX40%）。L（ハオ）：ATK×1.25、半径52〜96px・周囲へ40%（MAX50%）。全員ゆるいホーミング。キャラ詳細のSHOT表記を CHARGE M / L に。演出は css/charge_wave.css（shooting_core.jsが自動読込）。build1495の css/hao_charge.css は不要。build1488 + build1495を含む。"
 }

@@ -8304,42 +8304,47 @@
   }
 
   // ============================================================
-  // build1495: ハオ(ID54) 木の波動CHARGE
-  // ・溜め中：紋様リングが回り、外周の波紋が脈打つ（MAXで発光）
-  // ・射出後：大きな波動がゆるく敵へ向かって飛ぶ（緩ホーミング）
+  // build1496: CHARGE共通の「波動」演出（ミア／アイナ／アイレナ／ハオ）
+  // ・溜め中：核＋回転する紋様リング＋外へ広がる波紋（MAXで発光）
+  // ・射出後：波動が尾を引いて敵へゆるく向かって飛ぶ（緩ホーミング）
   // ・着弾：破裂し、周囲の敵へ範囲ダメージ（ボムと同じ判定関数を共用）
+  // 色は属性（.shooting-bullet-aqua等）、規模は CHARGE M / L（.charge-m / .charge-l）で切り替える。
   // 演出は弾1つにつき子要素4つ＋着弾時1要素のみ。transform/opacityだけをアニメーションする。
   // ============================================================
-  const HAO_CHARGE_CSS_VERSION = '1495-hao-wave';
-  function isHaoChargeCharacter(c) {
-    return !!c && Number(c.id) === Number(CHARACTER_ID.HAO);
+  const CHARGE_WAVE_CSS_VERSION = '1496-charge-wave';
+  function isChargeWaveCharacter(c) {
+    return !!c && c.shotType === 'charge';
   }
-  function ensureHaoChargeStyle() {
-    if (document.getElementById('hao-charge-style')) return;
+  function getChargeWaveSize(c) {
+    return String(c?.mainShot?.size || c?.chargeSize || 'M').toUpperCase() === 'L' ? 'L' : 'M';
+  }
+  function ensureChargeWaveStyle() {
+    if (document.getElementById('charge-wave-style')) return;
     const link = document.createElement('link');
-    link.id = 'hao-charge-style';
+    link.id = 'charge-wave-style';
     link.rel = 'stylesheet';
-    link.href = 'css/hao_charge.css?v=' + HAO_CHARGE_CSS_VERSION;
+    link.href = 'css/charge_wave.css?v=' + CHARGE_WAVE_CSS_VERSION;
     document.head.appendChild(link);
   }
-  function decorateHaoChargeElement(el, flying) {
-    if (!el || el.dataset.haoWave) return;
-    el.dataset.haoWave = '1';
+  function decorateChargeWaveElement(el, flying, c) {
+    if (!el || el.dataset.chargeWave) return;
+    el.dataset.chargeWave = '1';
+    el.classList.add('shooting-charge-wave', getChargeWaveSize(c) === 'L' ? 'charge-l' : 'charge-m');
     el.innerHTML =
-      (flying ? '<i class="hao-tail"></i>' : '') +
-      '<s class="hao-pulse"></s><u class="hao-sigil"></u><b class="hao-core"></b>';
+      (flying ? '<i class="cw-tail"></i>' : '') +
+      '<s class="cw-pulse"></s><u class="cw-sigil"></u><b class="cw-core"></b>';
   }
-  function updateHaoWaveProjectile(p, dt) {
-    const speed = Math.max(260, Number(p.haoSpeed || 760));
-    p.haoAge = Number(p.haoAge || 0) + dt;
+  function updateChargeWaveProjectile(p, dt) {
+    const speed = Math.max(260, Number(p.cwSpeed || 760));
+    p.cwAge = Number(p.cwAge || 0) + dt;
     // 発射直後は真上へ。その後、上方にいる最寄りの敵へゆるく曲がる。
-    if (p.haoAge > 0.07 && p.haoTurnRate > 0) {
+    if (p.cwAge > 0.07 && p.cwTurnRate > 0) {
       const target = getWolfTargetPoint(Number(p.x || 0), Number(p.y || 0));
       if (target && Number(target.y || 0) < Number(p.y || 0) - 10) {
         const dx = Number(target.x || p.x) - Number(p.x || 0);
         const dy = Number(target.y || 0) - Number(p.y || 0);
         const len = Math.max(1, Math.hypot(dx, dy));
-        const t = Math.min(1, Math.max(0, Number(p.haoTurnRate) * dt));
+        const t = Math.min(1, Math.max(0, Number(p.cwTurnRate) * dt));
         p.vx += (dx / len * speed - p.vx) * t;
         p.vy += (dy / len * speed - p.vy) * t;
       }
@@ -8352,27 +8357,28 @@
     p.x += p.vx * dt;
     p.y += p.vy * dt;
     const ang = Math.atan2(p.vx, -p.vy);
-    if (Math.abs(ang - Number(p.haoAngle || 0)) > 0.02) {
-      p.haoAngle = ang;
-      p.el.style.setProperty('--hao-angle', ang.toFixed(3) + 'rad');
+    if (Math.abs(ang - Number(p.cwAngle || 0)) > 0.02) {
+      p.cwAngle = ang;
+      p.el.style.setProperty('--cw-angle', ang.toFixed(3) + 'rad');
     }
   }
-  function createHaoWaveBurst(x, y, p) {
+  function createChargeWaveBurst(x, y, p) {
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
-    ensureHaoChargeStyle();
-    const radius = Math.max(40, Number(p?.splashRadius || 90));
+    ensureChargeWaveStyle();
+    const radius = Math.max(30, Number(p?.splashRadius || 70));
     const el = document.createElement('i');
-    el.className = 'shooting-hao-burst' + (p?.haoMax ? ' is-max' : '');
-    el.style.setProperty('--hao-burst-size', Math.round(radius * 2.0) + 'px');
-    el.innerHTML = '<b class="hb-flash"></b><u class="hb-ring"></u><u class="hb-ring hb-ring2"></u><s class="hb-shards"></s><s class="hb-leaves"></s>';
+    el.className = 'shooting-charge-burst el-' + (p?.attackElement || 'neutral') +
+      (p?.cwSize === 'L' ? ' charge-l' : ' charge-m') + (p?.cwMax ? ' is-max' : '');
+    el.style.setProperty('--cw-burst-size', Math.round(radius * 2.0) + 'px');
+    el.innerHTML = '<b class="cb-flash"></b><u class="cb-ring"></u><u class="cb-ring cb-ring2"></u><s class="cb-shards"></s><s class="cb-sparks"></s>';
     arena.appendChild(el);
     positionUnit(el, x, y);
     setTimeout(() => el.remove(), 620);
   }
-  function applyHaoWaveImpact(p, x, y, now, chara, target) {
-    if (state && state.nextHitEffect === 'hao_wave') state.nextHitEffect = null;
-    createHaoWaveBurst(x, y, p);
+  function applyChargeWaveImpact(p, x, y, now, chara, target) {
+    if (state && state.nextHitEffect === 'charge_wave') state.nextHitEffect = null;
+    createChargeWaveBurst(x, y, p);
     return applyGenericBombSplashDamage(p, x, y, now, chara, target);
   }
 
@@ -8387,9 +8393,9 @@
     const el = document.createElement('i');
     el.className = 'shooting-bullet shooting-mia-charge-shot shooting-charge-preview' + (Number(c.id) === Number(CHARACTER_ID.HAO) ? ' shooting-hao-charge-shot' : '') + getCharacterBulletClass(c);
     el.setAttribute('aria-hidden', 'true');
-    if (isHaoChargeCharacter(c)) {
-      ensureHaoChargeStyle();
-      decorateHaoChargeElement(el, false);
+    if (isChargeWaveCharacter(c)) {
+      ensureChargeWaveStyle();
+      decorateChargeWaveElement(el, false, c);
     }
     arena.appendChild(el);
     state.miaChargePreviewEl = el;
@@ -8565,21 +8571,22 @@
     p._hw = size / 2;
     p._hh = size / 2;
 
-    if (isHaoChargeCharacter(c)) {
-      // 木の波動：緩ホーミング＋着弾時に破裂して周囲へ範囲ダメージ。
-      ensureHaoChargeStyle();
+    if (isChargeWaveCharacter(c)) {
+      // 波動：緩ホーミング＋着弾時に破裂して周囲へ範囲ダメージ。規模は CHARGE M / L で変わる。
+      ensureChargeWaveStyle();
       const isMax = chargeRatio >= 0.999;
-      p.kind = 'hao_wave';
-      p.haoSpeed = Number(c.bulletSpeed || 760);
-      p.haoTurnRate = Math.max(0, Number(c.haoWaveTurnRate ?? 3.2));
-      p.haoAge = 0;
-      p.haoMax = isMax;
-      p.attackElement = normalizeCombatElement(c.shotElement || c.element) || 'wood';
-      const rMin = Math.max(30, Number(c.haoBurstRadiusMin || 56));
-      const rMax = Math.max(rMin, Number(c.haoBurstRadiusMax || 110));
-      p.splashRadius = (rMin + (rMax - rMin) * chargeRatio) * (isMax ? Number(c.haoBurstMaxRadiusBonus || 1.12) : 1);
-      p.splashDamageRate = isMax ? Number(c.haoBurstMaxRate || 0.60) : Number(c.haoBurstRate || 0.45);
-      decorateHaoChargeElement(p.el, true);
+      p.kind = 'charge_wave';
+      p.cwSize = getChargeWaveSize(c);
+      p.cwSpeed = Number(c.bulletSpeed || 760);
+      p.cwTurnRate = Math.max(0, Number(c.chargeHomingTurnRate ?? 2.8));
+      p.cwAge = 0;
+      p.cwMax = isMax;
+      p.attackElement = normalizeCombatElement(c.shotElement || c.element) || 'neutral';
+      const rMin = Math.max(24, Number(c.chargeBurstRadiusMin || 40));
+      const rMax = Math.max(rMin, Number(c.chargeBurstRadiusMax || 78));
+      p.splashRadius = (rMin + (rMax - rMin) * chargeRatio) * (isMax ? Number(c.chargeBurstMaxRadiusBonus || 1.1) : 1);
+      p.splashDamageRate = isMax ? Number(c.chargeBurstMaxRate || 0.45) : Number(c.chargeBurstRate || 0.35);
+      decorateChargeWaveElement(p.el, true, c);
       if (isMax) p.el.classList.add('is-max');
     }
 
@@ -16401,7 +16408,7 @@
       createMiaWaterHit(x, y, big);
       return;
     }
-    if (state && state.nextHitEffect === 'hao_wave') {
+    if (state && state.nextHitEffect === 'charge_wave') {
       // ハオの波動は着弾点で破裂演出を出すため、小HITリングは重ねない。
       state.nextHitEffect = null;
       return;
@@ -16891,8 +16898,8 @@
         updateWolfJHomingProjectile(p, dt, now);
       } else if (p.kind === 'generic_homing') {
         updateGenericHomingProjectile(p, dt);
-      } else if (p.kind === 'hao_wave') {
-        updateHaoWaveProjectile(p, dt);
+      } else if (p.kind === 'charge_wave') {
+        updateChargeWaveProjectile(p, dt);
       } else {
         p.x += p.vx * dt;
         p.y += p.vy * dt;
@@ -16962,8 +16969,8 @@
               p.splashRadius,
               p.bombSize
             );
-          } else if (p.kind === 'hao_wave') {
-            createHaoWaveBurst(Number(p.x || 0), Number(p.y || 0), p);
+          } else if (p.kind === 'charge_wave') {
+            createChargeWaveBurst(Number(p.x || 0), Number(p.y || 0), p);
           } else if (renderBarrierImpact) {
             createHit(Number(p.x || chapter6BarrierTarget.x || 0), Number(p.y || chapter6BarrierTarget.y || 0), false);
           }
@@ -17082,7 +17089,7 @@
 
         if (facelessObjectTarget) {
           if (p.pierce && p.piercedTargets) p.piercedTargets.add(facelessObjectTarget);
-          if (isMiaChargeProjectile(p)) state.nextHitEffect = p.kind === 'hao_wave' ? 'hao_wave' : 'mia_water';
+          if (isMiaChargeProjectile(p)) state.nextHitEffect = p.kind === 'charge_wave' ? 'charge_wave' : 'mia_water';
           const attackElement = normalizeCombatElement(
             p.attackElement || p.element || chara.element
           );
@@ -17107,8 +17114,8 @@
             const iy = Number(facelessObjectTarget.y || p.y);
             createGenericBombExplosionEffect(ix, iy, attackElement, p.splashRadius, p.bombSize);
             hitCount += applyGenericBombSplashDamage(p, ix, iy, now, chara, facelessObjectTarget);
-          } else if (p.kind === 'hao_wave') {
-            hitCount += applyHaoWaveImpact(p, Number(p.x || 0), Number(p.y || 0), now, chara, facelessObjectTarget);
+          } else if (p.kind === 'charge_wave') {
+            hitCount += applyChargeWaveImpact(p, Number(p.x || 0), Number(p.y || 0), now, chara, facelessObjectTarget);
           }
           if (appliedObjectDamage > 0) addLegacyCombatScore(80);
         } else if (normalTarget) {
@@ -17124,7 +17131,7 @@
 
           targetsToDamage.forEach(enemy => {
             if (p.pierce && p.piercedTargets) p.piercedTargets.add(enemy);
-            if (isMiaChargeProjectile(p)) state.nextHitEffect = p.kind === 'hao_wave' ? 'hao_wave' : 'mia_water';
+            if (isMiaChargeProjectile(p)) state.nextHitEffect = p.kind === 'charge_wave' ? 'charge_wave' : 'mia_water';
             const targetElement = getCombatTargetElement(enemy);
             const finalDamage = applyElementDamage(p.damage, attackElement, targetElement);
             const appliedEnemyDamage = damageNormalEnemy(enemy, finalDamage, now, false, getElementDamageReaction(attackElement, targetElement));
@@ -17150,8 +17157,8 @@
             const iy = Number(normalTarget.y || p.y);
             createGenericBombExplosionEffect(ix, iy, attackElement, p.splashRadius, p.bombSize);
             hitCount += applyGenericBombSplashDamage(p, ix, iy, now, chara, normalTarget);
-          } else if (p.kind === 'hao_wave' && normalTarget) {
-            hitCount += applyHaoWaveImpact(p, Number(p.x || 0), Number(p.y || 0), now, chara, normalTarget);
+          } else if (p.kind === 'charge_wave' && normalTarget) {
+            hitCount += applyChargeWaveImpact(p, Number(p.x || 0), Number(p.y || 0), now, chara, normalTarget);
           }
 
           state.normalEnemies = state.normalEnemies.filter(enemy => enemy && enemy.hp > 0);
@@ -17205,8 +17212,8 @@
             const iy = Number(p.y || state.boss.y || 0);
             createGenericBombExplosionEffect(ix, iy, attackElement, p.splashRadius, p.bombSize);
             hitCount += applyGenericBombSplashDamage(p, ix, iy, now, chara, state.boss);
-          } else if (p.kind === 'hao_wave') {
-            hitCount += applyHaoWaveImpact(p, Number(p.x || 0), Number(p.y || 0), now, chara, state.boss);
+          } else if (p.kind === 'charge_wave') {
+            hitCount += applyChargeWaveImpact(p, Number(p.x || 0), Number(p.y || 0), now, chara, state.boss);
           }
           // DAILY RAIDでは実ダメージ処理は全弾そのまま。
           // DOM負荷の大きいHIT演出/数字/flashだけ頻度制限する。
@@ -17218,7 +17225,7 @@
             if (bossEl) bossEl.dataset.ambushHit = '1';
             if (now - Number(state.ambushLastHitRingAt || 0) >= 80) {
               state.ambushLastHitRingAt = now;
-              if (p.kind === 'hao_wave') {
+              if (p.kind === 'charge_wave') {
                 // 破裂演出は着弾処理で描画済み
               } else if (isMiaChargeProjectile(p)) {
                 createMiaWaterHit(p.x, p.y, false);
@@ -17227,7 +17234,7 @@
               }
             }
           } else if (shouldRenderRaidBossHitVisual(now, 'hit')) {
-            if (p.kind === 'hao_wave') {
+            if (p.kind === 'charge_wave') {
               // 破裂演出は着弾処理で描画済み
             } else if (isMiaChargeProjectile(p)) {
               createMiaWaterHit(p.x, p.y, false);
