@@ -3021,6 +3021,7 @@
       normalDefeated: Number(state.normalDefeated || 0),
       normalSpawned: Number(state.normalSpawned || 0),
       swarmLargeDefeated: Number(state.swarmLargeDefeated || 0),
+      swarmGuardDefeated: Number(state.swarmGuardDefeated || 0),
       facelessWave: Number(state.facelessWave || 0),
       raidInitialHp: Number(state.raidInitialHp || 0),
       raidDamageDealt: Number(state.raidDamageDealt || 0),
@@ -3123,6 +3124,7 @@
     // 画面上の敵は安全のため復元しない。倒した数を起点に残り敵を再スポーンする。
     state.normalSpawned = state.normalDefeated;
     state.swarmLargeDefeated = Math.max(0, Number(snapshot.swarmLargeDefeated || 0));
+    state.swarmGuardDefeated = Math.max(0, Number(snapshot.swarmGuardDefeated || 0));
     state.facelessWave = Math.max(state.facelessWave || 0, Number(snapshot.facelessWave || 0));
 
     if (snapshot.boss && state.boss) {
@@ -4013,6 +4015,7 @@
       normalLastSpawnAt: -9999,
       swarmLargeSpawned: false,
       swarmLargeDefeated: 0,
+      swarmGuardDefeated: 0,
       normalEnemyStunUntil: 0,
       angeEnemyFreezeUntil: 0,
       ch101TutorialPhase: '',
@@ -4657,7 +4660,7 @@
         } else if (isScoreAttackStage()) {
           missionProgress.textContent = `TIME ${formatBattleTimer(getBattleTimeLeft(nowMission))}`;
         } else if (isSwarmBattle()) {
-          missionProgress.textContent = `ENEMY ${Number(state.swarmLargeDefeated || 0)}/${getSwarmLargeTotal()}`;
+          missionProgress.textContent = `ENEMY ${getSwarmObjectiveDefeated()}/${getSwarmObjectiveTotal()}`;
         } else if (m.type === SHOOTING_MISSION_TYPE.COLLECT_ITEM) {
           missionProgress.textContent = `ITEM ${state.collectedItems}/${Number(m.target || 3)}`;
         } else if (m.type === SHOOTING_MISSION_TYPE.CLEAR_TIME) {
@@ -7484,7 +7487,7 @@
   function applyRemnaTrapDamageToTarget(target, rawDamage, attackElement, now, fromExplosion = false) {
     if (!target || !target.ref || rawDamage <= 0) return 0;
     // CH07-3：TRAPの爆発は、群れの大を3回・小を1回で倒す（火力に依存しない攻略手段）
-    if (fromExplosion && target.kind === 'normal' && target.ref.swarmRole) {
+    if (fromExplosion && target.kind === 'normal' && (target.ref.swarmRole === 'large' || target.ref.swarmRole === 'small')) {
       const e = target.ref;
       const hits = Math.max(1, Math.floor(Number(getSwarmBattleConfig()?.largeTrapHitsToKill || 3)));
       const share = e.swarmRole === 'large' ? Math.ceil(Number(e.hpMax || e.hp) / hits) : Number(e.hp || 0);
@@ -11450,6 +11453,21 @@
     return Math.max(1, Math.floor(Number(getSwarmBattleConfig()?.largeCount || 3)));
   }
 
+  // 小蜘蛛は討伐ノルマ外。大蜘蛛と三頭狼だけをカウントする。
+  function getSwarmGuardTotal() {
+    return getSwarmBattleConfig()?.guardEnemyId ? 1 : 0;
+  }
+
+  function getSwarmObjectiveTotal() {
+    return getSwarmLargeTotal() + getSwarmGuardTotal();
+  }
+
+  function getSwarmObjectiveDefeated() {
+    const large = Math.min(getSwarmLargeTotal(), Math.max(0, Number(state?.swarmLargeDefeated || 0)));
+    const guard = Math.min(getSwarmGuardTotal(), Math.max(0, Number(state?.swarmGuardDefeated || 0)));
+    return large + guard;
+  }
+
   function spawnSwarmEnemy(enemyId, x, y, now, extra) {
     const base = getShootingEnemy(enemyId);
     if (!base || !base.implemented) return null;
@@ -11479,7 +11497,7 @@
       const total = getSwarmLargeTotal();
       const remain = Math.max(0, total - Number(state.swarmLargeDefeated || 0));
       const rates = total === 1 ? [.5] : Array.from({length: total}, (_, i) => .2 + .6 * i / (total - 1));
-      if (cfg.guardEnemyId) {
+      if (cfg.guardEnemyId && Number(state.swarmGuardDefeated || 0) < getSwarmGuardTotal()) {
         const guardBase = getShootingEnemy(cfg.guardEnemyId);
         if (guardBase) {
           const guardHp = Math.max(1, Number(cfg.guardHp || guardBase.hp || 5000));
@@ -11487,7 +11505,11 @@
           if (guard) {
             guard.swarmRole = 'guard';
             guard.x = guard.baseX = w * .5;
-            guard.y = guard.baseY = Math.max(82, h*.29);
+            // 他の群れAIを使用せず、上空を左右移動して2秒おきに攻撃する。
+            guard.y = guard.baseY = cfg.guardAi === 'tower13_upper_spread5'
+              ? Math.max(86, h * Number(cfg.guardTopYRate || .20))
+              : Math.max(82, h * .29);
+            guard.lastShotAt = now;
             positionUnit(guard.el, guard.x, guard.y);
             positionMiniEnemyHp(guard);
             state.normalEnemies.push(guard);
@@ -11573,7 +11595,8 @@
     }
     // 群れ同士で押し合い、一点に重ならないようにする（大どうしは特に間隔を空ける）
     (state.normalEnemies || []).forEach(o => {
-      if (!o || o === enemy || o.hp <= 0 || !o.swarmRole || !o.el) return;
+      if (!o || o === enemy || o.hp <= 0 || !o.el ||
+          (o.swarmRole !== 'large' && o.swarmRole !== 'small')) return;
       const minD = (enemy.swarmRole === 'large' && o.swarmRole === 'large') ? 128
         : (enemy.swarmRole === 'large' || o.swarmRole === 'large') ? 40 : 15;
       const ox = enemy.x - o.x, oy = enemy.y - o.y, od = Math.hypot(ox, oy);
@@ -11596,6 +11619,34 @@
         state.clarineDecoys = (state.clarineDecoys || []).filter(d => d && d.el);
       }
     }
+  }
+
+  // 残響の塔13F限定：三頭狼は群れに参加せず、画面上部を左右に往復し5WAYを2秒ごとに放つ。
+  // CH07-02に登場する同一画像の三頭狼の挙動は変えない。
+  function updateTower13GuardEnemy(enemy, now, w, h) {
+    const cfg = getSwarmBattleConfig();
+    if (!cfg || cfg.guardAi !== 'tower13_upper_spread5') return;
+
+    const age = Math.max(0, now - Number(enemy.spawnedAt || now)) / 1000;
+    const sideMargin = Math.min(w * .5, Math.max(68, w * .18));
+    const horizontalRoom = Math.max(0, (w - sideMargin * 2) / 2);
+    const amplitude = Math.min(horizontalRoom, w * Number(cfg.guardMoveAmplitudeRate || .24));
+    enemy.x = clamp(w * .5 + Math.sin(age * Number(cfg.guardMoveAngularSpeed || .92)) * amplitude,
+      sideMargin, Math.max(sideMargin, w - sideMargin));
+    enemy.y = clamp(h * Number(cfg.guardTopYRate || .20), 86, Math.max(86, h * .28));
+
+    const fireInterval = Math.max(200, Number(cfg.guardShotIntervalMs || 2000));
+    if (now - Number(enemy.lastShotAt || now) < fireInterval) return;
+    enemy.lastShotAt = now;
+    const target = getEnemyAimPosition();
+    const aimAngle = Math.atan2(target.y - enemy.y, target.x - enemy.x);
+    const stepAngle = Number(cfg.guardSpreadAngleRad || .23);
+    const speed = Number(cfg.guardBulletSpeed || enemy.def?.bulletSpeed || 235);
+    const damage = Number(cfg.guardBulletDamage || enemy.def?.bulletDamage || 120);
+    [-2, -1, 0, 1, 2].forEach(i => {
+      shootNormalEnemyProjectile(enemy, aimAngle + stepAngle * i, speed, damage,
+        'shooting-enemy-bullet shooting-mini-enemy-bullet shooting-tower13-wolf-bullet');
+    });
   }
 
   function isNormalBattle() {
@@ -13062,8 +13113,16 @@
         return;
       }
 
-      // CH07-3 群がる強化個体：弾は撃たず、一番近い味方オブジェクトへ這い寄る
-      if (enemy.swarmRole) {
+      // 13Fの三頭狼は上部を往復して5WAY射撃。蜘蛛の群れAIには入れない。
+      if (enemy.swarmRole === 'guard' && getSwarmBattleConfig()?.guardAi === 'tower13_upper_spread5') {
+        updateTower13GuardEnemy(enemy, now, w, h);
+        positionUnit(enemy.el, enemy.x, enemy.y);
+        positionMiniEnemyHp(enemy);
+        return;
+      }
+
+      // CH07-3と13Fの蜘蛛だけが、一番近い味方オブジェクトへ這い寄る。
+      if (enemy.swarmRole === 'large' || enemy.swarmRole === 'small') {
         if (!swarmTargets) swarmTargets = getSwarmLureTargets(now);
         updateSwarmEnemy(enemy, dt, now, w, h, swarmTargets);
         positionUnit(enemy.el, enemy.x, enemy.y);
@@ -13361,6 +13420,8 @@
     }
     if (enemy.swarmRole === 'large') {
       state.swarmLargeDefeated = Math.max(0, Number(state.swarmLargeDefeated || 0)) + 1;
+    } else if (enemy.swarmRole === 'guard') {
+      state.swarmGuardDefeated = Math.max(0, Number(state.swarmGuardDefeated || 0)) + 1;
     }
     state.normalDefeated++;
     state.score += Number(enemy.def?.scoreValue || 650);
@@ -13416,8 +13477,8 @@
     const allDefeated = isCh404SummonerBattle()
       ? Number(state.ch404Phase || 0) >= 3 && !(state.normalEnemies || []).some(e => e && e.hp > 0)
       : isSwarmBattle()
-      ? (Number(state.swarmLargeDefeated || 0) >= getSwarmLargeTotal() &&
-         !(getSwarmBattleConfig()?.guardEnemyId && state.normalEnemies.some(e=>e&&e.hp>0&&e.swarmRole==='guard')))
+      ? (getSwarmObjectiveDefeated() >= getSwarmObjectiveTotal() &&
+         !state.normalEnemies.some(e=>e&&e.hp>0&&(e.swarmRole==='large'||e.swarmRole==='guard')))
       : total > 0 && state.normalDefeated >= total && state.normalSpawned >= total;
 
     if (isChapter101TutorialStage() && allDefeated && !state.ch101TutorialUltTriggered) {

@@ -186,9 +186,14 @@
       difficultyLabel:'13F / 群生',name:'第十三層',type:'normal',background:'images/battle_bg_01.webp',
       enemyIds:Object.freeze([SHOOTING_ENEMY_ID.SWARM_SPIDER_LARGE,SHOOTING_ENEMY_ID.STRONG_CH07_02]),
       normalBattle:Object.freeze({totalEnemies:3,maxActive:3,spawnIntervalMs:1300,itemDropRate:0}),
+      // 13F: 大蜘蛛2体＋上部で5WAYを撃つ三頭狼1体が撃破ノルマ。
+      // 蜘蛛の移動・産卵は従来どおり。三頭狼のみ専用AIで群れから分離する。
       swarmBattle:Object.freeze({largeCount:2,largeEnemyId:SHOOTING_ENEMY_ID.SWARM_SPIDER_LARGE,
         smallEnemyId:SHOOTING_ENEMY_ID.SWARM_SPIDER_SMALL,broodIntervalMs:5200,broodMaxPerLarge:2,
-        guardEnemyId:SHOOTING_ENEMY_ID.STRONG_CH07_02,guardHp:7200}),
+        guardEnemyId:SHOOTING_ENEMY_ID.STRONG_CH07_02,guardHp:7200,
+        guardAi:'tower13_upper_spread5',guardShotIntervalMs:2000,guardSpreadAngleRad:.23,
+        guardBulletSpeed:235,guardBulletDamage:120,guardMoveAngularSpeed:.92,
+        guardMoveAmplitudeRate:.24,guardTopYRate:.20}),
       mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'群がる蜘蛛と強敵を撃破'}),playable:true
     });
     if (floor === 14) return Object.freeze({
