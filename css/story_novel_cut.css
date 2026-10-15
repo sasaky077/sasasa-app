@@ -1,0 +1,108 @@
+/* ============================================================
+   ZERAPHIA — ストーリーノベル：全身絵（chara_XX_cut）の上部70%を立ち絵に
+   完成図（CH06「火を払う水」）準拠：
+   ・立ち絵は画面の下端まで途切れずに表示（全身絵を上揃えで大きく置き、画面下端で切る）
+   ・セリフウインドウは低め＆半透明。キャラはウインドウの上から胸上が出る
+   ・ウインドウ越しにキャラがうっすら透ける
+   このCSSは story_novel.js が自動で読み込む。
+   ============================================================ */
+
+/* ---------- 立ち絵 ---------- */
+html body #story-novel-root .story-novel-character.is-cut{
+  /* 完成図の大きさ：頭の上端が画面の約46%、胸がウインドウ上端に来る。
+     画像は上揃えで、画面下端で切れる（＝全身絵の上半分ほどが見える）。
+     --sn-img を小さくするとキャラが小さく・多く見える（例：70%表示＝下記コメント参照）。 */
+  --sn-top:44dvh;
+  --sn-img:108dvh;
+  --sn-h:calc(100dvh - var(--sn-top));
+  --sn-w:min(96vw,430px);
+  position:absolute !important;
+  top:auto !important;
+  bottom:0 !important;
+  width:var(--sn-w) !important;
+  max-width:var(--sn-w) !important;
+  height:var(--sn-h) !important;
+  max-height:none !important;
+  overflow:hidden !important;           /* 下30%は表示しない */
+  display:block !important;
+  z-index:30 !important;                /* セリフウインドウ(40)の下 */
+  transform:none !important;
+}
+html body #story-novel-root .story-novel-character.is-cut img{
+  position:absolute !important;
+  top:0 !important;
+  left:50% !important;
+  bottom:auto !important;
+  height:var(--sn-img) !important;
+  width:auto !important;
+  max-width:none !important;
+  max-height:none !important;
+  transform:translateX(-50%) !important;
+  object-fit:contain !important;
+  object-position:center top !important;
+  -webkit-mask-image:none !important;
+  mask-image:none !important;
+  filter:drop-shadow(0 4px 14px rgba(14,19,33,.25)) !important;
+}
+
+/* 1人：右寄せ（左側のキャラだけの時は左寄せ） */
+html body #story-novel-root .story-novel-character.is-cut.is-right{right:-22% !important;left:auto !important;}
+html body #story-novel-root .story-novel-character.is-cut.is-left{left:-22% !important;right:auto !important;}
+
+/* 2人：少し小さく、左右の外側へ */
+html body #story-novel-root.has-duo .story-novel-character.is-cut{
+  --sn-top:50dvh;
+  --sn-img:94dvh;
+  --sn-w:min(80vw,360px);
+}
+html body #story-novel-root.has-duo .story-novel-character.is-cut.is-right{right:-34% !important;}
+html body #story-novel-root.has-duo .story-novel-character.is-cut.is-left{left:-34% !important;}
+
+/* 話している方を手前・明るく */
+html body #story-novel-root .story-novel-character.is-cut.show{opacity:1 !important;}
+html body #story-novel-root .story-novel-character.is-cut.show.is-active{z-index:32 !important;filter:none !important;}
+html body #story-novel-root .story-novel-character.is-cut.show:not(.is-active){
+  z-index:31 !important;
+  filter:brightness(.72) saturate(.8) !important;
+}
+
+/* ---------- セリフウインドウ：低め・半透明・角丸（完成図準拠） ---------- */
+html body #story-novel-root .story-novel-textbox{
+  bottom:calc(12px + env(safe-area-inset-bottom)) !important;
+  height:clamp(140px,19.5dvh,180px) !important;
+  padding:clamp(34px,4.6dvh,42px) clamp(22px,6vw,32px) 30px !important;
+  border:1px solid rgba(250,250,252,.88) !important;
+  border-radius:10px !important;
+  background:linear-gradient(170deg,
+    rgba(246,247,251,.80) 0%,
+    rgba(236,238,245,.72) 55%,
+    rgba(224,228,238,.66) 100%) !important;
+  box-shadow:
+    0 0 0 1px rgba(45,57,79,.18),
+    inset 0 0 0 4px rgba(255,255,255,.18),
+    0 8px 26px rgba(10,19,38,.20) !important;
+  -webkit-backdrop-filter:blur(2px) !important;
+  backdrop-filter:blur(2px) !important;
+}
+html body #story-novel-root .story-novel-speaker{
+  top:-22px !important;
+  height:36px !important;
+}
+html body #story-novel-root .story-novel-dialogue{
+  font-size:clamp(15px,4.3vw,19px) !important;
+  line-height:1.8 !important;
+}
+
+@media (max-height:700px){
+  html body #story-novel-root .story-novel-character.is-cut{--sn-top:42dvh;--sn-img:104dvh;}
+  html body #story-novel-root.has-duo .story-novel-character.is-cut{--sn-top:48dvh;--sn-img:92dvh;}
+  html body #story-novel-root .story-novel-textbox{
+    height:clamp(128px,21dvh,150px) !important;
+    padding-top:32px !important;
+    padding-bottom:26px !important;
+  }
+  html body #story-novel-root .story-novel-dialogue{font-size:clamp(14px,4vw,16px) !important;line-height:1.7 !important;}
+}
+@media (min-width:500px){
+  html body #story-novel-root .story-novel-character.is-cut{--sn-w:430px;}
+}

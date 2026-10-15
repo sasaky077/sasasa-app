@@ -63,15 +63,31 @@
     return entriesFor(stageId,phase).length>0;
   }
 
-  // CH06: ノベル立ち絵は指定されたパネル画像を固定で使う。
-  // CHARACTERS側のimg（全身絵等）より優先する。
+  // build1492:
+  // ノベルパート専用の立ち絵差し替え。
+  // 命名規則は images/chara_xx_novel.webp に統一する。
+  const novelPortraitOverrides = Object.freeze({
+    'アウラ': 'images/chara_03_novel.webp',
+    'ジグ': 'images/chara_05_novel.webp',
+    'アイナ': 'images/chara_17_novel.webp',
+    'アルノ': 'images/chara_20_novel.webp',
+    'ベロニカ': 'images/chara_22_novel.webp',
+    'リュネ': 'images/chara_25_novel.webp',
+    'ミモザ': 'images/chara_28_novel.webp',
+    'ラテルナ': 'images/chara_32_novel.webp',
+    'トイフェル': 'images/chara_37_novel.webp',
+    'レオナクロス': 'images/chara_39_novel.webp'
+  });
+
+  // CH06: 旧ノベル立ち絵は指定されたパネル画像を固定で使う。
+  // novel portrait override がないキャラだけこちらを使う。
   const chapter6PanelImages = Object.freeze({
     'トイフェル': 'images/chara_37_panel.webp',
     'アイナ': 'images/chara_17_panel.webp',
     'ベロニカ': 'images/chara_22_panel.webp'
   });
 
-  function getCharacterPanel(name){
+  function getCharacterFallbackPanel(name){
     const chapter6Panel = chapter6PanelImages[String(name||'')];
     if(chapter6Panel) return chapter6Panel;
     // CH04-04: リュネは指定された専用パネル画像を使用する。
@@ -86,6 +102,35 @@
       }
     }catch(_){}
     return 'images/chara_'+String(id).padStart(2,'0')+'_panel.webp';
+  }
+
+  // build1489: ノベルの立ち絵は chara_XX_cut.webp（全身絵）の上部70%を使う。
+  // 読み込めない時は 従来のノベル用画像 → パネル画像 の順に戻す。
+  function getCharacterCut(name){
+    const id=speakerIds[String(name||'')];
+    return id ? 'images/chara_'+String(id).padStart(2,'0')+'_cut.webp' : '';
+  }
+
+  function ensureCutPortraitStyle(){
+    // 商用版ノベルUI（story_novel_polish.css）が未読込なら一緒に読み込む。
+    if(!document.querySelector('link[href*="story_novel_polish.css"]')){
+      const polish=document.createElement('link');
+      polish.rel='stylesheet';
+      polish.href='css/story_novel_polish.css?v=1489-cut-portrait';
+      document.head.appendChild(polish);
+    }
+    if(document.getElementById('story-novel-cut-style')) return;
+    const link=document.createElement('link');
+    link.id='story-novel-cut-style';
+    link.rel='stylesheet';
+    link.href='css/story_novel_cut.css?v=1490-cut-fullbleed';
+    document.head.appendChild(link);
+  }
+
+  function getCharacterPanel(name){
+    const portrait = novelPortraitOverrides[String(name||'')];
+    if(portrait) return portrait;
+    return getCharacterFallbackPanel(name);
   }
 
   function isDialogueEntry(entry){
@@ -676,6 +721,7 @@
     if(root) return root;
 
     ensureInlineStyle();
+    ensureCutPortraitStyle();
 
     root=document.createElement('div');
     root.id=ROOT_ID;
@@ -686,12 +732,12 @@
       <div class="story-novel-wash" aria-hidden="true"></div>
       <div class="story-novel-vignette" aria-hidden="true"></div>
       <header class="story-novel-head">
-        <button type="button" class="story-novel-back">＜戻る</button>
+        <button type="button" class="story-novel-back" aria-label="ストーリーに戻る">戻る</button>
         <div class="story-novel-head-copy">
           <small class="story-novel-chapter"></small>
           <strong class="story-novel-stage"></strong>
         </div>
-        <button type="button" class="story-novel-skip">SKIP</button>
+        <button type="button" class="story-novel-skip" aria-label="ストーリーをスキップ">SKIP</button>
       </header>
       <div class="story-novel-location"></div>
       <div class="story-novel-cast" aria-hidden="true">
@@ -1056,18 +1102,34 @@
     const castInfo=enforcePortraitSides(resolveCast(session.entries, session.index));
 
     function applyCharacter(wrap,img,name,active){
-      const src=name ? getCharacterPanel(name) : '';
+      const cutSrc=name ? getCharacterCut(name) : '';
+      const legacySrc=name ? getCharacterPanel(name) : '';
+      const panelSrc=name ? getCharacterFallbackPanel(name) : '';
+      const chain=[cutSrc,legacySrc,panelSrc].filter((v,i,a)=>v && a.indexOf(v)===i);
+      const src=chain[0] || '';
       wrap.classList.remove('show','is-active');
+      wrap.classList.toggle('is-cut', !!cutSrc && src===cutSrc);
       if(!src){
         img.removeAttribute('src');
         img.alt='';
+        img.removeAttribute('data-fallback-src');
         return;
       }
       wrap.classList.add('show');
       if(active) wrap.classList.add('is-active');
-      img.src=src;
       img.alt=name;
-      img.onerror=function(){ wrap.classList.remove('show','is-active'); };
+      let next=1;
+      img.removeAttribute('data-fallback-src');
+      img.onerror=function(){
+        if(next < chain.length){
+          const fb=chain[next++];
+          wrap.classList.toggle('is-cut', fb===cutSrc);
+          img.src=fb;
+          return;
+        }
+        wrap.classList.remove('show','is-active','is-cut');
+      };
+      if(img.getAttribute('src') !== src) img.src=src;
     }
 
     function applyItemImage(targetEntry){
@@ -1112,6 +1174,7 @@
     root.classList.toggle('is-narration', !speaker);
     root.classList.toggle('has-duo', !!(castInfo.left && castInfo.right));
     root.classList.toggle('has-solo-right', !!(!castInfo.left && castInfo.right));
+    root.classList.toggle('has-solo-left', !!(castInfo.left && !castInfo.right));
     session.lastLocation=location;
     typeText(entry.text||'');
   }
