@@ -2793,10 +2793,15 @@
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON,
     id: CHARACTER_ID.HAO, effectKey: 'hao',
     label: 'CHARGE / FUTURE TRIGGER',
-    description: '木属性のCHARGE型。ULTで敵弾を全消去し、前方へ5段階の起動紋様を設置。触れた時点の強さで全敵へ落雷を与える。',
+    description: '木属性のCHARGE型。溜めた波動は敵へゆるく向かって飛び、着弾すると破裂して周囲の敵も巻き込む。ULTで敵弾を全消去し、前方へ5段階の起動紋様を設置。触れた時点の強さで全敵へ落雷を与える。',
     shotType: 'charge', shotStyle: 'kaina-charge', shotElement: 'wood', shotCount: 1,
-    fireRate: 0, bulletSpeed: 760, shotPowerRate: 0.90,
-    chargeMinMs: 120, chargeMaxMs: 1200, chargeMinSize: 28, chargeMaxSize: 72,
+    // build1495: CHARGE強化。ATK×0.90/1.2秒 → ATK×1.50/1.0秒（理論DPS 約2倍）。
+    fireRate: 0, bulletSpeed: 760, shotPowerRate: 1.50,
+    chargeMinMs: 120, chargeMaxMs: 1000, chargeMinSize: 32, chargeMaxSize: 84,
+    // 着弾時の破裂：半径56〜110px（MAXはさらに×1.12）、周囲の敵へ本体ダメージの45%（MAXは60%）。
+    haoBurstRadiusMin: 56, haoBurstRadiusMax: 110, haoBurstMaxRadiusBonus: 1.12,
+    haoBurstRate: 0.45, haoBurstMaxRate: 0.60,
+    haoWaveTurnRate: 3.2,   // 緩ホーミングの曲がりやすさ（0で直進）
     ultName: '天機・五刻の雷',
     ultDescription: '発動時に敵弾を全消去し、前方へ起動紋様を設置。接触時に全敵へ木属性落雷。0/2/4/6/8秒でLV1〜5に成長（ATK×1.0/1.8/3.0/4.0/5.0）。LV5は維持、設置後0.5秒間は接触判定なし。',
     ultType: 'hao_fivefold_trigger', ultBaseType: 'trap', ultAddons: ['bullet_clear', 'damage'],

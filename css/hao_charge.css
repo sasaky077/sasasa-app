@@ -1,0 +1,267 @@
+/* ============================================================
+   ZERAPHIA build1495 — ハオ(ID54) 木の波動CHARGE
+   ・溜め中：翡翠の核＋回転する占星紋のリング＋外へ広がる波紋
+   ・射出：大きな波動が尾を引いて敵へ飛ぶ（向きは --hao-angle）
+   ・着弾：閃光→衝撃リング2重→光の棘→葉の粒が飛び散る
+   すべて transform / opacity のアニメーションのみ（軽量）。
+   要素の大きさ＝当たり判定。見た目はその外側へ広がる。
+   ============================================================ */
+
+/* ---------- 弾本体：旧CHARGEの見た目を打ち消す ---------- */
+html body #shooting-event-root #shooting-arena .shooting-bullet.shooting-mia-charge-shot.shooting-hao-charge-shot,
+html body #shooting-event-root #shooting-arena .shooting-bullet.shooting-mia-charge-shot.shooting-hao-charge-shot.shooting-bullet-wood{
+  --hao-c1:255,255,236;   /* 芯 */
+  --hao-c2:186,255,140;   /* 若葉 */
+  --hao-c3:64,196,104;    /* 翡翠 */
+  --hao-c4:255,222,128;   /* 金（MAX） */
+  background:none !important;
+  border:0 !important;
+  outline:0 !important;
+  box-shadow:none !important;
+  filter:none !important;
+  overflow:visible !important;
+  animation:none !important;
+  border-radius:50% !important;
+  contain:layout style;
+}
+html body #shooting-event-root #shooting-arena .shooting-bullet.shooting-hao-charge-shot::before,
+html body #shooting-event-root #shooting-arena .shooting-bullet.shooting-hao-charge-shot::after{
+  content:none !important;
+  display:none !important;
+}
+html body #shooting-event-root #shooting-arena .shooting-hao-charge-shot > *{
+  position:absolute;
+  left:50%;
+  top:50%;
+  display:block;
+  pointer-events:none;
+  box-sizing:border-box;
+  text-decoration:none;
+  font-style:normal;
+}
+
+/* 核 */
+html body #shooting-event-root #shooting-arena .shooting-hao-charge-shot > .hao-core{
+  width:100%;
+  height:100%;
+  margin:-50% 0 0 -50%;
+  border-radius:50%;
+  background:radial-gradient(circle at 50% 45%,
+    rgba(var(--hao-c1),1) 0 16%,
+    rgba(var(--hao-c2),.95) 32%,
+    rgba(var(--hao-c3),.72) 56%,
+    rgba(var(--hao-c3),.22) 74%,
+    rgba(var(--hao-c3),0) 100%);
+  box-shadow:
+    0 0 14px rgba(var(--hao-c2),.75),
+    0 0 34px rgba(var(--hao-c3),.55);
+  animation:haoCoreBeat .42s ease-in-out infinite alternate;
+}
+
+/* 占星紋のリング（目盛り＋二重円）。核の1.65倍で回転 */
+html body #shooting-event-root #shooting-arena .shooting-hao-charge-shot > .hao-sigil{
+  width:165%;
+  height:165%;
+  margin:-82.5% 0 0 -82.5%;
+  border-radius:50%;
+  border:3px dashed rgba(var(--hao-c1),.85);
+  box-shadow:0 0 0 2px rgba(var(--hao-c3),.35),inset 0 0 0 3px rgba(var(--hao-c2),.30);
+  opacity:.9;
+  animation:haoSigilSpin 2.4s linear infinite;
+}
+
+/* 外へ広がる波紋 */
+html body #shooting-event-root #shooting-arena .shooting-hao-charge-shot > .hao-pulse{
+  width:100%;
+  height:100%;
+  margin:-50% 0 0 -50%;
+  border-radius:50%;
+  border:2px solid rgba(var(--hao-c2),.85);
+  box-shadow:0 0 8px rgba(var(--hao-c3),.55);
+  animation:haoPulse .62s ease-out infinite;
+}
+
+/* 飛行中の尾（進行方向の反対側へ伸びる） */
+html body #shooting-event-root #shooting-arena .shooting-hao-charge-shot > .hao-tail{
+  width:84%;
+  height:300%;
+  margin:0;
+  transform-origin:50% 0;
+  transform:translateX(-50%) rotate(var(--hao-angle,0rad));
+  border-radius:50% 50% 45% 45% / 12% 12% 88% 88%;
+  background:radial-gradient(ellipse 50% 100% at 50% 0%,
+    rgba(var(--hao-c2),.80) 0%,
+    rgba(var(--hao-c3),.45) 34%,
+    rgba(var(--hao-c3),.14) 68%,
+    rgba(var(--hao-c3),0) 100%);
+  opacity:.95;
+}
+
+/* 溜め中（プレビュー）：やや控えめ。MAXで金色の輝きへ */
+html body #shooting-event-root #shooting-arena .shooting-charge-preview.shooting-hao-charge-shot > .hao-sigil{
+  animation-duration:3.2s;
+  opacity:calc(.35 + var(--mia-charge-ratio,0) * .6);
+}
+html body #shooting-event-root #shooting-arena .shooting-charge-preview.shooting-hao-charge-shot > .hao-pulse{
+  animation-duration:.8s;
+}
+
+/* 飛行中：波動を大きく */
+html body #shooting-event-root #shooting-arena .shooting-bullet.shooting-hao-charge-shot:not(.shooting-charge-preview) > .hao-sigil{
+  width:190%;
+  height:190%;
+  margin:-95% 0 0 -95%;
+  animation-duration:.9s;
+}
+html body #shooting-event-root #shooting-arena .shooting-bullet.shooting-hao-charge-shot:not(.shooting-charge-preview) > .hao-pulse{
+  animation:haoPulseFly .42s ease-out infinite;
+}
+
+/* MAX：金の縁取り＋強い発光 */
+html body #shooting-event-root #shooting-arena .shooting-hao-charge-shot.is-max > .hao-core{
+  background:radial-gradient(circle at 50% 45%,
+    rgba(255,255,250,1) 0 20%,
+    rgba(var(--hao-c2),.96) 36%,
+    rgba(var(--hao-c3),.78) 58%,
+    rgba(var(--hao-c4),.30) 76%,
+    rgba(var(--hao-c4),0) 100%);
+  box-shadow:
+    0 0 16px rgba(var(--hao-c1),.9),
+    0 0 36px rgba(var(--hao-c4),.55);
+}
+html body #shooting-event-root #shooting-arena .shooting-hao-charge-shot.is-max > .hao-sigil{
+  border-color:rgba(var(--hao-c4),.95);
+  box-shadow:0 0 0 2px rgba(var(--hao-c4),.35),inset 0 0 0 3px rgba(var(--hao-c2),.40);
+  opacity:1;
+}
+html body #shooting-event-root #shooting-arena .shooting-hao-charge-shot.is-max > .hao-pulse{
+  border-color:rgba(var(--hao-c4),.9);
+}
+html body #shooting-event-root #shooting-arena .shooting-charge-preview.shooting-hao-charge-shot.is-max > .hao-core{
+  animation:haoMaxFlash .18s ease-out 1, haoCoreBeat .3s ease-in-out .18s infinite alternate;
+}
+
+@keyframes haoCoreBeat{ from{transform:scale(.93)} to{transform:scale(1.05)} }
+@keyframes haoSigilSpin{ to{transform:rotate(360deg)} }
+@keyframes haoPulse{
+  0%{transform:scale(.9);opacity:.85}
+  100%{transform:scale(2.1);opacity:0}
+}
+@keyframes haoPulseFly{
+  0%{transform:scale(1);opacity:.9}
+  100%{transform:scale(2.1);opacity:0}
+}
+@keyframes haoMaxFlash{
+  0%{transform:scale(1.5);filter:brightness(1.8)}
+  100%{transform:scale(1);filter:brightness(1)}
+}
+
+/* ---------- 着弾の破裂 ---------- */
+html body #shooting-event-root #shooting-arena .shooting-hao-burst{
+  --hb-c1:255,255,236;
+  --hb-c2:186,255,140;
+  --hb-c3:64,196,104;
+  --hb-c4:186,255,140;
+  position:absolute;
+  left:0;
+  top:0;
+  width:var(--hao-burst-size,180px);
+  height:var(--hao-burst-size,180px);
+  font-size:calc(var(--hao-burst-size,180px) / 2);
+  pointer-events:none;
+  z-index:14;
+  contain:layout style;
+}
+html body #shooting-event-root #shooting-arena .shooting-hao-burst.is-max{ --hb-c4:255,222,128; }
+html body #shooting-event-root #shooting-arena .shooting-hao-burst > *{
+  position:absolute;
+  left:0;
+  top:0;
+  width:100%;
+  height:100%;
+  display:block;
+  border-radius:50%;
+  box-sizing:border-box;
+  text-decoration:none;
+  opacity:0;
+}
+/* 閃光 */
+html body #shooting-event-root #shooting-arena .shooting-hao-burst > .hb-flash{
+  background:radial-gradient(circle,
+    rgba(var(--hb-c1),1) 0 14%,
+    rgba(var(--hb-c2),.85) 30%,
+    rgba(var(--hb-c3),.40) 52%,
+    rgba(var(--hb-c3),0) 72%);
+  animation:hbFlash .30s ease-out forwards;
+}
+/* 衝撃リング */
+html body #shooting-event-root #shooting-arena .shooting-hao-burst > .hb-ring{
+  border:calc(var(--hao-burst-size,180px) * .035) solid rgba(var(--hb-c2),.95);
+  box-shadow:0 0 18px rgba(var(--hb-c3),.8),inset 0 0 14px rgba(var(--hb-c2),.6);
+  animation:hbRing .48s cubic-bezier(.15,.7,.3,1) forwards;
+}
+html body #shooting-event-root #shooting-arena .shooting-hao-burst > .hb-ring2{
+  border-width:2px;
+  border-color:rgba(var(--hb-c4),.9);
+  box-shadow:0 0 10px rgba(var(--hb-c4),.6);
+  animation:hbRing2 .56s cubic-bezier(.15,.7,.3,1) .06s forwards;
+}
+/* 光の棘（放射状） */
+html body #shooting-event-root #shooting-arena .shooting-hao-burst > .hb-shards{
+  border-radius:0;
+  background:
+    linear-gradient(90deg,transparent 0 47%,rgba(var(--hb-c1),.9) 49% 51%,transparent 53%) 50% 50% / 100% 70% no-repeat,
+    linear-gradient(0deg,transparent 0 47%,rgba(var(--hb-c1),.9) 49% 51%,transparent 53%) 50% 50% / 70% 100% no-repeat;
+  -webkit-mask:none;mask:none;
+  animation:hbShards .40s ease-out forwards;
+}
+/* 葉の粒：小さな点を box-shadow で配置し、全体を拡大して外へ飛ばす */
+html body #shooting-event-root #shooting-arena .shooting-hao-burst > .hb-leaves{
+  left:50%;
+  top:50%;
+  width:.09em;
+  height:.09em;
+  margin:-.045em 0 0 -.045em;
+  border-radius:60% 0 60% 0;
+  background:rgba(var(--hb-c2),1);
+  box-shadow:
+    .82em  .08em 0 0 rgba(var(--hb-c2),.95),
+    -.78em .22em 0 0 rgba(var(--hb-c1),.95),
+    .30em -.80em 0 0 rgba(var(--hb-c4),.95),
+    -.36em -.74em 0 0 rgba(var(--hb-c2),.95),
+    .58em  .62em 0 0 rgba(var(--hb-c3),.95),
+    -.52em .66em 0 0 rgba(var(--hb-c4),.9),
+    .70em -.46em 0 0 rgba(var(--hb-c1),.9),
+    -.70em -.30em 0 0 rgba(var(--hb-c3),.95),
+    .04em  .86em 0 0 rgba(var(--hb-c2),.9),
+    .02em -.90em 0 0 rgba(var(--hb-c1),.9);
+  animation:hbLeaves .58s cubic-bezier(.2,.7,.35,1) forwards;
+}
+
+@keyframes hbFlash{
+  0%{transform:scale(.25);opacity:1}
+  45%{opacity:.95}
+  100%{transform:scale(1.05);opacity:0}
+}
+@keyframes hbRing{
+  0%{transform:scale(.18);opacity:1}
+  70%{opacity:.75}
+  100%{transform:scale(1);opacity:0}
+}
+@keyframes hbRing2{
+  0%{transform:scale(.3);opacity:.9}
+  100%{transform:scale(1.18);opacity:0}
+}
+@keyframes hbShards{
+  0%{transform:scale(.35) rotate(0deg);opacity:1}
+  100%{transform:scale(1.1) rotate(24deg);opacity:0}
+}
+@keyframes hbLeaves{
+  0%{transform:scale(.15) rotate(0deg);opacity:1}
+  70%{opacity:.9}
+  100%{transform:scale(1.15) rotate(40deg);opacity:0}
+}
+
+@media (prefers-reduced-motion:reduce){
+  html body #shooting-event-root #shooting-arena .shooting-hao-charge-shot > .hao-sigil{ animation:none; }
+}

@@ -1,4 +1,4 @@
 {
-  "build": 1494,
-  "note": "STORYノベル立ち絵の過大表示を修正。単独幅85%→最大約56%、複数表示約43%、画像比率維持・拡大縮小transformなし。ストーリー進行と素材は変更なし。"
+  "build": 1495,
+  "note": "ハオ(ID54) CHARGE強化と波動演出の刷新：威力 ATK×0.90/1.2秒 → ATK×1.50/1.0秒（理論DPS約2倍）。波動は敵へゆるく向かって飛び、着弾で破裂して周囲の敵へ本体の45%（MAX溜めは60%・範囲拡大）の範囲ダメージ。演出は css/hao_charge.css（shooting_core.js が自動読込）。index.html の shooting_event.js の ?v= を 1495-hao-wave に更新すること。"
 }
