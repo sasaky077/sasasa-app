@@ -42033,6 +42033,20 @@ html body #noah-piece-overlay .noah-piece-challenge{height:52px !important;font-
   margin-top:2px;
 }
 
+
+/* build1499: パーティ編成のキャラ詳細では、画像下にキャラ名を明確表示する。 */
+#detail-modal.is-shooting-party-detail .detail-name{
+  display:block !important;
+  margin:10px 0 0 !important;
+  color:#8a6a32 !important;
+  font:700 22px/1.35 "Noto Serif JP",serif !important;
+  letter-spacing:.10em !important;
+  text-align:center !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.88) !important;
+}
+#detail-modal.is-shooting-party-detail #detail-rank{
+  display:none !important;
+}
 /* build1463: フレンドのホーム設定キャラ詳細（閲覧専用） */
 #detail-modal.is-friend-character-detail .detail-lb-action-block,
 #detail-modal.is-friend-character-detail .btn-limit-break,

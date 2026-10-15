@@ -15579,7 +15579,6 @@ function showTenResult(results){
         '<div class="box-carousel-fixed">' +
           '<div class="box-carousel-visual-row primoa-detail-single">' + visualHtml + '</div>' +
           '<div class="box-carousel-name">' + detailEscapeHTML(chara.name || '') + '</div>' +
-          buildCharaSublineHTML(detailElementKey, displayData.rarity || chara.rarity, lb, owned) +
           '<div class="box-carousel-separator"></div>' +
           fixedActionsHtml +
         '</div>' +
@@ -19433,6 +19432,55 @@ function fadeOutOpeningBgm(){
   <link rel="stylesheet" href="css/item_redesign.css?v=1475-exchange-mock">
   <link rel="stylesheet" href="css/friend_redesign.css?v=1476-friend-mock">
   <link rel="stylesheet" href="css/chara_detail_redesign.css?v=1481-dps">
+  <link rel="stylesheet" href="css/zukan_detail_scroll_lock.css?v=1500-portrait-fixed">
+<!-- build1501: キャラ詳細の上部は完全固定。触れた位置からのページスクロールを遮断する。 -->
+<style id="zeraphia-primoa-detail-upper-lock-1501">
+  /* 一覧モードは従来どおりスクロール可能。詳細モード時のみ外側を固定する。 */
+  html body #screen-zukan.is-primoa-detail > .zukan-screen-scroll {
+    overflow: clip !important;
+    overscroll-behavior: none !important;
+    -webkit-overflow-scrolling: auto !important;
+  }
+  /* キャラ画像からボタンまでの固定領域では、タッチ操作をスクロールに変換しない。 */
+  html body #screen-zukan.is-primoa-detail #box-grid.primoa-detail-page .box-carousel-fixed,
+  html body #screen-zukan.is-primoa-detail #box-grid.primoa-detail-page .box-carousel-fixed * {
+    touch-action: none !important;
+  }
+  /* 下段は独立したスクロール領域として残す。シート上下操作も維持。 */
+  html body #screen-zukan.is-primoa-detail #box-grid.primoa-detail-page .box-carousel-detail-scroll {
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain !important;
+    touch-action: pan-y !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+</style>
+<script id="zeraphia-primoa-detail-gesture-guard-1501">
+(function () {
+  'use strict';
+  var screen = document.getElementById('screen-zukan');
+  if (!screen) return;
+
+  // CSSのみではiOS/PWAの慣性スクロールが上部から伝播する場合があるため、
+  // キャラ詳細の上部で開始したジェスチャーだけ既定のスクロールを抑止する。
+  function shouldBlockGesture(target) {
+    if (!screen.classList.contains('is-primoa-detail')) return false;
+    if (!screen.querySelector('#box-grid.primoa-detail-page')) return false;
+    var element = target && (target.nodeType === 1 ? target : target.parentElement);
+    if (!element || !element.closest) return false;
+    // ステータス欄とその内部はドラッグ/スクロールを今までどおり許可する。
+    if (element.closest('.box-carousel-detail-scroll')) return false;
+    return !!element.closest('.zukan-screen-scroll');
+  }
+
+  function stopUpperScroll(event) {
+    if (shouldBlockGesture(event.target) && event.cancelable) {
+      event.preventDefault();
+    }
+  }
+  screen.addEventListener('touchmove', stopUpperScroll, { passive: false, capture: true });
+  screen.addEventListener('wheel', stopUpperScroll, { passive: false, capture: true });
+})();
+</script>
   <link rel="stylesheet" href="css/growth_modal_redesign.css?v=1479-growth-rich">
 <script src="js/remnant_blessings.js?v=1416-names"></script>
 <!-- ローグライト（新規追加） -->

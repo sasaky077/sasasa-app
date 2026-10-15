@@ -1,0 +1,25 @@
+/* ZERAPHIA build1500: キャラ一覧 > 詳細：上部の画像/名前/操作は固定。
+   一覧モードとレムナント一覧には影響を与えない。 */
+
+/* 原因：キャラ詳細でも外側の .app-scroll-region に overflow-y:auto が残り、
+   画像エリアからのスワイプで画面全体が動いていた。詳細モードだけ解除する。 */
+#screen-zukan.is-primoa-detail > .zukan-screen-scroll {
+  overflow-y: hidden !important;
+  overflow-x: hidden !important;
+  overscroll-behavior-y: none !important;
+}
+
+/* 上部の立ち絵・キャラ名をスクロール起点にしない。
+   touch-action:none はクリックを阻止しないため画像拡大/育成ボタンは有効。 */
+#screen-zukan.is-primoa-detail #box-grid.primoa-detail-page .box-carousel-fixed {
+  touch-action: none !important;
+}
+
+/* 画面下部のステータス/スキル欄のスクロールとシート操作は維持。 */
+#screen-zukan.is-primoa-detail #box-grid.primoa-detail-page .box-carousel-detail-scroll {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior-y: contain !important;
+  touch-action: pan-y !important;
+}
