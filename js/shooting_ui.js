@@ -111,6 +111,14 @@
                 <div class="zpf-rule" id="shooting-party-rule-text">最大3人 · 1人から出撃可能</div>
               </div>
               <div class="zpf-slots" id="shooting-party-slots" aria-label="編成枠"></div>
+              <section class="zpf-lastclear is-empty" id="shooting-last-clear-party" aria-label="前回のクリア編成">
+                <div class="zpf-lastclear-info">
+                  <div class="zpf-lastclear-heading"><span>LAST CLEAR</span><strong>前回のクリア編成</strong></div>
+                  <div class="zpf-lastclear-members" id="shooting-last-clear-members">まだ記録がありません</div>
+                  <small class="zpf-lastclear-detail" id="shooting-last-clear-detail">このステージで勝利すると記録されます</small>
+                </div>
+                <button type="button" class="zpf-lastclear-restore" id="shooting-last-clear-restore" onclick="restoreLastClearedShootingParty()" disabled>一括編成</button>
+              </section>
               <div class="shooting-party-blessing" hidden aria-hidden="true" data-feature-state="reserved" style="display:none!important;">
                 <div class="shooting-party-section-head"><span>加護</span><small>未実装</small></div>
                 <button type="button" class="shooting-party-blessing-current disabled" id="shooting-party-blessing-current" onclick="toggleShootingBlessingPicker()">

@@ -2446,6 +2446,114 @@
     }
   }
 
+  // build1502: ステージ別の「最後に勝利したパーティ」だけを保存する。
+  // スコア記録や編成プリセットには干渉せず、プレイヤーID別に分離する。
+  const SHOOTING_LAST_CLEAR_PARTY_KEY = 'zeraphia_shooting_last_clear_party_v1';
+
+  function getShootingLastClearStorageKey() {
+    return `${SHOOTING_LAST_CLEAR_PARTY_KEY}:${getShootingUserId() || 'guest'}`;
+  }
+
+  function readShootingLastClearParties() {
+    try {
+      const value = JSON.parse(localStorage.getItem(getShootingLastClearStorageKey()) || '{}');
+      return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+    } catch (_) { return {}; }
+  }
+
+  function normalizeShootingLastClearParty(record) {
+    if (!record || !Array.isArray(record.partyIds)) return null;
+    const ids = record.partyIds.map(Number);
+    if (ids.length < 1 || ids.length > PARTY_SIZE ||
+        ids.some(id => !Number.isInteger(id) || !SHOOTING_CHARACTERS[id] || !isPublicShootingCharacterId(id)) ||
+        new Set(ids).size !== ids.length) return null;
+    return { partyIds: ids, clearedAt: Number(record.clearedAt) || 0 };
+  }
+
+  function getShootingLastClearParty(stageId = selectedStage?.id) {
+    const key = String(stageId || '');
+    if (!key) return null;
+    return normalizeShootingLastClearParty(readShootingLastClearParties()[key]);
+  }
+
+  function saveShootingLastClearParty(stageId, party) {
+    const key = String(stageId || '');
+    if (!key) return;
+    const record = normalizeShootingLastClearParty({ partyIds: party, clearedAt: Date.now() });
+    if (!record) return;
+    try {
+      const all = readShootingLastClearParties();
+      all[key] = record;
+      localStorage.setItem(getShootingLastClearStorageKey(), JSON.stringify(all));
+    } catch (err) { console.warn('[shooting] last clear party could not be saved', err); }
+  }
+
+  function getShootingLastClearRestoreStatus(record) {
+    if (!record) return { ok: false, reason: 'クリア編成の記録はまだありません' };
+    const fixed = getSelectedStoryFixedPartyIds();
+    if (fixed) return { ok: false, reason: 'このステージは固定編成です' };
+    const selectable = getSelectedStorySelectablePartyConfig();
+    if (selectable && (record.partyIds.length !== selectable.requiredSize ||
+        record.partyIds.some(id => !selectable.allowedIds.includes(id)))) {
+      return { ok: false, reason: '現在のステージ指定編成とは異なります' };
+    }
+    if (record.partyIds.some(id => !isShootingCharacterAvailableForCurrentParty(id))) {
+      return { ok: false, reason: isResonanceTowerStage()
+        ? '未所持・封印中のキャラが含まれています'
+        : '現在使用できないキャラが含まれています' };
+    }
+    return { ok: true, reason: '' };
+  }
+
+  function renderShootingLastClearParty() {
+    const panel = document.getElementById('shooting-last-clear-party');
+    const members = document.getElementById('shooting-last-clear-members');
+    const button = document.getElementById('shooting-last-clear-restore');
+    const detail = document.getElementById('shooting-last-clear-detail');
+    if (!panel || !members || !button || !detail) return;
+    const record = getShootingLastClearParty();
+    const status = getShootingLastClearRestoreStatus(record);
+    button.disabled = !status.ok;
+    button.title = status.reason || '前回クリアした編成に切り替える';
+    panel.classList.toggle('is-empty', !record);
+    panel.classList.toggle('is-unavailable', !!record && !status.ok);
+    if (!record) {
+      members.textContent = 'まだ記録がありません';
+      detail.textContent = 'このステージで勝利すると記録されます';
+      return;
+    }
+    members.innerHTML = record.partyIds.map(id => {
+      const c = buildResonatedCharacterProfile(id) || SHOOTING_CHARACTERS[id];
+      return `<span class="zpf-lastclear-member" title="${c.name}">
+        <img src="${c.panelImage || c.image}" alt="${c.name}" draggable="false">
+        <small>${c.name}</small>
+      </span>`;
+    }).join('');
+    detail.textContent = status.ok
+      ? (record.clearedAt ? `${new Date(record.clearedAt).toLocaleDateString('ja-JP')} CLEAR` : 'LAST CLEAR')
+      : status.reason;
+  }
+
+  window.restoreLastClearedShootingParty = function () {
+    if (!document.getElementById('shooting-character-select')?.classList.contains('show')) return;
+    const record = getShootingLastClearParty();
+    const status = getShootingLastClearRestoreStatus(record);
+    if (!status.ok) {
+      if (typeof window.showToast === 'function') window.showToast(status.reason);
+      return;
+    }
+    const previous = selectedPartyIds.slice();
+    selectedPartyIds = record.partyIds.slice();
+    if (isStoryShootingStage()) ensureStoryEriLeader();
+    if (!isShootingPartyReady()) {
+      selectedPartyIds = previous;
+      if (typeof window.showToast === 'function') window.showToast('この編成は現在使用できません');
+    } else {
+      selectedCharacterId = selectedPartyIds[0];
+    }
+    applySelectedCharacterToUi();
+  };
+
   function readLocalShootingHighScores() {
     try {
       const raw = window.localStorage.getItem(SHOOTING_HIGH_SCORE_STORAGE_KEY);
@@ -3869,6 +3977,7 @@
       btn.classList.toggle('selected', selectedPartyIds.includes(id));
     });
     renderShootingPartySlots();
+    renderShootingLastClearParty();
     renderShootingBlessingPicker();
 
     const fixedStoryParty = getSelectedStoryFixedPartyIds();
@@ -3984,6 +4093,8 @@
       tower10ReverseUntil:0,tower10ReverseTriggeredPhases:[],
       activeCharacterId: selectedCharacterId,
       switchReadyAt: 0,
+      // 編成確定時点のメンバー。イベント中にstate.partyが入れ替わっても記録を維持。
+      initialPartyIds: selectedPartyIds.slice(),
       party: selectedPartyIds.map(id => {
         const c = resolvedProfiles[Number(id)] || buildResonatedCharacterProfile(id);
         return { id, hp: c.hp, hpMax: c.hp, burst: 0, ultReadyNotified: false, hitCount: 0, ultUseCount: 0 };
@@ -21642,6 +21753,15 @@
     state.clearTimeMs = Math.max(0, performance.now() - (state.startedAt || performance.now()));
     // build1081: RESULTを閉じるまで勝敗を保持し、STORY後半ノベル判定に使う。
     state.lastResultWin = !!win;
+    // 敗北/中断では上書きしない。実際に出撃したメンバー順を保持する。
+    if (win) {
+      saveShootingLastClearParty(
+        state.stageId || selectedStage?.id,
+        Array.isArray(state.initialPartyIds) && state.initialPartyIds.length
+          ? state.initialPartyIds
+          : (Array.isArray(state.party) ? state.party.map(member => Number(member.id)) : [])
+      );
+    }
     finalizeStoryClearScore(!!win);
     const rankLetter = getResultRank(state.score, win);
 
