@@ -27942,97 +27942,205 @@
   // build1312: ハオULT『天機・五刻の雷』。盤面固定の成長トリガーを自キャラが回収すると全体落雷。
   const HAO_TRIGGER_DEFAULT_MULTIPLIERS = Object.freeze([1.0, 1.8, 3.0, 4.0, 5.0]);
 
+  // build1497: 紋章を全面刷新。LVごとに「図形が増える／色が変わる／大きくなる／5つの刻印が灯る」。
+  // ・LV1 淡翠：外環＋目盛り＋刻印1灯
+  // ・LV2 翠  ：五角形が刻まれる（刻印2灯）
+  // ・LV3 碧  ：五芒星＋内環（刻印3灯）
+  // ・LV4 金翠：外側に八卦の回転環（刻印4灯）
+  // ・LV5 黄金：中央に日輪の紋＋光輪・高速回転（刻印5灯）
+  // LVが上がる瞬間は衝撃リング＋LV表示の跳ねで知らせる。回転は独立したSVG要素の transform のみ。
+  const HAO_TRIGGER_SCALES = Object.freeze([1.0, 1.08, 1.16, 1.25, 1.36]);
+  const HAO_TRIGGER_BASE_HIT_RADIUS = 36;
+
+  function buildHaoSigilSvg() {
+    const pt = (r, deg) => {
+      const a = (deg - 90) * Math.PI / 180;
+      return [+(Math.cos(a) * r).toFixed(2), +(Math.sin(a) * r).toFixed(2)];
+    };
+    const five = [0, 1, 2, 3, 4].map(i => pt(36, i * 72));
+    const pentagon = 'M' + five.map(p => p.join(' ')).join(' L') + 'Z';
+    const star = 'M' + [0, 2, 4, 1, 3].map(i => five[i].join(' ')).join(' L') + 'Z';
+    const pips = [0, 1, 2, 3, 4].map(i => {
+      const [x, y] = pt(44, i * 72);
+      return `<circle class="hao-pip p${i + 1}" cx="${x}" cy="${y}" r="3.6"/>`;
+    }).join('');
+    const rays = Array.from({ length: 12 }, (_, i) => {
+      const [x1, y1] = pt(9, i * 30);
+      const [x2, y2] = pt(i % 2 ? 16 : 21, i * 30);
+      return `M${x1} ${y1}L${x2} ${y2}`;
+    }).join(' ');
+    return `
+      <svg class="hao-mark" viewBox="-50 -50 100 100" aria-hidden="true" focusable="false">
+        <circle class="hao-engrave" r="44"/>
+        <circle class="hao-line hao-strong" r="44"/>
+        <circle class="hao-ticks" r="41.6"/>
+        <circle class="hao-line" r="39"/>
+        <g class="hao-lv1">
+          <circle class="hao-line" r="10"/>
+          <path class="hao-accent" d="M0 -8 L5 0 L0 8 L-5 0Z"/>
+        </g>
+        <g class="hao-lv2"><path class="hao-engrave thin" d="${pentagon}"/><path class="hao-accent" d="${pentagon}"/></g>
+        <g class="hao-lv3"><path class="hao-engrave thin" d="${star}"/><path class="hao-accent" d="${star}"/><circle class="hao-line" r="22"/></g>
+        <g class="hao-lv5"><circle class="hao-sun" r="8"/><path class="hao-accent" d="${rays}"/></g>
+        ${pips}
+      </svg>`;
+  }
+
+  function buildHaoTrigramBandSvg() {
+    // 八卦（3本の爻）。陽＝一本線、陰＝中央が切れた線。
+    const trigrams = ['111', '011', '101', '001', '110', '010', '100', '000'];
+    const bars = trigrams.map((code, i) => {
+      const lines = code.split('').map((bit, j) => {
+        const r = 50 + j * 3.4;
+        return bit === '1'
+          ? `M-4.6 ${-r}H4.6`
+          : `M-4.6 ${-r}H-1.1M1.1 ${-r}H4.6`;
+      }).join('');
+      return `<path transform="rotate(${i * 45})" d="${lines}"/>`;
+    }).join('');
+    return `
+      <svg class="hao-band-svg" viewBox="-62 -62 124 124" aria-hidden="true" focusable="false">
+        <circle class="hao-band-ring" r="47.5"/>
+        <circle class="hao-band-ring" r="59.5"/>
+        <g class="hao-trigram">${bars}</g>
+      </svg>`;
+  }
+
   function ensureHaoTriggerStyle() {
-    if (document.getElementById('shooting-hao-trigger-style')) return;
+    if (document.getElementById('shooting-hao-trigger-style-1497')) return;
+    const old = document.getElementById('shooting-hao-trigger-style');
+    if (old) old.remove();
+    const lit = [];
+    for (let lv = 1; lv <= 5; lv++) {
+      for (let n = 1; n <= lv; n++) lit.push(`.shooting-hao-trigger[data-level="${lv}"] .hao-pip.p${n}`);
+    }
+    const show = (n) => {
+      const sel = [];
+      for (let lv = n; lv <= 5; lv++) sel.push(`.shooting-hao-trigger[data-level="${lv}"] .hao-lv${n}`);
+      return sel.join(',');
+    };
     const style = document.createElement('style');
-    style.id = 'shooting-hao-trigger-style';
+    style.id = 'shooting-hao-trigger-style-1497';
     style.textContent = `
-      /* build1313: Etched ground sigil, not a floating rotating ring. */
       .shooting-hao-trigger{
-        position:absolute;left:0;top:0;width:74px;height:74px;z-index:44;pointer-events:none;
+        position:absolute;left:0;top:0;width:88px;height:88px;z-index:44;pointer-events:none;
         border:0;background:transparent;box-shadow:none;overflow:visible;
-        --hao-light:rgba(170,212,148,.75);--hao-light-strong:rgba(203,239,174,.95);
-        --hao-glow:rgba(138,188,109,.42);
         font-family:'Noto Serif JP',serif;
+        --hc:rgba(186,236,196,.92);      /* 線 */
+        --hc2:rgba(226,252,224,1);       /* 強調線 */
+        --hglow:rgba(130,214,160,.55);   /* 発光 */
+        --hfill:rgba(12,40,24,.50);      /* 地 */
+        --hpip:rgba(232,255,214,1);
+        --hscale:1;
+      }
+      .shooting-hao-trigger[data-level="2"]{--hc:rgba(150,232,130,.9);--hc2:rgba(206,255,170,.98);--hglow:rgba(110,220,100,.55);--hscale:${HAO_TRIGGER_SCALES[1]}}
+      .shooting-hao-trigger[data-level="3"]{--hc:rgba(110,236,200,.92);--hc2:rgba(200,255,238,1);--hglow:rgba(70,220,190,.62);--hfill:rgba(8,44,40,.55);--hpip:rgba(220,255,248,1);--hscale:${HAO_TRIGGER_SCALES[2]}}
+      .shooting-hao-trigger[data-level="4"]{--hc:rgba(214,236,120,.94);--hc2:rgba(250,255,190,1);--hglow:rgba(206,226,90,.66);--hfill:rgba(36,46,12,.56);--hpip:rgba(255,252,206,1);--hscale:${HAO_TRIGGER_SCALES[3]}}
+      .shooting-hao-trigger[data-level="5"]{--hc:rgba(255,212,110,.96);--hc2:rgba(255,246,200,1);--hglow:rgba(255,196,80,.80);--hfill:rgba(60,38,8,.58);--hpip:rgba(255,255,236,1);--hscale:${HAO_TRIGGER_SCALES[4]}}
+
+      .shooting-hao-trigger .hao-body{
+        position:absolute;inset:0;transform:scale(var(--hscale));transform-origin:50% 50%;
+        transition:transform .32s cubic-bezier(.2,1.6,.4,1);
       }
       .shooting-hao-trigger .hao-ground{
-        position:absolute;inset:4px;border-radius:50%;transform:scaleY(.76);
-        background:radial-gradient(ellipse at 50% 50%,
-          rgba(9,27,15,.48) 0%,rgba(20,48,25,.40) 39%,
-          rgba(28,65,33,.16) 62%,transparent 78%);
-        box-shadow:inset 0 0 11px rgba(5,24,13,.38),
-          0 0 10px var(--hao-glow);
+        position:absolute;inset:-6%;border-radius:50%;
+        background:radial-gradient(circle,var(--hfill) 0%,var(--hfill) 52%,rgba(0,0,0,0) 72%);
+        box-shadow:0 0 18px var(--hglow),inset 0 0 14px var(--hglow);
       }
-      .shooting-hao-trigger .hao-mark{
-        position:absolute;inset:0;width:100%;height:100%;overflow:visible;
-        transform:scaleY(.76);transform-origin:50% 50%;
-        filter:drop-shadow(0 1px 0 rgba(9,23,14,.95)) drop-shadow(0 0 3px var(--hao-glow));
-        animation:haoSigilBreathe 2.6s ease-in-out infinite;
+      .shooting-hao-trigger .hao-aura{
+        position:absolute;inset:-26%;border-radius:50%;
+        background:radial-gradient(circle,rgba(0,0,0,0) 40%,var(--hglow) 58%,rgba(0,0,0,0) 74%);
+        opacity:.0;animation:haoAuraBreathe 1.8s ease-in-out infinite;
       }
-      .shooting-hao-trigger .hao-engrave{
-        fill:none;stroke:rgba(16,42,23,.92);stroke-width:2.9;
-        stroke-linejoin:round;stroke-linecap:round;
-      }
-      .shooting-hao-trigger .hao-line{
-        fill:none;stroke:var(--hao-light);stroke-width:1.2;
-        stroke-linejoin:round;stroke-linecap:round;
-      }
-      .shooting-hao-trigger .hao-accent{
-        fill:none;stroke:var(--hao-light-strong);stroke-width:1.5;
-        stroke-linecap:round;stroke-linejoin:round;
-      }
-      .shooting-hao-trigger .hao-inner,
-      .shooting-hao-trigger .hao-veins,
-      .shooting-hao-trigger .hao-runes,
-      .shooting-hao-trigger .hao-crest{
-        opacity:.10;transition:opacity .35s ease;
-      }
-      .shooting-hao-trigger[data-level="2"] .hao-inner,
-      .shooting-hao-trigger[data-level="3"] .hao-inner,
-      .shooting-hao-trigger[data-level="4"] .hao-inner,
-      .shooting-hao-trigger[data-level="5"] .hao-inner{opacity:.82}
-      .shooting-hao-trigger[data-level="3"] .hao-veins,
-      .shooting-hao-trigger[data-level="4"] .hao-veins,
-      .shooting-hao-trigger[data-level="5"] .hao-veins{opacity:.87}
-      .shooting-hao-trigger[data-level="4"] .hao-runes,
-      .shooting-hao-trigger[data-level="5"] .hao-runes{opacity:.96}
-      .shooting-hao-trigger[data-level="5"] .hao-crest{opacity:1}
-      .shooting-hao-trigger[data-level="3"],
-      .shooting-hao-trigger[data-level="4"]{
-        --hao-light:rgba(180,231,151,.89);--hao-light-strong:rgba(222,250,190,.98);
-        --hao-glow:rgba(145,202,115,.56);
-      }
-      .shooting-hao-trigger[data-level="5"]{
-        --hao-light:rgba(241,207,126,.9);--hao-light-strong:rgba(255,236,178,1);
-        --hao-glow:rgba(242,209,116,.78);
-      }
-      .shooting-hao-trigger[data-level="5"] .hao-ground{
-        background:radial-gradient(ellipse at 50% 50%,
-          rgba(52,43,16,.53) 0%,rgba(78,65,28,.35) 40%,
-          rgba(113,90,40,.16) 62%,transparent 78%);
-        box-shadow:inset 0 0 12px rgba(45,31,11,.4),0 0 17px var(--hao-glow);
-      }
-      .shooting-hao-trigger[data-level="5"] .hao-mark{
-        filter:drop-shadow(0 1px 0 rgba(49,33,12,.9)) drop-shadow(0 0 5px var(--hao-glow));
-      }
+      .shooting-hao-trigger[data-level="1"] .hao-aura{opacity:.32}
+      .shooting-hao-trigger[data-level="2"] .hao-aura{opacity:.42}
+      .shooting-hao-trigger[data-level="3"] .hao-aura{opacity:.6}
+      .shooting-hao-trigger[data-level="4"] .hao-aura{opacity:.75}
+      .shooting-hao-trigger[data-level="5"] .hao-aura{opacity:1;animation-duration:1.1s}
+      .shooting-hao-trigger .hao-mark,
+      .shooting-hao-trigger .hao-band{position:absolute;overflow:visible}
+      .shooting-hao-trigger .hao-mark{inset:0;width:100%;height:100%;
+        filter:drop-shadow(0 0 3px var(--hglow));}
+      .shooting-hao-trigger .hao-engrave{fill:none;stroke:rgba(6,22,14,.9);stroke-width:3.4;stroke-linejoin:round}
+      .shooting-hao-trigger .hao-engrave.thin{stroke-width:3}
+      .shooting-hao-trigger .hao-line{fill:none;stroke:var(--hc);stroke-width:1}
+      .shooting-hao-trigger .hao-strong{stroke-width:1.8}
+      .shooting-hao-trigger .hao-ticks{fill:none;stroke:var(--hc);stroke-width:3.2;stroke-dasharray:.7 3.66;opacity:.9}
+      .shooting-hao-trigger .hao-accent{fill:none;stroke:var(--hc2);stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}
+      .shooting-hao-trigger .hao-sun{fill:var(--hc2);stroke:rgba(90,56,10,.6);stroke-width:1}
+      .shooting-hao-trigger .hao-pip{fill:rgba(6,22,14,.95);stroke:rgba(120,140,128,.7);stroke-width:1;transform-box:fill-box;transform-origin:center;transform:scale(.8);transition:fill .25s ease,transform .3s cubic-bezier(.2,1.8,.4,1)}
+      ${lit.join(',')}{fill:var(--hpip);stroke:var(--hc2);stroke-width:1.4;transform:scale(1.25);filter:drop-shadow(0 0 3px var(--hglow)) drop-shadow(0 0 1px #fff)}
+      .shooting-hao-trigger .hao-lv2,
+      .shooting-hao-trigger .hao-lv3,
+      .shooting-hao-trigger .hao-lv5{opacity:0;transition:opacity .3s ease}
+      ${show(2)},${show(3)},${show(5)}{opacity:1}
+      .shooting-hao-trigger[data-level="5"] .hao-lv1{opacity:0}
+
+      /* LV4〜：外側の八卦環。要素ごと回転（SVG内部はアニメーションしない） */
+      .shooting-hao-trigger .hao-band{left:-20%;top:-20%;width:140%;height:140%;opacity:0;
+        transform:scale(.7);transition:opacity .3s ease,transform .35s cubic-bezier(.2,1.5,.4,1)}
+      .shooting-hao-trigger[data-level="4"] .hao-band,
+      .shooting-hao-trigger[data-level="5"] .hao-band{opacity:1;transform:scale(1)}
+      .shooting-hao-trigger .hao-band-spin{position:absolute;inset:0;animation:haoBandSpin 14s linear infinite}
+      .shooting-hao-trigger[data-level="5"] .hao-band-spin{animation-duration:6s}
+      .shooting-hao-trigger .hao-band-ring{fill:none;stroke:var(--hc);stroke-width:.9;opacity:.85}
+      .shooting-hao-trigger .hao-trigram path{fill:none;stroke:var(--hc2);stroke-width:2;stroke-linecap:round}
+      .shooting-hao-trigger .hao-band-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 0 2px var(--hglow))}
+
+      /* LVアップの衝撃リング */
+      .shooting-hao-trigger .hao-levelup{position:absolute;inset:0;border-radius:50%;
+        border:3px solid var(--hc2);box-shadow:0 0 16px var(--hglow);opacity:0}
+      .shooting-hao-trigger .hao-levelup.go{animation:haoLevelUp .5s ease-out forwards}
+
+      /* LV表示：バッジ */
       .shooting-hao-trigger .hao-caption{
-        position:absolute;top:66px;left:50%;transform:translateX(-50%);
-        display:flex;gap:4px;align-items:center;white-space:nowrap;
-        font-size:9px;line-height:1;letter-spacing:.035em;
-        color:#e7f3d2;text-shadow:0 1px 3px rgba(8,32,11,.9),0 0 3px rgba(20,47,18,.8);
-        opacity:.78;
+        position:absolute;top:100%;left:50%;margin-top:calc((var(--hscale) - 1) * 44px + 4px);
+        transform:translateX(-50%);
+        display:flex;gap:5px;align-items:baseline;white-space:nowrap;
+        padding:2px 8px 3px;border-radius:999px;
+        background:linear-gradient(180deg,rgba(10,30,20,.82),rgba(6,20,14,.82));
+        border:1px solid var(--hc);box-shadow:0 0 8px var(--hglow);
+        color:var(--hc2);line-height:1;letter-spacing:.04em;
+        text-shadow:0 1px 2px rgba(0,0,0,.8);
       }
-      .shooting-hao-trigger[data-level="5"] .hao-caption{color:#fff0bb;opacity:.94}
-      .shooting-hao-trigger .hao-power{font-size:8px;opacity:.78}
-      .shooting-hao-trigger.is-arming{opacity:.62}
-      .shooting-hao-lightning{position:absolute;z-index:49;width:16px;pointer-events:none;opacity:0;animation:haoLightningStrike .4s ease-out both}
-      .shooting-hao-lightning::before{content:'';position:absolute;left:2px;top:0;bottom:0;width:12px;
-        background:linear-gradient(180deg,transparent,rgba(237,255,217,.98) 15%,#fff 48%,rgba(184,236,141,.88) 78%,transparent);
-        filter:drop-shadow(0 0 7px #daf6a7);clip-path:polygon(48% 0%,75% 0%,48% 27%,92% 31%,37% 61%,72% 67%,24% 100%,40% 66%,4% 60%,58% 35%,20% 29%)}
-      .shooting-hao-lightning::after{content:'';position:absolute;left:50%;bottom:-9px;width:54px;height:18px;transform:translateX(-50%);border:2px solid rgba(219,247,170,.9);border-radius:50%;box-shadow:0 0 12px #dfffbb;background:radial-gradient(ellipse,rgba(255,254,218,.6),transparent 70%)}
+      .shooting-hao-trigger[data-level="5"] .hao-caption{background:linear-gradient(180deg,rgba(70,44,8,.9),rgba(40,24,4,.9))}
+      .shooting-hao-trigger .hao-level{font-size:12px;font-weight:700}
+      .shooting-hao-trigger .hao-power{font-size:10px;opacity:.9}
+      .shooting-hao-trigger .hao-caption.pop{animation:haoCaptionPop .38s cubic-bezier(.2,1.8,.4,1)}
+
+      .shooting-hao-trigger.is-arming{opacity:.6}
+
+      /* 起爆：紋章が光って弾ける */
+      .shooting-hao-trigger-burst{position:absolute;left:0;top:0;width:var(--hb-size,120px);height:var(--hb-size,120px);
+        z-index:48;pointer-events:none;border-radius:50%}
+      .shooting-hao-trigger-burst::before,
+      .shooting-hao-trigger-burst::after{content:'';position:absolute;inset:0;border-radius:50%;opacity:0}
+      .shooting-hao-trigger-burst::before{background:radial-gradient(circle,rgba(255,255,240,1) 0 12%,var(--hb-c2) 32%,var(--hb-c) 52%,rgba(0,0,0,0) 72%);
+        animation:haoTrigFlash .45s ease-out forwards}
+      .shooting-hao-trigger-burst::after{border:4px solid var(--hb-c2);box-shadow:0 0 18px var(--hb-c);
+        animation:haoTrigRing .55s cubic-bezier(.15,.7,.3,1) forwards}
+
+      .shooting-hao-lightning{position:absolute;z-index:49;width:16px;pointer-events:none;opacity:0;animation:haoLightningStrike .4s ease-out both;
+        --hl1:rgba(237,255,217,.98);--hl2:rgba(184,236,141,.88);--hlg:#daf6a7}
+      .shooting-hao-lightning.lv3{--hl1:rgba(220,255,246,.98);--hl2:rgba(110,236,200,.9);--hlg:#9ff5df}
+      .shooting-hao-lightning.lv4{--hl1:rgba(252,255,214,.98);--hl2:rgba(214,236,120,.9);--hlg:#eef59a}
+      .shooting-hao-lightning.lv5{--hl1:rgba(255,250,224,1);--hl2:rgba(255,206,96,.95);--hlg:#ffd66e;width:24px}
+      .shooting-hao-lightning::before{content:'';position:absolute;left:2px;right:2px;top:0;bottom:0;
+        background:linear-gradient(180deg,transparent,var(--hl1) 15%,#fff 48%,var(--hl2) 78%,transparent);
+        filter:drop-shadow(0 0 7px var(--hlg));clip-path:polygon(48% 0%,75% 0%,48% 27%,92% 31%,37% 61%,72% 67%,24% 100%,40% 66%,4% 60%,58% 35%,20% 29%)}
+      .shooting-hao-lightning::after{content:'';position:absolute;left:50%;bottom:-9px;width:54px;height:18px;transform:translateX(-50%);border:2px solid var(--hl2);border-radius:50%;box-shadow:0 0 12px var(--hlg);background:radial-gradient(ellipse,rgba(255,254,218,.6),transparent 70%)}
+      .shooting-hao-lightning.lv5::after{width:78px;height:24px;border-width:3px}
+
       @keyframes haoLightningStrike{0%{opacity:0}15%{opacity:1}48%{opacity:1}100%{opacity:0}}
-      @keyframes haoSigilBreathe{0%,100%{opacity:.76}50%{opacity:1}}
-      @media(prefers-reduced-motion:reduce){.shooting-hao-trigger .hao-mark{animation:none}}
+      @keyframes haoAuraBreathe{0%,100%{transform:scale(.94)}50%{transform:scale(1.04)}}
+      @keyframes haoBandSpin{to{transform:rotate(360deg)}}
+      @keyframes haoLevelUp{0%{transform:scale(.6);opacity:1}100%{transform:scale(1.7);opacity:0}}
+      @keyframes haoCaptionPop{0%{transform:translateX(-50%) scale(1.6)}100%{transform:translateX(-50%) scale(1)}}
+      @keyframes haoTrigFlash{0%{transform:scale(.3);opacity:1}100%{transform:scale(1.1);opacity:0}}
+      @keyframes haoTrigRing{0%{transform:scale(.25);opacity:1}100%{transform:scale(1.2);opacity:0}}
+      @media(prefers-reduced-motion:reduce){
+        .shooting-hao-trigger .hao-band-spin,.shooting-hao-trigger .hao-aura{animation:none}
+      }
     `;
     document.head.appendChild(style);
   }
@@ -28048,20 +28156,42 @@
     return Math.min(5, 1 + Math.floor(Math.max(0, now - trigger.startedAt) / step));
   }
 
-  function spawnHaoLightningOnBoard(points) {
+  function spawnHaoLightningOnBoard(points, level) {
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
+    const lv = Math.max(1, Math.min(5, Number(level || 1)));
     for (const point of points) {
       const el = document.createElement('i');
-      el.className = 'shooting-hao-lightning';
+      el.className = 'shooting-hao-lightning lv' + lv;
       const targetY = Math.max(25, Number(point.y || 0));
       const targetX = Number(point.x || 0);
-      el.style.left = `${targetX - 8}px`;
+      const w = lv >= 5 ? 24 : 16;
+      el.style.left = `${targetX - w / 2}px`;
       el.style.top = '0px';
       el.style.height = `${targetY}px`;
       arena.appendChild(el);
       setTimeout(() => el.remove(), 470);
     }
+  }
+
+  function spawnHaoTriggerBurst(trigger, level) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena || !trigger) return;
+    const el = document.createElement('i');
+    el.className = 'shooting-hao-trigger-burst';
+    const colors = [
+      ['rgba(120,200,140,.6)', 'rgba(214,246,200,.95)'],
+      ['rgba(110,220,100,.65)', 'rgba(206,255,170,.95)'],
+      ['rgba(70,220,190,.7)', 'rgba(200,255,238,.95)'],
+      ['rgba(206,226,90,.7)', 'rgba(250,255,190,.95)'],
+      ['rgba(255,196,80,.8)', 'rgba(255,246,200,1)'],
+    ][Math.max(0, Math.min(4, level - 1))];
+    el.style.setProperty('--hb-c', colors[0]);
+    el.style.setProperty('--hb-c2', colors[1]);
+    el.style.setProperty('--hb-size', `${Math.round(110 + level * 26)}px`);
+    arena.appendChild(el);
+    positionUnit(el, trigger.x, trigger.y);
+    setTimeout(() => el.remove(), 600);
   }
 
   function useHaoUlt(c) {
@@ -28078,44 +28208,23 @@
     const height = Math.max(80, bounds.height || arena.clientHeight);
     const playerX = Number(state.player.x || width * .5);
     const playerY = Number(state.player.y || height * .75);
-    const x = Math.max(37, Math.min(width - 37, playerX));
+    const x = Math.max(44, Math.min(width - 44, playerX));
     // Front of player is the UPWARD direction (negative arena Y).
-    const y = Math.max(37, Math.min(height - 37, playerY - 85));
+    const y = Math.max(44, Math.min(height - 44, playerY - 90));
     const el = document.createElement('div');
     el.className = 'shooting-hao-trigger is-arming';
     el.setAttribute('aria-label', 'ハオ ULT 起動紋様');
     el.dataset.level = '1';
     el.innerHTML = `
-      <span class="hao-ground" aria-hidden="true"></span>
-      <svg class="hao-mark" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
-        <circle class="hao-engrave" cx="50" cy="50" r="42"/>
-        <circle class="hao-line" cx="50" cy="50" r="40"/>
-        <circle class="hao-line" cx="50" cy="50" r="34"/>
-        <path class="hao-line" d="M50 8v8 M92 50h-8 M50 92v-8 M8 50h8"/>
-        <path class="hao-accent" d="M50 22 74 50 50 78 26 50Z"/>
-        <g class="hao-inner hao-line">
-          <circle cx="50" cy="50" r="24"/>
-          <path d="M50 28v44 M28 50h44"/>
-        </g>
-        <g class="hao-veins hao-accent">
-          <path d="M50 31 Q61 40 50 49 Q39 40 50 31Z"/>
-          <path d="M50 69 Q39 60 50 51 Q61 60 50 69Z"/>
-        </g>
-        <g class="hao-runes hao-line">
-          <path d="M26 25 31 20 35 25 M74 25 69 20 65 25"/>
-          <path d="M26 75 31 80 35 75 M74 75 69 80 65 75"/>
-        </g>
-        <g class="hao-crest hao-accent">
-          <path d="M50 12 54 20 50 26 46 20Z"/>
-          <path d="M88 50 80 54 74 50 80 46Z"/>
-          <path d="M50 88 46 80 50 74 54 80Z"/>
-          <path d="M12 50 20 46 26 50 20 54Z"/>
-        </g>
-      </svg>
+      <span class="hao-body" aria-hidden="true">
+        <span class="hao-aura"></span>
+        <span class="hao-ground"></span>
+        <span class="hao-band"><span class="hao-band-spin">${buildHaoTrigramBandSvg()}</span></span>
+        ${buildHaoSigilSvg()}
+        <span class="hao-levelup"></span>
+      </span>
       <span class="hao-caption"><span class="hao-level">LV1</span><span class="hao-power">×1.0</span></span>`;
-    // positionUnit uses translate(x,y) from the ARENA origin. Absolute children
-    // without left/top:0 inherit their static position (dependent on sibling DOM),
-    // so the visible sigil and collision coordinates disagree.
+    // positionUnit uses translate(x,y) from the ARENA origin.
     el.style.left = '0px';
     el.style.top = '0px';
     arena.appendChild(el);
@@ -28143,14 +28252,27 @@
       const power = trigger.el.querySelector('.hao-power');
       if (label) label.textContent = `LV${level}`;
       if (power) power.textContent = `×${Number(trigger.multipliers[level - 1] || 1).toFixed(1)}`;
+      // LVアップ演出：衝撃リングとバッジの跳ね（要素を差し替えてアニメーションを再始動）
+      const ring = trigger.el.querySelector('.hao-levelup');
+      if (ring) {
+        const fresh = ring.cloneNode(false);
+        fresh.className = 'hao-levelup go';
+        ring.replaceWith(fresh);
+      }
+      const caption = trigger.el.querySelector('.hao-caption');
+      if (caption) {
+        caption.classList.remove('pop');
+        requestAnimationFrame(() => caption.classList.add('pop'));
+      }
     }
     if (now - trigger.startedAt < trigger.safetyMs) return;
     trigger.el.classList.remove('is-arming');
     // プレイヤー自身が紋様へ接触した時だけ起爆。敵弾との接触は無視する。
     const dx = Number(state.player.x || 0) - trigger.x;
     const dy = Number(state.player.y || 0) - trigger.y;
-    // Same center as positionUnit(), allowing contact on the outer visible ring.
-    if (dx * dx + dy * dy > 36 * 36) return;
+    // 紋章はLVごとに大きくなるため、接触半径も見た目に合わせて広げる。
+    const hitRadius = HAO_TRIGGER_BASE_HIT_RADIUS * (HAO_TRIGGER_SCALES[level - 1] || 1);
+    if (dx * dx + dy * dy > hitRadius * hitRadius) return;
 
     // 消す→演出→攻撃の順。複数フレームで再発動しない。
     const owner = trigger.owner;
@@ -28162,8 +28284,10 @@
         if (enemy && enemy.el && enemy.hp > 0) targets.push({x: enemy.x,y: enemy.y});
       }
     }
+    const firedTrigger = { x: trigger.x, y: trigger.y };
     clearHaoTrigger();
-    spawnHaoLightningOnBoard(targets);
+    spawnHaoTriggerBurst(firedTrigger, level);
+    spawnHaoLightningOnBoard(targets, level);
     // ボス戦における増援も盤面の全敵に含む。通常戦と同じ属性相性処理を適用。
     if (!isNormalBattle() && Array.isArray(state.normalEnemies)) {
       for (const enemy of state.normalEnemies) {

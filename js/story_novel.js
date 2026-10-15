@@ -220,6 +220,34 @@
     };
   }
 
+  // build1497: STORYの立ち絵は現在発言しているキャラのみ表示する。
+  // 既存のleft/right指定と、レオナクロス・ミモザの向き補正後の位置を維持。
+  // 今後、特定の台詞だけ左右を変更したい場合は
+  //   portraitSide: 'left'  または  portraitSide: 'right'
+  // をそのエントリーに指定できる（未指定なら従来の左右判定を尊重）。
+  function resolveSpeakingPortraitCast(entry, cast){
+    const speaker=String(entry && entry.speaker || '');
+    if(!speaker || (entry && entry.narration)) return {left:'', right:'', active:''};
+
+    const selectedSide=String(entry && entry.portraitSide || '').toLowerCase();
+    if(selectedSide==='left') return {left:speaker, right:'', active:speaker};
+    if(selectedSide==='right') return {left:'', right:speaker, active:speaker};
+
+    const left=String(cast && cast.left || '');
+    const right=String(cast && cast.right || '');
+    if(left===speaker) return {left:speaker, right:'', active:speaker};
+    if(right===speaker) return {left:'', right:speaker, active:speaker};
+
+    // 片側だけ指定されているのに別人が入っている古いシナリオは、
+    // 表示位置を変えず、その位置に発言者を表示する。
+    // left/rightが共に空の「話者はいるが姿を見せない」演出は維持する。
+    if(speakerIds[speaker]){
+      if(left && !right) return {left:speaker, right:'', active:speaker};
+      if(right && !left) return {left:'', right:speaker, active:speaker};
+    }
+    return {left:'', right:'', active:speaker};
+  }
+
   const STORY_BG_PATHS = Object.freeze({
     outside_tower: 'images/scene_outside_tower.webp',
     outside_tower_enemy: 'images/scene_outside_tower_enemy.webp',
@@ -1099,7 +1127,8 @@
     const rightImg=rightWrap.querySelector('img');
     const itemWrap=root.querySelector('.story-novel-item');
     const itemImg=itemWrap ? itemWrap.querySelector('img') : null;
-    const castInfo=enforcePortraitSides(resolveCast(session.entries, session.index));
+    const castInfo=resolveSpeakingPortraitCast(entry,
+      enforcePortraitSides(resolveCast(session.entries, session.index)));
 
     function applyCharacter(wrap,img,name,active){
       const cutSrc=name ? getCharacterCut(name) : '';

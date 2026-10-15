@@ -1,4 +1,4 @@
 {
-  "build": 1496,
-  "note": "CHARGE全般を規格化（M/L）＋波動演出を全CHARGEキャラへ。M（ミア／アイナ／アイレナ）：MAX1.0秒でATK×1.10、破裂半径36〜70px・周囲へ30%（MAX40%）。L（ハオ）：ATK×1.25、半径52〜96px・周囲へ40%（MAX50%）。全員ゆるいホーミング。キャラ詳細のSHOT表記を CHARGE M / L に。演出は css/charge_wave.css（shooting_core.jsが自動読込）。build1495の css/hao_charge.css は不要。build1488 + build1495を含む。"
+  "build": 1497,
+  "note": "ハオULT『天機・五刻の雷』の紋章を刷新。LVごとに図形が増え（LV2五角形／LV3五芒星／LV4八卦の回転環／LV5日輪）、色が淡翠→翠→碧→金翠→黄金と変化、紋章が段階的に大きくなる（接触半径も追従）。外周5つの刻印がLV数だけ灯る。LVアップ時は衝撃リング＋LVバッジが跳ねる。起爆時は紋章が弾け、落雷もLV色（LV5は太い金雷）。build1496（CHARGE M/L）を含む。"
 }
