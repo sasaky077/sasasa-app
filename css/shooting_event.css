@@ -14585,3 +14585,32 @@ html body #shooting-event-root .shooting-footer-v1436 .shooting-ui-layout-btn{
 #shooting-event-root .shooting-boss-weakness-barrier{
   transition:opacity .18s ease,visibility 0s linear 0s;
 }
+
+/* build1510 — CH07-04: quiet watercolor ash eye bullets; purple not WARNING red. */
+#shooting-event-root[data-shooting-stage="shooting_ch07_04"] .shooting-ch07-mind-bullet,
+#shooting-event-root[data-shooting-stage="shooting_beginner_ch07_04"] .shooting-ch07-mind-bullet {
+  width:13px!important;height:13px!important;border-radius:50%!important;
+  background:radial-gradient(ellipse at 52% 43%,#242332 0 21%,#e8d8ec 25% 38%,#9577a4 45% 65%,#61536e 72%,transparent 78%)!important;
+  box-shadow:0 0 0 1px rgba(223,201,229,.58),0 0 9px rgba(141,99,161,.60)!important;
+}
+#shooting-event-root .shooting-ch07-mind-bullet::before,
+#shooting-event-root .shooting-ch07-mind-bullet::after{display:none!important;content:none!important}
+
+#shooting-event-root .shooting-ch07-aina-hint{
+  position:absolute;left:6%;right:6%;top:20%;z-index:95;pointer-events:none;
+  padding:8px 7px;text-align:center;line-height:1.4;
+  font-family:'Noto Serif JP',serif;font-size:clamp(9px,2.45vw,12px);letter-spacing:.015em;
+  color:#fff8f0;background:rgba(25,24,35,.85);border-top:1px solid rgba(207,180,213,.48);border-bottom:1px solid rgba(207,180,213,.48);
+  animation:ch07AinaHintIn .28s ease-out both;
+}
+@keyframes ch07AinaHintIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+
+/* build1511: a visible pulse warns that a sentient bullet has acquired its target. */
+#shooting-event-root .shooting-ch07-mind-bullet.seeker-lock-warning {
+  box-shadow:0 0 0 2px rgba(244,221,241,.88),0 0 14px rgba(181,111,190,.97)!important;
+  animation:ch704-seeker-locked .45s ease-in-out infinite alternate!important;
+}
+@keyframes ch704-seeker-locked {
+  from {filter:brightness(1)}
+  to {filter:brightness(1.6)}
+}

@@ -2094,6 +2094,7 @@
     // CH07：旅の9人（エリ/アウラ/ジグ/アルノ/ミモザ/レオナクロス/トイフェル/アイナ/ベロニカ）から3人。
     shooting_ch07_02: Object.freeze({ allowedIds: Object.freeze([1, 3, 5, 20, 28, 39, 37, 17, 22]), requiredSize: 3 }),
     shooting_ch07_03: Object.freeze({ allowedIds: Object.freeze([1, 3, 5, 20, 28, 39, 37, 17, 22]), requiredSize: 3 }),
+    shooting_ch07_04: Object.freeze({ allowedIds: Object.freeze([1, 3, 5, 20, 28, 39, 37, 17, 22]), requiredSize: 3 }),
   });
 
   // CH04-04以降は所持キャラから自由編成。CH04-03以前の物語編成は維持。
@@ -2119,7 +2120,8 @@
   }
 
   function getSelectedStorySelectablePartyConfig() {
-    if (isStoryReplayBattle() || isFreeStoryPartyStage() || !isStoryShootingStage() || !selectedStage) return null;
+    if (isFreeStoryPartyStage() || !isStoryShootingStage() || !selectedStage) return null;
+    if (isStoryReplayBattle()) return null;
     const key = String(selectedStage.id || '')
       .toLowerCase()
       .replace(/^shooting_beginner_/, 'shooting_');
@@ -2127,6 +2129,7 @@
     if (!cfg || !Array.isArray(cfg.allowedIds) || !cfg.allowedIds.length) return null;
     return {
       allowedIds: cfg.allowedIds.map(Number),
+      requiredIds: Array.isArray(cfg.requiredIds) ? cfg.requiredIds.map(Number) : [],
       requiredSize: Math.max(1, Math.min(PARTY_SIZE, Number(cfg.requiredSize || PARTY_SIZE))),
     };
   }
@@ -2276,6 +2279,16 @@
           isShootingCharacterAvailableForCurrentParty(id)
         )
         .slice(0, cfg.requiredSize);
+      // Required story guests are only pinned in stages that explicitly define them.
+      if (cfg.requiredIds.length) {
+        selectedPartyIds = [
+          ...cfg.requiredIds,
+          ...selectedPartyIds.filter(id => !cfg.requiredIds.includes(id))
+        ].slice(0, cfg.requiredSize);
+        if (!selectedPartyIds.includes(Number(selectedCharacterId))) {
+          selectedCharacterId = selectedPartyIds[0];
+        }
+      }
       return;
     }
     // ステージ固有の指定編成以外に、エリ単独・エリ先頭の強制制限は設けない。
@@ -2297,6 +2310,7 @@
     const selectableStoryParty = getSelectedStorySelectablePartyConfig();
     if (selectableStoryParty) {
       if (selectedPartyIds.length !== selectableStoryParty.requiredSize) return false;
+      if (!selectableStoryParty.requiredIds.every(id => selectedPartyIds.includes(id))) return false;
       return selectedPartyIds.every(id =>
         selectableStoryParty.allowedIds.includes(Number(id)) &&
         isShootingCharacterAvailableForCurrentParty(id)
@@ -3884,7 +3898,7 @@
       const id = selectedPartyIds[i];
       if (!id) return `<button type="button" class="shooting-party-slot empty" aria-label="編成枠${i + 1}・空き"><span class="zpf-slot-number">${i + 1}</span><b aria-hidden="true">＋</b></button>`;
       const c = buildResonatedCharacterProfile(id);
-      const fixedStoryMember = !!fixedStoryParty;
+      const fixedStoryMember = !!fixedStoryParty || !!selectableStoryParty?.requiredIds?.includes(Number(id));
       const fixedStoryEri =
         !fixedStoryParty &&
         false && isStoryShootingStage() && !isStoryReplayBattle() && !isFreeStoryPartyStage() &&
@@ -3931,6 +3945,7 @@
   window.removeShootingPartyCharacter = function(id) {
     id = Number(id);
     if (getSelectedStoryFixedPartyIds()) return;
+    if (getSelectedStorySelectablePartyConfig()?.requiredIds?.includes(id)) return;
     if (
       isStoryShootingStage() && !isStoryReplayBattle() && !isFreeStoryPartyStage() &&
       !isSelectedStorySelectablePartyStage() &&
@@ -11614,7 +11629,9 @@
   function spawnSwarmEnemy(enemyId, x, y, now, extra) {
     const base = getShootingEnemy(enemyId);
     if (!base || !base.implemented) return null;
-    const enemy = createNormalEnemy(Object.assign({}, base, { ch404Hp: base.hp, ch404Image: base.image }), now);
+    const horde = getSwarmBattleConfig();
+    const override = horde?.ch704SpiderHorde ? (base.swarmRole === 'small' ? { hp:Number(horde.smallHp || 90), moveSpeed:Number(horde.smallMoveSpeed || 205) } : { hp:Number(horde.largeHp || 2400) }) : {};
+    const enemy = createNormalEnemy(Object.assign({}, base, override, { ch404Hp:override.hp || base.hp, ch404Image:base.image }), now);
     if (!enemy) return null;
     enemy.swarmRole = base.swarmRole || 'small';
     enemy.x = enemy.baseX = x;
@@ -13181,6 +13198,51 @@
     );
   }
 
+  // CH07-04: the light itself has a will. It re-acquires the moving player
+  // every frame until Aina's stealth makes her presence disappear.
+  function fireCh704SentientProjectiles(enemy, now) {
+    if (!selectedStage?.ainaSeekerTrial || !state || !enemy) return;
+    const cfg = selectedStage.ainaSeekerTrial;
+    const interval = Math.max(1250, Number(cfg.volleyIntervalMs || 1650));
+    if (now - Number(enemy.lastShotAt || 0) < interval) return;
+    enemy.lastShotAt = now;
+    const live = state.enemyBullets.filter(p => p && p.ainaSentient).length;
+    if (live >= Number(cfg.maxBullets || 11)) return;
+    const wave = Number(state.normalSpawned || 0);
+    const count = Math.min(Number(cfg.maxBullets || 11) - live, wave >= 3 ? 3 : 2);
+    const target = getEnemyAimPosition();
+    const aimed = Math.atan2(target.y - enemy.y, target.x - enemy.x);
+    if (!state.ainaTrialHintShown) {
+      state.ainaTrialHintShown = true;
+      const arena = document.getElementById('shooting-arena');
+      if (arena) {
+        const hint = document.createElement('div');
+        hint.className = 'shooting-ch07-aina-hint';
+        hint.textContent = '追尾弾が接近中　—　アイナのULT「気配遮断」で狙いを外そう';
+        hint.setAttribute('aria-live','polite');
+        arena.appendChild(hint);
+        setTimeout(() => hint.remove(), 4600);
+      }
+    }
+    const spread = count === 3 ? [-.22,0,.22] : [-.16,.16];
+    spread.forEach((offset,index) => {
+      const p = shootNormalEnemyProjectile(enemy, aimed + offset,
+        Math.max(160,Number(cfg.speed || 215)),
+        Number(enemy.def?.bulletDamage || 100),
+        'shooting-enemy-bullet shooting-mini-enemy-bullet shooting-ch07-mind-bullet');
+      if (!p) return;
+      p.ainaSentient = true;
+      p.ainaSentientBornAt = now;
+      p.ainaSentientLifeMs = Math.max(4000, Number(cfg.durationMs || 9000));
+      p.ainaSentientSpeed = Math.max(160,Number(cfg.speed || 215));
+      p.ainaSentientTurn = Math.max(4,Number(cfg.turnRate || 12));
+      // A thinking projectile stays locked onto its prey until Aina removes the scent.
+      p.ainaSentientLockOnAt = now;
+      p.ainaSentientLockOnMs = Math.max(1200, Number(cfg.lockOnMs || 2450));
+      p.ainaSentientWander = 0;
+    });
+  }
+
   function updateNormalEnemies(dt, now) {
     if (!isNormalBattle() && !hasBossAdds()) return;
     const arena = document.getElementById('shooting-arena');
@@ -13324,6 +13386,14 @@
       }
 
       const age = (now - enemy.spawnedAt) / 1000;
+      if (def.behavior === 'ch07_sentient_eye_v1') {
+        enemy.x = clamp(enemy.baseX + Math.sin(age * 0.6 + enemy.phaseSeed) * Math.min(46,w * .1),38,w-38);
+        enemy.y = Math.max(82,Math.min(h * .25,enemy.baseY)) + Math.sin(age * .53) * 7;
+        positionUnit(enemy.el,enemy.x,enemy.y);
+        positionMiniEnemyHp(enemy);
+        fireCh704SentientProjectiles(enemy,now);
+        return;
+      }
 
       if (def.behavior === 'faceless_minion_v1' && !enemy.facelessMaskSpawned) {
         const cfg = getChapter07Config() || {};
@@ -17545,6 +17615,44 @@
 
       const moveDt = dt * getShiinaEnemyBulletSpeedMultiplier(p, now);
 
+      if (p.ainaSentient) {
+        if (now - Number(p.ainaSentientBornAt || now) > Number(p.ainaSentientLifeMs || 9000)) {
+          p.el.remove();
+          return false;
+        }
+        // build1511: moving sideways is NOT sufficient. The projectile visibly
+        // accelerates to intercept, then makes one guaranteed lock-on strike.
+        // Aina's 10-second stealth replaces the target with the cast position,
+        // immediately drops the hard lock and makes the projectile miss normally.
+        const stealth = isAinaStealthActive(now);
+        if (stealth) {
+          p.ainaSentientLockOnAt = 0;
+          p.ainaSentientStrikeDue = false;
+          p.el.classList.remove('seeker-lock-warning');
+        } else if (!Number(p.ainaSentientLockOnAt || 0)) {
+          // After stealth ends, give the player a fresh telegraph period.
+          p.ainaSentientLockOnAt = now;
+        }
+        const target = getEnemyAimPosition();
+        const dx = Number(target.x || 0) - Number(p.x || 0);
+        const dy = Number(target.y || 0) - Number(p.y || 0);
+        const desired = Math.atan2(dy,dx);
+        const current = Math.atan2(Number(p.vy || 0),Number(p.vx || 0));
+        const delta = Math.atan2(Math.sin(desired-current),Math.cos(desired-current));
+        const step = clamp(delta, -p.ainaSentientTurn * moveDt, p.ainaSentientTurn * moveDt);
+        const heading = current + step;
+        const lockAge = stealth ? 0 : now - Number(p.ainaSentientLockOnAt || now);
+        const timeLeft = Math.max(0.08, (Number(p.ainaSentientLockOnMs || 2450) - lockAge) / 1000);
+        const distance = Math.hypot(dx,dy);
+        const speed = stealth
+          ? Number(p.ainaSentientSpeed || 315)
+          : Math.min(1400,Math.max(Number(p.ainaSentientSpeed || 315),distance / timeLeft * 1.2));
+        p.vx = Math.cos(heading) * speed;
+        p.vy = Math.sin(heading) * speed;
+        if (!stealth && lockAge >= 1100) p.el.classList.add('seeker-lock-warning');
+        p.ainaSentientStrikeDue = !stealth && lockAge >= Number(p.ainaSentientLockOnMs || 2450);
+      }
+
       // CH04の▼弾。ゆるく横揺れしながら落下する。
       if (p.chapter4CurtainDrift) {
         p.chapter4CurtainAge = Number(p.chapter4CurtainAge || 0) + moveDt;
@@ -17711,7 +17819,7 @@
       // Canvas弾は座標データ自体が表示位置なので、DOM用style更新は不要。
       if (!p.canvasRendered) positionUnit(p.el, p.x, p.y);
       const offscreenMargin = isChapter03BossStage() ? 10 : 30;
-      if (!p.dangerRicochet && !p.dangerDrift && !p.ambushBounce && (p.y > h + offscreenMargin || p.x < -offscreenMargin || p.x > w + offscreenMargin || p.y < -offscreenMargin)) { p.el.remove(); return false; }
+      if (!p.dangerRicochet && !p.dangerDrift && !p.ambushBounce && !p.ainaSentient && (p.y > h + offscreenMargin || p.x < -offscreenMargin || p.x > w + offscreenMargin || p.y < -offscreenMargin)) { p.el.remove(); return false; }
       const r = getUnitRect(p, arenaRect);
 
       // ミトULT召喚獣は独立したHP付きユニットとして敵弾を受ける。
@@ -17757,6 +17865,20 @@
       }
 
       const moonlightInvulnerable = getCurrentCharacter().id === CHARACTER_ID.HAYATE && now < (state.hayateMoonlightUntil || 0);
+      // When a sentient bullet finishes its visible pursuit, it strikes the
+      // perceived player position regardless of continuous lateral movement.
+      // Normal hit invulnerability and protection ULTs are still respected.
+      // Stealth explicitly cancels the lock, so this never hits a concealed Aina.
+      if (p.ainaSentient && p.ainaSentientStrikeDue) {
+        if (!isAinaStealthActive(now) && !moonlightInvulnerable && now >= state.player.invulnUntil) {
+          p.x = Number(state.player.x || 0);
+          p.y = Number(state.player.y || 0);
+          if (!p.canvasRendered) positionUnit(p.el,p.x,p.y);
+          damagePlayer(now,p.damage,classifyIncomingAttack(p),getIncomingAttackElement(p),'enemy-bullet');
+        }
+        p.el.remove();
+        return false;
+      }
       if (!moonlightInvulnerable && now >= state.player.invulnUntil) {
         // 被弾判定はキャラクター画像全体ではなく、胸元の可視コアだけ。
         const hitPlayerCore = p.raidLaser
@@ -17846,6 +17968,27 @@
     }
 
     if (isNormalBattle()) {
+      const hordeCfg = getSwarmBattleConfig();
+      if (hordeCfg?.ch704SpiderHorde) {
+        const nearby = (state.normalEnemies || []).filter(e => e && e.hp > 0 && e.swarmRole === 'small' &&
+          Math.hypot(Number(e.x || 0) - Number(state.player.x || 0), Number(e.y || 0) - Number(state.player.y || 0)) < 33).length;
+        if (nearby > 0) {
+          const tick = Math.max(150, Number(hordeCfg.swarmContactTickMs || 250));
+          if (now - Number(state.ch704SwarmLastDamageAt || 0) >= tick) {
+            state.ch704SwarmLastDamageAt = now;
+            const member = getActiveMember();
+            if (member && now >= Number(member.invincibleUntil || 0)) {
+              // 1体に約3秒間群がられるとHPが尽きる。複数体ならさらに危険。
+              const damage = Math.max(1, Math.ceil(Number(member.maxHp || member.maxHP || member.hp || 100) * tick / Math.max(1000,Number(hordeCfg.swarmContactKillMs || 3000)) * Math.min(3,nearby)));
+              member.hp = Math.max(0, Number(member.hp || 0) - damage);
+              showDamageNumber(state.player.x,state.player.y,damage,'player',false,'');
+              renderHud();
+              if (member.hp <= 0) beginPlayerDefeat();
+            }
+          }
+        }
+        return;
+      }
       const hitEnemy = state.normalEnemies.find(enemy => {
         if (!enemy || !enemy.el || enemy.hp <= 0) return false;
         // Dedicated CHARGE zako only deals contact damage while actually dashing.
@@ -20076,6 +20219,7 @@
     if (!stage) return [];
 
     const gimmicks = [];
+    if (stage.ainaSeekerTrial) gimmicks.push({ id:'ainaSeeker', label:'意思を持つ追尾弾' });
     const barrierElements = getStageBarrierPreviewElements(stage);
     const isDailyAdvanced = !!(
       (stage.dailyQuest && stage.dailyQuest.level === 'advanced') ||
@@ -23793,10 +23937,10 @@
     } else if (isSelectedStorySelectablePartyStage()) {
       // CH03-04 / CH04-01の選択編成は空枠から指定メンバーを選ぶ。
       // CH04-04初回は固定編成へ移したため、この分岐に入らない。
-      selectedPartyIds = [];
       const cfg = getSelectedStorySelectablePartyConfig();
+      selectedPartyIds = cfg.requiredIds.slice();
       selectedCharacterId =
-        cfg.allowedIds.find(id => isShootingCharacterAvailableForCurrentParty(id)) ||
+        cfg.requiredIds[0] || cfg.allowedIds.find(id => isShootingCharacterAvailableForCurrentParty(id)) ||
         firstOwned ||
         CHARACTER_ID.ERI;
     } else if (isStoryReplayBattle() || isFreeStoryPartyStage()) {

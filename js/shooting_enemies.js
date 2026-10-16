@@ -30,6 +30,7 @@
     SWARM_SPIDER_SMALL: 'swarm_spider_small',
     // CH07-2: 空の聖堂の強化個体（バリアなし・単体）
     STRONG_CH07_02: 'strong_ch07_02',
+    CH07_WILL_O_WISP: 'ch07_will_o_wisp',
 
     // Remnant bosses
     REMNANT_01: 'shooting_remnant_01',
@@ -175,6 +176,16 @@
       hp: 6000, bulletDamage: 120, bulletSpeed: 235, fireRate: 1100,
       moveSpeed: 40, scoreValue: 3000, behavior: 'mini_barrage_v1',
       strongEnemy: true, uiScale: 2.1,
+    }),
+
+    // CH07-04: own-willed bullets that continuously seek a living presence.
+    [SHOOTING_ENEMY_ID.CH07_WILL_O_WISP]: Object.freeze({
+      id:SHOOTING_ENEMY_ID.CH07_WILL_O_WISP, kind:'normal', implemented:true,
+      name:'灰の追跡眼', displayName:'ASH / SEEKER', element:'neutral',
+      image:'images/enemy_mini_01_battle.webp',
+      hp:5700, bulletDamage:100, bulletSpeed:205, fireRate:1850,
+      moveSpeed:33, scoreValue:1750, behavior:'ch07_sentient_eye_v1',
+      strongEnemy:true, uiScale:1.50
     }),
 
     [SHOOTING_ENEMY_ID.SWARM_SPIDER_LARGE]: Object.freeze({

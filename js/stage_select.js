@@ -831,9 +831,18 @@
     // build1272: CH04-04でのみクリア済み再挑戦を先行導入。
     const normalizedStoryId = String(storyId).replace(/^shooting_beginner_/, 'shooting_');
     // CLEAR済みの表示に用いた記録と同じ判定で、再挑戦フラグを戦闘側へ渡す。
-    const replay = getStoryShootingRecord(stage.id).cleared ||
+    // CH07-04 used to be novel-only / a different event battle. Present the new
+    // Aina tutorial introduction once even when this stage is already marked CLEAR.
+    const isAinaStage04 = normalizedStoryId === 'shooting_ch07_04';
+    const ainaIntroKey = 'zeraphia_ch07_04_aina_intro_build1510_' + storyMode;
+    const needsAinaIntro = isAinaStage04 && (() => {
+      try { return localStorage.getItem(ainaIntroKey) !== '1'; } catch (_) { return true; }
+    })();
+    const replay = !needsAinaIntro && (
+      getStoryShootingRecord(stage.id).cleared ||
       getStoryShootingRecord(storyId).cleared ||
-      getStoryShootingRecord(normalizedStoryId).cleared;
+      getStoryShootingRecord(normalizedStoryId).cleared
+    );
 
     const hideStageSelect = () => {
       cancelStageSelectClose();
@@ -933,7 +942,12 @@
         // これにより「わ、わかった！」などpre最終行の後に
         // ステージ選択画面が一瞬見えるフラッシュを防ぐ。
         handoffBeforeNovelExit: true,
-        onComplete: () => { openBattle(); },
+        onComplete: () => {
+          if (needsAinaIntro) {
+            try { localStorage.setItem(ainaIntroKey, '1'); } catch (_) {}
+          }
+          openBattle();
+        },
         onExit: returnToChapter
       });
 
