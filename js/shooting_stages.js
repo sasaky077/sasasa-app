@@ -903,7 +903,7 @@
 
     // ============================================================
     // CHAPTER 07 — 灰路（仮）：9人で東の「輪をまとった光」の塔へ向かう道中
-    // 7-1 出発（物語） / 7-2 空の聖堂 / 7-3 灰の丘 / 7-4 夜明け（アイナの気配遮断で追尾弾を突破）
+    // 7-1 出発（物語） / 7-2 空の聖堂 / 7-3 灰の丘 / 7-4 夜明け（灰から湧き上がる小蜘蛛の大群を突破）
     // ============================================================
     [SHOOTING_STAGE_ID.CH07_01]: Object.freeze({
       id:SHOOTING_STAGE_ID.CH07_01, chapter:7, stageNo:1,
@@ -950,20 +950,19 @@
       id:SHOOTING_STAGE_ID.CH07_04, chapter:7, stageNo:4,
       get name(){return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch07_04?.stageTitle || '夜明け';},
       type:'normal', background:'images/battle_bg_ch07_03.webp',
-      enemyIds:Object.freeze([SHOOTING_ENEMY_ID.SWARM_SPIDER_LARGE, SHOOTING_ENEMY_ID.SWARM_SPIDER_SMALL]),
-      // 灰の山の小蜘蛛の大群。巣を壊すと発生源が止まる。
-      swarmBattle:Object.freeze({
-        largeEnemyId:SHOOTING_ENEMY_ID.SWARM_SPIDER_LARGE,
+      // 小蜘蛛だけが灰の中から次々と現れる。射撃弾は使用しない。
+      enemyIds:Object.freeze([SHOOTING_ENEMY_ID.SWARM_SPIDER_SMALL]),
+      spiderHorde:Object.freeze({
         smallEnemyId:SHOOTING_ENEMY_ID.SWARM_SPIDER_SMALL,
-        largeCount:3, broodIntervalMs:850, broodMaxPerLarge:12,
-        largeTrapHitsToKill:3, largeMaxYRate:.43,
-        objectContactDps:120,
-        ch704SpiderHorde:true,
-        swarmContactTickMs:250, swarmContactKillMs:3000,
-        smallMoveSpeed:205, smallHp:90, largeHp:2400
+        totalEnemies:42, maxActive:14, batchSize:3, spawnIntervalMs:1000,
+        moveSpeedMultiplier:1.75, surroundRadius:61,
+        groupMinCount:3, groupHitIntervalMs:420,
+        groupDamageHpRate:0.16, // 群がられ続けると概ね3秒で1キャラKO
       }),
-      normalBattle:Object.freeze({totalEnemies:3,maxActive:99,itemDropRate:0}),
-      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'小蜘蛛の大群を退け、灰の峠を突破'}),playable:true
+      normalBattle:Object.freeze({
+        totalEnemies:42, maxActive:14, spawnIntervalMs:1000, itemDropRate:0
+      }),
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'押し寄せる小蜘蛛42体を退け、灰の丘を越える'}),playable:true
     }),
 
     // ============================================================

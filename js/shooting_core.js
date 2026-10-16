@@ -11629,9 +11629,7 @@
   function spawnSwarmEnemy(enemyId, x, y, now, extra) {
     const base = getShootingEnemy(enemyId);
     if (!base || !base.implemented) return null;
-    const horde = getSwarmBattleConfig();
-    const override = horde?.ch704SpiderHorde ? (base.swarmRole === 'small' ? { hp:Number(horde.smallHp || 90), moveSpeed:Number(horde.smallMoveSpeed || 205) } : { hp:Number(horde.largeHp || 2400) }) : {};
-    const enemy = createNormalEnemy(Object.assign({}, base, override, { ch404Hp:override.hp || base.hp, ch404Image:base.image }), now);
+    const enemy = createNormalEnemy(Object.assign({}, base, { ch404Hp: base.hp, ch404Image: base.image }), now);
     if (!enemy) return null;
     enemy.swarmRole = base.swarmRole || 'small';
     enemy.x = enemy.baseX = x;
@@ -11709,6 +11707,46 @@
     });
   }
 
+  // build1512 — CH07-04：親個体なしの小蜘蛛の大群。
+  // 既存の群れAIだけを再利用し、CH07-03と残響の塔13Fの産卵/討伐条件には触れない。
+  function getCh704SpiderHorde() {
+    return selectedStage && selectedStage.spiderHorde || null;
+  }
+
+  function spawnCh704SpiderHorde(now) {
+    const cfg = getCh704SpiderHorde();
+    const arena = document.getElementById('shooting-arena');
+    if (!cfg || !arena || !state) return;
+    const total = Math.max(1, Math.floor(Number(cfg.totalEnemies || 42)));
+    const maxActive = Math.max(1, Math.floor(Number(cfg.maxActive || 21)));
+    const interval = Math.max(250, Number(cfg.spawnIntervalMs || 900));
+    if (state.normalSpawned >= total) return;
+    if (now - Number(state.normalLastSpawnAt || -9999) < interval) return;
+    // CH07-04 only: one count per spawn window; never allocate a new list each frame.
+    let active = 0;
+    for (const e of state.normalEnemies) {
+      if (e && e.hp > 0 && e.ch704Horde) ++active;
+    }
+    if (active >= maxActive) return;
+    state.normalLastSpawnAt = now;
+    const w = arena.clientWidth, h = arena.clientHeight;
+    const batch = Math.min(Math.max(1, Number(cfg.batchSize || 3)), total - state.normalSpawned,
+      maxActive - active);
+    for (let i = 0; i < batch; i++) {
+      const n = Number(state.normalSpawned || 0);
+      // 左右と画面上端から分散して出現。突然自機の足元へ湧かせない。
+      const lane = n % 5;
+      let x = lane === 0 ? 23 : lane === 1 ? w - 23 : w * (0.14 + ((n * 37) % 71) / 100);
+      let y = lane <= 1 ? h * (0.25 + ((n * 11) % 43) / 100) : 68 + ((n % 3) * 18);
+      const dist = Math.hypot(x - state.player.x, y - state.player.y);
+      if (dist < 105) { x = x < w / 2 ? 23 : w - 23; y = 74; }
+      const enemy = spawnSwarmEnemy(cfg.smallEnemyId, x, y, now, { ch704Horde: true });
+      if (!enemy) break;
+      enemy.el?.classList.add('ch704-horde-spider');
+      enemy.hpEl?.classList.add('ch704-horde-spider-hp');
+    }
+  }
+
   // 一番近い味方オブジェクト。自機はアイナの気配遮断中、偽の位置になる。
   function getSwarmLureTargets(now) {
     const targets = [];
@@ -11740,11 +11778,13 @@
 
     // 小は標的の周りを取り囲むように群がる（全員が一点に重ならない）
     const age = (now - enemy.spawnedAt) / 1000;
-    const ring = enemy.swarmRole === 'small' ? 16 + (enemy.phaseSeed % 1) * 10 : 0;
+    const ring = enemy.ch704Horde ? 11 + (enemy.phaseSeed % 1) * 8
+      : enemy.swarmRole === 'small' ? 16 + (enemy.phaseSeed % 1) * 10 : 0;
     const tx = best.x + Math.cos(enemy.phaseSeed * 3 + age * 1.6) * ring;
     const ty = best.y + Math.sin(enemy.phaseSeed * 3 + age * 1.6) * ring * .7;
     const dx = tx - enemy.x, dy = ty - enemy.y, dist = Math.hypot(dx, dy);
-    const speed = Math.max(10, Number(def.moveSpeed || 60));
+    const speed = Math.max(10, Number(def.moveSpeed || 60)) *
+      (enemy.ch704Horde ? Math.max(1, Number(getCh704SpiderHorde()?.moveSpeedMultiplier || 1.75)) : 1);
     if (dist > 1) {
       const step = Math.min(dist, speed * dt);
       // 這い寄る揺らぎ
@@ -11759,8 +11799,12 @@
           (o.swarmRole !== 'large' && o.swarmRole !== 'small')) return;
       const minD = (enemy.swarmRole === 'large' && o.swarmRole === 'large') ? 128
         : (enemy.swarmRole === 'large' || o.swarmRole === 'large') ? 40 : 15;
-      const ox = enemy.x - o.x, oy = enemy.y - o.y, od = Math.hypot(ox, oy);
-      if (od >= minD) return;
+      const ox = enemy.x - o.x, oy = enemy.y - o.y;
+      // AABB prefilter prevents expensive distance/sqrt for distant spiders.
+      if (Math.abs(ox) >= minD || Math.abs(oy) >= minD) return;
+      const d2 = ox * ox + oy * oy;
+      if (d2 >= minD * minD) return;
+      const od = Math.sqrt(d2);
       const push = (minD - od) * (enemy.swarmRole === 'large' && o.swarmRole !== 'large' ? .15 : .5);
       if (od < .01) { enemy.x += (Math.random() - .5) * 2; return; }
       enemy.x += ox / od * push;
@@ -11964,12 +12008,16 @@
     if (enemyDef.strongEnemy) el.classList.add('shooting-strong-enemy');
     layer.appendChild(el);
 
-    // 雑魚敵共通HPバー
-    const hpWrap = document.createElement('div');
-    hpWrap.className = 'shooting-mini-enemy-hp';
-    hpWrap.setAttribute('aria-hidden', 'true');
-    hpWrap.innerHTML = '<i></i>';
-    layer.appendChild(hpWrap);
+    // Only CH07-04 tiny spiders omit the invisible HP bar DOM entirely.
+    const lightweightHordeSpider = !!(getCh704SpiderHorde() && enemyDef.swarmRole === 'small');
+    let hpWrap = null;
+    if (!lightweightHordeSpider) {
+      hpWrap = document.createElement('div');
+      hpWrap.className = 'shooting-mini-enemy-hp';
+      hpWrap.setAttribute('aria-hidden', 'true');
+      hpWrap.innerHTML = '<i></i>';
+      layer.appendChild(hpWrap);
+    }
 
     // 属性アイコンはHPバーと同じレイヤーの独立DOMとして配置する。
     const enemyElement = normalizeCombatElement(
@@ -12124,6 +12172,7 @@
     if (!isNormalBattle() || state.finishing || state.ended) return;
     if (isCh404SummonerBattle()) { spawnCh404Enemies(now); return; }
     if (isSwarmBattle()) { spawnSwarmEnemies(now); return; }
+    if (getCh704SpiderHorde()) { spawnCh704SpiderHorde(now); return; }
     if (isChapter101TutorialStage() || isChapter102TutorialStage()) return;
     const cfg = getNormalBattleConfig();
 
@@ -13198,51 +13247,6 @@
     );
   }
 
-  // CH07-04: the light itself has a will. It re-acquires the moving player
-  // every frame until Aina's stealth makes her presence disappear.
-  function fireCh704SentientProjectiles(enemy, now) {
-    if (!selectedStage?.ainaSeekerTrial || !state || !enemy) return;
-    const cfg = selectedStage.ainaSeekerTrial;
-    const interval = Math.max(1250, Number(cfg.volleyIntervalMs || 1650));
-    if (now - Number(enemy.lastShotAt || 0) < interval) return;
-    enemy.lastShotAt = now;
-    const live = state.enemyBullets.filter(p => p && p.ainaSentient).length;
-    if (live >= Number(cfg.maxBullets || 11)) return;
-    const wave = Number(state.normalSpawned || 0);
-    const count = Math.min(Number(cfg.maxBullets || 11) - live, wave >= 3 ? 3 : 2);
-    const target = getEnemyAimPosition();
-    const aimed = Math.atan2(target.y - enemy.y, target.x - enemy.x);
-    if (!state.ainaTrialHintShown) {
-      state.ainaTrialHintShown = true;
-      const arena = document.getElementById('shooting-arena');
-      if (arena) {
-        const hint = document.createElement('div');
-        hint.className = 'shooting-ch07-aina-hint';
-        hint.textContent = '追尾弾が接近中　—　アイナのULT「気配遮断」で狙いを外そう';
-        hint.setAttribute('aria-live','polite');
-        arena.appendChild(hint);
-        setTimeout(() => hint.remove(), 4600);
-      }
-    }
-    const spread = count === 3 ? [-.22,0,.22] : [-.16,.16];
-    spread.forEach((offset,index) => {
-      const p = shootNormalEnemyProjectile(enemy, aimed + offset,
-        Math.max(160,Number(cfg.speed || 215)),
-        Number(enemy.def?.bulletDamage || 100),
-        'shooting-enemy-bullet shooting-mini-enemy-bullet shooting-ch07-mind-bullet');
-      if (!p) return;
-      p.ainaSentient = true;
-      p.ainaSentientBornAt = now;
-      p.ainaSentientLifeMs = Math.max(4000, Number(cfg.durationMs || 9000));
-      p.ainaSentientSpeed = Math.max(160,Number(cfg.speed || 215));
-      p.ainaSentientTurn = Math.max(4,Number(cfg.turnRate || 12));
-      // A thinking projectile stays locked onto its prey until Aina removes the scent.
-      p.ainaSentientLockOnAt = now;
-      p.ainaSentientLockOnMs = Math.max(1200, Number(cfg.lockOnMs || 2450));
-      p.ainaSentientWander = 0;
-    });
-  }
-
   function updateNormalEnemies(dt, now) {
     if (!isNormalBattle() && !hasBossAdds()) return;
     const arena = document.getElementById('shooting-arena');
@@ -13328,10 +13332,19 @@
 
       // CH07-3と13Fの蜘蛛だけが、一番近い味方オブジェクトへ這い寄る。
       if (enemy.swarmRole === 'large' || enemy.swarmRole === 'small') {
+        let swarmDt = dt;
+        if (enemy.ch704Horde) {
+          // 30 fps for little spiders, without slowing them down at 60/120 Hz.
+          const last = Number(enemy.ch704LastAiAt || 0);
+          if (last > 0 && now - last < 33) return;
+          swarmDt = last > 0 ? Math.min(.09, Math.max(0, (now - last) / 1000)) : dt;
+          enemy.ch704LastAiAt = now;
+        }
         if (!swarmTargets) swarmTargets = getSwarmLureTargets(now);
-        updateSwarmEnemy(enemy, dt, now, w, h, swarmTargets);
+        updateSwarmEnemy(enemy, swarmDt, now, w, h, swarmTargets);
         positionUnit(enemy.el, enemy.x, enemy.y);
-        positionMiniEnemyHp(enemy);
+        // CH07-04 tiny spiders have no HP bar/element overlay.
+        if (!enemy.ch704Horde) positionMiniEnemyHp(enemy);
         return;
       }
 
@@ -13386,15 +13399,6 @@
       }
 
       const age = (now - enemy.spawnedAt) / 1000;
-      if (def.behavior === 'ch07_sentient_eye_v1') {
-        enemy.x = clamp(enemy.baseX + Math.sin(age * 0.6 + enemy.phaseSeed) * Math.min(46,w * .1),38,w-38);
-        enemy.y = Math.max(82,Math.min(h * .25,enemy.baseY)) + Math.sin(age * .53) * 7;
-        positionUnit(enemy.el,enemy.x,enemy.y);
-        positionMiniEnemyHp(enemy);
-        fireCh704SentientProjectiles(enemy,now);
-        return;
-      }
-
       if (def.behavior === 'faceless_minion_v1' && !enemy.facelessMaskSpawned) {
         const cfg = getChapter07Config() || {};
         const delay = Math.max(250, Number(cfg.maskSpawnDelayMs || 700));
@@ -13585,7 +13589,7 @@
     const trialSmallHit = isGachaTrialStage() && !big;
     const trialFlash = !trialSmallHit || trialImpactNow >= Number(enemy._trialHpFlashNextAt || 0);
     if (appliedDamage > 0) {
-      renderMiniEnemyHp(enemy, trialFlash);
+      if (!enemy.ch704Horde) renderMiniEnemyHp(enemy, trialFlash);
       if (trialSmallHit && trialFlash) enemy._trialHpFlashNextAt = trialImpactNow + 120;
     }
 
@@ -13595,10 +13599,12 @@
     const immuneVisual = elementReaction === 'immune';
     // ニーナ連鎖などの高頻度HITでも実ダメージは全件反映。
     // DOM生成を伴うHIT/数字/点滅のみ、試遊中の小HITを敵ごと約8fpsに抑える。
-    const renderImpact = !suppressVisual &&
+    const hordeImpactReady = !enemy.ch704Horde || visualNow >= Number(enemy._hordeVisualNextAt || 0);
+    const renderImpact = !suppressVisual && hordeImpactReady &&
       (!immuneVisual || visualNow >= Number(enemy._immuneVisualNextAt || 0)) &&
       (!trialSmallHit || visualNow >= Number(enemy._trialVisualNextAt || 0));
     if (renderImpact) {
+      if (enemy.ch704Horde) enemy._hordeVisualNextAt = visualNow + 140;
       if (immuneVisual) enemy._immuneVisualNextAt = visualNow + 110;
       if (trialSmallHit) enemy._trialVisualNextAt = visualNow + 125;
 
@@ -17615,44 +17621,6 @@
 
       const moveDt = dt * getShiinaEnemyBulletSpeedMultiplier(p, now);
 
-      if (p.ainaSentient) {
-        if (now - Number(p.ainaSentientBornAt || now) > Number(p.ainaSentientLifeMs || 9000)) {
-          p.el.remove();
-          return false;
-        }
-        // build1511: moving sideways is NOT sufficient. The projectile visibly
-        // accelerates to intercept, then makes one guaranteed lock-on strike.
-        // Aina's 10-second stealth replaces the target with the cast position,
-        // immediately drops the hard lock and makes the projectile miss normally.
-        const stealth = isAinaStealthActive(now);
-        if (stealth) {
-          p.ainaSentientLockOnAt = 0;
-          p.ainaSentientStrikeDue = false;
-          p.el.classList.remove('seeker-lock-warning');
-        } else if (!Number(p.ainaSentientLockOnAt || 0)) {
-          // After stealth ends, give the player a fresh telegraph period.
-          p.ainaSentientLockOnAt = now;
-        }
-        const target = getEnemyAimPosition();
-        const dx = Number(target.x || 0) - Number(p.x || 0);
-        const dy = Number(target.y || 0) - Number(p.y || 0);
-        const desired = Math.atan2(dy,dx);
-        const current = Math.atan2(Number(p.vy || 0),Number(p.vx || 0));
-        const delta = Math.atan2(Math.sin(desired-current),Math.cos(desired-current));
-        const step = clamp(delta, -p.ainaSentientTurn * moveDt, p.ainaSentientTurn * moveDt);
-        const heading = current + step;
-        const lockAge = stealth ? 0 : now - Number(p.ainaSentientLockOnAt || now);
-        const timeLeft = Math.max(0.08, (Number(p.ainaSentientLockOnMs || 2450) - lockAge) / 1000);
-        const distance = Math.hypot(dx,dy);
-        const speed = stealth
-          ? Number(p.ainaSentientSpeed || 315)
-          : Math.min(1400,Math.max(Number(p.ainaSentientSpeed || 315),distance / timeLeft * 1.2));
-        p.vx = Math.cos(heading) * speed;
-        p.vy = Math.sin(heading) * speed;
-        if (!stealth && lockAge >= 1100) p.el.classList.add('seeker-lock-warning');
-        p.ainaSentientStrikeDue = !stealth && lockAge >= Number(p.ainaSentientLockOnMs || 2450);
-      }
-
       // CH04の▼弾。ゆるく横揺れしながら落下する。
       if (p.chapter4CurtainDrift) {
         p.chapter4CurtainAge = Number(p.chapter4CurtainAge || 0) + moveDt;
@@ -17819,7 +17787,7 @@
       // Canvas弾は座標データ自体が表示位置なので、DOM用style更新は不要。
       if (!p.canvasRendered) positionUnit(p.el, p.x, p.y);
       const offscreenMargin = isChapter03BossStage() ? 10 : 30;
-      if (!p.dangerRicochet && !p.dangerDrift && !p.ambushBounce && !p.ainaSentient && (p.y > h + offscreenMargin || p.x < -offscreenMargin || p.x > w + offscreenMargin || p.y < -offscreenMargin)) { p.el.remove(); return false; }
+      if (!p.dangerRicochet && !p.dangerDrift && !p.ambushBounce && (p.y > h + offscreenMargin || p.x < -offscreenMargin || p.x > w + offscreenMargin || p.y < -offscreenMargin)) { p.el.remove(); return false; }
       const r = getUnitRect(p, arenaRect);
 
       // ミトULT召喚獣は独立したHP付きユニットとして敵弾を受ける。
@@ -17865,20 +17833,6 @@
       }
 
       const moonlightInvulnerable = getCurrentCharacter().id === CHARACTER_ID.HAYATE && now < (state.hayateMoonlightUntil || 0);
-      // When a sentient bullet finishes its visible pursuit, it strikes the
-      // perceived player position regardless of continuous lateral movement.
-      // Normal hit invulnerability and protection ULTs are still respected.
-      // Stealth explicitly cancels the lock, so this never hits a concealed Aina.
-      if (p.ainaSentient && p.ainaSentientStrikeDue) {
-        if (!isAinaStealthActive(now) && !moonlightInvulnerable && now >= state.player.invulnUntil) {
-          p.x = Number(state.player.x || 0);
-          p.y = Number(state.player.y || 0);
-          if (!p.canvasRendered) positionUnit(p.el,p.x,p.y);
-          damagePlayer(now,p.damage,classifyIncomingAttack(p),getIncomingAttackElement(p),'enemy-bullet');
-        }
-        p.el.remove();
-        return false;
-      }
       if (!moonlightInvulnerable && now >= state.player.invulnUntil) {
         // 被弾判定はキャラクター画像全体ではなく、胸元の可視コアだけ。
         const hitPlayerCore = p.raidLaser
@@ -17968,27 +17922,6 @@
     }
 
     if (isNormalBattle()) {
-      const hordeCfg = getSwarmBattleConfig();
-      if (hordeCfg?.ch704SpiderHorde) {
-        const nearby = (state.normalEnemies || []).filter(e => e && e.hp > 0 && e.swarmRole === 'small' &&
-          Math.hypot(Number(e.x || 0) - Number(state.player.x || 0), Number(e.y || 0) - Number(state.player.y || 0)) < 33).length;
-        if (nearby > 0) {
-          const tick = Math.max(150, Number(hordeCfg.swarmContactTickMs || 250));
-          if (now - Number(state.ch704SwarmLastDamageAt || 0) >= tick) {
-            state.ch704SwarmLastDamageAt = now;
-            const member = getActiveMember();
-            if (member && now >= Number(member.invincibleUntil || 0)) {
-              // 1体に約3秒間群がられるとHPが尽きる。複数体ならさらに危険。
-              const damage = Math.max(1, Math.ceil(Number(member.maxHp || member.maxHP || member.hp || 100) * tick / Math.max(1000,Number(hordeCfg.swarmContactKillMs || 3000)) * Math.min(3,nearby)));
-              member.hp = Math.max(0, Number(member.hp || 0) - damage);
-              showDamageNumber(state.player.x,state.player.y,damage,'player',false,'');
-              renderHud();
-              if (member.hp <= 0) beginPlayerDefeat();
-            }
-          }
-        }
-        return;
-      }
       const hitEnemy = state.normalEnemies.find(enemy => {
         if (!enemy || !enemy.el || enemy.hp <= 0) return false;
         // Dedicated CHARGE zako only deals contact damage while actually dashing.
@@ -18000,8 +17933,34 @@
         return rectsHit(playerRect, getUnitRect(enemy, arenaRectForContact), 14, 9);
       });
       if (hitEnemy) {
-        // CH07-3の群れは、固定ダメージ(110)ではなく個体ごとの接触ダメージ（小55・大140）を使う
-        if (hitEnemy.swarmRole) {
+        // build1512: CH07-04のみ、3匹以上に密着して包囲されると約3秒でKO。
+        // 被弾後の無敵時間をこの接触に限り420msへ短縮。
+        // 通常の1〜2匹の接触、ほかのステージ、他ULTの無敵は既存どおり。
+        const horde = getCh704SpiderHorde();
+        if (horde && hitEnemy.ch704Horde) {
+          const radius = Math.max(35, Number(horde.surroundRadius || 61));
+          let nearby = 0;
+          const r2 = radius * radius;
+          for (const e of state.normalEnemies || []) {
+            if (!e || e.hp <= 0 || !e.ch704Horde) continue;
+            const dx = e.x - state.player.x, dy = e.y - state.player.y;
+            if (dx * dx + dy * dy <= r2) ++nearby;
+            if (nearby >= Math.max(2, Number(horde.groupMinCount || 3))) break;
+          }
+          if (nearby >= Math.max(2, Number(horde.groupMinCount || 3))) {
+            const member = getActiveMember();
+            if (member && member.hp > 0) {
+              const damage = Math.max(1, Math.ceil(Number(member.hpMax || member.hp) *
+                Math.max(.01, Number(horde.groupDamageHpRate || .16))));
+              damagePlayer(now, damage, 'raw', 'neutral', 'swarm-contact');
+              if (!state.koTransition && !state.ended && !state.finishing) {
+                state.player.invulnUntil = now + Math.max(250, Number(horde.groupHitIntervalMs || 420));
+              }
+            }
+          } else {
+            damagePlayer(now, Math.max(1, Number(hitEnemy.def?.contactDamage) || 55), 'raw', 'neutral', 'swarm-contact');
+          }
+        } else if (hitEnemy.swarmRole) {
           damagePlayer(now, Math.max(1, Number(hitEnemy.def?.contactDamage) || 60), 'raw', getCombatTargetElement(hitEnemy), 'swarm-contact');
         } else {
           damagePlayer(now, Number(hitEnemy.def && (hitEnemy.def.contactDamage || hitEnemy.def.bulletDamage)) || 85, 'normal', getCombatTargetElement(hitEnemy));
@@ -20219,7 +20178,7 @@
     if (!stage) return [];
 
     const gimmicks = [];
-    if (stage.ainaSeekerTrial) gimmicks.push({ id:'ainaSeeker', label:'意思を持つ追尾弾' });
+    if (stage.spiderHorde) gimmicks.push({ id:'ch704Horde', label:'小蜘蛛の大群・接触連撃' });
     const barrierElements = getStageBarrierPreviewElements(stage);
     const isDailyAdvanced = !!(
       (stage.dailyQuest && stage.dailyQuest.level === 'advanced') ||
