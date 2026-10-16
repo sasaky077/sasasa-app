@@ -34,7 +34,7 @@
     get 5() { return window.ZERAPHIA_STORY_SCENARIO?.['shooting_ch05_01']?.chapterTitle || '円環'; },
     get 6() { return window.ZERAPHIA_STORY_SCENARIO?.['shooting_ch06_01']?.chapterTitle || '来訪者'; },
     get 7() { const s=window.ZERAPHIA_STORY_SCENARIO||{}; return s.shooting_ch07_01?.chapterTitle || s.shooting_ch07_03?.chapterTitle || '未定'; },
-    8: '未定'
+    get 8() { return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch08_01?.chapterTitle || '七つの塔'; }
   };
 
   const SHOOTING_STAGE_ID = Object.freeze({
@@ -73,6 +73,11 @@
     CH07_02: 'shooting_ch07_02',
     CH07_03: 'shooting_ch07_03',
     CH07_04: 'shooting_ch07_04',
+
+    CH08_01: 'shooting_ch08_01',
+    CH08_02: 'shooting_ch08_02',
+    CH08_03: 'shooting_ch08_03',
+    CH08_04: 'shooting_ch08_04',
 
     DAILY_MON_INTERMEDIATE: 'shooting_daily_mon_intermediate',
     DAILY_MON_ADVANCED: 'shooting_daily_mon_advanced',
@@ -965,6 +970,63 @@
         totalEnemies:42, maxActive:14, spawnIntervalMs:1000, itemDropRate:0
       }),
       mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'押し寄せる小蜘蛛42体を退け、灰の丘を越える'}),playable:true
+    }),
+
+    // ============================================================
+    // CHAPTER 08 — 七つの塔
+    // 全4ステージ：探索戦 → 壁＋属性戦 → 迎撃戦 → 守護者BOSS
+    // ノア幹部の正体は明かさない。第7章「……呼んでる。」の直後から。
+    // ============================================================
+    [SHOOTING_STAGE_ID.CH08_01]: Object.freeze({
+      id:SHOOTING_STAGE_ID.CH08_01, chapter:8, stageNo:1,
+      get name(){return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch08_01?.stageTitle || '塔の麓';},
+      type:'normal', background:'images/battle_bg_01.webp',
+      enemyIds:Object.freeze([SHOOTING_ENEMY_ID.MINI_05, SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT]),
+      normalBattle:Object.freeze({
+        totalEnemies:5,maxActive:3,spawnIntervalMs:1700,itemDropRate:0,
+        enemyElementSequence:Object.freeze(['light','dark','light','dark','light']),
+        enemyHp:2200,enemyBulletDamage:125,enemyBulletSpeed:248,enemyFireRate:980,barrageLevel:4
+      }),
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'塔の入口を守るレムナント5体を撃破'}),playable:true
+    }),
+    [SHOOTING_STAGE_ID.CH08_02]: Object.freeze({
+      id:SHOOTING_STAGE_ID.CH08_02, chapter:8, stageNo:2,
+      get name(){return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch08_02?.stageTitle || '七方向の印';},
+      type:'normal', background:'images/battle_bg_01.webp',
+      enemyIds:Object.freeze([SHOOTING_ENEMY_ID.ZAKO_DARK_SHOT,SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT]),
+      chapter6Barriers:Object.freeze([
+        Object.freeze({xRate:.50,yRate:.47,widthRate:.52,height:20,moveRangeRate:.14,moveSpeed:.31,contactDamage:90})
+      ]),
+      normalBattle:Object.freeze({
+        totalEnemies:6,maxActive:3,spawnIntervalMs:1750,itemDropRate:0,
+        enemyElementSequence:Object.freeze(['dark','light','dark','light','dark','light']),
+        enemyHp:2350,enemyBulletDamage:130,enemyBulletSpeed:253,enemyFireRate:1030,barrageLevel:4
+      }),
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'遮断壁を越えて守護個体6体を撃破'}),playable:true
+    }),
+    [SHOOTING_STAGE_ID.CH08_03]: Object.freeze({
+      id:SHOOTING_STAGE_ID.CH08_03, chapter:8, stageNo:3,
+      get name(){return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch08_03?.stageTitle || '観測';},
+      type:'normal', background:'images/battle_bg_01.webp',
+      enemyIds:Object.freeze([SHOOTING_ENEMY_ID.MINI_05,SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT,SHOOTING_ENEMY_ID.ZAKO_WOOD_SHOT]),
+      normalBattle:Object.freeze({
+        totalEnemies:7,maxActive:3,spawnIntervalMs:1300,itemDropRate:0,
+        enemyElementSequence:Object.freeze(['aqua','wood','dark','light','aqua','wood','dark']),
+        enemyHp:2600,enemyBulletDamage:135,enemyBulletSpeed:262,enemyFireRate:900,barrageLevel:4
+      }),
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'塔の内壁に現れた観測個体7体を撃破'}),playable:true
+    }),
+    [SHOOTING_STAGE_ID.CH08_04]: Object.freeze({
+      id:SHOOTING_STAGE_ID.CH08_04, chapter:8, stageNo:4,
+      get name(){return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch08_04?.stageTitle || '応答';},
+      type:'boss', background:'images/battle_bg_01.webp',
+      enemyIds:Object.freeze([SHOOTING_ENEMY_ID.CH08_GUARDIAN]),
+      bossGauges:2,
+      bossGaugeHps:Object.freeze([9500,12500]),
+      // 専用イラストが未提供のため、既存のレムナント画像を一時的に共用。
+      bossBattleImage:'images/remnant_03_battle.webp',
+      bossVisualScale:1.03,
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.BOSS_CLEAR,text:'塔の守護者を撃破し、円盤への道を開く'}),playable:true
     }),
 
     // ============================================================

@@ -2099,6 +2099,11 @@
     shooting_ch07_02: Object.freeze({ allowedIds: Object.freeze([1, 3, 5, 20, 28, 39, 37, 17, 22]), requiredSize: 3 }),
     shooting_ch07_03: Object.freeze({ allowedIds: Object.freeze([1, 3, 5, 20, 28, 39, 37, 17, 22]), requiredSize: 3 }),
     shooting_ch07_04: Object.freeze({ allowedIds: Object.freeze([1, 3, 5, 20, 28, 39, 37, 17, 22]), requiredSize: 3 }),
+    // CH08でも九人の遠征隊から自由に3人を選ぶ。必須キャラ・ULT満タン開始なし。
+    shooting_ch08_01: Object.freeze({ allowedIds:Object.freeze([1,3,5,20,28,39,37,17,22]), requiredSize:3 }),
+    shooting_ch08_02: Object.freeze({ allowedIds:Object.freeze([1,3,5,20,28,39,37,17,22]), requiredSize:3 }),
+    shooting_ch08_03: Object.freeze({ allowedIds:Object.freeze([1,3,5,20,28,39,37,17,22]), requiredSize:3 }),
+    shooting_ch08_04: Object.freeze({ allowedIds:Object.freeze([1,3,5,20,28,39,37,17,22]), requiredSize:3 }),
   });
 
   // CH04-04以降は所持キャラから自由編成。CH04-03以前の物語編成は維持。
@@ -5231,8 +5236,8 @@
   function getCanvasStoryChapter() {
     if (!selectedStage) return 0;
     const chapter = Number(selectedStage.chapter || 0);
-    if (chapter >= 1 && chapter <= 7) return chapter;
-    const m = String(selectedStage.id || '').match(/^shooting_(?:beginner_)?ch0?([1-7])_/i);
+    if (chapter >= 1 && chapter <= 8) return chapter;
+    const m = String(selectedStage.id || '').match(/^shooting_(?:beginner_)?ch0?([1-8])_/i);
     return m ? Number(m[1] || 0) : 0;
   }
 

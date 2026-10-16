@@ -41,6 +41,7 @@
     REMNANT_06: 'shooting_remnant_06',
     REMNANT_07: 'shooting_remnant_07',
     REMNANT_08: 'shooting_remnant_08',
+    CH08_GUARDIAN: 'shooting_ch08_guardian',
 
     // SPECIAL EVENT bosses
     FACELESS: 'shooting_faceless',
@@ -377,6 +378,18 @@
 
       behavior: 'barrage_v1',
       uiScale: 1.18,
+    }),
+
+    // CH08 final boss: the identity of the tower's guard remains unknown.
+    // Uses existing barrage_v1 behavior and placeholder art until dedicated art is supplied.
+    [SHOOTING_ENEMY_ID.CH08_GUARDIAN]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.CH08_GUARDIAN,
+      kind: 'boss', implemented: true,
+      name: '塔の守護者', displayName: 'TOWER GUARDIAN　塔の守護者',
+      image: 'images/remnant_03_battle.webp', element: 'light',
+      gaugeHps: Object.freeze([9500,12500]), gauges: 2,
+      bulletSpeed: 250, fireRate: 920, bulletDamage: 175,
+      behavior: 'barrage_v1', uiScale: 1.03,
     }),
 
     // ------------------------------------------------------------
