@@ -1571,11 +1571,13 @@
     ...ERI_BASE_PROFILE,
     id: CHARACTER_ID.SUI,
     effectKey: 'sui',
-    label: 'CLOCK / DELAY BURST',
-    description: 'シンプルな2ライン射撃。ULTは4秒のカウント後、HPを100%まで回復し、敵弾を全消去してATKの300%ダメージを与える。',
-    ultDescription: '発動から4秒後に効果発動。操作中キャラのHPを100%まで回復し、画面内の敵弾をすべて消去、さらに敵へATK×3.0のダメージを与える。',
-    ultName: '星環の約束',
-    ultType: 'sui_clock_burst',
+    label: 'PARALLEL / TIME DOMAIN',
+    description: 'シンプルな2ライン射撃。ULT「時空操環」で6秒間、自機に追従する広い時空領域を展開し、領域内の敵弾を80%減速、攻撃力を1.3倍にする。',
+    ultDescription: '自機を中心に6秒間、半径275pxの時空領域を展開。領域内の敵弾は速度が20%になり、操作キャラのATKは1.3倍になる。敵弾全消去・回復・全体攻撃は行わない。',
+    ultName: '時空操環',
+    ultType: 'sui_time_domain',
+    ultBaseType: 'field',
+    ultAddons: ['enemy_bullet_slow', 'atk_up'],
     moveSpeed: 400,
     fireRate: 170,
     bulletSpeed: 800,
@@ -1593,14 +1595,11 @@
     coreTop: '38%',
     shotOffsetY: 38,
 
-    // ---- ULT設定 ----
-    clockTitleLeadMs: 1000,
-    clockDelayMs: 4000,
-    clockMarks: ['X', 'XI', 'XII'],
-    clockStepMs: 1000,
-    ultDamageAtkMultiplier: 3.0,
-    ultFullHeal: true,
-    ultClearEnemyBullets: true,
+    // ---- ULT「時空操環」 ----
+    suiDomainDurationMs: 6000,
+    suiDomainRadius: 275,
+    suiDomainBulletSpeedMultiplier: 0.2,
+    suiDomainAtkMultiplier: 1.3,
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.ARNO] = buildShootingCharacter({
@@ -2973,8 +2972,8 @@
         return '敵全体の属性バリアを解除し、敵全体に' + atk(c.ultDamageAtkMultiplier, 2.0) + 'のダメージ。';
       case 'shion_delayed_curse':
         return '敵全体に呪印を刻み、' + sec(c.ultDelayMs, 1200) + '後に' + atk(c.ultDamageAtkMultiplier, 2.8) + 'のダメージ。その後' + sec(c.ultDebuffDurationMs, 6000) + '間、受けるダメージを' + pct(1 - num(c.ultEnemyDamageMultiplier, 0.7), 0.3) + '軽減。' + note('即死攻撃は軽減しない');
-      case 'sui_clock_burst':
-        return sec(c.clockDelayMs, 4000) + '後に発動。操作キャラのHPを全回復し、さらに敵弾を全消去して敵全体に' + atk(c.ultDamageAtkMultiplier, 3.0) + 'のダメージ。';
+      case 'sui_time_domain':
+        return '自機に追従する半径' + String(num(c.suiDomainRadius, 275)) + 'pxの時空領域を' + sec(c.suiDomainDurationMs, 6000) + '間展開。領域内の敵弾を' + pct(1 - num(c.suiDomainBulletSpeedMultiplier, 0.2), 0.8) + '減速し、領域内の操作キャラのATKを' + mul(c.suiDomainAtkMultiplier, 1.3) + 'にする。' + note('敵弾全消去・回復・全体攻撃なし');
       case 'meloria_stun':
         return '敵全体を' + sec(c.ultStunMs, 5000) + '間スタン。さらに各敵に' + pct(c.meloriaPercentChance, 0.2) + 'の確率で最大HPの' + pct(c.meloriaMaxHpDamageRate, 0.5) + 'のダメージ。';
 
