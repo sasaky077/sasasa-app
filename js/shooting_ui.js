@@ -185,6 +185,7 @@
           <div class="shooting-result-card">
             <span id="shooting-result-kicker">SPECIAL EVENT</span>
             <strong id="shooting-result-title">RESULT</strong>
+            <div id="shooting-result-stage-label" class="shooting-result-stage-label" aria-label="挑戦ステージ"></div>
             <div class="shooting-result-rank-wrap">
               <small>RANK</small>
               <b class="shooting-result-rank" id="shooting-result-rank" data-rank="E">E</b>

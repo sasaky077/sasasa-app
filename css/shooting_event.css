@@ -14599,3 +14599,30 @@ html body #shooting-event-root .shooting-footer-v1436 .shooting-ui-layout-btn{
 #shooting-event-root .shooting-mini-enemy-hp.ch704-horde-spider-hp {
   display:none!important;
 }
+
+/* build1515 — RESULT subtitle: the exact stage/floor completed, between RESULT and RANK. */
+html body #shooting-event-root #shooting-result #shooting-result-stage-label{
+  flex:0 0 auto !important;
+  display:block;
+  width:100%;
+  max-width:100%;
+  min-height:16px;
+  box-sizing:border-box;
+  margin:-3px 0 -4px !important;
+  padding:0 7px;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  text-align:center;
+  font:500 clamp(10px,2.8vw,12px)/1.4 "Noto Serif JP","Yu Mincho",serif !important;
+  letter-spacing:.075em;
+  color:#927243 !important;
+}
+html body #shooting-event-root #shooting-result #shooting-result-stage-label:empty{display:none !important}
+@media (max-height:720px){
+  html body #shooting-event-root #shooting-result #shooting-result-stage-label{
+    min-height:14px;
+    margin:-3px 0 -5px !important;
+    font-size:10px !important;
+  }
+}

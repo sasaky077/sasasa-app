@@ -21819,6 +21819,26 @@
     }, POST_RESULT_TRANSITION_MS + 100);
   }
 
+  // build1515: RESULT見出しの下に、今回挑戦したステージを表示する。
+  // 戦闘開始前から保持しているselectedStageを使うので、再挑戦や事後ノベル後も同じ名称になる。
+  function getShootingResultStageLabel() {
+    const stage = selectedStage;
+    if (!stage) return '';
+    if (stage.eventId === 'resonance_tower') {
+      const floor = Math.max(0, Math.floor(Number(stage.stageNo || 0)));
+      const floorLabel = String(stage.difficultyLabel || '').trim() || `${String(floor).padStart(2, '0')}F`;
+      return `${String(stage.eventTitle || '残響の塔').trim()} ｜ ${floorLabel}`;
+    }
+    if (Number(stage.chapter || 0) > 0 && Number(stage.stageNo || 0) > 0) {
+      // ノベル側のstageTitleがある場合は、その実際の表示名を優先。
+      const lines = getShootingStageInfoLines();
+      return `${lines[0] || ''} ｜ ${lines[1] || ''}${lines[2] ? '  ' + lines[2] : ''}`.trim();
+    }
+    if (stage.dailyQuest) return `DAILY ｜ ${String(stage.name || '').trim()}`;
+    const lines = getShootingStageInfoLines();
+    return lines.filter(Boolean).join(' ｜ ');
+  }
+
   async function endGame(win) {
     if (isGachaTrialStage()) return; // 試遊ではRESULT・報酬・履歴処理に絶対に入らない
     if (!state || state.ended) return;
@@ -21878,6 +21898,7 @@
     const result = document.getElementById('shooting-result');
     const kicker = document.getElementById('shooting-result-kicker');
     const title = document.getElementById('shooting-result-title');
+    const stageLabel = document.getElementById('shooting-result-stage-label');
     const score = document.getElementById('shooting-result-score');
     const combo = document.getElementById('shooting-result-combo');
     const rank = document.getElementById('shooting-result-rank');
@@ -21970,6 +21991,11 @@
     };
     if (kicker) kicker.textContent = isResonanceTowerReplay() ? 'FREE REPLAY · NO REWARDS' : (win ? '' : 'MISSION FAILED');
     if (title) title.textContent = 'RESULT';
+    if (stageLabel) {
+      stageLabel.textContent = getShootingResultStageLabel();
+      stageLabel.style.display = stageLabel.textContent ? '' : 'none';
+      stageLabel.title = stageLabel.textContent;
+    }
     if (score) score.textContent = String(state.score).padStart(6, '0');
     if (combo) combo.textContent = String(state.maxCombo || 0);
     if (hitDetails) hitDetails.innerHTML = state.party.map(m => resultMemberHtml(m, m.hitCount || 0, '回', false)).join('');
