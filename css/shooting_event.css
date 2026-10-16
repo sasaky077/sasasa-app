@@ -2033,10 +2033,10 @@
   border-radius:50%;
   opacity:0;
   pointer-events:none;
-  border:2px solid rgba(226,246,255,.94);
-  /* 拡大中の大きなぼかし影は再描画負荷が高いため削除。 */
-  box-shadow:none;
-  will-change:transform,opacity;
+  border:2px solid rgba(226,246,255,.88);
+  box-shadow:
+    0 0 18px rgba(104,179,243,.84),
+    0 0 70px rgba(70,132,219,.55);
 }
 .shooting-sui-clock-burst::before,
 .shooting-sui-clock-burst::after,
@@ -2055,20 +2055,11 @@
 .shooting-sui-clock-burst i{transform:rotate(45deg)}
 .shooting-sui-clock-burst b{transform:rotate(-45deg)}
 .shooting-sui-clock-burst.show{
-  animation:shootingSuiClockBurst .70s ease-out both;
+  animation:shootingSuiClockBurst .82s ease-out both;
 }
 
-/* 盤面全体のfilterアニメーションをやめ、固定色の薄いフラッシュをopacityのみで描画。 */
-.shooting-sui-clock-flash{
-  position:absolute;
-  inset:0;
-  z-index:93;
-  pointer-events:none;
-  background:radial-gradient(ellipse at 50% 48%,
-    rgba(226,246,255,.60) 0%, rgba(125,189,248,.20) 38%, rgba(125,189,248,0) 74%);
-  opacity:0;
-  will-change:opacity;
-  animation:shootingSuiClockLightFlash .52s ease-out both;
+#shooting-event-root.sui-clock-detonate .shooting-arena{
+  animation:shootingSuiDetonateFlash .72s ease-out;
 }
 
 @keyframes shootingSuiClockMark{
@@ -2098,14 +2089,15 @@
   18%{opacity:1}
   100%{
     opacity:0;
-    transform:translate(-50%,-50%) scale(7.2) rotate(135deg);
+    transform:translate(-50%,-50%) scale(8.6) rotate(135deg);
   }
 }
 
-@keyframes shootingSuiClockLightFlash{
-  0%{opacity:0}
-  19%{opacity:1}
-  100%{opacity:0}
+@keyframes shootingSuiDetonateFlash{
+  0%{filter:brightness(1)}
+  15%{filter:brightness(1.55) saturate(.8)}
+  38%{filter:brightness(1.16)}
+  100%{filter:brightness(1)}
 }
 
 
@@ -14608,39 +14600,30 @@ html body #shooting-event-root .shooting-footer-v1436 .shooting-ui-layout-btn{
   display:none!important;
 }
 
-/* build1515 — RESULT subtitle: the exact stage/floor completed, between RESULT and RANK. */
-html body #shooting-event-root #shooting-result #shooting-result-stage-label{
-  flex:0 0 auto !important;
-  display:block;
-  width:100%;
-  max-width:100%;
-  min-height:16px;
-  box-sizing:border-box;
-  margin:-3px 0 -4px !important;
-  padding:0 7px;
-  overflow:hidden;
-  white-space:nowrap;
-  text-overflow:ellipsis;
-  text-align:center;
-  font:500 clamp(10px,2.8vw,12px)/1.4 "Noto Serif JP","Yu Mincho",serif !important;
-  letter-spacing:.075em;
-  color:#927243 !important;
-}
-html body #shooting-event-root #shooting-result #shooting-result-stage-label:empty{display:none !important}
-@media (max-height:720px){
-  html body #shooting-event-root #shooting-result #shooting-result-stage-label{
-    min-height:14px;
-    margin:-3px 0 -5px !important;
-    font-size:10px !important;
-  }
-}
 
-/* build1516: 拡大するスゥULTの光輪はglobal ULT filterの対象外。 */
-#shooting-event-root .shooting-sui-clock-burst{
-  filter:none !important;
-  -webkit-filter:none !important;
+/* build1521: CH07-02 単体強敵を既存BOSS HP HUDへ統一。通常/初級共通。 */
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_ch07_02"],
+  [data-shooting-stage="shooting_beginner_ch07_02"]
+) .shooting-boss-hud{
+  top:90px !important;
+  width:min(70vw,410px) !important;
+  z-index:27 !important;
+  pointer-events:none !important;
 }
-@media (prefers-reduced-motion: reduce){
-  #shooting-event-root .shooting-sui-clock-burst.show{animation-duration:.38s}
-  #shooting-event-root .shooting-sui-clock-flash{animation-duration:.28s}
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_ch07_02"],
+  [data-shooting-stage="shooting_beginner_ch07_02"]
+) .shooting-normal-enemy-layer .shooting-mini-enemy-hp,
+#shooting-event-root:is(
+  [data-shooting-stage="shooting_ch07_02"],
+  [data-shooting-stage="shooting_beginner_ch07_02"]
+) .shooting-normal-enemy-layer .shooting-mini-enemy-element-icon{
+  display:none !important;
+}
+@media(max-width:420px){
+  #shooting-event-root:is(
+    [data-shooting-stage="shooting_ch07_02"],
+    [data-shooting-stage="shooting_beginner_ch07_02"]
+  ) .shooting-boss-hud{width:min(69vw,350px) !important;}
 }

@@ -4715,6 +4715,21 @@
     return Math.max(1, Math.min(gauges, gauges - remainingGauges + 1));
   }
 
+  // build1521: CH07-02の三頭狼は通常敵エンジンで動く単体ボス。
+  // 画面外へ押し出される個別HPではなく、既存の固定BOSS HUDに実HPを表示する。
+  function getCh702FixedBossStatus() {
+    if (!state || !isNormalBattle() || !isSelectedBaseStage(SHOOTING_STAGE_ID.CH07_02)) return null;
+    const def = getShootingEnemy(selectedStage?.enemyIds?.[0]);
+    const enemy = (state.normalEnemies || []).find(e => e && e.def?.id === def?.id);
+    const max = Math.max(1, Number(enemy?.hpMax || def?.hp || 1));
+    return {
+      name: String(def?.name || '白い三頭狼の強化個体'),
+      hp: Math.max(0, Number(enemy?.hp ?? (state.normalSpawned > 0 ? 0 : max))),
+      max,
+      element: enemy?.element || def?.element || 'neutral',
+    };
+  }
+
   function renderHud() {
     if (!state) return;
     updateBattleTimer(performance.now());
@@ -4728,6 +4743,7 @@
     renderActivePlayerElementIcon();
     const gaugeWrap = document.getElementById('shooting-ult-side');
     const gauge = document.getElementById('shooting-burst-gauge');
+    const ch702Boss = getCh702FixedBossStatus();
 
     const phase = state.boss.phase || 1;
     const gaugeHp = getBossGaugeHpForPhase(phase);
@@ -4735,7 +4751,9 @@
     const normalCurrentGaugeHp = clamp(state.boss.hp - gaugeFloor, 0, gaugeHp);
     const currentGaugeHp = isChapter43BossStage() ? getChapter43WaveCurrentHp() : normalCurrentGaugeHp;
     const currentGaugeMaxHp = isChapter43BossStage() ? getChapter43WaveMaxHp(phase) : gaugeHp;
-    const amount = isScoreAttackStage() ? 1 : (currentGaugeHp / Math.max(1, currentGaugeMaxHp));
+    const amount = ch702Boss
+      ? ch702Boss.hp / ch702Boss.max
+      : (isScoreAttackStage() ? 1 : (currentGaugeHp / Math.max(1, currentGaugeMaxHp)));
     if (bossGauge) bossGauge.style.setProperty('--gauge-fill', String(amount));
     if (bossBar) {
       bossBar.classList.remove('phase-1', 'phase-2', 'phase-3');
@@ -4743,7 +4761,9 @@
     }
     if (bossPhase) {
       const scoreAttack = isScoreAttackStage();
-      bossPhase.textContent = scoreAttack
+      bossPhase.textContent = ch702Boss
+        ? `HP ${Math.ceil(ch702Boss.hp).toLocaleString('ja-JP')} / ${Math.ceil(ch702Boss.max).toLocaleString('ja-JP')}`
+        : scoreAttack
         ? 'HP：∞'
         : (isAmbushStage()
           ? `WAVE ${state.ambushWave || 1} / 2`
@@ -4768,12 +4788,17 @@
       }
     }
     const bossHud = document.querySelector(`#${ROOT_ID} .shooting-boss-hud`);
+    if (bossHud) {
+      const bossName = bossHud.querySelector('.shooting-boss-name');
+      const displayName = ch702Boss ? ch702Boss.name : String(BOSS.displayName || BOSS.name || 'BOSS');
+      if (bossName && bossName.textContent !== displayName) bossName.textContent = displayName;
+    }
     renderBossElementIcon();
     const missionHud = document.getElementById('shooting-mission-hud');
 
     // build792: every battle uses the same fixed mission/clear-condition band.
     // The shell never disappears between STORY / DAILY / EVENT / RAID; only its text changes.
-    if (bossHud) bossHud.style.display = isNormalBattle() ? 'none' : '';
+    if (bossHud) bossHud.style.display = (isNormalBattle() && !ch702Boss) ? 'none' : '';
     if (missionHud) missionHud.style.display = 'grid';
 
     if (selectedStage) {
@@ -5979,9 +6004,10 @@
   function renderBossElementIcon() {
     const bossHud = document.querySelector(`#${ROOT_ID} .shooting-boss-hud`);
     if (!bossHud || !state || !state.boss) return;
+    const ch702Boss = getCh702FixedBossStatus();
     setEnemyHpElementIcon(
       bossHud,
-      state.boss.element,
+      ch702Boss ? ch702Boss.element : state.boss.element,
       'shooting-boss-element-icon'
     );
   }
@@ -12064,9 +12090,14 @@
     const x = enemyDef.strongEnemy
       ? w * .50
       : lanes[lane] + (fixedStagePatternRandom('normal_spawn_x', spawnIndex, 0) - .5) * Math.min(28, w * .06);
-    const y = enemyDef.strongEnemy
-      ? Math.max(86, h * .145)
-      : Math.max(92, h * (.16 + (state.normalSpawned % 2) * .075));
+    // build1521: CH07-02は固定ボスHP欄の下に三頭狼を配置。HP UIと画像を重ねない。
+    const isCh702Wolf = isSelectedBaseStage(SHOOTING_STAGE_ID.CH07_02) &&
+      enemyDef.id === selectedStage?.enemyIds?.[0];
+    const y = isCh702Wolf
+      ? Math.max(148, h * .28)
+      : (enemyDef.strongEnemy
+        ? Math.max(86, h * .145)
+        : Math.max(92, h * (.16 + (state.normalSpawned % 2) * .075)));
     const cfg = getNormalBattleConfig();
     const hpSequence = Array.isArray(cfg.enemyHpSequence) ? cfg.enemyHpSequence : null;
     const sequencedHp = hpSequence && hpSequence.length
