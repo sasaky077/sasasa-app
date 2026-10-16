@@ -10,7 +10,7 @@
   const currentVersionParam = current && current.src
     ? new URL(current.src, location.href).searchParams.get('v')
     : '';
-  const MODULE_VERSION = '20261016-build1515-result-stage-label';
+  const MODULE_VERSION = '20261016-build1516-sui-burst-light';
   window.__sasaphiaShootingLoaderVersion = MODULE_VERSION;
 
   window.openShootingEvent = window.openShootingEvent || function (...args) {

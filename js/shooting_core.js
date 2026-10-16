@@ -24336,16 +24336,18 @@
     }, 700);
   }
 
-  function applyUltDamage(amount, big, character) {
+  function applyUltDamage(amount, big, character, maxImpactFx = 0) {
     if (!state || state.ended || state.finishing) return;
     const c = character || getCurrentCharacter();
     const attackElement = getUltAttackElement(c);
     if (isNormalBattle()) {
       const targets = state.normalEnemies.filter(enemy => enemy && enemy.el && enemy.hp > 0);
-      targets.forEach(enemy => {
+      // maxImpactFx=0なら従来どおり。スゥULTだけ演出数を抑え、ダメージは省略しない。
+      targets.forEach((enemy, index) => {
         const targetElement = getCombatTargetElement(enemy);
         const finalDamage = applyElementDamage(amount, attackElement, targetElement);
-        damageNormalEnemy(enemy, finalDamage, performance.now(), !!big, getElementDamageReaction(attackElement, targetElement));
+        damageNormalEnemy(enemy, finalDamage, performance.now(), !!big,
+          getElementDamageReaction(attackElement, targetElement), maxImpactFx > 0 && index >= maxImpactFx);
       });
       state.normalEnemies = state.normalEnemies.filter(enemy => enemy && enemy.hp > 0);
       addLegacyCombatScore(Math.round(Number(amount || 0) * 35 * Math.max(1, targets.length)));
@@ -26187,24 +26189,25 @@
     }
 
     const damage = Number(c.atk || 0) * Number(c.ultDamageAtkMultiplier || 3);
-    applyUltDamage(damage, true, c);
+    // build1516: 全体ダメージ/スコアは全対象に維持し、同一フレームのHIT演出だけ4体に制限。
+    applyUltDamage(damage, true, c, 4);
 
-    const root = document.getElementById(ROOT_ID);
-    if (root) {
-      root.classList.remove('sui-clock-detonate');
-      void root.offsetWidth;
-      root.classList.add('sui-clock-detonate');
-      setTimeout(() => root.classList.remove('sui-clock-detonate'), 820);
-    }
-
+    // build1516: フィールド全体をfilterで再描画する演出を廃止。
+    // 固定グラデーションのopacityと、影のない光輪のtransformだけを合成する。
     const arena = document.getElementById('shooting-arena');
     if (arena) {
+      const flash = document.createElement('div');
+      flash.className = 'shooting-sui-clock-flash';
+      flash.setAttribute('aria-hidden', 'true');
+      arena.appendChild(flash);
+      setTimeout(() => flash.remove(), 540);
+
       const burst = document.createElement('div');
-      burst.className = 'shooting-sui-clock-burst';
+      burst.className = 'shooting-sui-clock-burst show';
+      burst.setAttribute('aria-hidden', 'true');
       burst.innerHTML = '<i></i><b></b>';
       arena.appendChild(burst);
-      requestAnimationFrame(() => burst.classList.add('show'));
-      setTimeout(() => burst.remove(), 900);
+      setTimeout(() => burst.remove(), 730);
     }
 
     renderHud();
