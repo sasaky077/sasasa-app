@@ -2572,6 +2572,20 @@
     try { window.localStorage.setItem(SHOOTING_HIGH_SCORE_STORAGE_KEY, JSON.stringify(map)); } catch (_) {}
   }
 
+  // build1507: SCORE ATTACKの過去の誤記録をサーバー側で修正できるようにする。
+  // 通常ステージは従来通りmax保存。SCORE ATTACKのみサーバー確定値で
+  // ローカルキャッシュを下方にも同期し、修正前のNORMAL/HARD共通値を残さない。
+  function isScoreAttackHighScoreStage(stageId) {
+    return stageId === 'shooting_score_attack_normal' || stageId === 'shooting_score_attack_hard';
+  }
+
+  function replaceLocalShootingHighScore(stageId, score) {
+    if (!stageId) return;
+    const map = readLocalShootingHighScores();
+    map[stageId] = Math.max(0, Math.floor(Number(score || 0)));
+    try { window.localStorage.setItem(SHOOTING_HIGH_SCORE_STORAGE_KEY, JSON.stringify(map)); } catch (_) {}
+  }
+
   function getLocalShootingHighScore(stageId) {
     return Math.max(0, Number(readLocalShootingHighScores()[stageId] || 0));
   }
@@ -2670,8 +2684,17 @@
       });
       if (result?.error) throw result.error;
       const cloudScore = Math.max(0, Number(result?.data || 0));
-      selectedStageHighScore = Math.max(selectedStageHighScore, cloudScore);
-      writeLocalShootingHighScore(stageId, selectedStageHighScore);
+      // 難易度ごとのサーバー記録が確定値。旧共通ローカル記録は上書きして修復する。
+      if (isScoreAttackHighScoreStage(stageId)) {
+        replaceLocalShootingHighScore(stageId, cloudScore);
+      } else {
+        writeLocalShootingHighScore(stageId, cloudScore);
+      }
+      // 通信中に別ステージへ移っていた場合はその画面へ旧ステージの記録を出さない。
+      if (String(selectedStage?.id || '') !== stageId) return cloudScore;
+      selectedStageHighScore = isScoreAttackHighScoreStage(stageId)
+        ? cloudScore
+        : Math.max(selectedStageHighScore, cloudScore);
       const root = document.getElementById(ROOT_ID);
       if (root && !root.classList.contains('battle-hud-visible')) setShootingStageHeader(false);
     } catch (err) {
@@ -2711,8 +2734,17 @@
 
       const row = Array.isArray(result?.data) ? result.data[0] : result?.data;
       const cloudScore = Math.max(0, Number(row?.high_score || 0));
-      selectedStageHighScore = Math.max(selectedStageHighScore, cloudScore);
-      writeLocalShootingHighScore(stageId, selectedStageHighScore);
+      if (isScoreAttackHighScoreStage(stageId)) {
+        // RESULTから戻る際もサーバー側で確定した難易度別記録をそのまま使う。
+        replaceLocalShootingHighScore(stageId, cloudScore);
+      } else {
+        writeLocalShootingHighScore(stageId, cloudScore);
+      }
+      if (String(selectedStage?.id || '') === stageId) {
+        selectedStageHighScore = isScoreAttackHighScoreStage(stageId)
+          ? cloudScore
+          : Math.max(selectedStageHighScore, cloudScore);
+      }
 
       const gem = Number(row?.gem);
       if (Number.isFinite(gem) && window.userProfile) {
