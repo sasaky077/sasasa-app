@@ -326,9 +326,9 @@
   <link id="sasaphia-main-style"
         rel="preload"
         as="style"
-        href="css/style.css?v=1463-friend-chara-detail"
+        href="css/style.css?v=1505-ornate-confirm"
         onload="this.onload=null;this.rel='stylesheet';this.dataset.ready='1';window.dispatchEvent(new Event('sasaphia-main-style-ready'))">
-  <noscript><link rel="stylesheet" href="css/style.css?v=1463-friend-chara-detail"></noscript>
+  <noscript><link rel="stylesheet" href="css/style.css?v=1505-ornate-confirm"></noscript>
   <script>
   window._sasaphiaMainStyleReady = new Promise(function(resolve){
     var done = false;
@@ -2912,6 +2912,103 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
   }
 </style>
 
+<style id="gacha-confirm-visual-refresh-build1504">
+  /* build1504: ガチャ確認モーダルをindex側でも直接上書きし、キャッシュ影響を受けずに確実反映させる */
+  #summon-confirm-modal{
+    padding:24px 18px !important;
+    background:rgba(248,246,240,0.58) !important;
+    backdrop-filter:blur(1.5px) !important;
+    -webkit-backdrop-filter:blur(1.5px) !important;
+    align-items:center !important;
+    justify-content:center !important;
+  }
+
+  #summon-confirm-modal .modal.summon-confirm-shell{
+    width:min(100%,332px) !important;
+    max-width:332px !important;
+    padding:0 !important;
+    border-radius:0 !important;
+    border:1px solid rgba(227,220,206,.98) !important;
+    background:rgba(255,255,255,.94) !important;
+    box-shadow:0 14px 34px rgba(145,132,104,.12) !important;
+    overflow:hidden !important;
+  }
+
+  #summon-confirm-modal .summon-confirm-inner{
+    padding:30px 28px 24px !important;
+    text-align:center !important;
+  }
+
+  #summon-confirm-modal .summon-confirm-copy{
+    padding:16px 4px 8px !important;
+  }
+
+  #summon-confirm-modal #summon-confirm-text,
+  #summon-confirm-modal .summon-confirm-text,
+  #summon-confirm-modal .modal-inner p{
+    margin:0 !important;
+    color:#8a8275 !important;
+    -webkit-text-fill-color:#8a8275 !important;
+    font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif !important;
+    font-size:14px !important;
+    font-weight:400 !important;
+    line-height:2.05 !important;
+    letter-spacing:.04em !important;
+    text-align:center !important;
+  }
+
+  #summon-confirm-modal .modal-btns,
+  #summon-confirm-modal .summon-confirm-actions{
+    display:flex !important;
+    flex-direction:column !important;
+    gap:14px !important;
+    padding-top:18px !important;
+  }
+
+  #summon-confirm-modal .btn-pay,
+  #summon-confirm-modal .btn-cancel-txt,
+  #summon-confirm-modal .summon-confirm-yes,
+  #summon-confirm-modal .summon-confirm-no{
+    width:100% !important;
+    margin:0 !important;
+    padding:4px 10px !important;
+    min-height:auto !important;
+    background:transparent !important;
+    border:0 !important;
+    border-radius:0 !important;
+    box-shadow:none !important;
+    text-shadow:none !important;
+  }
+
+  #summon-confirm-modal .btn-pay,
+  #summon-confirm-modal .summon-confirm-yes{
+    color:#b5965d !important;
+    -webkit-text-fill-color:#b5965d !important;
+    font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif !important;
+    font-size:15px !important;
+    font-weight:500 !important;
+    letter-spacing:.12em !important;
+  }
+
+  #summon-confirm-modal .btn-cancel-txt,
+  #summon-confirm-modal .summon-confirm-no{
+    color:#6f6c66 !important;
+    -webkit-text-fill-color:#6f6c66 !important;
+    font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif !important;
+    font-size:14px !important;
+    font-weight:400 !important;
+    letter-spacing:.08em !important;
+  }
+
+  @media (max-width:380px){
+    #summon-confirm-modal .modal.summon-confirm-shell{
+      width:min(100%,316px) !important;
+    }
+    #summon-confirm-modal .summon-confirm-inner{
+      padding:26px 24px 22px !important;
+    }
+  }
+</style>
 
 <style id="crystal-shop-square-cool-build894">
   /* CRYSTAL SHOP：角丸と重い装飾を外し、薄金×ブラウンのフラットな構成へ */
@@ -4361,14 +4458,34 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
   </div>
 </div>
 
-<div class="modal-overlay" id="summon-confirm-modal">
-  <div class="modal">
-    <div class="modal-inner">
-      <p id="summon-confirm-text"></p>
-      <div class="modal-btns">
-        <button class="btn-pay" onclick="confirmSummonYes()">はい</button>
-        <button class="btn-cancel-txt" onclick="confirmSummonNo()">いいえ</button>
+<!-- build1505: 参考画像の装飾を使用したガチャ確認画面（数値はリアルタイム描画） -->
+<div class="modal-overlay zgc-overlay" id="summon-confirm-modal">
+  <div class="modal zgc-modal" role="dialog" aria-modal="true" aria-labelledby="zgc-title" aria-describedby="summon-confirm-text">
+    <img class="zgc-crest" src="images/gacha_confirm_crest.webp" alt="" aria-hidden="true">
+    <h2 class="zgc-title" id="zgc-title">ガチャ確認</h2>
+    <div class="zgc-subtitle" aria-hidden="true">GACHA CONFIRM</div>
+    <p class="zgc-message" id="summon-confirm-text"></p>
+    <div class="zgc-consumption" aria-live="polite">
+      <img id="zgc-cost-icon" class="zgc-cost-icon" src="images/icon_gem.webp" alt="" aria-hidden="true">
+      <div class="zgc-cost-copy">
+        <span class="zgc-cost-label" id="zgc-cost-label">消費結晶</span>
+        <strong class="zgc-cost-value" id="zgc-cost-value">50</strong>
       </div>
+    </div>
+    <div class="zgc-balance zgc-balance-current">
+      <span>現在所持数</span>
+      <img src="images/icon_gem.webp" alt="結晶">
+      <strong id="zgc-current-balance">0</strong>
+    </div>
+    <div class="zgc-arrow" aria-hidden="true"></div>
+    <div class="zgc-balance zgc-balance-after">
+      <span>消費後</span>
+      <img src="images/icon_gem.webp" alt="結晶">
+      <strong id="zgc-after-balance">0</strong>
+    </div>
+    <div class="zgc-actions">
+      <button class="zgc-button zgc-cancel" type="button" onclick="confirmSummonNo()">いいえ</button>
+      <button class="zgc-button zgc-accept" type="button" onclick="confirmSummonYes()">はい</button>
     </div>
   </div>
 </div>
@@ -11276,10 +11393,27 @@ function goHome(){
     isGachaTutorialFreeDraw(currentGacha, currentSummonCount)
   );
 
-  document.getElementById('summon-confirm-text').textContent = towerLimitedTicketDraw
-    ? '限定邂逅10連無料TICKETを1枚使用して10連を回します。結晶は消費しません。'
-    : tutorialFreeDraw ? '初回無料で通常邂逅の10連を回します。'
-    : ('結晶を ' + cost + ' 個消費してガチャを回します。');
+  // build1505: 確認画像の各欄を所持数/必要数と連動。無料/チケット時は結晶を減らさない。
+  var gemBalance = Math.max(0, Math.floor(Number(userProfile.gem) || 0));
+  var crystalCost = Math.max(0, Math.floor(Number(cost) || 0));
+  var paymentIsFree = tutorialFreeDraw || towerLimitedTicketDraw;
+  var actualCrystalCost = paymentIsFree ? 0 : crystalCost;
+  var fmtConfirmNum = function(number){ return Math.max(0,Number(number) || 0).toLocaleString('ja-JP'); };
+  var messageNode = document.getElementById('summon-confirm-text');
+  if (towerLimitedTicketDraw) {
+    messageNode.innerHTML = '無料10連TICKETを1枚使用して<br>限定邂逅を10回引きます。';
+  } else if (tutorialFreeDraw) {
+    messageNode.innerHTML = '初回無料で通常邂逅の10連を<br>回します。';
+  } else {
+    messageNode.innerHTML = '結晶を <strong class="zgc-message-amount">' + fmtConfirmNum(actualCrystalCost) + '</strong> 個消費して<br>ガチャを回します。';
+  }
+  document.getElementById('zgc-cost-label').textContent = towerLimitedTicketDraw ? '使用TICKET' : '消費結晶';
+  document.getElementById('zgc-cost-value').textContent = towerLimitedTicketDraw ? '1' : fmtConfirmNum(actualCrystalCost);
+  document.getElementById('zgc-cost-icon').src = towerLimitedTicketDraw ? 'images/gacha_ticket_10.webp' : 'images/icon_gem.webp';
+  document.getElementById('zgc-current-balance').textContent = fmtConfirmNum(gemBalance);
+  document.getElementById('zgc-after-balance').textContent = fmtConfirmNum(gemBalance - actualCrystalCost);
+  document.getElementById('summon-confirm-modal').classList.toggle('zgc-is-ticket', towerLimitedTicketDraw);
+  document.getElementById('summon-confirm-modal').classList.toggle('zgc-is-free', tutorialFreeDraw);
 
   if(!tutorialFreeDraw && !towerLimitedTicketDraw && userProfile.gem < cost){
   isSummoning = false;
@@ -19482,6 +19616,7 @@ function fadeOutOpeningBgm(){
 })();
 </script>
   <link rel="stylesheet" href="css/growth_modal_redesign.css?v=1479-growth-rich">
+  <link rel="stylesheet" href="css/gacha_confirm_redesign.css?v=1505-ornate-confirm">
 <script src="js/remnant_blessings.js?v=1416-names"></script>
 <!-- ローグライト（新規追加） -->
 <script src="js/shinju.js?v=1416-boss-name"></script>

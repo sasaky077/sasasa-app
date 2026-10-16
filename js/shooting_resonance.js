@@ -406,7 +406,7 @@
   // build1319で確定済みの12体のみ、表示・効果共通の安全な登録済み情報を保持する。
   // CHARGE / LASER は属性・攻撃方式に合わせたLv.2/Lv.3効果を維持。
   const RECENT_DEFAULT_CHARACTERS = Object.freeze({
-    41: Object.freeze({name:'シュオリン',shotType:'spread'}),
+    41: Object.freeze({name:'シャオラン',shotType:'spread'}),
     42: Object.freeze({name:'キョウ',shotType:'strike'}),
     43: Object.freeze({name:'スズ',shotType:'parallel'}),
     44: Object.freeze({name:'メロリア',shotType:'piercing'}),

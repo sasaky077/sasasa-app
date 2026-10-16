@@ -1,0 +1,248 @@
+/* ZERAPHIA build1505 — ガチャ確認スクリーンショットの装飾を使った再実装 */
+html body #summon-confirm-modal.zgc-overlay{
+  position:fixed !important;
+  inset:0 !important;
+  padding:10px !important;
+  box-sizing:border-box !important;
+  align-items:center !important;
+  justify-content:center !important;
+  background:rgba(17,17,25,.56) !important;
+  backdrop-filter:blur(2px) !important;
+  -webkit-backdrop-filter:blur(2px) !important;
+  z-index:2100 !important;
+}
+html body #summon-confirm-modal.zgc-overlay.active{display:flex !important;}
+html body #summon-confirm-modal .zgc-modal{
+  box-sizing:border-box !important;
+  position:relative !important;
+  display:block !important;
+  width:min(89vw,420px,calc((100dvh - 52px) * 836 / 878)) !important;
+  max-width:none !important;
+  height:auto !important;
+  aspect-ratio:836 / 878 !important;
+  max-height:none !important;
+  flex:none !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  overflow:visible !important;
+  background:#fbf8f1 url('../images/gacha_confirm_plate.webp') center / 100% 100% no-repeat !important;
+  color:#4a382a !important;
+  box-shadow:0 10px 26px rgba(23,20,19,.20) !important;
+  container-type:inline-size;
+}
+html body #summon-confirm-modal .zgc-crest{
+  display:block;
+  position:absolute;
+  top:-7.8%;
+  left:42.8%;
+  width:14.4%;
+  height:17.4%;
+  object-fit:fill;
+  pointer-events:none;
+  z-index:2;
+}
+html body #summon-confirm-modal .zgc-title{
+  position:absolute;
+  top:8.5%;
+  left:4%;
+  width:92%;
+  margin:0 !important;
+  padding:0 !important;
+  font-family:'Noto Serif JP','Yu Mincho',serif !important;
+  font-size:clamp(20px,6.35cqw,29px) !important;
+  font-weight:700 !important;
+  line-height:1.1 !important;
+  letter-spacing:.14em !important;
+  text-align:center !important;
+  color:#513925 !important;
+  -webkit-text-fill-color:#513925 !important;
+  text-shadow:none !important;
+}
+html body #summon-confirm-modal .zgc-subtitle{
+  position:absolute;
+  top:17.1%;
+  left:4%;
+  width:92%;
+  font-family:'Cinzel',Georgia,serif;
+  font-size:clamp(8px,2.7cqw,13px);
+  font-weight:600;
+  letter-spacing:.2em;
+  color:#b7a28f;
+  text-align:center;
+}
+html body #summon-confirm-modal #summon-confirm-text.zgc-message{
+  position:absolute !important;
+  left:9% !important;
+  top:27.3% !important;
+  width:82% !important;
+  min-height:12% !important;
+  margin:0 !important;
+  padding:0 !important;
+  font-family:'Noto Serif JP','Yu Mincho',serif !important;
+  font-size:clamp(12px,4.1cqw,18px) !important;
+  font-weight:600 !important;
+  line-height:1.62 !important;
+  letter-spacing:.035em !important;
+  color:#382e2a !important;
+  -webkit-text-fill-color:#382e2a !important;
+  text-align:center !important;
+  white-space:normal !important;
+}
+html body #summon-confirm-modal .zgc-message-amount{
+  display:inline;
+  font-family:'Cinzel','Noto Serif JP',serif;
+  font-size:1.55em;
+  vertical-align:-.06em;
+  font-weight:700;
+  line-height:.9;
+  color:#8a2eeb !important;
+  -webkit-text-fill-color:#8a2eeb !important;
+}
+html body #summon-confirm-modal .zgc-consumption{
+  position:absolute;
+  top:44.3%;
+  left:31.8%;
+  width:42%;
+  height:11.4%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6%;
+}
+html body #summon-confirm-modal .zgc-cost-icon{
+  display:block;
+  width:27%;
+  height:82%;
+  object-fit:contain;
+  flex:none;
+  filter:drop-shadow(0 1px 2px rgba(100,62,145,.15));
+}
+html body #summon-confirm-modal .zgc-cost-copy{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:flex-start;
+  gap:1px;
+  min-width:0;
+  white-space:nowrap;
+  font-family:'Noto Serif JP',serif;
+  text-align:left;
+  transform:translateY(5px);
+}
+html body #summon-confirm-modal .zgc-cost-label{
+  font-size:clamp(10px,3.8cqw,16px);
+  font-weight:600;
+  color:#56412d;
+  line-height:1.25;
+}
+html body #summon-confirm-modal .zgc-cost-value{
+  font-family:'Cinzel','Noto Serif JP',serif;
+  font-size:clamp(18px,6.65cqw,31px);
+  font-weight:600;
+  line-height:1.15;
+  color:#3b2ab6;
+}
+html body #summon-confirm-modal .zgc-balance{
+  position:absolute;
+  left:18%;
+  width:64%;
+  height:5.6%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:5%;
+  font-family:'Noto Serif JP',serif;
+  font-size:clamp(10px,3.4cqw,15px);
+  font-weight:600;
+  line-height:1;
+  white-space:nowrap;
+  color:#534438;
+}
+html body #summon-confirm-modal .zgc-balance-current{top:63.9%;}
+html body #summon-confirm-modal .zgc-balance-after{top:73.0%;color:#a6a0a0;}
+html body #summon-confirm-modal .zgc-balance img{
+  display:block;
+  width:11%;
+  height:85%;
+  object-fit:contain;
+  flex:none;
+}
+html body #summon-confirm-modal .zgc-balance-after img{opacity:.58;filter:saturate(.8);}
+html body #summon-confirm-modal .zgc-balance strong{
+  font-family:'Cinzel','Noto Serif JP',serif;
+  font-size:clamp(17px,6.05cqw,29px);
+  font-weight:600;
+  line-height:1;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:.02em;
+  color:#59412c;
+}
+html body #summon-confirm-modal .zgc-balance-after strong{color:#a6a0a0;}
+html body #summon-confirm-modal .zgc-arrow{
+  position:absolute;
+  top:69.7%;
+  left:calc(50% - 4px);
+  width:7px;
+  height:7px;
+  border-right:2px solid #ae9c83;
+  border-bottom:2px solid #ae9c83;
+  transform:rotate(45deg);
+  opacity:.85;
+}
+html body #summon-confirm-modal .zgc-actions{
+  position:absolute;
+  top:81.0%;
+  left:4.1%;
+  right:3.5%;
+  height:14.5%;
+  display:grid;
+  grid-template-columns:1fr 1.07fr;
+  gap:2.7%;
+  align-items:stretch;
+}
+html body #summon-confirm-modal .zgc-button{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:100% !important;
+  height:100% !important;
+  min-height:0 !important;
+  margin:0 !important;
+  padding:0 2px 2px !important;
+  border:0 !important;
+  border-radius:0 !important;
+  appearance:none;
+  -webkit-appearance:none;
+  box-shadow:none !important;
+  background-color:transparent !important;
+  background-size:100% 100% !important;
+  background-repeat:no-repeat !important;
+  font-family:'Noto Serif JP',serif !important;
+  font-size:clamp(17px,6cqw,29px) !important;
+  font-weight:700 !important;
+  letter-spacing:.055em;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+  transition:filter .13s ease;
+}
+html body #summon-confirm-modal .zgc-cancel{
+  background-image:url('../images/gacha_confirm_no.webp') !important;
+  color:#46301c !important;
+  -webkit-text-fill-color:#46301c !important;
+}
+html body #summon-confirm-modal .zgc-accept{
+  background-image:url('../images/gacha_confirm_yes.webp') !important;
+  color:#fff1c7 !important;
+  -webkit-text-fill-color:#fff1c7 !important;
+  text-shadow:0 1px 2px rgba(36,25,57,.28) !important;
+}
+html body #summon-confirm-modal .zgc-button:active{filter:brightness(.89);}
+html body #summon-confirm-modal .zgc-button:focus-visible{outline:2px solid #9f7d41;outline-offset:3px;}
+html body #summon-confirm-modal.zgc-is-ticket .zgc-cost-icon{width:25%;}
+@media (max-width:360px){
+  html body #summon-confirm-modal .zgc-title{font-size:6.2cqw !important;}
+  html body #summon-confirm-modal #summon-confirm-text.zgc-message{font-size:4cqw !important;}
+}
