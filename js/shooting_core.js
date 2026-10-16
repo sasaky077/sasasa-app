@@ -4577,7 +4577,7 @@
   function clearProjectiles() {
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
-    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-rose-fortress,.shooting-remna-trap-preview,.shooting-conjure-preview,.shooting-conjure-deploy-projectile,.shooting-conjure-turret,.shooting-conjure-ult-turret,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning,.shooting-ch07-complete-shield,.shooting-ch07-torii').forEach(el => el.remove());
+    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-rose-fortress,.shooting-remna-trap-preview,.shooting-conjure-preview,.shooting-conjure-deploy-projectile,.shooting-conjure-turret,.shooting-conjure-ult-turret,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-sui-time-domain,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning,.shooting-ch07-complete-shield,.shooting-ch07-torii').forEach(el => el.remove());
     clearEnemyBulletCanvas();
     if (state) {
       state.bullets = [];
@@ -4593,6 +4593,7 @@
       state.remnaTrapPlacementPreview = null;
       state.conjureUlt = null;
       state.wolfAtkField = null;
+      state.suiTimeDomainEl = null;
       state.bossDangerWarningEl = null;
       state.bossDangerExecuteAt = 0;
       if (Array.isArray(state.facelessObjects)) {
@@ -4665,6 +4666,10 @@
       {
         left: wolfFieldStatus.active ? wolfFieldStatus.left : -Infinity,
         multiplier: wolfFieldStatus.multiplier,
+      },
+      {
+        left: isSuiTimeDomainActive(now) ? Math.max(0, Number(state.suiTimeDomainUntil || 0) - now) : -Infinity,
+        multiplier: getSuiTimeDomainAtkMultiplier(now),
       },
     ].filter(entry => entry.left > 0);
 
@@ -5032,6 +5037,54 @@
     if (!silent) renderHud();
   }
 
+  // build1524: 最終的な「敵行動禁止」判定を発射元ごとに統一する。
+  // 全体停止と個別拘束を分離し、拘束されていない別の敵の攻撃は止めない。
+  function isEntireEnemyActionLocked(now = performance.now()) {
+    if (!state || state.ended || state.finishing) return false;
+    return !!(
+      state.paused || state.arnoSlashActive || state.ultCutinActive || state.ch07EnhanceTransitionActive ||
+      now < Number(state.noahMovementFreezeUntil || 0) ||
+      now < Number(state.angeEnemyFreezeUntil || 0) ||
+      isEnemyPullFieldActive(now)
+    );
+  }
+
+  function getNormalEnemyLockUntil(enemy, now = performance.now()) {
+    if (!state || !enemy) return 0;
+    const until = Math.max(
+      Number(state.normalEnemyStunUntil || 0),
+      Number(enemy.noahStunUntil || 0),
+      Number(enemy.gojoPurpleFreezeUntil || 0),
+      Number(enemy.ayaneGrabUntil || 0),
+      Number(state.noahMovementFreezeUntil || 0),
+      Number(state.angeEnemyFreezeUntil || 0),
+      Number(state.eltenaBlackHole?.activeUntil || 0)
+    );
+    // 時刻ではなくフラグで停止する演出でも弾を作らない。
+    return isEntireEnemyActionLocked(now) ? Math.max(until, now + 100) : until;
+  }
+
+  function getFacelessObjectLockUntil(obj, now = performance.now()) {
+    if (!state || !obj) return 0;
+    const until = Math.max(
+      Number(obj.noahStunUntil || 0), Number(obj.gojoPurpleFreezeUntil || 0),
+      Number(state.noahMovementFreezeUntil || 0), Number(state.angeEnemyFreezeUntil || 0),
+      Number(state.eltenaBlackHole?.activeUntil || 0)
+    );
+    return isEntireEnemyActionLocked(now) ? Math.max(until, now + 100) : until;
+  }
+
+  function getBossLockUntil(now = performance.now()) {
+    if (!state || isNormalBattle()) return 0;
+    const until = Math.max(
+      Number(state.bossStunUntil || 0), Number(state.bossGrabUntil || 0),
+      Number(state.gojoPurpleBossFreezeUntil || 0),
+      Number(state.noahMovementFreezeUntil || 0), Number(state.angeEnemyFreezeUntil || 0),
+      Number(state.eltenaBlackHole?.activeUntil || 0)
+    );
+    return isEntireEnemyActionLocked(now) ? Math.max(until, now + 100) : until;
+  }
+
   // build565: 敵の「移動停止」と「敵弾生成停止」は常にセットで扱う。
   // 停止解除時に、停止時間中に期限切れになった射撃/行動予約をまとめて消化しないよう、
   // 再開基準時刻を停止終了後へ送る共通ヘルパー。
@@ -5071,6 +5124,21 @@
       Number(state.nextBossDangerAt || 0),
       until + getBossDangerInterval()
     );
+    // 塔15Fは3系統の発射時計が独立。通常のlastBossShotAtだけでは
+    // 拘束解除の1フレームに螺旋＋狙い弾＋リングが同時に出てしまう。
+    if (state.tower15) {
+      for (const key of ['lastSpiralAt', 'lastAimAt', 'lastRingAt']) {
+        state.tower15[key] = Math.max(Number(state.tower15[key] || 0), until);
+      }
+      state.tower15.warningDeficitSince = Math.max(Number(state.tower15.warningDeficitSince || 0), until);
+    }
+    // サキエルのリズム弾幕も、停止中の拍を一括消化しない。
+    if (isChapter43BossStage()) {
+      state.chapter43RhythmNextAt = Math.max(Number(state.chapter43RhythmNextAt || 0), until + 500);
+    }
+    if (isAmbushStage()) {
+      state.ambushWarningLastAt = Math.max(Number(state.ambushWarningLastAt || 0), until);
+    }
   }
 
   function deferAllEnemyAttackResume(resumeAt) {
@@ -5594,9 +5662,10 @@
     if (ts < Number(state.noahMovementFreezeUntil || 0)) return true;
     if (isEnemyPullFieldActive(ts)) return true;
 
-    if (isNormalBattle()) {
-      return ts < Number(state.normalEnemyStunUntil || 0);
-    }
+    // setTimeout/外部イベント経由でも、敵の全体停止演出中には弾を作らない。
+    if (isEntireEnemyActionLocked(ts)) return true;
+    // ステージ内で敵全体が停止している場合は最終生成口でも遮断。
+    if (isNormalBattle()) return ts < Number(state.normalEnemyStunUntil || 0);
     return ts < Number(state.bossStunUntil || 0);
   }
 
@@ -7497,7 +7566,7 @@
     const itemAtkBuffMultiplier = activeMember && now < (activeMember.atkBuffUntil || 0)
       ? Number(activeMember.atkBuffMultiplier || 1)
       : 1;
-    const wolfFieldAtkMultiplier = getWolfAtkFieldStatus(now).multiplier;
+    const wolfFieldAtkMultiplier = getWolfAtkFieldStatus(now).multiplier * getSuiTimeDomainAtkMultiplier(now);
     return Math.max(0,
       Number(c?.atk || 0) *
       Number(c?.shotPowerRate || 0.095) *
@@ -8721,7 +8790,7 @@
         ? Number(activeMember.atkBuffMultiplier || 1)
         : 1;
     // CHARGEにも既存のATK UPフィールドとアイナの隠密射撃×1.3を個別に適用する。
-    const wolfFieldAtkMultiplier = getWolfAtkFieldStatus(Number(now || performance.now())).multiplier;
+    const wolfFieldAtkMultiplier = getWolfAtkFieldStatus(Number(now || performance.now())).multiplier * getSuiTimeDomainAtkMultiplier(Number(now || performance.now()));
 
     const damage =
       Number(c.atk || 0) *
@@ -8981,7 +9050,7 @@
       mitoMember && now < Number(mitoMember.atkBuffUntil || 0)
         ? Number(mitoMember.atkBuffMultiplier || 1)
         : 1;
-    const wolfFieldAtkMultiplier = getWolfAtkFieldStatus(now).multiplier;
+    const wolfFieldAtkMultiplier = getWolfAtkFieldStatus(now).multiplier * getSuiTimeDomainAtkMultiplier(now);
     const effectivePower =
       Number(c.atk || 0) *
       Number(c.shotPowerRate || 0.095) *
@@ -9811,7 +9880,7 @@
       activeMember && now < (activeMember.atkBuffUntil || 0)
         ? Number(activeMember.atkBuffMultiplier || 1)
         : 1;
-    const wolfFieldAtkMultiplier = getWolfAtkFieldStatus(now).multiplier;
+    const wolfFieldAtkMultiplier = getWolfAtkFieldStatus(now).multiplier * getSuiTimeDomainAtkMultiplier(now);
 
     const effectiveFireRate = Number(c.fireRate || 170) * fireRateMultiplier;
     const effectivePower =
@@ -12343,8 +12412,14 @@
     const cfg = selectedStage?.towerLethalVolley;
     if (!cfg || !state || state.ended || state.finishing) return;
     if (now - Number(state.tower12LastLethalAt || 0) < Number(cfg.intervalMs || 2900)) return;
+    const enemies = state.normalEnemies.filter(e => e && e.hp > 0 &&
+      now >= getNormalEnemyLockUntil(e, now)).slice(0, Number(cfg.maxEnemyCount || 2));
+    if (!enemies.length) {
+      // 12FのWARNING発射時計も停止後に再始動。解除直後の集中発射を避ける。
+      state.tower12LastLethalAt = Math.max(Number(state.tower12LastLethalAt || 0), now);
+      return;
+    }
     state.tower12LastLethalAt = now;
-    const enemies = state.normalEnemies.filter(e => e && e.hp > 0).slice(0, Number(cfg.maxEnemyCount || 2));
     if (!enemies.length || state.enemyBullets.length > 95) return;
     const aim = getEnemyAimPosition();
     enemies.forEach(enemy => {
@@ -12364,6 +12439,13 @@
   }
 
   function shootNormalEnemyProjectile(enemy, angle, speed, damage, className) {
+    if (!enemy || !state) return null;
+    const now = performance.now();
+    const lockedUntil = getNormalEnemyLockUntil(enemy, now);
+    if (now < lockedUntil) {
+      deferNormalEnemyAttackResume(enemy, lockedUntil);
+      return null;
+    }
     const projectile = makeProjectile(
       className || 'shooting-enemy-bullet shooting-mini-enemy-bullet',
       enemy.x, enemy.y + 24,
@@ -12815,7 +12897,12 @@
 
 
   function fireNormalEnemy(enemy, now) {
-    if (!enemy || !enemy.el || now < (state.normalEnemyStunUntil || 0)) return;
+    if (!enemy || !enemy.el || !state) return;
+    const lockedUntil = getNormalEnemyLockUntil(enemy, now);
+    if (now < lockedUntil) {
+      freezeNormalEnemyAction(enemy, lockedUntil);
+      return;
+    }
     const def = enemy.def || {};
 
     // v212 generic elemental angels
@@ -14488,6 +14575,11 @@
     }
 
     // --- WARNING常駐（3つ） ---
+    const bossLockedUntil = getBossLockUntil(now);
+    if (now < bossLockedUntil) {
+      deferBossAttackResume(bossLockedUntil);
+      return;
+    }
     let alive = 0;
     for (const p of state.enemyBullets) if (p && p.tower15Warning) alive++;
     const want = Math.max(0, Number(cfg.warningCount || 3));
@@ -14885,6 +14977,11 @@
 
   function fireFacelessObject(obj, now) {
     if (!state || !obj || obj.hp <= 0 || !obj.el) return;
+    const lockedUntil = getFacelessObjectLockUntil(obj, now);
+    if (now < lockedUntil) {
+      deferFacelessObjectAttackResume(obj, lockedUntil);
+      return;
+    }
 
     const fireInterval = obj.ways >= 3 ? 720 : 820;
     if (now - Number(obj.lastShotAt || 0) < fireInterval) return;
@@ -15775,6 +15872,11 @@
 
   function fireAmbushMinion(obj, now) {
     if (!state || !obj || !obj.ambushMinion || obj.hp <= 0 || !obj.el || !obj.el.isConnected) return;
+    const lockedUntil = getFacelessObjectLockUntil(obj, now);
+    if (now < lockedUntil) {
+      deferFacelessObjectAttackResume(obj, lockedUntil);
+      return;
+    }
     const cfg = getAmbushConfig();
     const interval = Math.max(1000, Number(cfg?.minionFireEveryMs || 5000));
     if (now - Number(obj.lastShotAt || 0) < interval) return;
@@ -15835,9 +15937,10 @@
     const w = arena.clientWidth;
     state.facelessObjects = (state.facelessObjects || []).filter(obj => {
       if (!obj || !obj.ambushMinion || obj.hp <= 0) return false;
-      // build929: アンジェULT中は乱入ミニオンもその場で停止し、新規射撃を行わない。
-      if (now < Number(state.angeEnemyFreezeUntil || 0)) {
-        deferFacelessObjectAttackResume(obj, Number(state.angeEnemyFreezeUntil || now));
+      // 全体停止＋個別の麻痺/拘束を同じ規則で適用。移動・弾生成をセットで停止。
+      const lockUntil = getFacelessObjectLockUntil(obj, now);
+      if (now < lockUntil) {
+        deferFacelessObjectAttackResume(obj, lockUntil);
         positionUnit(obj.el, obj.x, obj.y);
         positionUnit(obj.hpEl, obj.x, obj.y + 38);
         return true;
@@ -16563,6 +16666,13 @@
   }
 
   function fireBoss(now) {
+    // BOSSの射撃経路をひとつの入口で抑止。個別ロック中は他のADDを止めない。
+    if (!state || !state.boss) return;
+    const lockedUntil = getBossLockUntil(now);
+    if (now < lockedUntil) {
+      deferBossAttackResume(lockedUntil);
+      return;
+    }
     // build1485: 塔15F BOSSは専用パターンのみ（汎用WARNING攻撃は使わない）。
     if (BOSS && BOSS.behavior === 'tower15_echo_v1') {
       fireTower15Boss(now);
@@ -17236,6 +17346,7 @@
     enforceEnemyBulletSafetyLimit(now);
     enforcePlayerBulletSafetyLimit(now);
     syncShiinaLightRingVisual(now);
+    syncSuiTimeDomainVisual(now);
 
     const layout = frameLayout || captureCombatFrameLayout();
     if (!layout) return;
@@ -19818,6 +19929,9 @@
     }
     if (ts < Number(state.bossGrabUntil || 0)) {
       deferBossAttackResume(Number(state.bossGrabUntil || ts));
+    }
+    if (ts < Number(state.bossStunUntil || 0) || ts < Number(state.angeEnemyFreezeUntil || 0)) {
+      deferBossAttackResume(Math.max(Number(state.bossStunUntil || 0), Number(state.angeEnemyFreezeUntil || 0)));
     }
     if (!state.phaseTransition && !state.koTransition && !ultLocked) {
       // 長いULT演出で通常射撃だけを止めたい場合は playerShotLockUntil を使う。
@@ -26256,90 +26370,61 @@
     renderHud();
   }
 
-  function showSuiClockMark(mark, stepIndex) {
+  // build1523 — スゥ ULT「時空操環」
+  // 描画は要素1個とCSSの薄い同心円だけ。Canvas/粒子/画面フィルターは使わない。
+  // 領域は現在操作中の自機に追従。切替時も効果時間中は継続する。
+  function isSuiTimeDomainActive(now = performance.now()) {
+    return !!(state && !state.ended && !state.finishing &&
+      now < Number(state.suiTimeDomainUntil || 0));
+  }
+
+  function getSuiTimeDomainAtkMultiplier(now = performance.now()) {
+    // 領域は自機を中心に移動するため、現在操作中のキャラは常に内部にいる。
+    return isSuiTimeDomainActive(now)
+      ? Math.max(1, Number(state.suiTimeDomainAtkMultiplier || 1.3)) : 1;
+  }
+
+  function syncSuiTimeDomainVisual(now = performance.now()) {
+    if (!state) return;
+    let ring = state.suiTimeDomainEl;
+    if (!isSuiTimeDomainActive(now)) {
+      if (ring && ring.isConnected) ring.remove();
+      state.suiTimeDomainEl = null;
+      return;
+    }
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
-
-    const markEl = document.createElement('div');
-    markEl.className = 'shooting-sui-clock-mark';
-    markEl.textContent = String(mark || '');
-    markEl.style.setProperty('--sui-clock-step', String(stepIndex || 0));
-    arena.appendChild(markEl);
-
-    requestAnimationFrame(() => markEl.classList.add('show'));
-    setTimeout(() => markEl.remove(), 920);
+    if (!ring || !ring.isConnected || ring.parentElement !== arena) {
+      ring = document.createElement('div');
+      ring.className = 'shooting-sui-time-domain';
+      ring.setAttribute('aria-hidden', 'true');
+      const diameter = Math.max(1, Number(state.suiTimeDomainRadius || 275)) * 2;
+      ring.style.width = `${diameter}px`;
+      ring.style.height = `${diameter}px`;
+      arena.appendChild(ring);
+      state.suiTimeDomainEl = ring;
+      state.suiTimeDomainVisualX = NaN;
+      state.suiTimeDomainVisualY = NaN;
+    }
+    const x = Number(state.player?.x || 0);
+    const y = Number(state.player?.y || 0);
+    if (x !== state.suiTimeDomainVisualX || y !== state.suiTimeDomainVisualY) {
+      ring.style.transform = `translate3d(${x}px,${y}px,0) translate(-50%,-50%)`;
+      state.suiTimeDomainVisualX = x;
+      state.suiTimeDomainVisualY = y;
+    }
   }
 
-  function triggerSuiClockBurst(c, ownerId) {
-    if (!state || state.ended) return;
-
-    const owner = getPartyMember(ownerId);
-    if (owner && c.ultFullHeal !== false) {
-      owner.hp = owner.hpMax;
-    }
-
-    if (c.ultClearEnemyBullets !== false) {
-      clearEnemyBulletsOnly();
-    }
-
-    const damage = Number(c.atk || 0) * Number(c.ultDamageAtkMultiplier || 3);
-    // build1516: 全体ダメージ/スコアは全対象に維持し、同一フレームのHIT演出だけ4体に制限。
-    applyUltDamage(damage, true, c, 4);
-
-    // build1516: フィールド全体をfilterで再描画する演出を廃止。
-    // 固定グラデーションのopacityと、影のない光輪のtransformだけを合成する。
-    const arena = document.getElementById('shooting-arena');
-    if (arena) {
-      const flash = document.createElement('div');
-      flash.className = 'shooting-sui-clock-flash';
-      flash.setAttribute('aria-hidden', 'true');
-      arena.appendChild(flash);
-      setTimeout(() => flash.remove(), 540);
-
-      const burst = document.createElement('div');
-      burst.className = 'shooting-sui-clock-burst show';
-      burst.setAttribute('aria-hidden', 'true');
-      burst.innerHTML = '<i></i><b></b>';
-      arena.appendChild(burst);
-      setTimeout(() => burst.remove(), 730);
-    }
-
-    renderHud();
-  }
-
-  function useSuiUlt(c) {
-    if (!state) return;
-
+  function useSuiTimeDomainUlt(c) {
+    if (!state || state.ended || state.finishing) return;
     const now = performance.now();
-    const marks = Array.isArray(c.clockMarks) && c.clockMarks.length
-      ? c.clockMarks
-      : ['X', 'XI', 'XII'];
-    const stepMs = Math.max(200, Number(c.clockStepMs || 1000));
-    const titleLeadMs = Math.max(0, Number(c.clockTitleLeadMs || 1000));
-    const totalDelay = Math.max(
-      titleLeadMs + marks.length * stepMs,
-      Number(c.clockDelayMs || 4000)
-    );
-    const ownerId = c.id;
-
-    showUltCut(c.ultName, c.effectKey);
-    ultScreenFlash('ult-flash-sui');
-
-    // 発動モーションだけ短くロック。カウント中は通常操作・射撃を継続できる。
-    state.ultLockUntil = now + 260;
-
-    // スキルタイトル演出を先に見せ、その後に X → XI → XII。
-    marks.forEach((mark, index) => {
-      pushUltTimer(() => {
-        if (!state || state.ended) return;
-        showSuiClockMark(mark, index);
-      }, titleLeadMs + index * stepMs);
-    });
-
-    pushUltTimer(() => {
-      triggerSuiClockBurst(c, ownerId);
-    }, totalDelay);
-
+    showUltCut(c.ultName || '時空操環', c.effectKey, c);
+    state.suiTimeDomainUntil = now + Math.max(1000, Number(c.suiDomainDurationMs || 6000));
+    state.suiTimeDomainRadius = Math.max(190, Number(c.suiDomainRadius || 275));
+    state.suiTimeDomainBulletSpeedMultiplier = Math.max(0.05, Math.min(1, Number(c.suiDomainBulletSpeedMultiplier || 0.2)));
+    state.suiTimeDomainAtkMultiplier = Math.max(1, Number(c.suiDomainAtkMultiplier || 1.3));
+    state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), now + 230);
+    syncSuiTimeDomainVisual(now);
     renderHud();
   }
 
@@ -27696,12 +27781,21 @@
   }
 
   function getShiinaEnemyBulletSpeedMultiplier(p, now = performance.now()) {
-    if (!p || !state || !isShiinaLightRingActive(now)) return 1;
-    const radius = Math.max(1, Number(state.shiinaLightRingRadius || 190));
+    if (!p || !state) return 1;
+    const shiinaActive = isShiinaLightRingActive(now);
+    const suiActive = isSuiTimeDomainActive(now);
+    if (!shiinaActive && !suiActive) return 1;
     const dx = Number(p.x || 0) - Number(state.player?.x || 0);
     const dy = Number(p.y || 0) - Number(state.player?.y || 0);
-    if (dx * dx + dy * dy > radius * radius) return 1;
-    return Math.max(0.05, Math.min(1, Number(state.shiinaLightRingSlowMultiplier || 0.2)));
+    const dist2 = dx * dx + dy * dy;
+    let multiplier = 1;
+    if (shiinaActive && dist2 <= Number(state.shiinaLightRingRadius || 190) ** 2) {
+      multiplier = Math.min(multiplier, Math.max(0.05, Number(state.shiinaLightRingSlowMultiplier || 0.2)));
+    }
+    if (suiActive && dist2 <= Number(state.suiTimeDomainRadius || 275) ** 2) {
+      multiplier = Math.min(multiplier, Math.max(0.05, Number(state.suiTimeDomainBulletSpeedMultiplier || 0.2)));
+    }
+    return multiplier;
   }
 
   function syncShiinaLightRingVisual(now = performance.now()) {
@@ -28835,7 +28929,7 @@
     applyUltElementVisualContext(c);
 
     if (c.ultType === 'ryune_absolute_lethe' || Number(c.id) === 25) useLyuneAbsoluteLetheUlt(c);
-    else if (c.ultType === 'sui_clock_burst') useSuiUlt(c);
+    else if (c.ultType === 'sui_time_domain') useSuiTimeDomainUlt(c);
     else if (c.ultType === 'rose_fortress') useRoseUlt(c);
     else if (c.ultType === 'suzu_bullet_silence') useSuzuBulletSilenceUlt(c);
     else if (c.ultType === 'meloria_stun') useMeloriaStunUlt(c);
