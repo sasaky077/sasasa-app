@@ -213,7 +213,9 @@
       //   WARNING（即死弾）が常に3つ浮遊し壁で反射し続ける。
       //   定期的に「暗転」：弾幕と自キャラ以外が見えなくなる。
       enemyIds:Object.freeze([SHOOTING_ENEMY_ID.TOWER15_BOSS]),
-      bossElement:'dark',enemyElement:'dark',bossVisualScale:1.0,
+      // build1520: トワのバトル表示だけ自キャラ画像と同程度の横幅へ縮小。
+      // 128px基準 × 1.1(uiScale) × 0.62 = 約87px（元は約141px）。
+      bossElement:'dark',enemyElement:'dark',bossVisualScale:0.62,
       introImage:'images/tower15_boss_battle_start.webp',
       tower15Echo:Object.freeze({
         warningCount:3, warningSpeed:118, warningRespawnMs:2200,
