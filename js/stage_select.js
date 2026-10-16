@@ -44,27 +44,21 @@
   const SHOOTING_STAGE_RECORD_KEY = 'zeraphia_shooting_stage_records_v1';
   const SHOOTING_HIGH_SCORE_KEY = 'zeraphia_shooting_high_scores_v1';
 
+  // build1506: ランクの優劣は文字コードではなく実際のランク順で比較する。
+  const STORY_RANK_ORDER = ['S', 'A', 'B', 'C', 'D', 'E'];
+  function highestStoryRank(a, b) {
+    const left = String(a || '').toUpperCase();
+    const right = String(b || '').toUpperCase();
+    const leftIndex = STORY_RANK_ORDER.indexOf(left);
+    const rightIndex = STORY_RANK_ORDER.indexOf(right);
+    if (leftIndex < 0) return rightIndex < 0 ? '' : right;
+    if (rightIndex < 0) return left;
+    return leftIndex <= rightIndex ? left : right;
+  }
+
   function getStoryShootingRecord(stageId) {
     const id = String(stageId || '');
     if (!id) return { cleared: false, bestRank: '', highScore: 0 };
-
-    // shooting_core.js がロード済みなら共通APIを正として使う。
-    if (typeof window.getShootingStageRecordSummary === 'function') {
-      try {
-        const record = window.getShootingStageRecordSummary(id) || {};
-        const cleared = isStoryStageCleared(id) || !!record.cleared;
-        const highScore = Math.max(0, Number(record.highScore || 0));
-        const storedRank = String(record.bestRank || '').toUpperCase();
-        return {
-          cleared,
-          bestRank: storedRank || (cleared && highScore > 0 ? getStoryRankFromScore(highScore) : ''),
-          highScore,
-        };
-      } catch (_) {}
-    }
-
-    // stage_select.js は shooting_event.js より先に読み込まれるため、
-    // 初回表示だけは localStorage から同じキーを直接参照できるようにする。
     let records = {};
     let scores = {};
     try {
@@ -74,33 +68,74 @@
       scores = JSON.parse(localStorage.getItem(SHOOTING_HIGH_SCORE_KEY) || '{}') || {};
     } catch (_) {}
 
-    const raw = records[id] || {};
-    const cleared = isStoryStageCleared(id) || !!raw.cleared;
-    const highScore = Math.max(0, Number(raw.highScore || 0), Number(scores[id] || 0));
-    const storedRank = String(raw.bestRank || '').toUpperCase();
+    const raw = records[id] && typeof records[id] === 'object' ? records[id] : {};
+    let common = {};
+    // 共通記録APIが存在する場合も、ローカルの最新HIGH SCOREと突き合わせる。
+    if (typeof window.getShootingStageRecordSummary === 'function') {
+      try { common = window.getShootingStageRecordSummary(id) || {}; } catch (_) {}
+    }
+    const cleared = isStoryStageCleared(id) || !!raw.cleared || !!common.cleared;
+    const highScore = Math.max(0, Number(raw.highScore || 0), Number(scores[id] || 0), Number(common.highScore || 0));
+    const storedRank = highestStoryRank(raw.bestRank, common.bestRank);
 
-    // 旧バージョンではクリア済み/ハイスコアだけ保存され、RANK自体は未保存だった。
-    // クリア済みが確認できるステージに限り、既存HIGH SCOREから現在の閾値で復元する。
-    const derivedRank = storedRank || (cleared && highScore > 0 ? getStoryRankFromScore(highScore) : '');
+    // 新記録は勝利時だけ更新した bestClearScore からランクを計算する。
+    // 旧記録（bestClearScore未保存）のみ、クリア済みHIGH SCOREから復元。
+    // これにより、初回クリア時の古いbestRankが更新を妨げる問題も解消する。
+    const hasClearScore = Number.isFinite(Number(raw.bestClearScore)) && raw.bestClearScore != null;
+    const bestClearScore = hasClearScore ? Math.max(0, Number(raw.bestClearScore)) : highScore;
+    const scoreRank = cleared && (bestClearScore > 0 || hasClearScore)
+      ? getStoryRankFromScore(bestClearScore) : '';
+    const bestRank = cleared ? highestStoryRank(storedRank, scoreRank) : '';
 
-    // 復元できた場合は新しい記録領域にも移行して、次回以降は通常の保存値として扱う。
-    if (!storedRank && derivedRank) {
+    // 旧記録のランクを復元した場合だけ永続化（読み取りの度に書き戻さない）。
+    // bestClearScoreは旧スコアの勝敗が特定できないので、この時点では確定させない。
+    if (cleared && bestRank && bestRank !== String(raw.bestRank || '').toUpperCase()) {
       try {
-        records[id] = {
-          ...raw,
-          cleared: true,
-          bestRank: derivedRank,
-          highScore,
-        };
+        records[id] = { ...raw, cleared: true, bestRank, highScore };
         localStorage.setItem(SHOOTING_STAGE_RECORD_KEY, JSON.stringify(records));
       } catch (_) {}
     }
+    return { cleared, bestRank, highScore };
+  }
 
-    return {
-      cleared,
-      bestRank: derivedRank,
-      highScore,
-    };
+  // リザルトで更新された各ステージの記録を保存（初回も周回も同じ処理）。
+  function updateStoryBestRecordFromResult(detail) {
+    const id = String(detail && detail.stageId || '');
+    if (!/^shooting_(?:beginner_)?ch\d{2}_\d{2}(?:_|$)/.test(id)) return;
+    const score = Math.max(0, Math.floor(Number(detail.score || 0)));
+    if (!Number.isFinite(score)) return;
+    const win = detail.win === true;
+    try {
+      const records = JSON.parse(localStorage.getItem(SHOOTING_STAGE_RECORD_KEY) || '{}') || {};
+      const raw = records[id] && typeof records[id] === 'object' ? records[id] : {};
+      const scores = JSON.parse(localStorage.getItem(SHOOTING_HIGH_SCORE_KEY) || '{}') || {};
+      const previousScore = Math.max(0, Number(raw.highScore || 0), Number(scores[id] || 0));
+      const highScore = Math.max(previousScore, score);
+      if (highScore > Number(scores[id] || 0)) {
+        scores[id] = highScore;
+        localStorage.setItem(SHOOTING_HIGH_SCORE_KEY, JSON.stringify(scores));
+      }
+
+      // HIGH SCOREは既存の全プレイ記録を維持するが、RANKは勝利時だけ伸ばす。
+      let bestRank = String(raw.bestRank || '').toUpperCase();
+      let bestClearScore = raw.bestClearScore == null
+        ? null : Math.max(0, Number(raw.bestClearScore || 0));
+      if (win) {
+        // 古い形式のbestRankがある場合は、既存の最高ランクも維持する。
+        bestClearScore = Math.max(bestClearScore == null ? 0 : bestClearScore, score);
+        bestRank = highestStoryRank(bestRank, getStoryRankFromScore(bestClearScore));
+      }
+      records[id] = {
+        ...raw,
+        cleared: !!raw.cleared || win || isStoryStageCleared(id),
+        highScore,
+        bestRank,
+        ...(bestClearScore == null ? {} : { bestClearScore })
+      };
+      localStorage.setItem(SHOOTING_STAGE_RECORD_KEY, JSON.stringify(records));
+    } catch (err) {
+      console.warn('[story] best stage record save failed:', err);
+    }
   }
 
   function getStoryRankFromScore(score) {
@@ -1022,7 +1057,10 @@ if (guf) {
   // ============================================================
   window.addEventListener('shooting-stage-result', function (event) {
     const detail = event && event.detail ? event.detail : {};
-    if (!detail.win || !detail.stageId) return;
+    if (!detail.stageId) return;
+    // 成否を問わずHIGH SCOREを更新。最高RANKは勝利結果のみ更新する。
+    updateStoryBestRecordFromResult(detail);
+    if (!detail.win) return;
 
     markStoryStageCleared(String(detail.stageId));
     renderStoryChapterList('normal');
