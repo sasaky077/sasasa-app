@@ -4255,6 +4255,8 @@
       raidLastBossDamageNumberAt: 0,
       facelessWave: isFacelessStage() ? 1 : 0,
       facelessSummonTriggered: false,
+      // build1518: each wave independently tracks the timeout-based summon fallback.
+      facelessWaveStartedAt: 0,
       facelessObjects: [],
       facelessObjectSeq: 0,
 
@@ -14487,8 +14489,13 @@
     for (const p of state.enemyBullets) if (p && !p.tower15Warning) ordinary++;
     const soft = phase === 1 ? 170 : 230;
 
+    // build1517: 塔15Fの2ゲージ目だけ、通常弾幕の毎秒発射量を15%減らす。
+    // 1 / 0.85倍の間隔にすることで、螺旋・扇・リングの形と弾速は維持する。
+    // PHASE1と常駐WARNING弾、暗転の時間には影響させない。
+    const phase2DensityInterval = phase === 2 ? (1 / 0.85) : 1;
+
     // 螺旋
-    const spiralEvery = getStageAdjustedEnemyFireInterval(phase === 1 ? 150 : 165);
+    const spiralEvery = getStageAdjustedEnemyFireInterval((phase === 1 ? 150 : 165) * phase2DensityInterval);
     if (now - Number(t15.lastSpiralAt || 0) >= spiralEvery && ordinary < soft) {
       t15.lastSpiralAt = now;
       t15.angle = Number(t15.angle || 0) + (phase === 1 ? 0.21 : 0.17);
@@ -14503,7 +14510,7 @@
     }
 
     // 自機狙いの扇（WARNINGの合間を縫う必要がある）
-    const aimEvery = getStageAdjustedEnemyFireInterval(phase === 1 ? 1650 : 1250);
+    const aimEvery = getStageAdjustedEnemyFireInterval((phase === 1 ? 1650 : 1250) * phase2DensityInterval);
     if (now - Number(t15.lastAimAt || 0) >= aimEvery) {
       t15.lastAimAt = now;
       const aim = getEnemyAimPosition();
@@ -14514,7 +14521,7 @@
     }
 
     // リング
-    const ringEvery = getStageAdjustedEnemyFireInterval(phase === 1 ? 3200 : 2300);
+    const ringEvery = getStageAdjustedEnemyFireInterval((phase === 1 ? 3200 : 2300) * phase2DensityInterval);
     if (now - Number(t15.lastRingAt || 0) >= ringEvery && ordinary < soft + 20) {
       t15.lastRingAt = now;
       const n = phase === 1 ? 16 : 22;
@@ -14695,6 +14702,14 @@
 
     const el = document.createElement('img');
     el.className = 'shooting-faceless-object';
+    // The original mask art remains the preferred asset. If it is absent from a
+    // deployment, still show an actual target instead of an invisible <img>.
+    el.onerror = function () {
+      el.onerror = null;
+      const fallbackSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="78" height="78" viewBox="0 0 78 78"><path d="M16 12Q39 1 62 12L66 41Q63 65 39 72Q15 65 12 41Z" fill="#e6e2df" stroke="#77707f" stroke-width="3"/><path d="M20 33Q28 27 35 38Q25 44 20 33M43 38Q50 27 58 33Q53 44 43 38" fill="#514960"/><path d="M35 54L43 54" stroke="#8f8194" stroke-width="2"/></svg>';
+      el.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(fallbackSvg);
+      console.warn('[faceless] mask image missing, using fallback silhouette');
+    };
     el.src = 'images/enemy_faceless_battle_object.webp';
     el.alt = '仮面';
     el.draggable = false;
@@ -14970,21 +14985,39 @@
   }
 
   function beginFacelessObjectSummon(count, ways) {
-    if (!state || state.ended || state.finishing || state.phaseTransition) return;
+    if (!state || !isFacelessStage() || state.ended || state.finishing ||
+        state.phaseTransition || state.facelessSummonTriggered) return;
+    const summonState = state;
+    const summonWave = Number(state.facelessWave || 1);
     state.facelessSummonTriggered = true;
     state.phaseTransition = true;
     clearEnemyBulletsOnly();
     showFacelessBattleCut('仮面顕現', `${count} OBJECT`);
 
     setTimeout(() => {
-      if (!state || state.ended || state.finishing || !isFacelessStage()) return;
+      if (state !== summonState || !state || state.ended || state.finishing ||
+          !isFacelessStage() || Number(state.facelessWave || 1) !== summonWave) return;
       const arena = document.getElementById('shooting-arena');
-      if (!arena) return;
+      if (!arena) {
+        // Never permanently freeze the battle if its arena was briefly detached.
+        state.phaseTransition = false;
+        state.facelessSummonTriggered = false;
+        return;
+      }
       const w = arena.clientWidth;
       const h = arena.clientHeight;
-      // 無貌専用：仮面は画面中央付近に顕現させる。
-      // 旧0.46はiPhone縦長画面で下寄りに見えたため上へ補正。
-      const y = h * 0.28;
+      // build1519: 仮面をボス画像より十分下へ召喚する。
+      // フェイスレスの表示高さは190px、仮面は78px。
+      // 固定割合だけでなく現在のボス座標も見て上下の重なりを防ぐ。
+      const bossCenterY = Number.isFinite(Number(state.boss?.y))
+        ? Number(state.boss.y) : Math.max(56, h * 0.18);
+      const bossHalfHeight = 95; // faceless .shooting-boss height:190px
+      const maskHalfHeight = 39; // .shooting-faceless-object height:78px
+      const visualGap = 24;
+      const y = Math.min(
+        h - maskHalfHeight - 18,
+        Math.max(h * 0.49, bossCenterY + bossHalfHeight + maskHalfHeight + visualGap)
+      );
       if (count <= 1) {
         spawnFacelessObject(w * 0.5, y, ways);
       } else {
@@ -15002,7 +15035,11 @@
     if (!state || !isFacelessStage() || state.ended || state.finishing) return;
     const wave = Number(state.facelessWave || 1);
     const ratio = state.boss.hpMax > 0 ? state.boss.hp / state.boss.hpMax : 1;
-    if (!state.facelessSummonTriggered && ratio <= 0.5 && state.boss.hp > 0) {
+    if (!state.facelessWaveStartedAt) state.facelessWaveStartedAt = now;
+    // HP trigger is retained, but a time fallback prevents a low-damage build from
+    // seeing zero mask objects. A lethal burst is separately guarded in beginBossDefeat.
+    if (!state.facelessSummonTriggered && state.boss.hp > 0 &&
+        (ratio <= 0.5 || now - state.facelessWaveStartedAt >= 6000)) {
       const cfg = getFacelessConfig();
       const counts = Array.isArray(cfg?.waveObjectCount) ? cfg.waveObjectCount : [1, 2];
       beginFacelessObjectSummon(Number(counts[wave - 1] || (wave === 1 ? 1 : 2)), Number(cfg?.objectWays || 2));
@@ -15017,6 +15054,7 @@
     state.facelessObjects = [];
     state.facelessWave = 2;
     state.facelessSummonTriggered = false;
+    state.facelessWaveStartedAt = 0;
     state.facelessVolleyIndex = 0;
 
     const hp = getFacelessWaveHp(2);
@@ -20775,9 +20813,29 @@
       beginAmbushWave2();
       return;
     }
-    if (isFacelessStage() && Number(state.facelessWave || 1) === 1) {
-      beginFacelessWave2();
-      return;
+    // build1518: Large SHOT/ULT bursts can take the boss directly from above
+    // half HP to zero between animation frames. Previously beginBossDefeat
+    // transitioned immediately, skipping both mask summons (wave 1 and wave 2).
+    // Restore 1 HP until at least one summon is processed in each wave.
+    if (isFacelessStage()) {
+      if (!state.facelessSummonTriggered) {
+        state.boss.hp = Math.max(1, Number(state.boss.hp || 0));
+        const cfg = getFacelessConfig();
+        const wave = Number(state.facelessWave || 1);
+        const counts = Array.isArray(cfg?.waveObjectCount) ? cfg.waveObjectCount : [1, 2];
+        beginFacelessObjectSummon(Number(counts[wave - 1] || (wave === 1 ? 1 : 2)), Number(cfg?.objectWays || 2));
+        renderHud();
+        return;
+      }
+      if (state.phaseTransition) {
+        state.boss.hp = Math.max(1, Number(state.boss.hp || 0));
+        renderHud();
+        return;
+      }
+      if (Number(state.facelessWave || 1) === 1) {
+        beginFacelessWave2();
+        return;
+      }
     }
     if (isStoryShootingStage() && !state.bossDefeatScoreAwarded) {
       state.bossDefeatScoreAwarded = true;
