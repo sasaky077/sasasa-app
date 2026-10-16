@@ -1,4 +1,4 @@
-// ZERAPHIA build1420 — 残響の塔 出撃前・封印対象確認
+// ZERAPHIA build1514 — 残響の塔：クリア済み階層は自由編成・無報酬の再挑戦
 // アカウント・週次進行・封印はSupabaseの3つのRPCのみを正とする。
 (function(){
   'use strict';
@@ -75,7 +75,7 @@
     return out;
   }
 
-  let selected=1, progress=null, busy=false, focusBeforePanel=null, attempt=null, finishPromise=null;
+  let selected=1, progress=null, busy=false, focusBeforePanel=null, attempt=null, finishPromise=null, replayFloor=0;
   const $=id=>document.getElementById(id);
   function notify(message){
     if(typeof window.showToast==='function') window.showToast(message);
@@ -89,8 +89,11 @@
   function currentFloor(){return progress ? Number(progress.currentFloor||1):1;}
   function cleared(floor){return !!(progress && (progress.clearedFloors||[]).includes(floor));}
   function available(floor){return !!(progress && !progress.completed && currentFloor()===floor);}
+  // 再挑戦は今週の突破済み階層に限る。出撃トークン・報酬・封印は発行しない。
+  function isReplayFloor(floor){return Number(replayFloor)>0 && Number(floor)===replayFloor && cleared(Number(floor));}
   function isCharacterAvailable(id){
     if(!progress) return false; // サーバー状態を受信するまでは出撃不可
+    if(isReplayFloor(replayFloor)) return true; // 再挑戦では週内封印を適用しない（所持判定は戦闘側）
     return !(progress.sealedCharacterIds||[]).some(n=>Number(n)===Number(id));
   }
   function syncTowerWallet(){
@@ -175,7 +178,7 @@
   function panelText(kind,number){
     if(kind==='floor'){
       if(!progress) return 'サーバーと同期できるまで出撃できません。';
-      if(cleared(number)) return '突破済みです。出撃に使用した仲間は今週は封印されています。';
+      if(cleared(number)) return descriptions[number-1]+'\nCLEAR再挑戦：所持キャラから1〜3体を自由編成。封印中のキャラも使用できます。\n※再挑戦では報酬・追加封印・階層進行はありません。';
       if(!available(number)) return '前の階層を突破すると解放されます。';
       const used=(progress.sealedCharacterIds||[]).length;
       return descriptions[number-1]+'\n所持キャラから1〜3体を編成。封印中 '+used+'体。';
@@ -201,8 +204,17 @@
     if(dismiss) dismiss.hidden=(kind==='rewards');
     layer.classList.toggle('is-reward-overview',kind==='rewards');
     layer.classList.toggle('is-floor-challenge',kind==='floor');
-    kicker.textContent=kind==='floor'?'ECHO TOWER / FLOOR':'ECHO TOWER';
-    start.hidden=kind!=='floor'||!available(number)||busy;
+    layer.classList.toggle('is-floor-replay',kind==='floor'&&cleared(number));
+    kicker.textContent=kind==='floor'?(cleared(number)?'ECHO TOWER / REPLAY':'ECHO TOWER / FLOOR'):'ECHO TOWER';
+    const foot=layer.querySelector('.resonance-tower-panel-foot');
+    if(foot && kind==='floor') {
+      foot.hidden=false;
+      foot.textContent=cleared(number)
+        ? 'クリア済み階層の練習です。\n報酬・追加封印・進行更新はありません。'
+        : '使用した仲間は勝利時に封印されます。\n敗北、中断時は封印されません。';
+    }
+    start.hidden=kind!=='floor'||!(available(number)||cleared(number))||busy;
+    start.textContent=cleared(number)?'好きなキャラで再挑戦':'この階層に挑戦';
     start.dataset.floor=String(number||0);
     layer.hidden=false;
     layer.querySelector('.resonance-tower-panel-close')?.focus();
@@ -213,14 +225,15 @@
     focusBeforePanel=null;
   }
   async function openBattle(floor){
-    if(busy||!available(floor)) return;
+    if(busy||!(available(floor)||cleared(floor))) return;
     if(typeof window.openShootingEvent!=='function'){notify('戦闘エンジンの準備が完了していません');return;}
     // 編成画面で選ぶ1〜3体は実戦開始時にサーバーが検証する。
     attempt=null;finishPromise=null;
+    replayFloor=cleared(floor)?Number(floor):0;
     window.__shootingReturnContext={type:'resonanceTower'};
     closePanel();
     try{window.openShootingEvent({stageId:'shooting_tower_'+String(floor).padStart(2,'0')});}
-    catch(err){window.__shootingReturnContext=null;console.error('[tower] battle open failed',err);notify('戦闘画面を開けませんでした');}
+    catch(err){replayFloor=0;window.__shootingReturnContext=null;console.error('[tower] battle open failed',err);notify('戦闘画面を開けませんでした');}
   }
   // 出撃前に封印対象を示す。表示/キャンセルの段階ではRPCも進行データも更新しない。
   let activeSealConfirmation=null;
@@ -291,11 +304,14 @@
   }
   async function prepareBattle(floor,partyIds){
     if(busy) return false;
-    if(!available(floor)){notify('現在挑戦できる階層ではありません');return false;}
+    const replay=isReplayFloor(floor);
+    if(!replay && !available(floor)){notify('現在挑戦できる階層ではありません');return false;}
     const party=Array.isArray(partyIds)?partyIds.map(Number):[];
     if(party.length<1||party.length>3||new Set(party).size!==party.length||!party.every(isCharacterAvailable)){
-      notify('封印されていないキャラを1〜3体選択してください');return false;
+      notify(replay?'所持キャラを1〜3体選択してください':'封印されていないキャラを1〜3体選択してください');return false;
     }
+    // 練習はサーバー上の週次挑戦に一切触らない。
+    if(replay){attempt={replay:true,floor,party};finishPromise=null;return true;}
     busy=true;
     try{
       const {data,error}=await rpcClient().rpc('begin_resonance_tower_run',{p_floor:floor,p_party_ids:party});
@@ -311,6 +327,12 @@
   }
   async function finishRun(win){
     if(finishPromise) return finishPromise;
+    if(attempt?.replay){
+      attempt=null;
+      if(win) notify('再挑戦クリア！ 報酬や封印の追加はありません。');
+      finishPromise=Promise.resolve({towerConfirmed:true,replay:true,firstClearClaimed:false,firstClearAmount:0,highScore:0});
+      return finishPromise;
+    }
     finishPromise=(async()=>{
       if(!attempt?.token) throw new Error('出撃記録が見つかりません');
       const {data,error}=await rpcClient().rpc('finish_resonance_tower_run',{p_token:attempt.token,p_win:!!win});
@@ -330,15 +352,16 @@
     });
     return finishPromise;
   }
-  window.ResonanceTower=Object.freeze({isTowerStageId:id=>/^shooting_tower_(?:0[1-9]|1[0-5])$/.test(String(id||'')),isCharacterAvailable,confirmSealParty,cancelSealConfirmation,prepareBattle,finishRun,refresh});
+  window.ResonanceTower=Object.freeze({isTowerStageId:id=>/^shooting_tower_(?:0[1-9]|1[0-5])$/.test(String(id||'')),isReplayFloor,isCharacterAvailable,confirmSealParty,cancelSealConfirmation,prepareBattle,finishRun,refresh});
   window.openResonanceTower=function(){
+    replayFloor=0;attempt=null;finishPromise=null;
     if(typeof window.requireChapter03ContentUnlock!=='function'||!window.requireChapter03ContentUnlock())return;
     closePanel();
     if(typeof window.showMainTab==='function')window.showMainTab('resonance-tower');
     render();void refresh();
   };
   window.closeResonanceTower=function(){
-    closePanel();if(typeof window.showMainTab==='function')window.showMainTab('main');
+    replayFloor=0;closePanel();if(typeof window.showMainTab==='function')window.showMainTab('main');
   };
   function init(){
     const screen=$('screen-resonance-tower'),list=$('resonance-tower-floor-list');

@@ -991,6 +991,10 @@
   function isResonanceTowerStage() {
     return !!(selectedStage && selectedStage.eventId === 'resonance_tower');
   }
+  function isResonanceTowerReplay() {
+    return isResonanceTowerStage() && !!(window.ResonanceTower &&
+      window.ResonanceTower.isReplayFloor(Number(selectedStage.stageNo)));
+  }
 
   function isFacelessStage() {
     return !!(selectedStage && selectedStage.eventId === 'faceless' && selectedStage.faceless);
@@ -2512,7 +2516,7 @@
       return { ok: false, reason: '現在のステージ指定編成とは異なります' };
     }
     if (record.partyIds.some(id => !isShootingCharacterAvailableForCurrentParty(id))) {
-      return { ok: false, reason: isResonanceTowerStage()
+      return { ok: false, reason: isResonanceTowerStage() && !isResonanceTowerReplay()
         ? '未所持・封印中のキャラが含まれています'
         : '現在使用できないキャラが含まれています' };
     }
@@ -4035,7 +4039,9 @@
     const ruleText = document.getElementById('shooting-party-rule-text');
     if (ruleText) {
       if (isResonanceTowerStage()) {
-        ruleText.textContent = '残響の塔 · 最大3人 / 勝利すると使用キャラは週内封印';
+        ruleText.textContent = isResonanceTowerReplay()
+          ? '残響の塔 · CLEAR再挑戦 / 所持キャラ自由編成 / 報酬・封印なし'
+          : '残響の塔 · 最大3人 / 勝利すると使用キャラは週内封印';
       } else if (fixedStoryParty) {
         const names = fixedStoryParty
           .map(id => buildResonatedCharacterProfile(id)?.name || '')
@@ -21889,7 +21895,7 @@
     // build1081: RESULTを閉じるまで勝敗を保持し、STORY後半ノベル判定に使う。
     state.lastResultWin = !!win;
     // 敗北/中断では上書きしない。実際に出撃したメンバー順を保持する。
-    if (win) {
+    if (win && !isResonanceTowerReplay()) {
       saveShootingLastClearParty(
         state.stageId || selectedStage?.id,
         Array.isArray(state.initialPartyIds) && state.initialPartyIds.length
@@ -21962,7 +21968,7 @@
       const c = getBattleCharacter(m.id);
       return `<span class="shooting-result-member${markDown && m.hp <= 0 ? ' down' : ''}" title="${c.name}"><img src="${c.panelImage || c.image}" alt="${c.name}"><b>${value}${suffix}</b></span>`;
     };
-    if (kicker) kicker.textContent = win ? '' : 'MISSION FAILED';
+    if (kicker) kicker.textContent = isResonanceTowerReplay() ? 'FREE REPLAY · NO REWARDS' : (win ? '' : 'MISSION FAILED');
     if (title) title.textContent = 'RESULT';
     if (score) score.textContent = String(state.score).padStart(6, '0');
     if (combo) combo.textContent = String(state.maxCombo || 0);
@@ -23573,7 +23579,7 @@
 
     // build1418: 塔は編成確定後・出撃トークン発行前に封印対象を必ず表示する。
     // 戻る／ESCでは出撃なし。選択編成やステージが変更された場合も出撃しない。
-    if (isResonanceTowerStage()) {
+    if (isResonanceTowerStage() && !isResonanceTowerReplay()) {
       if (!window.ResonanceTower || typeof window.ResonanceTower.confirmSealParty !== 'function') {
         if (typeof window.showToast==='function') window.showToast('封印確認画面を準備できませんでした');
         return;
