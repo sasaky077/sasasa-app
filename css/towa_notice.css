@@ -21,10 +21,12 @@
 #screen-resonance-tower .resonance-tower-menu > .towa-memory-notice-dot[hidden]{
   display:none!important;
 }
-/* Position beside the HOME「残響の塔」label, at the red-marked location. */
+/* build1556: HOME badge sits immediately to the RIGHT of the red tower icon,
+   vertically alongside the illustration and ABOVE the "残響の塔" text label.
+   Anchor to the existing home-entry button; keep icon/text/global chrome unchanged. */
 #screen-main #resonance-tower-home-entry > .towa-memory-notice-dot{
-  left:52px!important;
-  top:calc(50% - 4px)!important;
+  left:55px!important;
+  top:20px!important;
 }
 /* Position on the upper right of the Echo Tower「トワとの邂逅」icon. */
 #screen-resonance-tower .resonance-tower-actions .resonance-tower-menu:first-child{
@@ -36,6 +38,6 @@
   top:-4px!important;
 }
 @media(max-width:380px),(max-height:700px){
-  #screen-main #resonance-tower-home-entry > .towa-memory-notice-dot{left:48px!important;top:calc(50% - 4px)!important;}
+  #screen-main #resonance-tower-home-entry > .towa-memory-notice-dot{left:52px!important;top:13px!important;}
   #screen-resonance-tower .resonance-tower-actions .resonance-tower-menu:first-child > .towa-memory-notice-dot{right:0!important;top:-4px!important;}
 }
