@@ -345,6 +345,9 @@
         const assigned=Array.isArray(data?.rewards)
           ? data.rewards.find(r=>Number(r.floor)===Number(data.floor)):null;
         const grantedItems=Array.isArray(assigned?.items)?assigned.items:[];
+        if(grantedItems.some(item=>item.id==='towa_memory'&&Number(item.qty)>0)){
+          window.dispatchEvent(new Event('zeraphia:towa-memory-refresh'));
+        }
         const expected=TOWER_REWARDS[Number(data.floor)-1]||[];
         const rewardText=grantedItems.map(r=>{
           const item=expected.find(e=>e.id===r.id);

@@ -1,0 +1,41 @@
+/* build1554 — exclusively Towa Memory eligibility dots on HOME / Echo Tower. */
+#screen-main #resonance-tower-home-entry > .towa-memory-notice-dot,
+#screen-resonance-tower .resonance-tower-menu > .towa-memory-notice-dot {
+  position:absolute!important;
+  display:block!important;
+  width:13px!important;
+  height:13px!important;
+  padding:0!important;
+  margin:0!important;
+  border-radius:50%!important;
+  border:2px solid #fff8ed!important;
+  background:#e33239!important;
+  box-shadow:0 1px 5px rgba(65,0,0,.36)!important;
+  opacity:1!important;
+  transform:none!important;
+  pointer-events:none!important;
+  z-index:40!important;
+  animation:none!important;
+}
+#screen-main #resonance-tower-home-entry > .towa-memory-notice-dot[hidden],
+#screen-resonance-tower .resonance-tower-menu > .towa-memory-notice-dot[hidden]{
+  display:none!important;
+}
+/* Position beside the HOME「残響の塔」label, at the red-marked location. */
+#screen-main #resonance-tower-home-entry > .towa-memory-notice-dot{
+  left:52px!important;
+  top:calc(50% - 4px)!important;
+}
+/* Position on the upper right of the Echo Tower「トワとの邂逅」icon. */
+#screen-resonance-tower .resonance-tower-actions .resonance-tower-menu:first-child{
+  position:relative;
+  overflow:visible!important;
+}
+#screen-resonance-tower .resonance-tower-actions .resonance-tower-menu:first-child > .towa-memory-notice-dot{
+  right:2px!important;
+  top:-4px!important;
+}
+@media(max-width:380px),(max-height:700px){
+  #screen-main #resonance-tower-home-entry > .towa-memory-notice-dot{left:48px!important;top:calc(50% - 4px)!important;}
+  #screen-resonance-tower .resonance-tower-actions .resonance-tower-menu:first-child > .towa-memory-notice-dot{right:0!important;top:-4px!important;}
+}

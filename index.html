@@ -419,6 +419,7 @@
   <link rel="stylesheet" href="css/resonance_tower.css?v=1473-tower-15-floors">
   <link rel="stylesheet" href="css/towa_encounter.css?v=1553-rates-visible">
   <link rel="stylesheet" href="css/towa_dark_gacha.css?v=1552">
+  <link rel="stylesheet" href="css/towa_notice.css?v=1554">
   <link rel="stylesheet" href="css/towa_preflight.css?v=1548-towa-black-burgundy">
   <link rel="stylesheet" href="css/shooting_event.css?v=1539-towa-bg-only">
   <link rel="stylesheet" href="css/tower15_boss.css?v=1485-tower15">
@@ -3751,7 +3752,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
   </button>
 
   <!-- build1339: 週替わりコンテンツ「残響の塔」のホーム入口 -->
-  <button class="resonance-tower-home-entry home-type-entry" id="resonance-tower-home-entry" type="button" onclick="openResonanceTower()" aria-label="残響の塔を開く" data-home-head="残" data-home-rest="響の塔"></button>
+  <button class="resonance-tower-home-entry home-type-entry" id="resonance-tower-home-entry" type="button" onclick="openResonanceTower()" aria-label="残響の塔を開く" data-home-head="残" data-home-rest="響の塔"><span class="towa-memory-notice-dot" aria-hidden="true" hidden></span></button>
 
   <button class="score-attack-home-entry home-type-entry" id="score-attack-home-entry" type="button" onclick="openScoreAttack()" aria-label="スコアアタックへ移動" data-home-head="ス" data-home-rest="コア&#10;　アタック" data-home-lines="2"></button>
 
@@ -3777,7 +3778,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 
     <div class="resonance-tower-actions" aria-label="塔のメニュー">
       <button type="button" class="resonance-tower-menu" onclick="openTowaEncounter()" aria-label="トワとの邂逅を開く">
-        <span class="resonance-tower-menu-diamond" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M16 2 28 16 16 30 4 16Z" stroke="currentColor" stroke-width="1.5"/><path d="M16 7v18m-8-9h16" stroke="currentColor" stroke-width="1.5"/></svg></span><span>トワとの邂逅</span>
+        <span class="resonance-tower-menu-diamond" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M16 2 28 16 16 30 4 16Z" stroke="currentColor" stroke-width="1.5"/><path d="M16 7v18m-8-9h16" stroke="currentColor" stroke-width="1.5"/></svg></span><span>トワとの邂逅</span><span class="towa-memory-notice-dot" aria-hidden="true" hidden></span>
       </button>
 
       <button type="button" class="resonance-tower-menu" data-tower-panel="ranking" aria-label="ランキング">
@@ -19941,8 +19942,9 @@ window.returnToTitleScreen = function(){
 </script>
 
 <script src="js/score_attack.js?v=1530-score-cap-safe"></script>
-<script src="js/resonance_tower.js?v=1531-towa-reward-confirm"></script>
-<script src="js/towa_encounter.js?v=1552"></script>
+<script src="js/resonance_tower.js?v=1554-notice"></script>
+<script src="js/towa_encounter.js?v=1554-notice"></script>
+<script src="js/towa_notice.js?v=1554"></script>
 <script src="js/towa_dark_gacha.js?v=1548-native-skip"></script>
 
 <script id="ten-gacha-retry-two-line-v97">

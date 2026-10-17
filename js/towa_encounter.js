@@ -120,6 +120,7 @@
       if(error)throw error;
       if(!data?.ok)throw new Error('ガチャ状態を取得できません');
       memory=Math.max(0,Number(data.memory)||0);pity=Math.max(0,Number(data.pity_count)||0);
+      window.dispatchEvent(new CustomEvent('zeraphia:towa-memory-changed',{detail:{memory}}));
       notice(memory?'トワの記憶を使い、特別な邂逅へ。':'トワの記憶は残響の塔15階で入手できます。');
       loaded=true;
     }catch(e){console.error('[towa encounter] state',e);notice('通信エラー：ガチャ状態を取得できません。もう一度開き直してください。');}
@@ -291,6 +292,7 @@
       if(error)throw error;
       if(!data?.ok||!Array.isArray(data.results)||data.results.length!==10)throw new Error('抽選結果を確認できません');
       memory=Math.max(0,Number(data.memory)||0);pity=Math.max(0,Number(data.pity_count)||0);
+      window.dispatchEvent(new CustomEvent('zeraphia:towa-memory-changed',{detail:{memory}}));
       // On a confirmed server result, replace TAP with the Pixi presentation.
       $('towa-encounter-standby')?.setAttribute('hidden','');
       $('towa-encounter-standby')?.classList.remove('is-starting');
