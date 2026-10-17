@@ -1988,8 +1988,10 @@
 
 
 /* =========================================================
-   build1525 — SUI「時空操環」
-   自機中心の静かな時空領域。DOM 1個 / 静的な輪郭 / フィルターなし。
+   build1526 — SUI「時空操環」
+   円内全域を淡い水色に変化させ、減速フィールドの内外を見分けやすくする。
+   自機中心 / DOM 1個 / 静的グラデーション / フィルター・粒子なし。
+   弾幕（z-index:10）と自機（z-index:12）はフィールド（z-index:7）の前面。
    ========================================================= */
 .shooting-bullet-sui{
   width:7px!important;
@@ -2004,13 +2006,14 @@
   border-radius:50%;
   pointer-events:none;
   box-sizing:border-box;
-  border:1.5px solid rgba(108,191,217,.79);
-  background:radial-gradient(circle,
-    rgba(200,246,251,.045) 0%,
-    rgba(167,223,239,.06) 58%,
-    rgba(139,210,228,.14) 86%,
-    rgba(177,228,236,.035) 100%);
-  outline:1px solid rgba(227,254,255,.24);
+  border:1.5px solid rgba(104,185,212,.88);
+  /* 円周だけでなく中心から全域に色を付ける。端の内側のみごく薄く強調。 */
+  background:radial-gradient(circle at center,
+    rgba(82,169,205,.14) 0%,
+    rgba(82,169,205,.14) 65%,
+    rgba(75,165,204,.19) 90%,
+    rgba(96,185,216,.14) 100%);
+  outline:1px solid rgba(227,254,255,.28);
   outline-offset:-5px;
   will-change:transform;
 }

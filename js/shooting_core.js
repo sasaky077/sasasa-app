@@ -4187,6 +4187,7 @@
       swarmGuardDefeated: 0,
       normalEnemyStunUntil: 0,
       angeEnemyFreezeUntil: 0,
+      fullEnemyStopUntil: 0,
       ch101TutorialPhase: '',
       ch101TutorialPaused: false,
       ch101TutorialOverlayActive: false,
@@ -5045,6 +5046,8 @@
       state.paused || state.arnoSlashActive || state.ultCutinActive || state.ch07EnhanceTransitionActive ||
       now < Number(state.noahMovementFreezeUntil || 0) ||
       now < Number(state.angeEnemyFreezeUntil || 0) ||
+      // build1527: エリ/クレハ/ネム等の全体停止はBOSSだけでなく全増援・OBJECTに適用。
+      now < Number(state.fullEnemyStopUntil || 0) ||
       isEnemyPullFieldActive(now)
     );
   }
@@ -5058,6 +5061,7 @@
       Number(enemy.ayaneGrabUntil || 0),
       Number(state.noahMovementFreezeUntil || 0),
       Number(state.angeEnemyFreezeUntil || 0),
+      Number(state.fullEnemyStopUntil || 0),
       Number(state.eltenaBlackHole?.activeUntil || 0)
     );
     // 時刻ではなくフラグで停止する演出でも弾を作らない。
@@ -5069,6 +5073,7 @@
     const until = Math.max(
       Number(obj.noahStunUntil || 0), Number(obj.gojoPurpleFreezeUntil || 0),
       Number(state.noahMovementFreezeUntil || 0), Number(state.angeEnemyFreezeUntil || 0),
+      Number(state.fullEnemyStopUntil || 0),
       Number(state.eltenaBlackHole?.activeUntil || 0)
     );
     return isEntireEnemyActionLocked(now) ? Math.max(until, now + 100) : until;
@@ -5080,6 +5085,7 @@
       Number(state.bossStunUntil || 0), Number(state.bossGrabUntil || 0),
       Number(state.gojoPurpleBossFreezeUntil || 0),
       Number(state.noahMovementFreezeUntil || 0), Number(state.angeEnemyFreezeUntil || 0),
+      Number(state.fullEnemyStopUntil || 0),
       Number(state.eltenaBlackHole?.activeUntil || 0)
     );
     return isEntireEnemyActionLocked(now) ? Math.max(until, now + 100) : until;
@@ -5160,6 +5166,15 @@
   function applyBossStun(durationMs, source) {
     if (!state || state.ended || state.finishing) return;
     const now = performance.now();
+    // build1527: 全体停止ULTと「命中した敵のみ」の麻痺を明確に分離。
+    // ニーナ/ノアのBOSS単体麻痺で無関係な増援を止めない。
+    const isGlobalUltStop = source === 'eri_ult' || source === 'ult';
+    if (isGlobalUltStop) {
+      const globalUntil = now + Math.max(0, Number(durationMs || 0));
+      state.fullEnemyStopUntil = Math.max(Number(state.fullEnemyStopUntil || 0), globalUntil);
+      // 生成済みの発射予約も、解除後へ送る。非同期射撃も共通生成ガードで遮断。
+      deferAllEnemyAttackResume(state.fullEnemyStopUntil);
+    }
     if (isNormalBattle()) {
       // ネムのスタンは「これから行う敵の攻撃」を止めるだけ。
       // 既に発射済みの弾は残すが、新規弾生成はmakeProjectile側でも遮断する。
@@ -5780,6 +5795,14 @@
     positionUnit(el, x, y);
     measureUnitSize(p);
     return p;
+  }
+
+  // build1527: 停止中のmakeProjectile()はnullを返す。旧ボス弾幕の
+  // push(makeProjectile(...))経路にnullを積まず、解除時の弾詰まりを防ぐ。
+  function appendEnemyProjectile(p) {
+    if (!state || !p || !p.el) return false;
+    state.enemyBullets.push(p);
+    return true;
   }
 
   function isProtectedEnemyProjectile(p) {
@@ -13398,8 +13421,14 @@
         return;
       }
 
-      // エリ/ネム等の全体停止：移動停止と敵弾生成停止を必ずセットにする。
-      const globalStunUntil = Number(state.normalEnemyStunUntil || 0);
+      // build1527: 全体停止ULTをボス戦の増援まで適用する。
+      // 通常戦のスタンだけでなく、ボス戦の全体停止・アンジェULTにも同じ規則を適用。
+      // エルテナの吸引は別の分岐で位置を更新するため、ここで別途凍結しない。
+      const globalStunUntil = Math.max(
+        Number(state.normalEnemyStunUntil || 0),
+        Number(state.fullEnemyStopUntil || 0),
+        Number(state.angeEnemyFreezeUntil || 0)
+      );
       if (now < globalStunUntil) {
         freezeNormalEnemyAction(enemy, globalStunUntil);
         positionUnit(enemy.el, enemy.x, enemy.y);
@@ -13993,7 +14022,7 @@
 
     // 暴力は弾数ではなく、一発の圧で押す。
     if (phase === 1) {
-      state.enemyBullets.push(makeProjectile(
+      appendEnemyProjectile(makeProjectile(
         'shooting-enemy-bullet shooting-violence-boss-heavy',
         state.boss.x, state.boss.y + 42,
         Math.cos(baseAngle) * speed,
@@ -14006,7 +14035,7 @@
     if (phase === 2) {
       [-0.22, 0.22].forEach(offset => {
         const a = baseAngle + offset;
-        state.enemyBullets.push(makeProjectile(
+        appendEnemyProjectile(makeProjectile(
           'shooting-enemy-bullet shooting-violence-boss-heavy',
           state.boss.x, state.boss.y + 40,
           Math.cos(a) * speed * 1.04,
@@ -14020,7 +14049,7 @@
     // 最終段階だけ3方向。弾幕化はさせず、逃げ道を削る。
     [-0.30, 0, 0.30].forEach(offset => {
       const a = baseAngle + offset;
-      state.enemyBullets.push(makeProjectile(
+      appendEnemyProjectile(makeProjectile(
         'shooting-enemy-bullet shooting-violence-boss-heavy',
         state.boss.x, state.boss.y + 38,
         Math.cos(a) * speed * 1.35,
@@ -14304,7 +14333,7 @@
     const spin = volleyIndex * interval * spinRate;
     for (let i = 0; i < ringCount; i++) {
       const a = spin + (Math.PI * 2 * i / ringCount);
-      state.enemyBullets.push(makeProjectile(
+      appendEnemyProjectile(makeProjectile(
         'shooting-enemy-bullet',
         originX, originY,
         Math.cos(a) * speed,
@@ -14324,7 +14353,7 @@
     };
     (fanOffsets[phase] || fanOffsets[3]).forEach(offset => {
       const a = baseAngle + offset;
-      state.enemyBullets.push(makeProjectile(
+      appendEnemyProjectile(makeProjectile(
         'shooting-enemy-bullet',
         originX, originY,
         Math.cos(a) * speed * 1.15,
@@ -14697,7 +14726,7 @@
       [-0.54, -0.36, -0.18, 0, 0.18, 0.36, 0.54].forEach((offset, i) => {
         if (!keepLiviaBullet(i)) return;
         const a = baseAngle + offset;
-        state.enemyBullets.push(makeProjectile(
+        appendEnemyProjectile(makeProjectile(
           'shooting-enemy-bullet',
           state.boss.x, state.boss.y + 40,
           Math.cos(a) * speed,
@@ -14711,7 +14740,7 @@
         for (let i = 0; i < 10; i++) {
           if (!keepLiviaBullet(i)) continue;
           const a = start + (Math.PI * 2 * i / 10);
-          state.enemyBullets.push(makeProjectile(
+          appendEnemyProjectile(makeProjectile(
             'shooting-enemy-bullet',
             state.boss.x, state.boss.y + 30,
             Math.cos(a) * speed * 0.74,
@@ -14728,7 +14757,7 @@
       [-0.68, -0.51, -0.34, -0.17, 0, 0.17, 0.34, 0.51, 0.68].forEach((offset, i) => {
         if (!keepLiviaBullet(i)) return;
         const a = baseAngle + offset;
-        state.enemyBullets.push(makeProjectile(
+        appendEnemyProjectile(makeProjectile(
           'shooting-enemy-bullet',
           state.boss.x, state.boss.y + 40,
           Math.cos(a) * speed * 1.02,
@@ -14741,7 +14770,7 @@
       for (let i = 0; i < 8; i++) {
         if (!keepLiviaBullet(i)) continue;
         const a = start + (Math.PI * 2 * i / 8);
-        state.enemyBullets.push(makeProjectile(
+        appendEnemyProjectile(makeProjectile(
           'shooting-enemy-bullet',
           state.boss.x, state.boss.y + 28,
           Math.cos(a) * speed * 0.82,
@@ -14756,7 +14785,7 @@
     [-0.80, -0.64, -0.48, -0.32, -0.16, 0, 0.16, 0.32, 0.48, 0.64, 0.80].forEach((offset, i) => {
         if (!keepLiviaBullet(i)) return;
       const a = baseAngle + offset;
-      state.enemyBullets.push(makeProjectile(
+      appendEnemyProjectile(makeProjectile(
         'shooting-enemy-bullet',
         state.boss.x, state.boss.y + 38,
         Math.cos(a) * speed * 1.08,
@@ -14769,7 +14798,7 @@
     for (let i = 0; i < 8; i++) {
         if (!keepLiviaBullet(i)) continue;
       const a = start + (Math.PI * 2 * i / 8);
-      state.enemyBullets.push(makeProjectile(
+      appendEnemyProjectile(makeProjectile(
         'shooting-enemy-bullet',
         state.boss.x, state.boss.y + 26,
         Math.cos(a) * speed * 0.86,
@@ -15071,10 +15100,14 @@
         return true;
       }
 
-      // build929: アンジェULT中はOBJECTも移動・新規射撃を停止。
-      // 既に盤面にある敵弾はupdateProjectiles側で通常どおり進行する。
-      if (now < Number(state.angeEnemyFreezeUntil || 0)) {
-        deferFacelessObjectAttackResume(obj, Number(state.angeEnemyFreezeUntil || now));
+      // build1527: 全体停止ULT中のOBJECTも移動・新規射撃を停止する。
+      // 命中対象だけの麻痺は下の個別判定で処理する。
+      const fullObjectStopUntil = Math.max(
+        Number(state.angeEnemyFreezeUntil || 0),
+        Number(state.fullEnemyStopUntil || 0)
+      );
+      if (now < fullObjectStopUntil) {
+        deferFacelessObjectAttackResume(obj, fullObjectStopUntil);
         positionFacelessObjectVisual(obj);
         return true;
       }
@@ -15241,7 +15274,7 @@
     const base = Math.atan2(getEnemyAimPosition().y - state.boss.y, getEnemyAimPosition().x - state.boss.x);
     offsets.forEach(offset => {
       const a = base + offset;
-      state.enemyBullets.push(makeProjectile(
+      appendEnemyProjectile(makeProjectile(
         'shooting-enemy-bullet shooting-faceless-bullet',
         state.boss.x, state.boss.y + 38,
         Math.cos(a) * speed,
@@ -15255,7 +15288,7 @@
       const start = volleyIndex * (fireRate * 0.0022);
       for (let i = 0; i < 10; i++) {
         const a = start + Math.PI * 2 * i / 10;
-        state.enemyBullets.push(makeProjectile(
+        appendEnemyProjectile(makeProjectile(
           'shooting-enemy-bullet shooting-faceless-bullet',
           state.boss.x, state.boss.y + 24,
           Math.cos(a) * 185,
@@ -16748,7 +16781,7 @@
     const speed = BOSS.bulletSpeed * (phase <= 2 ? 1 : 1.08);
     patterns[phase].forEach(offset => {
       const a = baseAngle + offset;
-      state.enemyBullets.push(makeProjectile(
+      appendEnemyProjectile(makeProjectile(
         'shooting-enemy-bullet',
         state.boss.x, state.boss.y + 42,
         Math.cos(a) * speed,
@@ -19840,8 +19873,9 @@
 
     if (state.ultCutinActive) {
       // ULTカットイン中はプレイヤー・敵・弾・DoT・召喚物を含めて完全停止。
-      // RAFだけ継続し、再開時のdtジャンプを防ぐ。
+      // build1527: 敵の射撃予約も先送りし、解除時の集中発射を防ぐ。
       prevTs = ts;
+      deferAllEnemyAttackResume(ts + 120);
       renderHud();
       rafId = requestAnimationFrame(gameLoop);
       return;
