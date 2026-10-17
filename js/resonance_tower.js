@@ -1,4 +1,4 @@
-// ZERAPHIA build1514 — 残響の塔：クリア済み階層は自由編成・無報酬の再挑戦
+// ZERAPHIA build1531 — 残響の塔：クリア済み階層は自由編成・無報酬の再挑戦
 // アカウント・週次進行・封印はSupabaseの3つのRPCのみを正とする。
 (function(){
   'use strict';
@@ -341,9 +341,24 @@
       syncTowerWallet();
       attempt=null;render();
       if(win){const sealed=(data?.sealedCharacterIds||[]).length;
-        const assigned=Array.isArray(data?.rewards)?data.rewards.find(r=>Number(r.floor)===Number(data.floor)):null;
-        const rewardText=assigned?TOWER_REWARDS[Number(data.floor)-1].map(r=>r.name+'×'+r.qty).join('・'):'';
-        notify('第'+data.floor+'層突破！ '+(rewardText?('報酬：'+rewardText+'。'):'')+' 使用した'+sealed+'体を今週封印しました');}
+        // Display what the server actually granted, never a client-side assumption.
+        const assigned=Array.isArray(data?.rewards)
+          ? data.rewards.find(r=>Number(r.floor)===Number(data.floor)):null;
+        const grantedItems=Array.isArray(assigned?.items)?assigned.items:[];
+        const expected=TOWER_REWARDS[Number(data.floor)-1]||[];
+        const rewardText=grantedItems.map(r=>{
+          const item=expected.find(e=>e.id===r.id);
+          const name=item?.name||String(r.id||'不明なアイテム');
+          return name+'×'+Math.max(0,Number(r.qty)||0);
+        }).join('・');
+        const missingTowa=Number(data.floor)===15
+          && !grantedItems.some(r=>r.id==='towa_memory'&&Number(r.qty)>=1);
+        if(missingTowa){
+          console.error('[tower] 15F reward not confirmed on server:',data.rewards);
+          notify('第15層突破。ただし「トワの記憶」の配布確認ができません。所持品を確認してください。');
+        }else{
+          notify('第'+data.floor+'層突破！ '+(rewardText?('報酬：'+rewardText+'。'):'')+' 使用した'+sealed+'体を今週封印しました');
+        }}
       return {towerConfirmed:true,firstClearClaimed:false,firstClearAmount:0,highScore:0};
     })().catch(err=>{
       console.error('[tower] finish was not confirmed',err);
