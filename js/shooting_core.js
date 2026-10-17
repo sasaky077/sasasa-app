@@ -11924,7 +11924,7 @@
     if (!best) return;
 
     // 小は標的の周りを取り囲むように群がる（全員が一点に重ならない）
-    const age = (now - enemy.spawnedAt) / 1000;
+    const age = getEnemyMotionAgeSeconds(enemy, now);
     const ring = enemy.ch704Horde ? 11 + (enemy.phaseSeed % 1) * 8
       : enemy.swarmRole === 'small' ? 16 + (enemy.phaseSeed % 1) * 10 : 0;
     const tx = best.x + Math.cos(enemy.phaseSeed * 3 + age * 1.6) * ring;
@@ -11978,7 +11978,7 @@
     const cfg = getSwarmBattleConfig();
     if (!cfg || cfg.guardAi !== 'tower13_upper_spread5') return;
 
-    const age = Math.max(0, now - Number(enemy.spawnedAt || now)) / 1000;
+    const age = getEnemyMotionAgeSeconds(enemy, now);
     const sideMargin = Math.min(w * .5, Math.max(68, w * .18));
     const horizontalRoom = Math.max(0, (w - sideMargin * 2) / 2);
     const amplitude = Math.min(horizontalRoom, w * Number(cfg.guardMoveAmplitudeRate || .24));
@@ -13501,6 +13501,7 @@
       // 13Fの三頭狼は上部を往復して5WAY射撃。蜘蛛の群れAIには入れない。
       if (enemy.swarmRole === 'guard' && getSwarmBattleConfig()?.guardAi === 'tower13_upper_spread5') {
         updateTower13GuardEnemy(enemy, now, w, h);
+        smoothEnemyMotionResume(enemy, now);
         positionUnit(enemy.el, enemy.x, enemy.y);
         positionMiniEnemyHp(enemy);
         return;
@@ -13518,6 +13519,7 @@
         }
         if (!swarmTargets) swarmTargets = getSwarmLureTargets(now);
         updateSwarmEnemy(enemy, swarmDt, now, w, h, swarmTargets);
+        smoothEnemyMotionResume(enemy, now);
         positionUnit(enemy.el, enemy.x, enemy.y);
         // CH07-04 tiny spiders have no HP bar/element overlay.
         if (!enemy.ch704Horde) positionMiniEnemyHp(enemy);
@@ -13574,7 +13576,7 @@
         return;
       }
 
-      const age = (now - enemy.spawnedAt) / 1000;
+      const age = getEnemyMotionAgeSeconds(enemy, now);
       if (def.behavior === 'faceless_minion_v1' && !enemy.facelessMaskSpawned) {
         const cfg = getChapter07Config() || {};
         const delay = Math.max(250, Number(cfg.maskSpawnDelayMs || 700));
@@ -13645,6 +13647,7 @@
         enemy.y = enemy.baseY + Math.sin(age * .9 + enemy.phaseSeed) * 8;
       }
 
+      smoothEnemyMotionResume(enemy, now);
       positionUnit(enemy.el, enemy.x, enemy.y);
       positionMiniEnemyHp(enemy);
       fireNormalEnemy(enemy, now);
@@ -15588,7 +15591,7 @@
       }
     }
 
-    const t = (ts - Number(state.startedAt || ts)) / 1000;
+    const t = getBossMotionElapsedSeconds(ts);
     state.boss.x = clamp(w * .5 + Math.sin(t * .72) * w * .18, 58, w - 58);
     state.boss.y = Math.max(68, h * .18 + Math.sin(t * 1.12) * 10);
     return true;
@@ -17226,7 +17229,7 @@
       return;
     }
 
-    const t = (now - state.startedAt) / 1000;
+    const t = getBossMotionElapsedSeconds(now);
     const bossGrabbed = now < (state.bossGrabUntil || 0);
     const bossStunned = now < (state.bossStunUntil || 0);
     const bossGojoFrozen = now < Number(state.gojoPurpleBossFreezeUntil || 0);
@@ -17244,11 +17247,11 @@
     const applyBossStartBlend = (targetX, targetY) => {
       const startedAt = Number(state.bossMotionBlendStartedAt || 0);
       const duration = Math.max(1, Number(state.bossMotionBlendDurationMs || 420));
-      if (!startedAt || now >= startedAt + duration) {
+      if (!startedAt || getBossMotionTime(now) >= startedAt + duration) {
         return { x: targetX, y: targetY };
       }
 
-      const raw = clamp((now - startedAt) / duration, 0, 1);
+      const raw = clamp((getBossMotionTime(now) - startedAt) / duration, 0, 1);
       // smoothstep: 開始/終了の速度を0寄りにして視覚的な段差をなくす。
       const eased = raw * raw * (3 - 2 * raw);
       return {
@@ -17264,7 +17267,7 @@
       if (BOSS && BOSS.behavior === 'tower15_echo_v1') {
         // 塔15F：ゆっくり大きな∞字を描いて漂う。PHASE2は振れ幅と速度が少し増す。
         const phase15 = Math.max(1, Number(state.boss.phase || 1));
-        const tt = (now - Number(state.startedAt || now)) / 1000;
+        const tt = getBossMotionElapsedSeconds(now);
         const sp = phase15 >= 2 ? 0.62 : 0.48;
         const targetX = w * 0.5 + Math.sin(tt * sp) * w * (phase15 >= 2 ? 0.26 : 0.20);
         const targetY = Math.max(64, h * 0.17 + Math.sin(tt * sp * 2) * (phase15 >= 2 ? 22 : 14));
@@ -17290,7 +17293,7 @@
         const telegraphMs = 1050;
         const approachMs = 620;
         const initialDashDelayMs = 2600;
-        const battleElapsedMs = Math.max(0, now - Number(state.startedAt || now));
+        const battleElapsedMs = getBossMotionElapsedSeconds(now) * 1000;
         const cycleAt = battleElapsedMs < initialDashDelayMs
           ? -1
           : (((battleElapsedMs - initialDashDelayMs) % cycleMs) + cycleMs) % cycleMs;
@@ -17362,7 +17365,10 @@
     }
 
     positionUnit(player, state.player.x, state.player.y);
-    if (boss && !isNormalBattle()) positionUnit(boss, state.boss.x, state.boss.y);
+    if (boss && !isNormalBattle()) {
+      if (!isNoahPatternStage() && !isChapter04BossStage()) smoothBossMotionResume(now);
+      positionUnit(boss, state.boss.x, state.boss.y);
+    }
   }
 
   // build551: 同一フレームのarena/player/core/boss矩形を一括で読み、
@@ -19828,8 +19834,111 @@
     renderHud();
   }
 
+  // build1529: Freeze *enemy motion clocks*, not the stage timer.
+  // dt can be clamped for rendering, but age-based sine/dash movement uses absolute time.
+  // Without a separate motion clock, a stopped enemy jumps to a future position on resume.
+  function getEnemyMotionAgeSeconds(enemy, now) {
+    return Math.max(0, (now - Number(enemy?.spawnedAt || now) - Number(enemy?.motionPausedMs || 0)) / 1000);
+  }
+
+  function getBossMotionTime(now) {
+    return now - Number(state?.bossMotionPausedMs || 0);
+  }
+
+  function getBossMotionElapsedSeconds(now) {
+    return Math.max(0, (getBossMotionTime(now) - Number(state?.startedAt || now)) / 1000);
+  }
+
+  function resetEnemyMotionFreezeSampling(now = performance.now()) {
+    if (!state) return;
+    state.bossMotionSampleAt = now;
+    state.bossMotionWasFrozen = false;
+    (state.normalEnemies || []).forEach(enemy => {
+      if (!enemy) return;
+      enemy.motionSampleAt = now;
+      enemy.motionWasFrozen = false;
+    });
+  }
+
+  // One sample per game frame, including the frames in which the loop returns for a cut-in.
+  // Exclude explicit menu/Arno freezes: both already use shiftPausedTimestamps().
+  function syncEnemyMotionFreezeClocks(now) {
+    if (!state || state.paused || state.arnoSlashActive) return;
+    const sharedFreeze = !!(
+      state.ultCutinActive ||
+      now < Number(state.noahMovementFreezeUntil || 0) ||
+      now < Number(state.angeEnemyFreezeUntil || 0) ||
+      now < Number(state.fullEnemyStopUntil || 0) ||
+      isEnemyPullFieldActive(now)
+    );
+
+    const bossFrozen = sharedFreeze || now < getBossLockUntil(now);
+    const bossLast = Number(state.bossMotionSampleAt || 0);
+    const bossWasFrozen = !!state.bossMotionWasFrozen;
+    if (bossLast > 0 && bossWasFrozen) {
+      const stoppedMs = Math.max(0, now - bossLast);
+      state.bossMotionPausedMs = Number(state.bossMotionPausedMs || 0) + stoppedMs;
+      // CH07 dash interpolators use their own absolute timestamps.
+      // Hold those too, otherwise a dash instantly completes after an ULT.
+      if (state.ch07DashState) {
+        for (const key of ['startedAt', 'executeAt']) {
+          if (Number(state.ch07DashState[key] || 0) > 0) state.ch07DashState[key] += stoppedMs;
+        }
+      }
+    }
+    if (bossWasFrozen && !bossFrozen && state.boss) {
+      state.bossMotionResumeBlend = {
+        startedAt: now, x: Number(state.boss.x || 0), y: Number(state.boss.y || 0)
+      };
+    }
+    state.bossMotionSampleAt = now;
+    state.bossMotionWasFrozen = bossFrozen;
+
+    (state.normalEnemies || []).forEach(enemy => {
+      if (!enemy || enemy.hp <= 0) return;
+      // ultLockUntil blocks normal-enemy AI, but boss movement still runs.
+      const frozen = sharedFreeze || now < Number(state.ultLockUntil || 0) ||
+        now < getNormalEnemyLockUntil(enemy, now);
+      const last = Number(enemy.motionSampleAt || 0);
+      const wasFrozen = !!enemy.motionWasFrozen;
+      if (last > 0 && wasFrozen) {
+        enemy.motionPausedMs = Number(enemy.motionPausedMs || 0) + Math.max(0, now - last);
+      }
+      if (wasFrozen && !frozen) {
+        enemy.motionResumeBlend = {
+          startedAt: now, x: Number(enemy.x || 0), y: Number(enemy.y || 0)
+        };
+      }
+      enemy.motionSampleAt = now;
+      enemy.motionWasFrozen = frozen;
+    });
+  }
+
+  // A grabbed/pulled target may no longer sit on its original sine trajectory.
+  // Return smoothly rather than assigning the analytic target position instantly.
+  function smoothEnemyMotionResume(enemy, now) {
+    const blend = enemy?.motionResumeBlend;
+    if (!blend) return;
+    const p = Math.min(1, Math.max(0, (now - blend.startedAt) / 260));
+    const easing = p * p * (3 - 2 * p);
+    enemy.x = blend.x + (enemy.x - blend.x) * easing;
+    enemy.y = blend.y + (enemy.y - blend.y) * easing;
+    if (p >= 1) enemy.motionResumeBlend = null;
+  }
+
+  function smoothBossMotionResume(now) {
+    const blend = state?.bossMotionResumeBlend;
+    if (!blend || !state.boss) return;
+    const p = Math.min(1, Math.max(0, (now - blend.startedAt) / 260));
+    const easing = p * p * (3 - 2 * p);
+    state.boss.x = blend.x + (state.boss.x - blend.x) * easing;
+    state.boss.y = blend.y + (state.boss.y - blend.y) * easing;
+    if (p >= 1) state.bossMotionResumeBlend = null;
+  }
+
   function gameLoop(ts) {
     if (!state || !state.running || state.ended || state.finishing || state.countdown) return;
+    syncEnemyMotionFreezeClocks(ts);
 
     if (state.paused) {
       // メニュー表示中はゲーム進行を完全停止。
@@ -23347,6 +23456,7 @@
 
     state.paused = false;
     state.pauseStartedAt = 0;
+    resetEnemyMotionFreezeSampling(now);
     const pauseRoot = document.getElementById(ROOT_ID);
     if (pauseRoot) pauseRoot.classList.remove('is-shooting-paused');
     prevTs = now;
@@ -25108,6 +25218,8 @@
       prevTs = ts;
       const elapsedMs = ts - now;
 
+      const previousX = currentX;
+      const previousY = currentY;
       currentX += dirX * TRAVEL_SPEED * dt;
       currentY += dirY * TRAVEL_SPEED * dt;
       const spinDeg = (elapsedMs / 1000) * ROTATE_DPS;
@@ -25131,13 +25243,22 @@
       }
 
       // 現在位置に最初に触れた敵で停止。自動追尾・最寄り照準はしない。
+      const segmentDx = currentX - previousX;
+      const segmentDy = currentY - previousY;
+      const segmentLen2 = segmentDx * segmentDx + segmentDy * segmentDy;
       const contact = collectTargets()
-        .map(target => ({
-          ...target,
-          distance: Math.hypot(target.x - currentX, target.y - currentY)
-        }))
+        .map(target => {
+          const segmentT = segmentLen2 > 0
+            ? Math.max(0, Math.min(1,
+                ((target.x - previousX) * segmentDx + (target.y - previousY) * segmentDy) / segmentLen2))
+            : 0;
+          const nearX = previousX + segmentDx * segmentT;
+          const nearY = previousY + segmentDy * segmentT;
+          return { ...target, distance: Math.hypot(target.x - nearX, target.y - nearY), segmentT };
+        })
         .filter(target => target.distance <= target.hitRadius)
-        .sort((a, b) => b.y - a.y || a.distance - b.distance)[0] || null;
+        // Choose the first obstacle along the throw, not the nearest on the final sample.
+        .sort((a, b) => a.segmentT - b.segmentT || a.distance - b.distance)[0] || null;
 
       if (contact) {
         impactAt(contact);
@@ -26631,6 +26752,7 @@
     // ULT中に経過した実時間を、戦闘時計・敵AI時計・バフ等の絶対時刻へまとめて加算。
     // これにより解除直後の弾まとめ撃ち、移動位置ジャンプ、クリアタイム加算を防ぐ。
     if (frozenFor > 0) shiftPausedTimestamps(state, frozenFor);
+    resetEnemyMotionFreezeSampling(now);
 
     clearEnemyBulletsOnly();
     state.arnoSlashActive = false;
