@@ -22,6 +22,9 @@ var EVOLUTION_MATERIAL_MASTER = window.ShootingResonance
 function getLimitBreakRate(limitBreak, charaId){
   var lb = Math.max(0, Number(limitBreak || 0));
 
+  // トワは汎用+4%ではなく固有HP/ATK+10%をLv1/2で獲得する。
+  if(Number(charaId) === 101) return 0;
+
   // エリはLv1で+5%、以降は従来どおり1Lvごとに+4%。
   if(Number(charaId) === 1 && lb > 0){
     return 0.05 + Math.max(0, lb - 1) * LIMIT_BREAK_RATE;
@@ -38,6 +41,9 @@ function applyLimitBreakStats(baseStats, limitBreak, rarity, charaId){
   BASE_STATS.forEach(function(s){
     var base = baseStats[s] || 0;
     var statRate = rate;
+    if(Number(charaId) === 101){
+      statRate = s === 'HP' ? (lb >= 1 ? 0.10 : 0) : (s === 'ATK' ? (lb >= 2 ? 0.10 : 0) : 0);
+    }
     // ハヤテは共鳴Lv.1の固有ボーナスとしてATKのみ+5%。
     // Lv.2以降は従来どおり、追加の共鳴1段階ごとに+4%を加算する。
     if(Number(charaId) === 12 && s === 'ATK' && lb > 0){

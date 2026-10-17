@@ -329,6 +329,21 @@
       ])
     }),
 
+    101: Object.freeze({
+      1: bonus('常闇の器', 'HP +10%', 'トワの最大HPが10%上昇する。', [
+        {type:'statRate', hp:0.10, atk:0}
+      ]),
+      2: bonus('黒き加護', 'ATK +10%', 'トワのATKが10%上昇する。', [
+        {type:'statRate', hp:0, atk:0.10}
+      ]),
+      3: bonus('深淵の奔流', 'CHARGE M → CHARGE L', '通常ショットがCHARGE Lになり、威力・サイズ・破裂範囲もL規格へ強化される。', [
+        {type:'chargeSize', value:'L'}
+      ]),
+      4: bonus('永劫の常闇', 'ULT 5秒 → 7秒', '「常闇」の暗転・弾生成停止時間を7秒へ延長する。', [
+        {type:'profileSet', field:'towaDarkDurationMs', value:7000}
+      ])
+    }),
+
     52: Object.freeze({
       1: bonus('理想の共鳴', 'HP・ATK +5%', 'ノアの基礎HPとATKが5%上昇する。', [
         { type:'statRate', hp:0.05, atk:0.05 }
@@ -488,6 +503,16 @@
         break;
       }
 
+      case 'chargeSize': {
+        // Keep numeric CHARGE damage/area parameters and the shot icon in sync.
+        const size = String(effect.value || 'M').toUpperCase() === 'L' ? 'L' : 'M';
+        const preset = window.ShootingCharacters?.CHARGE_SIZE_PRESETS?.[size];
+        if (profile.shotType !== 'charge' || !preset) break;
+        Object.assign(profile, preset);
+        profile.chargeSize = size;
+        profile.mainShot = { ...(profile.mainShot || {}), type:'charge', size };
+        break;
+      }
       case 'profileAdd': {
         const field = String(effect.field || '');
         if (!field || !Number.isFinite(Number(profile[field]))) break;

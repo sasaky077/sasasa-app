@@ -1,0 +1,206 @@
+/* ZERAPHIA build1546: Real PixiJS+GSAP gacha animation (original engine copied), Towa palette only.
+   Only #towa-encounter-screen descendants affected; normal gacha and shared chrome untouched. */
+#towa-encounter-screen.towa-animation-active{z-index:510!important}
+#towa-encounter-screen .towa-pixi-sequence{position:absolute;inset:0;z-index:600;overflow:hidden;background:#0b090c}
+#towa-encounter-screen .towa-pixi-frame{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#0c090e}
+/* Same placement and frameless treatment as the standard .standby-skip-btn.
+   Dark-stage text is pale instead of brown for contrast. */
+#towa-encounter-screen .towa-pixi-skip{
+ position:absolute!important;z-index:10;right:20px!important;bottom:calc(24px + env(safe-area-inset-bottom))!important;top:auto!important;
+ min-height:0!important;padding:0!important;border:0!important;border-radius:0!important;
+ background:transparent!important;box-shadow:none!important;backdrop-filter:none!important;
+ color:rgba(248,239,243,.94)!important;font:600 13px 'Cinzel','Noto Serif JP',serif!important;
+ letter-spacing:.12em!important;text-shadow:0 1px 4px rgba(0,0,0,.75),0 0 8px rgba(194,102,125,.35)!important;
+ cursor:pointer;animation:summonSkipBrownPulse 1.8s ease-in-out infinite;
+ -webkit-tap-highlight-color:transparent;
+}
+/* Result layout uses the original ten-result-card / ten-card-* elements; only skin and container are new. */
+#towa-encounter-screen .towa-encounter-result{position:absolute!important;inset:0!important;z-index:610!important;display:flex!important;flex-direction:column!important;justify-content:stretch!important;align-items:stretch!important;box-sizing:border-box!important;
+ padding:calc(env(safe-area-inset-top) + 9px) 9px calc(env(safe-area-inset-bottom) + 9px)!important;gap:5px!important;overflow:hidden!important;color:#f1e7e9!important;
+ background:
+ linear-gradient(180deg,rgba(13,9,13,.88),rgba(23,10,16,.93)),
+ url('../images/gacha_banner_towa.webp') center 48%/cover no-repeat,#100b10!important;
+}
+#towa-encounter-screen .towa-encounter-result[hidden]{display:none!important}
+#towa-encounter-screen .towa-encounter-result::before{content:'';position:absolute;inset:7px;border:1px solid rgba(193,146,149,.58);pointer-events:none}
+#towa-encounter-screen .towa-result-caption{flex:0 0 auto;color:#c9b6bc!important;font:9px Georgia,serif!important;text-align:center;letter-spacing:.25em;padding-top:4px}
+#towa-encounter-screen .towa-encounter-result h2{flex:0 0 auto;font:600 18px 'Noto Serif JP',serif!important;letter-spacing:.14em;text-align:center;color:#efe2e5!important;margin:2px 0 5px!important}
+#towa-encounter-screen .towa-result-grid{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;grid-template-rows:repeat(2,minmax(0,1fr))!important;gap:5px!important;align-content:stretch!important;flex:1 1 0!important;min-height:0!important;max-height:none!important;overflow:hidden!important;width:100%!important;padding:0!important}
+#towa-encounter-screen .towa-result-grid .ten-result-card{position:relative;min-width:0!important;min-height:0!important;width:100%!important;height:100%!important;border-radius:0!important;overflow:hidden!important;background:linear-gradient(165deg,#1c1319,#0d0c10 70%,#1d0c15)!important;border:1px solid rgba(202,153,158,.82)!important;box-shadow:inset 0 0 0 2px rgba(15,7,12,.95),inset 0 0 0 3px rgba(166,112,125,.26)!important;animation:none!important;cursor:default;isolation:isolate}
+#towa-encounter-screen .towa-result-grid .ten-result-card::before{content:'';position:absolute;inset:3px;z-index:7;border:1px solid rgba(187,140,143,.48);pointer-events:none;border-radius:0!important}
+#towa-encounter-screen .towa-result-grid .ten-result-card.rarity-sr{border-color:#cab1bc!important;box-shadow:0 0 8px rgba(169,88,110,.27),inset 0 0 0 2px #140b12!important}
+#towa-encounter-screen .towa-result-grid .ten-result-card.is-pickup{border:2px solid #ead4da!important;box-shadow:0 0 13px rgba(211,140,158,.38),inset 0 0 0 1px #5c283a!important}
+#towa-encounter-screen .towa-result-grid .ten-card-alchemia-back{position:absolute;inset:0;border:0!important;border-radius:0!important;background:
+ radial-gradient(circle at 50% 49%,transparent 0 13%,rgba(196,156,161,.37) 14% 14.5%,transparent 15% 32%,rgba(196,156,161,.22) 32.5% 33%,transparent 34%),
+ linear-gradient(180deg,rgba(11,11,15,.28),rgba(78,21,37,.10)),
+ url('../images/gacha_banner_towa.webp') 50% 42%/auto 125% no-repeat,#1a1117!important;
+ box-shadow:inset 0 0 22px rgba(0,0,0,.76)!important;z-index:2}
+#towa-encounter-screen .towa-result-grid .ten-card-alchemia-back::before{border:1px solid rgba(174,127,137,.46)!important;box-shadow:none!important;width:68%!important;aspect-ratio:1!important}
+#towa-encounter-screen .towa-result-grid .ten-card-alchemia-back::after{background:linear-gradient(to bottom,transparent,rgba(204,159,162,.38),rgba(250,228,225,.84),rgba(144,88,103,.32),transparent)!important}
+#towa-encounter-screen .towa-result-grid .ten-card-back-ring{border:1px solid rgba(217,185,189,.36)!important;box-shadow:0 0 8px rgba(178,111,132,.22)!important}
+#towa-encounter-screen .towa-result-grid .ten-card-back-core{background:#e8d9da!important;box-shadow:0 0 8px #ac617c!important}
+#towa-encounter-screen .towa-native-card-face{position:absolute;inset:0;visibility:hidden;opacity:0;transform:rotateY(-65deg) scale(.88);transition:transform .45s cubic-bezier(.16,.72,.26,1),opacity .32s,visibility .32s}
+#towa-encounter-screen .towa-native-revealed .towa-native-card-face{visibility:visible;opacity:1;transform:rotateY(0) scale(1)}
+#towa-encounter-screen .towa-result-grid .ten-card-img{position:absolute;inset:4px!important;width:calc(100% - 8px)!important;height:calc(100% - 8px)!important;object-fit:contain!important;object-position:center 45%!important;border-radius:0!important;filter:none!important;z-index:2!important}
+#towa-encounter-screen .towa-result-grid .ten-card-bottom{position:absolute;left:2px;right:2px;bottom:2px;z-index:5!important;padding:19px 2px 5px!important;background:linear-gradient(transparent,rgba(10,6,11,.97) 42%,rgba(10,6,11,.99))!important}
+#towa-encounter-screen .towa-result-grid .ten-card-name{display:block;font:600 clamp(7px,1.8vw,11px) 'Noto Serif JP',serif!important;white-space:normal!important;overflow-wrap:anywhere;line-height:1.3!important;color:#f8f0f1!important;text-align:center!important}
+#towa-encounter-screen .towa-native-card-qty{display:block;font:8px Georgia,serif;color:#dacbd0;text-align:center;margin-top:4px}
+#towa-encounter-screen .towa-native-pity{position:absolute;top:4px;right:4px;z-index:9;color:#f6edef;font:700 8px 'Noto Serif JP',serif;background:#5c2030;padding:2px 3px}
+#towa-encounter-screen .towa-result-grid .ten-card-sr-shimmer{position:absolute;inset:0;border:1px solid rgba(221,185,197,.72);pointer-events:none;z-index:4}
+#towa-encounter-screen .towa-result-grid .ten-card-pickup-aura{position:absolute;inset:0;background:linear-gradient(120deg,transparent 20%,rgba(255,239,241,.20) 45%,transparent 70%);background-size:200% 100%;animation:towa-native-glint 2.8s ease-in-out infinite;pointer-events:none;z-index:5}
+@keyframes towa-native-glint{0%,40%{background-position:150% 0}85%,100%{background-position:-140% 0}}
+#towa-encounter-screen .towa-result-actions{flex:0 0 auto;display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;padding-top:6px}
+#towa-encounter-screen .towa-result-actions button{width:100%;min-height:49px;margin:0;background:linear-gradient(170deg,#261a21,#0d0b0e)!important;border:1px solid #9d7882!important;color:#e9d9dd!important;font:600 12px 'Noto Serif JP',serif;letter-spacing:.03em;padding:8px!important}
+#towa-encounter-screen .towa-result-actions .towa-result-redraw{background:linear-gradient(160deg,#642033,#361523)!important;border-color:#b47d8e!important}
+#towa-encounter-screen .towa-result-actions button:disabled{opacity:.48}
+@media(max-width:365px){#towa-encounter-screen .towa-result-grid{gap:3px!important}#towa-encounter-screen .towa-result-actions{gap:6px}#towa-encounter-screen .towa-result-grid .ten-card-name{font-size:7px!important}}
+@media(prefers-reduced-motion:reduce){#towa-encounter-screen .towa-native-card-face,#towa-encounter-screen .ten-card-pickup-aura{transition:none!important;animation:none!important}}
+
+
+/* build1543: result card border/shine matches the server's rainbow / burgundy / silver tiers. */
+#towa-encounter-screen .towa-result-grid .ten-result-card.towa-tier-burgundy{border-color:#9e4b5f!important;box-shadow:inset 0 0 0 2px #140810,inset 0 0 0 3px #682b41!important}
+#towa-encounter-screen .towa-result-grid .ten-result-card.towa-tier-rainbow{border-color:#e5d4eb!important;box-shadow:0 0 9px rgba(178,144,224,.24),inset 0 0 0 2px #1d121e!important}
+
+/* The acquisition presentation is the EXISTING #reveal-modal. Temporarily lower
+   Towa's z-index while showing it; original reveal UI will stay above the page. */
+#towa-encounter-screen.towa-acquisition-active {z-index:100!important;}
+
+/* build1545: uniform small-item result appearance regardless of reward tier.
+   The standard game's .is-material produces a huge white radial halo and
+   enlarged icons; Towa does not use those classes.  These rules also
+   neutralize inherited generic result pseudo-elements (Towa only). */
+#towa-encounter-screen .towa-result-grid .ten-result-card.towa-native-result-card {
+  background:linear-gradient(165deg,#1c1319,#0d0c10 70%,#1d0c15)!important;
+  filter:none!important;
+  animation:none!important;
+}
+#towa-encounter-screen .towa-result-grid .ten-result-card.towa-native-result-card::before {
+  content:''!important;
+  display:block!important;
+  position:absolute!important;
+  inset:3px!important;
+  background:none!important;
+  mix-blend-mode:normal!important;
+  box-shadow:none!important;
+  filter:none!important;
+  opacity:1!important;
+  border:1px solid rgba(187,140,143,.48)!important;
+  z-index:7!important;
+  animation:none!important;
+  pointer-events:none!important;
+}
+#towa-encounter-screen .towa-result-grid .ten-result-card.towa-native-result-card::after {
+  content:none!important;
+  display:none!important;
+  background:none!important;
+  box-shadow:none!important;
+  filter:none!important;
+  animation:none!important;
+}
+#towa-encounter-screen .towa-result-grid .ten-result-card.towa-native-result-card .towa-native-card-face {
+  background:none!important;
+  filter:none!important;
+}
+/* build1546: EXACT native ten-gacha MATERIAL image geometry, but scoped to Towa.
+   The normal result card's .is-material img uses 100% width/height,
+   object-fit:contain, and translateY(-2px) scale(1.62).
+   Do not restore the native .is-material background/white halo.
+   Never vary image size by rarity, item name, or outcome. */
+#towa-encounter-screen .towa-result-grid .ten-result-card.towa-native-result-card:not(.towa-hit-card) .towa-native-card-face img.ten-card-img.ten-card-item-img {
+  position:absolute!important;
+  inset:0!important;
+  top:0!important;
+  left:0!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:none!important;
+  max-height:none!important;
+  min-width:0!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  transform:translateY(-2px) scale(1.62)!important;
+  transform-origin:center center!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  border-radius:0!important;
+  filter:none!important;
+  z-index:2!important;
+}
+/* Character 101 is NOT a material: keep the current character icon behavior. */
+#towa-encounter-screen .towa-result-grid .ten-result-card.towa-hit-card .towa-native-card-face img.ten-card-img {
+  position:absolute!important;
+  inset:auto!important;
+  top:47%!important;
+  left:50%!important;
+  width:clamp(32px,10vw,44px)!important;
+  height:clamp(32px,10vw,44px)!important;
+  max-width:44px!important;
+  max-height:44px!important;
+  margin:0!important;
+  padding:0!important;
+  transform:translate(-50%,-50%)!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  filter:none!important;
+}
+/* Preserve reward ranking by FRAME only. All panels use identical interiors. */
+#towa-encounter-screen .towa-result-grid .ten-result-card.towa-native-result-card.towa-tier-silver {
+  border-color:#777178!important;
+  box-shadow:inset 0 0 0 2px #140d12,inset 0 0 0 3px #4c4149!important;
+}
+#towa-encounter-screen .towa-result-grid .ten-result-card.towa-native-result-card.towa-tier-burgundy {
+  border-color:#9e4b5f!important;
+  box-shadow:inset 0 0 0 2px #140810,inset 0 0 0 3px #682b41!important;
+}
+#towa-encounter-screen .towa-result-grid .ten-result-card.towa-native-result-card.towa-tier-rainbow {
+  border-color:#e5d4eb!important;
+  box-shadow:inset 0 0 0 2px #1d121e,inset 0 0 0 3px #85738c!important;
+}
+#towa-encounter-screen .towa-result-grid .ten-result-card.towa-native-result-card.towa-hit-card {
+  border-color:#e9d2dc!important;
+}
+
+/* build1549: Original 10-pull character artwork sizing for Towa. The requested
+   chara_101_up.webp is tall artwork, NOT a small material/panel icon. */
+#towa-encounter-screen .towa-result-grid .ten-result-card.towa-hit-card .towa-native-card-face img.ten-card-img {
+  position:absolute!important;inset:0!important;top:0!important;left:0!important;
+  width:100%!important;height:100%!important;
+  max-width:none!important;max-height:none!important;min-width:0!important;min-height:0!important;
+  padding:0!important;margin:0!important;
+  object-fit:cover!important;object-position:center top!important;
+  transform:none!important;filter:none!important;z-index:2!important;
+}
+
+/* build1550: Result re-draw button. Preserve existing layout/action; two compact centered rows. */
+#towa-encounter-screen .towa-result-actions .towa-result-redraw{
+ display:flex!important;flex-direction:column;align-items:center;justify-content:center;
+ gap:3px;line-height:1.15!important;
+}
+#towa-encounter-screen .towa-result-actions .towa-redraw-title{
+ display:block;font-size:12px;font-weight:600;line-height:1.25;white-space:nowrap;
+}
+#towa-encounter-screen .towa-result-actions .towa-redraw-cost{
+ display:inline-flex;align-items:center;justify-content:center;gap:4px;
+ font-size:12px;line-height:1;white-space:nowrap;
+}
+#towa-encounter-screen .towa-result-actions .towa-redraw-cost img{
+ width:20px;height:20px;display:block;flex:0 0 20px;object-fit:contain;
+}
+
+/* build1552: supplied card-back illustration ONLY while the ten-pull card is face down.
+   The user's art replaces the previous CSS circles and overlaid banner. */
+#towa-encounter-screen .towa-result-grid .ten-card-alchemia-back{
+  background:#180b12 url('../images/gachacard_towa.webp') center center/cover no-repeat!important;
+  box-shadow:inset 0 0 9px rgba(0,0,0,.20)!important;
+}
+#towa-encounter-screen .towa-result-grid .ten-card-alchemia-back::before,
+#towa-encounter-screen .towa-result-grid .ten-card-alchemia-back::after,
+#towa-encounter-screen .towa-result-grid .ten-card-alchemia-back .ten-card-back-ring,
+#towa-encounter-screen .towa-result-grid .ten-card-alchemia-back .ten-card-back-core{
+  display:none!important;content:none!important;
+}

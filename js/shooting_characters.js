@@ -52,7 +52,7 @@
     LEONA_CROSS: 39,
     KUREHA: 41,
     KYOU: 42, SUZU: 43, MELORIA: 44, KIRIMARU: 45, AIRENA: 46,
-    LINLIN: 47, MUUMUU: 48, MEGMEG: 49, CHACHA: 51, RUIRUI: 53, HAO: 54, // ID52 is reserved for Noah (existing saves/RPC)
+    LINLIN: 47, MUUMUU: 48, MEGMEG: 49, CHACHA: 51, RUIRUI: 53, HAO: 54, TOWA: 101, // ID52 is reserved for Noah (existing saves/RPC)
   });
 
   // ============================================================
@@ -110,7 +110,7 @@
     40: 'sr', // オリビア（限定ピックアップSR）
     41: 'sr',  // シャオラン
     42: 'r', 43: 'r', 44: 'r', 45: 'r', 46: 'r',
-    47: 'r', 48: 'r', 49: 'r', 51: 'r', 53: 'r', 54: 'sr',
+    47: 'r', 48: 'r', 49: 'r', 51: 'r', 53: 'r', 54: 'sr', 101: 'sr',
   });
 
   // 現行互換：R はSRに対して基本性能(HP/ATK)を20%落とす。育成/凸の新倍率は別フェーズで統合予定。
@@ -1331,6 +1331,24 @@
     "homeScale": 0.99,
     "homeOffsetX": 0,
     "homeOffsetY": -24,
+    "hidden": false
+  },
+  "101": {
+    "id": 101,
+    "name": "トワ",
+    "element": "dark",
+    "hp": 600,
+    "atk": 250,
+    "image": "images/chara_101_battle_back.webp",
+    "panelImage": "images/chara_101_panel.webp",
+    "cutinImage": "images/chara_101_cutin.webp",
+    "uiScale": {"panel": 1, "battleBack": 1.2, "battleUp": 1},
+    "portraitImage": "images/chara_101.webp",
+    "homeImage": "images/chara_101_cut.webp",
+    "upImage": "images/chara_101_up.webp",
+    "homeScale": 0.83,
+    "homeOffsetX": 0,
+    "homeOffsetY": -26,
     "hidden": false
   }
 });
@@ -2836,6 +2854,24 @@
     burstNeed: 30, ultGainPerHit: 0.476,
   });
 
+  // build1532: トワ (ID101) — 闇 SR / CHARGE M / 常闇。
+  SHOOTING_CHARACTERS[CHARACTER_ID.TOWA] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE,
+    id: CHARACTER_ID.TOWA,
+    effectKey: 'towa',
+    label: 'CHARGE / ETERNAL DARKNESS',
+    description: '闇属性CHARGE M型。ULT「常闇」で敵弾を全消去し、5秒間盤面を暗転させて敵の新規弾生成を封印する。',
+    shotType: 'charge', chargeSize: 'M', shotStyle: 'kaina-charge',
+    shotElement: 'dark', fireRate: 0, bulletSpeed: 760, shotCount: 1,
+    chargeMinMs: 120, shotOffsetY: 44, coreTop: '38%',
+    ultType: 'towa_eternal_darkness', ultBaseType: 'field',
+    ultAddons: ['bullet_clear', 'enemy_bullet_silence'],
+    ultName: '常闇',
+    ultDescription: '発動時に盤面の敵弾をすべて削除。5秒間、盤面が暗転して新規敵弾の生成が停止。終了時にフェードインして通常の射撃が再開する。',
+    towaDarkDurationMs: 5000,
+    burstNeed: 32, burstDamage: 0, ultGainPerHit: 0.50,
+  });
+
   // 別マスターではない。SHOOTING_CHARACTER_MASTERから毎回生成する読み取り用配列。
   const CHARACTER_CATALOG = Object.freeze(
     Object.values(SHOOTING_CHARACTER_MASTER)
@@ -3022,6 +3058,8 @@
       // --- 行動妨害・防御 ---
       case 'nem_stun':
         return '敵全体を' + sec(c.ultStunMs, 5000) + '間スタン。' + note('ULT自体のダメージなし');
+      case 'towa_eternal_darkness':
+        return CLEAR + sec(c.towaDarkDurationMs, 5000) + '間、盤面を常闇に包み、敵弾の新規生成を完全停止。効果終了時にフェードインして敵の射撃が再開する。';
       case 'suzu_bullet_silence':
         return CLEAR + sec(c.suzuBulletSilenceMs, 3500) + '間、敵の射撃を封じる。' + note('敵の移動は止まらない');
       case 'shiina_light_ring':
@@ -3073,6 +3111,7 @@
     SHOOTING_RARITY,
     RARITY_STAT_MULTIPLIER,
     SHOT_VARIANTS,
+    CHARGE_SIZE_PRESETS,
     PARTY_SIZE: 3,
     SWITCH_COOLDOWN_MS: 5000,
     getShootingCharacterMaster,

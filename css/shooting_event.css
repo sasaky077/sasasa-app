@@ -14596,3 +14596,29 @@ html body #shooting-event-root .shooting-boss-hud .shooting-boss-phase{
     letter-spacing:0;
   }
 }
+
+/* build1539: 常闇は背景だけ暗転。弾・敵・味方・HUDは明度を変えない。 */
+/* 単一classのON/OFFだけで描画。新しいオーバーレイやアニメーションループなし。 */
+html body #shooting-event-root .shooting-stage{
+  transition:background-color .58s ease-out;
+}
+html body #shooting-event-root .shooting-bg,
+html body #shooting-event-root .shooting-wash{
+  transition:opacity .58s ease-out;
+}
+html body #shooting-event-root.towa-dark-background .shooting-stage{
+  background-color:#000!important;
+  transition:none!important;
+}
+html body #shooting-event-root.towa-dark-background .shooting-bg,
+html body #shooting-event-root.towa-dark-background .shooting-wash{
+  opacity:0!important;
+  transition:none!important;
+}
+/* 過去のbuildの全面暗転DOMを万一保持していても描画させない。 */
+#shooting-arena #shooting-towa-darkness{display:none!important}
+@media(prefers-reduced-motion:reduce){
+  html body #shooting-event-root .shooting-stage,
+  html body #shooting-event-root .shooting-bg,
+  html body #shooting-event-root .shooting-wash{transition:none!important}
+}

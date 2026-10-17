@@ -4111,6 +4111,9 @@
   function setCommonUiVisible(open) { UIModule.setCommonUiVisible(open); }
 
   function resetState() {
+    // 再挑戦・試遊切替でも前の常闇背景を持ち越さない。
+    document.getElementById(ROOT_ID)?.classList.remove('towa-dark-background');
+    document.getElementById('shooting-towa-darkness')?.remove();
     removeTower10ReverseBanner();
     // 旧バトルのITEM表示が何らかの経路で残っていても、新state作成前にDOM側を掃除する。
     purgeChapter4ItemDom();
@@ -4355,6 +4358,7 @@
       ignisBossBurnUntil: 0, ignisBossBurnNextTickAt: 0,
       roseFortress: null,
       suzuBulletSilenceUntil: 0,
+      towaDarkUntil: 0,
       conjureTurrets: [],
       conjureDeployments: [],
       conjurePlacementPreview: null,
@@ -5720,6 +5724,7 @@
     // gameLoop外の遅延処理から来た弾生成も最終入口で必ず遮断する。
     // スズULT: 弾の生成だけ封印。敵の移動や攻撃準備は継続。
     if (ts < Number(state.suzuBulletSilenceUntil || 0)) return true;
+    if (ts < Number(state.towaDarkUntil || 0)) return true;
     if (ts < Number(state.noahMovementFreezeUntil || 0)) return true;
     if (isEnemyPullFieldActive(ts)) return true;
 
@@ -16913,6 +16918,14 @@
     state.enemyBullets = keep;
   }
 
+  // トワだけは残留WARNINGや15階反射弾も例外なく消す。
+  function clearAllEnemyBulletsForTowa() {
+    if (!state) return;
+    (state.enemyBullets || []).forEach(p => { if (p && p.el) p.el.remove(); });
+    state.enemyBullets = [];
+    removeBossDangerWarning();
+  }
+
   function flashBossPhaseChange(phase) {
     const boss = document.getElementById(BOSS_ID);
     const root = document.getElementById(ROOT_ID);
@@ -19977,6 +19990,8 @@
       rafId = requestAnimationFrame(gameLoop);
       return;
     }
+
+    updateTowaDarkness(ts);
 
     if (state.ch101TutorialPaused || state.ch102TutorialPaused || state.ch202ElementTutorialPaused) {
       prevTs = ts;
@@ -24227,15 +24242,28 @@
     return true;
   }
 
+  // build1538: report precisely why an encounter trial cannot start.
+  // In old cached character modules ID101 was not registered; that used to fail silently.
   window.openShootingTrial = function (characterId) {
     const id = Number(characterId);
-    if (id !== 36 && id !== 40) return false;
-    if (!SHOOTING_CHARACTERS[id]) return false;
+    window.__zeraphiaShootingTrialFailure = '';
+    const rejectTrial = (reason) => {
+      window.__zeraphiaShootingTrialFailure = reason;
+      console.warn('[shooting trial] start rejected:', reason, { characterId:id });
+      return false;
+    };
+    if (id !== 36 && id !== 40 && id !== 101) return rejectTrial('unsupported-character');
+    if (!SHOOTING_CHARACTERS[id]) return rejectTrial('character-definition-missing');
     const existing = document.getElementById(ROOT_ID);
-    if (existing && existing.classList.contains('open')) return false;
+    if (existing && existing.classList.contains('open')) return rejectTrial('another-battle-open');
+    if (!SHOOTING_STAGE_ID.GACHA_TRIAL) return rejectTrial('trial-stage-missing');
     gachaTrialCharacterId = id;
-    window.__shootingReturnContext = { type: 'gachaTrial' };
-    return window.openShootingEvent({ stageId: SHOOTING_STAGE_ID.GACHA_TRIAL });
+    window.__shootingReturnContext = { type: id===101 ? 'towaEncounter' : 'gachaTrial' };
+    const started = window.openShootingEvent({ stageId: SHOOTING_STAGE_ID.GACHA_TRIAL });
+    if (started === false) return rejectTrial('battle-start-rejected');
+    const root = document.getElementById(ROOT_ID);
+    if (!root || !root.classList.contains('open')) return rejectTrial('battle-screen-not-open');
+    return true;
   };
 
   window.openShootingStage = function (stageId) {
@@ -24689,6 +24717,12 @@
     }
 
     selectedRaidContext = null;
+    if (returnContext && returnContext.type === 'towaEncounter') {
+      if (typeof window.openResonanceTower === 'function') window.openResonanceTower();
+      if (typeof window.openTowaEncounter === 'function') window.openTowaEncounter();
+      clearShootingResultExitFade();
+      return;
+    }
     if (returnContext && returnContext.type === 'resonanceTower') {
       if (typeof window.openResonanceTower==='function') window.openResonanceTower();
       clearShootingResultExitFade();
@@ -29075,6 +29109,34 @@
     renderHud();
   }
 
+  // build1539: トワULT「常闇」／暗転は背景レイヤーだけ。
+  // 背景切替はULTの開始と終了の2回だけ。敵・自機・弾・HUDは触らない。
+  function updateTowaDarkness(now = performance.now()) {
+    if (!state || !Number(state.towaDarkUntil || 0)) return;
+    if (now < Number(state.towaDarkUntil)) return;
+    state.towaDarkUntil = 0;
+    // 暗転解除から敵の攻撃タイマーを再開。停止中の射撃は溜めない。
+    deferAllEnemyAttackResume(now);
+    document.getElementById(ROOT_ID)?.classList.remove('towa-dark-background');
+  }
+
+  function useTowaEternalDarkUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+    showUltCut(c.ultName || '常闇', c.effectKey, c);
+    const now = performance.now();
+    const duration = Math.max(500, Number(c.towaDarkDurationMs ?? 5000));
+    state.towaDarkUntil = Math.max(Number(state.towaDarkUntil || 0), now + duration);
+    // 効果中は敵弾生成を抑止し、既存弾は全消去する。戦闘の時計・敵位置は変えない。
+    deferAllEnemyAttackResume(state.towaDarkUntil);
+    clearAllEnemyBulletsForTowa();
+    // 旧ビルドの黒い全面オーバーレイが残っていても除去する。
+    document.getElementById('shooting-towa-darkness')?.remove();
+    // CSSは戦闘背景の2要素だけを隠し、ステージ背景色を黒くする。
+    document.getElementById(ROOT_ID)?.classList.add('towa-dark-background');
+    state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), now + 250);
+    renderHud();
+  }
+
   // build1324: スズULT「静寂の森」：既存の敵弾を消去し、3.5秒間だけ弾生成を封印。
   // 敵の移動・HP・照準AIには手を触れない。全弾生成の共通ゲートで抑止する。
   function useSuzuBulletSilenceUlt(c) {
@@ -29163,6 +29225,7 @@
 
     if (c.ultType === 'ryune_absolute_lethe' || Number(c.id) === 25) useLyuneAbsoluteLetheUlt(c);
     else if (c.ultType === 'sui_time_domain') useSuiTimeDomainUlt(c);
+    else if (c.ultType === 'towa_eternal_darkness') useTowaEternalDarkUlt(c);
     else if (c.ultType === 'rose_fortress') useRoseUlt(c);
     else if (c.ultType === 'suzu_bullet_silence') useSuzuBulletSilenceUlt(c);
     else if (c.ultType === 'meloria_stun') useMeloriaStunUlt(c);

@@ -1,0 +1,62 @@
+/* ZERAPHIA build1547 — Towa-only confirmation and native TAP styling.
+   DO NOT change #summon-standby, normal gacha modals, or any shared navigation. */
+.towa-encounter .towa-preflight-confirm,
+.towa-encounter .towa-preflight-standby{position:absolute;inset:0;z-index:700;box-sizing:border-box;}
+.towa-encounter .towa-preflight-confirm{display:flex;justify-content:center;align-items:center;padding:24px 16px;background:rgba(13,9,14,.86);}
+.towa-encounter .towa-preflight-panel{position:relative;width:min(100%,360px);padding:24px 18px 19px;text-align:center;color:#3f3130;
+ border:1px solid #b9a17e;background:linear-gradient(160deg,#fffaf1,#e8ddd0 92%);box-shadow:0 12px 32px rgba(0,0,0,.38),inset 0 0 0 3px rgba(255,255,255,.68);}
+.towa-encounter .towa-preflight-eyebrow{font:600 10px Georgia,serif;letter-spacing:.18em;color:#836452;}
+.towa-encounter .towa-preflight-panel h2{font:600 22px/1.5 'Noto Serif JP',serif;margin:8px 0 12px;color:#5d3039;}
+.towa-encounter .towa-preflight-panel p{font:12px/1.8 'Noto Serif JP',serif;margin:6px 0 12px;}
+.towa-encounter .towa-confirm-consumption{display:flex;gap:11px;align-items:center;justify-content:center;margin:13px 0;padding:12px 10px;background:rgba(246,235,227,.85);border:1px solid #c9b3a0;}
+.towa-encounter .towa-confirm-consumption img{width:44px;height:44px;object-fit:contain;flex:none;}
+.towa-encounter .towa-confirm-consumption div{display:flex;flex-direction:column;align-items:flex-start;gap:4px;}
+.towa-encounter .towa-confirm-consumption span{font:11px 'Noto Serif JP',serif;color:#87695e;}
+.towa-encounter .towa-confirm-consumption strong{font:600 15px 'Noto Serif JP',serif;color:#632b38;}
+.towa-encounter .towa-confirm-balance{display:flex;align-items:center;justify-content:center;gap:8px;padding:5px 0;font:11px 'Noto Serif JP',serif;color:#775b52;white-space:nowrap;}
+.towa-encounter .towa-confirm-balance strong{color:#5a3436;font:600 17px Georgia,serif;}
+.towa-encounter .towa-preflight-panel .towa-confirm-notice{font-size:10px;color:#84685f;margin:11px 0 16px;}
+.towa-encounter .towa-preflight-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.towa-encounter .towa-preflight-actions button{min-height:43px;background:#eee3d8;border:1px solid #bfa693;color:#624b43;font:600 12px 'Noto Serif JP',serif;cursor:pointer;}
+.towa-encounter .towa-preflight-actions #towa-confirm-accept{background:linear-gradient(145deg,#7c3447,#471e2c);border-color:#b78c87;color:#fff5f2;}
+.towa-encounter .towa-preflight-standby{display:flex;align-items:center;justify-content:center;overflow:hidden;isolation:isolate;
+ background:radial-gradient(ellipse 85% 64% at 50% 42%,#3a1722 0%,#250e17 29%,#120b10 58%,#060508 100%);}
+.towa-encounter .towa-preflight-standby::before{content:'';position:absolute;inset:-20%;z-index:0;pointer-events:none;opacity:.74;
+ background:linear-gradient(115deg,transparent 28%,rgba(145,42,64,.16) 48%,transparent 66%),radial-gradient(circle at 24% 28%,rgba(139,38,63,.18),transparent 20%);
+ animation:alchemiaAmbientDrift 8s ease-in-out infinite;}
+.towa-encounter .towa-preflight-standby::after{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;
+ background:radial-gradient(circle at 50% 43%,rgba(255,255,255,.01) 0%,rgba(91,26,45,.12) 38%,rgba(56,15,29,.25) 66%,rgba(0,0,0,.65) 100%);}
+.towa-encounter .towa-preflight-standby .standby-text{z-index:2;pointer-events:none;}
+.towa-encounter .towa-standby-start{position:absolute;inset:0;z-index:3;border:0;background:transparent;cursor:pointer;}
+.towa-encounter .towa-preflight-standby.is-starting .standby-orbit{animation-duration:1.1s;}
+.towa-encounter .towa-preflight-standby.is-starting .standby-core{animation:standbyStartCore .42s ease-out forwards;}
+@media(prefers-reduced-motion:reduce){
+ .towa-encounter .towa-preflight-standby::before,
+ .towa-encounter .towa-preflight-standby .standby-orbit,
+ .towa-encounter .towa-preflight-standby .standby-core,
+ .towa-encounter .towa-preflight-standby .standby-text{animation:none!important;}
+}
+
+/* build1548: Towa's TAP screen alone uses a black/burgundy palette.
+   The original rotating orbit/core/text animations are reused unchanged. */
+#towa-encounter-screen #towa-encounter-standby .standby-text,
+#towa-encounter-screen #towa-encounter-standby .standby-main-copy,
+#towa-encounter-screen #towa-encounter-standby .standby-sub-copy{
+ color:#f7f3f5!important;
+ text-shadow:0 1px 6px rgba(0,0,0,.64),0 0 13px rgba(255,247,252,.22)!important;
+}
+#towa-encounter-screen #towa-encounter-standby .standby-sub-copy{opacity:.82}
+#towa-encounter-screen #towa-encounter-standby .standby-orbit{
+ border-color:rgba(205,165,176,.32)!important;
+ box-shadow:0 0 11px rgba(151,45,76,.12),inset 0 0 9px rgba(255,230,236,.10)!important;
+}
+#towa-encounter-screen #towa-encounter-standby .standby-orbit-1{border-top-color:rgba(244,227,233,.75)!important}
+#towa-encounter-screen #towa-encounter-standby .standby-orbit-2{border-left-color:rgba(244,227,233,.64)!important}
+#towa-encounter-screen #towa-encounter-standby .standby-core{
+ background:#fbf6f9!important;
+ box-shadow:0 0 15px rgba(255,249,251,.65),0 0 32px rgba(126,36,62,.28)!important;
+}
+#towa-encounter-screen #towa-encounter-standby .standby-light-fragment{
+ background:linear-gradient(to bottom,transparent,rgba(233,213,225,.65),transparent)!important;
+ box-shadow:0 0 7px rgba(123,52,76,.25)!important;
+}

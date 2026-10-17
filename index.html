@@ -417,7 +417,10 @@
 #detail-modal.is-gacha-pickup-preview #detail-name{display:none!important}
 </style>
   <link rel="stylesheet" href="css/resonance_tower.css?v=1473-tower-15-floors">
-  <link rel="stylesheet" href="css/shooting_event.css?v=1528-boss-hp-numeric">
+  <link rel="stylesheet" href="css/towa_encounter.css?v=1553-rates-visible">
+  <link rel="stylesheet" href="css/towa_dark_gacha.css?v=1552">
+  <link rel="stylesheet" href="css/towa_preflight.css?v=1548-towa-black-burgundy">
+  <link rel="stylesheet" href="css/shooting_event.css?v=1539-towa-bg-only">
   <link rel="stylesheet" href="css/tower15_boss.css?v=1485-tower15">
   <link rel="stylesheet" href="css/daily_stage_select.css?v=1388-shared-card">
   <link rel="stylesheet" href="css/raid_event.css?v=852-raid-glass-canonical">
@@ -3773,6 +3776,10 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
     </div>
 
     <div class="resonance-tower-actions" aria-label="塔のメニュー">
+      <button type="button" class="resonance-tower-menu" onclick="openTowaEncounter()" aria-label="トワとの邂逅を開く">
+        <span class="resonance-tower-menu-diamond" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M16 2 28 16 16 30 4 16Z" stroke="currentColor" stroke-width="1.5"/><path d="M16 7v18m-8-9h16" stroke="currentColor" stroke-width="1.5"/></svg></span><span>トワとの邂逅</span>
+      </button>
+
       <button type="button" class="resonance-tower-menu" data-tower-panel="ranking" aria-label="ランキング">
         <span class="resonance-tower-menu-diamond" aria-hidden="true">
           <svg viewBox="0 0 32 32" fill="none"><path d="M3 10 9 16 16 5 23 16 29 10 26 24H6L3 10Z" fill="currentColor" fill-opacity=".8" stroke="currentColor" stroke-width="1.1"/><path d="M5 27H27M16 7V22" stroke="currentColor" stroke-width="1.3"/></svg>
@@ -3809,6 +3816,97 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
       <button type="button" class="resonance-tower-panel-dismiss" data-tower-close>閉じる</button>
     </section>
   </div>
+</div>
+
+<!-- Tower-specific, ticket-funded encounter. Server-authoritative ten-pull. -->
+<div id="towa-encounter-screen" class="towa-encounter" role="region" aria-labelledby="towa-gacha-title" hidden>
+  <div class="towa-encounter-art" aria-hidden="true"></div>
+  <button type="button" id="towa-encounter-back" class="towa-encounter-back"><span class="towa-back-chevron" aria-hidden="true">〈</span> 戻る</button>
+  <div class="towa-encounter-label">
+    <h1 id="towa-gacha-title"><span class="towa-title-initial">ト</span>ワとの邂逅</h1>
+    <div class="towa-title-flourish" aria-hidden="true"><span>◆</span></div>
+    <button type="button" id="towa-pickup-detail" class="towa-pickup-detail">提供割合 <span aria-hidden="true">❯</span></button>
+  </div>
+  <div class="towa-encounter-lower">
+    <div class="towa-encounter-subhead"><span>天井まで</span><span class="towa-progress-track"><span id="towa-pity-fill" class="towa-progress-fill"></span></span><strong id="towa-pity-count">0 / 100</strong></div>
+    <div class="towa-pity-note">100回引くと、確定でピックアップキャラを獲得できます。</div>
+    <button type="button" id="towa-draw-button" class="towa-draw-button" disabled>
+      <span class="towa-draw-main">10回引く</span>
+      <span class="towa-draw-cost"><img src="images/item_towa_memory.webp" alt="トワの記憶"> ×1</span>
+    </button>
+    <div class="towa-wallet"><img src="images/item_towa_memory.webp" alt=""><span>所持数</span><b id="towa-memory-count">0</b></div>
+    <button type="button" id="towa-try-button" class="towa-try-button"><span aria-hidden="true">⚔</span> 使ってみる <span aria-hidden="true">❯</span></button>
+    <div id="towa-gacha-message" class="towa-gacha-message" aria-live="polite"></div>
+    <small id="towa-loading" hidden>サーバーと同期中…</small>
+  </div>
+  <!-- Towa-only purchase confirmation: never calls the normal gacha payment flow. -->
+  <section id="towa-encounter-confirm" class="towa-preflight-confirm" role="dialog" aria-modal="true" aria-labelledby="towa-confirm-title" hidden>
+    <div class="towa-preflight-panel">
+      <div class="towa-preflight-eyebrow">SPECIAL ENCOUNTER</div>
+      <h2 id="towa-confirm-title">トワとの邂逅</h2>
+      <p id="towa-confirm-message">トワの記憶を1個消費して、10回引きますか？</p>
+      <div class="towa-confirm-consumption">
+        <img src="images/item_towa_memory.webp" alt="" width="44" height="44">
+        <div><span>消費アイテム</span><strong id="towa-confirm-cost">トワの記憶 ×1</strong></div>
+      </div>
+      <div class="towa-confirm-balance"><span>現在所持数</span><strong id="towa-confirm-before">0</strong><span aria-hidden="true">→</span><span>消費後</span><strong id="towa-confirm-after">0</strong></div>
+      <p class="towa-confirm-notice">次の画面でタップすると、抽選とアイテム消費が確定します。</p>
+      <div class="towa-preflight-actions">
+        <button type="button" id="towa-confirm-cancel">キャンセル</button>
+        <button type="button" id="towa-confirm-accept">次へ進む</button>
+      </div>
+    </div>
+  </section>
+  <!-- Exact native standby child animation classes, isolated from #summon-standby's click handler. -->
+  <section id="towa-encounter-standby" class="towa-preflight-standby" aria-label="タップしてトワとの邂逅を開始" hidden>
+    <div class="standby-alchemia-bg" aria-hidden="true">
+      <div class="standby-orbit standby-orbit-1"></div>
+      <div class="standby-orbit standby-orbit-2"></div>
+      <div class="standby-orbit standby-orbit-3"></div>
+      <div class="standby-core"></div>
+      <div class="standby-light-fragment standby-light-fragment-1"></div>
+      <div class="standby-light-fragment standby-light-fragment-2"></div>
+      <div class="standby-light-fragment standby-light-fragment-3"></div>
+    </div>
+    <div class="standby-text" aria-hidden="true">
+      <span class="standby-main-copy">TAP TO ENCOUNTER</span>
+      <span class="standby-sub-copy">キャラと出会う</span>
+    </div>
+    <button type="button" id="towa-standby-start" class="towa-standby-start" aria-label="タップして10連ガチャを開始"></button>
+  </section>
+  <section id="towa-encounter-pickup-modal" class="towa-encounter-info" role="dialog" aria-modal="true" aria-labelledby="towa-pickup-modal-title" hidden>
+    <div class="towa-info-sheet">
+      <button type="button" class="towa-info-close" id="towa-pickup-modal-close" aria-label="閉じる">×</button>
+      <div class="towa-info-kicker">SPECIAL ENCOUNTER</div>
+      <img src="images/chara_101_panel.webp" alt="トワ" class="towa-info-portrait">
+      <h2 id="towa-pickup-modal-title">トワ <small>SR / 闇</small></h2>
+      <p>SHOT：CHARGE (M)<br>ULT：常闇 ── 敵弾を全消去し、5秒間敵の射撃を停止</p>
+      <p class="towa-info-note">限定突破 Lv3：CHARGE (L) / Lv4：常闇が7秒間に延長</p>
+      <button type="button" id="towa-pickup-modal-dismiss" class="towa-info-dismiss">閉じる</button>
+    </div>
+  </section>
+  <section id="towa-encounter-rates-modal" class="towa-encounter-info" role="dialog" aria-modal="true" aria-labelledby="towa-rates-modal-title" hidden>
+    <div class="towa-info-sheet towa-rates-sheet">
+      <button type="button" class="towa-info-close" id="towa-rates-modal-close" aria-label="閉じる">×</button>
+      <div class="towa-info-kicker">DROP RATE</div>
+      <h2 id="towa-rates-modal-title">提供割合</h2>
+      <p>トワの記憶1個で10回抽選。トワ未当選が100回続く場合、100回目に確定します。</p>
+      <div id="towa-rate-lines" class="towa-rate-lines"></div>
+      <button type="button" id="towa-rates-modal-dismiss" class="towa-info-dismiss">閉じる</button>
+    </div>
+  </section>
+  <section id="towa-encounter-result" class="towa-encounter-result" aria-label="10連抽選結果" hidden>
+    <p id="towa-result-caption" class="towa-result-caption">SPECIAL ENCOUNTER • 10 RESULTS</p>
+    <h2 id="towa-result-heading">邂逅の記憶</h2>
+    <div id="towa-result-grid" class="towa-result-grid"></div>
+    <div class="towa-result-actions">
+      <button type="button" class="towa-result-close" id="towa-result-close">戻る</button>
+      <button type="button" class="towa-result-redraw" id="towa-result-redraw" aria-label="トワの記憶1個でもう一度引く">
+        <span class="towa-redraw-title">もう一度引く</span>
+        <span class="towa-redraw-cost"><img src="images/item_towa_memory.webp" alt="" width="20" height="20" decoding="async"> ×1</span>
+      </button>
+    </div>
+  </section>
 </div>
 
 <!-- ボーナス一覧 -->
@@ -6129,8 +6227,8 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=1488-retired-origin-wing"></script>
-<script src="js/resonance_system.js?v=1488-retired-origin-wing"></script>
+<script src="js/shooting_resonance.js?v=1532-towa"></script>
+<script src="js/resonance_system.js?v=1532-towa"></script>
 <script src="js/resonance_ui.js?v=1479-growth-rich"></script>
 <script src="js/character_levelup.js?v=1479-growth-rich"></script>
 <script>
@@ -6946,6 +7044,18 @@ document.addEventListener('touchend', function (e) {
     // 名前が No.54 になったり、不明画像になったりするのを防止する。
     // 排出確率・抽選処理・キャラ性能には影響しない。
     var displayFallback = {
+      101: {
+        name:'トワ', element:'dark', rarity:'sr',
+        panelImg:'images/chara_101_panel.webp',
+        img:'images/chara_101.webp',
+        upImg:'images/chara_101_up.webp',
+        ultImg:'images/chara_101_cutin.webp',
+        stats:{HP:600,ATK:250},
+        shotType:'charge', chargeSize:'M', shotElement:'dark',
+        ultType:'towa_eternal_darkness', ultName:'常闇',
+        ultDescription:'発動時、盤面の敵弾を全消去。5秒間、戦闘背景が暗転し、新規敵弾の生成を封じる。限界突破Lv4で7秒間に延長。',
+        burstNeed:32
+      },
       36: { name:'ニーナ', panelImg:'images/chara_36_panel.webp', rarity:'SR' },
       40: { name:'オリビア', panelImg:'images/chara_40_panel.webp', rarity:'SR' },
       54: {
@@ -7098,6 +7208,101 @@ document.addEventListener('touchend', function (e) {
     }).join('');
   }
 
+  // build1552: use the ORIGINAL pool modal, character row component and preview.
+  // Towa is an independent draw pool; never mutate currentGachaId or normal gacha data.
+  var gachaPoolDetailIsTowa = false;
+  var towaPoolOriginalNoteHTML = null;
+  // build1553: The shared rates modal originally lives inside #screen-summon.
+  // When Towa is opened from Resonance Tower, #screen-summon is display:none.
+  // Temporarily port the *same* rates modal to <body> while Towa uses it;
+  // never clone its markup or alter the native normal-gacha behavior.
+  var towaRatesHome = null;
+  var towaRatesHomeNext = null;
+  function showTowaRatesOutsideHiddenSummon(modal){
+    if(!modal)return;
+    if(!towaRatesHome){
+      towaRatesHome=modal.parentNode;
+      towaRatesHomeNext=modal.nextSibling;
+    }
+    if(modal.parentNode!==document.body)document.body.appendChild(modal);
+  }
+  function restoreTowaRatesToSummon(){
+    var modal=document.getElementById('gacha-pool-detail-modal');
+    if(!modal||!towaRatesHome||modal.parentNode===towaRatesHome)return;
+    if(towaRatesHomeNext && towaRatesHomeNext.parentNode===towaRatesHome){
+      towaRatesHome.insertBefore(modal,towaRatesHomeNext);
+    }else{
+      towaRatesHome.appendChild(modal);
+    }
+  }
+  function openTowaGachaPoolDetail(){
+    var modal=document.getElementById('gacha-pool-detail-modal');
+    var content=document.getElementById('gacha-pool-detail-content');
+    var subtitle=document.getElementById('gacha-pool-detail-subtitle');
+    var note=document.getElementById('gacha-pool-detail-note');
+    if(!modal||!content)return;
+    if(towaPoolOriginalNoteHTML === null && note) towaPoolOriginalNoteHTML=note.innerHTML;
+    gachaPoolDetailIsTowa=true;
+    if(subtitle)subtitle.textContent='トワとの邂逅';
+    var labels=modal.querySelectorAll('.zgr-summary .zgr-rate > span');
+    if(labels[0])labels[0].textContent='虹';
+    if(labels[1])labels[1].textContent='エンジ';
+    if(labels[2])labels[2].textContent='灰銀';
+    var s=document.getElementById('gacha-rate-sr');if(s)s.textContent='5%';
+    var r=document.getElementById('gacha-rate-r');if(r)r.textContent='45%';
+    var m=document.getElementById('gacha-rate-item');if(m)m.textContent='50%';
+    function itemRow(name,id,quantity,rate){
+      var images={
+        flower_sr:'images/item_flower_sr.webp',flower_r:'images/item_flower_r.webp',
+        level_exp_large:'images/item_exp_gold.webp',level_exp_medium:'images/item_exp_silver.webp',
+        kyoumei_stone:'images/item_kyoumeistone.webp',coin:'images/icon_coin.webp',
+        soul_vessel_fire:'images/item_soul_vessel_fire.webp',
+        soul_vessel_aqua:'images/item_soul_vessel_aqua.webp',
+        soul_vessel_wood:'images/item_soul_vessel_wood.webp',
+        soul_vessel_light:'images/item_soul_vessel_light.webp',
+        soul_vessel_dark:'images/item_soul_vessel_dark.webp'
+      };
+      var label=name+(quantity>1?' ×'+Number(quantity).toLocaleString('ja-JP'):'');
+      return '<div class="zgr-entry is-material">'+
+        '<img class="zgr-entry-img" src="'+detailEscapeHTML(images[id]||'images/unknown.webp')+'" alt="">'+
+        '<div class="zgr-entry-main"><div class="zgr-entry-name">'+detailEscapeHTML(label)+'</div>'+
+        '<div class="zgr-entry-meta">ITEM</div></div>'+
+        '<div class="zgr-entry-rate">'+formatGachaRate(rate)+'</div></div>';
+    }
+    function section(name,total,rows){
+      return '<div class="zgr-section"><div class="zgr-section-head"><span>'+name+'</span><b>'+formatGachaRate(total)+'</b></div>'+
+        '<div class="zgr-section-list">'+rows.join('')+'</div></div>';
+    }
+    content.innerHTML=
+      section('虹',5,[
+        buildGachaCharacterPoolRows([101],.015,[101],{'101':.015}),
+        itemRow('聖霊花（SR）','flower_sr',1,3.5)
+      ])+
+      section('エンジ',45,[
+        itemRow('聖霊花（R）','flower_r',1,5),
+        itemRow('経験値・金','level_exp_large',5,5),
+        itemRow('コイン','coin',5000,5),
+        itemRow('共鳴石','kyoumei_stone',1,5),
+        itemRow('魂の器・火','soul_vessel_fire',1,5),
+        itemRow('魂の器・水','soul_vessel_aqua',1,5),
+        itemRow('魂の器・木','soul_vessel_wood',1,5),
+        itemRow('魂の器・光','soul_vessel_light',1,5),
+        itemRow('魂の器・闇','soul_vessel_dark',1,5)
+      ])+
+      section('灰銀',50,[
+        itemRow('経験値・銀','level_exp_medium',5,25),
+        itemRow('コイン','coin',2500,25)
+      ]);
+    if(note)note.innerHTML='<p>※ トワの記憶×1で10連抽選。トワ未当選が100回続く場合、100回目はトワ確定。</p>'+
+      '<p>※ 表示確率は通常時の単体当選確率。天井時はトワ確定が優先されます。</p>';
+    content.scrollTop=0;
+    showTowaRatesOutsideHiddenSummon(modal);
+    modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden','false');
+    document.body.classList.add('is-gacha-pool-detail-open');
+  }
+  window.openTowaGachaPoolDetail=openTowaGachaPoolDetail;
+
   var gachaPoolDetailReturnScrollTop = 0;
 
   function openGachaPoolCharacterDetail(charaId){
@@ -7132,6 +7337,15 @@ document.addEventListener('touchend', function (e) {
   window.openGachaPoolCharacterDetail = openGachaPoolCharacterDetail;
 
   function openGachaPoolDetail(){
+    if(gachaPoolDetailIsTowa){
+      gachaPoolDetailIsTowa=false;
+      var labels=document.querySelectorAll('#gacha-pool-detail-modal .zgr-summary .zgr-rate > span');
+      if(labels[0])labels[0].textContent='SR';
+      if(labels[1])labels[1].textContent='R';
+      if(labels[2])labels[2].textContent='進化素材';
+      var note=document.getElementById('gacha-pool-detail-note');
+      if(note && towaPoolOriginalNoteHTML!==null)note.innerHTML=towaPoolOriginalNoteHTML;
+    }
     var gacha = GACHA_BANNERS.find(function(item){ return item.id === currentGachaId; }) || GACHA_BANNERS[0];
     var modal = document.getElementById('gacha-pool-detail-modal');
     var content = document.getElementById('gacha-pool-detail-content');
@@ -7218,6 +7432,9 @@ document.addEventListener('touchend', function (e) {
     modal.classList.remove('is-open');
     modal.setAttribute('aria-hidden','true');
     document.body.classList.remove('is-gacha-pool-detail-open');
+    // Only Towa temporarily relocates this shared modal. Restore it on close,
+    // including the transition into the native character-detail preview.
+    if(gachaPoolDetailIsTowa)restoreTowaRatesToSummon();
   }
 
   window.openGachaPoolDetail = openGachaPoolDetail;
@@ -13077,6 +13294,13 @@ function finalGachaFlash(callback){
   }
 
   function closeReveal(){
+  // build1544: Towa's special draw reuses this EXISTING full-screen acquisition reveal.
+  // Return to the Towa ten-result screen instead of normal single-draw detail.
+  // Ordinary gacha is unchanged because this callback is normally absent.
+  if(typeof window.__towaFullscreenRevealClose === 'function'){
+    window.__towaFullscreenRevealClose();
+    return;
+  }
   const modal = document.getElementById('reveal-modal');
   const content = document.getElementById('reveal-content');
   const blackout = document.getElementById('fullscreen-blackout');
@@ -17237,7 +17461,8 @@ async function deleteCurrentChara(){
     closeModal('detail-modal');
 
     if(returnToGachaPool){
-      openGachaPoolDetail();
+      if(gachaPoolDetailIsTowa) openTowaGachaPoolDetail();
+      else openGachaPoolDetail();
       requestAnimationFrame(function(){
         var content = document.getElementById('gacha-pool-detail-content');
         if(content) content.scrollTop = Math.max(0, Number(gachaPoolDetailReturnScrollTop || 0));
@@ -19452,7 +19677,7 @@ function fadeOutOpeningBgm(){
 
 
 
-<script src="js/shooting_characters.js?v=1525-sui-ult-fixed"></script>
+<script src="js/shooting_characters.js?v=1538-towa-trial"></script>
 <script src="js/story_scenario.js?v=1522-ch08-4stages"></script>
 <script src="js/story_novel.js?v=1510-aina-seeker-trial"></script>
 <script src="js/stage_select.js?v=1512-ch704-spider-horde"></script>
@@ -19689,7 +19914,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1530-score-boss-100k"></script>
+<script src="js/shooting_event.js?v=1539-towa-bg-only"></script>
 <script src="js/shooting_party_filter.js?v=1472-filter-screen-exit-reset"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
@@ -19717,6 +19942,8 @@ window.returnToTitleScreen = function(){
 
 <script src="js/score_attack.js?v=1530-score-cap-safe"></script>
 <script src="js/resonance_tower.js?v=1531-towa-reward-confirm"></script>
+<script src="js/towa_encounter.js?v=1552"></script>
+<script src="js/towa_dark_gacha.js?v=1548-native-skip"></script>
 
 <script id="ten-gacha-retry-two-line-v97">
 (function(){
