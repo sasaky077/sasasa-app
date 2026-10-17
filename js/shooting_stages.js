@@ -1267,6 +1267,9 @@
       background: 'images/battle_bg_01.webp',
       enemyIds: Object.freeze([SHOOTING_ENEMY_ID.BULLET_HELL_TEST]),
       survivalBoss: true,
+      bossTotalHp: 100000,
+      bossGaugeHp: 100000,
+      bossGauges: 1,
       timeLimitSeconds: 60,
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.SURVIVE_TIME,
@@ -1298,6 +1301,9 @@
       background: 'images/battle_bg_01.webp',
       enemyIds: Object.freeze([SHOOTING_ENEMY_ID.BULLET_HELL_TEST]),
       survivalBoss: true,
+      bossTotalHp: 100000,
+      bossGaugeHp: 100000,
+      bossGauges: 1,
       timeLimitSeconds: 60,
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.SURVIVE_TIME,

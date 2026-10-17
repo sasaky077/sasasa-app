@@ -1234,6 +1234,10 @@
     return Math.max(1, Number(values[Math.max(0, Number(wave || 1) - 1)] || values[0] || 350));
   }
 
+  const SCORE_ATTACK_BOSS_HP = 100000;
+  const SCORE_ATTACK_MAX_SCORE = 9999999;
+  const SCORE_ATTACK_BOSS_RESPAWN_MS = 350;
+
   function getScoreAttackComboMultiplier(comboValue) {
     const combo = Math.max(0, Number(comboValue || 0));
     if (combo >= 300) return 3.0;
@@ -1249,7 +1253,7 @@
     const dealt = Math.max(0, Number(damage || 0));
     if (!dealt) return true;
     const multiplier = getScoreAttackComboMultiplier(state.combo || 0);
-    state.score += Math.round(dealt * 100 * multiplier);
+    state.score = Math.min(SCORE_ATTACK_MAX_SCORE, Math.max(0, Number(state.score || 0)) + Math.round(dealt * 100 * multiplier));
     state.scoreAttackDamageTotal = Math.max(0, Number(state.scoreAttackDamageTotal || 0) + dealt);
     return true;
   }
@@ -1296,7 +1300,7 @@
     const remaining = Math.max(0, 2500 - Number(state.scoreAttackMoveWindowScore || 0));
     const add = Math.min(raw, remaining);
     if (add > 0) {
-      state.score += add;
+      state.score = Math.min(SCORE_ATTACK_MAX_SCORE, Math.max(0, Number(state.score || 0)) + add);
       state.scoreAttackMoveWindowScore = Number(state.scoreAttackMoveWindowScore || 0) + add;
       state.scoreAttackMoveDistance = Number(state.scoreAttackMoveDistance || 0) + distance;
     }
@@ -3278,6 +3282,7 @@
     state.activeCharacterId = selectedCharacterId;
     state.resumeElapsedMsPending = Math.max(0, Number(snapshot.elapsedMs || 0));
     state.score = Math.max(0, Number(snapshot.score || 0));
+    if (isScoreAttackStage()) state.score = Math.min(SCORE_ATTACK_MAX_SCORE, state.score);
     state.shotsHit = Math.max(0, Number(snapshot.shotsHit || 0));
     state.combo = Math.max(0, Number(snapshot.combo || 0));
     state.maxCombo = Math.max(state.combo, Number(snapshot.maxCombo || 0));
@@ -3299,6 +3304,21 @@
       }
       state.boss.gauges = Math.max(1, Number(snapshot.boss.gauges || state.boss.gauges));
       state.boss.phase = Math.max(1, Math.min(state.boss.gauges, Number(snapshot.boss.phase || 1)));
+    }
+
+    if (isScoreAttackStage() && state.boss) {
+      // Old resume snapshots used MAX_SAFE_INTEGER. Start those at 100K instead.
+      const savedMax = Number(snapshot.boss?.hpMax || 0);
+      const savedHp = Number(snapshot.boss?.hp || 0);
+      state.boss.hpMax = SCORE_ATTACK_BOSS_HP;
+      state.boss.gaugeHp = SCORE_ATTACK_BOSS_HP;
+      state.boss.gaugeHps = null;
+      state.boss.gauges = 1;
+      state.boss.phase = 1;
+      state.boss.hp = savedMax === SCORE_ATTACK_BOSS_HP
+        ? Math.max(1, Math.min(SCORE_ATTACK_BOSS_HP, savedHp))
+        : SCORE_ATTACK_BOSS_HP;
+      state.scoreAttackBossRespawnAt = 0;
     }
 
     if (isRaidStage()) {
@@ -4307,6 +4327,8 @@
       bullets: [], enemyBullets: [], score: 0, shotsHit: 0,
       scoreAttackVolleyIndex: -1,
       scoreAttackDamageTotal: 0,
+      scoreAttackBossRespawnAt: 0,
+      scoreAttackBossDefeated: 0,
       scoreAttackMoveDistance: 0,
       scoreAttackLastMoveX: NaN,
       scoreAttackLastMoveY: NaN,
@@ -4376,9 +4398,17 @@
     // 60秒到達フレームでのDOM生成を減らす。
     if (isChapter04Stage() && !isChapter43MemoryBossStage()) prepareChapter4ItemOverlay();
 
-    if (selectedStage && selectedStage.survivalBoss && state.boss) {
-      // SCORE ATTACK等の耐久ボスは「倒す対象」ではなく、制限時間中ずっと殴る標的。
-      // 十分に大きい内部HPを持たせ、UIでは∞として扱う。
+    if (isScoreAttackStage() && state.boss) {
+      // build1530: SCORE ATTACK NORMAL/HARD only. 60-second survival fight,
+      // 100K HP per boss, reappearing after each defeat (not an early CLEAR).
+      state.boss.hp = SCORE_ATTACK_BOSS_HP;
+      state.boss.hpMax = SCORE_ATTACK_BOSS_HP;
+      state.boss.gaugeHp = SCORE_ATTACK_BOSS_HP;
+      state.boss.gaugeHps = null;
+      state.boss.gauges = 1;
+      state.boss.phase = 1;
+    } else if (selectedStage && selectedStage.survivalBoss && state.boss) {
+      // Non-score-attack survival modes retain their existing immortal target.
       const survivalHp = Number.MAX_SAFE_INTEGER;
       state.boss.hp = survivalHp;
       state.boss.hpMax = survivalHp;
@@ -4765,7 +4795,7 @@
     const currentGaugeMaxHp = isChapter43BossStage() ? getChapter43WaveMaxHp(phase) : gaugeHp;
     const amount = ch702Boss
       ? ch702Boss.hp / ch702Boss.max
-      : (isScoreAttackStage() ? 1 : (currentGaugeHp / Math.max(1, currentGaugeMaxHp)));
+      : (currentGaugeHp / Math.max(1, currentGaugeMaxHp));
     if (bossGauge) bossGauge.style.setProperty('--gauge-fill', String(amount));
     if (bossBar) {
       bossBar.classList.remove('phase-1', 'phase-2', 'phase-3');
@@ -4773,9 +4803,9 @@
     }
     // build1528: all top-fixed boss HP bars share one numeric readout.
     // Numeric values represent *total remaining HP*, except bosses that reset HP by wave.
-    // Never expose the internal MAX_SAFE_INTEGER sentinel for survival/score attack.
+    // SCORE ATTACK now has a real 100K gauge. Other immortal survival types still show infinity.
     if (bossHpValue) {
-      const isInfiniteHp = isScoreAttackStage() || !!selectedStage?.survivalBoss;
+      const isInfiniteHp = !!selectedStage?.survivalBoss && !isScoreAttackStage();
       const shownCurrent = ch702Boss ? ch702Boss.hp
         : (isChapter43BossStage() ? getChapter43WaveCurrentHp() : state.boss.hp);
       const shownMax = ch702Boss ? ch702Boss.max
@@ -20041,6 +20071,7 @@
 
 
     if (checkBattleTimeLimit(ts)) return;
+    respawnScoreAttackBoss(ts);
 
     const dt = Math.min(0.032, Math.max(0, (ts - (prevTs || ts)) / 1000));
     prevTs = ts;
@@ -20106,7 +20137,7 @@
           spawnBossAdds(ts);
           updateNormalEnemies(dt, ts);
         }
-        if (!bossGrabbed && !bossStunned) {
+        if (!bossGrabbed && !bossStunned && (!isScoreAttackStage() || state.boss.hp > 0)) {
           fireBoss(ts);
         }
       }
@@ -21069,8 +21100,35 @@
     setTimeout(showStep, 260);
   }
 
+  function respawnScoreAttackBoss(now) {
+    if (!isScoreAttackStage() || !state || !state.boss || state.ended || state.finishing) return false;
+    const readyAt = Number(state.scoreAttackBossRespawnAt || 0);
+    if (!readyAt || now < readyAt) return false;
+    state.scoreAttackBossRespawnAt = 0;
+    state.boss.hpMax = SCORE_ATTACK_BOSS_HP;
+    state.boss.hp = SCORE_ATTACK_BOSS_HP;
+    state.boss.gaugeHp = SCORE_ATTACK_BOSS_HP;
+    state.boss.gaugeHps = null;
+    state.boss.gauges = 1;
+    state.boss.phase = 1;
+    renderHud();
+    return true;
+  }
+
   function beginBossDefeat() {
     if (!state || state.ended || state.finishing) return;
+
+    if (isScoreAttackStage()) {
+      // build1530: no premature results in this 60-second challenge.
+      // Hold HP=0 for a short respawn interval; 0-HP enemies cannot be hit.
+      if (Number(state.scoreAttackBossRespawnAt || 0) > 0) return;
+      state.boss.hp = 0;
+      state.scoreAttackBossDefeated = Number(state.scoreAttackBossDefeated || 0) + 1;
+      state.scoreAttackBossRespawnAt = performance.now() + SCORE_ATTACK_BOSS_RESPAWN_MS;
+      flashBossHit(true);
+      renderHud();
+      return;
+    }
 
     // build1042: CH04-3は記憶のかけら未回収ゲートを撃破処理より優先。
     if (enforceChapter43MemoryGateBeforeDefeat()) return;
@@ -22292,6 +22350,9 @@
       );
     }
     finalizeStoryClearScore(!!win);
+    if (isScoreAttackStage()) {
+      state.score = Math.min(SCORE_ATTACK_MAX_SCORE, Math.max(0, Math.floor(Number(state.score || 0))));
+    }
     const rankLetter = getResultRank(state.score, win);
 
     if (dailyQuestAtResult) {
