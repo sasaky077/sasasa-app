@@ -4747,6 +4747,7 @@
     const bossBar = document.getElementById('shooting-boss-bar');
     const bossGauge = bossBar ? bossBar.querySelector('i') : null;
     const bossPhase = document.getElementById('shooting-boss-phase');
+    const bossHpValue = document.getElementById('shooting-boss-hp-value');
     const score = document.getElementById('shooting-score');
     const comboCount = document.getElementById('shooting-combo-count');
     const hpText = document.getElementById('shooting-player-hp-text');
@@ -4770,20 +4771,35 @@
       bossBar.classList.remove('phase-1', 'phase-2', 'phase-3');
       bossBar.classList.add(`phase-${phase}`);
     }
+    // build1528: all top-fixed boss HP bars share one numeric readout.
+    // Numeric values represent *total remaining HP*, except bosses that reset HP by wave.
+    // Never expose the internal MAX_SAFE_INTEGER sentinel for survival/score attack.
+    if (bossHpValue) {
+      const isInfiniteHp = isScoreAttackStage() || !!selectedStage?.survivalBoss;
+      const shownCurrent = ch702Boss ? ch702Boss.hp
+        : (isChapter43BossStage() ? getChapter43WaveCurrentHp() : state.boss.hp);
+      const shownMax = ch702Boss ? ch702Boss.max
+        : (isChapter43BossStage() ? getChapter43WaveMaxHp(phase) : state.boss.hpMax);
+      const maxHp = Math.max(1, Math.ceil(Number(shownMax) || 1));
+      const remainingHp = Math.max(0, Math.min(maxHp, Math.ceil(Number(shownCurrent) || 0)));
+      const value = isInfiniteHp ? 'HP ∞' : `${remainingHp.toLocaleString('ja-JP')} / ${maxHp.toLocaleString('ja-JP')}`;
+      if (bossHpValue.textContent !== value) bossHpValue.textContent = value;
+      bossHpValue.classList.toggle('is-infinite', isInfiniteHp);
+    }
     if (bossPhase) {
-      const scoreAttack = isScoreAttackStage();
-      bossPhase.textContent = ch702Boss
-        ? `HP ${Math.ceil(ch702Boss.hp).toLocaleString('ja-JP')} / ${Math.ceil(ch702Boss.max).toLocaleString('ja-JP')}`
-        : scoreAttack
-        ? 'HP：∞'
-        : (isAmbushStage()
-          ? `WAVE ${state.ambushWave || 1} / 2`
-          : (isFacelessStage()
-            ? `WAVE ${state.facelessWave || 1} / 2`
-            : (isChapter43BossStage()
-              ? `WAVE ${phase} / 2　HP ${Math.ceil(getChapter43WaveCurrentHp())} / ${getChapter43WaveMaxHp(phase)}`
-              : `PHASE ${phase} / ${state.boss.gauges}`)));
-      bossPhase.classList.toggle('score-attack-infinite-hp', scoreAttack);
+      const phaseLabel = ch702Boss
+        ? 'BOSS'
+        : (isScoreAttackStage()
+          ? 'SCORE ATTACK'
+          : (isAmbushStage()
+            ? `WAVE ${state.ambushWave || 1} / 2`
+            : (isFacelessStage()
+              ? `WAVE ${state.facelessWave || 1} / 2`
+              : (isChapter43BossStage()
+                ? `WAVE ${phase} / 2`
+                : `PHASE ${phase} / ${state.boss.gauges}`))));
+      if (bossPhase.textContent !== phaseLabel) bossPhase.textContent = phaseLabel;
+      bossPhase.classList.remove('score-attack-infinite-hp');
     }
     if (score) {
       const root = document.getElementById(ROOT_ID);

@@ -14560,3 +14560,39 @@ html body #shooting-event-root .shooting-footer-v1436 .shooting-ui-layout-btn{
     [data-shooting-stage="shooting_beginner_ch07_02"]
   ) .shooting-boss-hud{width:min(69vw,350px) !important;}
 }
+
+
+/* ============================================================
+   build1528 — All fixed BOSS HP HUDs show current / maximum HP.
+   Place readout directly beneath the HP bar without replacing phase text.
+   ============================================================ */
+html body #shooting-event-root .shooting-boss-hud #shooting-boss-hp-value{
+  display:block;
+  margin:4px auto 0;
+  min-height:15px;
+  max-width:100%;
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:clamp(11px,3vw,13px);
+  font-weight:700;
+  line-height:1.15;
+  letter-spacing:.055em;
+  text-align:center;
+  white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+  color:#503a22;
+  text-shadow:0 0 2px #fff,0 0 5px rgba(255,255,255,.98),0 1px 0 #fff;
+  pointer-events:none;
+}
+html body #shooting-event-root .shooting-boss-hud #shooting-boss-hp-value.is-infinite{
+  font-size:15px;
+  color:#97733e;
+}
+html body #shooting-event-root .shooting-boss-hud .shooting-boss-phase{
+  margin-top:2px;
+}
+@media (max-width:360px){
+  html body #shooting-event-root .shooting-boss-hud #shooting-boss-hp-value{
+    font-size:10.5px;
+    letter-spacing:0;
+  }
+}

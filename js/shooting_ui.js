@@ -34,7 +34,9 @@
 
         <section class="shooting-boss-hud">
           <div class="shooting-boss-name">${BOSS.displayName || BOSS.name}</div>
-          <div class="shooting-boss-bar phase-1" id="shooting-boss-bar"><i></i></div><div class="shooting-boss-phase" id="shooting-boss-phase">PHASE 1 / ${BOSS.gauges}</div>
+          <div class="shooting-boss-bar phase-1" id="shooting-boss-bar"><i></i></div>
+          <div class="shooting-boss-hp-value" id="shooting-boss-hp-value" aria-label="ボスの現在HPと最大HP">— / —</div>
+          <div class="shooting-boss-phase" id="shooting-boss-phase">PHASE 1 / ${BOSS.gauges}</div>
         </section>
         <div class="shooting-battle-timer" id="shooting-battle-timer" aria-live="polite" aria-hidden="true">
           <small>TIME</small><strong id="shooting-battle-timer-value">00:00</strong>
