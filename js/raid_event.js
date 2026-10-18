@@ -1358,7 +1358,7 @@
         <section class="daily-raid-entry" id="daily-raid-entry">
           <div class="daily-raid-entry-hero">
             <img src="images/raid_enemy_01.webp" alt="SIGMA-IX">
-            <div><small>RAID BATTLE</small><strong>SIGMA-IX</strong><span>募集するか、フレンドの募集へ参加してください。</span></div>
+            <div><small>RAID BATTLE</small><strong data-raid-boss-name>SIGMA-IX</strong><span>募集するか、フレンドの募集へ参加してください。</span></div>
           </div>
           <div class="daily-raid-mode-grid">
             <button type="button" class="daily-raid-mode-card is-host raid-surface" id="daily-raid-recruit-btn">
@@ -2009,6 +2009,7 @@
     // lobbyBg: ロビー全面の背景（背景＋ボスの絵を1枚で描いたもの）。bg_raid_01.webp と同サイズ・同構図で用意する。
     sigma:{name:'SIGMA-IX',line:'―これより、調査を開始する。',lobbyBg:'images/bg_raid_01.webp',lobbyImage:'images/raid_enemy_01.webp',enemyId:'shooting_raid_test',pieceImage:'images/chara_50_panel.webp'},
     shien:{name:'シエン',line:'―霞の果てで、また会おう。',lobbyBg:'images/bg_raid_02.webp?v=1572',lobbyImage:'images/raid_enemy_02_battle.webp',enemyId:'shooting_raid_shien',pieceImage:'images/raid_piece_shien.webp'},
+    camilla:{name:'カミラ',line:'―甘い血の匂いがするわ。',lobbyBg:'images/bg_raid_03.webp',lobbyImage:'images/raid_enemy_03_battle.webp',enemyId:'shooting_raid_camilla',pieceImage:'images/raid_piece_camilla.webp'},
     // boss3:{name:'',line:'',lobbyBg:'images/bg_raid_03.webp',lobbyImage:'images/raid_enemy_03_battle.webp',enemyId:'shooting_raid_boss3',pieceImage:'images/raid_piece_boss3.webp'},
   };
   function getBossDef(status){
@@ -2048,7 +2049,9 @@
       #daily-raid-root .daily-raid-hero img{transition:opacity .22s ease}
       #daily-raid-root.raid-boss-pending .daily-raid-hero-copy,
       #daily-raid-root.raid-boss-pending .daily-raid-enemy-page img,
-      #daily-raid-root.raid-boss-pending .daily-raid-hero img{opacity:0!important}
+      #daily-raid-root.raid-boss-pending .daily-raid-hero img,
+      #daily-raid-root.raid-boss-pending .daily-raid-entry-hero{opacity:0!important}
+      #daily-raid-root .daily-raid-entry-hero{transition:opacity .22s ease}
     `;
     document.head.appendChild(st);
   }
@@ -2066,8 +2069,10 @@
     const def=getBossDef(status);
     root.querySelectorAll('[data-raid-boss-name]').forEach(el=>{ el.textContent=def.name; });
     root.querySelectorAll('[data-raid-boss-line]').forEach(el=>{ el.textContent=def.line||''; });
-    const img=root.querySelector('.daily-raid-enemy-page img, .daily-raid-hero img');
-    if(img&&def.lobbyImage&&img.getAttribute('src')!==def.lobbyImage){ img.setAttribute('src',def.lobbyImage); img.alt=def.name; }
+    // build1580: 入口画面（チーム未所属）のボス画像も含めて差し替える
+    root.querySelectorAll('.daily-raid-enemy-page img, .daily-raid-hero img, .daily-raid-entry-hero img').forEach(img=>{
+      if(def.lobbyImage&&img.getAttribute('src')!==def.lobbyImage){ img.setAttribute('src',def.lobbyImage); img.alt=def.name; }
+    });
     // ロビー全面の背景をボスごとに差し替える（既存CSSの bg_raid_01.webp は !important のため inline !important で上書き）
     if(def.lobbyBg&&root.dataset.raidBossBg!==def.lobbyBg){
       root.dataset.raidBossBg=def.lobbyBg;
@@ -2098,11 +2103,22 @@
       #daily-raid-root .drp-piece{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding-top:8px;border-top:1px solid rgba(91,72,49,.16)}
       #daily-raid-root .drp-piece img{width:30px;height:30px;object-fit:cover;border:1px solid rgba(160,124,69,.5)}
       #daily-raid-root .drp-piece span{font:600 12px/1.3 "Noto Serif JP",serif;color:#4c3020}
-      #daily-raid-root .drp-piece span small{display:block;font:400 10px/1.3 "Noto Serif JP",serif;color:#7a5f3e}
+      #daily-raid-root .drp-piece span{min-width:0}
+      #daily-raid-root .drp-piece span small{display:block;font:400 10px/1.3 "Noto Serif JP",serif;color:#7a5f3e;white-space:normal!important;overflow-wrap:anywhere}
       #daily-raid-root .drp-piece button{appearance:none;border:1px solid rgba(160,124,69,.6);background:linear-gradient(180deg,#fff,#efe3c6);color:#4c3020;font:700 12px/1 "Noto Serif JP",serif;letter-spacing:.08em;padding:8px 12px;cursor:pointer}
       #daily-raid-root .drp-piece button:disabled{opacity:.45;cursor:default}
       #daily-raid-root .drp-piece button:focus-visible{outline:2px solid #b08a46;outline-offset:2px}
-      #daily-raid-root .drp-table-open{appearance:none;justify-self:stretch;margin-top:2px;border:1px solid rgba(160,124,69,.55);background:rgba(255,255,255,.55);color:#4c3020;font:700 12px/1 "Noto Serif JP",serif;letter-spacing:.2em;padding:9px 12px;cursor:pointer}
+      #daily-raid-root .drp-head small{margin-right:auto}
+      #daily-raid-root .drp-table-open{appearance:none;flex:0 0 auto;margin-left:10px;align-self:center;border:1px solid rgba(160,124,69,.55);background:rgba(255,255,255,.6);color:#4c3020;font:700 11px/1 "Noto Serif JP",serif;letter-spacing:.12em;padding:7px 10px;cursor:pointer}
+      /* build1579: 画面の低い端末（iPhone SE等）でもメンバー欄まで見られるよう、情報ページは縦スクロール可能に */
+      #daily-raid-root .daily-raid-lobby .daily-raid-info-page{overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;touch-action:pan-y}
+      #daily-raid-root .daily-raid-lobby .daily-raid-info-page::-webkit-scrollbar{display:none}
+      #daily-raid-root .daily-raid-lobby .daily-raid-info-page > *{flex-shrink:0!important}
+      @media (max-height:700px){
+        #daily-raid-root .daily-raid-progress{gap:6px;padding:9px 12px}
+        #daily-raid-root .drp-piece{padding-top:6px}
+        #daily-raid-root .drp-piece img{width:26px;height:26px}
+      }
       #daily-raid-root .drp-table-open:focus-visible{outline:2px solid #b08a46;outline-offset:2px}
     `;
     document.head.appendChild(st);
@@ -2126,12 +2142,11 @@
     const canExchange=!!(boss&&boss.chara_id)&&have>=need;
     box.hidden=false;
     box.innerHTML=`
-      <div class="drp-head"><small>TOTAL CLEAR</small><strong>${fmt(total)}<em>回</em></strong></div>
+      <div class="drp-head"><small>TOTAL CLEAR</small><strong>${fmt(total)}<em>回</em></strong><button type="button" class="drp-table-open" id="daily-raid-reward-table-open">報酬一覧</button></div>
       <div class="drp-bar"><i style="transform:scaleX(${ratio})"></i></div>
       ${hasNext?`<div class="drp-next"><span>あと${fmt(next-total)}回（${fmt(next)}回目）</span><b>${esc(itemsText(pr.next_items))}</b></div>`:`<div class="drp-next"><span>累計討伐ボーナスをすべて達成</span></div>`}
       ${n(status.rank_reward&&status.rank_reward.unclaimed_count)>0?`<div class="drp-piece drp-claim"><span style="grid-column:1/3">未受取の討伐報酬<small>${fmt(status.rank_reward.unclaimed_count)}件 · 受け取ると累計に加算されます</small></span><button type="button" id="daily-raid-claim-pending">受け取る</button></div>`:''}
-      ${boss&&boss.piece_item_id?`<div class="drp-piece"><img src="${esc(def.pieceImage||'')}" alt="" onerror="this.style.visibility='hidden'"><span>${esc(def.name)}の欠片<small>${fmt(have)} / ${fmt(need)}　Sランク討伐で1個・集めると仲間になる</small></span><button type="button" id="daily-raid-piece-exchange" ${canExchange?'':'disabled'}>交換</button></div>`:''}
-      <button type="button" class="drp-table-open" id="daily-raid-reward-table-open">報酬一覧</button>`;
+      ${boss&&boss.piece_item_id?`<div class="drp-piece"><img src="${esc(def.pieceImage||'')}" alt="" onerror="this.style.visibility='hidden'"><span>${esc(def.name)}の欠片<small>${fmt(have)} / ${fmt(need)}　S討伐で1個・${fmt(need)}個で仲間に</small></span><button type="button" id="daily-raid-piece-exchange" ${canExchange?'':'disabled'}>交換</button></div>`:''}`;
     const ex=box.querySelector('#daily-raid-piece-exchange');
     if(ex) ex.addEventListener('click',()=>exchangeBossPiece(status));
     const tb=box.querySelector('#daily-raid-reward-table-open');

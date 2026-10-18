@@ -48,6 +48,7 @@
     RAID_TEST: 'shooting_raid_test',
     // build1570: DAILY RAID 日替わりボス
     RAID_SHIEN: 'shooting_raid_shien',
+    RAID_CAMILLA: 'shooting_raid_camilla',
     BULLET_HELL_TEST: 'shooting_bullet_hell_test',
     NOAH: 'shooting_noah',
     OVERSEER_AMBUSH: 'shooting_overseer_ambush',
@@ -465,6 +466,25 @@
       // build1571: 霞化(7秒実体→4秒無敵) / 回転斬り / 出血。shooting_core.js updateShienMechanics。
       shienMechanics: true,
       // 突進の当たり判定は表示サイズに比例するため、イリシュ（CH02-4）と同じ1.15に留める。
+      uiScale: 1.15,
+    }),
+    [SHOOTING_ENEMY_ID.RAID_CAMILLA]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.RAID_CAMILLA,
+      kind: 'boss',
+      implemented: true,
+      name: 'カミラ',
+      displayName: 'RAID ENEMY　カミラ',
+      image: 'images/raid_enemy_03_battle.webp',
+      element: 'fire',
+
+      gaugeHp: 33334,
+      gauges: 3,
+      bulletSpeed: 200,
+      fireRate: 860,
+      bulletDamage: 205,
+
+      // build1578: 3体目。サキエルと同じ「美しい弾幕」（螺旋＋ウェーブ）。専用ギミックは今後追加。
+      behavior: 'beautiful_boss_v1',
       uiScale: 1.15,
     }),
 
