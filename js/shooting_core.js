@@ -4140,6 +4140,8 @@
   function setCommonUiVisible(open) { UIModule.setCommonUiVisible(open); }
 
   function resetState() {
+    // build1586: 前の戦闘のシエン出血表示（HPゲージの斜線）を持ち越さない
+    try { setShienBleedGauge(false); } catch (_) {}
     // 再挑戦・試遊切替でも前の常闇背景を持ち越さない。
     document.getElementById(ROOT_ID)?.classList.remove('towa-dark-background');
     document.getElementById('shooting-towa-darkness')?.remove();
@@ -20287,6 +20289,26 @@
         border:1px solid rgba(255,170,170,.7);border-radius:8px;padding:1px 7px;pointer-events:none;
         animation:shienBleedPulse 1s ease-in-out infinite}
       .shien-bleed-tag small{font-size:8px;font-weight:600;opacity:.85;margin-left:4px}
+      /* build1586: 出血の継続ダメージ演出 */
+      .shien-blood-drop{position:absolute;left:0;top:0;width:var(--bs,10px);height:var(--bs,10px);margin:calc(var(--bs,10px) / -2) 0 0 calc(var(--bs,10px) / -2);z-index:13;box-shadow:0 0 4px rgba(200,10,30,.6);
+        border-radius:50% 50% 50% 0;background:radial-gradient(circle at 35% 35%,#ff8a8a,#c4121f 55%,#7a0710);
+        pointer-events:none;animation:shienBloodDrop .55s cubic-bezier(.2,.6,.4,1) forwards}
+      @keyframes shienBloodDrop{
+        0%{transform:translate3d(var(--bx),var(--by),0) scale(.6);opacity:1}
+        60%{opacity:1}
+        100%{transform:translate3d(calc(var(--bx) + var(--dx)),calc(var(--by) + var(--dy)),0) scale(.25);opacity:0}}
+      .shien-bleed-vignette{position:absolute;inset:0;z-index:29;pointer-events:none;
+        background:radial-gradient(ellipse at 50% 55%,transparent 52%,rgba(190,16,32,.22) 74%,rgba(150,8,20,.55) 100%);
+        animation:shienBleedVignette .42s ease-out forwards}
+      @keyframes shienBleedVignette{0%{opacity:0}25%{opacity:1}100%{opacity:0}}
+      .shien-bleed-gauge{position:absolute;inset:0;pointer-events:none;z-index:1;
+        background:repeating-linear-gradient(135deg,rgba(214,24,44,.62) 0 5px,rgba(150,10,24,.18) 5px 10px);
+        background-size:14px 14px;animation:shienBleedGauge .9s linear infinite,shienBleedGaugePulse 1s ease-in-out infinite}
+      @keyframes shienBleedGauge{from{background-position:0 0}to{background-position:0 14px}}
+      @keyframes shienBleedGaugePulse{0%,100%{opacity:.55}50%{opacity:1}}
+      #shooting-event-root.shien-bleed-hp .shooting-hp-side-track,
+      #shooting-event-root.shien-bleed-hp #shooting-player-hp-bar{
+        box-shadow:0 0 0 1px rgba(200,20,40,.6),0 0 10px rgba(220,30,50,.55)!important}
       @keyframes shienBleedPulse{50%{background:rgba(220,30,50,.92)}}
     `;
     document.head.appendChild(st);
@@ -20320,6 +20342,7 @@
     if (bossEl) { bossEl.classList.add('shien-blade-boss'); bossEl.classList.remove('shien-smoke','violence-charge-warning','shien-dash-warning'); }
     document.getElementById(PLAYER_ID)?.classList.remove('shien-bleeding');
     document.querySelectorAll('#shooting-player .shien-bleed-tag').forEach(el => el.remove());
+    setShienBleedGauge(false);
     installShienHpGuard();
     if (arena) arena.querySelectorAll('.shien-safe-zone,.shien-moon-sweep,.shien-crescent-slash,.shien-hit-flash').forEach(el => el.remove());
     state.shien = { smoke:false, slot:-1, cur:null, target:null, zone:null, safe:null, caption:null,
@@ -20665,6 +20688,49 @@
     updateShienBleed(now,halted);
   }
 
+  // 出血中はHPゲージに赤い斜線を流して脈打たせる（縦・横どちらのHP表示にも対応）
+  function setShienBleedGauge(on) {
+    document.getElementById(ROOT_ID)?.classList.toggle('shien-bleed-hp', !!on);
+    ['#shooting-hp-side-gauge', '#shooting-player-hp-bar i'].forEach(sel => {
+      const host = document.querySelector(sel);
+      if (!host) return;
+      let ov = host.querySelector(':scope > .shien-bleed-gauge');
+      if (on && !ov) {
+        ov = document.createElement('span');
+        ov.className = 'shien-bleed-gauge';
+        ov.setAttribute('aria-hidden', 'true');
+        if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
+        host.appendChild(ov);
+      } else if (!on && ov) {
+        ov.remove();
+      }
+    });
+  }
+
+  // 出血ダメージのたびに血しぶき＋画面の縁を赤くにじませる（DOM 7個・0.55秒で自動削除）
+  function spawnShienBloodFx() {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena || !state?.player) return;
+    const x = Number(state.player.x) || 0, y = Number(state.player.y) || 0;
+    for (let i = 0; i < 9; i++) {
+      const d = document.createElement('i');
+      d.className = 'shien-blood-drop';
+      const a = -Math.PI * (0.15 + Math.random() * 0.7) + (Math.random() < .5 ? 0 : Math.PI * 0.08);
+      const dist = 26 + Math.random() * 34;
+      d.style.setProperty('--bs', `${(7 + Math.random() * 7).toFixed(1)}px`);
+      d.style.setProperty('--bx', `${(x + (Math.random() - .5) * 14).toFixed(1)}px`);
+      d.style.setProperty('--by', `${(y - 10 + (Math.random() - .5) * 18).toFixed(1)}px`);
+      d.style.setProperty('--dx', `${(Math.cos(a) * dist).toFixed(1)}px`);
+      d.style.setProperty('--dy', `${(Math.sin(a) * dist + 22).toFixed(1)}px`);
+      arena.appendChild(d);
+      setTimeout(() => d.remove(), 600);
+    }
+    const v = document.createElement('div');
+    v.className = 'shien-bleed-vignette';
+    arena.appendChild(v);
+    setTimeout(() => v.remove(), 460);
+  }
+
   function updateShienBleed(now, halted) {
     const party = Array.isArray(state.party) ? state.party : [];
     const active = getActiveMember();
@@ -20687,6 +20753,7 @@
         } else if (!bleeding && tag) {
           tag.remove();
         }
+        setShienBleedGauge(bleeding);
       }
     }
     if (!bleeding || halted) {
@@ -20698,6 +20765,7 @@
     const dmg = Math.min(active.hp, Math.max(1, Math.floor(Number(active.hpMax || 0) * SHIEN_BLEED_RATE)));
     active.hp = Math.max(0, active.hp - dmg);
     showDamageNumber(state.player.x, state.player.y, dmg, 'player', false, '');
+    spawnShienBloodFx();
     renderHud();
     if (active.hp <= 0) {
       active.shienBleeding = false;
