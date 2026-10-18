@@ -22,8 +22,13 @@
 
   // stage 1 = shinju_01.webp（芽） / stage 5 = shinju_05.webp（大木）
   // build1605: 聖樹の息吹1個=1。Lv5(MAX)まで累計500個。1段ごとの必要数 50→90→140→220（サーバー _shinju_level_for と揃える）
-  const STAGE_EXP = [0, 50, 140, 280, 500];
-  const COMPLETE_EXP = 500;
+  // build1610: 神樹EXP ＝ 3SLOTに注いだ創世ptの合計。Lv5(MAX)＝全SLOT Lv10（456pt）
+  const STAGE_EXP = [0, 50, 140, 280, 456];
+  const COMPLETE_EXP = 456;
+  // SLOT育成（サーバー _shinju_slot_cost と揃える）。効果はLvごとに HP/ATK +2.5%、ULT還元 +2%
+  const SLOT_MAX_LEVEL = 10;
+  const SLOT_COSTS = Object.freeze([5, 6, 8, 10, 12, 15, 18, 22, 26, 30]);
+  const SLOT_RATE_PER_LEVEL = Object.freeze({ hp: 0.025, atk: 0.025, ult: 0.02 });
   const STAGE_LABELS = [
     '萌芽',
     '若芽',
@@ -43,7 +48,8 @@
 
   const DEFAULT_BOSS_ITEM_EXP = 120;
   // build1608: 加護SLOTの差し替え・解除に必要な創世pt（サーバー set_shinju_blessing_secure と揃える）
-  const SLOT_CHANGE_COST = 10;
+  // build1610: 加護キャラの入れ替えは無料
+  const SLOT_CHANGE_COST = 0;
   const RUN_REWARD_MASTER = {
     default: {
       bossId: 'enemy_01',
@@ -162,11 +168,29 @@
     return normalized;
   }
 
+  function normalizeSlots(value) {
+    const src = value && typeof value === 'object' ? value : {};
+    const lv = v => Math.max(0, Math.min(SLOT_MAX_LEVEL, Math.floor(Number(v || 0))));
+    return { hp: lv(src.hp), atk: lv(src.atk), ult: lv(src.ult) };
+  }
+  function slotRates(slots) {
+    const s = normalizeSlots(slots);
+    return { hp: s.hp * SLOT_RATE_PER_LEVEL.hp, atk: s.atk * SLOT_RATE_PER_LEVEL.atk, ult: s.ult * SLOT_RATE_PER_LEVEL.ult };
+  }
+  function slotNextCost(level) {
+    const lv = Math.floor(Number(level || 0));
+    return lv >= SLOT_MAX_LEVEL ? null : SLOT_COSTS[lv];
+  }
+  function fmtPct(rate) {
+    const v = Math.round(Number(rate || 0) * 1000) / 10;
+    return (Number.isInteger(v) ? String(v) : v.toFixed(1)) + '%';
+  }
   function normalizeState(state) {
     const s = state && typeof state === 'object' ? state : createInitialState();
     return {
       exp: Math.max(0, Number(s.exp || 0)),
       pt: Math.max(0, Number(s.pt || 0)),
+      slots: normalizeSlots(s.slots),
       inventory: Array.isArray(s.inventory) ? s.inventory.filter(Boolean) : [],
       offeredItems: Array.isArray(s.offeredItems) ? s.offeredItems.filter(Boolean) : [],
       gameClearSeen: !!s.gameClearSeen,
@@ -213,7 +237,7 @@
 
     const view = getViewState(authoritativeState);
     const slots = view.blessings || {};
-    const rates = view.blessingRates || getBlessingRates(view.stage);
+    const rates = view.blessingRates || slotRates(view.slots);
     return {
       characterId: id,
       stage: view.stage,
@@ -265,8 +289,8 @@
       pendingItemCount: s.inventory.length,
       // build1605: 奉納待ちの「栄養の個数」（1行に複数個入ることがある）
       pendingNutrition: (s.inventory || []).reduce((sum, item) => sum + Math.max(0, Number(item && item.exp || 0)), 0),
-      blessingRates: getBlessingRates(stage),
-      imageSrc: `images/shinju_${String(stage).padStart(2, '0')}.webp?v=758`,
+      blessingRates: slotRates(s.slots),
+      imageSrc: `images/shinju_${String(stage).padStart(2, '0')}.webp?v=1609`,
     });
   }
 
@@ -329,7 +353,7 @@
       <div class="shinju-panel" role="dialog" aria-modal="true" aria-label="ゼラフィア創世進捗">
         <button class="shinju-close" type="button" onclick="closeShinjuScreen()">＜戻る</button>
         <div class="shinju-visual-wrap">
-          <img class="shinju-visual" id="shinju-visual" src="images/shinju_01.webp?v=758" alt="神樹">
+          <img class="shinju-visual" id="shinju-visual" src="images/shinju_01.webp?v=1609" alt="神樹">
           <div class="shinju-visual-glow"></div>
           <div class="shinju-aura-field" id="shinju-aura-field" aria-hidden="true"></div>
           <div class="shinju-hero-info" aria-label="神樹の成長情報">
@@ -489,10 +513,10 @@
   }
 
   function blessingRateLabel(slot, rate) {
-    const pct = Math.round(Math.max(0, Number(rate || 0)) * 100);
-    if (slot === 'hp') return `HP +${pct}%`;
-    if (slot === 'atk') return `ATK +${pct}%`;
-    return `ULT還元 +${pct}%`;
+    const pct = fmtPct(Math.max(0, Number(rate || 0)));
+    if (slot === 'hp') return `HP +${pct}`;
+    if (slot === 'atk') return `ATK +${pct}`;
+    return `ULT還元 ${pct}`;
   }
 
   async function setBlessingSlot(slot, characterId) {
@@ -536,20 +560,76 @@
   function renderBlessingSlots(ov, state) {
     const box = ov.querySelector('#shinju-blessing-slots');
     if (!box) return;
-    const rates = state.blessingRates || getBlessingRates(state.stage);
+    const rates = state.blessingRates || slotRates(state.slots);
+    const slots = normalizeSlots(state.slots);
+    const pt = Math.max(0, Number(state.pt || 0));
     box.innerHTML = BLESSING_SLOTS.map(slot => {
       const id = state.blessings && state.blessings[slot];
       const info = getCharacterInfo(id);
       const assigned = !!info;
+      const lv = slots[slot];
+      const cost = slotNextCost(lv);
+      const isMax = cost == null;
+      const canPay = !isMax && pt >= cost;
+      // build1610: キャラ配置（円をタップ）と SLOT 強化（下のボタン）を分ける
       return `
-        <button class="shinju-blessing-slot ${assigned ? 'is-assigned' : 'is-empty'}" type="button" data-blessing-slot="${slot}" onclick="ShinjuProgress.openBlessingPicker('${slot}')">
-          <span class="shinju-blessing-slot-kind">${BLESSING_LABELS[slot]}</span>
-          <span class="shinju-blessing-character-panel">
+        <div class="shinju-blessing-slot ${assigned ? 'is-assigned' : 'is-empty'}" data-blessing-slot="${slot}">
+          <span class="shinju-blessing-slot-kind">${BLESSING_LABELS[slot].replace(' SLOT', '<span class="shinju-slot-word"> SLOT</span>')}<i class="shinju-slot-lv">Lv${lv}</i></span>
+          <button type="button" class="shinju-blessing-character-panel" aria-label="${BLESSING_LABELS[slot]}のキャラを選ぶ" onclick="ShinjuProgress.openBlessingPicker('${slot}')">
             ${assigned && info.image ? `<img src="${escapeHtml(info.image)}" alt="">` : '<span class="shinju-blessing-plus">＋</span>'}
-          </span>
+          </button>
           <span class="shinju-blessing-slot-effect">${blessingRateLabel(slot, rates[slot])}</span>
-        </button>`;
+          <button type="button" class="shinju-slot-invest ${isMax ? 'is-max' : (canPay ? '' : 'is-short')}" data-invest-slot="${slot}" ${isMax ? 'disabled' : ''}
+            onclick="ShinjuProgress.investSlotFromUI('${slot}', this)">${isMax ? 'MAX' : `強化 <b>${cost}</b>pt`}</button>
+        </div>`;
     }).join('');
+  }
+
+  // build1610: SLOT 強化。誤タップ防止のため、1回目のタップで「確定」表示→2回目で実行
+  let investArmed = null;
+  async function investSlotFromUI(slot, btn) {
+    if (!BLESSING_SLOTS.includes(slot) || !btn) return;
+    const s = getViewState();
+    const lv = normalizeSlots(s.slots)[slot];
+    const cost = slotNextCost(lv);
+    if (cost == null) return;
+    if (Number(s.pt || 0) < cost) { showTinyToast(`創世ptが足りません（あと ${cost - Number(s.pt || 0)}pt）`); return; }
+    if (investArmed !== btn) {
+      if (investArmed) { investArmed.classList.remove('is-armed'); investArmed.innerHTML = investArmed.dataset.label || investArmed.innerHTML; }
+      btn.dataset.label = btn.innerHTML;
+      btn.classList.add('is-armed');
+      btn.innerHTML = 'タップで確定';
+      investArmed = btn;
+      setTimeout(() => {
+        if (investArmed === btn) { btn.classList.remove('is-armed'); btn.innerHTML = btn.dataset.label; investArmed = null; }
+      }, 2600);
+      return;
+    }
+    investArmed = null;
+    btn.disabled = true;
+    const sb = window.zsSupabase;
+    try {
+      if (!sb || typeof sb.rpc !== 'function') throw new Error('offline');
+      const res = await sb.rpc('invest_shinju_slot_secure', { p_slot: slot, p_levels: 1 });
+      if (res && res.error) throw res.error;
+      let data = res ? res.data : null;
+      if (typeof data === 'string') { try { data = JSON.parse(data); } catch (_) {} }
+      applyServerPayload(data);
+      renderOverlay();
+      renderHomeEntry();
+      const after = getViewState();
+      if (Number(data && data.stage_after) > Number(data && data.stage_before)) {
+        showTinyToast(`神樹が成長した：${after.stageLabel} ${after.stage} / 5`);
+      } else {
+        showTinyToast(`${BLESSING_LABELS[slot]} Lv${data && data.slot_level}（創世pt -${data && data.pt_spent}）`);
+      }
+    } catch (err) {
+      const message = String(err && err.message || '');
+      if (message.includes('not enough shinju pt')) showTinyToast('創世ptが足りません');
+      else if (message.includes('already max')) showTinyToast('このSLOTは最大です');
+      else showTinyToast('強化に失敗しました');
+      renderOverlay();
+    }
   }
 
   function ensureBlessingPicker() {
@@ -598,14 +678,14 @@
     picker.dataset.slot = slot;
     // build1608: キャラが入っているスロットの差し替え・解除は創世ptを消費
     const currentId = Number(state.blessings && state.blessings[slot]) || 0;
-    const needsCost = currentId > 0;
+    const needsCost = SLOT_CHANGE_COST > 0 && currentId > 0;
     const canPay = !needsCost || Number(state.pt || 0) >= SLOT_CHANGE_COST;
     const costBox = picker.querySelector('#shinju-blessing-picker-cost');
     if (costBox) {
       costBox.className = 'shinju-blessing-picker-cost' + (needsCost && !canPay ? ' is-short' : '');
       costBox.innerHTML = needsCost
         ? `変更・解除には <b>創世pt ${SLOT_CHANGE_COST}</b> を消費します（所持 ${Number(state.pt || 0)}pt）`
-        : '空きスロットへの配置は無料です';
+        : 'キャラの入れ替えは無料です';
     }
     const confirmBox = picker.querySelector('#shinju-blessing-picker-confirm');
     if (confirmBox) confirmBox.hidden = true;
@@ -683,37 +763,42 @@
       document.body.appendChild(help);
     }
     const s = getViewState();
-    const rows = STAGE_LABELS.map((label, i) => {
+    const slots = normalizeSlots(s.slots);
+    const slotRows = SLOT_COSTS.map((cost, i) => {
+      const lv = i + 1;
+      const mark = k => slots[k] >= lv ? ' is-done' : (slots[k] + 1 === lv ? ' is-next' : '');
+      return `<tr><th>Lv${lv}</th><td>${cost}pt</td>
+        <td class="${mark('hp')}">+${fmtPct(lv * SLOT_RATE_PER_LEVEL.hp)}</td>
+        <td class="${mark('atk')}">+${fmtPct(lv * SLOT_RATE_PER_LEVEL.atk)}</td>
+        <td class="${mark('ult')}">${fmtPct(lv * SLOT_RATE_PER_LEVEL.ult)}</td></tr>`;
+    }).join('');
+    const treeRows = STAGE_LABELS.map((label, i) => {
       const stage = i + 1;
-      const r = BLESSING_RATE_BY_STAGE[stage];
       const need = STAGE_EXP[i] || 0;
-      const state = stage < s.stage ? 'is-done' : (stage === s.stage ? 'is-current' : (stage === s.stage + 1 ? 'is-next' : 'is-locked'));
-      const remain = Math.max(0, need - s.exp);
-      const tag = state === 'is-current' ? '<em>現在</em>' : (state === 'is-next' ? `<em>あと ${remain}pt</em>` : (state === 'is-done' ? '<em>到達済</em>' : ''));
-      return `
-        <li class="${state}">
-          <div class="shinju-help-stage"><b>Lv${stage}</b><span>${escapeHtml(label)}</span>${tag}</div>
-          <div class="shinju-help-need">${stage === 1 ? 'はじまり' : `累計 ${need}pt`}</div>
-          <div class="shinju-help-rates">
-            <span>HP <b>+${Math.round(r.hp * 100)}%</b></span>
-            <span>ATK <b>+${Math.round(r.atk * 100)}%</b></span>
-            <span>ULT還元 <b>${Math.round(r.ult * 100)}%</b></span>
-          </div>
-        </li>`;
+      const st = stage < s.stage ? 'is-done' : (stage === s.stage ? 'is-current' : (stage === s.stage + 1 ? 'is-next' : 'is-locked'));
+      const tag = st === 'is-current' ? '<em>現在</em>' : (st === 'is-next' ? `<em>あと ${Math.max(0, need - s.exp)}pt</em>` : (st === 'is-done' ? '<em>到達済</em>' : ''));
+      return `<li class="${st}"><div class="shinju-help-stage"><b>Lv${stage}</b><span>${escapeHtml(label)}</span>${tag}</div>
+        <div class="shinju-help-need">${stage === 1 ? 'はじまり' : `神樹EXP ${need}`}</div></li>`;
     }).join('');
     help.innerHTML = `
-      <div class="shinju-blessing-help-card" role="dialog" aria-modal="true" aria-label="神聖樹の加護 段階一覧">
+      <div class="shinju-blessing-help-card" role="dialog" aria-modal="true" aria-label="神聖樹の加護">
         <div class="shinju-blessing-help-head">
           <small>BLESSING OF THE SACRED TREE</small>
           <strong>神聖樹の加護</strong>
         </div>
-        <p class="shinju-blessing-help-lead">神樹が育つほど、SLOTに置いたキャラの能力が上がります。</p>
-        <ol class="shinju-blessing-help-list">${rows}</ol>
+        <p class="shinju-blessing-help-lead">創世ptをSLOTに注ぐと加護が強まり、注いだ分だけ神樹が育ちます。</p>
+        <h3 class="shinju-help-sub">SLOT強化</h3>
+        <div class="shinju-help-table-wrap"><table class="shinju-help-table">
+          <thead><tr><th></th><th>必要</th><th>HP<small>Lv${slots.hp}</small></th><th>ATK<small>Lv${slots.atk}</small></th><th>ULT還元<small>Lv${slots.ult}</small></th></tr></thead>
+          <tbody>${slotRows}</tbody>
+        </table></div>
+        <h3 class="shinju-help-sub">神樹の成長</h3>
+        <ol class="shinju-blessing-help-list">${treeRows}</ol>
         <ul class="shinju-blessing-help-notes">
+          <li>聖樹の息吹を奉納すると創世ptになります</li>
           <li>HP / ATK：SLOTのキャラの最終ステータスに加算</li>
           <li>ULT還元：ULT発動直後、必要ゲージの一部が戻る</li>
-          <li>聖樹の息吹を奉納すると創世ptになり、累計で神樹が育ちます</li>
-          <li>キャラが入っているSLOTの変更・解除には創世pt ${SLOT_CHANGE_COST} を消費します</li>
+          <li>SLOTに置くキャラの入れ替えは無料です</li>
         </ul>
         <button type="button" class="shinju-blessing-help-close" onclick="ShinjuProgress.closeBlessingHelp()">閉じる</button>
       </div>`;
@@ -744,11 +829,11 @@
       img.src = s.imageSrc;
       img.onerror = function () {
         this.onerror = null;
-        this.src = 'images/shinju_05.webp?v=758';
+        this.src = 'images/shinju_05.webp?v=1609';
       };
     }
     if (stage) stage.innerHTML = `${escapeHtml(s.stageLabel)}<i class="shinju-stage-sep" aria-hidden="true">◆</i>${s.stage} / ${s.maxStage}`;
-    if (expLabel) expLabel.textContent = s.isMax ? `累計創世pt ${s.exp} / ${s.totalRequiredExp}` : `累計創世pt ${s.exp} / ${s.nextStageExp}`;
+    if (expLabel) expLabel.textContent = s.isMax ? `神樹EXP ${s.exp} / ${s.totalRequiredExp}` : `神樹EXP ${s.exp} / ${s.nextStageExp}`;
     const ptEl = ov.querySelector('#shinju-pt-balance');
     if (ptEl) ptEl.textContent = String(s.pt || 0);
     if (expPercent) expPercent.textContent = s.isMax ? 'MAX' : `${Math.round(s.progress)}%`;
@@ -756,7 +841,7 @@
     if (lore) {
       lore.textContent = s.isMax
         ? '神樹は成長臨界点に到達した。'
-        : '聖樹の息吹を奉納すると、ゼラフィアの創世が進む。';
+        : '創世ptをSLOTに注ぐと、神樹が育つ。';
     }
 
     renderBlessingSlots(ov, s);
@@ -898,8 +983,8 @@
       const applyAfterLabels = () => {
         if (stage) stage.innerHTML = `${escapeHtml(after.stageLabel)}<i class="shinju-stage-sep" aria-hidden="true">◆</i>${after.stage} / ${after.maxStage}`;
         if (expLabel) expLabel.textContent = after.isMax
-          ? `累計創世pt ${after.exp} / ${after.totalRequiredExp}`
-          : `累計創世pt ${after.exp} / ${after.nextStageExp}`;
+          ? `神樹EXP ${after.exp} / ${after.totalRequiredExp}`
+          : `神樹EXP ${after.exp} / ${after.nextStageExp}`;
         if (expPercent) expPercent.textContent = after.isMax ? 'MAX' : `${Math.round(after.progress)}%`;
       };
 
@@ -962,6 +1047,7 @@
     openBlessingPicker,
     closeBlessingPicker,
     openBlessingHelp,
+    investSlotFromUI,
     closeBlessingHelp,
     grantBossItem,
     grantBossItemFromRoguelite,

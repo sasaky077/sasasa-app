@@ -420,3 +420,60 @@ html body #shinju-overlay#shinju-overlay .shinju-help-btn{
 .shinju-blessing-picker-confirm button{flex:1;height:36px;border-radius:6px;font:600 13px/1 "Noto Serif JP",serif;letter-spacing:.08em}
 .shinju-blessing-picker-confirm .is-cancel{background:#fff;border:1px solid #c2a062;color:#6f5b3c}
 .shinju-blessing-picker-confirm .is-ok{background:linear-gradient(180deg,#e6c983,#c09a52 55%,#a98240);border:1px solid #8c6a30;color:#fffaf0}
+
+
+/* =========================================================
+   build1609: 新しい神樹イラスト（3:4）用の表示位置
+   木（島の根元〜樹冠の上端）が横長の枠でも収まるよう、段階ごとに縦位置を合わせる
+   ========================================================= */
+html body #shinju-overlay#shinju-overlay .shinju-visual[data-stage="1"]{object-position:center 58%!important}
+html body #shinju-overlay#shinju-overlay .shinju-visual[data-stage="2"]{object-position:center 62%!important}
+html body #shinju-overlay#shinju-overlay .shinju-visual[data-stage="3"]{object-position:center 46%!important}
+html body #shinju-overlay#shinju-overlay .shinju-visual[data-stage="4"]{object-position:center 44%!important}
+html body #shinju-overlay#shinju-overlay .shinju-visual[data-stage="5"]{object-position:center 30%!important}
+
+/* =========================================================
+   build1610: SLOT育成（Lv表示・強化ボタン）／段階一覧の表
+   ========================================================= */
+html body #shinju-overlay#shinju-overlay .shinju-blessing-slot{cursor:default!important}
+html body #shinju-overlay#shinju-overlay button.shinju-blessing-character-panel{cursor:pointer!important;font:inherit!important;color:inherit!important;-webkit-appearance:none!important;appearance:none!important}
+html body #shinju-overlay#shinju-overlay .shinju-blessing-slot-kind{display:flex!important;align-items:center!important;justify-content:center!important;gap:4px!important}
+html body #shinju-overlay#shinju-overlay .shinju-slot-lv{
+  font:700 10px/1 "Cinzel",serif!important;font-style:normal!important;padding:2px 5px!important;border-radius:999px!important;
+  color:#fffaf0!important;background:linear-gradient(180deg,#d9b86f,#a98240)!important;letter-spacing:.02em!important;
+}
+html body #shinju-overlay#shinju-overlay .shinju-slot-invest{
+  display:flex!important;align-items:center!important;justify-content:center!important;gap:2px!important;
+  width:100%!important;height:28px!important;margin:0!important;padding:0 4px!important;border-radius:5px!important;
+  font:600 11.5px/1 "Noto Serif JP",serif!important;letter-spacing:.04em!important;white-space:nowrap!important;
+  color:#fffaf0!important;text-shadow:0 1px 2px rgba(80,55,20,.4)!important;
+  background:linear-gradient(180deg,#e6c983,#c09a52 55%,#a98240)!important;border:1px solid #8c6a30!important;
+  box-shadow:inset 0 0 0 1px rgba(255,240,200,.5)!important;
+}
+html body #shinju-overlay#shinju-overlay .shinju-slot-invest b{font:700 13px/1 "Cinzel",serif!important;margin:0 1px 0 3px!important}
+html body #shinju-overlay#shinju-overlay .shinju-slot-invest.is-short{background:linear-gradient(180deg,#c9c4bb,#aba69e)!important;border-color:#b5a27a!important;text-shadow:none!important}
+html body #shinju-overlay#shinju-overlay .shinju-slot-invest.is-max{background:linear-gradient(180deg,#fff8e6,#f1e4c6)!important;color:#9a7330!important;border-color:#c2a062!important;text-shadow:none!important;font-family:"Cinzel",serif!important;letter-spacing:.2em!important}
+html body #shinju-overlay#shinju-overlay .shinju-slot-invest.is-armed{background:linear-gradient(180deg,#8c6a30,#6f5222)!important;animation:sjArmed .8s ease-in-out infinite alternate!important}
+@keyframes sjArmed{from{box-shadow:0 0 0 0 rgba(233,200,120,.0)}to{box-shadow:0 0 0 3px rgba(233,200,120,.6)}}
+@media (max-height:700px){
+  html body #shinju-overlay#shinju-overlay .shinju-slot-invest{height:24px!important;font-size:10.5px!important}
+}
+
+.shinju-help-sub{margin:12px 0 6px;font:700 13px/1 "Noto Serif JP",serif;letter-spacing:.1em;color:#6f5b3c;display:flex;align-items:center;gap:8px}
+.shinju-help-sub::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,#c2a062,transparent)}
+.shinju-help-table-wrap{border:1px solid rgba(194,160,98,.45);border-radius:8px;overflow:hidden;background:rgba(255,255,255,.7)}
+.shinju-help-table{width:100%;border-collapse:collapse;font-size:11.5px;text-align:center;color:#4a3a24}
+.shinju-help-table th,.shinju-help-table td{padding:5px 4px;border-bottom:1px solid rgba(194,160,98,.18)}
+.shinju-help-table thead th{background:#f3e7cc;font-weight:700;font-size:11px}
+.shinju-help-table thead small{display:block;font:700 9px/1.2 "Cinzel",serif;color:#9a7330}
+.shinju-help-table tbody th{font:700 11px/1 "Cinzel",serif;color:#8a6a32}
+.shinju-help-table td.is-done{background:rgba(233,200,120,.28);font-weight:700}
+.shinju-help-table td.is-next{outline:1.5px dashed #c2a062;outline-offset:-3px;font-weight:700}
+html body #shinju-overlay#shinju-overlay button.shinju-blessing-character-panel{flex:0 0 auto!important;aspect-ratio:1/1!important;box-sizing:border-box!important;padding:0!important}
+@media (max-width:360px){
+  html body #shinju-overlay#shinju-overlay .shinju-slot-word{display:none!important}
+  html body #shinju-overlay#shinju-overlay .shinju-blessing-slot-kind{font-size:11px!important}
+  html body #shinju-overlay#shinju-overlay .shinju-slot-invest{font-size:10px!important;letter-spacing:0!important}
+  html body #shinju-overlay#shinju-overlay .shinju-slot-invest b{font-size:12px!important}
+}
+html body #shinju-overlay#shinju-overlay .shinju-blessing-character-panel{min-height:0!important;min-width:0!important;max-height:none!important}
