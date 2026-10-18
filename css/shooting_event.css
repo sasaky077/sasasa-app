@@ -14622,3 +14622,31 @@ html body #shooting-event-root.towa-dark-background .shooting-wash{
   html body #shooting-event-root .shooting-bg,
   html body #shooting-event-root .shooting-wash{transition:none!important}
 }
+/* =========================================================
+   build1591 DAILY RAID：ボスごとのバトル背景
+   03 シエン / 04 カミラ / 05 SIGMA-IX
+   画像が無い場合は下に重ねた共通背景(battle_bg_01)が見える。
+   ========================================================= */
+#shooting-event-root[data-raid-boss="shooting_raid_shien"] .shooting-bg{
+  background-image:url('../images/battle_bg_03.webp'),url('../images/battle_bg_01.webp');
+  background-size:cover;background-position:center;
+  filter:saturate(.95);opacity:.86;
+}
+#shooting-event-root[data-raid-boss="shooting_raid_camilla"] .shooting-bg{
+  background-image:url('../images/battle_bg_04.webp'),url('../images/battle_bg_01.webp');
+  background-size:cover;background-position:center;
+  filter:brightness(.92) saturate(.95);opacity:.9;
+}
+#shooting-event-root[data-raid-boss="shooting_raid_test"] .shooting-bg{
+  background-image:url('../images/battle_bg_05.webp'),url('../images/battle_bg_01.webp');
+  background-size:cover;background-position:center;
+  filter:none;opacity:.86;
+}
+/* カミラの背景は暗いので、上部HUD（ボス名・HP・PHASE）の帯だけ明るく敷いて文字を読みやすくする */
+#shooting-event-root[data-raid-boss="shooting_raid_camilla"] .shooting-wash{
+  background:linear-gradient(180deg,rgba(252,246,242,.78) 0%,rgba(252,246,242,.55) 15%,rgba(252,246,242,0) 27%,rgba(0,0,0,0) 100%);
+}
+html body #shooting-event-root[data-raid-boss="shooting_raid_camilla"] :is(.shooting-hp-side-label,.shooting-hp-side-value,.shooting-ult-side-label,.shooting-hp-side-copy,.shooting-ult-side-copy,.shooting-ult-side-copy span,.shooting-hp-side-copy span){
+  color:#fff3ea!important;
+  text-shadow:0 0 3px rgba(40,0,10,.95),0 0 7px rgba(60,0,15,.85)!important;
+}

@@ -23271,6 +23271,8 @@
 
       ensureBossWeaknessBarrier();
       root.setAttribute('data-shooting-stage', selectedStage.id);
+      // build1591: レイドはボスごとにバトル背景を変える（CSS: [data-raid-boss]）
+      if (isRaidStage() && BOSS?.id) root.setAttribute('data-raid-boss', BOSS.id); else root.removeAttribute('data-raid-boss');
       root.setAttribute('data-battle-type','boss');
       root.setAttribute('data-boss-phase','1');
       root.classList.remove('boss-defeat-flash','boss-phase-flash','boss-phase-pause','player-defeat-flash');
@@ -25456,6 +25458,7 @@
     }
     ensureBossWeaknessBarrier();
     root.setAttribute('data-shooting-stage', selectedStage ? selectedStage.id : '');
+    if (isRaidStage() && BOSS?.id) root.setAttribute('data-raid-boss', BOSS.id); else root.removeAttribute('data-raid-boss');
     root.setAttribute('data-battle-type', selectedStage ? selectedStage.type : 'boss');
     applyShootingUiLayout(shootingUiLayoutType);
 
