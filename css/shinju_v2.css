@@ -477,3 +477,59 @@ html body #shinju-overlay#shinju-overlay button.shinju-blessing-character-panel{
   html body #shinju-overlay#shinju-overlay .shinju-slot-invest b{font-size:12px!important}
 }
 html body #shinju-overlay#shinju-overlay .shinju-blessing-character-panel{min-height:0!important;min-width:0!important;max-height:none!important}
+
+/* =========================================================
+   build1611: モーダルの × ボタン（右上）／SLOT強化の確認ポップアップ
+   ========================================================= */
+.shinju-blessing-help-card,.shinju-invest-confirm-card{position:relative}
+.shinju-modal-x,
+html body #shinju-blessing-picker .shinju-blessing-picker-close.shinju-modal-x{
+  position:absolute!important;top:10px!important;right:10px!important;z-index:3!important;
+  width:32px!important;height:32px!important;min-width:0!important;min-height:0!important;padding:0!important;margin:0!important;
+  display:grid!important;place-items:center!important;border-radius:50%!important;
+  font:400 20px/1 "Noto Serif JP",serif!important;color:#8a6a32!important;-webkit-text-fill-color:#8a6a32!important;
+  background:radial-gradient(circle,#fffdf6,#f1e4c6)!important;border:1px solid #c2a062!important;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.7),0 1px 4px rgba(120,96,50,.2)!important;text-indent:0!important;
+}
+html body #shinju-blessing-picker .shinju-blessing-picker-card{position:relative!important}
+html body #shinju-blessing-picker .shinju-blessing-picker-head{padding-right:44px!important}
+
+.shinju-invest-confirm{position:fixed;inset:0;z-index:300000;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(40,32,20,.45);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+.shinju-invest-confirm.active{display:flex}
+.shinju-invest-confirm-card{
+  width:min(340px,100%);box-sizing:border-box;padding:22px 18px 16px;border-radius:12px;text-align:center;
+  background:linear-gradient(180deg,#fffdf7,#f6eedc);border:1px solid #c2a062;
+  box-shadow:inset 0 0 0 3px rgba(255,255,255,.7),inset 0 0 0 4px rgba(194,160,98,.3),0 10px 30px rgba(40,30,10,.3);
+  color:#4a3a24;font-family:"Noto Serif JP",serif;
+}
+.shinju-invest-confirm-card > small{display:block;font:600 9px/1 "Cinzel",serif;letter-spacing:.24em;color:#a8874c;margin-bottom:10px}
+.shinju-invest-confirm-main{margin:0;font-size:16px;font-weight:700;line-height:1.6;letter-spacing:.04em}
+.shinju-invest-confirm-main b{font:700 18px/1 "Cinzel",serif;color:#8a6a32}
+.shinju-invest-confirm-cost{margin:4px 0 12px;font-size:13px;color:#6f5b3c}
+.shinju-invest-confirm-cost b{color:#9a7330;font-size:15px}
+.shinju-invest-confirm-detail{display:flex;align-items:center;justify-content:center;gap:10px;padding:9px 10px;border-radius:8px;background:rgba(255,255,255,.75);border:1px solid rgba(194,160,98,.45);font-size:13px;font-weight:700}
+.shinju-invest-confirm-detail i{font-style:normal;color:#c2a062}
+.shinju-invest-confirm-detail .is-up{color:#9a7330}
+.shinju-invest-confirm-pt{margin:8px 0 14px;font-size:11.5px;color:#8f7c5c}
+.shinju-invest-confirm-actions{display:flex;gap:8px}
+.shinju-invest-confirm-actions button{flex:1;height:42px;border-radius:6px;font:600 14px/1 "Noto Serif JP",serif;letter-spacing:.1em}
+.shinju-invest-confirm-actions .is-cancel{background:#fff;border:1px solid #c2a062;color:#6f5b3c}
+.shinju-invest-confirm-actions .is-ok{background:linear-gradient(180deg,#e6c983,#c09a52 55%,#a98240);border:1px solid #8c6a30;color:#fffaf0;text-shadow:0 1px 2px rgba(80,55,20,.4)}
+.shinju-blessing-help-card{padding-top:20px!important}
+
+/* build1612: × はお知らせモーダルと同じ「菱形フレーム」デザインに統一 */
+.shinju-modal-x,
+html body #shinju-blessing-picker .shinju-blessing-picker-close.shinju-modal-x{
+  top:8px!important;right:8px!important;width:40px!important;height:40px!important;
+  border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;
+  color:#4a3826!important;-webkit-text-fill-color:#4a3826!important;
+  font:300 26px/40px 'Noto Serif JP',serif!important;text-align:center!important;isolation:isolate!important;
+}
+.shinju-modal-x::before,
+html body #shinju-blessing-picker .shinju-blessing-picker-close.shinju-modal-x::before{
+  content:""!important;display:block!important;position:absolute!important;inset:6px!important;z-index:-1!important;
+  border:1px solid #c4a066!important;background:linear-gradient(135deg,#fffdf7,#efe6d3)!important;
+  box-shadow:0 0 0 2px rgba(255,253,246,.9),0 0 0 3px rgba(196,160,102,.45),0 2px 5px rgba(80,55,20,.18)!important;
+  transform:rotate(45deg)!important;border-radius:0!important;
+}
+html body #shinju-blessing-picker .shinju-blessing-picker-close.shinju-modal-x::after{content:none!important;display:none!important}

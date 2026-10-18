@@ -585,27 +585,50 @@
     }).join('');
   }
 
-  // build1610: SLOT 強化。誤タップ防止のため、1回目のタップで「確定」表示→2回目で実行
-  let investArmed = null;
+  // build1611: SLOT 強化。確認ポップアップ（〇〇SLOTを LvX⇒LvY に強化します（Npt消費））で「強化する」を押して確定
+  function confirmInvest(slot, lv, cost, pt) {
+    return new Promise(resolve => {
+      let box = document.getElementById('shinju-invest-confirm');
+      if (!box) {
+        box = document.createElement('div');
+        box.id = 'shinju-invest-confirm';
+        box.className = 'shinju-invest-confirm';
+        document.body.appendChild(box);
+      }
+      const rate = SLOT_RATE_PER_LEVEL[slot];
+      box.innerHTML = `
+        <div class="shinju-invest-confirm-card" role="dialog" aria-modal="true" aria-label="SLOT強化の確認">
+          <button type="button" class="shinju-modal-x" data-act="no" aria-label="閉じる">×</button>
+          <small>SLOT ENHANCE</small>
+          <p class="shinju-invest-confirm-main">${BLESSING_LABELS[slot]}を<br><b>Lv${lv}</b> ⇒ <b>Lv${lv + 1}</b> に強化します</p>
+          <p class="shinju-invest-confirm-cost">（創世pt <b>${cost}</b> を消費）</p>
+          <div class="shinju-invest-confirm-detail">
+            <span>${blessingRateLabel(slot, lv * rate)}</span><i>⇒</i><span class="is-up">${blessingRateLabel(slot, (lv + 1) * rate)}</span>
+          </div>
+          <div class="shinju-invest-confirm-pt">所持 創世pt ${pt} ⇒ ${pt - cost}</div>
+          <div class="shinju-invest-confirm-actions">
+            <button type="button" class="is-cancel" data-act="no">やめる</button>
+            <button type="button" class="is-ok" data-act="yes">強化する</button>
+          </div>
+        </div>`;
+      const done = ok => { box.classList.remove('active'); box.onclick = null; resolve(ok); };
+      box.onclick = e => {
+        const act = e.target && e.target.closest && e.target.closest('[data-act]');
+        if (act) done(act.dataset.act === 'yes');
+        else if (e.target === box) done(false);
+      };
+      box.classList.add('active');
+    });
+  }
   async function investSlotFromUI(slot, btn) {
     if (!BLESSING_SLOTS.includes(slot) || !btn) return;
     const s = getViewState();
     const lv = normalizeSlots(s.slots)[slot];
     const cost = slotNextCost(lv);
     if (cost == null) return;
-    if (Number(s.pt || 0) < cost) { showTinyToast(`創世ptが足りません（あと ${cost - Number(s.pt || 0)}pt）`); return; }
-    if (investArmed !== btn) {
-      if (investArmed) { investArmed.classList.remove('is-armed'); investArmed.innerHTML = investArmed.dataset.label || investArmed.innerHTML; }
-      btn.dataset.label = btn.innerHTML;
-      btn.classList.add('is-armed');
-      btn.innerHTML = 'タップで確定';
-      investArmed = btn;
-      setTimeout(() => {
-        if (investArmed === btn) { btn.classList.remove('is-armed'); btn.innerHTML = btn.dataset.label; investArmed = null; }
-      }, 2600);
-      return;
-    }
-    investArmed = null;
+    const pt = Number(s.pt || 0);
+    if (pt < cost) { showTinyToast(`創世ptが足りません（あと ${cost - pt}pt）`); return; }
+    if (!(await confirmInvest(slot, lv, cost, pt))) return;
     btn.disabled = true;
     const sb = window.zsSupabase;
     try {
@@ -645,7 +668,7 @@
             <small>神聖樹の加護</small>
             <strong id="shinju-blessing-picker-title">SLOT</strong>
           </div>
-          <button type="button" class="shinju-blessing-picker-close" onclick="ShinjuProgress.closeBlessingPicker()">閉じる</button>
+          <button type="button" class="shinju-blessing-picker-close shinju-modal-x" aria-label="閉じる" onclick="ShinjuProgress.closeBlessingPicker()">×</button>
         </div>
         <div class="shinju-blessing-picker-cost" id="shinju-blessing-picker-cost"></div>
         <div class="shinju-blessing-picker-grid" id="shinju-blessing-picker-grid"></div>
@@ -782,6 +805,7 @@
     }).join('');
     help.innerHTML = `
       <div class="shinju-blessing-help-card" role="dialog" aria-modal="true" aria-label="神聖樹の加護">
+        <button type="button" class="shinju-modal-x" aria-label="閉じる" onclick="ShinjuProgress.closeBlessingHelp()">×</button>
         <div class="shinju-blessing-help-head">
           <small>BLESSING OF THE SACRED TREE</small>
           <strong>神聖樹の加護</strong>
@@ -800,7 +824,6 @@
           <li>ULT還元：ULT発動直後、必要ゲージの一部が戻る</li>
           <li>SLOTに置くキャラの入れ替えは無料です</li>
         </ul>
-        <button type="button" class="shinju-blessing-help-close" onclick="ShinjuProgress.closeBlessingHelp()">閉じる</button>
       </div>`;
     help.classList.add('active');
   }
