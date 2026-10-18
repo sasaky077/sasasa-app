@@ -20099,21 +20099,30 @@
   // 他の violence_v1（CH02-04 イリシュ）とは完全に独立。
   // 攻撃時計は getBossMotionElapsedSeconds を使用し、停止ULT中は進まない。
   // ============================================================
-  const SHIEN_SOLID_MS = 7000;
-  const SHIEN_SMOKE_MS = 4000;
+  // build1585 ブラッシュアップ:
+  //  ・霞化は周期無敵をやめ「三巴」の分身中だけ（予告〜突進終了）。
+  //  ・技順を 満月→一閃→半月→三巴→逆半月（範囲と突進を交互）。
+  //  ・ゲージ（phase）ごとに間隔・予告・三巴の時間差が段階的に厳しくなる。技はスロット開始時の段階で固定。
+  //  ・斬撃の軌跡エフェクト、発動時の画面揺れ、半月の安全地帯表示、三巴の危険幅＝当たり判定幅。
   const SHIEN_ATTACK_START_MS = 1800;
-  const SHIEN_ATTACK_CYCLE_MS = 6300;
   const SHIEN_MOVE_MS = 850;
-  const SHIEN_WARN_START_MS = 900;
-  const SHIEN_STRIKE_AT_MS = 2460;
-  const SHIEN_DASH_MS = 460;
   const SHIEN_SLASH_DAMAGE = 320;
   const SHIEN_DASH_DAMAGE = 280;
+  const SHIEN_DASH_HIT_R = 26;          // 三巴・一閃の当たり半径（予告帯の半幅と一致）
+  const SHIEN_HALF_SAFE = 0.32;         // 半月斬りの安全地帯（画面幅比）
   const SHIEN_BLEED_RATE = 0.03;
   const SHIEN_BLEED_TICK_MS = 1000;
   const SHIEN_TECHNIQUES = Object.freeze([
     '満月斬り', '半月斬り', '逆半月斬り', '一閃', '三巴'
   ]);
+  // 技の種類番号: 0満月 1半月(右) 2逆半月(左) 3一閃 4三巴。出す順番:
+  const SHIEN_ORDER = Object.freeze([0, 3, 1, 4, 2]);
+  // ゲージ段階ごとのテンポ。len=1技の周期, warnAt=予告開始, strikeAt=発動, dashMs=突進時間, stagger=三巴の分身時間差
+  const SHIEN_TIER = Object.freeze({
+    1: { len:6300, warnAt:900, strikeAt:2460, dashMs:460, stagger:0,   iaiStrikeAt:2460 },
+    2: { len:5500, warnAt:850, strikeAt:2250, dashMs:420, stagger:0,   iaiStrikeAt:2100 },
+    3: { len:4900, warnAt:800, strikeAt:2100, dashMs:380, stagger:170, iaiStrikeAt:1800 },
+  });
 
   function isShienBattle() {
     return !!(state && BOSS && BOSS.shienMechanics && !isNormalBattle());
@@ -20133,17 +20142,38 @@
     };
   }
 
-  function shienFrame(now) {
-    const elapsed = getBossMotionElapsedSeconds(now) * 1000;
-    const age = elapsed - SHIEN_ATTACK_START_MS;
-    if (age < 0) return { index:-1, slot:-1, local:0, name:'' };
-    const slot = Math.floor(age / SHIEN_ATTACK_CYCLE_MS);
+  function getShienTier() {
+    return clamp(Math.round(Number(state?.boss?.phase || 1)), 1, 3);
+  }
+
+  function makeShienSlot(slot, start) {
+    const tier = getShienTier();
+    const t = SHIEN_TIER[tier];
+    const index = SHIEN_ORDER[((slot % SHIEN_ORDER.length) + SHIEN_ORDER.length) % SHIEN_ORDER.length];
     return {
-      index: slot % SHIEN_TECHNIQUES.length,
-      slot,
-      local: age - slot * SHIEN_ATTACK_CYCLE_MS,
-      name: SHIEN_TECHNIQUES[slot % SHIEN_TECHNIQUES.length]
+      slot, start, tier, index, name: SHIEN_TECHNIQUES[index],
+      len: t.len, warnAt: t.warnAt,
+      strikeAt: index === 3 ? t.iaiStrikeAt : t.strikeAt,
+      dashMs: t.dashMs, stagger: index === 4 ? t.stagger : 0,
     };
+  }
+
+  // 技スケジューラ。BOSSモーション時計で進むので停止ULT中は止まる。
+  // 段階（ゲージ）が変わっても進行中の技は変えず、次の技から新しいテンポになる。
+  function shienFrame(now) {
+    const sh = state && state.shien;
+    const elapsed = getBossMotionElapsedSeconds(now) * 1000;
+    if (!sh || elapsed < SHIEN_ATTACK_START_MS) return { index:-1, slot:-1, local:0, name:'' };
+    if (!sh.cur) sh.cur = makeShienSlot(0, SHIEN_ATTACK_START_MS);
+    let guard = 0;
+    while (elapsed >= sh.cur.start + sh.cur.len && guard++ < 64) {
+      sh.cur = makeShienSlot(sh.cur.slot + 1, sh.cur.start + sh.cur.len);
+    }
+    return Object.assign({}, sh.cur, { local: elapsed - sh.cur.start });
+  }
+
+  function shienDashEndAt(f) {
+    return f.strikeAt + f.dashMs + f.stagger * 2;
   }
 
   function shienSmooth(v) {
@@ -20201,11 +20231,14 @@
         animation:shienCut .48s ease-out both}
       @keyframes shienZonePulse{from{opacity:.5}to{opacity:.88}}
       @keyframes shienCut{0%{opacity:1;filter:brightness(1.8)}100%{opacity:0;filter:brightness(1)}}
-      .shien-dash-path{position:absolute;left:0;top:0;height:4px;transform-origin:0 50%;z-index:9;
-        background:repeating-linear-gradient(90deg,#fbf1ff 0 11px,#bd74e8 11px 18px,transparent 18px 25px);
-        box-shadow:0 0 9px rgba(183,69,247,.86);opacity:.9;pointer-events:none;
+      .shien-dash-path{position:absolute;left:0;top:0;height:var(--shien-band,52px);margin-top:calc(var(--shien-band,52px) / -2);
+        transform-origin:0 50%;z-index:9;box-sizing:border-box;border-radius:999px;
+        border:1.5px dashed rgba(232,188,255,.9);
+        background:linear-gradient(180deg,rgba(150,60,220,.10),rgba(176,82,238,.26) 42%,rgba(250,236,255,.55) 50%,rgba(176,82,238,.26) 58%,rgba(150,60,220,.10));
+        box-shadow:0 0 10px rgba(183,69,247,.55);opacity:.9;pointer-events:none;
         animation:shienDashPath .42s ease-in-out infinite alternate}
-      .shien-dash-path.striking{height:9px;background:linear-gradient(90deg,transparent,#f9ddff,#fff,transparent);
+      .shien-dash-path.striking{border-style:solid;border-color:rgba(255,255,255,.95);
+        background:linear-gradient(180deg,rgba(214,150,255,.25),rgba(255,255,255,.95) 50%,rgba(214,150,255,.25));
         animation:shienDashFlash .46s ease-out both}
       @keyframes shienDashPath{from{opacity:.36}to{opacity:.94}}
       @keyframes shienDashFlash{from{opacity:1}to{opacity:0}}
@@ -20219,6 +20252,35 @@
         width:74px;height:126px;object-fit:contain;opacity:.78;
         filter:drop-shadow(0 0 10px #ba80ec) saturate(.78);will-change:transform}
       @media(min-width:700px){.shien-split-clone{width:82px;height:140px}}
+      /* build1585: 満月の円周をはっきり */
+      .shien-technique-zone.full{border:3px solid rgba(160,70,225,.95);
+        box-shadow:0 0 0 2px rgba(255,255,255,.35),0 0 22px rgba(176,82,238,.65),inset 0 0 26px rgba(150,60,220,.28)}
+      /* 半月の安全地帯 */
+      .shien-safe-zone{position:absolute;z-index:8;pointer-events:none;box-sizing:border-box;
+        border:2px solid rgba(214,170,74,.95);background:linear-gradient(180deg,rgba(255,236,170,.30),rgba(255,226,140,.18));
+        box-shadow:inset 0 0 24px rgba(230,180,70,.45),0 0 12px rgba(230,180,70,.35);animation:shienSafePulse .6s ease-in-out infinite alternate}
+      .shien-safe-zone b{position:absolute;left:50%;top:22px;transform:translateX(-50%);
+        font:700 14px/1 'Cinzel','Noto Serif JP',serif;letter-spacing:.28em;color:#8a5a12;
+        text-shadow:0 0 6px #fff,0 0 10px #fff,0 1px 0 #fff}
+      @keyframes shienSafePulse{from{opacity:.55}to{opacity:1}}
+      /* 満月: 円周を刀が一周する軌跡 */
+      .shien-moon-sweep{position:absolute;z-index:10;pointer-events:none;border-radius:50%;
+        background:conic-gradient(from 0deg,rgba(255,255,255,0) 0deg,rgba(214,150,255,0) 200deg,rgba(214,150,255,.55) 320deg,#fff 356deg,rgba(255,255,255,0) 360deg);
+        -webkit-mask:radial-gradient(circle,transparent 78%,#000 82%,#000 98%,transparent 100%);
+                mask:radial-gradient(circle,transparent 78%,#000 82%,#000 98%,transparent 100%);
+        animation:shienMoonSweep .36s cubic-bezier(.2,.75,.3,1) forwards}
+      @keyframes shienMoonSweep{0%{rotate:-120deg;opacity:1}75%{opacity:1}100%{rotate:250deg;opacity:0}}
+      /* 半月: 一瞬で横切る鋭い軌跡 */
+      .shien-crescent-slash{position:absolute;z-index:10;pointer-events:none;height:10px;transform-origin:0 50%;
+        background:linear-gradient(90deg,rgba(255,255,255,0),#f4dcff 18%,#fff 55%,rgba(214,150,255,.8) 82%,rgba(255,255,255,0));
+        box-shadow:0 0 16px #c88bff,0 0 32px rgba(160,70,230,.7);border-radius:50%;
+        animation:shienCrescentSlash .32s cubic-bezier(.15,.8,.3,1) forwards}
+      @keyframes shienCrescentSlash{0%{scale:0 1;opacity:1}55%{scale:1 1;opacity:1}100%{scale:1 .2;opacity:0}}
+      /* 斬撃命中時の白い閃光 */
+      .shien-hit-flash{position:absolute;inset:0;z-index:30;pointer-events:none;
+        background:radial-gradient(circle at var(--fx,50%) var(--fy,70%),rgba(255,255,255,.75),rgba(230,190,255,.25) 35%,transparent 65%);
+        animation:shienHitFlash .22s ease-out forwards}
+      @keyframes shienHitFlash{from{opacity:1}to{opacity:0}}
       #shooting-event-root #shooting-player.shien-bleeding img{filter:drop-shadow(0 0 6px rgba(230,30,50,.85))}
       .shien-bleed-tag{position:absolute;left:50%;top:-14px;transform:translateX(-50%);z-index:3;white-space:nowrap;
         font-size:10px;font-weight:700;letter-spacing:.06em;color:#fff;background:rgba(170,16,36,.86);
@@ -20259,8 +20321,9 @@
     document.getElementById(PLAYER_ID)?.classList.remove('shien-bleeding');
     document.querySelectorAll('#shooting-player .shien-bleed-tag').forEach(el => el.remove());
     installShienHpGuard();
-    state.shien = { smoke:false, slot:-1, target:null, zone:null, caption:null,
-      paths:[], clones:[], smokeEl:null, struck:false, dashed:false, hit:false, prevPoints:null };
+    if (arena) arena.querySelectorAll('.shien-safe-zone,.shien-moon-sweep,.shien-crescent-slash,.shien-hit-flash').forEach(el => el.remove());
+    state.shien = { smoke:false, slot:-1, cur:null, target:null, zone:null, safe:null, caption:null,
+      paths:[], clones:[], smokeEl:null, struck:false, dashed:[], hit:false, prevPoints:null };
     if (bossEl) bossEl.style.setProperty('--enemy-scale',String(getResponsiveBossDisplayScale()));
     return state.shien;
   }
@@ -20268,10 +20331,11 @@
   function clearShienTechniqueFx(sh) {
     if (!sh) return;
     if (sh.zone) sh.zone.remove();
+    if (sh.safe) sh.safe.remove();
     if (sh.caption) sh.caption.remove();
     (sh.paths || []).forEach(el => el.remove());
     (sh.clones || []).forEach(c => c.el.remove());
-    sh.zone = null;sh.caption = null;sh.paths=[];sh.clones=[];sh.prevPoints=null;
+    sh.zone = null;sh.safe = null;sh.caption = null;sh.paths=[];sh.clones=[];sh.prevPoints=null;
   }
 
   // 分身スプレッド: 3本の軌道が中心線から左右に扇状に展開。
@@ -20302,33 +20366,33 @@
     if (idx === 1) {aimX = w*.76;aimY = h*.26;} // 半月斬り: 右
     if (idx === 2) {aimX = w*.24;aimY = h*.26;} // 逆半月斬り: 左
     const into = shienSmooth(local / SHIEN_MOVE_MS);
-    const back = shienSmooth((local - (SHIEN_STRIKE_AT_MS+680))/850);
+    const back = shienSmooth((local - (frame.strikeAt+680))/850);
     let x = w*.5+(aimX-w*.5)*into*(1-back);
     let y = restingY+(aimY-restingY)*into*(1-back);
     if (idx >= 3) {
       // 発動まで刀を引き、小刻みに震える予告モーション。
-      if (local >= SHIEN_WARN_START_MS && local < SHIEN_STRIKE_AT_MS) {
-        const q = clamp((local-SHIEN_WARN_START_MS)/(SHIEN_STRIKE_AT_MS-SHIEN_WARN_START_MS),0,1);
+      if (local >= frame.warnAt && local < frame.strikeAt) {
+        const q = clamp((local-frame.warnAt)/(frame.strikeAt-frame.warnAt),0,1);
         y -= Math.sin(q*Math.PI*.75)*Math.min(22,h*.038);
         x += Math.sin(local*.067)*(1+q*2.8);
       }
       // 突進の行先は予告中に確定。プレイヤー位置の後追いは禁止。
       const target = sh.slot === frame.slot ? sh.target : null;
-      if (target && local >= SHIEN_STRIKE_AT_MS && local < SHIEN_STRIKE_AT_MS + SHIEN_DASH_MS) {
-        const p = shienSmooth((local - SHIEN_STRIKE_AT_MS) / SHIEN_DASH_MS);
+      if (target && local >= frame.strikeAt && local < frame.strikeAt + frame.dashMs) {
+        const p = shienSmooth((local - frame.strikeAt) / frame.dashMs);
         const end = getShienDashEndpoints(idx,target,w,h).find(e=>e.side===0);
         x=w*.5+(end.x-w*.5)*p;
         y=restingY+(end.y-restingY)*p;
-      } else if(local >= SHIEN_STRIKE_AT_MS + SHIEN_DASH_MS && target) {
+      } else if(local >= frame.strikeAt + frame.dashMs && target) {
         const end = getShienDashEndpoints(idx,target,w,h).find(e=>e.side===0);
-        const retreat = shienSmooth((local - SHIEN_STRIKE_AT_MS - SHIEN_DASH_MS)/750);
+        const retreat = shienSmooth((local - frame.strikeAt - frame.dashMs)/750);
         x=end.x+(w*.5-end.x)*retreat;
         y=end.y+(restingY-end.y)*retreat;
       }
     }
     state.boss.x = clamp(x,28,w-28);
     state.boss.y = clamp(y,42,h-35);
-    if (bossEl) bossEl.classList.toggle('shien-dash-warning',idx>=3 && local >= SHIEN_WARN_START_MS && local < SHIEN_STRIKE_AT_MS);
+    if (bossEl) bossEl.classList.toggle('shien-dash-warning',idx>=3 && local >= frame.warnAt && local < frame.strikeAt);
   }
 
   function positionShienLine(el,sx,sy,ex,ey) {
@@ -20340,7 +20404,7 @@
 
   function setupShienTechnique(now, sh, frame, w, h, arena) {
     clearShienTechniqueFx(sh);
-    sh.slot = frame.slot;sh.target = null;sh.struck=false;sh.dashed=false;sh.hit=false;
+    sh.slot = frame.slot;sh.target = null;sh.struck=false;sh.dashed=[];sh.hit=false;
     if (!arena) return;
     sh.caption=document.createElement('div');
     sh.caption.className='shien-technique-caption';
@@ -20349,23 +20413,95 @@
     if (frame.index <= 2) {
       sh.zone=document.createElement('div');
       sh.zone.className='shien-technique-zone '+(frame.index===0?'full':frame.index===1?'half-right':'half-left');
+      sh.zone.style.visibility='hidden';
       arena.appendChild(sh.zone);
+      if (frame.index !== 0) {
+        sh.safe=document.createElement('div');
+        sh.safe.className='shien-safe-zone';
+        sh.safe.innerHTML='<b>SAFE</b>';
+        sh.safe.style.visibility='hidden';
+        arena.appendChild(sh.safe);
+      }
     }
+  }
+
+  // 満月斬りの半径。円周がすべて画面内に収まるよう build1585 で縮小（四隅と上下が安全地帯）。
+  function getShienFullRadius(w, h) {
+    return clamp(Math.min(w*.47, h*.34), 150, 360);
+  }
+
+  function getShienHalfRect(idx, w, h) {
+    const safe = w*SHIEN_HALF_SAFE;
+    const zw = w - safe;
+    return { left: idx===1 ? safe : 0, top: h*.12, width: zw, height: h*.84,
+      safeLeft: idx===1 ? 0 : zw, safeWidth: safe };
   }
 
   function layoutShienZone(sh, idx, w, h) {
     const el=sh.zone;
     if(!el) return;
     if(idx===0) {
-      const r=clamp(Math.max(w*.68,h*.405),205,540);
+      const r=getShienFullRadius(w,h);
       el.style.left=`${w*.5-r}px`;el.style.top=`${h*.5-r}px`;
       el.style.width=`${2*r}px`;el.style.height=`${2*r}px`;
     } else {
-      // 右/左の約74%を覆う巨大な半月。反対側26%が安全地帯。
-      const left=idx===1?w*.26:0;
-      el.style.left=`${left}px`;el.style.top=`${h*.12}px`;
-      el.style.width=`${w*.74}px`;el.style.height=`${h*.84}px`;
+      const z=getShienHalfRect(idx,w,h);
+      el.style.left=`${z.left}px`;el.style.top=`${z.top}px`;
+      el.style.width=`${z.width}px`;el.style.height=`${z.height}px`;
+      if (sh.safe) {
+        sh.safe.style.left=`${z.safeLeft}px`;sh.safe.style.top=`${z.top}px`;
+        sh.safe.style.width=`${z.safeWidth}px`;sh.safe.style.height=`${z.height}px`;
+      }
     }
+  }
+
+  // 斬撃の軌跡エフェクト（見た目のみ）
+  function spawnShienSlashFx(idx, w, h, arena) {
+    if (!arena) return;
+    if (idx===0) {
+      const r=getShienFullRadius(w,h);
+      const el=document.createElement('div');
+      el.className='shien-moon-sweep';
+      el.style.left=`${w*.5-r}px`;el.style.top=`${h*.5-r}px`;
+      el.style.width=`${2*r}px`;el.style.height=`${2*r}px`;
+      arena.appendChild(el);setTimeout(()=>el.remove(),420);
+    } else {
+      const z=getShienHalfRect(idx,w,h);
+      // 半月の弧に沿って2本の斬線を斜めに走らせる
+      [[.18,.82],[.42,.58]].forEach(([fy,ty],k)=>{
+        const el=document.createElement('div');
+        el.className='shien-crescent-slash';
+        const sx = idx===1 ? z.left+z.width : z.left;
+        const ex = idx===1 ? z.left : z.left+z.width;
+        const sy = z.top+z.height*fy, ey = z.top+z.height*ty;
+        positionShienLine(el, sx, sy, ex, ey);
+        el.style.marginTop='-5px';
+        el.style.animationDelay=`${k*60}ms`;
+        arena.appendChild(el);setTimeout(()=>el.remove(),460);
+      });
+    }
+  }
+
+  // 斬撃発動時の軽い画面揺れ（命中時は従来の強い揺れ）
+  function shakeShienStrike() {
+    const stage=document.getElementById(ROOT_ID)?.querySelector('.shooting-stage');
+    if(!stage||typeof stage.animate!=='function') return;
+    try{
+      stage.animate([
+        {transform:'translate3d(0,0,0)'},{transform:'translate3d(-4px,2px,0)'},
+        {transform:'translate3d(3px,-2px,0)'},{transform:'translate3d(-1px,1px,0)'},{transform:'translate3d(0,0,0)'}
+      ],{duration:200,easing:'ease-out'});
+    }catch(_){ }
+  }
+
+  function flashShienHit(arena) {
+    if(!arena||!state?.player) return;
+    const el=document.createElement('div');
+    el.className='shien-hit-flash';
+    const w=arena.clientWidth||1,h=arena.clientHeight||1;
+    el.style.setProperty('--fx',`${(Number(state.player.x)/w*100).toFixed(1)}%`);
+    el.style.setProperty('--fy',`${(Number(state.player.y)/h*100).toFixed(1)}%`);
+    arena.appendChild(el);setTimeout(()=>el.remove(),260);
   }
 
   function makeShienPaths(sh, idx, w, h, arena) {
@@ -20373,6 +20509,8 @@
     for (const end of ends) {
       const path=document.createElement('div');
       path.className='shien-dash-path';
+      path.style.setProperty('--shien-band',`${SHIEN_DASH_HIT_R*2}px`);
+      path.dataset.side=String(end.side);
       positionShienLine(path,w*.5+end.side*18,Math.max(62,h*.18),end.x,end.y);
       arena.appendChild(path);sh.paths.push(path);
     }
@@ -20398,46 +20536,55 @@
   function hitShienBlade(now, sh, idx, w, h) {
     if (!state?.player || !state?.boss) return;
     const x=Number(state.player.x),y=Number(state.player.y);
-    const r=clamp(Math.max(w*.68,h*.405),205,540);
+    const r=getShienFullRadius(w,h);
+    const z=idx===0?null:getShienHalfRect(idx,w,h);
     const inside=idx===0?(x-w*.5)**2+(y-h*.5)**2<=r*r:
-      idx===1?x>=w*.26&&y>=h*.12&&y<=h*.96:
-      x<=w*.74&&y>=h*.12&&y<=h*.96;
+      x>=z.left&&x<=z.left+z.width&&y>=z.top&&y<=z.top+z.height;
     if (!inside || now < Number(state.player.invulnUntil||0)) return;
     const member=getActiveMember();
     if (!member || member.hp<=0) return;
     const before=member.hp;
     damagePlayer(now,SHIEN_SLASH_DAMAGE,'raw',normalizeCombatElement(state.boss.element||BOSS.element),'boss-slash');
+    if (member.hp<before) { triggerPlayerHitScreenShake(); flashShienHit(document.getElementById('shooting-arena')); }
     if (member.hp<before && member.hp>0) {
       member.shienBleeding=true;
       member.shienBleedNextAt=now+SHIEN_BLEED_TICK_MS;
     }
   }
 
-  function tickShienDash(now, sh, idx, local, w, h) {
+  // 三巴は段階3で分身ごとに時間差（中央→左右）。各軌跡の進行度は個別に計算。
+  function shienDashDelay(side, f) {
+    return side===0 ? 0 : f.stagger * (side<0 ? 1 : 2);
+  }
+
+  function tickShienDash(now, sh, f, local, w, h) {
     if (!sh.target) return;
-    const d=local-SHIEN_STRIKE_AT_MS;
-    if (d<0 || d>SHIEN_DASH_MS) {sh.prevPoints=null;return;}
-    const p=shienSmooth(d/SHIEN_DASH_MS);
+    const idx=f.index;
     const ends=getShienDashEndpoints(idx,sh.target,w,h);
-    const points=ends.map(end=>({
-      side:end.side,
-      x:(w*.5+end.side*18)+(end.x-(w*.5+end.side*18))*p,
-      y:Math.max(62,h*.18)+(end.y-Math.max(62,h*.18))*p
-    }));
+    const sy0=Math.max(62,h*.18);
+    const points=[];
+    for (const end of ends) {
+      const d=local-f.strikeAt-shienDashDelay(end.side,f);
+      if (d<0 || d>f.dashMs) continue;
+      const p=shienSmooth(d/f.dashMs);
+      const sx=w*.5+end.side*18;
+      points.push({ side:end.side, x:sx+(end.x-sx)*p, y:sy0+(end.y-sy0)*p });
+    }
     for (const c of sh.clones) {
       const pt=points.find(v=>v.side===c.side);
       if (pt) positionUnit(c.el,pt.x,pt.y);
     }
+    if (!points.length) { sh.prevPoints=null; return; }
     if (!sh.hit && !state.koTransition && now >= Number(state.player.invulnUntil||0)) {
       const member=getActiveMember();
       if (member && member.hp>0) {
         const pos={x:Number(state.player.x),y:Number(state.player.y)};
         for (const pt of points) {
           const prev=sh.prevPoints?.find(v=>v.side===pt.side)||pt;
-          if (!shienSegmentHit(pos,prev,pt,28)) continue;
+          if (!shienSegmentHit(pos,prev,pt,SHIEN_DASH_HIT_R)) continue;
           const hp=member.hp;
           damagePlayer(now,SHIEN_DASH_DAMAGE,'boss-heavy',normalizeCombatElement(state.boss.element||BOSS.element),'boss-charge');
-          if (member.hp<hp) { sh.hit=true;triggerPlayerHitScreenShake(); }
+          if (member.hp<hp) { sh.hit=true;triggerPlayerHitScreenShake();flashShienHit(document.getElementById('shooting-arena')); }
           break;
         }
       }
@@ -20452,8 +20599,11 @@
     const {arena,w,h}=getShienArenaSize();
     const halted=state.ended||state.finishing||state.koTransition||state.phaseTransition||
       !(state.boss&&state.boss.hp>0)|| now<getBossLockUntil(now);
-    const elapsed=getBossMotionElapsedSeconds(now)*1000;
-    const smokeNow=!halted&&(elapsed%(SHIEN_SOLID_MS+SHIEN_SMOKE_MS))>=SHIEN_SOLID_MS;
+    const frame=shienFrame(now);
+    const idx=frame.index,local=frame.local;
+
+    // 霞化: 三巴の分身中（予告〜最後の分身の突進終了＋余韻）だけ。周期的な無敵は廃止。
+    const smokeNow=!halted&&idx===4&&local>=frame.warnAt&&local<shienDashEndAt(frame)+420;
     if(smokeNow!==sh.smoke){
       sh.smoke=smokeNow;
       bossEl?.classList.toggle('shien-smoke',smokeNow);
@@ -20465,8 +20615,7 @@
     }
     if(sh.smoke&&sh.smokeEl)sh.smokeEl.style.translate=`${state.boss.x}px ${state.boss.y}px`;
 
-    const frame=shienFrame(now);
-    if (halted || frame.index<0) {
+    if (halted || idx<0) {
       // 敵停止ULT中はBOSSモーション時計が止まるため、予告はそのまま保持。
       // フェーズ演出・撃破時だけ予告を破棄し、復帰後に作り直す。
       if (state.phaseTransition || state.ended || state.finishing || state.koTransition || state.boss.hp<=0) {
@@ -20478,33 +20627,41 @@
       return;
     }
     if(frame.slot!==sh.slot)setupShienTechnique(now,sh,frame,w,h,arena);
-    const idx=frame.index,local=frame.local;
     if(idx<=2){
-      if(sh.zone){layoutShienZone(sh,idx,w,h);sh.zone.style.visibility=local>=SHIEN_WARN_START_MS?'visible':'hidden';}
-      if(local>=SHIEN_STRIKE_AT_MS&&!sh.struck){
+      const warnOn=local>=frame.warnAt;
+      if(sh.zone){layoutShienZone(sh,idx,w,h);sh.zone.style.visibility=warnOn?'visible':'hidden';}
+      if(sh.safe)sh.safe.style.visibility=(warnOn&&local<frame.strikeAt)?'visible':'hidden';
+      if(local>=frame.strikeAt&&!sh.struck){
         sh.struck=true;
-        if (local<=SHIEN_STRIKE_AT_MS+500) {
+        if (local<=frame.strikeAt+500) {
           if(sh.zone){sh.zone.classList.add('cut');sh.zone.style.visibility='visible';}
+          spawnShienSlashFx(idx,w,h,arena);
+          shakeShienStrike();
           hitShienBlade(now,sh,idx,w,h);
         }
       }
-      if(local>=SHIEN_STRIKE_AT_MS+530&&sh.zone){sh.zone.remove();sh.zone=null;}
+      if(local>=frame.strikeAt+530&&sh.zone){sh.zone.remove();sh.zone=null;}
+      if(local>=frame.strikeAt&&sh.safe){sh.safe.remove();sh.safe=null;}
     }else{
-      if(local>=SHIEN_WARN_START_MS&&!sh.target){
+      if(local>=frame.warnAt&&!sh.target){
         sh.target={x:Number(state.player.x),y:Number(state.player.y)};
         if(arena)makeShienPaths(sh,idx,w,h,arena);
       }
-      if(local>=SHIEN_STRIKE_AT_MS&&!sh.dashed){
-        sh.dashed=true;
-        sh.paths.forEach(el=>el.classList.add('striking'));
+      // 各軌跡は自分の突進開始で発光
+      for (const el of sh.paths) {
+        const side=Number(el.dataset.side||0);
+        if (!sh.dashed.includes(side) && local>=frame.strikeAt+shienDashDelay(side,frame)) {
+          sh.dashed.push(side);el.classList.add('striking');
+          if (side===0) shakeShienStrike();
+        }
       }
-      tickShienDash(now,sh,idx,local,w,h);
-      if(local>=SHIEN_STRIKE_AT_MS+SHIEN_DASH_MS+420){
+      tickShienDash(now,sh,frame,local,w,h);
+      if(local>=shienDashEndAt(frame)+420){
         sh.paths.forEach(el=>el.remove());sh.paths=[];
         sh.clones.forEach(c=>c.el.remove());sh.clones=[];
       }
     }
-    if(local>SHIEN_WARN_START_MS+1700&&sh.caption){sh.caption.remove();sh.caption=null;}
+    if(local>frame.warnAt+1700&&sh.caption){sh.caption.remove();sh.caption=null;}
     updateShienBleed(now,halted);
   }
 
