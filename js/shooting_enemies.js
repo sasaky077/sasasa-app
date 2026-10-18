@@ -319,8 +319,8 @@
       kind: 'boss',
       remnantNo: 1,
       implemented: true,
-      name: 'オーバーシア',
-      displayName: 'REMNANT 01　オーバーシア',
+      name: '竜型レムナント',
+      displayName: 'REMNANT 01　竜型レムナント',
       image: 'images/remnant_01_battle.webp',
       element: 'neutral',
 
