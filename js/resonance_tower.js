@@ -153,8 +153,24 @@
         availability.append(label,floor,next);
       }
     }
-    const week=$('screen-resonance-tower')?.querySelector('.resonance-tower-week-note small');
-    if(week) week.textContent='日曜12:00（日本時間）更新';
+    // build1599: 今週の残り日数（次の更新＝毎週日曜12:00 JST まで）
+    const daysEl=$('screen-resonance-tower')?.querySelector('[data-tower-days-left]');
+    if(daysEl) daysEl.textContent=towerTimeLeftText();
+  }
+  // 次の更新時刻。サーバーの resetAt を優先し、無ければ「次の日曜12:00(JST)」を端末で計算。
+  function nextTowerResetMs(){
+    const server=Date.parse(progress&&progress.resetAt||'');
+    if(Number.isFinite(server)&&server>Date.now()) return server;
+    const JST=9*3600e3, now=Date.now(), j=new Date(now+JST);
+    const dow=j.getUTCDay();
+    let target=Date.UTC(j.getUTCFullYear(),j.getUTCMonth(),j.getUTCDate()+((7-dow)%7),12)-JST;
+    if(target<=now) target+=7*86400e3;
+    return target;
+  }
+  function towerTimeLeftText(){
+    const ms=Math.max(0,nextTowerResetMs()-Date.now());
+    if(ms>=86400e3) return Math.floor(ms/86400e3)+'日';
+    return Math.max(1,Math.ceil(ms/3600e3))+'時間';
   }
   async function refresh(){
     try{

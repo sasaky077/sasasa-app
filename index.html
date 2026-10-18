@@ -416,7 +416,7 @@
 .gacha-resonance-overview-missing{padding:9px 3px;font-size:11px;color:#8f7354}
 #detail-modal.is-gacha-pickup-preview #detail-name{display:none!important}
 </style>
-  <link rel="stylesheet" href="css/resonance_tower.css?v=1473-tower-15-floors">
+  <link rel="stylesheet" href="css/resonance_tower.css?v=1599-tower-rule">
   <link rel="stylesheet" href="css/towa_encounter.css?v=1553-rates-visible">
   <link rel="stylesheet" href="css/towa_dark_gacha.css?v=1552">
   <link rel="stylesheet" href="css/towa_notice.css?v=1556">
@@ -3798,11 +3798,11 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
     <div class="resonance-tower-floor-list" id="resonance-tower-floor-list" aria-label="第十層から第一層までの階層一覧"></div>
 
     <div class="resonance-tower-oath-stack">
-      <aside class="resonance-tower-oath" aria-label="挑戦の掟">
+      <aside class="resonance-tower-oath" aria-label="挑戦ルール">
         <div class="resonance-tower-oath-star" aria-hidden="true">✧</div>
-        <h2><span>—</span> 挑戦の掟 <span>—</span></h2>
-        <p>初回突破で使った仲間は、<br>その週の未突破階層では封印。<br>突破済み階層は自由編成で再挑戦可能。</p>
-        <div class="resonance-tower-week-note"><span aria-hidden="true">♜</span> 今週の状況 <small>日曜 12:00 更新予定</small></div>
+        <h2><span>—</span> 挑戦ルール <span>—</span></h2>
+        <p class="tower-oath-lines"><span>初回クリアで使用したキャラは、</span><span>その週の未クリア階層では封印。</span><span>クリア済みの階層は自由編成でプレイ可能。</span></p>
+        <div class="resonance-tower-week-note"><span class="tower-week-left"><span aria-hidden="true">♜</span> 今週の残り日数：<b data-tower-days-left>--</b></span><small>毎週日曜 12:00(JST)更新</small></div>
       </aside>
       <div class="resonance-tower-availability" aria-live="polite">サーバーと同期しています…</div>
     </div>
@@ -19967,7 +19967,7 @@ window.returnToTitleScreen = function(){
 </script>
 
 <script src="js/score_attack.js?v=1530-score-cap-safe"></script>
-<script src="js/resonance_tower.js?v=1581-tower-sunday-noon"></script>
+<script src="js/resonance_tower.js?v=1599-tower-rule"></script>
 <script src="js/towa_encounter.js?v=1554-notice"></script>
 <script src="js/towa_notice.js?v=1554"></script>
 <script src="js/towa_dark_gacha.js?v=1560-soul-flame"></script>

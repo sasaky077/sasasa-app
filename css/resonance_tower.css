@@ -1161,3 +1161,12 @@ html body #screen-resonance-tower .resonance-tower-floor-list .resonance-tower-f
   min-height:39px;
   height:39px;
 }
+
+/* build1599: 挑戦ルールの週表示を2行に（残り日数／更新時刻） */
+#screen-resonance-tower .resonance-tower-week-note{flex-direction:column;gap:2px;padding:4px 6px;min-height:0;}
+#screen-resonance-tower .resonance-tower-week-note .tower-week-left{display:flex;align-items:center;gap:5px;}
+#screen-resonance-tower .resonance-tower-week-note .tower-week-left b{font-weight:700;color:#fff3d6;}
+
+/* build1599: rule lines never break mid-line */
+#screen-resonance-tower .resonance-tower-oath p.tower-oath-lines{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:clamp(8px,calc((51vw - 16px) / 20.5),11px);letter-spacing:0;line-height:1.7;}
+#screen-resonance-tower .resonance-tower-oath p.tower-oath-lines span{display:block;white-space:nowrap;}
