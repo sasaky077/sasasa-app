@@ -12069,7 +12069,17 @@
   function spawnSwarmEnemy(enemyId, x, y, now, extra) {
     const base = getShootingEnemy(enemyId);
     if (!base || !base.implemented) return null;
-    const enemy = createNormalEnemy(Object.assign({}, base, { ch404Hp: base.hp, ch404Image: base.image }), now);
+    // build1593: 群れステージ側に倍率指定がある場合だけ、生成個体の定義を調整する。
+    // 元の敵マスターは書き換えない（CH07-03/04やカミラには影響しない）。
+    const swarmCfg = getSwarmBattleConfig() || {};
+    const speedScale = Math.max(0.1, Number(swarmCfg.spiderMoveSpeedScale || 1));
+    const damageScale = Math.max(0.1, Number(swarmCfg.spiderContactDamageScale || 1));
+    const tuned = Object.assign({}, base, {
+      moveSpeed: Number(base.moveSpeed || 0) * speedScale,
+      contactDamage: Math.round(Number(base.contactDamage || 0) * damageScale),
+      ch404Hp: base.hp, ch404Image: base.image
+    });
+    const enemy = createNormalEnemy(tuned, now);
     if (!enemy) return null;
     enemy.swarmRole = base.swarmRole || 'small';
     enemy.x = enemy.baseX = x;
