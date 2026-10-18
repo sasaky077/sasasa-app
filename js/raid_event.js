@@ -2005,6 +2005,7 @@
     level_exp_medium:{name:'強化素材・銀',img:'images/item_exp_silver.webp'},
     kyoumei_stone:{name:'共鳴石',img:'images/item_kyoumeistone.webp'},
     flower_r:{name:'聖霊花(R)',img:'images/item_flower_r.webp'},
+    shinju_nutrition:{name:'聖樹の息吹',img:'images/shinju_aura.webp'},
     flower_sr:{name:'聖霊花(SR)',img:'images/item_flower_sr.webp'},
     special_stage_ticket:{name:'Special Ticket -ノア-',img:'images/special_stage_ticket.webp'},
     soul_vessel_fire:{name:'魂の器(火)',img:'images/item_soul_vessel_fire.webp'},
@@ -2426,6 +2427,8 @@
       try{ if(typeof window.loadInventoryFromSupabase==='function') await window.loadInventoryFromSupabase(uid()); }catch(_){ }
       try{ if(typeof window.updateMainUI==='function') window.updateMainUI(); }catch(_){ }
       try{ if(typeof window.updateSummonGemUI==='function') window.updateSummonGemUI(); }catch(_){ }
+      // build1605: ランク報酬の聖樹の息吹は神聖樹の奉納待ちへ入るので、ホームのバッジも更新
+      try{ if(window.ShinjuProgress&&typeof window.ShinjuProgress.refreshFromServer==='function') void window.ShinjuProgress.refreshFromServer(); }catch(_){ }
       showRewardModal(result);
       const latest=await fetchStatus();
       if(latest){ await hydrateMemberPanels(latest); render(latest); }

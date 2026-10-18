@@ -22,7 +22,9 @@
   const numerals=['第一層','第二層','第三層','第四層','第五層','第六層','第七層','第八層','第九層','第十層','第十一層','第十二層','第十三層','第十四層','第十五層'];
 
   // v1420: tower rewards; the database RPC is authoritative for grants.
-  const TOWER_REWARDS=Object.freeze([
+  // build1606: 聖樹の息吹は3層ごと。3F×1・6F×2・9F×3・12F×4・15F×5（サーバー claim_resonance_tower_rewards と揃える）
+  const towerBreath=floor=>floor%3===0?Object.freeze({id:'shinju_nutrition',name:'聖樹の息吹',qty:floor/3,img:'images/shinju_aura.webp'}):null;
+  const TOWER_REWARDS_BASE=Object.freeze([
     [{id:'kyoumei_stone',name:'共鳴石',qty:3,img:'images/item_kyoumeistone.webp'}],
     [{id:'flower_r',name:'聖霊花(R)',qty:1,img:'images/item_flower_r.webp'}],
     [{id:'level_exp_large',name:'強化素材・金',qty:5,img:'images/item_exp_gold.webp'}],
@@ -40,6 +42,7 @@
     // build1486: 15F（トワ）の報酬。使い道は未定。
     [{id:'towa_memory',name:'トワの記憶',qty:1,img:'images/item_towa_memory.webp'}]
   ]);
+  const TOWER_REWARDS=Object.freeze(TOWER_REWARDS_BASE.map((list,i)=>{const breath=towerBreath(i+1);return Object.freeze(breath?[...list,breath]:[...list]);}));
   function createTowerRewardList(floors){
     const out=document.createElement('div');out.className='resonance-tower-reward-list';
     out.setAttribute('aria-label','残響の塔クリア報酬');
@@ -356,6 +359,8 @@
       if(data?.state) progress=data.state;
       syncTowerWallet();
       attempt=null;render();
+      // build1605: 聖樹の息吹が奉納待ちに入るので神聖樹の表示も更新
+      if(win){try{window.ShinjuProgress&&typeof window.ShinjuProgress.refreshFromServer==='function'&&window.ShinjuProgress.refreshFromServer();}catch(_){}}
       if(win){const sealed=(data?.sealedCharacterIds||[]).length;
         // Display what the server actually granted, never a client-side assumption.
         const assigned=Array.isArray(data?.rewards)

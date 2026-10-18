@@ -2819,7 +2819,7 @@
       }
       if (typeof window.updateSummonGemUI === 'function') window.updateSummonGemUI();
 
-      // build896: server decides whether this finalized run produced 神樹の栄養.
+      // build896: server decides whether this finalized run produced 聖樹の息吹.
       // The client no longer creates Shinju EXP/items by itself.
       let shinjuRewardExp = 0;
       if (win) {
@@ -22914,7 +22914,7 @@
     Object.freeze({ id: 'soul_vessel_wood', name: '魂の器(木)', image: 'images/type_wood.webp', rewardType: 'evolution' }),
     Object.freeze({ id: 'soul_vessel_dark', name: '魂の器(闇)', image: 'images/type_dark.webp', rewardType: 'evolution' }),
     Object.freeze({ id: 'soul_vessel_light', name: '魂の器(光)', image: 'images/type_light.webp', rewardType: 'evolution' }),
-    Object.freeze({ id: 'shinju_nutrition', name: '神樹の栄養', image: 'images/shinju_aura.webp', rewardType: 'shinju' }),
+    Object.freeze({ id: 'shinju_nutrition', name: '聖樹の息吹', image: 'images/shinju_aura.webp', rewardType: 'shinju' }),
   ]);
 
 
@@ -23048,7 +23048,7 @@
   function getShootingClearRewardPlan() {
     const stage = selectedStage || {};
 
-    // 神樹の栄養は1個あたりの栄養値だけステージ種別で変える。
+    // 聖樹の息吹は1個あたりの栄養値だけステージ種別で変える。
     // ドロップ「個数」はステージ種別ではなく最終スコアだけで決める。
     if (isRaidStage()) {
       return { nutritionExp: 150 };
@@ -23709,7 +23709,7 @@
         if (!rewardExp) return;
         const shinjuDrop = {
           type: 'material',
-          name: '神樹の栄養',
+          name: '聖樹の息吹',
           amount: 1,
           detail: `神樹成長素材 / 創世EXP +${rewardExp}`,
           image: 'images/shinju_aura.webp',
