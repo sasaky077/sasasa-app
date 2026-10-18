@@ -1372,8 +1372,8 @@
 
         <section class="daily-raid-entry" id="daily-raid-entry">
           <div class="daily-raid-entry-hero">
-            <img src="images/raid_enemy_01.webp" alt="SIGMA-IX">
-            <div><small>RAID BATTLE</small><strong data-raid-boss-name>SIGMA-IX</strong><span>募集するか、フレンドの募集へ参加してください。</span></div>
+            <img src="images/raid_enemy_01.webp" alt="テスト">
+            <div><small>RAID BATTLE</small><strong data-raid-boss-name>テスト</strong><span>募集するか、フレンドの募集へ参加してください。</span></div>
           </div>
           <div class="daily-raid-mode-grid">
             <button type="button" class="daily-raid-mode-card is-host raid-surface" id="daily-raid-recruit-btn">
@@ -1407,9 +1407,9 @@
                 <section class="daily-raid-swipe-page daily-raid-enemy-page" data-raid-page-index="0">
                   <section class="daily-raid-hero">
                     <div class="daily-raid-hero-halo" aria-hidden="true"></div><div class="daily-raid-hero-lines" aria-hidden="true"></div>
-                    <div class="daily-raid-hero-rank"><span>RAID ENEMY</span><b data-raid-boss-name>SIGMA-IX</b></div>
-                    <img src="images/raid_enemy_01.webp" alt="SIGMA-IX">
-                    <div class="daily-raid-hero-copy"><small>RAID ENEMY</small><strong data-raid-boss-name>SIGMA-IX</strong><span data-raid-boss-line>―これより、調査を開始する。</span></div>
+                    <div class="daily-raid-hero-rank"><span>RAID ENEMY</span><b data-raid-boss-name>テスト</b></div>
+                    <img src="images/raid_enemy_01.webp" alt="テスト">
+                    <div class="daily-raid-hero-copy"><small>RAID ENEMY</small><strong data-raid-boss-name>テスト</strong><span data-raid-boss-line>―これより、調査を開始する。</span></div>
                   </section>
 
                   <section class="daily-raid-hpbox raid-surface">
@@ -2027,7 +2027,7 @@
   // ============================================================
   const RAID_BOSS_DEFS={
     // lobbyBg: ロビー全面の背景（背景＋ボスの絵を1枚で描いたもの）。bg_raid_01.webp と同サイズ・同構図で用意する。
-    sigma:{name:'SIGMA-IX',line:'―これより、調査を開始する。',lobbyBg:'images/bg_raid_01.webp',lobbyImage:'images/raid_enemy_01.webp',banner:'images/raid_banner_sigma.webp',enemyId:'shooting_raid_test',pieceImage:'images/chara_50_panel.webp'},
+    sigma:{name:'テスト',line:'―これより、調査を開始する。',lobbyBg:'images/bg_raid_01.webp',lobbyImage:'images/raid_enemy_01.webp',banner:'images/raid_banner_sigma.webp',enemyId:'shooting_raid_test',pieceImage:'images/chara_50_panel.webp'},
     shien:{name:'シエン',line:'霞の果てで、待つ。',lobbyBg:'images/bg_raid_02.webp?v=1572',lobbyImage:'images/raid_enemy_02_battle.webp',banner:'images/raid_banner_shien.webp',enemyId:'shooting_raid_shien',pieceImage:'images/raid_piece_shien.webp'},
     camilla:{name:'カミラ',line:'骨になるまで、愛してあげる。',lobbyBg:'images/bg_raid_03.webp',lobbyImage:'images/raid_enemy_03_battle.webp',banner:'images/raid_banner_camilla.webp',enemyId:'shooting_raid_camilla',pieceImage:'images/raid_piece_camilla.webp'},
     // boss3:{name:'',line:'',lobbyBg:'images/bg_raid_03.webp',lobbyImage:'images/raid_enemy_03_battle.webp',enemyId:'shooting_raid_boss3',pieceImage:'images/raid_piece_boss3.webp'},

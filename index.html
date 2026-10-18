@@ -4650,7 +4650,7 @@ window.NOTICE_ITEMS = [
     id: 'notice_daily_raid_renewal_20261018',
     date: '2026.10.18',
     title: 'レイドバトルがリニューアルされました',
-    body: 'レイドバトルをリニューアルしました。\n\n■ 日替わりボス：SIGMA-IX・シエン・カミラが日替わりで登場\n■ ブレイク：チームの与ダメージで溜まり、満タンで全員のダメージ1.5倍\n■ 討伐ランク報酬：S/A/B/Cで報酬が変化。Sランクでボスの欠片\n■ 累計討伐ボーナス：節目ごとに結晶。累計50回・100回は結晶100個\n\n報酬の詳細はレイド画面「RAID INFO」の「報酬一覧」をご確認ください。',
+    body: 'レイドバトルをリニューアルしました。\n\n■ 日替わりボス：テスト・シエン・カミラが日替わりで登場\n■ ブレイク：チームの与ダメージで溜まり、満タンで全員のダメージ1.5倍\n■ 討伐ランク報酬：S/A/B/Cで報酬が変化。Sランクでボスの欠片\n■ 累計討伐ボーナス：節目ごとに結晶。累計50回・100回は結晶100個\n\n報酬の詳細はレイド画面「RAID INFO」の「報酬一覧」をご確認ください。',
     hidden: false
   },
   {
@@ -5307,11 +5307,11 @@ window.NOTICE_ITEMS = [
       id: RAID_TEST_REWARD_NOTICE_ID,
       date: status.raid_date ? String(status.raid_date).replace(/-/g,'.') : '2026.08.17',
       title: 'DAILY RAID CLEAR 報酬',
-      body: 'SIGMA-IX討伐への参加報酬として「SIGMA-IX（シグマ-ナイン）」1体をプレゼントします。',
+      body: 'テスト討伐への参加報酬として「テスト」1体をプレゼントします。',
       reward: {
         type: 'character',
         characterId: 50,
-        characterName: 'SIGMA-IX',
+        characterName: 'テスト',
         image: 'images/chara_50_panel.webp',
         claimed: status.claimed === true
       },
@@ -5486,7 +5486,7 @@ window.NOTICE_ITEMS = [
             <img class="notice-reward-character-icon" src="${escapeHtml(reward.image || 'images/chara_50_panel.webp')}" alt="">
             <div class="notice-reward-copy">
               <span class="notice-reward-label">レイドクリア報酬</span>
-              <strong>${escapeHtml(reward.characterName || 'SIGMA-IX')} ×1</strong>
+              <strong>${escapeHtml(reward.characterName || 'テスト')} ×1</strong>
             </div>
           </div>
           <button
@@ -5847,7 +5847,7 @@ window.NOTICE_ITEMS = [
             const entry = typeof createCharaSummonData === 'function'
               ? createCharaSummonData(chara, now)
               : {
-                  id:50, name:'SIGMA-IX', rarity:'sr',
+                  id:50, name:'テスト', rarity:'sr',
                   stats:{HP:620,ATK:285}, baseStats:{HP:620,ATK:285},
                   capturedAt:now.toISOString()
                 };
@@ -5865,7 +5865,7 @@ window.NOTICE_ITEMS = [
 
         item.reward.claimed = true;
         if (!noticeBulkClaimActive && typeof window.showToast === 'function') {
-          window.showToast('SIGMA-IX ×1 を受け取りました！');
+          window.showToast('テスト ×1 を受け取りました！');
         }
         if (typeof renderZukan === 'function') {
           try { renderZukan(); } catch(_){}
@@ -19703,7 +19703,7 @@ function fadeOutOpeningBgm(){
 
 
 
-<script src="js/shooting_characters.js?v=1538-towa-trial"></script>
+<script src="js/shooting_characters.js?v=1603-sigma-test"></script>
 <script src="js/story_scenario.js?v=1522-ch08-4stages"></script>
 <script src="js/story_novel.js?v=1510-aina-seeker-trial"></script>
 <script src="js/stage_select.js?v=1512-ch704-spider-horde"></script>
@@ -19940,10 +19940,10 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1602-raid-title"></script>
+<script src="js/shooting_event.js?v=1603-sigma-test"></script>
 <script src="js/shooting_party_filter.js?v=1472-filter-screen-exit-reset"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
-<script src="js/raid_event.js?v=1596-raid-theme"></script>
+<script src="js/raid_event.js?v=1603-sigma-test"></script>
 <script src="js/skin_system.js?v=1477-skin-battle"></script>
 <script src="js/item_management.js?v=1488-retired-origin-wing"></script>
 

@@ -427,8 +427,8 @@
       id: SHOOTING_ENEMY_ID.RAID_TEST,
       kind: 'boss',
       implemented: true,
-      name: 'SIGMA-IX',
-      displayName: 'RAID ENEMY　SIGMA-IX',
+      name: 'テスト',
+      displayName: 'RAID ENEMY　テスト',
       image: 'images/raid_enemy_01_battle.webp',
       // build1590: 木属性（レイドのボス表と同じ）。敵弾・レーザーも木属性になる。
       element: 'wood',

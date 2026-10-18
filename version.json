@@ -1,4 +1,4 @@
 {
-  "build": 1602,
-  "note": "DAILY RAID：バトル開始前のタイトル表示（RAID BATTLE / ボス名）が日替わりボスでもSIGMA-IXになっていたのを修正。build1601まで含む。"
+  "build": 1603,
+  "note": "SIGMA-IX のゲーム内表示名を「テスト」に変更（レイドボス・キャラ・お知らせ等。ファイル名/IDは sigma のまま）。要SQL build1603。build1602まで含む。"
 }

@@ -1291,7 +1291,7 @@
   },
   "50": {
     "id": 50,
-    "name": "SIGMA-IX",
+    "name": "テスト",
     "element": "wood",
     "hp": 620,
     "atk": 285,
@@ -2575,7 +2575,7 @@
     id: CHARACTER_ID.TESTCHAN,
     effectKey: 'testchan',
     label: 'TRI-LASER / BLACK SHIP',
-    description: '未来から来たアンドロイド、SIGMA-IX（シグマ-ナイン）。3WAYの緑色レーザーを照射するSR火力型。ULT「ブラックシップ」は5秒間、正面へ極太レーザーを照射する。弾幕消去・スタン等の追加効果はなく、純粋な高火力特化。',
+    description: '未来から来たアンドロイド、テスト。3WAYの緑色レーザーを照射するSR火力型。ULT「ブラックシップ」は5秒間、正面へ極太レーザーを照射する。弾幕消去・スタン等の追加効果はなく、純粋な高火力特化。',
     ultDescription: '正面へ極太レーザーを5秒間連続照射する。0.25秒ごとにATK×35%のダメージ判定が発生し、全段命中時は最大ATK×700%相当。敵弾消去・スタン・無敵などの追加効果はない。',
     ultName: 'ブラックシップ',
     ultType: 'testchan_black_ship',

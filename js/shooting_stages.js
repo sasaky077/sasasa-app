@@ -1337,7 +1337,7 @@
       chapter: 0,
       stageNo: 1,
       eventId: 'raid',
-      eventTitle: 'SIGMA-IX',
+      eventTitle: 'テスト',
       difficultyLabel: 'DAILY RAID',
       type: 'boss',
       background: 'images/battle_bg_01.webp',
