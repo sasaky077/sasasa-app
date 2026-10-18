@@ -1326,7 +1326,7 @@
 
 
     // ============================================================
-    // DAILY RAID - ザ・テスト
+    // DAILY RAID - SIGMA-IX
     // 共有HP 100,000 / 最大4人 / 1日1回。
     // 実際の残HPはSupabaseのraidContextからshooting_core側で上書きする。
     // ============================================================
@@ -1335,7 +1335,7 @@
       chapter: 0,
       stageNo: 1,
       eventId: 'raid',
-      eventTitle: 'ザ・テスト',
+      eventTitle: 'SIGMA-IX',
       difficultyLabel: 'DAILY RAID',
       type: 'boss',
       background: 'images/battle_bg_01.webp',

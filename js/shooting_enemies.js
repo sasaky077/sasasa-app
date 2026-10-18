@@ -420,14 +420,14 @@
 
 
     // ------------------------------------------------------------
-    // DAILY RAID - ザ・テスト
+    // DAILY RAID - SIGMA-IX
     // ------------------------------------------------------------
     [SHOOTING_ENEMY_ID.RAID_TEST]: Object.freeze({
       id: SHOOTING_ENEMY_ID.RAID_TEST,
       kind: 'boss',
       implemented: true,
-      name: 'ザ・テスト',
-      displayName: 'RAID ENEMY　ザ・テスト',
+      name: 'SIGMA-IX',
+      displayName: 'RAID ENEMY　SIGMA-IX',
       image: 'images/raid_enemy_01_battle.webp',
 
       // 共有HPはSupabaseの日次レイド値で上書き。
