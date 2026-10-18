@@ -2884,11 +2884,11 @@
     fireRate: 95, laserWidth: 16, laserHitWidth: 50,
     laserDamageAtkRate: 0.105, laserVisualHoldMs: 130,
     ultName: 'びっくり箱',
-    ultDescription: '前方に弾幕を遮る箱を3秒間設置。時間経過で範囲内の敵にATK×3.0の光属性ダメージ。ATK×1.5（5秒）・無敵（3秒）・HP33%回復・ULT全回復のいずれか1つをランダムで出現させる。',
+    ultDescription: '前方に弾幕を遮る箱を3秒間設置。時間経過で箱が開き、周囲広範囲の爆風が当たった敵にATK×3.0の光属性ダメージ。ATK×1.5（5秒）・無敵（3秒）・HP33%回復・ULT全回復のいずれか1つをランダムで出現させる。',
     ultType: 'smile_surprise_box', ultBaseType: 'summon',
     ultAddons: ['bullet_block', 'damage', 'item_summon'],
     smileBoxDurationMs: 3000, smileBoxOffsetY: 90,
-    smileBoxDamageMultiplier: 3.0, smileBoxBlastRadius: 142,
+    smileBoxDamageMultiplier: 3.0, smileBoxBlastRadius: 230, // build1615: 広範囲の爆風
     smileItemAtkMultiplier: 1.5, smileItemAtkDurationMs: 5000,
     smileItemInvincibleDurationMs: 3000, smileItemHealPercent: 0.33,
     burstNeed: 32, ultGainPerHit: 0.676,

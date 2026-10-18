@@ -30417,16 +30417,62 @@
     return false;
   }
 
+  // build1615: 爆風演出を広範囲・多層に。閃光→衝撃波2重→煙→紙吹雪（星・菱形カード・鈴）＋画面揺れ。
+  // DOMは約30個・900msで破棄（軽量化のため画像は使わずCSSのみ）。
   function spawnSmileExplosionFx(x, y, radius) {
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
     const fx = document.createElement('div');
     fx.className = 'shooting-smile-box-explosion';
     fx.style.setProperty('--smile-blast-size', `${Math.round(radius * 2)}px`);
-    fx.innerHTML = '<span class="smile-blast-core"></span><span class="smile-blast-ring"></span><span class="smile-blast-star">✦</span>';
+    const parts = [
+      '<span class="smile-blast-flash"></span>',
+      '<span class="smile-blast-core"></span>',
+      '<span class="smile-blast-ring"></span>',
+      '<span class="smile-blast-ring smile-blast-ring2"></span>',
+      '<span class="smile-blast-wave"></span>',
+      '<span class="smile-blast-star">✦</span>',
+    ];
+    const smokeCount = 10;
+    for (let i = 0; i < smokeCount; i++) {
+      const a = (i / smokeCount) * Math.PI * 2 + Math.random() * .4;
+      const d = radius * (.55 + Math.random() * .35);
+      const sz = Math.round(radius * (.32 + Math.random() * .18));
+      parts.push(`<span class="smile-blast-smoke" style="--dx:${Math.round(Math.cos(a) * d)}px;--dy:${Math.round(Math.sin(a) * d)}px;--sz:${sz}px;--dl:${Math.round(Math.random() * 80)}ms"></span>`);
+    }
+    const confetti = ['star', 'star', 'card', 'card', 'diamond', 'bell'];
+    const confettiCount = 16;
+    for (let i = 0; i < confettiCount; i++) {
+      const a = (i / confettiCount) * Math.PI * 2 + (Math.random() - .5) * .5;
+      const d = radius * (.75 + Math.random() * .45);
+      const kind = confetti[i % confetti.length];
+      const rot = Math.round((Math.random() < .5 ? -1 : 1) * (240 + Math.random() * 360));
+      const glyph = kind === 'star' ? '★' : kind === 'diamond' ? '✦' : '';
+      parts.push(`<span class="smile-blast-bit is-${kind}" style="--dx:${Math.round(Math.cos(a) * d)}px;--dy:${Math.round(Math.sin(a) * d - radius * .12)}px;--rot:${rot}deg;--dl:${Math.round(Math.random() * 60)}ms">${glyph}</span>`);
+    }
+    fx.innerHTML = parts.join('');
     arena.appendChild(fx);
     positionUnit(fx, x, y);
-    setTimeout(() => fx.remove(), 650);
+    const root = document.getElementById(ROOT_ID);
+    if (root) {
+      root.classList.remove('smile-blast-shake');
+      void root.offsetWidth;
+      root.classList.add('smile-blast-shake');
+      setTimeout(() => root.classList.remove('smile-blast-shake'), 420);
+    }
+    setTimeout(() => fx.remove(), 950);
+  }
+
+  // build1615: 爆発時は箱を「開いた箱」の画像に差し替えて一瞬弾ませてから消す（弾の遮蔽はこの時点で終了）。
+  function openSmileBox(box) {
+    const el = box && box.el;
+    if (!el || !el.isConnected) return;
+    el.classList.add('smile-box-open');
+    el.querySelector('.smile-box-timer')?.remove();
+    el.querySelector('.smile-box-halo')?.remove();
+    const img = el.querySelector('img');
+    if (img) img.src = 'images/chara_56_box_open.webp';
+    setTimeout(() => el.remove(), 820);
   }
 
   function spawnSmileRandomItem(box, now) {
@@ -30460,9 +30506,9 @@
   function explodeSmileBox(box, now) {
     if (!state || state.ended || state.finishing) return;
     const damage = Math.max(0, Number(box.owner.atk || 0)) * Math.max(0, Number(box.damageMultiplier || 3));
-    const radius = Math.max(30, Number(box.blastRadius || 142));
+    const radius = Math.max(30, Number(box.blastRadius || 230));
     const element = getUltAttackElement(box.owner);
-    box.el?.remove();
+    openSmileBox(box);
     spawnSmileExplosionFx(box.x, box.y, radius);
 
     // BOSSの増援も含め、座標が爆風内の敵に1回だけ命中させる。
@@ -30517,6 +30563,8 @@
     el.className = 'shooting-smile-box';
     el.setAttribute('aria-label', 'スマイル ULT びっくり箱');
     el.innerHTML = '<span class="smile-box-halo"></span><img src="images/chara_56_box.webp" alt="" draggable="false"><span class="smile-box-timer"></span>';
+    // 爆発時に差し替える画像を先読み（切り替えの一瞬の空白を防ぐ）
+    try { const pre = new Image(); pre.src = 'images/chara_56_box_open.webp'; } catch (_) {}
     el.style.left = '0px';
     el.style.top = '0px';
     arena.appendChild(el);
@@ -30524,7 +30572,7 @@
     const now = performance.now();
     state.smileBoxes.push({
       el, x, y, owner:c, explodeAt:now + Math.max(100, Number(c.smileBoxDurationMs ?? 3000)),
-      blastRadius:Math.max(30, Number(c.smileBoxBlastRadius ?? 142)),
+      blastRadius:Math.max(30, Number(c.smileBoxBlastRadius ?? 230)),
       damageMultiplier:Math.max(0, Number(c.smileBoxDamageMultiplier ?? 3)),
       lastHitFxAt:0,
     });

@@ -14777,3 +14777,87 @@ html body #shooting-event-root[data-raid-boss="shooting_raid_camilla"] :is(.shoo
 /* PAUSEではバトル時刻と同様、箱の残り時間演出も静止する。 */
 #shooting-event-root.is-shooting-paused .shooting-smile-box *,
 #shooting-event-root.is-shooting-paused .shooting-smile-box{animation-play-state:paused!important}
+
+/* =========================================================
+   build1615 — スマイル ULT：開いた箱＋広範囲の爆風
+   ========================================================= */
+#shooting-event-root .shooting-smile-box.smile-box-open{z-index:49}
+#shooting-event-root .shooting-smile-box.smile-box-open img{
+  animation:smileBoxOpenPop .82s cubic-bezier(.2,1.6,.4,1) forwards!important;
+  filter:drop-shadow(0 0 18px rgba(255,226,120,.95)) drop-shadow(0 0 40px rgba(255,200,60,.6))!important;
+}
+@keyframes smileBoxOpenPop{
+  0%{transform:scale(.9) rotate(0)}
+  18%{transform:scale(1.55) rotate(-6deg)}
+  35%{transform:scale(1.32) rotate(4deg)}
+  70%{opacity:1;transform:scale(1.38) rotate(0)}
+  100%{opacity:0;transform:scale(1.5) translateY(-10px)}
+}
+#shooting-event-root .shooting-smile-box-explosion{overflow:visible}
+#shooting-event-root .shooting-smile-box-explosion > span{pointer-events:none}
+#shooting-event-root .shooting-smile-box-explosion .smile-blast-flash{
+  position:absolute;left:50%;top:50%;width:260%;height:260%;border-radius:50%;transform:translate(-50%,-50%);
+  background:radial-gradient(circle,rgba(255,252,230,.85) 0%,rgba(255,236,160,.35) 30%,rgba(255,230,140,0) 60%);
+  animation:smileBlastFlash .45s ease-out forwards;
+}
+#shooting-event-root .shooting-smile-box-explosion .smile-blast-ring2{
+  border-width:2px!important;border-color:rgba(255,255,255,.9)!important;animation:smileBlastRing .8s .08s ease-out both!important;
+}
+#shooting-event-root .shooting-smile-box-explosion .smile-blast-wave{
+  position:absolute;inset:-12%;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,0) 52%,rgba(255,244,190,.55) 62%,rgba(255,214,90,.25) 70%,rgba(255,214,90,0) 76%);
+  animation:smileBlastWave .7s ease-out forwards;
+}
+#shooting-event-root .shooting-smile-box-explosion .smile-blast-smoke{
+  position:absolute;left:50%;top:50%;width:var(--sz);height:var(--sz);margin:calc(var(--sz) / -2) 0 0 calc(var(--sz) / -2);border-radius:50%;
+  background:radial-gradient(circle at 40% 38%,#fffdf6 0%,rgba(250,242,226,.92) 45%,rgba(240,226,200,.0) 72%);
+  opacity:0;animation:smileBlastSmoke .9s var(--dl) ease-out forwards;
+}
+#shooting-event-root .shooting-smile-box-explosion .smile-blast-bit{
+  position:absolute;left:50%;top:50%;opacity:0;animation:smileBlastBit .9s var(--dl) cubic-bezier(.15,.7,.35,1) forwards;
+  will-change:transform,opacity;
+}
+#shooting-event-root .smile-blast-bit.is-star{font-size:22px;line-height:1;margin:-11px 0 0 -11px;color:#ffd75a;text-shadow:0 0 8px rgba(255,210,70,.9)}
+#shooting-event-root .smile-blast-bit.is-diamond{font-size:18px;line-height:1;margin:-9px 0 0 -9px;color:#fff3c0;text-shadow:0 0 8px rgba(255,230,140,.9)}
+#shooting-event-root .smile-blast-bit.is-card{
+  width:14px;height:20px;margin:-10px 0 0 -7px;border-radius:2px;
+  background:conic-gradient(from 45deg,#2d2730 0 25%,#f6efe0 0 50%,#2d2730 0 75%,#f6efe0 0) center/10px 10px;
+  border:1.5px solid #d9b45a;box-shadow:0 0 6px rgba(255,220,120,.6);
+}
+#shooting-event-root .smile-blast-bit.is-bell{
+  width:13px;height:13px;margin:-6.5px 0 0 -6.5px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#fff6c8,#e0b54a 55%,#8d6a1d);box-shadow:0 0 6px rgba(255,210,90,.7);
+}
+@keyframes smileBlastFlash{from{opacity:1;transform:translate(-50%,-50%) scale(.3)}to{opacity:0;transform:translate(-50%,-50%) scale(1)}}
+@keyframes smileBlastWave{0%{opacity:.95;transform:scale(.2)}70%{opacity:.7}100%{opacity:0;transform:scale(1.08)}}
+@keyframes smileBlastSmoke{
+  0%{opacity:0;transform:translate(0,0) scale(.3)}
+  20%{opacity:.95}
+  100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.25)}
+}
+@keyframes smileBlastBit{
+  0%{opacity:0;transform:translate(0,0) rotate(0) scale(.4)}
+  12%{opacity:1}
+  80%{opacity:1}
+  100%{opacity:0;transform:translate(var(--dx),calc(var(--dy) + 26px)) rotate(var(--rot)) scale(1)}
+}
+#shooting-event-root.smile-blast-shake #shooting-arena{animation:smileBlastShake .42s ease-out}
+/* PCの中央寄せ（transform:translateX(-50%)）を壊さないよう、個別プロパティ translate で揺らす */
+@keyframes smileBlastShake{
+  0%{translate:0 0}15%{translate:-6px 4px}30%{translate:5px -5px}
+  45%{translate:-4px 3px}60%{translate:3px -2px}80%{translate:-1px 1px}100%{translate:0 0}
+}
+@media(prefers-reduced-motion:reduce){
+  #shooting-event-root.smile-blast-shake #shooting-arena{animation:none}
+  #shooting-event-root .shooting-smile-box-explosion .smile-blast-bit,
+  #shooting-event-root .shooting-smile-box-explosion .smile-blast-smoke{animation-duration:.5s}
+}
+/* build1615b: 明るい背景でも煙・閃光が見えるよう、縁に陰影と金のにじみを足す */
+#shooting-event-root .shooting-smile-box-explosion .smile-blast-smoke{
+  background:radial-gradient(circle at 38% 34%,#ffffff 0%,#fbf4e4 38%,rgba(226,206,168,.92) 62%,rgba(205,178,128,0) 74%)!important;
+  filter:drop-shadow(0 2px 4px rgba(150,115,55,.35)) drop-shadow(0 0 10px rgba(255,214,110,.45));
+}
+#shooting-event-root .shooting-smile-box-explosion .smile-blast-flash{
+  background:radial-gradient(circle,rgba(255,250,215,.95) 0%,rgba(255,224,120,.55) 28%,rgba(255,214,90,.18) 48%,rgba(255,214,90,0) 62%)!important;
+}
+#shooting-event-root .shooting-smile-box-explosion .smile-blast-ring{border-color:rgba(255,206,80,.95)!important;box-shadow:0 0 24px rgba(255,190,40,.9),inset 0 0 18px rgba(255,220,120,.6)!important}
