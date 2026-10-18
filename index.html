@@ -3801,7 +3801,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
         <div class="resonance-tower-oath-star" aria-hidden="true">✧</div>
         <h2><span>—</span> 挑戦の掟 <span>—</span></h2>
         <p>初回突破で使った仲間は、<br>その週の未突破階層では封印。<br>突破済み階層は自由編成で再挑戦可能。</p>
-        <div class="resonance-tower-week-note"><span aria-hidden="true">♜</span> 今週の状況 <small>月曜 05:00 更新予定</small></div>
+        <div class="resonance-tower-week-note"><span aria-hidden="true">♜</span> 今週の状況 <small>日曜 12:00 更新予定</small></div>
       </aside>
       <div class="resonance-tower-availability" aria-live="polite">サーバーと同期しています…</div>
     </div>
@@ -4645,6 +4645,20 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 // =========================================================
 
 window.NOTICE_ITEMS = [
+  {
+    id: 'notice_daily_raid_renewal_20261018',
+    date: '2026.10.18',
+    title: 'レイドバトルがリニューアルされました',
+    body: 'レイドバトルをリニューアルしました。\n\n■ 日替わりボス：SIGMA-IX・シエン・カミラが日替わりで登場\n■ ブレイク：チームの与ダメージで溜まり、満タンで全員のダメージ1.5倍\n■ 討伐ランク報酬：S/A/B/Cで報酬が変化。Sランクでボスの欠片\n■ 累計討伐ボーナス：節目ごとに結晶。累計50回・100回は結晶100個\n\n報酬の詳細はレイド画面「RAID INFO」の「報酬一覧」をご確認ください。',
+    hidden: false
+  },
+  {
+    id: 'notice_resonance_tower_reset_20261018',
+    date: '2026.10.18',
+    title: '残響の塔がリセットされました',
+    body: '残響の塔がリセットされました。\n\n本日より、塔のリセット時間を毎週日曜 12:00 に変更しました。\n次回のリセットは 10/25（日）12:00 です。\n\n各階層の初回突破報酬・キャラクターの封印もリセットされています。',
+    hidden: false
+  },
   {
     id: 'notice_noah_boss_display_apology_20261013',
     date: '2026.10.13',
@@ -19947,7 +19961,7 @@ window.returnToTitleScreen = function(){
 </script>
 
 <script src="js/score_attack.js?v=1530-score-cap-safe"></script>
-<script src="js/resonance_tower.js?v=1554-notice"></script>
+<script src="js/resonance_tower.js?v=1581-tower-sunday-noon"></script>
 <script src="js/towa_encounter.js?v=1554-notice"></script>
 <script src="js/towa_notice.js?v=1554"></script>
 <script src="js/towa_dark_gacha.js?v=1560-soul-flame"></script>
