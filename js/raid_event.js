@@ -2007,9 +2007,9 @@
   // ============================================================
   const RAID_BOSS_DEFS={
     // lobbyBg: ロビー全面の背景（背景＋ボスの絵を1枚で描いたもの）。bg_raid_01.webp と同サイズ・同構図で用意する。
-    sigma:{name:'SIGMA-IX',line:'―これより、調査を開始する。',lobbyBg:'images/bg_raid_01.webp',lobbyImage:'images/raid_enemy_01.webp',enemyId:'shooting_raid_test',pieceImage:'images/chara_50_panel.webp'},
-    shien:{name:'シエン',line:'霞の果てで、待つ。',lobbyBg:'images/bg_raid_02.webp?v=1572',lobbyImage:'images/raid_enemy_02_battle.webp',enemyId:'shooting_raid_shien',pieceImage:'images/raid_piece_shien.webp'},
-    camilla:{name:'カミラ',line:'骨になるまで、愛してあげる。',lobbyBg:'images/bg_raid_03.webp',lobbyImage:'images/raid_enemy_03_battle.webp',enemyId:'shooting_raid_camilla',pieceImage:'images/raid_piece_camilla.webp'},
+    sigma:{name:'SIGMA-IX',line:'―これより、調査を開始する。',lobbyBg:'images/bg_raid_01.webp',lobbyImage:'images/raid_enemy_01.webp',banner:'images/raid_banner_sigma.webp',enemyId:'shooting_raid_test',pieceImage:'images/chara_50_panel.webp'},
+    shien:{name:'シエン',line:'霞の果てで、待つ。',lobbyBg:'images/bg_raid_02.webp?v=1572',lobbyImage:'images/raid_enemy_02_battle.webp',banner:'images/raid_banner_shien.webp',enemyId:'shooting_raid_shien',pieceImage:'images/raid_piece_shien.webp'},
+    camilla:{name:'カミラ',line:'骨になるまで、愛してあげる。',lobbyBg:'images/bg_raid_03.webp',lobbyImage:'images/raid_enemy_03_battle.webp',banner:'images/raid_banner_camilla.webp',enemyId:'shooting_raid_camilla',pieceImage:'images/raid_piece_camilla.webp'},
     // boss3:{name:'',line:'',lobbyBg:'images/bg_raid_03.webp',lobbyImage:'images/raid_enemy_03_battle.webp',enemyId:'shooting_raid_boss3',pieceImage:'images/raid_piece_boss3.webp'},
   };
   function getBossDef(status){
@@ -2037,7 +2037,40 @@
   function writeCachedBoss(boss){
     if(!boss||!boss.key) return;
     try{ localStorage.setItem(RAID_BOSS_CACHE_KEY,JSON.stringify({day:jstDay(),key:boss.key,name:boss.name||''})); }catch(_){ }
+    try{ applyRaidHomeBanner(); }catch(_){ }
   }
+
+  // ============================================================
+  // build1594: ホーム上部のレイドバナーを、その日のボスのバナーへ自動で切り替える
+  // ============================================================
+  function getRaidHomeBannerImage(fallback){
+    const c=readCachedBoss();
+    const def=c&&RAID_BOSS_DEFS[c.key];
+    return (def&&def.banner)||fallback||null;
+  }
+  function applyRaidHomeBanner(){
+    const src=getRaidHomeBannerImage(null);
+    if(!src) return;
+    document.querySelectorAll('img[data-raid-banner]').forEach(img=>{ if(img.getAttribute('src')!==src) img.setAttribute('src',src); });
+  }
+  let raidBannerRefreshing=false;
+  async function refreshRaidHomeBanner(attempt){
+    attempt=Number(attempt||0);
+    applyRaidHomeBanner();
+    if(readCachedBoss()||raidBannerRefreshing) return;
+    if(!uid()||!window.zsSupabase||typeof window.zsSupabase.rpc!=='function'){
+      if(attempt<12) setTimeout(()=>refreshRaidHomeBanner(attempt+1),2500);
+      return;
+    }
+    raidBannerRefreshing=true;
+    try{
+      const boss=await fetchTodayBoss();
+      if(boss) writeCachedBoss(boss);
+      else if(attempt<3) setTimeout(()=>refreshRaidHomeBanner(attempt+1),5000);
+    }finally{ raidBannerRefreshing=false; }
+  }
+  window.getRaidHomeBannerImage=getRaidHomeBannerImage;
+  window.refreshRaidHomeBanner=refreshRaidHomeBanner;
   function ensureBossPendingStyle(){
     if(document.getElementById('daily-raid-boss-pending-style-v1576')) return;
     const st=document.createElement('style');
@@ -2689,6 +2722,9 @@
 
   window.RaidEvent={fetchStatus,finishAttempt,skipRemainingAttempts,refreshFriendHomeNotice,refreshHomeNotices:refreshFriendHomeNotice,getCurrentStatus:()=>currentStatus,showJoinList,startRecruiting};
   window.openDailyRaid=open;
+  // build1594: 起動時と、日付が変わったあと（5分ごとに確認）にバナーを当日のボスへ。
+  setTimeout(()=>refreshRaidHomeBanner(0),1200);
+  setInterval(()=>{ if(!readCachedBoss()) refreshRaidHomeBanner(0); },5*60*1000);
   window.closeDailyRaid=close;
   window.startDailyRaidBattle=start;
 })();

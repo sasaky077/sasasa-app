@@ -4634,7 +4634,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=595"></script>
+<script src="js/home_banners.js?v=1594-raid-banner"></script>
 <script id="sasaphia-notices-inline-v9">
 // =========================================================
 // Zeraphia Notices
@@ -18024,6 +18024,11 @@ function renderHomeEventBanners(){
 
     var img = document.createElement('img');
     img.src = banner.img;
+    // build1594: レイドバナーはその日のボス用の画像に差し替える（端末に覚えた当日のボス）。
+    if(banner.raidBossBanner){
+      img.setAttribute('data-raid-banner','1');
+      if(typeof window.getRaidHomeBannerImage === 'function') img.src = window.getRaidHomeBannerImage(banner.img);
+    }
     img.alt = banner.alt || banner.title || 'イベントバナー';
     img.decoding = 'async';
     if(index === 0){
@@ -19937,7 +19942,7 @@ window.returnToTitleScreen = function(){
 <script src="js/shooting_event.js?v=1593-tower13-spiders"></script>
 <script src="js/shooting_party_filter.js?v=1472-filter-screen-exit-reset"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
-<script src="js/raid_event.js?v=1580-raid-entry-name"></script>
+<script src="js/raid_event.js?v=1594-raid-banner"></script>
 <script src="js/skin_system.js?v=1477-skin-battle"></script>
 <script src="js/item_management.js?v=1488-retired-origin-wing"></script>
 

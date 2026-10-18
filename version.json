@@ -1,4 +1,4 @@
 {
-  "build": 1593,
-  "note": "残響の塔13F：大蜘蛛・小蜘蛛の移動速度を15%増、接触ダメージを30%増（小蜘蛛55→72へ四捨五入）。デコイへの蜘蛛接触DPSも60→78。13F限定で他階層・三頭狼・カミラには影響なし。build1592まで含む。"
+  "build": 1594,
+  "note": "ホーム上部のレイドバナーを、その日のレイドボスのバナーへ自動で切り替え（SIGMA-IX raid_banner_sigma / シエン raid_banner_shien / カミラ raid_banner_camilla）。当日のボスは端末に記憶し、起動時と日付変更後に get_daily_raid_today_boss で取得。build1593まで含む。"
 }

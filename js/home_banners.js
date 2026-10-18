@@ -23,6 +23,9 @@ window.HOME_EVENT_BANNERS = [
     img: 'images/raid_banner_01.webp',
     alt: 'DAILY RAID BATTLE',
     actionName: 'openDailyRaid',
+    // build1594: その日のレイドボスのバナーに自動で差し替える（raid_event.js の RAID_BOSS_DEFS.banner）。
+    // img は日替わりボスが分からない時の予備。
+    raidBossBanner: true,
     hidden: false
   },
   {
