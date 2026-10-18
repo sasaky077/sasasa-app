@@ -5276,11 +5276,14 @@ window.NOTICE_ITEMS = [
     return String(localStorage.getItem('zukan_user_id') || '').trim().toLowerCase();
   }
 
+  const RAID_TEST_REWARD_RETIRED = true;
   function upsertRaidTestRewardNotice(status) {
     const items = window.NOTICE_ITEMS || (window.NOTICE_ITEMS = []);
     const pos = items.findIndex(item => item && item.id === RAID_TEST_REWARD_NOTICE_ID);
 
-    if (!status || status.eligible !== true) {
+    // build1568: 討伐ごとのSIGMA-IX配布（テスト報酬）は「ボスの欠片」に置き換えたため表示しない。
+    // 再開したい場合は RAID_TEST_REWARD_RETIRED を false にする（サーバー側の関数は残してある）。
+    if (!status || status.eligible !== true || status.claimed === true || RAID_TEST_REWARD_RETIRED) {
       if (pos >= 0) items.splice(pos, 1);
       return;
     }
@@ -19917,10 +19920,10 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1559-intro-order"></script>
+<script src="js/shooting_event.js?v=1571-shien-gimmick"></script>
 <script src="js/shooting_party_filter.js?v=1472-filter-screen-exit-reset"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
-<script src="js/raid_event.js?v=871-raid-recruit-font-hp-polish"></script>
+<script src="js/raid_event.js?v=1576-raid-no-flash"></script>
 <script src="js/skin_system.js?v=1477-skin-battle"></script>
 <script src="js/item_management.js?v=1488-retired-origin-wing"></script>
 
@@ -21313,8 +21316,10 @@ html body #global-user-frame .hud-sweep-line-player::after{
     var root = document.getElementById('daily-raid-root');
     if(!root) return;
 
+    // build1572: ボスごとの台詞は raid_event.js (data-raid-boss-line) が設定する。
+    // 台詞属性のない旧DOMの場合だけ従来の文言で補う。
     var sub = root.querySelector('.daily-raid-hero-copy span');
-    if(sub && sub.textContent !== COPY) sub.textContent = COPY;
+    if(sub && !sub.hasAttribute('data-raid-boss-line') && sub.textContent !== COPY) sub.textContent = COPY;
 
     var msg = root.querySelector('.daily-raid-hero-message');
     if(msg) {

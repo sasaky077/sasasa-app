@@ -46,6 +46,8 @@
     // SPECIAL EVENT bosses
     FACELESS: 'shooting_faceless',
     RAID_TEST: 'shooting_raid_test',
+    // build1570: DAILY RAID 日替わりボス
+    RAID_SHIEN: 'shooting_raid_shien',
     BULLET_HELL_TEST: 'shooting_bullet_hell_test',
     NOAH: 'shooting_noah',
     OVERSEER_AMBUSH: 'shooting_overseer_ambush',
@@ -435,6 +437,35 @@
       bulletDamage: 190,
       behavior: 'barrage_v1',
       uiScale: 1.12,
+    }),
+
+    // ------------------------------------------------------------
+    // DAILY RAID - シエン（build1570）
+    // 紫煙をまとう剣士。突進と重い一撃（violence_v1）。闇属性。
+    // 共有HPはSupabaseの日次レイド値で上書きされる。
+    // ------------------------------------------------------------
+    [SHOOTING_ENEMY_ID.RAID_SHIEN]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.RAID_SHIEN,
+      kind: 'boss',
+      implemented: true,
+      name: 'シエン',
+      displayName: 'RAID ENEMY　シエン',
+      image: 'images/raid_enemy_02_battle.webp',
+      element: 'dark',
+
+      gaugeHp: 33334,
+      gauges: 3,
+      bulletSpeed: 270,
+      fireRate: 960,
+      bulletDamage: 210,
+      contactDamage: 280,
+      chargeSpeed: 600,
+
+      behavior: 'violence_v1',
+      // build1571: 霞化(7秒実体→4秒無敵) / 回転斬り / 出血。shooting_core.js updateShienMechanics。
+      shienMechanics: true,
+      // 突進の当たり判定は表示サイズに比例するため、イリシュ（CH02-4）と同じ1.15に留める。
+      uiScale: 1.15,
     }),
 
 

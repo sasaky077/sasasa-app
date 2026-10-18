@@ -22,6 +22,16 @@
     if(res && res.error) throw res.error;
     return res ? res.data : null;
   }
+  // build1563: 新RPCが未適用（SQL適用前）の環境では旧RPCへ切り替える。
+  function isMissingRpc(err){
+    const code=String(err&&err.code||'');
+    const msg=String(err&&(err.message||err.details||err.hint)||'');
+    return code==='PGRST202'||code==='42883'||/Could not find the function|does not exist/i.test(msg);
+  }
+  async function submitDamage(damage){
+    try{ return await rpc('submit_daily_raid_damage_v3',{p_user_id:uid(),p_damage:n(damage)}); }
+    catch(err){ if(isMissingRpc(err)) return await rpc('submit_daily_raid_damage_v2',{p_user_id:uid(),p_damage:n(damage)}); throw err; }
+  }
   function normalizeStatus(raw){
     if(!raw) return null;
     if(typeof raw==='string'){ try{ raw=JSON.parse(raw); }catch(_){ } }
@@ -81,7 +91,7 @@
     btn.setAttribute(
       'aria-label',
       active
-        ? (reason==='hosting'?'レイドバトルへ移動、自分の募集レイド進行中':'レイドバトルへ移動、参加中のレイドあり')
+        ? (reason==='reward'?'レイドバトルへ移動、討伐報酬を受け取れます':reason==='hosting'?'レイドバトルへ移動、自分の募集レイド進行中':'レイドバトルへ移動、参加中のレイドあり')
         : 'レイドバトルへ移動'
     );
   }
@@ -180,6 +190,10 @@
         if(mine && mine.raid_id && !isRaidResultFinal(mine)){
           activeRaid=true;
           raidRole=mine.is_host?'hosting':'joined';
+        } else if(isRankRewardClaimable(mine)){
+          // build1567: 討伐済みでランク報酬が未受取ならレイドに印を出す
+          activeRaid=true;
+          raidRole='reward';
         }
       }catch(err){
         console.warn('[home notice] active raid check skipped',err&&err.message||err);
@@ -1378,14 +1392,21 @@
                 <section class="daily-raid-swipe-page daily-raid-enemy-page" data-raid-page-index="0">
                   <section class="daily-raid-hero">
                     <div class="daily-raid-hero-halo" aria-hidden="true"></div><div class="daily-raid-hero-lines" aria-hidden="true"></div>
-                    <div class="daily-raid-hero-rank"><span>RAID ENEMY</span><b>SIGMA-IX</b></div>
+                    <div class="daily-raid-hero-rank"><span>RAID ENEMY</span><b data-raid-boss-name>SIGMA-IX</b></div>
                     <img src="images/raid_enemy_01.webp" alt="SIGMA-IX">
-                    <div class="daily-raid-hero-copy"><small>RAID ENEMY</small><strong>SIGMA-IX</strong><span>―これより、調査を開始する。</span></div>
+                    <div class="daily-raid-hero-copy"><small>RAID ENEMY</small><strong data-raid-boss-name>SIGMA-IX</strong><span data-raid-boss-line>―これより、調査を開始する。</span></div>
                   </section>
 
                   <section class="daily-raid-hpbox raid-surface">
                     <div class="daily-raid-hphead"><div><small>現在のHP</small></div><strong id="daily-raid-hptext">-- / 100,000</strong></div>
-                    <div class="daily-raid-hpbar"><i id="daily-raid-hpfill"></i><span></span></div>
+                    <div class="daily-raid-hpbar"><i id="daily-raid-hpfill"></i><em id="daily-raid-hppending" aria-hidden="true"></em><span></span></div>
+                    <div class="daily-raid-hpforecast" id="daily-raid-hpforecast" hidden></div>
+                    <div class="daily-raid-break" id="daily-raid-break" hidden>
+                      <small>BREAK</small>
+                      <div class="daily-raid-break-bar"><i id="daily-raid-break-fill"></i></div>
+                      <b id="daily-raid-break-pct">0%</b>
+                      <span id="daily-raid-break-text">--</span>
+                    </div>
                     <div class="daily-raid-hpmeta"><b id="daily-raid-status">CONNECTING...</b><span>RESET 00:00 JST</span></div>
                   </section>
                 </section>
@@ -1397,6 +1418,8 @@
                       <button type="button" id="daily-raid-recruit-cancel" class="daily-raid-recruit-cancel" hidden>募集を取り消す</button>
                     </div>
                   </section>
+
+                  <section class="daily-raid-progress raid-surface" id="daily-raid-progress" hidden></section>
 
                   <section class="daily-raid-members raid-surface">
                     <div class="daily-raid-section-title"><div><small>CO-OP UNIT</small><span>RAID MEMBERS</span></div><b id="daily-raid-member-count">0 / 4</b></div>
@@ -1433,6 +1456,11 @@
               <div><b>01</b><span>1人につき1日3回。BESTダメージを採用</span></div>
               <div><b>02</b><span>全滅または180秒経過で終了</span></div>
               <div><b>03</b><span>3回目終了時にBESTを共有HPへ反映</span></div>
+              <div><b>04</b><span>BREAK：全員の全挑戦の合計ダメージで溜まる。満タンで以降の挑戦は全員ダメージ1.5倍</span></div>
+              <div><b>05</b><span>討伐ランク：C 討伐 / B ブレイク達成 / A＋合計BEST120% / S＋合計BEST150%</span></div>
+              <div><b>06</b><span>討伐後、挑戦したメンバーは報酬を受け取れる。S ボスの欠片／A 聖霊花(R)／B 進化素材ランダム2つ／C コイン。一覧はRAID INFOの「報酬一覧」</span></div>
+              <div><b>07</b><span>累計討伐ボーナス：討伐した日数が節目に届くと結晶。30回ごとにくり返し、累計50回・100回は結晶100</span></div>
+              <div><b>08</b><span>ボスの欠片を集めると、そのボスが仲間になる</span></div>
             </div>
           </section>
         </div>
@@ -1635,10 +1663,99 @@
 
   function showEntryMode(){ currentStatus=null; updateAttemptOverview(null); setRaidSwipePage(0,true); showOnly('entry'); }
 
+  // ============================================================
+  // build1561: 「挑戦中」のまま残った挑戦の復旧
+  // 戦闘中にアプリが落ちて再開を破棄した場合などに、サーバー上で挑戦が終了せず
+  // ロビーの「バトル開始」「残り挑戦をスキップ」が押せなくなるのを防ぐ。
+  // ============================================================
+  const RAID_PENDING_FINISH_KEY='zeraphia_raid_pending_finish_v1';
+  const SHOOTING_RESUME_KEY='sasaphia_shooting_resume_v1';
+  function readJson(key){ try{ const raw=localStorage.getItem(key); return raw?JSON.parse(raw):null; }catch(_){ return null; } }
+  function removeKey(key){ try{ localStorage.removeItem(key); }catch(_){ } }
+  function isShootingBattleOpenHere(){
+    const root=document.getElementById('shooting-event-root');
+    return !!(root&&root.classList.contains('open'));
+  }
+  function isOrphanedAttempt(status){
+    if(!status||!status.raid_id||isAdmin()) return false;
+    const me=status.me||{};
+    const inBattle=!!me.attempt_started_at&&!me.attempt_finished_at;
+    const cleared=status.status==='cleared'||n(status.current_hp)<=0;
+    return inBattle&&!cleared&&!isShootingBattleOpenHere();
+  }
+  // 端末に残っている情報から、中断した挑戦のダメージを推定する。
+  function getOrphanDamage(raidId){
+    const pending=readJson(RAID_PENDING_FINISH_KEY);
+    if(pending&&String(pending.raidId||'')===String(raidId||'')) return {damage:n(pending.damage),source:'pending'};
+    const snap=readJson(SHOOTING_RESUME_KEY);
+    const ctx=snap&&snap.raidContext;
+    if(ctx&&String(ctx.raidId||'')===String(raidId||'')){
+      const initial=Number(snap.raidInitialHp||ctx.currentHp||0);
+      const bossHp=Number(snap.boss&&snap.boss.hp);
+      const dmg=Number.isFinite(bossHp)&&initial>0?initial-bossHp:Number(snap.raidDamageDealt||0);
+      return {damage:n(dmg),source:'resume'};
+    }
+    return {damage:0,source:'none'};
+  }
+  async function submitOrphanFinish(status,damage){
+    const result=normalizeStatus(await submitDamage(damage));
+    if(!result||result.ok===false) throw new Error(result&&result.message||'中断した挑戦を終了できませんでした');
+    removeKey(RAID_PENDING_FINISH_KEY);
+    const snap=readJson(SHOOTING_RESUME_KEY);
+    if(snap&&snap.raidContext&&String(snap.raidContext.raidId||'')===String(status.raid_id||'')) removeKey(SHOOTING_RESUME_KEY);
+    return result;
+  }
+  async function recoverOrphanedAttempt(status){
+    const info=getOrphanDamage(status.raid_id);
+    const me=status.me||{};
+    const attemptNo=Math.max(1,Math.min(3,n(me.attempt_count)||1));
+    const ok=confirm(
+      `${attemptNo}回目の挑戦が「挑戦中」のまま残っています。\n\n`+
+      (info.source==='none'
+        ? 'この端末に記録が残っていないため、0 DAMAGE として終了します。\n'
+        : `中断時点までの ${fmt(info.damage)} DAMAGE で終了します。\n`)+
+      'BESTは今までの挑戦と比べて高い方が採用されます。\n'+
+      '別の端末でこの挑戦を続けている場合は、そちらで終えてください。\n\nOK？'
+    );
+    if(!ok) return;
+    const btn=document.getElementById('daily-raid-finalize-best');
+    if(btn) btn.disabled=true;
+    try{
+      let result=await submitOrphanFinish(status,info.damage);
+      const latest=await fetchStatus();
+      if(latest) result=latest;
+      currentStatus=result;
+      await hydrateMemberPanels(result); render(result);
+      refreshFriendHomeNotice();
+      if(result&&(result.status==='cleared'||n(result.current_hp)<=0)){
+        try{ window.dispatchEvent(new CustomEvent('sasaphia-daily-raid-cleared',{detail:result})); }catch(_){ }
+        if(typeof window.refreshRaidClearRewardNotice==='function'){ try{ window.refreshRaidClearRewardNotice(); }catch(_){ } }
+      }
+    }catch(err){
+      console.error('[raid] orphan attempt recovery failed',err);
+      alert(err&&err.message?err.message:'中断した挑戦を終了できませんでした。');
+      if(btn) btn.disabled=false;
+    }
+  }
+  // 破棄時に送れなかった終了処理（保留キュー）は、ロビーを開いた時に自動で送る。
+  let pendingFlushBusy=false;
+  async function flushPendingFinish(status){
+    if(pendingFlushBusy||!isOrphanedAttempt(status)) return status;
+    const pending=readJson(RAID_PENDING_FINISH_KEY);
+    if(!pending||String(pending.raidId||'')!==String(status.raid_id||'')) return status;
+    pendingFlushBusy=true;
+    try{
+      await submitOrphanFinish(status,n(pending.damage));
+      return normalizeStatus(await rpc('get_my_daily_raid_room',{p_user_id:uid()}))||status;
+    }catch(err){ console.warn('[raid] pending finish flush failed',err); return status; }
+    finally{ pendingFlushBusy=false; }
+  }
+
   async function fetchStatus(){
     const userId=uid();
     if(!userId) throw new Error('ユーザーIDがありません');
     currentStatus=normalizeStatus(await rpc('get_my_daily_raid_room',{p_user_id:userId}));
+    if(currentStatus&&currentStatus.raid_id) currentStatus=await flushPendingFinish(currentStatus);
     return currentStatus;
   }
 
@@ -1722,6 +1839,534 @@
     }finally{ if(btn) btn.disabled=false; }
   }
 
+  // build1562: 予測HPバー
+  // 共有HPへの反映は従来どおり各メンバーの3回目終了時。まだ反映されていない
+  // 暫定BESTを「反映待ち」としてバー上に重ね、戦闘直後から削った手応えを見せる。
+  function ensureForecastStyle(){
+    if(document.getElementById('daily-raid-forecast-style-v1562')) return;
+    const style=document.createElement('style');
+    style.id='daily-raid-forecast-style-v1562';
+    style.textContent=`
+      #daily-raid-root .daily-raid-lobby .daily-raid-hpbar > em{
+        position:absolute!important;top:0!important;bottom:0!important;left:0;width:0;
+        display:block!important;font-style:normal!important;
+        background:repeating-linear-gradient(135deg,rgba(167,135,73,.55) 0 3px,rgba(255,250,236,.85) 3px 6px)!important;
+        border-left:1px solid rgba(255,255,255,.9)!important;
+        transition:left .45s ease,width .45s ease;
+        animation:dailyRaidPendingPulse 1.6s ease-in-out infinite alternate;
+        pointer-events:none;
+      }
+      #daily-raid-root .daily-raid-lobby .daily-raid-hpbar > em[hidden]{display:none!important}
+      @keyframes dailyRaidPendingPulse{from{opacity:.62}to{opacity:1}}
+      #daily-raid-root .daily-raid-hpforecast{
+        display:flex;justify-content:space-between;align-items:baseline;gap:8px;
+        margin-top:6px;font-family:"Noto Serif JP","Yu Mincho",serif;font-size:11px;letter-spacing:.06em;
+        color:#7a5f3e;font-variant-numeric:tabular-nums;
+      }
+      #daily-raid-root .daily-raid-hpforecast[hidden]{display:none}
+      #daily-raid-root .daily-raid-hpforecast b{font-weight:700;color:#5d4128}
+      #daily-raid-root .daily-raid-hpforecast.is-lethal{color:#8b3a2c}
+      #daily-raid-root .daily-raid-hpforecast.is-lethal b{color:#8b3a2c}
+      @media (prefers-reduced-motion:reduce){#daily-raid-root .daily-raid-lobby .daily-raid-hpbar > em{animation:none;transition:none}}
+    `;
+    document.head.appendChild(style);
+  }
+  function getPendingRaidDamage(status){
+    const members=Array.isArray(status&&status.members)?status.members:[];
+    let pending=0;
+    members.forEach(m=>{
+      const attempts=Math.max(0,Math.min(3,n(m.attempt_count)));
+      const reflected=attempts>=3&&!!m.attempt_finished_at;
+      if(!reflected) pending+=n(m.best_damage);
+    });
+    return pending;
+  }
+  function renderForecast(root,status,hp,maxHp,cleared){
+    ensureForecastStyle();
+    const pendingEl=root.querySelector('#daily-raid-hppending');
+    const box=root.querySelector('#daily-raid-hpforecast');
+    if(!pendingEl||!box) return;
+    const pending=cleared?0:getPendingRaidDamage(status);
+    if(pending<=0){ pendingEl.hidden=true; box.hidden=true; box.classList.remove('is-lethal'); return; }
+    const predicted=Math.max(0,hp-pending);
+    pendingEl.hidden=false;
+    pendingEl.style.left=`${(predicted/maxHp)*100}%`;
+    pendingEl.style.width=`${(Math.min(hp,pending)/maxHp)*100}%`;
+    box.hidden=false;
+    const lethal=predicted<=0;
+    box.classList.toggle('is-lethal',lethal);
+    box.innerHTML=lethal
+      ? `<span>反映待ち −${fmt(pending)}</span><b>討伐確定圏内</b>`
+      : `<span>反映待ち −${fmt(pending)}</span><span>予測HP <b>${fmt(predicted)}</b></span>`;
+    box.title=lethal?'全員の3回目終了（または残り挑戦のスキップ）で討伐されます':'各メンバーの3回目終了時にBESTが共有HPへ反映されます';
+  }
+
+  // build1563: 共有ブレイクゲージ / 討伐ランク
+  const RANK_NOTE={S:'ブレイク＋オーバーキル150%以上',A:'ブレイク＋オーバーキル120%以上',B:'ブレイク達成で討伐',C:'討伐'};
+  function ensureBreakStyle(){
+    if(document.getElementById('daily-raid-break-style-v1563')) return;
+    const style=document.createElement('style');
+    style.id='daily-raid-break-style-v1563';
+    style.textContent=`
+      /* HP枠は従来86px固定。予測HP・ブレイク行の分だけ中身に合わせて伸ばす（ボス画像は背面のまま）。 */
+      #daily-raid-root .daily-raid-enemy-page .daily-raid-hpbox{flex:0 0 auto!important;height:auto!important;min-height:86px!important;max-height:none!important;overflow:visible!important}
+      #daily-raid-root .daily-raid-break{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:8px;margin-top:6px}
+      #daily-raid-root .daily-raid-break[hidden]{display:none!important}
+      #daily-raid-root .daily-raid-break small{font:600 9px/1 "Cinzel",serif;letter-spacing:.22em;color:#7a5f3e}
+      #daily-raid-root .daily-raid-break-bar{position:relative;height:6px;min-width:40px;overflow:hidden;border:1px solid rgba(91,72,49,.42);background:rgba(92,76,56,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.5)}
+      #daily-raid-root .daily-raid-break-bar > i{position:absolute;inset:0;transform-origin:left center;transform:scaleX(0);background:linear-gradient(90deg,#8d5b3a,#c0703f);transition:transform .5s ease}
+      #daily-raid-root .daily-raid-break.is-broken .daily-raid-break-bar > i{background:linear-gradient(90deg,#b5442c,#e08a3c,#f3c35a);animation:dailyRaidBreakGlow 1.4s ease-in-out infinite alternate}
+      @keyframes dailyRaidBreakGlow{from{filter:brightness(1)}to{filter:brightness(1.18)}}
+      #daily-raid-root .daily-raid-break b{font:700 11px/1 "Cinzel",serif;color:#5d4128;font-variant-numeric:tabular-nums;min-width:30px;text-align:right}
+      #daily-raid-root .daily-raid-break span{font:400 10.5px/1 "Noto Serif JP",serif;color:#7a5f3e;white-space:nowrap;font-variant-numeric:tabular-nums}
+      #daily-raid-root .daily-raid-break.is-broken b,#daily-raid-root .daily-raid-break.is-broken span{color:#9a3f26}
+      #daily-raid-start .daily-raid-rank-chip{display:inline-block;margin-left:8px;padding:1px 7px;font:700 12px/1.3 "Cinzel",serif;letter-spacing:.06em;color:#fff8e6;background:linear-gradient(180deg,#c9922f,#9a6418)}
+      @media (prefers-reduced-motion:reduce){#daily-raid-root .daily-raid-break.is-broken .daily-raid-break-bar > i{animation:none}}
+    `;
+    document.head.appendChild(style);
+  }
+  function renderBreakAndRank(root,status,cleared){
+    ensureBreakStyle();
+    const box=root.querySelector('#daily-raid-break');
+    const hasBreak=!!status&&status.break_goal!=null;
+    if(!box) return;
+    box.hidden=!hasBreak;
+    if(!hasBreak) return;
+    const dmg=n(status.break_damage), goal=Math.max(1,n(status.break_goal));
+    const broken=status.broken===true;
+    const pct=broken?100:Math.min(99,Math.floor(dmg/goal*100));
+    box.classList.toggle('is-broken',broken);
+    root.querySelector('#daily-raid-break-fill').style.transform=`scaleX(${broken?1:Math.min(1,dmg/goal)})`;
+    root.querySelector('#daily-raid-break-pct').textContent=broken?'MAX':`${pct}%`;
+    root.querySelector('#daily-raid-break-text').textContent=broken?(cleared?'ブレイク達成':'ダメージ1.5倍'):`ブレイクまで ${fmt(goal-dmg)}`;
+    box.title=broken?'ブレイク中：以降の挑戦は全員の与ダメージ1.5倍':'全員の全挑戦の合計ダメージで溜まります。満タンでブレイク（以降の挑戦は全員ダメージ1.5倍）';
+  }
+
+  // build1566: HP枠が伸びたとき、下端固定のページ切替インジケータが重ならないよう追従させる。
+  function syncSwipeIndicatorPosition(){
+    const root=document.getElementById('daily-raid-root');
+    if(!root) return;
+    const ind=root.querySelector('.daily-raid-swipe-indicator');
+    const box=root.querySelector('.daily-raid-enemy-page .daily-raid-hpbox');
+    const actions=root.querySelector('.daily-raid-actions');
+    if(!ind||!box) return;
+    ind.style.removeProperty('bottom');
+    ind.style.removeProperty('visibility');
+    if(!box.offsetParent||!ind.offsetParent) return;
+    const gap=4;
+    const boxBottom=box.getBoundingClientRect().bottom;
+    const indRect=ind.getBoundingClientRect();
+    if(indRect.top>=boxBottom+gap) return; // 重なっていなければ従来位置のまま
+    // HP枠とボタンの間の隙間の中央へ。隙間が足りなければ隠す（上部タブでページは分かる）。
+    const limit=actions&&actions.offsetParent?actions.getBoundingClientRect().top:window.innerHeight;
+    const room=limit-boxBottom;
+    if(room<indRect.height+gap*2){ ind.style.setProperty('visibility','hidden','important'); return; }
+    const targetTop=boxBottom+(room-indRect.height)/2;
+    const base=parseFloat(getComputedStyle(ind).bottom)||0;
+    ind.style.setProperty('bottom',`${Math.max(0,base-(targetTop-indRect.top))}px`,'important');
+  }
+  let swipeIndicatorBound=false;
+  function scheduleSwipeIndicatorSync(){
+    requestAnimationFrame(()=>requestAnimationFrame(syncSwipeIndicatorPosition));
+    if(!swipeIndicatorBound){
+      swipeIndicatorBound=true;
+      window.addEventListener('resize',()=>requestAnimationFrame(syncSwipeIndicatorPosition));
+      if(document.fonts&&document.fonts.ready) document.fonts.ready.then(syncSwipeIndicatorPosition).catch(()=>{});
+    }
+  }
+
+  // ============================================================
+  // build1567: 討伐ランク報酬
+  // ============================================================
+  const RAID_REWARD_ITEM={
+    coin:{name:'コイン',img:'images/icon_coin.webp'},
+    gem:{name:'結晶',img:'images/icon_gem.webp'},
+    level_exp_large:{name:'強化素材・金',img:'images/item_exp_gold.webp'},
+    level_exp_medium:{name:'強化素材・銀',img:'images/item_exp_silver.webp'},
+    kyoumei_stone:{name:'共鳴石',img:'images/item_kyoumeistone.webp'},
+    flower_r:{name:'聖霊花(R)',img:'images/item_flower_r.webp'},
+    flower_sr:{name:'聖霊花(SR)',img:'images/item_flower_sr.webp'},
+    special_stage_ticket:{name:'Special Ticket -ノア-',img:'images/special_stage_ticket.webp'},
+    soul_vessel_fire:{name:'魂の器(火)',img:'images/item_soul_vessel_fire.webp'},
+    soul_vessel_aqua:{name:'魂の器(水)',img:'images/item_soul_vessel_aqua.webp'},
+    soul_vessel_wood:{name:'魂の器(木)',img:'images/item_soul_vessel_wood.webp'},
+    soul_vessel_dark:{name:'魂の器(闇)',img:'images/item_soul_vessel_dark.webp'},
+    soul_vessel_light:{name:'魂の器(光)',img:'images/item_soul_vessel_light.webp'},
+    // build1573: 受け取り時に共鳴石・魂の器(5属性)から抽選される枠（一覧表示用）
+    raid_random_evo:{name:'進化素材ランダム',img:'images/item_kyoumeistone.webp',note:'共鳴石・魂の器から抽選'}
+  };
+  function isRankRewardClaimable(status){
+    const r=status&&status.rank_reward;
+    if(!r||isAdmin()) return false;
+    return !!((r.eligible&&!r.claimed)||n(r.unclaimed_count)>0);
+  }
+
+  // ============================================================
+  // build1568: 日替わりボス / 累計討伐 / 欠片
+  // ボスを追加するときは、ここ・shooting_enemies.js・サーバーの daily_raid_boss_master の3か所。
+  // ============================================================
+  const RAID_BOSS_DEFS={
+    // lobbyBg: ロビー全面の背景（背景＋ボスの絵を1枚で描いたもの）。bg_raid_01.webp と同サイズ・同構図で用意する。
+    sigma:{name:'SIGMA-IX',line:'―これより、調査を開始する。',lobbyBg:'images/bg_raid_01.webp',lobbyImage:'images/raid_enemy_01.webp',enemyId:'shooting_raid_test',pieceImage:'images/chara_50_panel.webp'},
+    shien:{name:'シエン',line:'―霞の果てで、また会おう。',lobbyBg:'images/bg_raid_02.webp?v=1572',lobbyImage:'images/raid_enemy_02_battle.webp',enemyId:'shooting_raid_shien',pieceImage:'images/raid_piece_shien.webp'},
+    // boss3:{name:'',line:'',lobbyBg:'images/bg_raid_03.webp',lobbyImage:'images/raid_enemy_03_battle.webp',enemyId:'shooting_raid_boss3',pieceImage:'images/raid_piece_boss3.webp'},
+  };
+  function getBossDef(status){
+    const key=status&&status.boss&&status.boss.key||'sigma';
+    const def=RAID_BOSS_DEFS[key]||RAID_BOSS_DEFS.sigma;
+    return Object.assign({key},def,{name:(status&&status.boss&&status.boss.name)||def.name});
+  }
+  function registerPieceItem(status){
+    const b=status&&status.boss;
+    if(!b||!b.piece_item_id) return;
+    const def=getBossDef(status);
+    RAID_REWARD_ITEM[b.piece_item_id]={name:`${b.name||def.name}の欠片`,img:def.pieceImage||''};
+  }
+  // build1576: ロビー表示時に前のボス（既定のSIGMA）が一瞬映らないよう、
+  // その日のボスを端末に覚えておき、通信前に即反映する。分からない時は通信が終わるまで伏せる。
+  const RAID_BOSS_CACHE_KEY='zeraphia_raid_today_boss_v1';
+  function jstDay(){
+    try{ return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()); }
+    catch(_){ return new Date(Date.now()+9*3600e3).toISOString().slice(0,10); }
+  }
+  function readCachedBoss(){
+    const c=readJson(RAID_BOSS_CACHE_KEY);
+    return c&&c.day===jstDay()&&c.key&&RAID_BOSS_DEFS[c.key]?c:null;
+  }
+  function writeCachedBoss(boss){
+    if(!boss||!boss.key) return;
+    try{ localStorage.setItem(RAID_BOSS_CACHE_KEY,JSON.stringify({day:jstDay(),key:boss.key,name:boss.name||''})); }catch(_){ }
+  }
+  function ensureBossPendingStyle(){
+    if(document.getElementById('daily-raid-boss-pending-style-v1576')) return;
+    const st=document.createElement('style');
+    st.id='daily-raid-boss-pending-style-v1576';
+    st.textContent=`
+      #daily-raid-root.raid-boss-pending{background-image:linear-gradient(180deg,#f3f2f5,#e9e8ec)!important}
+      #daily-raid-root .daily-raid-hero-copy,
+      #daily-raid-root .daily-raid-enemy-page img,
+      #daily-raid-root .daily-raid-hero img{transition:opacity .22s ease}
+      #daily-raid-root.raid-boss-pending .daily-raid-hero-copy,
+      #daily-raid-root.raid-boss-pending .daily-raid-enemy-page img,
+      #daily-raid-root.raid-boss-pending .daily-raid-hero img{opacity:0!important}
+    `;
+    document.head.appendChild(st);
+  }
+  async function fetchTodayBoss(){
+    try{
+      const r=normalizeStatus(await rpc('get_daily_raid_today_boss',{p_user_id:uid()}));
+      return r&&r.key?r:null;
+    }catch(err){
+      if(!isMissingRpc(err)) console.warn('[raid] today boss failed',err);
+      return null;
+    }
+  }
+  function renderBossHero(root,status){
+    if(status&&status.boss&&status.boss.key) writeCachedBoss(status.boss);
+    const def=getBossDef(status);
+    root.querySelectorAll('[data-raid-boss-name]').forEach(el=>{ el.textContent=def.name; });
+    root.querySelectorAll('[data-raid-boss-line]').forEach(el=>{ el.textContent=def.line||''; });
+    const img=root.querySelector('.daily-raid-enemy-page img, .daily-raid-hero img');
+    if(img&&def.lobbyImage&&img.getAttribute('src')!==def.lobbyImage){ img.setAttribute('src',def.lobbyImage); img.alt=def.name; }
+    // ロビー全面の背景をボスごとに差し替える（既存CSSの bg_raid_01.webp は !important のため inline !important で上書き）
+    if(def.lobbyBg&&root.dataset.raidBossBg!==def.lobbyBg){
+      root.dataset.raidBossBg=def.lobbyBg;
+      if(def.lobbyBg==='images/bg_raid_01.webp'){
+        root.style.removeProperty('background-image');
+      }else{
+        root.style.setProperty('background-image',
+          `linear-gradient(180deg,rgba(255,255,255,.04) 0%,rgba(255,255,255,.01) 42%,rgba(245,246,247,.08) 70%,rgba(238,240,242,.14) 100%),url("${def.lobbyBg}")`,
+          'important');
+      }
+    }
+  }
+  function ensureProgressStyle(){
+    if(document.getElementById('daily-raid-progress-style-v1568')) return;
+    const st=document.createElement('style');
+    st.id='daily-raid-progress-style-v1568';
+    st.textContent=`
+      #daily-raid-root .daily-raid-progress{display:grid;gap:8px;padding:12px 14px}
+      #daily-raid-root .daily-raid-progress[hidden]{display:none!important}
+      #daily-raid-root .drp-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+      #daily-raid-root .drp-head small{font:600 9px/1 "Cinzel",serif;letter-spacing:.24em;color:#7a5f3e}
+      #daily-raid-root .drp-head strong{font:700 16px/1 "Cinzel","Noto Serif JP",serif;color:#4c3020;font-variant-numeric:tabular-nums}
+      #daily-raid-root .drp-head strong em{font-style:normal;font-size:11px;margin-left:2px;color:#7a5f3e}
+      #daily-raid-root .drp-bar{position:relative;height:6px;overflow:hidden;border:1px solid rgba(91,72,49,.4);background:rgba(92,76,56,.14)}
+      #daily-raid-root .drp-bar i{position:absolute;inset:0;transform-origin:left center;background:linear-gradient(90deg,#a77d3a,#e0b55c);transition:transform .5s ease}
+      #daily-raid-root .drp-next{display:flex;justify-content:space-between;gap:8px;font:400 11px/1.4 "Noto Serif JP",serif;color:#6a4a24}
+      #daily-raid-root .drp-next b{font-weight:700;color:#4c3020;text-align:right}
+      #daily-raid-root .drp-piece{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding-top:8px;border-top:1px solid rgba(91,72,49,.16)}
+      #daily-raid-root .drp-piece img{width:30px;height:30px;object-fit:cover;border:1px solid rgba(160,124,69,.5)}
+      #daily-raid-root .drp-piece span{font:600 12px/1.3 "Noto Serif JP",serif;color:#4c3020}
+      #daily-raid-root .drp-piece span small{display:block;font:400 10px/1.3 "Noto Serif JP",serif;color:#7a5f3e}
+      #daily-raid-root .drp-piece button{appearance:none;border:1px solid rgba(160,124,69,.6);background:linear-gradient(180deg,#fff,#efe3c6);color:#4c3020;font:700 12px/1 "Noto Serif JP",serif;letter-spacing:.08em;padding:8px 12px;cursor:pointer}
+      #daily-raid-root .drp-piece button:disabled{opacity:.45;cursor:default}
+      #daily-raid-root .drp-piece button:focus-visible{outline:2px solid #b08a46;outline-offset:2px}
+      #daily-raid-root .drp-table-open{appearance:none;justify-self:stretch;margin-top:2px;border:1px solid rgba(160,124,69,.55);background:rgba(255,255,255,.55);color:#4c3020;font:700 12px/1 "Noto Serif JP",serif;letter-spacing:.2em;padding:9px 12px;cursor:pointer}
+      #daily-raid-root .drp-table-open:focus-visible{outline:2px solid #b08a46;outline-offset:2px}
+    `;
+    document.head.appendChild(st);
+  }
+  function itemsText(items){
+    return (Array.isArray(items)?items:[]).map(it=>{const m=RAID_REWARD_ITEM[it.id]||{name:it.id};return `${m.name}×${fmt(it.qty)}`;}).join('・');
+  }
+  function renderProgress(root,status){
+    ensureProgressStyle();
+    const box=root.querySelector('#daily-raid-progress');
+    if(!box) return;
+    const pr=status&&status.progress, boss=status&&status.boss;
+    if(!pr){ box.hidden=true; return; }
+    registerPieceItem(status);
+    const total=n(pr.total_clears), hasNext=n(pr.next_milestone)>0, next=hasNext?n(pr.next_milestone):total;
+    const list=Array.isArray(pr.milestones)?pr.milestones.map(Number):[];
+    const prev=[0].concat(list).filter(m=>m<=total).pop()||0;
+    const ratio=!hasNext?1:(next>prev?Math.min(1,(total-prev)/(next-prev)):0);
+    const def=getBossDef(status);
+    const have=n(boss&&boss.pieces), need=Math.max(1,n(boss&&boss.piece_need)||10);
+    const canExchange=!!(boss&&boss.chara_id)&&have>=need;
+    box.hidden=false;
+    box.innerHTML=`
+      <div class="drp-head"><small>TOTAL CLEAR</small><strong>${fmt(total)}<em>回</em></strong></div>
+      <div class="drp-bar"><i style="transform:scaleX(${ratio})"></i></div>
+      ${hasNext?`<div class="drp-next"><span>あと${fmt(next-total)}回（${fmt(next)}回目）</span><b>${esc(itemsText(pr.next_items))}</b></div>`:`<div class="drp-next"><span>累計討伐ボーナスをすべて達成</span></div>`}
+      ${n(status.rank_reward&&status.rank_reward.unclaimed_count)>0?`<div class="drp-piece drp-claim"><span style="grid-column:1/3">未受取の討伐報酬<small>${fmt(status.rank_reward.unclaimed_count)}件 · 受け取ると累計に加算されます</small></span><button type="button" id="daily-raid-claim-pending">受け取る</button></div>`:''}
+      ${boss&&boss.piece_item_id?`<div class="drp-piece"><img src="${esc(def.pieceImage||'')}" alt="" onerror="this.style.visibility='hidden'"><span>${esc(def.name)}の欠片<small>${fmt(have)} / ${fmt(need)}　Sランク討伐で1個・集めると仲間になる</small></span><button type="button" id="daily-raid-piece-exchange" ${canExchange?'':'disabled'}>交換</button></div>`:''}
+      <button type="button" class="drp-table-open" id="daily-raid-reward-table-open">報酬一覧</button>`;
+    const ex=box.querySelector('#daily-raid-piece-exchange');
+    if(ex) ex.addEventListener('click',()=>exchangeBossPiece(status));
+    const tb=box.querySelector('#daily-raid-reward-table-open');
+    if(tb) tb.addEventListener('click',()=>openRewardTable(status));
+    const cl=box.querySelector('#daily-raid-claim-pending');
+    if(cl) cl.addEventListener('click',()=>{ cl.disabled=true; claimRankReward(); });
+  }
+  async function exchangeBossPiece(status){
+    const boss=status&&status.boss; if(!boss) return;
+    const def=getBossDef(status);
+    if(!confirm(`${def.name}の欠片を${fmt(boss.piece_need)}個使って、${def.name}を仲間にします。\n\nOK？`)) return;
+    const btn=document.getElementById('daily-raid-piece-exchange'); if(btn) btn.disabled=true;
+    try{
+      let r;
+      try{ r=normalizeStatus(await rpc('exchange_daily_raid_boss_piece',{p_user_id:uid(),p_boss_key:boss.key})); }
+      catch(err){ if(isMissingRpc(err)) throw new Error('サーバーの更新が必要です（exchange_daily_raid_boss_piece が未適用）。'); throw err; }
+      if(!r||r.ok===false) throw new Error(r&&r.message||'交換できませんでした');
+      try{ if(typeof window.loadInventoryFromSupabase==='function') await window.loadInventoryFromSupabase(uid()); }catch(_){ }
+      try{ if(typeof window.loadDatabaseFromSupabase==='function') await window.loadDatabaseFromSupabase(); }catch(_){ }
+      if(typeof window.showToast==='function') window.showToast(`${def.name}が仲間になりました！`);
+      const latest=await fetchStatus(); if(latest){ await hydrateMemberPanels(latest); render(latest); }
+    }catch(err){
+      console.error('[raid] piece exchange failed',err);
+      alert(err&&err.message?err.message:'交換できませんでした。');
+      if(btn) btn.disabled=false;
+    }
+  }
+  function rewardItemsHtml(items){
+    return (Array.isArray(items)?items:[]).map(it=>{
+      const m=RAID_REWARD_ITEM[it.id]||{name:it.id,img:''};
+      return `<li><span class="rw-icon">${m.img?`<img src="${esc(m.img)}" alt="" onerror="this.style.visibility='hidden'">`:''}</span><span class="rw-name">${esc(m.name)}</span><b>×${fmt(it.qty)}</b></li>`;
+    }).join('');
+  }
+  function ensureRewardStyle(){
+    if(document.getElementById('daily-raid-reward-style-v1567')) return;
+    const st=document.createElement('style');
+    st.id='daily-raid-reward-style-v1567';
+    st.textContent=`
+      #daily-raid-reward-modal{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:24px 16px;background:rgba(40,30,18,.42);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+      #daily-raid-reward-modal .rw-card{max-height:calc(100vh - 48px);overflow:auto;width:min(100%,340px);padding:22px 20px 18px;background:linear-gradient(180deg,#fffdf7,#f6efe1);border:1px solid rgba(160,124,69,.55);box-shadow:0 18px 40px rgba(60,40,15,.25);text-align:center;animation:dailyRaidRewardIn .32s cubic-bezier(.2,.8,.2,1) both}
+      @keyframes dailyRaidRewardIn{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+      #daily-raid-reward-modal small{display:block;font:600 10px/1 "Cinzel",serif;letter-spacing:.32em;color:#8a6a3a}
+      #daily-raid-reward-modal .rw-rank{margin:8px 0 2px;font:700 46px/1 "Cinzel",serif;background:linear-gradient(180deg,#b07a26,#f0cf78 52%,#8f5d17);-webkit-background-clip:text;background-clip:text;color:transparent}
+      #daily-raid-reward-modal .rw-note{margin:0 0 12px;font:400 11px/1.5 "Noto Serif JP",serif;color:#7a5f3e}
+      #daily-raid-reward-modal ul{list-style:none;margin:0 0 16px;padding:0;display:grid;gap:6px;text-align:left}
+      #daily-raid-reward-modal li{display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:10px;padding:6px 10px;background:rgba(255,255,255,.7);border:1px solid rgba(160,124,69,.25)}
+      #daily-raid-reward-modal .rw-icon{width:30px;height:30px;display:grid;place-items:center}
+      #daily-raid-reward-modal .rw-icon img{max-width:30px;max-height:30px;object-fit:contain}
+      #daily-raid-reward-modal .rw-name{font:600 13px/1.3 "Noto Serif JP",serif;color:#4c3020}
+      #daily-raid-reward-modal li b{font:700 14px/1 "Cinzel",serif;color:#7a4f16;font-variant-numeric:tabular-nums}
+      #daily-raid-reward-modal button{appearance:none;border:1px solid rgba(160,124,69,.6);background:linear-gradient(180deg,#fff,#efe3c6);color:#4c3020;font:700 14px/1 "Noto Serif JP",serif;letter-spacing:.2em;padding:12px 36px;cursor:pointer}
+      #daily-raid-reward-modal button:focus-visible{outline:2px solid #b08a46;outline-offset:2px}
+      #daily-raid-start .daily-raid-reward-ready{display:inline-block;margin-left:6px;width:7px;height:7px;border-radius:50%;background:#d64545;vertical-align:middle;box-shadow:0 0 6px rgba(214,69,69,.7)}
+      @media (prefers-reduced-motion:reduce){#daily-raid-reward-modal .rw-card{animation:none}}
+    `;
+    document.head.appendChild(st);
+  }
+  function mergeItems(lists){
+    const map=new Map();
+    lists.forEach(items=>(Array.isArray(items)?items:[]).forEach(it=>{ map.set(it.id,(map.get(it.id)||0)+n(it.qty)); }));
+    return [...map.entries()].map(([id,qty])=>({id,qty}));
+  }
+  function showRewardModal(result){
+    ensureRewardStyle();
+    document.getElementById('daily-raid-reward-modal')?.remove();
+    // build1568: 受け取り忘れをまとめて受け取った場合も1枚で見せる
+    if(result&&Array.isArray(result.claims)){
+      const claims=result.claims;
+      const latest=claims[claims.length-1]||{};
+      const miles=Array.isArray(result.milestones)?result.milestones:[];
+      result=Object.assign({},result,{
+        rank:latest.rank||'',
+        items:mergeItems(claims.map(c=>c.items)),
+        _count:claims.length,
+        _miles:miles
+      });
+    }
+    const rank=String(result&&result.rank||'');
+    const wrap=document.createElement('div');
+    wrap.id='daily-raid-reward-modal';
+    wrap.setAttribute('role','dialog');wrap.setAttribute('aria-modal','true');wrap.setAttribute('aria-label','討伐報酬');
+    const countNote=result&&result._count>1?`<p class="rw-note">受け取り忘れを含む ${result._count}回分の討伐報酬</p>`:'';
+    const miles=(result&&result._miles)||[];
+    const milesHtml=miles.length?miles.map(m=>`<small style="margin-top:4px">TOTAL CLEAR ${esc(String(m.milestone))}</small><p class="rw-note">累計${esc(String(m.milestone))}回討伐ボーナス</p><ul>${rewardItemsHtml(m.items)}</ul>`).join(''):'';
+    const nextHtml=result&&result.next_milestone?`<p class="rw-note">累計 ${fmt(result.total_clears)}回 · 次は${fmt(result.next_milestone)}回で ${esc(itemsText(result.next_items))}</p>`:'';
+    wrap.innerHTML=`<div class="rw-card"><small>RAID CLEAR REWARD</small><div class="rw-rank">${esc(rank)}</div><p class="rw-note">${esc(RANK_NOTE[rank]||'')}</p>${countNote}<ul>${rewardItemsHtml(result&&result.items)}</ul>${milesHtml}${nextHtml}<button type="button">受け取りました</button></div>`;
+    const close=()=>wrap.remove();
+    wrap.querySelector('button').addEventListener('click',close);
+    wrap.addEventListener('click',e=>{ if(e.target===wrap) close(); });
+    document.body.appendChild(wrap);
+    wrap.querySelector('button').focus();
+  }
+  // ============================================================
+  // build1573: 報酬一覧（ランク別の討伐報酬 ＋ 累計討伐ボーナス）
+  //   数字はサーバーの報酬表（get_daily_raid_reward_table）から取る。
+  // ============================================================
+  function ensureRewardTableStyle(){
+    if(document.getElementById('daily-raid-reward-table-style-v1573')) return;
+    const st=document.createElement('style');
+    st.id='daily-raid-reward-table-style-v1573';
+    st.textContent=`
+      #daily-raid-reward-table{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:24px 16px;background:rgba(40,30,18,.42);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+      #daily-raid-reward-table .rt-card{position:relative;max-height:calc(100vh - 48px);overflow:auto;overscroll-behavior:contain;width:min(100%,360px);padding:20px 16px 16px;background:linear-gradient(180deg,#fffdf7,#f6efe1);border:1px solid rgba(160,124,69,.55);box-shadow:0 18px 40px rgba(60,40,15,.25);animation:dailyRaidRewardIn .28s cubic-bezier(.2,.8,.2,1) both}
+      #daily-raid-reward-table .rt-x{position:absolute;top:8px;right:8px;width:32px;height:32px;appearance:none;border:0;background:none;color:#7a5f3e;font:400 22px/1 serif;cursor:pointer}
+      #daily-raid-reward-table h3{margin:0 0 2px;font:700 15px/1.3 "Noto Serif JP",serif;color:#4c3020;letter-spacing:.08em}
+      #daily-raid-reward-table .rt-label{display:block;font:600 9px/1 "Cinzel",serif;letter-spacing:.3em;color:#8a6a3a;margin-bottom:6px}
+      #daily-raid-reward-table .rt-note{margin:2px 0 10px;font:400 10.5px/1.5 "Noto Serif JP",serif;color:#7a5f3e}
+      #daily-raid-reward-table section+section{margin-top:18px;padding-top:14px;border-top:1px solid rgba(91,72,49,.18)}
+      #daily-raid-reward-table .rt-row{display:grid;grid-template-columns:58px 1fr;gap:10px;align-items:start;padding:8px 0;border-bottom:1px dashed rgba(91,72,49,.16)}
+      #daily-raid-reward-table .rt-row:last-child{border-bottom:0}
+      #daily-raid-reward-table .rt-rank{font:700 24px/1 "Cinzel",serif;text-align:center;color:#7a5f3e;padding-top:2px}
+      #daily-raid-reward-table .rt-rank.s{background:linear-gradient(180deg,#b07a26,#f0cf78 52%,#8f5d17);-webkit-background-clip:text;background-clip:text;color:transparent}
+      #daily-raid-reward-table .rt-rank small{display:block;margin-top:3px;font:400 8.5px/1.3 "Noto Serif JP",serif;color:#8a6a3a;letter-spacing:0}
+      #daily-raid-reward-table .rt-items{display:flex;flex-wrap:wrap;gap:4px}
+      #daily-raid-reward-table .rt-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 7px 3px 4px;background:rgba(255,255,255,.75);border:1px solid rgba(160,124,69,.28);font:600 11px/1.2 "Noto Serif JP",serif;color:#4c3020}
+      #daily-raid-reward-table .rt-chip img{width:20px;height:20px;object-fit:contain}
+      #daily-raid-reward-table .rt-chip b{font:700 11px/1 "Cinzel",serif;color:#7a4f16}
+      #daily-raid-reward-table .rt-chip.add{border-color:rgba(176,122,38,.7);background:rgba(255,244,214,.9)}
+      #daily-raid-reward-table .rt-chip small{font:400 9px/1.2 "Noto Serif JP",serif;color:#8a6a3a}
+      #daily-raid-reward-table .rt-mile{grid-template-columns:52px 1fr auto;align-items:center}
+      #daily-raid-reward-table .rt-mile .rt-count{font:700 14px/1 "Cinzel",serif;color:#4c3020;text-align:right}
+      #daily-raid-reward-table .rt-mile .rt-count em{font-style:normal;font-size:9px;margin-left:1px;color:#7a5f3e}
+      #daily-raid-reward-table .rt-state{font:600 9.5px/1 "Noto Serif JP",serif;color:#8a6a3a;white-space:nowrap}
+      #daily-raid-reward-table .rt-mile.done{opacity:.5}
+      #daily-raid-reward-table .rt-mile.special .rt-count{color:#a06a12}
+      #daily-raid-reward-table .rt-mile.special .rt-chip{border-color:rgba(176,122,38,.75);background:rgba(255,244,214,.95)}
+      #daily-raid-reward-table .rt-mile.next{background:linear-gradient(90deg,rgba(240,207,120,.28),rgba(240,207,120,0));}
+      #daily-raid-reward-table .rt-mile.next .rt-state{color:#a0441f}
+      #daily-raid-reward-table .rt-close{display:block;margin:16px auto 0;appearance:none;border:1px solid rgba(160,124,69,.6);background:linear-gradient(180deg,#fff,#efe3c6);color:#4c3020;font:700 13px/1 "Noto Serif JP",serif;letter-spacing:.2em;padding:11px 32px;cursor:pointer}
+      #daily-raid-reward-table button:focus-visible{outline:2px solid #b08a46;outline-offset:2px}
+      #daily-raid-reward-table .rt-loading{padding:30px 0;text-align:center;font:400 12px/1.5 "Noto Serif JP",serif;color:#7a5f3e}
+      @media (prefers-reduced-motion:reduce){#daily-raid-reward-table .rt-card{animation:none}}
+    `;
+    document.head.appendChild(st);
+  }
+  function rewardChipsHtml(items,prevIds){
+    const prev=prevIds||new Set();
+    return (Array.isArray(items)?items:[]).map(it=>{
+      const m=RAID_REWARD_ITEM[it.id]||{name:it.id,img:''};
+      const add=prevIds&&!prev.has(it.id);
+      return `<span class="rt-chip${add?' add':''}">${m.img?`<img src="${esc(m.img)}" alt="" onerror="this.style.visibility='hidden'">`:''}${esc(m.name)}<b>×${fmt(it.qty)}</b>${m.note?`<small>${esc(m.note)}</small>`:''}</span>`;
+    }).join('');
+  }
+  function renderRewardTable(card,data,status){
+    const def=getBossDef(status);
+    const ranks=Array.isArray(data.ranks)?data.ranks:[];
+    const order=['C','B','A','S'];
+    const byRank={}; ranks.forEach(r=>{ byRank[String(r.rank).toUpperCase()]=r.items||[]; });
+    const rows=order.slice().reverse().filter(r=>byRank[r]).map(r=>{
+      return `<div class="rt-row"><div class="rt-rank ${r==='S'?'s':''}">${r}<small>${esc(RANK_NOTE[r]||'')}</small></div><div class="rt-items">${rewardChipsHtml(byRank[r])}</div></div>`;
+    }).join('');
+    const total=n(data.total_clears);
+    const miles=Array.isArray(data.milestones)?data.milestones:[];
+    const nextCount=(miles.find(m=>!m.reached)||{}).count;
+    const mileRows=miles.map(m=>{
+      const special=Array.isArray(data.specials)&&data.specials.map(Number).includes(Number(m.count));
+      const cls=(m.claimed?'done':(m.count===nextCount?'next':''))+(special?' special':'');
+      const state=m.claimed?'受取済':(m.reached?'未受取':(m.count===nextCount?`あと${fmt(m.count-total)}回`:''));
+      return `<div class="rt-row rt-mile ${cls}"><div class="rt-count">${fmt(m.count)}<em>回</em></div><div class="rt-items">${rewardChipsHtml(m.items)}</div><span class="rt-state">${esc(state)}</span></div>`;
+    }).join('');
+    const after=data.after_50&&Array.isArray(data.after_50.items)&&data.after_50.items.length
+      ? `<p class="rt-note">${fmt(miles.length?miles[miles.length-1].count:50)}回以降は${fmt(data.after_50.every||10)}回ごとに ${esc(itemsText(data.after_50.items))}</p>`:'';
+    card.innerHTML=`
+      <button type="button" class="rt-x" aria-label="閉じる">×</button>
+      <section>
+        <span class="rt-label">CLEAR REWARD</span>
+        <h3>討伐ランク報酬</h3>
+        <p class="rt-note">本日のボス：${esc(def.name)}　討伐時のランクで報酬が決まります。挑戦したメンバー全員が受け取れます。</p>
+        ${rows}
+      </section>
+      <section>
+        <span class="rt-label">TOTAL CLEAR BONUS</span>
+        <h3>累計討伐ボーナス</h3>
+        <p class="rt-note">討伐報酬を受け取った回数（現在 ${fmt(total)}回）が節目に届くと追加でもらえます。30回ごとに同じ報酬をくり返し、累計50回・100回は特別に結晶100個。</p>
+        ${mileRows}
+        ${after}
+      </section>
+      <button type="button" class="rt-close">閉じる</button>`;
+  }
+  async function openRewardTable(status){
+    ensureRewardStyle();
+    ensureRewardTableStyle();
+    document.getElementById('daily-raid-reward-table')?.remove();
+    const wrap=document.createElement('div');
+    wrap.id='daily-raid-reward-table';
+    wrap.setAttribute('role','dialog');wrap.setAttribute('aria-modal','true');wrap.setAttribute('aria-label','報酬一覧');
+    wrap.innerHTML='<div class="rt-card"><div class="rt-loading">読み込み中…</div></div>';
+    const card=wrap.querySelector('.rt-card');
+    const opener=document.getElementById('daily-raid-reward-table-open');
+    const close=()=>{ wrap.remove(); document.removeEventListener('keydown',onKey,true); if(opener) opener.focus(); };
+    const onKey=e=>{ if(e.key==='Escape'){ e.preventDefault(); close(); } };
+    wrap.addEventListener('click',e=>{ if(e.target===wrap||e.target.closest('.rt-x,.rt-close')) close(); });
+    document.addEventListener('keydown',onKey,true);
+    document.body.appendChild(wrap);
+    try{
+      let data;
+      try{ data=normalizeStatus(await rpc('get_daily_raid_reward_table',{p_user_id:uid()})); }
+      catch(err){ if(isMissingRpc(err)) throw new Error('サーバーの更新が必要です（get_daily_raid_reward_table が未適用）。'); throw err; }
+      if(!data||data.ok===false) throw new Error(data&&data.message||'報酬一覧を読み込めませんでした');
+      if(!wrap.isConnected) return;
+      renderRewardTable(card,data,status);
+      card.scrollTop=0;card.querySelector('.rt-close')?.focus({preventScroll:true});
+    }catch(err){
+      console.error('[raid] reward table failed',err);
+      card.innerHTML=`<div class="rt-loading">${esc(err&&err.message||'報酬一覧を読み込めませんでした')}</div><button type="button" class="rt-close">閉じる</button>`;
+    }
+  }
+  async function claimRankReward(){
+    const btn=document.getElementById('daily-raid-start');
+    if(btn) btn.disabled=true;
+    try{
+      let result;
+      try{ result=normalizeStatus(await rpc('claim_daily_raid_rank_reward',{p_user_id:uid()})); }
+      catch(err){ if(isMissingRpc(err)) throw new Error('サーバーの更新が必要です（claim_daily_raid_rank_reward が未適用）。'); throw err; }
+      if(!result||result.ok===false) throw new Error(result&&result.message||'報酬を受け取れませんでした');
+      // 所持数・結晶/コイン表示を同期
+      if(window.userProfile){
+        if(Number.isFinite(Number(result.gem))) window.userProfile.gem=Number(result.gem);
+        if(Number.isFinite(Number(result.coin))) window.userProfile.coin=Number(result.coin);
+        if(Number.isFinite(Number(result.special_stage_ticket))) window.userProfile.special_stage_ticket=Number(result.special_stage_ticket);
+      }
+      try{ if(typeof window.loadInventoryFromSupabase==='function') await window.loadInventoryFromSupabase(uid()); }catch(_){ }
+      try{ if(typeof window.updateMainUI==='function') window.updateMainUI(); }catch(_){ }
+      try{ if(typeof window.updateSummonGemUI==='function') window.updateSummonGemUI(); }catch(_){ }
+      showRewardModal(result);
+      const latest=await fetchStatus();
+      if(latest){ await hydrateMemberPanels(latest); render(latest); }
+      refreshFriendHomeNotice();
+    }catch(err){
+      console.error('[raid] rank reward claim failed',err);
+      alert(err&&err.message?err.message:'報酬を受け取れませんでした。');
+      if(btn) btn.disabled=false;
+    }
+  }
+
   function render(status){
     const root=ensureRoot();
     const lobbyWasHidden=!!(root.querySelector('#daily-raid-lobby')&&root.querySelector('#daily-raid-lobby').hidden);
@@ -1739,6 +2384,11 @@
 
     root.querySelector('#daily-raid-hptext').textContent=`${fmt(hp)} / ${fmt(maxHp)}`;
     root.querySelector('#daily-raid-hpfill').style.transform=`scaleX(${Math.max(0,Math.min(1,hp/maxHp))})`;
+    renderForecast(root,status,hp,maxHp,cleared);
+    renderBreakAndRank(root,status,cleared);
+    renderBossHero(root,status);
+    renderProgress(root,status);
+    scheduleSwipeIndicatorSync();
     root.querySelector('#daily-raid-member-count').textContent=`${members.length} / 4`;
     root.querySelector('#daily-raid-attempt-count').textContent=admin?'∞ / 3':`${attemptCount} / 3`;
     const teamName=root.querySelector('#daily-raid-team-name');
@@ -1781,20 +2431,26 @@
 
     const finalizeBtn=root.querySelector('#daily-raid-finalize-best');
     const actions=root.querySelector('.daily-raid-actions');
+    const orphaned=isOrphanedAttempt(status);
     const canFinalizeEarly=!admin && !cleared && !inBattle && attemptCount>0 && attemptCount<3;
-    if(actions) actions.classList.toggle('can-finalize-early',canFinalizeEarly);
+    const showSecondary=canFinalizeEarly||orphaned;
+    if(actions) actions.classList.toggle('can-finalize-early',showSecondary);
     if(finalizeBtn){
-      finalizeBtn.hidden=!canFinalizeEarly;
-      finalizeBtn.disabled=!canFinalizeEarly;
-      if(canFinalizeEarly){
+      finalizeBtn.hidden=!showSecondary;
+      finalizeBtn.disabled=!showSecondary;
+      if(orphaned){
+        finalizeBtn.innerHTML=`<span>${Math.max(1,attemptCount)} / 3 が中断中</span><b>中断した挑戦を終了</b>`;
+      } else if(canFinalizeEarly){
         finalizeBtn.innerHTML=`<span>現在BEST：${fmt(bestDamage)}</span><b>残り挑戦をスキップ</b>`;
       }
     }
 
     const start=root.querySelector('#daily-raid-start');
-    start.disabled=admin?false:(cleared||inBattle||attemptCount>=3);
+    const rewardReady=cleared&&isRankRewardClaimable(status);
+    start.disabled=admin?false:rewardReady?false:(cleared||inBattle||attemptCount>=3);
     if(admin) start.innerHTML='<span>ADMIN TEST</span><b>テスト挑戦</b>';
-    else if(cleared) start.innerHTML='<span>DAILY RAID</span><b>RAID CLEAR</b>';
+    else if(rewardReady){ ensureRewardStyle(); start.innerHTML=`<span>RAID CLEAR · RANK ${esc(status.rank_reward.rank||status.clear_rank||'')}</span><b>報酬を受け取る<i class="daily-raid-reward-ready" aria-hidden="true"></i></b>`; }
+    else if(cleared) start.innerHTML=`<span>DAILY RAID</span><b>RAID CLEAR${status&&status.clear_rank?`<i class="daily-raid-rank-chip" title="${esc(RANK_NOTE[status.clear_rank]||'')}">RANK ${esc(status.clear_rank)}</i>`:''}</b>`;
     else if(inBattle) start.innerHTML='<span>TODAY\'S ATTEMPT</span><b>挑戦中</b>';
     else if(attemptCount>=3) start.innerHTML='<span>BEST DAMAGE LOCKED</span><b>本日の3回終了</b>';
     else start.innerHTML=`<span>${attemptCount+1} / 3 ATTEMPT</span><b>バトル開始</b>`;
@@ -1804,15 +2460,27 @@
     if (typeof window.requireChapter03ContentUnlock === 'function' && !window.requireChapter03ContentUnlock()) return false;
     bindRaidChromeNavigation();
     document.body.classList.add('raid-shell-active');
-    const root=ensureRoot(); root.style.display='block'; root.setAttribute('aria-hidden','false');
+    const root=ensureRoot();
+    ensureBossPendingStyle();
+    const cached=readCachedBoss();
+    if(cached){ root.classList.remove('raid-boss-pending'); renderBossHero(root,{boss:{key:cached.key,name:cached.name}}); }
+    else root.classList.add('raid-boss-pending');
+    root.style.display='block'; root.setAttribute('aria-hidden','false');
     if(options&&options.immediate) root.classList.add('show'); else requestAnimationFrame(()=>root.classList.add('show'));
     try{
       const status=await fetchStatus();
       if(status&&status.raid_id){ await hydrateMemberPanels(status); render(status); }
-      else showEntryMode();
+      else{
+        // チーム未所属でもその日のボスで表示する
+        const boss=cached||await fetchTodayBoss();
+        if(boss) renderBossHero(root,{boss});
+        showEntryMode();
+      }
       refreshFriendHomeNotice();
     }catch(err){
       console.error('[raid] open failed',err); showEntryMode();
+    }finally{
+      root.classList.remove('raid-boss-pending');
     }
   }
   function close(){
@@ -1833,6 +2501,7 @@
     const cleared=status.status==='cleared'||n(status.current_hp)<=0;
 
     if(cleared){ alert('レイドはすでに討伐されています。'); return; }
+    if(inBattle&&isOrphanedAttempt(status)){ await recoverOrphanedAttempt(status); return; }
     if(inBattle){ alert('挑戦中は残り挑戦をスキップできません。'); return; }
     if(attemptCount<=0){ alert('1回以上挑戦してから使用してください。'); return; }
     if(attemptCount>=3){ return; }
@@ -1840,8 +2509,7 @@
     const remaining=Math.max(0,3-attemptCount);
     const ok=confirm(
       `残り${remaining}回の挑戦をスキップします。\n\n`+
-      `スキップした挑戦は 0 DAMAGE として処理されます。\n`+
-      `3回目終了時の既存処理で、現在のBEST ${fmt(bestDamage)} DAMAGE が共有HPへ反映されます。\n\n`+
+      `現在のBEST ${fmt(bestDamage)} DAMAGE が共有HPへ反映されます。\n\n`+
       `この操作は取り消せません。\n\nOK？`
     );
     if(!ok) return;
@@ -1854,26 +2522,18 @@
     try{
       let result=status;
 
-      // 新しい「確定RPC」は使わない。
-      // 普通の挑戦と同じ既存ルートを、0 DAMAGEで残回数ぶん繰り返す。
-      for(let i=attemptCount;i<3;i++){
-        const begun=normalizeStatus(await rpc('begin_daily_raid_attempt_v2',{p_user_id:uid()}));
-        if(!begun || begun.ok===false){
-          throw new Error(begun&&begun.message||'残り挑戦の開始処理に失敗しました');
-        }
-
-        result=normalizeStatus(await rpc('submit_daily_raid_damage_v2',{
-          p_user_id:uid(),
-          p_damage:0
-        }));
-        if(!result || result.ok===false){
-          throw new Error(result&&result.message||'残り挑戦のスキップ処理に失敗しました');
-        }
-
-        currentStatus=result;
-
-        if(result.status==='cleared'||n(result.current_hp)<=0) break;
+      // build1563: 専用RPCで3/3として確定する。
+      // 旧方式（begin→即submit(0)）はサーバーの5秒ガードで必ず失敗し、挑戦中のまま止まっていた。
+      try{
+        result=normalizeStatus(await rpc('skip_daily_raid_remaining_v2',{p_user_id:uid()}));
+      }catch(err){
+        if(isMissingRpc(err)) throw new Error('サーバーの更新が必要です（skip_daily_raid_remaining_v2 が未適用）。');
+        throw err;
       }
+      if(!result || result.ok===false){
+        throw new Error(result&&result.message||'残り挑戦のスキップ処理に失敗しました');
+      }
+      currentStatus=result;
 
       const latest=await fetchStatus();
       if(latest) result=latest;
@@ -1911,6 +2571,8 @@
       // ここではパーティ編成画面を開くだけ。
       const status=currentStatus||await fetchStatus();
       if(!status||!status.raid_id) throw new Error('レイド情報を取得できません');
+      const todayCleared=status.status==='cleared'||n(status.current_hp)<=0;
+      if(!isAdmin()&&todayCleared&&isRankRewardClaimable(status)){ await claimRankReward(); return; }
 
       const hp=n(status.current_hp);
       const maxHp=n(status.max_hp)||100000;
@@ -1918,9 +2580,13 @@
       if(isAdmin()){
         close();
         window.__shootingReturnContext={type:'raidLobby'};
+        const adminBossDef=getBossDef(status);
         window.openShootingEvent({
           stageId:STAGE_ID,
+          enemyId:adminBossDef.enemyId,
           raidContext:{
+            bossKey:adminBossDef.key,
+            enemyId:adminBossDef.enemyId,
             raidId:status.raid_id||'admin-test',
             currentHp:maxHp,
             maxHp,
@@ -1944,9 +2610,13 @@
 
       close();
       window.__shootingReturnContext={type:'raidLobby'};
+      const bossDef=getBossDef(status);
       window.openShootingEvent({
         stageId:STAGE_ID,
+        enemyId:bossDef.enemyId,
         raidContext:{
+          bossKey:bossDef.key,
+          enemyId:bossDef.enemyId,
           raidId:status.raid_id,
           currentHp:hp,
           maxHp,
@@ -1954,7 +2624,8 @@
           adminTest:false,
           pendingAttempt:true,
           attemptStarted:false,
-          attemptCount
+          attemptCount,
+          broken:status.broken===true
         }
       });
     }catch(err){
@@ -1969,7 +2640,7 @@
     if(finishPromise) return finishPromise;
     finishPromise=(async()=>{
       try{
-        const result=normalizeStatus(await rpc('submit_daily_raid_damage_v2',{p_user_id:uid(),p_damage:n(damage)}));
+        const result=normalizeStatus(await submitDamage(damage));
         currentStatus=result; refreshFriendHomeNotice();
         if(result&&(result.status==='cleared'||n(result.current_hp)<=0)){
           try{ window.dispatchEvent(new CustomEvent('sasaphia-daily-raid-cleared',{detail:result})); }catch(_){ }

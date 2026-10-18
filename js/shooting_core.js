@@ -2645,8 +2645,9 @@
     const isSpecialEvent = !!selectedStage?.eventId;
     // STORYでは内部マスターの固有名（朝・呼吸・邂逅・旅立ち等）をヘッダーに出さない。
     // ステージ選択画面と表記を揃え、「ステージ1〜4」で統一する。
+    // build1570: DAILY RAIDは日替わりボスの名前を出す（ステージ名は全ボス共通のため）
     const stageTitle = isSpecialEvent
-      ? (selectedStage?.eventTitle || selectedStage?.name || BOSS?.displayName || BOSS?.name || 'STAGE')
+      ? ((isRaidStage() && BOSS?.name) || selectedStage?.eventTitle || selectedStage?.name || BOSS?.displayName || BOSS?.name || 'STAGE')
       : `ステージ${Number(selectedStage?.stageNo || 1)}`;
     const difficultyLabel = isSpecialEvent ? (selectedStage?.difficultyLabel || '') : '';
 
@@ -3382,6 +3383,25 @@
     return true;
   }
 
+  // build1561: 破棄した中断DAILY RAIDの挑戦をサーバー上で終了させる。
+  // RaidEventが未準備・通信失敗の場合は保留キューへ入れ、次にロビーを開いた時に送信する。
+  const RAID_PENDING_FINISH_KEY = 'zeraphia_raid_pending_finish_v1';
+  function finishDiscardedRaidAttempt(snapshot) {
+    const ctx = snapshot && snapshot.raidContext;
+    if (!ctx || !ctx.attemptStarted || ctx.adminTest) return;
+    const initial = Number(snapshot.raidInitialHp || ctx.currentHp || 0);
+    const bossHp = Number(snapshot.boss && snapshot.boss.hp);
+    const damage = Math.max(0, Math.floor(Number.isFinite(bossHp) && initial > 0 ? initial - bossHp : Number(snapshot.raidDamageDealt || 0)));
+    const pending = { raidId: String(ctx.raidId || ''), damage, at: Date.now() };
+    const queue = () => { try { localStorage.setItem(RAID_PENDING_FINISH_KEY, JSON.stringify(pending)); } catch (_) {} };
+    queue();
+    if (window.RaidEvent && typeof window.RaidEvent.finishAttempt === 'function') {
+      Promise.resolve(window.RaidEvent.finishAttempt(damage, { aborted: true, discarded: true }))
+        .then(result => { if (result) { try { localStorage.removeItem(RAID_PENDING_FINISH_KEY); } catch (_) {} } })
+        .catch(() => {});
+    }
+  }
+
   function tryRestoreShootingBattle() {
     const snapshot = readShootingResumeState();
     if (!snapshot) return false;
@@ -3392,6 +3412,9 @@
     if (!window.confirm(label)) {
       // 「いいえ」を選んだ中断データは明示的に破棄する。
       // 残したままだと次回起動時にも同じ再開確認が繰り返し表示される。
+      // build1561: DAILY RAIDはサーバー上で挑戦開始済みのため、破棄時もそこまでの
+      // ダメージで挑戦を終了させる。送らないと「挑戦中」のまま残り、ロビーが進めなくなる。
+      finishDiscardedRaidAttempt(snapshot);
       clearShootingResumeState();
       return false;
     }
@@ -3399,6 +3422,8 @@
     window.__shootingReturnContext = snapshot.returnContext || (snapshot.raidContext ? { type: 'raidLobby' } : null);
     window.openShootingEvent({
       stageId: snapshot.stageId,
+      // build1568: 日替わりボスのレイドは、中断時と同じボスで再開する
+      ...(snapshot.raidContext && snapshot.raidContext.enemyId ? { enemyId: snapshot.raidContext.enemyId } : {}),
       raidContext: snapshot.raidContext || null,
       resumeSnapshot: snapshot,
     });
@@ -4814,6 +4839,7 @@
   }
 
   function renderHud() {
+    ensureRaidBreakBadge();
     if (!state) return;
     updateBattleTimer(performance.now());
     const bossBar = document.getElementById('shooting-boss-bar');
@@ -8170,8 +8196,36 @@
       return 0;
     }
 
-    const elemental = base * rate;
+    const elemental = base * rate * (incoming ? 1 : getRaidBreakDamageMultiplier());
     return incoming ? elemental : applyHitComboDamage(elemental);
+  }
+
+  // build1563: DAILY RAIDの共有ブレイク達成中は、与ダメージ1.5倍（受けるダメージは対象外）。
+  const RAID_BREAK_DAMAGE_MULTIPLIER = 1.5;
+  function getRaidBreakDamageMultiplier() {
+    return (selectedRaidContext && selectedRaidContext.broken && isRaidStage()) ? RAID_BREAK_DAMAGE_MULTIPLIER : 1;
+  }
+  function ensureRaidBreakBadge() {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const on = getRaidBreakDamageMultiplier() > 1;
+    let badge = document.getElementById('shooting-raid-break-badge');
+    if (!on) { if (badge) badge.remove(); return; }
+    if (badge) return;
+    if (!document.getElementById('shooting-raid-break-badge-style')) {
+      const st = document.createElement('style');
+      st.id = 'shooting-raid-break-badge-style';
+      st.textContent = `#shooting-raid-break-badge{position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:30;pointer-events:none;
+        padding:4px 12px;font:700 11px/1 "Cinzel","Noto Serif JP",serif;letter-spacing:.24em;color:#fff8e6;
+        background:linear-gradient(90deg,rgba(150,60,40,0),rgba(170,72,44,.92) 18%,rgba(196,96,52,.95) 50%,rgba(170,72,44,.92) 82%,rgba(150,60,40,0));
+        text-shadow:0 1px 2px rgba(60,20,10,.6);white-space:nowrap}
+        #shooting-raid-break-badge b{color:#ffe6a6;margin-left:6px}`;
+      document.head.appendChild(st);
+    }
+    badge = document.createElement('div');
+    badge.id = 'shooting-raid-break-badge';
+    badge.innerHTML = 'BREAK<b>×1.5</b>';
+    arena.appendChild(badge);
   }
 
   // build1023: 無属性は属性バリアにも等倍で通るためIMMUNE表示にしない。
@@ -8537,6 +8591,7 @@
 
     if (
       !isNormalBattle() &&
+      !isShienIntangible() &&
       state.boss && state.boss.hp > 0 &&
       Math.abs(Number(state.boss.x || 0) - x) <= hitWidth &&
       Number(state.boss.y || 0) < startY
@@ -17065,6 +17120,8 @@
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
 
+    // build1571 シエン霞化中は敵側のダメージ数値を出さない（実際にHPも減らない）。
+    if (kind !== 'player' && isShienIntangible()) return;
     const value = Math.max(0, Math.round(Number(amount || 0)));
     const reaction = elementReaction === 'weak' || elementReaction === 'resist' || elementReaction === 'immune'
       ? elementReaction
@@ -17656,6 +17713,7 @@
       }
       const hitBoss = !facelessObjectTarget &&
         !isNormalBattle() &&
+        !isShienIntangible() &&
         bossRect &&
         p.bombIgnoreTarget !== state.boss &&
         !(p.pierce && p.piercedTargets && state.boss && p.piercedTargets.has(state.boss)) &&
@@ -20025,6 +20083,256 @@
     if (p >= 1) state.bossMotionResumeBlend = null;
   }
 
+  // ============================================================
+  // build1571 RAID シエン専用ギミック（BOSS.shienMechanics）
+  //   ・霞化   : 7秒実体 → 4秒紫煙。煙の間は一切ダメージが通らない。
+  //   ・回転斬り: 突進の合間に溜め1.4秒 → 敵中心の巨大円に斬撃。
+  //   ・出血   : 斬撃を受けたキャラは1秒ごとに最大HPの3%を失い続ける。
+  //              控えに戻す（キャラ交代）と解除。
+  //   時間はBOSSのモーション時計で数えるため、ポーズ/凍結中は進まない。
+  // ============================================================
+  const SHIEN_SOLID_MS = 7000;
+  const SHIEN_SMOKE_MS = 4000;
+  const SHIEN_DASH_CYCLE_MS = 9200;      // violence_v1 の突進周期と同期
+  const SHIEN_DASH_DELAY_MS = 2600;
+  const SHIEN_SLASH_WARN_AT = 4300;      // 突進(0〜1670ms)と重ならない位置
+  const SHIEN_SLASH_WARN_MS = 1400;
+  const SHIEN_SLASH_DAMAGE = 320;
+  const SHIEN_BLEED_RATE = 0.03;
+  const SHIEN_BLEED_TICK_MS = 1000;
+
+  function isShienBattle() {
+    return !!(state && BOSS && BOSS.shienMechanics && !isNormalBattle());
+  }
+
+  function isShienIntangible() {
+    return !!(state && state.shien && state.shien.smoke);
+  }
+
+  function ensureShienStyle() {
+    if (document.getElementById('shooting-shien-style-v1')) return;
+    const st = document.createElement('style');
+    st.id = 'shooting-shien-style-v1';
+    st.textContent = `
+      #shooting-event-root #shooting-boss.shien-smoke{
+        opacity:.34 !important;
+        filter:blur(1.2px) saturate(.6) brightness(1.15) drop-shadow(0 0 14px rgba(170,90,255,.9)) !important;
+        transition:opacity .35s ease, filter .35s ease;
+      }
+      #shooting-event-root #shooting-boss.shien-solid-in{transition:opacity .35s ease, filter .35s ease}
+      .shien-smoke-fx{position:absolute;left:0;top:0;width:220px;height:220px;margin:-110px 0 0 -110px;
+        z-index:10;pointer-events:none;opacity:0;transition:opacity .35s ease;will-change:transform,opacity}
+      .shien-smoke-fx.on{opacity:1}
+      .shien-smoke-fx i{position:absolute;left:50%;top:50%;width:110px;height:110px;margin:-55px 0 0 -55px;border-radius:50%;
+        background:radial-gradient(circle,rgba(190,120,255,.55) 0%,rgba(120,60,200,.28) 45%,rgba(80,30,150,0) 72%);
+        animation:shienPuff 2.2s ease-in-out infinite}
+      .shien-smoke-fx i:nth-child(2){animation-delay:-.75s;--sx:-34px;--sy:18px}
+      .shien-smoke-fx i:nth-child(3){animation-delay:-1.5s;--sx:30px;--sy:-14px}
+      .shien-smoke-fx i:nth-child(1){--sx:4px;--sy:-30px}
+      @keyframes shienPuff{
+        0%{transform:translate(0,10px) scale(.7);opacity:0}
+        35%{opacity:1}
+        100%{transform:translate(var(--sx),var(--sy)) scale(1.55);opacity:0}
+      }
+      .shien-slash-ring{position:absolute;left:0;top:0;border-radius:50%;pointer-events:none;z-index:8;will-change:translate,rotate,opacity}
+      .shien-slash-ring.warn{
+        border:2px dashed rgba(200,120,255,.85);
+        background:radial-gradient(circle,rgba(150,60,230,0) 0%,rgba(150,60,230,0) calc(var(--fill,0)*100% - 4%),rgba(190,110,255,.30) calc(var(--fill,0)*100%),rgba(150,60,230,.08) calc(var(--fill,0)*100% + 1%),rgba(120,40,200,.10) 100%);
+        box-shadow:0 0 18px rgba(170,80,255,.45) inset;
+        animation:shienWarnBlink .35s steps(2,jump-none) infinite;
+      }
+      @keyframes shienWarnBlink{50%{border-color:rgba(255,255,255,.95)}}
+      .shien-slash-ring.cut{
+        border:0;
+        background:conic-gradient(from 0deg,rgba(150,70,230,0) 0deg,rgba(150,70,230,0) 150deg,rgba(170,90,245,.32) 260deg,rgba(210,150,255,.72) 335deg,rgba(255,255,255,.98) 358deg,rgba(255,255,255,0) 360deg);
+        -webkit-mask:radial-gradient(circle,transparent 18%,#000 22%,#000 97%,transparent 100%);
+                mask:radial-gradient(circle,transparent 18%,#000 22%,#000 97%,transparent 100%);
+        animation:shienSweep .42s cubic-bezier(.2,.7,.3,1) forwards;
+      }
+      .shien-slash-ring.cut::after{content:'';position:absolute;inset:0;border-radius:50%;
+        border:3px solid rgba(235,190,255,.95);box-shadow:0 0 22px rgba(190,100,255,.85),0 0 22px rgba(190,100,255,.6) inset;
+        animation:shienEdge .42s ease-out forwards}
+      @keyframes shienEdge{0%{opacity:1}100%{opacity:0}}
+      @keyframes shienSweep{
+        0%{opacity:1;rotate:-200deg}
+        70%{opacity:1}
+        100%{opacity:0;rotate:160deg}
+      }
+      #shooting-event-root #shooting-player.shien-bleeding img{filter:drop-shadow(0 0 6px rgba(230,30,50,.85))}
+      .shien-bleed-tag{position:absolute;left:50%;top:-14px;transform:translateX(-50%);z-index:3;white-space:nowrap;
+        font-size:10px;font-weight:700;letter-spacing:.06em;color:#fff;background:rgba(170,16,36,.86);
+        border:1px solid rgba(255,170,170,.7);border-radius:8px;padding:1px 7px;pointer-events:none;
+        animation:shienBleedPulse 1s ease-in-out infinite}
+      .shien-bleed-tag small{font-size:8px;font-weight:600;opacity:.85;margin-left:4px}
+      @keyframes shienBleedPulse{50%{background:rgba(220,30,50,.92)}}
+    `;
+    document.head.appendChild(st);
+  }
+
+  // 霞化中は「HPが減る」書き込みをすべて無視する（弾以外のULT/設置物などの経路も一括で塞ぐ）。
+  function installShienHpGuard() {
+    const boss = state && state.boss;
+    if (!boss || boss._shienHpGuard) return;
+    let hpValue = Number(boss.hp || 0);
+    Object.defineProperty(boss, 'hp', {
+      configurable: true,
+      enumerable: true,
+      get() { return hpValue; },
+      set(v) {
+        const next = Number(v);
+        if (!Number.isFinite(next)) return;
+        if (next < hpValue && isShienIntangible()) return;
+        hpValue = next;
+      },
+    });
+    boss._shienHpGuard = true;
+  }
+
+  function getShienArenaSize() {
+    const arena = document.getElementById('shooting-arena');
+    const r = getArenaInputRect();
+    return {
+      arena,
+      w: Number(r?.width || arena?.clientWidth || 390),
+      h: Number(r?.height || arena?.clientHeight || 700),
+    };
+  }
+
+  function getShienSlashRadius(w, h) {
+    // 横幅はほぼ全域、縦は画面の約半分。最下段まで下がれば避けられる。
+    return clamp(Math.max(w * .62, h * .5), 200, 560);
+  }
+
+  function updateShienMechanics(now) {
+    if (!isShienBattle()) return;
+    if (!state.shien) {
+      ensureShienStyle();
+      document.querySelectorAll('#shooting-arena .shien-smoke-fx, #shooting-arena .shien-slash-ring').forEach(el => el.remove());
+      document.getElementById(BOSS_ID)?.classList.remove('shien-smoke');
+      document.getElementById(PLAYER_ID)?.classList.remove('shien-bleeding');
+      document.querySelectorAll('#shooting-player .shien-bleed-tag').forEach(el => el.remove());
+      installShienHpGuard();
+      state.shien = { smoke: false, slashCycle: -1, slashState: '', ringEl: null, smokeEl: null };
+    }
+    const sh = state.shien;
+    const bossEl = document.getElementById(BOSS_ID);
+    const { arena, w, h } = getShienArenaSize();
+    const halted = state.ended || state.finishing || state.koTransition || state.phaseTransition || !(state.boss && state.boss.hp > 0);
+    const elapsed = getBossMotionElapsedSeconds(now) * 1000;
+
+    // --- 霞化 ---
+    const smokeNow = !halted && (elapsed % (SHIEN_SOLID_MS + SHIEN_SMOKE_MS)) >= SHIEN_SOLID_MS;
+    if (smokeNow !== sh.smoke) {
+      sh.smoke = smokeNow;
+      if (bossEl) bossEl.classList.toggle('shien-smoke', smokeNow);
+      if (!sh.smokeEl && arena) {
+        sh.smokeEl = document.createElement('div');
+        sh.smokeEl.className = 'shien-smoke-fx';
+        sh.smokeEl.innerHTML = '<i></i><i></i><i></i>';
+        arena.appendChild(sh.smokeEl);
+      }
+      if (sh.smokeEl) sh.smokeEl.classList.toggle('on', smokeNow);
+    }
+    if (sh.smoke && sh.smokeEl) {
+      sh.smokeEl.style.translate = `${state.boss.x.toFixed(1)}px ${state.boss.y.toFixed(1)}px`;
+    }
+
+    // --- 回転斬り ---
+    if (!halted && elapsed >= SHIEN_DASH_DELAY_MS) {
+      const cycleIndex = Math.floor((elapsed - SHIEN_DASH_DELAY_MS) / SHIEN_DASH_CYCLE_MS);
+      const cycleAt = (elapsed - SHIEN_DASH_DELAY_MS) % SHIEN_DASH_CYCLE_MS;
+      const R = getShienSlashRadius(w, h);
+      const inWarn = cycleAt >= SHIEN_SLASH_WARN_AT && cycleAt < SHIEN_SLASH_WARN_AT + SHIEN_SLASH_WARN_MS;
+      if (inWarn && sh.slashCycle !== cycleIndex) {
+        sh.slashCycle = cycleIndex;
+        sh.slashState = 'warn';
+        if (sh.ringEl) sh.ringEl.remove();
+        sh.ringEl = document.createElement('div');
+        sh.ringEl.className = 'shien-slash-ring warn';
+        if (arena) arena.appendChild(sh.ringEl);
+      }
+      if (sh.slashState === 'warn' && sh.ringEl) {
+        const p = clamp((cycleAt - SHIEN_SLASH_WARN_AT) / SHIEN_SLASH_WARN_MS, 0, 1);
+        sh.ringEl.style.width = sh.ringEl.style.height = `${R * 2}px`;
+        sh.ringEl.style.translate = `${(state.boss.x - R).toFixed(1)}px ${(state.boss.y - R).toFixed(1)}px`;
+        sh.ringEl.style.setProperty('--fill', p.toFixed(3));
+        if (!inWarn) releaseShienSlash(now, R);
+      }
+    } else if (halted && sh.slashState === 'warn') {
+      // 演出中/撃破時は予告を消す（ダメージは出さない）。
+      sh.slashState = '';
+      if (sh.ringEl) { sh.ringEl.remove(); sh.ringEl = null; }
+    }
+
+    updateShienBleed(now, halted);
+  }
+
+  function releaseShienSlash(now, R) {
+    const sh = state.shien;
+    sh.slashState = '';
+    const ring = sh.ringEl;
+    sh.ringEl = null;
+    if (ring) {
+      ring.className = 'shien-slash-ring cut';
+      ring.style.translate = `${(state.boss.x - R).toFixed(1)}px ${(state.boss.y - R).toFixed(1)}px`;
+      setTimeout(() => ring.remove(), 480);
+    }
+    try { triggerPlayerHitScreenShake(); } catch (_) {}
+
+    const dx = Number(state.player.x || 0) - Number(state.boss.x || 0);
+    const dy = Number(state.player.y || 0) - Number(state.boss.y || 0);
+    if (dx * dx + dy * dy > R * R) return;
+    if (now < Number(state.player.invulnUntil || 0)) return;
+    const member = getActiveMember();
+    if (!member || member.hp <= 0) return;
+    const hpBefore = member.hp;
+    damagePlayer(now, SHIEN_SLASH_DAMAGE, 'raw', normalizeCombatElement(state.boss.element || BOSS.element), 'boss-slash');
+    if (member.hp < hpBefore && member.hp > 0) {
+      member.shienBleedNextAt = now + SHIEN_BLEED_TICK_MS;
+      member.shienBleeding = true;
+    }
+  }
+
+  function updateShienBleed(now, halted) {
+    const party = Array.isArray(state.party) ? state.party : [];
+    const active = getActiveMember();
+    party.forEach(m => {
+      // 控えに戻った（交代した）キャラ・倒れたキャラは出血解除。
+      if (m.shienBleeding && (m !== active || m.hp <= 0)) m.shienBleeding = false;
+    });
+
+    const bleeding = !!(active && active.shienBleeding);
+    const playerEl = document.getElementById(PLAYER_ID);
+    if (playerEl) {
+      if (playerEl.classList.contains('shien-bleeding') !== bleeding) {
+        playerEl.classList.toggle('shien-bleeding', bleeding);
+        let tag = playerEl.querySelector('.shien-bleed-tag');
+        if (bleeding && !tag) {
+          tag = document.createElement('span');
+          tag.className = 'shien-bleed-tag';
+          tag.innerHTML = '出血<small>交代で解除</small>';
+          playerEl.appendChild(tag);
+        } else if (!bleeding && tag) {
+          tag.remove();
+        }
+      }
+    }
+    if (!bleeding || halted) {
+      if (bleeding && halted) active.shienBleedNextAt = Math.max(Number(active.shienBleedNextAt || 0), now + 200);
+      return;
+    }
+    if (now < Number(active.shienBleedNextAt || 0)) return;
+    active.shienBleedNextAt = now + SHIEN_BLEED_TICK_MS;
+    const dmg = Math.min(active.hp, Math.max(1, Math.floor(Number(active.hpMax || 0) * SHIEN_BLEED_RATE)));
+    active.hp = Math.max(0, active.hp - dmg);
+    showDamageNumber(state.player.x, state.player.y, dmg, 'player', false, '');
+    renderHud();
+    if (active.hp <= 0) {
+      active.shienBleeding = false;
+      beginPlayerDefeat();
+    }
+  }
+
   function gameLoop(ts) {
     if (!state || !state.running || state.ended || state.finishing || state.countdown) return;
     syncEnemyMotionFreezeClocks(ts);
@@ -20203,6 +20511,8 @@
         }
       }
     }
+    // build1571 RAID シエン: 霞化 / 回転斬り / 出血
+    updateShienMechanics(ts);
 
     // エルテナULTは通常の敵移動が終わった後に吸引を適用。
     // これによりAIの横移動よりブラックホールの集敵を優先する。
@@ -30483,6 +30793,7 @@
 
   function getShootingSpecialStageInfoName(stage = selectedStage) {
     if (!stage) return 'STAGE';
+    if (stage === selectedStage && isRaidStage() && BOSS && BOSS.name) return String(BOSS.name);
     return String(stage.stageInfoName || stage.eventTitle || stage.name || getShootingStageInfoBossName(stage) || 'STAGE').trim();
   }
 
