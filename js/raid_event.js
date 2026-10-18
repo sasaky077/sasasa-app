@@ -2008,8 +2008,8 @@
   const RAID_BOSS_DEFS={
     // lobbyBg: ロビー全面の背景（背景＋ボスの絵を1枚で描いたもの）。bg_raid_01.webp と同サイズ・同構図で用意する。
     sigma:{name:'SIGMA-IX',line:'―これより、調査を開始する。',lobbyBg:'images/bg_raid_01.webp',lobbyImage:'images/raid_enemy_01.webp',enemyId:'shooting_raid_test',pieceImage:'images/chara_50_panel.webp'},
-    shien:{name:'シエン',line:'―霞の果てで、また会おう。',lobbyBg:'images/bg_raid_02.webp?v=1572',lobbyImage:'images/raid_enemy_02_battle.webp',enemyId:'shooting_raid_shien',pieceImage:'images/raid_piece_shien.webp'},
-    camilla:{name:'カミラ',line:'―甘い血の匂いがするわ。',lobbyBg:'images/bg_raid_03.webp',lobbyImage:'images/raid_enemy_03_battle.webp',enemyId:'shooting_raid_camilla',pieceImage:'images/raid_piece_camilla.webp'},
+    shien:{name:'シエン',line:'霞の果てで、待つ。',lobbyBg:'images/bg_raid_02.webp?v=1572',lobbyImage:'images/raid_enemy_02_battle.webp',enemyId:'shooting_raid_shien',pieceImage:'images/raid_piece_shien.webp'},
+    camilla:{name:'カミラ',line:'骨になるまで、愛してあげる。',lobbyBg:'images/bg_raid_03.webp',lobbyImage:'images/raid_enemy_03_battle.webp',enemyId:'shooting_raid_camilla',pieceImage:'images/raid_piece_camilla.webp'},
     // boss3:{name:'',line:'',lobbyBg:'images/bg_raid_03.webp',lobbyImage:'images/raid_enemy_03_battle.webp',enemyId:'shooting_raid_boss3',pieceImage:'images/raid_piece_boss3.webp'},
   };
   function getBossDef(status){
