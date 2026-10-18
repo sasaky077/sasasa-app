@@ -536,3 +536,20 @@ html body #daily-raid-root#daily-raid-root .daily-raid-rule-close::before{
 @media (max-height:640px){
   html body #daily-raid-root#daily-raid-root .daily-raid-rule-modal{padding-top:calc(env(safe-area-inset-top) + 74px)!important;padding-bottom:calc(80px + env(safe-area-inset-bottom))!important}
 }
+
+/* =========================================================
+   build1625: カミラ（深紅の背景）では名前・台詞を白抜きにして読みやすく
+   入口画面（募集する／参加する）とロビー（ENEMY INFO）の両方
+   ========================================================= */
+html body #daily-raid-root#daily-raid-root[data-raid-theme="camilla"] :is(.daily-raid-entry-hero strong,.daily-raid-hero-copy strong){
+  color:#fffaf6!important;-webkit-text-fill-color:#fffaf6!important;-webkit-text-stroke:0!important;
+  text-shadow:0 0 2px rgba(60,0,10,.95),0 0 10px rgba(90,0,20,.85),0 2px 16px rgba(40,0,8,.7)!important;
+}
+html body #daily-raid-root#daily-raid-root[data-raid-theme="camilla"] :is(.daily-raid-entry-hero span,.daily-raid-hero-copy span){
+  color:#fff1ec!important;-webkit-text-fill-color:#fff1ec!important;
+  text-shadow:0 0 2px rgba(60,0,10,.95),0 0 8px rgba(90,0,20,.8)!important;
+}
+html body #daily-raid-root#daily-raid-root[data-raid-theme="camilla"] :is(.daily-raid-entry-hero small,.daily-raid-hero-copy small){
+  color:#ffd9a8!important;-webkit-text-fill-color:#ffd9a8!important;
+  text-shadow:0 0 2px rgba(60,0,10,.95),0 0 6px rgba(90,0,20,.8)!important;
+}

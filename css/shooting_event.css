@@ -14861,3 +14861,25 @@ html body #shooting-event-root[data-raid-boss="shooting_raid_camilla"] :is(.shoo
   background:radial-gradient(circle,rgba(255,250,215,.95) 0%,rgba(255,224,120,.55) 28%,rgba(255,214,90,.18) 48%,rgba(255,214,90,0) 62%)!important;
 }
 #shooting-event-root .shooting-smile-box-explosion .smile-blast-ring{border-color:rgba(255,206,80,.95)!important;box-shadow:0 0 24px rgba(255,190,40,.9),inset 0 0 18px rgba(255,220,120,.6)!important}
+
+/* =========================================================
+   build1623 残響の塔：バトル背景
+   1〜14F：bg_battle_tower_01 / 15F：bg_battle_tower_02
+   画像が無い場合は下に重ねた共通背景(battle_bg_01)が見える。
+   ========================================================= */
+#shooting-event-root[data-shooting-stage^="shooting_tower_"] .shooting-bg{
+  background-image:url('../images/bg_battle_tower_01.webp'),url('../images/battle_bg_01.webp');
+  background-size:cover;background-position:center;
+  filter:none;opacity:.9;
+}
+#shooting-event-root[data-shooting-stage="shooting_tower_15"] .shooting-bg{
+  background-image:url('../images/bg_battle_tower_02.webp'),url('../images/battle_bg_01.webp');
+}
+/* 背景が暗いので、上部HUDの帯だけ明るく敷き、左右ゲージの文字にも縁取りを付けて読みやすくする */
+#shooting-event-root[data-shooting-stage^="shooting_tower_"] .shooting-wash{
+  background:linear-gradient(180deg,rgba(248,245,252,.78) 0%,rgba(248,245,252,.55) 15%,rgba(248,245,252,0) 27%,rgba(0,0,0,0) 100%);
+}
+html body #shooting-event-root[data-shooting-stage^="shooting_tower_"] :is(.shooting-hp-side-label,.shooting-hp-side-value,.shooting-ult-side-label,.shooting-hp-side-copy,.shooting-ult-side-copy,.shooting-ult-side-copy span,.shooting-hp-side-copy span){
+  color:#f6f0ff!important;
+  text-shadow:0 0 3px rgba(20,10,40,.95),0 0 7px rgba(30,15,60,.85)!important;
+}
