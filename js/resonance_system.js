@@ -521,10 +521,7 @@ async function executeStoryLimitBreakSecure(target, vesselId, options){
     }
 
     try {
-      renderBox();
-      updateMainUI();
-      if(currentZukanMainTab !== 'box') showDetail(target, false);
-      if(typeof updateZukanLimitBreakNotice === 'function') updateZukanLimitBreakNotice();
+      refreshLimitBreakScreens(target);
     } catch(renderError) {
       // サーバーの突破確定後にUI更新で失敗しても、二重消費や再試行はしない。
       console.warn('[Resonance] secure limit break committed; UI refresh failed', renderError);
@@ -616,10 +613,7 @@ async function executeGachaLimitBreakSecure(target, material, vesselId, options)
       if(typeof window.loadInventoryFromSupabase === 'function') await window.loadInventoryFromSupabase(userId);
     } catch(syncError){ console.warn('[Resonance] post-commit inventory refresh deferred',syncError); }
     try {
-      renderBox();
-      updateMainUI();
-      if(currentZukanMainTab !== 'box') showDetail(target, false);
-      updateZukanLimitBreakNotice();
+      refreshLimitBreakScreens(target);
     } catch(renderError){ console.warn('[Resonance] post-commit UI refresh deferred',renderError); }
     var completeText = document.getElementById('lb-complete-text');
     if(completeText){
@@ -649,6 +643,25 @@ async function executeGachaLimitBreakSecure(target, material, vesselId, options)
     return false;
   }
 }
+
+// build1559: 限界突破後の画面更新。
+// キャラ一覧の「詳細」表示中は renderBox() を呼ぶと一覧へ戻ってしまうため、
+// 詳細をその場で再描画する（演出カバーの裏で実行され、演出後はそのまま詳細画面に戻る）。
+function refreshLimitBreakScreens(target){
+  var detailId = (typeof currentZukanDetailCharaId !== 'undefined') ? currentZukanDetailCharaId : null;
+  var inBoxDetail = (typeof currentZukanMainTab === 'undefined' || currentZukanMainTab === 'box') &&
+    detailId !== null && detailId !== undefined && typeof renderBoxDetail === 'function';
+  if(inBoxDetail){
+    renderBoxDetail(detailId);
+    if(typeof updateZukanHeaderForMode === 'function') updateZukanHeaderForMode();
+  } else {
+    renderBox();
+    if(typeof currentZukanMainTab !== 'undefined' && currentZukanMainTab !== 'box') showDetail(target, false);
+  }
+  updateMainUI();
+  if(typeof updateZukanLimitBreakNotice === 'function') updateZukanLimitBreakNotice();
+}
+window.refreshLimitBreakScreens = refreshLimitBreakScreens;
 
 async function executeLimitBreak(target, material, selectedSoulVesselId, options){
   if(!target) return false;

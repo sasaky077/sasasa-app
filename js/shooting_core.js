@@ -4603,10 +4603,48 @@
     } else if (el.classList.contains('shooting-raid-green-laser')) {
       el.style.transform =
         `translate3d(${x}px,${y}px,0) translate(-50%,-50%) rotate(var(--raid-laser-angle,0rad))`;
+    } else if (el._shotFx) {
+      // build1557 SHOT FX: 見た目のみ進行方向へ回転。当たり判定(_hw/_hh)は生成時の値のまま。
+      let r = el._shotFxRot || 0;
+      if (el._shotFx === 2) {
+        const dx = x - el._shotFxPx;
+        const dy = y - el._shotFxPy;
+        if (dx * dx + dy * dy > 0.25) {
+          r = Math.atan2(dx, -dy);
+          el._shotFxRot = r;
+        }
+        el._shotFxPx = x;
+        el._shotFxPy = y;
+      }
+      el.style.transform =
+        `translate3d(${x}px,${y}px,0) translate(-50%,-50%) rotate(${r.toFixed(3)}rad)`;
     } else {
       el.style.transform =
         `translate3d(${x}px,${y}px,0) translate(-50%,-50%)`;
     }
+  }
+
+  // build1557 SHOT FX
+  // HOMING / SPREAD / PIERCING の見た目を共通デザインへ統一する。
+  // makeProjectile()内で当たり判定サイズを計測した「後」にクラスを足すため、
+  // 判定・威力・挙動は一切変わらない。追加DOM・アニメーション・filterは使わない。
+  function applyShotFx(p, kind, track) {
+    if (!p || !p.el || p.canvasRendered || !p.el.classList) return p;
+    const el = p.el;
+    el.classList.add('shot-fx', 'shot-fx-' + kind);
+    if (track) {
+      el._shotFx = 2;
+      el._shotFxPx = Number(p.x || 0);
+      el._shotFxPy = Number(p.y || 0);
+      el._shotFxRot = 0;
+    } else {
+      el._shotFx = 1;
+      const vx = Number(p.vx || 0);
+      const vy = Number(p.vy || 0);
+      el._shotFxRot = (vx || vy) ? Math.atan2(vx, -vy) : 0;
+    }
+    positionUnit(el, Number(p.x || 0), Number(p.y || 0));
+    return p;
   }
 
   function clearProjectiles() {
@@ -6837,7 +6875,7 @@
   }
 
   function ensureBombVisualStyles() {
-    const styleId = 'shooting-bomb-visual-style-build777';
+    const styleId = 'shooting-bomb-visual-style-build1558';
     if (document.getElementById(styleId)) return;
 
     const style = document.createElement('style');
@@ -6918,7 +6956,9 @@
         transform:translate3d(var(--bomb-x,0px),var(--bomb-y,0px),0) translate(-50%,-50%);
         pointer-events:none;
         z-index:46;
-        contain:layout style paint;
+        /* build1558: paint封じ込めは子要素の拡大・光彩を箱形に切り取り「角」が見えるため外す */
+        contain:layout style;
+        overflow:visible;
       }
       .shooting-bomb-explosion > i{
         position:absolute;
@@ -6981,7 +7021,9 @@
         transform:translate3d(var(--bomb-x,0px),var(--bomb-y,0px),0) translate(-50%,-50%);
         pointer-events:none;
         z-index:48;
-        contain:layout style paint;
+        /* build1558: paint封じ込めは子要素の拡大・光彩を箱形に切り取り「角」が見えるため外す */
+        contain:layout style;
+        overflow:visible;
       }
       .shooting-bomb-splash-hit > i{
         position:absolute;
@@ -6992,7 +7034,7 @@
       .shooting-bomb-splash-hit .splash-core{
         width:34px;
         height:34px;
-        margin:-17px 0 0 -17px;
+        margin:0; /* build1558: 中心合わせはkeyframesのtranslate(-50%,-50%)のみ（二重オフセット解消） */
         border-radius:50%;
         background:radial-gradient(circle,rgba(255,255,255,1) 0 18%,rgba(var(--bomb-rgb,244,239,227),.98) 19% 48%,rgba(var(--bomb-rgb,244,239,227),.18) 70%,rgba(var(--bomb-rgb,244,239,227),0) 78%);
         box-shadow:0 0 12px 3px rgba(var(--bomb-rgb,244,239,227),.98),0 0 30px 8px rgba(var(--bomb-rgb,244,239,227),.52);
@@ -7001,7 +7043,7 @@
       .shooting-bomb-splash-hit .splash-burst{
         width:70px;
         height:70px;
-        margin:-35px 0 0 -35px;
+        margin:0; /* build1558: 中心合わせはkeyframesのtranslate(-50%,-50%)のみ（二重オフセット解消） */
         border-radius:50%;
         background:radial-gradient(circle,rgba(255,255,255,.34) 0 16%,rgba(var(--bomb-rgb,244,239,227),.44) 28%,rgba(var(--bomb-rgb,244,239,227),.14) 52%,rgba(var(--bomb-rgb,244,239,227),0) 74%);
         animation:shootingBombSplashBurst582 .38s ease-out forwards;
@@ -7009,7 +7051,7 @@
       .shooting-bomb-splash-hit .splash-ring{
         width:68px;
         height:68px;
-        margin:-34px 0 0 -34px;
+        margin:0; /* build1558: 中心合わせはkeyframesのtranslate(-50%,-50%)のみ（二重オフセット解消） */
         border-radius:50%;
         border:3px solid rgba(var(--bomb-rgb,244,239,227),.94);
         box-shadow:0 0 12px rgba(var(--bomb-rgb,244,239,227),.84), inset 0 0 14px rgba(var(--bomb-rgb,244,239,227),.30);
@@ -7018,7 +7060,7 @@
       .shooting-bomb-splash-hit .splash-ring.r2{
         width:46px;
         height:46px;
-        margin:-23px 0 0 -23px;
+        margin:0; /* build1558: 中心合わせはkeyframesのtranslate(-50%,-50%)のみ（二重オフセット解消） */
         border-width:2px;
         opacity:.92;
         animation-duration:.32s;
@@ -7069,7 +7111,7 @@
       .shooting-bomb-split-burst .split-core{
         width:24px;
         height:24px;
-        margin:-12px 0 0 -12px;
+        margin:0; /* build1558: 中心合わせはkeyframesのtranslate(-50%,-50%)のみ（二重オフセット解消） */
         border-radius:50%;
         background:radial-gradient(circle,#fff 0 16%,rgba(var(--bomb-rgb,244,239,227),.94) 18% 48%,rgba(var(--bomb-rgb,244,239,227),0) 74%);
         box-shadow:0 0 12px rgba(var(--bomb-rgb,244,239,227),.88);
@@ -7078,7 +7120,7 @@
       .shooting-bomb-split-burst .split-ring{
         width:42px;
         height:42px;
-        margin:-21px 0 0 -21px;
+        margin:0; /* build1558: 中心合わせはkeyframesのtranslate(-50%,-50%)のみ（二重オフセット解消） */
         border-radius:50%;
         border:2px solid rgba(var(--bomb-rgb,244,239,227),.82);
         box-shadow:0 0 8px rgba(var(--bomb-rgb,244,239,227),.52);
@@ -8293,6 +8335,7 @@
     );
     if (!p) return null;
 
+    applyShotFx(p, 'homing', true);
     const target = getWolfTargetPoint(startX, startY);
     p.kind = 'wolf_j_homing';
     p.wolfSide = side;
@@ -8510,6 +8553,7 @@
     const speed = Math.max(260, Number(c.bulletSpeed || 640));
     const p = makeProjectile(bulletClass + ' shooting-bullet-homing', startX, startY, 0, -speed, damage, c.id);
     if (!p) return null;
+    applyShotFx(p, 'homing', true);
     p.kind = 'generic_homing';
     p.homingSpeed = speed;
     p.homingTurnRate = Math.max(1, Number(c.homingTurnRate || 7));
@@ -10124,7 +10168,7 @@
         const step = i - (shotCount - 1) / 2;
         const angle = -Math.PI / 2 + angleStep * step;
 
-        state.bullets.push(makeProjectile(
+        const p = makeProjectile(
           bulletClass,
           state.player.x,
           y,
@@ -10132,7 +10176,8 @@
           Math.sin(angle) * Number(c.bulletSpeed || 780),
           effectivePower,
           c.id
-        ));
+        );
+        if (p) state.bullets.push(applyShotFx(p, 'spread', false));
       }
       return;
     }
@@ -10160,6 +10205,7 @@
           c.id
         );
         if (p) {
+          applyShotFx(p, 'pierce', false);
           // PIERCING は貫通弾。1体につき1回だけ命中し、敵に当たっても消えない。
           p.pierce = true;
           p.piercedTargets = new WeakSet();
@@ -20292,24 +20338,49 @@
     return meta.image ? meta : null;
   }
 
-  async function playBossStageIntro(onComplete) {
+  // build1559: ステージタイトル表示中にBOSSイントロ画像を先読みする。
+  function warmBossStageIntroImage() {
+    try {
+      const meta = getBossIntroMeta();
+      if (meta && meta.image) void preloadShootingImage(meta.image, 7000, false);
+    } catch (_) {}
+  }
+
+  // build1559: options.revealMask=true の場合、白いステージ遷移マスクを
+  // 「イントロを不透明で配置した後」に外す。タイトル → イントロ → 戦闘 の順になり、
+  // イントロ前にシューティング画面が一瞬見えることがない。
+  async function playBossStageIntro(onComplete, options = {}) {
+    const revealMask = !!(options && options.revealMask);
+    const onReveal = options && typeof options.onReveal === 'function' ? options.onReveal : null;
+    let revealed = false;
+    const reveal = () => {
+      if (revealed) return Promise.resolve();
+      revealed = true;
+      const done = revealMask ? endShootingStageTransitionMask() : Promise.resolve();
+      return Promise.resolve(done).then(() => { if (onReveal) onReveal(); });
+    };
     const meta = getBossIntroMeta();
 
     // 通常ステージは従来通り、そのままカウントダウンへ。
     if (!meta) {
-      if (typeof onComplete === 'function') onComplete();
+      await reveal();
+      if (typeof onComplete === 'function') requestAnimationFrame(() => onComplete());
       return;
     }
 
     const root = document.getElementById(ROOT_ID);
     if (!root) {
+      await reveal();
       if (typeof onComplete === 'function') onComplete();
       return;
     }
 
     await preloadShootingImage(meta.image, 7000, true);
 
-    if (!document.getElementById(ROOT_ID) || !state || state.ended) return;
+    if (!document.getElementById(ROOT_ID) || !state || state.ended) {
+      if (revealMask) clearShootingStageTransitionMask();
+      return;
+    }
 
     root.querySelectorAll('.shooting-boss-intro').forEach(el => el.remove());
 
@@ -20336,6 +20407,9 @@
       <div class="shooting-boss-intro-line line-b"></div>
     `;
 
+    // 最初のフレームから不透明。フェードインで背後の戦闘画面を透かさない。
+    intro.style.transition = 'none';
+    intro.style.opacity = '1';
     root.appendChild(intro);
 
     // 背景画像と同じ画像をglitch stripにも使用。
@@ -20343,9 +20417,16 @@
       glitch.style.backgroundImage = `url("${meta.image}")`;
     });
 
-    requestAnimationFrame(() => {
-      intro.classList.add('show', 'shake-entry');
-    });
+    // イントロが描画された次のフレームで演出開始と同時にマスクを抜く。
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    if (!intro.isConnected) {
+      if (revealMask) clearShootingStageTransitionMask();
+      return;
+    }
+    intro.classList.add('show', 'shake-entry');
+    intro.style.removeProperty('opacity');
+    intro.style.removeProperty('transition');
+    void reveal();
 
     // 登場直後：画面全体へ短い衝撃。長く揺らさず、余韻だけ残す。
     setTimeout(() => {
@@ -24109,6 +24190,7 @@
 
     // ステージIN演出。実ロードの有無とは切り離したアイキャッチ演出として扱う。
     const stageIcatchPromise = showShootingStageIcatch();
+    warmBossStageIntroImage();
 
     selectedCharacterId = selectedPartyIds[0];
     clearEltenaBlackHole();
@@ -24143,11 +24225,11 @@
     // タイトル演出が終わった白画面の裏で初期配置を完成させる。
     placeInitialUnits();
     renderHud();
-    await endShootingStageTransitionMask();
-    // 画面が戦闘へ戻った瞬間からBGM開始。BOSSは登場演出から専用曲を流す。
-    activateShootingBattleBgm(true);
-    requestAnimationFrame(() => {
-      playBossStageIntro(runStartCountdown);
+    // build1559: BOSSイントロがある場合はマスクの裏でイントロを用意してから抜く。
+    // 画面が戦闘（またはイントロ）へ切り替わった瞬間からBGM開始。
+    await playBossStageIntro(runStartCountdown, {
+      revealMask: true,
+      onReveal: () => activateShootingBattleBgm(true),
     });
     } finally {
       if (towerBattleStart) towerBattleStartPending=false;
@@ -24481,6 +24563,7 @@
     const stageIcatchPromise = chapter104ArnoRetry
       ? Promise.resolve()
       : showShootingStageIcatch();
+    warmBossStageIntroImage();
 
     const root = document.getElementById(ROOT_ID);
     if (!root) {
@@ -24542,10 +24625,10 @@
 
     placeInitialUnits();
     renderHud();
-    await endShootingStageTransitionMask();
-    activateShootingBattleBgm(true);
 
     if (chapter104ArnoRetry) {
+      await endShootingStageTransitionMask();
+      activateShootingBattleBgm(true);
       showChapter104ArnoBattleStart(() => {
         if (!state || state.ended || state.finishing) return;
         state.lastBossShotAt = performance.now();
@@ -24556,7 +24639,10 @@
       return;
     }
 
-    playBossStageIntro(runStartCountdown);
+    await playBossStageIntro(runStartCountdown, {
+      revealMask: true,
+      onReveal: () => activateShootingBattleBgm(true),
+    });
   };
 
   window.closeShootingEvent = async function () {

@@ -1,0 +1,211 @@
+/* ============================================================
+   build1557 — ALLIED SHOT FX (HOMING / SPREAD / PIERCING)
+   - 3種のショットを属性カラー共通の統一デザインへ。
+   - 軽量化優先：追加DOMなし / animationなし / filterなし。
+     描画は「1弾 = 本体 + ::before + ::after」のみで、移動はtransformだけ。
+   - 当たり判定はJS側で生成時に数値化済み（_hw/_hh）。ここでのサイズ変更は見た目のみ。
+   - 既存のキャラ別弾スタイル（eltena / gojo / wolf-j など、!important含む）を
+     ID 2つの詳細度で確実に上書きする。
+   ============================================================ */
+
+/* ---------- 属性パレット ----------
+   --fx-hi  : ハイライト（芯の外側）
+   --fx-mid : 本体色
+   --fx-deep: 輪郭色（アイボリー背景でも沈まないための締め色）
+   --fx-rgb : 光彩用 RGB
+-------------------------------------- */
+#shooting-event-root #shooting-arena .shooting-bullet.shot-fx{
+  --fx-hi:#fff6dc; --fx-mid:#e2b45c; --fx-deep:#8c6424; --fx-rgb:226,180,92;
+}
+#shooting-event-root #shooting-arena .shooting-bullet.shot-fx.shooting-bullet-fire{
+  --fx-hi:#ffe9d6; --fx-mid:#ff6b3d; --fx-deep:#b02a14; --fx-rgb:255,107,61;
+}
+#shooting-event-root #shooting-arena .shooting-bullet.shot-fx.shooting-bullet-aqua{
+  --fx-hi:#e3f7ff; --fx-mid:#38a8ff; --fx-deep:#1556a8; --fx-rgb:56,168,255;
+}
+#shooting-event-root #shooting-arena .shooting-bullet.shot-fx.shooting-bullet-wood{
+  --fx-hi:#ecffe2; --fx-mid:#46c25e; --fx-deep:#1f7432; --fx-rgb:70,194,94;
+}
+#shooting-event-root #shooting-arena .shooting-bullet.shot-fx.shooting-bullet-dark{
+  --fx-hi:#f3e8ff; --fx-mid:#9b5cf0; --fx-deep:#4f2394; --fx-rgb:155,92,240;
+}
+#shooting-event-root #shooting-arena .shooting-bullet.shot-fx.shooting-bullet-light{
+  --fx-hi:#fffbe0; --fx-mid:#ffc42e; --fx-deep:#a8770a; --fx-rgb:255,196,46;
+}
+/* ノアのSUBホーミングは従来どおり灰白（キャラ固有の意匠を維持） */
+#shooting-event-root #shooting-arena .shooting-bullet.shot-fx.shooting-bullet-noah{
+  --fx-hi:#ffffff; --fx-mid:#b9bcc6; --fx-deep:#5e6270; --fx-rgb:176,180,192;
+}
+
+/* ---------- 共通リセット（既存キャラ別スタイルの打ち消し） ---------- */
+#shooting-event-root #shooting-arena .shooting-bullet.shot-fx{
+  position:absolute!important;
+  left:0!important; top:0!important;
+  margin:0!important; padding:0!important;
+  min-width:0!important; min-height:0!important;
+  max-width:none!important; max-height:none!important;
+  border:0!important;
+  overflow:visible!important;
+  opacity:1!important;
+  filter:none!important; -webkit-filter:none!important;
+  animation:none!important;
+  mix-blend-mode:normal!important;
+  contain:layout style;
+}
+#shooting-event-root #shooting-arena .shooting-bullet.shot-fx::before,
+#shooting-event-root #shooting-arena .shooting-bullet.shot-fx::after{
+  content:""!important;
+  position:absolute!important;
+  inset:auto!important;
+  margin:0!important;
+  border:0!important;
+  opacity:1!important;
+  filter:none!important; -webkit-filter:none!important;
+  animation:none!important;
+  box-shadow:none!important;
+  pointer-events:none;
+}
+
+/* ============================================================
+   SPREAD — 「光の花弁」
+   丸い光核から尖った残光が伸びる涙滴。進行方向へ回転（JS）。
+   全SPREADキャラ共通の単一デザイン。
+   ============================================================ */
+#shooting-event-root #shooting-arena .shooting-bullet.shot-fx.shot-fx-spread{
+  width:8px!important;
+  height:11px!important;
+  border-radius:50% 50% 50% 50% / 56% 56% 44% 44%!important;
+  background:radial-gradient(ellipse 60% 55% at 50% 38%,
+    #fff 0 34%,
+    var(--fx-hi) 52%,
+    var(--fx-mid) 82%,
+    var(--fx-deep) 100%)!important;
+  box-shadow:
+    0 0 0 .5px rgba(var(--fx-rgb),.55),
+    0 0 6px rgba(var(--fx-rgb),.9),
+    0 0 13px rgba(var(--fx-rgb),.36)!important;
+}
+/* 尾：頭と同じ幅から尖って溶ける一続きの花弁 */
+#shooting-event-root #shooting-arena .shooting-bullet.shot-fx.shot-fx-spread::before{
+  left:0!important; top:72%!important;
+  width:8px!important; height:16px!important;
+  transform:none!important;
+  border-radius:0!important;
+  background:linear-gradient(180deg,
+    rgba(var(--fx-rgb),.78) 0%,
+    rgba(var(--fx-rgb),.34) 50%,
+    rgba(var(--fx-rgb),0) 100%)!important;
+  clip-path:polygon(4% 0,96% 0,50% 100%);
+}
+/* 尾の芯（白い一筋） */
+#shooting-event-root #shooting-arena .shooting-bullet.shot-fx.shot-fx-spread::after{
+  left:50%!important; top:96%!important;
+  width:1.5px!important; height:8px!important;
+  transform:translateX(-50%)!important;
+  border-radius:1px!important;
+  background:linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,0))!important;
+}
+
+/* ============================================================
+   HOMING — 「彗星核」
+   白芯の光球 + 細い輪 + 進行方向の反対側へ伸びる尾。
+   ============================================================ */
+#shooting-event-root #shooting-arena .shooting-bullet.shot-fx.shot-fx-homing{
+  width:14px!important;
+  height:14px!important;
+  border-radius:50%!important;
+  background:radial-gradient(circle at 50% 42%,
+    #fff 0 20%,
+    var(--fx-hi) 30%,
+    var(--fx-mid) 58%,
+    var(--fx-deep) 100%)!important;
+  box-shadow:
+    inset 0 -2px 3px rgba(0,0,0,.18),
+    0 0 0 1px rgba(255,255,255,.75),
+    0 0 7px rgba(var(--fx-rgb),.95),
+    0 0 16px rgba(var(--fx-rgb),.42)!important;
+}
+/* 尾（回転に追従して常に後方）— 根元が太く先へ溶ける残光 */
+#shooting-event-root #shooting-arena .shooting-bullet.shot-fx.shot-fx-homing::before{
+  left:50%!important; top:55%!important;
+  width:12px!important; height:26px!important;
+  transform:translateX(-50%)!important;
+  border-radius:50% 50% 50% 50% / 30% 30% 70% 70%!important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 40%) center top / 3px 100% no-repeat,
+    linear-gradient(180deg, rgba(var(--fx-rgb),.62) 0%, rgba(var(--fx-rgb),.24) 45%, rgba(var(--fx-rgb),0) 88%)!important;
+  clip-path:polygon(0 0,100% 0,58% 100%,42% 100%);
+}
+/* 外周リング */
+#shooting-event-root #shooting-arena .shooting-bullet.shot-fx.shot-fx-homing::after{
+  left:-5px!important; top:-5px!important;
+  width:24px!important; height:24px!important;
+  transform:none!important;
+  border-radius:50%!important;
+  background:radial-gradient(circle, transparent 0 56%, rgba(var(--fx-rgb),.55) 60%, rgba(var(--fx-rgb),.12) 68%, transparent 74%)!important;
+}
+
+/* ============================================================
+   PIERCING — 「光槍」
+   菱形の穂先 + 白い芯 + 長く伸びる貫通の残光。
+   ============================================================ */
+#shooting-event-root #shooting-arena .shooting-bullet.shot-fx.shot-fx-pierce{
+  width:6px!important;
+  height:34px!important;
+  border-radius:3px 3px 50% 50% / 3px 3px 100% 100%!important;
+  background:linear-gradient(180deg,
+    #fff 0%,
+    var(--fx-hi) 14%,
+    var(--fx-mid) 40%,
+    rgba(var(--fx-rgb),.45) 75%,
+    rgba(var(--fx-rgb),0) 100%)!important;
+  box-shadow:
+    0 0 0 .75px rgba(var(--fx-rgb),.6),
+    0 0 7px rgba(var(--fx-rgb),.85),
+    0 0 15px rgba(var(--fx-rgb),.35)!important;
+}
+/* 芯 + 長い残光 */
+#shooting-event-root #shooting-arena .shooting-bullet.shot-fx.shot-fx-pierce::before{
+  left:50%!important; top:4px!important;
+  width:2px!important; height:62px!important;
+  transform:translateX(-50%)!important;
+  border-radius:1px!important;
+  background:linear-gradient(180deg,
+    #fff 0%,
+    rgba(255,255,255,.95) 30%,
+    rgba(var(--fx-rgb),.55) 55%,
+    rgba(var(--fx-rgb),0) 100%)!important;
+}
+/* 菱形の穂先 */
+#shooting-event-root #shooting-arena .shooting-bullet.shot-fx.shot-fx-pierce::after{
+  left:50%!important; top:-5px!important;
+  width:8px!important; height:8px!important;
+  transform:translateX(-50%) rotate(45deg)!important;
+  border-radius:1px!important;
+  background:linear-gradient(135deg, #fff 0 45%, var(--fx-hi) 60%, var(--fx-mid) 100%)!important;
+  box-shadow:0 0 0 .75px var(--fx-deep), 0 0 7px rgba(var(--fx-rgb),.9)!important;
+}
+
+/* 強化弾（chargedEvery） — ひと回り太く長く */
+#shooting-event-root #shooting-arena .shooting-bullet.shot-fx.shot-fx-pierce.charged{
+  width:9px!important;
+  height:46px!important;
+  box-shadow:
+    0 0 0 1px rgba(var(--fx-rgb),.7),
+    0 0 10px rgba(var(--fx-rgb),.95),
+    0 0 22px rgba(var(--fx-rgb),.45)!important;
+}
+#shooting-event-root #shooting-arena .shooting-bullet.shot-fx.shot-fx-pierce.charged::before{
+  width:3px!important; height:84px!important;
+}
+#shooting-event-root #shooting-arena .shooting-bullet.shot-fx.shot-fx-pierce.charged::after{
+  width:11px!important; height:11px!important; top:-7px!important;
+}
+
+/* ハヤテ「月光」中：SPREADをわずかに明るく（transform非依存） */
+#shooting-event-root.hayate-moonlight-active #shooting-arena .shooting-bullet.shot-fx.shot-fx-spread{
+  box-shadow:
+    0 0 0 .5px rgba(var(--fx-rgb),.6),
+    0 0 8px rgba(255,244,157,.95),
+    0 0 18px rgba(255,210,58,.6)!important;
+}

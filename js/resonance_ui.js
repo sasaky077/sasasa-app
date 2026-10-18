@@ -192,34 +192,72 @@ function getLimitBreakCutImage(target){
   return 'images/chara_' + idText + '_cut.webp';
 }
 
+// ============================================================
+// build1559 LIMIT BREAK EFFECT (lbx)
+// 決定 → 白カバー(サーバー確定待ち) → 強化演出 → キャラ詳細へフェード。
+// カバーと演出は同一要素で、class切替を同一フレームで行うため背後は一度も見えない。
+// ============================================================
+var LBX_DURATION_MS = 3900;
+var LBX_FADE_MS = 520;
+var LBX_ELEMENT_ACCENT = {
+  fire:'224,96,63', aqua:'63,143,216', wood:'74,163,92',
+  light:'214,167,44', dark:'138,92,200', neutral:'179,154,106'
+};
+
 function ensureLimitBreakPowerupEffect(){
   var old = document.getElementById('limitbreak-powerup-effect');
-  if(old) return old;
+  if(old && old.classList.contains('lbx')) return old;
+  if(old) old.remove();
+
+  var motes = '';
+  for(var i = 0; i < 18; i++){
+    var x = (Math.round((Math.sin(i * 12.9898) * 43758.5453 % 1 + 1) % 1 * 84) + 8);
+    motes += '<i style="--x:' + x + '%;--d:' + (1.05 + (i % 5) * 0.11).toFixed(2) + 's;--s:' + (3 + (i % 3)) + 'px;--w:' + ((i * 37) % 9 - 4) + 'vw;--t:' + (1050 + (i * 83) % 900) + 'ms"></i>';
+  }
+  var shards = '';
+  for(var k = 0; k < 12; k++){
+    shards += '<i style="--a:' + (k * 30 + (k % 2 ? 9 : -6)) + 'deg;--l:' + (k % 3 === 0 ? 46 : 32) + 'vmin"></i>';
+  }
 
   var el = document.createElement('div');
   el.id = 'limitbreak-powerup-effect';
-  el.className = 'lb-powerup-effect';
+  el.className = 'lb-powerup-effect lbx';
+  el.setAttribute('aria-hidden', 'true');
   el.innerHTML =
-    '<div class="lb-powerup-bg"></div>' +
-    '<div class="lb-powerup-rays"></div>' +
-    '<div class="lb-powerup-ring ring-a"></div>' +
-    '<div class="lb-powerup-ring ring-b"></div>' +
-    '<div class="lb-powerup-image-wrap"><img id="lb-powerup-cut" alt=""></div>' +
-    '<div class="lb-powerup-flash"></div>' +
-    '<div class="lb-powerup-copy">' +
+    '<div class="lbx-bg"></div>' +
+    '<div class="lbx-rays"></div>' +
+    '<div class="lbx-sigil"><i class="s1"></i><i class="s2"></i><i class="s3"></i><i class="s4"></i></div>' +
+    '<div class="lbx-core"></div>' +
+    '<div class="lbx-pillar"></div>' +
+    '<div class="lbx-chara"><img id="lb-powerup-cut" alt="" decoding="async"></div>' +
+    '<div class="lbx-ring r1"></div><div class="lbx-ring r2"></div><div class="lbx-ring r3"></div>' +
+    '<div class="lbx-shards">' + shards + '</div>' +
+    '<div class="lbx-motes">' + motes + '</div>' +
+    '<div class="lbx-flash"></div>' +
+    '<div class="lbx-copy">' +
       '<small>RESONANCE</small>' +
-      '<strong>LIMIT BREAK</strong>' +
-      '<span id="lb-powerup-name"></span>' +
-      '<b id="lb-powerup-level"></b>' +
-    '</div>';
+      '<strong class="lbx-title" aria-label="LIMIT BREAK"></strong>' +
+      '<span class="lbx-name" id="lb-powerup-name"></span>' +
+      '<div class="lbx-level" id="lb-powerup-level"></div>' +
+      '<div class="lbx-pips" id="lbx-pips"></div>' +
+      '<p class="lbx-unlock" id="lbx-unlock"></p>' +
+    '</div>' +
+    '<div class="lbx-skip">TAP TO SKIP</div>';
+
+  var title = el.querySelector('.lbx-title');
+  'LIMIT BREAK'.split('').forEach(function(ch, idx){
+    var span = document.createElement('span');
+    span.textContent = ch === ' ' ? ' ' : ch;
+    span.style.setProperty('--i', idx);
+    title.appendChild(span);
+  });
   document.body.appendChild(el);
   return el;
 }
 
-
 function beginLimitBreakTransitionCover(){
   var el = ensureLimitBreakPowerupEffect();
-  el.classList.remove('show');
+  el.classList.remove('show', 'lbx-out');
   el.classList.add('preparing');
   return el;
 }
@@ -230,44 +268,108 @@ function endLimitBreakTransitionCover(){
   el.classList.remove('preparing');
 }
 
-function playLimitBreakPowerupEffect(target, fromLb, toLb){
-  // The result dialog must wait for this visible sequence, not for image network timing.
+function getLimitBreakUnlockTitles(target, fromLb, toLb){
+  var master = (typeof getResonanceBonusMaster === 'function') ? getResonanceBonusMaster(target) : null;
+  var titles = [];
+  if(!master) return titles;
+  for(var lv = Number(fromLb || 0) + 1; lv <= Number(toLb || 0); lv++){
+    var b = master[lv];
+    if(b && (b.title || b.summary)) titles.push(String(b.title || b.summary));
+  }
+  return titles;
+}
+
+function loadLimitBreakCutImage(img, candidates, timeoutMs){
   return new Promise(function(resolve){
-    var el = ensureLimitBreakPowerupEffect();
-    var img = document.getElementById('lb-powerup-cut');
-    var name = document.getElementById('lb-powerup-name');
-    var level = document.getElementById('lb-powerup-level');
-    if(name) name.textContent = target && target.name ? target.name : '';
-    if(level) level.textContent = 'Lv.' + Number(fromLb || 0) + '  →  Lv.' + Number(toLb || 0);
-    var candidates = [getLimitBreakCutImage(target), target && target.upImg,
-      target && target.img, target && target.panelImg]
-      .filter(function(src,i,arr){return !!src && arr.indexOf(src) === i;});
+    if(!img || !candidates.length){ if(img) img.removeAttribute('src'); resolve(false); return; }
     var index = 0;
-    if(img){
-      img.onload = null;
-      img.onerror = function(){
-        index++;
-        if(index < candidates.length) img.src = candidates[index];
-        else img.removeAttribute('src');
-      };
-      if(candidates.length) img.src = candidates[0];
-      else img.removeAttribute('src');
+    var done = false;
+    var finish = function(ok){ if(done) return; done = true; resolve(ok); };
+    var timer = setTimeout(function(){ finish(false); }, timeoutMs);
+    img.onload = function(){
+      clearTimeout(timer);
+      if(typeof img.decode === 'function') img.decode().catch(function(){}).then(function(){ finish(true); });
+      else finish(true);
+    };
+    img.onerror = function(){
+      index++;
+      if(index < candidates.length) img.src = candidates[index];
+      else { clearTimeout(timer); img.removeAttribute('src'); finish(false); }
+    };
+    img.src = candidates[0];
+  });
+}
+
+function playLimitBreakPowerupEffect(target, fromLb, toLb){
+  // 画像の読込はカバー表示中に最大1.2秒だけ待つ。失敗しても演出は必ず完走する。
+  var el = ensureLimitBreakPowerupEffect();
+  if(!el.classList.contains('preparing')) el.classList.add('preparing');
+
+  var from = Number(fromLb || 0);
+  var to = Number(toLb || 0);
+  var max = (typeof MAX_LIMIT_BREAK !== 'undefined') ? Number(MAX_LIMIT_BREAK) : 4;
+
+  var name = document.getElementById('lb-powerup-name');
+  if(name) name.textContent = target && target.name ? target.name : '';
+  var level = document.getElementById('lb-powerup-level');
+  if(level){
+    level.innerHTML = '<small>共鳴Lv</small><b class="from">' + from + '</b><em aria-hidden="true"></em><b class="to">' + to + '</b>';
+  }
+  var pips = document.getElementById('lbx-pips');
+  if(pips){
+    var html = '';
+    for(var p = 1; p <= max; p++){
+      var cls = p <= from ? 'on' : (p <= to ? 'gain' : '');
+      html += '<i class="' + cls + '" style="--n:' + Math.max(0, p - from - 1) + '"></i>';
     }
-    // Start on the next paint. Image failure cannot skip the title or end the effect.
-    el.classList.remove('show','preparing');
-    void el.offsetWidth;
-    requestAnimationFrame(function(){
-      el.classList.add('show');
-      el.style.display = 'flex';
-      el.style.opacity = '1';
-      el.style.pointerEvents = 'auto';
-      setTimeout(function(){
-        el.classList.remove('show');
-        el.style.removeProperty('display');
-        el.style.removeProperty('opacity');
-        el.style.removeProperty('pointer-events');
+    pips.innerHTML = html;
+  }
+  var unlock = document.getElementById('lbx-unlock');
+  if(unlock){
+    var titles = getLimitBreakUnlockTitles(target, from, to);
+    unlock.textContent = titles.length ? '解放「' + titles.join('」「') + '」' : '';
+    unlock.style.display = titles.length ? '' : 'none';
+  }
+  var elementKey = String(target && target.element || 'neutral').toLowerCase();
+  el.style.setProperty('--lbx-accent', LBX_ELEMENT_ACCENT[elementKey] || LBX_ELEMENT_ACCENT.neutral);
+
+  var img = document.getElementById('lb-powerup-cut');
+  var candidates = [getLimitBreakCutImage(target), target && target.upImg,
+    target && target.img, target && target.panelImg]
+    .filter(function(src,i,arr){return !!src && arr.indexOf(src) === i;});
+
+  return loadLimitBreakCutImage(img, candidates, 1200).then(function(){
+    return new Promise(function(resolve){
+      var finished = false;
+      var timers = [];
+      var finish = function(){
+        if(finished) return;
+        finished = true;
+        timers.forEach(clearTimeout);
+        el.removeEventListener('pointerdown', onSkip);
+        el.classList.remove('show', 'lbx-out', 'preparing');
         resolve(true);
-      }, 3000);
+      };
+      var fadeOut = function(){
+        if(finished || el.classList.contains('lbx-out')) return;
+        el.classList.add('lbx-out');
+        timers.push(setTimeout(finish, LBX_FADE_MS));
+      };
+      var onSkip = function(){
+        // 誤タップ防止：バースト(0.9秒)前はスキップしない。
+        if(performance.now() - startedAt < 900) return;
+        fadeOut();
+      };
+      var startedAt = performance.now();
+
+      // カバー → 演出は同一フレームで切替（間に背後が見えるフレームを作らない）。
+      el.classList.remove('show', 'lbx-out');
+      void el.offsetWidth;
+      el.classList.add('show');
+      el.classList.remove('preparing');
+      el.addEventListener('pointerdown', onSkip);
+
+      timers.push(setTimeout(fadeOut, LBX_DURATION_MS - LBX_FADE_MS));
     });
   });
 }
@@ -362,22 +464,9 @@ function confirmBulkLimitBreak(){
     }
 
     if(completed > 0){
+      // build1559: 背後はキャラ詳細のまま最新化（カバーの裏）→ 演出 → そのまま詳細へ。
+      try { refreshLimitBreakScreens(target); } catch(e){ console.warn('[Resonance] refresh before effect failed', e); }
       await playLimitBreakPowerupEffect(target, fromLb, Number(target.limitBreak || 0));
-
-      // 演出が終わってから背後画面を最新状態へ更新する。
-      renderBox();
-      updateMainUI();
-      if(currentZukanMainTab !== 'box') showDetail(target, false);
-      updateZukanLimitBreakNotice();
-
-      var completeText = document.getElementById('lb-complete-text');
-      if(completeText){
-        completeText.style.whiteSpace = 'pre-line';
-        completeText.textContent = completed + '段階の一括限界突破が完了しました。\n限界突破Lvが ' +
-          Number(target.limitBreak || 0) + ' になりました。';
-      }
-      var completeModal = document.getElementById('limitbreak-complete-modal');
-      if(completeModal) completeModal.classList.add('active');
     } else {
       endLimitBreakTransitionCover();
     }
@@ -555,24 +644,9 @@ function confirmLimitBreak(materialDbId){
     var fromLbForEffect = Number(target.limitBreak || 0);
     var ok = await executeLimitBreak(target, mat, selectedLimitBreakSoulVesselId, { silent:true });
     if(ok){
+      // build1559: 背後はキャラ詳細のまま最新化（カバーの裏）→ 演出 → そのまま詳細へ。
+      try { refreshLimitBreakScreens(target); } catch(e){ console.warn('[Resonance] refresh before effect failed', e); }
       await playLimitBreakPowerupEffect(target, fromLbForEffect, Number(target.limitBreak || 0));
-
-      // 演出終了後に一覧/詳細を更新する。
-      renderBox();
-      updateMainUI();
-      if(currentZukanMainTab !== 'box') showDetail(target, false);
-      updateZukanLimitBreakNotice();
-
-      var completeText = document.getElementById('lb-complete-text');
-      if(completeText){
-        var unlockedBonus = getResonanceBonusMaster(target);
-        var unlocked = unlockedBonus && unlockedBonus[target.limitBreak];
-        completeText.style.whiteSpace = 'pre-line';
-        completeText.textContent = '限界突破Lvが ' + target.limitBreak + ' になりました。' +
-          (unlocked ? '\n「' + unlocked.title + '」を解放しました。' : '');
-      }
-      var completeModal = document.getElementById('limitbreak-complete-modal');
-      if(completeModal) completeModal.classList.add('active');
     } else {
       endLimitBreakTransitionCover();
     }

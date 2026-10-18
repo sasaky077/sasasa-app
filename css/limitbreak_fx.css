@@ -1,0 +1,373 @@
+/* ============================================================
+   build1559 — LIMIT BREAK EFFECT (lbx)
+   決定 → 白カバー → 強化演出 → キャラ詳細へフェード
+   タイムライン（.show 付与からの経過）
+     0–850ms   : 魔法陣が展開し、中心に光が集まる／金色のシルエット
+     ~900ms    : バースト（閃光・衝撃リング・光条・光柱）
+     900ms–    : キャラが色づいて現れ、光の粒が立ち昇る
+     1250ms–   : LIMIT BREAK / 名前 / 共鳴Lv / 解放効果
+     3380ms–   : 0.52秒でフェードし、背後のキャラ詳細へ
+   ルートは最初から不透明（白カバーと同一要素）なので、背後は一度も透けない。
+   ============================================================ */
+
+.lb-powerup-effect.lbx{
+  --lbx-accent: 179,154,106;
+  --lbx-gold: 214,170,82;
+  --lbx-ink: #4c3020;
+  position:fixed!important;
+  inset:0!important;
+  z-index:9999999!important;
+  overflow:hidden;
+  background:#f8f6f1;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+/* 旧 lbPowerupWhole（透明から始まる全体フェード）を無効化 */
+.lb-powerup-effect.lbx.show{
+  display:block!important;
+  opacity:1!important;
+  animation:none!important;
+  pointer-events:auto!important;
+}
+.lb-powerup-effect.lbx.preparing{ display:block!important; }
+.lb-powerup-effect.lbx.lbx-out{
+  opacity:0!important;
+  transition:opacity .52s cubic-bezier(.4,0,.2,1)!important;
+  pointer-events:none!important;
+}
+.lb-powerup-effect.lbx.preparing > :not(.lbx-bg){ opacity:0!important; animation:none!important; }
+.lb-powerup-effect.lbx > *{ position:absolute; pointer-events:none; }
+
+/* ---------- 背景 ---------- */
+.lbx-bg{
+  inset:0;
+  background:
+    radial-gradient(ellipse 70% 48% at 50% 46%, rgba(255,240,200,.75), rgba(255,240,200,0) 70%),
+    radial-gradient(circle at 50% 46%, rgba(var(--lbx-accent),.10), rgba(var(--lbx-accent),0) 58%),
+    linear-gradient(180deg,#fffdf8 0%,#f6f1e6 100%);
+}
+.lb-powerup-effect.lbx.show .lbx-bg{ animation:lbxBg 3.9s ease-out both; }
+@keyframes lbxBg{
+  0%{ filter:brightness(.97); }
+  24%{ filter:brightness(1.05); }
+  100%{ filter:brightness(1); }
+}
+
+/* ---------- 光条（ゆっくり回転） ---------- */
+.lbx-rays{
+  left:50%; top:46%;
+  width:150vmax; height:150vmax;
+  margin:-75vmax 0 0 -75vmax;
+  background:repeating-conic-gradient(from 0deg,
+    rgba(var(--lbx-gold),.16) 0 1.6deg,
+    rgba(var(--lbx-gold),0) 1.6deg 10deg);
+  -webkit-mask:radial-gradient(circle, #000 0 18%, rgba(0,0,0,.6) 34%, transparent 62%);
+          mask:radial-gradient(circle, #000 0 18%, rgba(0,0,0,.6) 34%, transparent 62%);
+  opacity:0;
+}
+.lb-powerup-effect.lbx.show .lbx-rays{ animation:lbxRays 3.9s linear both; }
+@keyframes lbxRays{
+  0%{ opacity:0; transform:rotate(0deg) scale(.6); }
+  22%{ opacity:.55; transform:rotate(6deg) scale(.86); }
+  26%{ opacity:1; transform:rotate(8deg) scale(1.04); }
+  100%{ opacity:.55; transform:rotate(26deg) scale(1.1); }
+}
+
+/* ---------- 魔法陣 ---------- */
+.lbx-sigil{
+  left:50%; top:46%;
+  width:min(78vw,380px); aspect-ratio:1;
+  transform:translate(-50%,-50%) scale(.4);
+  opacity:0;
+}
+.lbx-sigil i{ position:absolute; inset:0; border-radius:50%; }
+.lbx-sigil .s1{
+  border:1px solid rgba(var(--lbx-gold),.75);
+  box-shadow:0 0 0 5px rgba(var(--lbx-gold),.08), inset 0 0 0 5px rgba(var(--lbx-gold),.08);
+  background:repeating-conic-gradient(from 0deg, rgba(var(--lbx-gold),.55) 0 .6deg, transparent .6deg 7.5deg);
+  -webkit-mask:radial-gradient(circle, transparent 0 46.5%, #000 47% 49.5%, transparent 50%);
+          mask:radial-gradient(circle, transparent 0 46.5%, #000 47% 49.5%, transparent 50%);
+}
+.lbx-sigil .s2{
+  inset:9%;
+  border:1.5px dashed rgba(var(--lbx-accent),.8);
+}
+.lbx-sigil .s3{
+  inset:18%;
+  border:1.5px solid rgba(var(--lbx-gold),.6);
+  background:
+    conic-gradient(from 0deg, transparent 0 40deg, rgba(var(--lbx-accent),.32) 60deg, transparent 80deg 160deg, rgba(var(--lbx-accent),.32) 180deg, transparent 200deg 280deg, rgba(var(--lbx-accent),.32) 300deg, transparent 320deg);
+  -webkit-mask:radial-gradient(circle, transparent 0 60%, #000 61%);
+          mask:radial-gradient(circle, transparent 0 60%, #000 61%);
+}
+/* 六芒の線 */
+.lbx-sigil .s4{
+  inset:18%;
+  border-radius:0;
+  background:
+    linear-gradient(0deg, transparent calc(50% - .5px), rgba(var(--lbx-gold),.45) calc(50% - .5px) calc(50% + .5px), transparent calc(50% + .5px)),
+    linear-gradient(60deg, transparent calc(50% - .5px), rgba(var(--lbx-gold),.45) calc(50% - .5px) calc(50% + .5px), transparent calc(50% + .5px)),
+    linear-gradient(120deg, transparent calc(50% - .5px), rgba(var(--lbx-gold),.45) calc(50% - .5px) calc(50% + .5px), transparent calc(50% + .5px));
+  -webkit-mask:radial-gradient(circle, transparent 0 22%, #000 23% 68%, transparent 70%);
+          mask:radial-gradient(circle, transparent 0 22%, #000 23% 68%, transparent 70%);
+}
+.lb-powerup-effect.lbx.show .lbx-sigil{ animation:lbxSigil 3.9s cubic-bezier(.2,.8,.2,1) both; }
+.lb-powerup-effect.lbx.show .lbx-sigil .s1{ animation:lbxSpin 16s linear infinite; }
+.lb-powerup-effect.lbx.show .lbx-sigil .s2{ animation:lbxSpin 11s linear infinite reverse; }
+.lb-powerup-effect.lbx.show .lbx-sigil .s3{ animation:lbxSpin 7s linear infinite; }
+.lb-powerup-effect.lbx.show .lbx-sigil .s4{ animation:lbxSpin 24s linear infinite reverse; }
+@keyframes lbxSigil{
+  0%{ opacity:0; transform:translate(-50%,-50%) scale(.4) rotate(-30deg); }
+  18%{ opacity:1; transform:translate(-50%,-50%) scale(.92) rotate(0deg); }
+  22%{ opacity:1; transform:translate(-50%,-50%) scale(.86); }
+  25%{ opacity:1; transform:translate(-50%,-50%) scale(1.12); }
+  40%{ opacity:.55; transform:translate(-50%,-50%) scale(1.04); }
+  100%{ opacity:.38; transform:translate(-50%,-50%) scale(1.08); }
+}
+@keyframes lbxSpin{ to{ transform:rotate(360deg); } }
+
+/* ---------- 中心に集まる光 ---------- */
+.lbx-core{
+  left:50%; top:46%;
+  width:120px; height:120px; margin:-60px 0 0 -60px;
+  border-radius:50%;
+  background:radial-gradient(circle, #fff 0 18%, rgba(255,238,190,.95) 30%, rgba(var(--lbx-gold),.45) 52%, rgba(var(--lbx-gold),0) 72%);
+  opacity:0;
+}
+.lb-powerup-effect.lbx.show .lbx-core{ animation:lbxCore 1.4s cubic-bezier(.5,0,.3,1) both; }
+@keyframes lbxCore{
+  0%{ opacity:0; transform:scale(.1); }
+  55%{ opacity:1; transform:scale(.55); }
+  62%{ opacity:1; transform:scale(.38); }
+  70%{ opacity:1; transform:scale(2.4); }
+  100%{ opacity:0; transform:scale(5); }
+}
+
+/* ---------- 光柱 ---------- */
+.lbx-pillar{
+  left:50%; top:-10%; bottom:-10%;
+  width:min(46vw,220px); margin-left:calc(min(46vw,220px) / -2);
+  background:linear-gradient(90deg,
+    rgba(255,244,214,0), rgba(255,244,214,.75) 30%, #fff 50%, rgba(255,244,214,.75) 70%, rgba(255,244,214,0));
+  opacity:0;
+  transform:scaleX(0);
+}
+.lb-powerup-effect.lbx.show .lbx-pillar{ animation:lbxPillar 1s .84s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes lbxPillar{
+  0%{ opacity:0; transform:scaleX(.05); }
+  18%{ opacity:1; transform:scaleX(1); }
+  100%{ opacity:0; transform:scaleX(.18); }
+}
+
+/* ---------- キャラクター ---------- */
+.lbx-chara{
+  inset:5% 0 19%;
+  display:flex; align-items:flex-end; justify-content:center;
+}
+.lbx-chara img{
+  width:min(94vw,520px); height:100%;
+  object-fit:contain; object-position:center bottom;
+  opacity:0;
+  transform-origin:50% 70%;
+}
+.lb-powerup-effect.lbx.show .lbx-chara img{
+  animation:
+    lbxCharaSilhouette .9s cubic-bezier(.3,.6,.3,1) both,
+    lbxCharaReveal 3s .88s cubic-bezier(.16,.8,.2,1) forwards;
+}
+/* 金色のシルエットとして浮かび上がる */
+@keyframes lbxCharaSilhouette{
+  0%{ opacity:0; transform:translateY(26px) scale(.94);
+      filter:brightness(0) invert(1) sepia(1) saturate(2.6) hue-rotate(-12deg) brightness(1.04) drop-shadow(0 0 0 rgba(255,200,90,0)); }
+  100%{ opacity:.9; transform:translateY(4px) scale(.985);
+      filter:brightness(0) invert(1) sepia(1) saturate(2.6) hue-rotate(-12deg) brightness(1.04) drop-shadow(0 0 18px rgba(255,200,90,.8)); }
+}
+/* バーストで色が戻る */
+@keyframes lbxCharaReveal{
+  0%{ opacity:1; transform:translateY(0) scale(1.02); filter:brightness(2.1) saturate(.4) drop-shadow(0 0 26px rgba(255,214,120,.95)); }
+  22%{ filter:brightness(1.12) saturate(1) drop-shadow(0 0 16px rgba(255,214,120,.55)); }
+  40%{ filter:brightness(1) saturate(1) drop-shadow(0 10px 22px rgba(80,58,24,.2)); }
+  100%{ opacity:1; transform:translateY(-4px) scale(1.045); filter:brightness(1) saturate(1) drop-shadow(0 10px 22px rgba(80,58,24,.2)); }
+}
+
+/* ---------- 衝撃リング ---------- */
+.lbx-ring{
+  left:50%; top:46%;
+  width:200px; height:200px; margin:-100px 0 0 -100px;
+  border-radius:50%;
+  border:2px solid rgba(var(--lbx-accent),.85);
+  box-shadow:0 0 18px rgba(var(--lbx-accent),.45), inset 0 0 14px rgba(255,236,180,.5);
+  opacity:0;
+}
+.lbx-ring.r2{ border-color:rgba(var(--lbx-gold),.9); border-width:1px; }
+.lbx-ring.r3{ border-color:rgba(255,255,255,.95); border-width:3px; box-shadow:0 0 22px rgba(255,230,160,.8); }
+.lb-powerup-effect.lbx.show .lbx-ring.r1{ animation:lbxRing 1.1s .86s cubic-bezier(.1,.7,.2,1) both; }
+.lb-powerup-effect.lbx.show .lbx-ring.r2{ animation:lbxRing 1.35s .96s cubic-bezier(.1,.7,.2,1) both; }
+.lb-powerup-effect.lbx.show .lbx-ring.r3{ animation:lbxRing .8s .86s cubic-bezier(.1,.7,.2,1) both; }
+@keyframes lbxRing{
+  0%{ opacity:0; transform:scale(.15); }
+  12%{ opacity:1; }
+  100%{ opacity:0; transform:scale(3.4); }
+}
+
+/* ---------- 光条の破片 ---------- */
+.lbx-shards{ left:50%; top:46%; width:0; height:0; }
+.lbx-shards i{
+  position:absolute; left:0; top:-1.5px;
+  width:var(--l); height:3px;
+  border-radius:3px;
+  transform-origin:0 50%;
+  background:linear-gradient(90deg, #fff, rgba(255,236,180,.9) 30%, rgba(var(--lbx-accent),0));
+  opacity:0;
+  transform:rotate(var(--a)) translateX(10px) scaleX(0);
+}
+.lb-powerup-effect.lbx.show .lbx-shards i{ animation:lbxShard .75s .88s cubic-bezier(.15,.75,.25,1) both; }
+@keyframes lbxShard{
+  0%{ opacity:0; transform:rotate(var(--a)) translateX(10px) scaleX(0); }
+  25%{ opacity:1; transform:rotate(var(--a)) translateX(24px) scaleX(1); }
+  100%{ opacity:0; transform:rotate(var(--a)) translateX(90px) scaleX(.4); }
+}
+
+/* ---------- 立ち昇る光の粒 ---------- */
+.lbx-motes{ inset:0; }
+.lbx-motes i{
+  position:absolute;
+  left:var(--x); bottom:12%;
+  width:var(--s); height:var(--s);
+  border-radius:50%;
+  background:#fff;
+  box-shadow:0 0 6px 2px rgba(255,214,120,.85), 0 0 12px 3px rgba(var(--lbx-accent),.35);
+  opacity:0;
+}
+.lb-powerup-effect.lbx.show .lbx-motes i{ animation:lbxMote var(--d) var(--t) ease-out both; }
+@keyframes lbxMote{
+  0%{ opacity:0; transform:translate3d(0,0,0) scale(.6); }
+  20%{ opacity:1; }
+  100%{ opacity:0; transform:translate3d(var(--w),-46vh,0) scale(1); }
+}
+
+/* ---------- 閃光 ---------- */
+.lbx-flash{
+  inset:0;
+  background:radial-gradient(circle at 50% 46%, #fff 0 30%, rgba(255,250,232,.92) 60%, rgba(255,246,220,.85));
+  opacity:0;
+}
+.lb-powerup-effect.lbx.show .lbx-flash{ animation:lbxFlash .6s .86s ease-out both; }
+@keyframes lbxFlash{
+  0%{ opacity:0; }
+  14%{ opacity:.96; }
+  100%{ opacity:0; }
+}
+
+/* ---------- テキスト ---------- */
+.lbx-copy{
+  left:0; right:0; bottom:0;
+  padding:72px 16px max(9vh, calc(env(safe-area-inset-bottom) + 40px));
+  display:flex; flex-direction:column; align-items:center; text-align:center;
+  background:linear-gradient(180deg, rgba(250,247,240,0), rgba(250,247,240,.86) 44%, rgba(250,247,240,.96));
+  color:var(--lbx-ink);
+  opacity:0;
+}
+.lb-powerup-effect.lbx.show .lbx-copy{ animation:lbxFadeIn .4s 1.2s ease-out both; }
+.lbx-copy > *{ opacity:0; }
+.lbx-copy small{
+  font-family:"Cinzel",serif;
+  font-size:10px; letter-spacing:.5em; text-indent:.5em;
+  color:#8a6a3a;
+}
+.lbx-title{
+  margin-top:6px;
+  font-family:"Cinzel",serif; font-weight:700;
+  font-size:clamp(30px,9vw,44px);
+  letter-spacing:.1em; line-height:1;
+  white-space:nowrap;
+}
+.lbx-title span{
+  display:inline-block;
+  background:linear-gradient(180deg,#a8782c 0%,#e9c46a 46%,#8a5f20 100%);
+  -webkit-background-clip:text; background-clip:text;
+  color:transparent;
+  filter:drop-shadow(0 1px 0 rgba(255,255,255,.9));
+  opacity:0;
+}
+.lbx-name{
+  margin-top:10px;
+  font-family:"Noto Serif JP",serif; font-weight:700;
+  font-size:16px; letter-spacing:.24em; text-indent:.24em;
+}
+.lbx-level{
+  margin-top:8px;
+  display:flex; align-items:baseline; gap:10px;
+  font-family:"Cinzel",serif;
+}
+.lbx-level small{ font-family:"Noto Serif JP",serif; font-size:11px; letter-spacing:.14em; color:#7a5c38; }
+.lbx-level b{ font-size:20px; font-weight:700; color:#8f7a5a; }
+.lbx-level b.to{ font-size:30px; color:#9a6418; text-shadow:0 0 12px rgba(var(--lbx-gold),.55); }
+.lbx-level em{
+  width:9px; height:9px; align-self:center;
+  border-top:1.5px solid #a07c45; border-right:1.5px solid #a07c45;
+  transform:rotate(45deg);
+}
+.lbx-pips{ margin-top:8px; display:flex; gap:9px; }
+.lbx-pips i{
+  width:10px; height:10px;
+  transform:rotate(45deg);
+  border:1px solid rgba(160,124,69,.75);
+  background:rgba(255,255,255,.6);
+}
+.lbx-pips i.on{ background:linear-gradient(135deg,#f3d58a,#b8862e); border-color:#a2742a; }
+.lbx-pips i.gain{ background:rgba(255,255,255,.6); }
+.lbx-unlock{
+  margin:10px 0 0;
+  max-width:92%;
+  padding:5px 14px;
+  font-family:"Noto Serif JP",serif;
+  font-size:12px; letter-spacing:.08em; line-height:1.5;
+  color:#6a4a24;
+  border-top:1px solid rgba(160,124,69,.4);
+  border-bottom:1px solid rgba(160,124,69,.4);
+  background:linear-gradient(90deg, rgba(255,246,220,0), rgba(255,246,220,.9) 20% 80%, rgba(255,246,220,0));
+}
+
+.lb-powerup-effect.lbx.show .lbx-copy small{ animation:lbxRise .5s 1.25s ease-out both; }
+.lb-powerup-effect.lbx.show .lbx-title{ opacity:1; }
+.lb-powerup-effect.lbx.show .lbx-title span{ animation:lbxLetter .5s calc(1.32s + var(--i) * 45ms) cubic-bezier(.2,.8,.2,1) both; }
+.lb-powerup-effect.lbx.show .lbx-name{ animation:lbxRise .5s 1.8s ease-out both; }
+.lb-powerup-effect.lbx.show .lbx-level{ animation:lbxRise .5s 1.95s ease-out both; }
+.lb-powerup-effect.lbx.show .lbx-pips{ animation:lbxRise .4s 2.05s ease-out both; }
+.lb-powerup-effect.lbx.show .lbx-pips i.gain{ animation:lbxPip .45s calc(2.2s + var(--n) * 170ms) cubic-bezier(.2,1.4,.4,1) both; }
+.lb-powerup-effect.lbx.show .lbx-unlock{ animation:lbxRise .5s 2.45s ease-out both; }
+
+@keyframes lbxFadeIn{ from{opacity:0} to{opacity:1} }
+@keyframes lbxRise{
+  from{ opacity:0; transform:translateY(8px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+@keyframes lbxLetter{
+  0%{ opacity:0; transform:translateY(12px) scale(1.25); filter:drop-shadow(0 0 10px rgba(255,214,120,.9)) blur(3px); }
+  60%{ opacity:1; filter:drop-shadow(0 0 6px rgba(255,214,120,.8)) blur(0); }
+  100%{ opacity:1; transform:none; filter:drop-shadow(0 1px 0 rgba(255,255,255,.9)); }
+}
+@keyframes lbxPip{
+  0%{ background:rgba(255,255,255,.6); transform:rotate(45deg) scale(1); box-shadow:none; }
+  45%{ background:#fff; transform:rotate(45deg) scale(1.7); box-shadow:0 0 14px 4px rgba(255,210,110,.9); }
+  100%{ background:linear-gradient(135deg,#f3d58a,#b8862e); border-color:#a2742a; transform:rotate(45deg) scale(1); box-shadow:0 0 8px rgba(255,210,110,.6); }
+}
+
+/* ---------- スキップ表示 ---------- */
+.lbx-skip{
+  right:16px; top:max(16px, env(safe-area-inset-top));
+  font-family:"Cinzel",serif; font-size:9px; letter-spacing:.3em;
+  color:rgba(110,84,48,.55);
+  opacity:0;
+}
+.lb-powerup-effect.lbx.show .lbx-skip{ animation:lbxFadeIn .5s 1.4s ease-out both; }
+
+/* 動きを減らす設定：揺れの大きい要素を止め、表示のみ */
+@media (prefers-reduced-motion: reduce){
+  .lb-powerup-effect.lbx.show .lbx-rays,
+  .lb-powerup-effect.lbx.show .lbx-sigil i,
+  .lb-powerup-effect.lbx.show .lbx-motes i,
+  .lb-powerup-effect.lbx.show .lbx-shards i,
+  .lb-powerup-effect.lbx.show .lbx-ring{ animation:none!important; opacity:0!important; }
+}

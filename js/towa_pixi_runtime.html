@@ -197,7 +197,54 @@ function soulHaloTexture(size,type){return canvasTexture(size,(x,s)=>{const colo
 function wispTexture(size,type){return canvasTexture(size,(x,s)=>{x.clearRect(0,0,s,s);const palette=type==='gold'?['rgba(225,145,164,.33)','rgba(156,65,91,.22)']:type==='rainbow'?['rgba(255,201,220,.28)','rgba(161,224,247,.25)','rgba(213,173,248,.25)']:['rgba(232,226,232,.28)','rgba(165,156,167,.18)'];x.save();x.globalCompositeOperation='lighter';for(let i=0;i<4;i++){const cx=s*(.42+i*.055),cy=s*(.65-i*.08),rx=s*(.09-i*.009),ry=s*(.24-i*.025);x.save();x.translate(cx,cy);x.rotate((i-1.5)*.13);x.scale(1,ry/rx);const g=x.createRadialGradient(0,0,0,0,0,rx);g.addColorStop(0,palette[i%palette.length]);g.addColorStop(.45,palette[(i+1)%palette.length]);g.addColorStop(.72,'rgba(255,255,255,.05)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.beginPath();x.arc(0,0,rx,0,Math.PI*2);x.fill();x.restore()}x.restore()})}
 function spr(t,a=1,b='normal'){const s=new Sprite(t);s.anchor.set(.5);s.alpha=a;s.blendMode=b;return s}
 const TEX={};
-for(const k of Object.keys(PALETTES)) TEX[k]=soulTexture(256,k);
+
+// ===== build1560 SOUL FLAME (案A) =====
+// 本体＝丸い根元＋上半分が溶けるしずく型。炎の先端は根元から湧き上がる「炎の舌」が作る。
+const SF_LIGHT=false;
+const SF_SHELL={"silver": ["#e6e1e5", "#8d858d", "#333038"], "gold": ["#dba0ad", "#79283e", "#2d101c"]};
+const SF_RAINBOW=["#e75883", "#f6a55d", "#f5e8a5", "#9fdcb8", "#92c9f5", "#ac97e9", "#df91c7", "#f06b89", "#e75883"];
+const SF_FLAME={"silver": ["rgba(236,226,232,.8)", "rgba(150,132,146,.62)"], "gold": ["rgba(236,150,172,.85)", "rgba(150,40,72,.78)"]};
+const SF_EMBER={"silver": 16050928, "gold": 16762836, "rainbow": 16777215};
+const SF_BASE_Y=74;
+function sfTeardrop(x,cx,tipY,baseY,r,lean){x.beginPath();x.moveTo(cx+lean,tipY);x.bezierCurveTo(cx+lean+r*.18,tipY+(baseY-tipY)*.34,cx+r*1.08,baseY-r*.95,cx+r,baseY);x.arc(cx,baseY,r,0,Math.PI,false);x.bezierCurveTo(cx-r*1.08,baseY-r*.95,cx+lean-r*.22,tipY+(baseY-tipY)*.30,cx+lean,tipY);x.closePath()}
+const SF_CAN_FILTER=(()=>{try{const x=document.createElement('canvas').getContext('2d');x.filter='blur(2px)';return x.filter==='blur(2px)'}catch(_){return false}})();
+function sfSoft(x,blur,fill){if(SF_CAN_FILTER){x.filter=`blur(${blur}px)`;fill();x.filter='none'}else{x.shadowColor='rgba(255,255,255,.6)';x.shadowBlur=blur*2;fill();x.shadowBlur=0}}
+function sfBodyTexture(type){return canvasTexture(256,(x,s)=>{const cx=s*.5,tipY=s*.10,baseY=s*.70,r=s*.205;let fill;if(type==='rainbow'){fill=x.createConicGradient(-Math.PI*.65,cx,baseY*.8);SF_RAINBOW.forEach((v,i)=>fill.addColorStop(i/8,v))}else{const c=SF_SHELL[type];fill=x.createLinearGradient(0,tipY,0,baseY+r);fill.addColorStop(0,c[0]);fill.addColorStop(.42,c[0]);fill.addColorStop(.72,c[1]);fill.addColorStop(1,c[2])}sfSoft(x,4,()=>{x.fillStyle=fill;sfTeardrop(x,cx,tipY,baseY,r,s*.025);x.fill()});x.globalCompositeOperation='source-atop';const core=x.createRadialGradient(cx,baseY-r*.15,0,cx,baseY-r*.15,r*1.15);core.addColorStop(0,'rgba(255,255,255,.9)');core.addColorStop(.22,'rgba(255,255,255,.55)');core.addColorStop(.6,'rgba(255,255,255,.12)');core.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=core;x.fillRect(0,0,s,s);sfSoft(x,3,()=>{const g=x.createLinearGradient(0,s*.25,0,baseY);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(1,'rgba(255,255,255,.55)');x.fillStyle=g;sfTeardrop(x,cx,s*.30,baseY-r*.1,r*.5,-s*.01);x.fill()});x.globalCompositeOperation='destination-out';const tip=x.createLinearGradient(0,tipY,0,s*.52);tip.addColorStop(0,'rgba(0,0,0,1)');tip.addColorStop(.45,'rgba(0,0,0,.7)');tip.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=tip;x.fillRect(0,0,s,s*.54)})}
+function sfTongueTexture(type){const c=document.createElement('canvas');c.width=128;c.height=256;const x=c.getContext('2d');const s=128,h=256,cx=s*.5,tipY=h*.06,baseY=h*.70,r=s*.30;let fill=x.createLinearGradient(0,tipY,0,baseY+r);if(type==='rainbow'){['rgba(255,110,150,0)','rgba(255,120,160,.7)','rgba(255,206,110,.75)','rgba(110,222,190,.75)','rgba(110,190,255,.8)','rgba(190,160,255,.75)'].forEach((v,i,a)=>fill.addColorStop(i/(a.length-1),v))}else{const [inner,outer]=SF_FLAME[type];fill.addColorStop(0,outer.replace(/[0-9.]+\)$/,'0)'));fill.addColorStop(.35,outer);fill.addColorStop(.85,inner);fill.addColorStop(1,outer)}sfSoft(x,6,()=>{x.fillStyle=fill;sfTeardrop(x,cx,tipY,baseY,r,0);x.fill()});return Texture.from(c)}
+const SF_EMBER_TEX=radialTexture(32,[[0,'rgba(255,255,255,1)'],[.35,'rgba(255,255,255,.75)'],[1,'rgba(255,255,255,0)']]);
+function sfRng(seed){let s=seed>>>0||1;return()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296}}
+function sfResetTongue(F,tg,init){const R=F.R;tg.dur=tg.front?(.42+R()*.26):(.55+R()*.38);tg.x0=(R()-.5)*(tg.front?34:80);tg.w=tg.front?(.36+R()*.14):(.48+R()*.26);tg.h=tg.front?(.34+R()*.14):(.46+R()*.22);tg.a=tg.front?(.34+R()*.18):(.68*(.8+R()*.3));tg.rise=tg.front?(60+R()*35):(95+R()*70);if(!init)tg.p-=1}
+// 待機中の炎。o._wisps（＝炎の舌）・o._shell（本体）・o._white（芯）・o._embers を毎フレーム更新。
+function sfUpdateOrb(o,t,dt){
+ const F=o._flame;if(!F)return;
+ const type=o._type;
+ const sway=Math.sin(t*1.6*F.spd+F.ph1)*.6+Math.sin(t*2.7*F.spd+F.ph2)*.4;
+ const flick=Math.sin(t*8.3+F.ph3)*.5+Math.sin(t*12.9+F.ph4)*.3+Math.sin(t*5.1+F.ph1)*.2;
+ const surge=Math.max(0,Math.sin(t*2.2*F.spd+F.ph2*1.3));
+ const gate=Math.max(0,Math.min(1,o._shell.alpha));
+ o._shell.skew.x=sway*.11+flick*.012;
+ o._shell.scale.set(.96*(1-flick*.018),1.04*(1+flick*.03+surge*.05));
+ o._white.scale.set(.46*(1+flick*.05),.38*(1+flick*.07));
+ const silverA=type==='silver'?.84:1;
+ o._wisps.forEach(w=>{
+   const tg=w._tg;tg.p+=dt/tg.dur;if(tg.p>=1)sfResetTongue(F,tg,false);
+   const p=tg.p;
+   w.x=tg.x0*(1-p*.75)+sway*18*p*p;
+   w.y=SF_BASE_Y-(tg.front?52:40)-p*tg.rise;
+   w.scale.set(tg.w*(1-p*.68)*(1+flick*.04),tg.h*(.70+p*.45));
+   w.rotation=sway*.22*p-tg.x0*.004*(1-p);
+   w.alpha=tg.a*(tg.front?1:silverA)*Math.pow(Math.sin(Math.PI*Math.min(1,p)),1.15)*(1+flick*.08)*gate;
+ });
+ F.embers.forEach(em=>{
+   em.p+=dt/em.dur;if(em.p>=1){em.p-=1;em.x0=(F.R()-.5)*50;em.dur=1.3+F.R()*1.1}
+   const p=em.p,e=em.e,on=type==='silver'?em.k===0:true;
+   e.tint=SF_EMBER[type];
+   e.x=em.x0*.6+Math.sin(p*7+em.ph)*em.amp+sway*20*p;e.y=-20-p*130;
+   e.scale.set((.32+(1-p)*.28)*(type==='silver'?.8:1));
+   e.alpha=on?(p<.12?p/.12:(1-p)*1.1)*gate:0;
+ });
+}
+for(const k of Object.keys(PALETTES)) TEX[k]=sfBodyTexture(k);
 const GLOW={
  silver:bleedAuraTexture(320,'silver'),
  gold:bleedAuraTexture(320,'gold'),
@@ -209,28 +256,29 @@ const HALO={
  rainbow:soulHaloTexture(280,'rainbow')
 };
 const WISP={
- silver:wispTexture(260,'silver'),
- gold:wispTexture(260,'gold'),
- rainbow:wispTexture(260,'rainbow')
+ silver:sfTongueTexture('silver'),
+ gold:sfTongueTexture('gold'),
+ rainbow:sfTongueTexture('rainbow')
 };
 function makeOrb(type,index){
  const c=new Container();
  const glow=spr(GLOW[type],type==='rainbow'?.94:.82,'add');glow.scale.set(1.42,1.66);glow.rotation=(index%5)*.12-.18;c.addChild(glow);
  const glow2=spr(GLOW[type],type==='rainbow'?.38:.27,'screen');glow2.scale.set(1.80,2.12);glow2.rotation=-.36-(index%4)*.09;c.addChild(glow2);
+ // build1560: 炎の舌（奥7枚・手前3枚）。o._wisps として既存の出現/昇格処理とも互換。
+ const F={R:sfRng(9173+index*7919),embers:[]};
+ F.spd=.9+F.R()*.25;F.ph1=F.R()*10;F.ph2=F.R()*10;F.ph3=F.R()*10;F.ph4=F.R()*10;
  const wisps=[];
- for(let j=0;j<3;j++){
-   const w=spr(WISP[type],type==='rainbow'?.34:.25,'add');
-   w.scale.set(.80+j*.10,1.02+j*.14);
-   w.position.set((j-1)*10,-12-j*6);
-   w.rotation=(j-1)*.18;
-   c.addChild(w);wisps.push(w);
- }
  const r1=spr(HALO[type],type==='rainbow'?.42:.28,'screen');r1.scale.set(1.12,1.26);r1.rotation=(index%3-.8)*.18;c.addChild(r1);
- const shell=spr(TEX[type],.98,'normal');shell.scale.set(.94,1.08);shell.position.y=3;c.addChild(shell);
- const tint=spr(rainbowTexture(256),type==='rainbow'?.15:0,'screen');tint.scale.set(.58,.72);tint.position.y=9;c.addChild(tint);
- const white=spr(radialTexture(256,[[0,'rgba(255,255,255,.95)'],[.18,'rgba(255,255,255,.54)'],[.50,'rgba(255,255,255,.10)'],[1,'rgba(255,255,255,0)']]),.26,'add');white.scale.set(.24,.34);white.position.set(-5,18);c.addChild(white);
+ function addTongue(front,k,n){const w=new Sprite(WISP[type]);w.anchor.set(.5,.86);w.blendMode=front?'add':(SF_LIGHT?'normal':'add');w.alpha=0;w._tg={front,p:k/n+F.R()*.08};sfResetTongue(F,w._tg,true);c.addChild(w);wisps.push(w)}
+ for(let k=0;k<7;k++)addTongue(false,k,7);
+ const shell=new Sprite(TEX[type]);shell.anchor.set(.5,.78);shell.alpha=.98;shell.scale.set(.96,1.04);shell.position.y=SF_BASE_Y;c.addChild(shell);
+ const tint=spr(rainbowTexture(256),type==='rainbow'?.15:0,'screen');tint.scale.set(.5,.62);tint.position.y=20;c.addChild(tint);
+ for(let k=0;k<3;k++)addTongue(true,k,3);
+ const white=spr(radialTexture(256,[[0,'rgba(255,255,255,.95)'],[.18,'rgba(255,255,255,.54)'],[.50,'rgba(255,255,255,.10)'],[1,'rgba(255,255,255,0)']]),.26,'add');white.scale.set(.46,.38);white.position.set(0,SF_BASE_Y-24);c.addChild(white);
+ const embers=new Container();c.addChild(embers);
+ for(let k=0;k<3;k++){const e=spr(SF_EMBER_TEX,0,SF_LIGHT?'normal':'add');embers.addChild(e);F.embers.push({e,k,p:F.R(),dur:1.3+F.R()*1.1,x0:(F.R()-.5)*50,amp:4+F.R()*8,ph:F.R()*6})}
  const fx=new Container();c.addChild(fx);
- c._glow=glow;c._glow2=glow2;c._wisps=wisps;c._ring=r1;c._shell=shell;c._rainbowTint=tint;c._white=white;c._fx=fx;c._type=type;c._index=index;c.scale.set(.46);
+ c._flame=F;c._glow=glow;c._glow2=glow2;c._wisps=wisps;c._ring=r1;c._shell=shell;c._rainbowTint=tint;c._white=white;c._fx=fx;c._type=type;c._index=index;c.scale.set(.46);
  return c;
 }
 function centralCore(){
@@ -668,8 +716,10 @@ window.addEventListener('message',function(event){
 });
 notifyParent('ZERAPHIA_PIXI_GACHA_READY');
 
+let sfLast=performance.now()/1000;
 app.ticker.add(()=>{
  const t=performance.now()/1000;
+ const sfDt=Math.min(.05,Math.max(0,t-sfLast));sfLast=t;
  if(altar){
    altar._slow.rotation+=.00010;
    altar._inner.rotation-=.000055;
@@ -690,28 +740,7 @@ app.ticker.add(()=>{
    o._glow.alpha=(o._type==='rainbow'?.90:.76)+breath*.10;
    o._glow2.alpha=(o._type==='rainbow'?.38:.26)+breath2*.075;
 
-   o._shell.rotation=Math.sin(t*.72+i*.71)*.035;
-   o._shell.scale.set(.94*(1+Math.sin(t*.92+i*.43)*.025),1.08*(1+Math.sin(t*.79+i*.37)*.040));
-
-   // Each wisp is intentionally exaggerated because the parent soul is scaled to ~30% in ring mode.
-   // This turns the aura into visible, irregular tongues of light instead of a static circular glow.
-   o._wisps.forEach((w,j)=>{
-     const ph=i*.83+j*1.91;
-     const s1=Math.sin(t*(1.22+j*.19)+ph);
-     const s2=Math.sin(t*(1.91+j*.13)+ph*.71);
-     const s3=Math.sin(t*(2.63+j*.17)+ph*1.17);
-     const baseX=(j-1)*15;
-     const baseY=-18-j*12;
-     w.x=baseX+s1*(15+j*3)+s2*(6+j*2);
-     w.y=baseY+s2*(9+j*2)-Math.max(0,s3)*(8+j*3);
-     w.rotation=(j-1)*.18+s1*.27+s3*.08;
-     const baseAlpha=o._type==='rainbow'?(.38+j*.045):(.30+j*.040);
-     w.alpha=Math.max(.13,Math.min(.62,baseAlpha+s2*.12+s3*.075));
-     w.scale.set(
-       (.82+j*.11)*(1+s3*.11),
-       (1.08+j*.17)*(1+s1*.18+s2*.06)
-     );
-   });
+   sfUpdateOrb(o,t,sfDt);
  })
 });
 layoutBtns.forEach(b=>b.addEventListener('click',()=>{if(!busy)applyLayout(b.dataset.layout,true)}));

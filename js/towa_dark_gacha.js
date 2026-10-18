@@ -30,7 +30,7 @@
     frame.setAttribute('aria-hidden','true');
     frame.style.pointerEvents='none';
     // Exact clone of existing normal summon runtime, but with isolated Towa palette.
-    frame.src='js/towa_pixi_runtime.html?v=1543-rainbow';
+    frame.src='js/towa_pixi_runtime.html?v=1560-soul-flame';
     const skip=document.createElement('button');
     skip.type='button';skip.className='towa-pixi-skip';skip.textContent='演出をスキップ';
     skip.setAttribute('aria-label','演出をスキップして確定済みの結果へ');
