@@ -24875,19 +24875,32 @@
   // - boss stages:   audio/bgm_battle_boss.mp3
   // - global BGM setting (zeraphia_bgm_enabled) is shared with HOME/TITLE.
   // ============================================================
-  const SHOOTING_BGM_NORMAL_ID = 'bgm-battle-normal';
-  const SHOOTING_BGM_BOSS_ID = 'bgm-battle-boss';
-  const SHOOTING_BGM_BOSS_02_ID = 'bgm-battle-boss-02';
+  // build1621: バトルBGMの整理。ステージ種別ごとの候補からバトル開始時に1曲ランダムで選ぶ。
+  //  ボス：boss_01〜03 / 雑魚：normal_01〜03 / 残響の塔1〜14F：tower_01〜02 / 15F：tower_03 固定
+  const SHOOTING_BGM_POOLS = Object.freeze({
+    boss:    Object.freeze(['bgm-battle-boss-01', 'bgm-battle-boss-02', 'bgm-battle-boss-03']),
+    normal:  Object.freeze(['bgm-battle-normal-01', 'bgm-battle-normal-02', 'bgm-battle-normal-03']),
+    tower:   Object.freeze(['bgm-battle-tower-01', 'bgm-battle-tower-02']),
+    tower15: Object.freeze(['bgm-battle-tower-03']),
+  });
   let shootingBattleBgmSessionActive = false;
   let shootingBattleBgmFadeRaf = 0;
+  let shootingBattleBgmPick = { key: '', id: '' };
 
+  function getShootingBattleBgmPoolKey() {
+    if (isResonanceTowerStage()) return Number(selectedStage && selectedStage.stageNo) === 15 ? 'tower15' : 'tower';
+    if (selectedStage && selectedStage.type === 'normal') return 'normal';
+    return 'boss';
+  }
+
+  // 同じバトル中は同じ曲（一時停止→再開でも変わらない）。バトル終了でリセットし、次のバトルで選び直す。
   function getShootingBattleBgmTrack() {
-    const id = isNoahPatternStage()
-      ? SHOOTING_BGM_BOSS_02_ID
-      : (selectedStage && selectedStage.type === 'normal'
-        ? SHOOTING_BGM_NORMAL_ID
-        : SHOOTING_BGM_BOSS_ID);
-    return document.getElementById(id);
+    const key = getShootingBattleBgmPoolKey();
+    if (shootingBattleBgmPick.key !== key || !shootingBattleBgmPick.id) {
+      const pool = SHOOTING_BGM_POOLS[key] || SHOOTING_BGM_POOLS.boss;
+      shootingBattleBgmPick = { key, id: pool[Math.floor(Math.random() * pool.length)] };
+    }
+    return document.getElementById(shootingBattleBgmPick.id);
   }
 
   function getShootingBattleBgmVolume() {
@@ -24908,11 +24921,8 @@
   }
 
   function getAllShootingBattleBgmTracks() {
-    return [
-      document.getElementById(SHOOTING_BGM_NORMAL_ID),
-      document.getElementById(SHOOTING_BGM_BOSS_ID),
-      document.getElementById(SHOOTING_BGM_BOSS_02_ID)
-    ].filter(Boolean);
+    return Object.values(SHOOTING_BGM_POOLS).flat()
+      .map(id => document.getElementById(id)).filter(Boolean);
   }
 
   function cancelShootingBattleBgmFade() {
@@ -25019,6 +25029,7 @@
 
   function fadeOutShootingBattleBgm(durationMs, resetPosition) {
     shootingBattleBgmSessionActive = false;
+    shootingBattleBgmPick = { key: '', id: '' }; // 次のバトルで選び直す
     cancelShootingBattleBgmFade();
 
     const playing = getAllShootingBattleBgmTracks().filter(audio => !audio.paused);
