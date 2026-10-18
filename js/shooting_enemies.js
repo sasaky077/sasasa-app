@@ -49,6 +49,7 @@
     // build1570: DAILY RAID 日替わりボス
     RAID_SHIEN: 'shooting_raid_shien',
     RAID_CAMILLA: 'shooting_raid_camilla',
+    CAMILLA_SPIDERLING: 'camilla_spiderling',
     BULLET_HELL_TEST: 'shooting_bullet_hell_test',
     NOAH: 'shooting_noah',
     OVERSEER_AMBUSH: 'shooting_overseer_ambush',
@@ -485,9 +486,20 @@
       fireRate: 860,
       bulletDamage: 205,
 
-      // build1578: 3体目。サキエルと同じ「美しい弾幕」（螺旋＋ウェーブ）。専用ギミックは今後追加。
-      behavior: 'beautiful_boss_v1',
+      // build1592: 蜘蛛の巣と吸血。浮遊弾・巣レーザー・捕縛罠・吸血子蜘蛛・火の属性バリア。
+      // 攻撃はすべて shooting_core.js updateCamillaMechanics。
+      behavior: 'camilla_v1',
+      camillaMechanics: true,
       uiScale: 1.15,
+    }),
+
+    // カミラが召喚する子蜘蛛（吸血）。通常敵として撃ち落とせる。
+    [SHOOTING_ENEMY_ID.CAMILLA_SPIDERLING]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.CAMILLA_SPIDERLING, kind: 'normal', implemented: true,
+      name: '血吸いの子蜘蛛', displayName: 'CAMILLA / SPIDERLING',
+      element: 'neutral', attackType: 'contact', image: 'images/remnant_spider_small.webp',
+      hp: 300, contactDamage: 0, moveSpeed: 72, scoreValue: 150,
+      behavior: 'camilla_spiderling_v1', uiScale: 0.72,
     }),
 
 

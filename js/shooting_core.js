@@ -1172,7 +1172,7 @@
   }
 
   function getResponsiveBossDisplayScale() {
-    if (BOSS && BOSS.shienMechanics) {
+    if (BOSS && (BOSS.shienMechanics || BOSS.camillaMechanics)) {
       // 味方の立ち絵(最大122px x ベース1.2倍)と同じ高さを基準にする。
       return 1.16 * getResponsiveCombatScaleProfile().player;
     }
@@ -4142,6 +4142,7 @@
   function resetState() {
     // build1586: 前の戦闘のシエン出血表示（HPゲージの斜線）を持ち越さない
     try { setShienBleedGauge(false); } catch (_) {}
+    try { clearCamillaBind(); } catch (_) {}
     // 再挑戦・試遊切替でも前の常闇背景を持ち越さない。
     document.getElementById(ROOT_ID)?.classList.remove('towa-dark-background');
     document.getElementById('shooting-towa-darkness')?.remove();
@@ -8187,6 +8188,8 @@
 
   function getStageWeaknessBarrierElements() {
     if (!selectedStage) return [];
+    // build1592: カミラは火の属性バリアを纏う（レイドのステージは全ボス共通なのでキャッシュしない）。
+    if (BOSS && BOSS.camillaMechanics) return ['fire'];
     if (weaknessBarrierElementCacheStage === selectedStage) {
       return weaknessBarrierElementCache;
     }
@@ -12317,6 +12320,8 @@
 
   function hasBossAdds() {
     const cfg = getBossAddsConfig();
+    // build1592: カミラは子蜘蛛（通常敵として扱い、自機弾で撃ち落とせる）を召喚する。
+    if (isCamillaBattle()) return true;
     return !!(cfg && Array.isArray(cfg.enemyIds) && cfg.enemyIds.length);
   }
 
@@ -12712,6 +12717,7 @@
     if (isNormalBattle() || !hasBossAdds() || state.finishing || state.ended) return;
 
     const cfg = getBossAddsConfig();
+    if (!cfg) return;
     const total = Math.max(0, Number(cfg.totalEnemies || 0));
     const maxActive = Math.max(1, Number(cfg.maxActive || 1));
     const interval = Math.max(500, Number(cfg.spawnIntervalMs || 7000));
@@ -13717,6 +13723,7 @@
 
     state.normalEnemies.forEach(enemy => {
       if (!enemy || !enemy.el) return;
+      if (enemy.camSpider) { updateCamillaSpider(enemy, dt, now); return; }
       const def = enemy.def || {};
 
       // build1157: CH01-02の貫通チュートリアルは3体を縦一列に固定する。
@@ -17029,6 +17036,8 @@
 
     // build1583: シエンは5つの斬撃/突進技のみ。共通WARNINGとviolence通常弾を発射しない。
     if (isShienBattle()) return;
+    // build1592: カミラも専用の攻撃のみ（updateCamillaMechanics）。共通WARNING・通常弾は撃たない。
+    if (isCamillaBattle()) return;
     // WARNING攻撃は必ず先に処理する。レイド軽量化で危険攻撃を消さない。
     if (handleBossDangerAttack(now)) return;
 
@@ -17521,6 +17530,11 @@
     applyBarrierKnock(dt, minY, maxY);
     state.player.x = clamp(state.player.x, dynamicMinX, Math.max(dynamicMinX, dynamicMaxX));
     state.player.y = clamp(state.player.y, minY, maxY);
+    // build1592: カミラの罠に捕縛されている間はその場から動けない。
+    if (state.camillaBindPos && Number(now) < Number(state.camillaBindUntil || 0)) {
+      state.player.x = state.camillaBindPos.x;
+      state.player.y = state.camillaBindPos.y;
+    }
 
     // カウントダウン中は本当にプレイヤー移動だけ。
     // ボスAIをここで止めることで、START時に周期運動の位相がリセットされても
@@ -17589,6 +17603,8 @@
         state.boss.y = Math.max(64, h * 0.17 + ch04BossOffsetY);
       } else if (isShienBattle()) {
         updateShienBossMovement(now, dt, w, h, boss);
+      } else if (isCamillaBattle()) {
+        updateCamillaBossMovement(now, dt, w, h);
       } else if (BOSS && BOSS.behavior === 'violence_v1') {
         // build1214 CH02-04 イリシュ:
         // 「唐突に突っ込む」のをやめ、必ず約1秒の溜めを見せてから突進する。
@@ -18523,6 +18539,7 @@
     if (!boss || !bossRect || !state.boss || state.boss.hp <= 0) return;
     // シエンの接触は専用の一閃/三巴の軌跡判定のみ。通常移動では接触ダメージなし。
     if (isShienBattle()) return;
+    if (isCamillaBattle()) return;
     // CH02-4 イリシュ(violence_v1)専用: 突進の当たり判定は画像の透明余白ぶんを
     // 大きく差し引いて、画面幅の半分以上は必ず回避ゾーンとして残す。
     // 他ボスの当たり判定(14, 18)は一切変更しない。
@@ -21052,6 +21069,394 @@
     }
   }
 
+  // ============================================================
+  // build1592 RAID カミラ専用: 蜘蛛の巣と吸血
+  //  ・赤い弾幕の浮遊   : ゆっくり蛇行して漂う赤い弾を円状に放つ
+  //  ・蜘蛛の巣レーザー : 本体を中心に放射8本＋同心3重の巣を予告→照射
+  //  ・足元の罠（捕縛） : 自機の周りに巣の罠。踏むと一定時間その場から動けない
+  //  ・子蜘蛛の召喚     : 自機に群がって吸血（HPを吸われ、カミラが回復）。撃ち落とせる／交代で振り払える
+  //  ・火の属性バリア   : 既存の属性バリア規則（弱点の水属性のみ有効）
+  // 時間はBOSSモーション時計で数えるので、停止ULT中は進まない。
+  // ============================================================
+  const CAMILLA_TIER = Object.freeze({
+    1:{ ringMs:1500, ringN:8,  ringSpeed:58, webMs:9000, webWarn:1100, trapMs:7500, trapN:2, bindMs:1400, spiderMs:13000, spiderN:3 },
+    2:{ ringMs:1250, ringN:10, ringSpeed:64, webMs:8000, webWarn:1000, trapMs:6500, trapN:2, bindMs:1600, spiderMs:11000, spiderN:3 },
+    3:{ ringMs:1000, ringN:12, ringSpeed:70, webMs:7000, webWarn:850,  trapMs:5500, trapN:3, bindMs:1800, spiderMs:9000,  spiderN:4 },
+  });
+  const CAMILLA_WEB_ACTIVE_MS = 600;
+  const CAMILLA_WEB_DAMAGE = 260;
+  const CAMILLA_WEB_HIT_R = 8;
+  const CAMILLA_TRAP_R = 30;
+  const CAMILLA_TRAP_ARM_MS = 700;
+  const CAMILLA_TRAP_LIFE_MS = 7000;
+  const CAMILLA_SPIDER_SPEED = 95;
+  const CAMILLA_DRAIN_RATE = 0.02;
+  const CAMILLA_HEAL_PER_TICK = 250;
+  const CAMILLA_LATCH_MAX_MS = 8000;
+
+  function isCamillaBattle() {
+    return !!(state && BOSS && BOSS.camillaMechanics && !isNormalBattle());
+  }
+
+  function getCamillaTier() {
+    return clamp(Math.round(Number(state?.boss?.phase || 1)), 1, 3);
+  }
+
+  function ensureCamillaStyle() {
+    if (document.getElementById('shooting-camilla-style-v1')) return;
+    const st = document.createElement('style');
+    st.id = 'shooting-camilla-style-v1';
+    st.textContent = `
+      #shooting-event-root #shooting-boss.camilla-unit-boss{width:74px !important;height:126px !important;object-fit:contain !important}
+      @media(min-width:700px){#shooting-event-root #shooting-boss.camilla-unit-boss{width:82px !important;height:140px !important}}
+      .camilla-web-line{position:absolute;left:0;top:0;height:3px;margin-top:-1.5px;transform-origin:0 50%;z-index:9;pointer-events:none;
+        background:repeating-linear-gradient(90deg,rgba(255,215,222,1) 0 9px,transparent 9px 15px);opacity:.85;
+        box-shadow:0 0 6px rgba(255,60,90,.9);
+        animation:camillaWebWarn .26s ease-in-out infinite alternate}
+      .camilla-web-line.active{height:${CAMILLA_WEB_HIT_R*2}px;margin-top:-${CAMILLA_WEB_HIT_R}px;border-radius:99px;opacity:1;animation:camillaWebFire .6s ease-out forwards;
+        background:linear-gradient(180deg,rgba(255,40,70,0),rgba(255,70,95,.85) 30%,#fff1f3 50%,rgba(255,70,95,.85) 70%,rgba(255,40,70,0));
+        box-shadow:0 0 10px rgba(255,40,70,.85)}
+      @keyframes camillaWebWarn{from{opacity:.55}to{opacity:1}}
+      @keyframes camillaWebFire{0%{opacity:1;filter:brightness(1.6)}70%{opacity:1}100%{opacity:0}}
+      .camilla-trap{position:absolute;left:0;top:0;width:${CAMILLA_TRAP_R*2+16}px;height:${CAMILLA_TRAP_R*2+16}px;
+        margin:-${CAMILLA_TRAP_R+8}px 0 0 -${CAMILLA_TRAP_R+8}px;border-radius:50%;z-index:7;pointer-events:none;opacity:.35;
+        background:
+          repeating-conic-gradient(from 0deg,rgba(255,90,110,.85) 0deg 2deg,transparent 2deg 45deg),
+          repeating-radial-gradient(circle,transparent 0 9px,rgba(255,90,110,.75) 9px 10.5px);
+        -webkit-mask:radial-gradient(circle,#000 62%,transparent 72%);mask:radial-gradient(circle,#000 62%,transparent 72%);
+        transition:opacity .25s ease}
+      .camilla-trap.armed{opacity:.92;animation:camillaTrapPulse .7s ease-in-out infinite alternate}
+      @keyframes camillaTrapPulse{from{filter:drop-shadow(0 0 2px rgba(255,40,70,.4))}to{filter:drop-shadow(0 0 8px rgba(255,40,70,.9))}}
+      #shooting-event-root #shooting-player.camilla-bound img{filter:drop-shadow(0 0 6px rgba(255,60,90,.95)) saturate(.7)}
+      .camilla-bind-web{position:absolute;left:50%;top:50%;width:92px;height:92px;margin:-46px 0 0 -46px;z-index:4;pointer-events:none;border-radius:50%;
+        background:repeating-conic-gradient(from 10deg,rgba(255,235,240,.95) 0deg 1.6deg,transparent 1.6deg 30deg),
+          repeating-radial-gradient(circle,transparent 0 10px,rgba(255,235,240,.9) 10px 11.2px);
+        -webkit-mask:radial-gradient(circle,#000 58%,transparent 70%);mask:radial-gradient(circle,#000 58%,transparent 70%);
+        animation:camillaBindIn .2s ease-out both}
+      @keyframes camillaBindIn{from{transform:scale(1.6);opacity:0}to{transform:scale(1);opacity:1}}
+      .camilla-bind-tag{position:absolute;left:50%;top:-14px;transform:translateX(-50%);z-index:5;white-space:nowrap;
+        font-size:10px;font-weight:700;color:#fff;background:rgba(150,10,40,.88);border:1px solid rgba(255,180,190,.7);
+        border-radius:8px;padding:1px 7px;pointer-events:none}
+      .camilla-drain-orb{position:absolute;left:0;top:0;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;z-index:14;pointer-events:none;
+        background:radial-gradient(circle at 35% 35%,#ff9aa8,#d4102c 60%,#7a0010);box-shadow:0 0 8px rgba(230,20,50,.85)}
+      .camilla-heal-num{position:absolute;left:0;top:0;z-index:15;pointer-events:none;white-space:nowrap;
+        font:700 13px/1 'Cinzel',serif;color:#ff5a74;text-shadow:0 0 4px #fff,0 0 8px rgba(255,255,255,.9);
+        animation:camillaHealNum .8s ease-out forwards}
+      @keyframes camillaHealNum{from{opacity:1;translate:0 0}to{opacity:0;translate:0 -24px}}
+      .shooting-mini-enemy.camilla-spider-latched{filter:drop-shadow(0 0 5px rgba(230,20,50,.9))}
+    `;
+    document.head.appendChild(st);
+  }
+
+  function ensureCamillaState() {
+    if (!isCamillaBattle()) return null;
+    if (state.camilla) return state.camilla;
+    ensureCamillaStyle();
+    const arena = document.getElementById('shooting-arena');
+    if (arena) arena.querySelectorAll('.camilla-web-line,.camilla-trap,.camilla-drain-orb,.camilla-heal-num').forEach(el => el.remove());
+    const bossEl = document.getElementById(BOSS_ID);
+    if (bossEl) {
+      bossEl.classList.add('camilla-unit-boss');
+      bossEl.style.setProperty('--enemy-scale', String(getResponsiveBossDisplayScale()));
+    }
+    clearCamillaBind();
+    state.camilla = {
+      ringIndex:0, nextRingAt:1500, nextWebAt:5200, nextTrapAt:3600, nextSpiderAt:8000,
+      web:null, traps:[], activeId:state.activeCharacterId,
+    };
+    return state.camilla;
+  }
+
+  function camillaElapsed(now) {
+    return getBossMotionElapsedSeconds(now) * 1000;
+  }
+
+  function updateCamillaBossMovement(now, dt, w, h) {
+    ensureCamillaState();
+    const t = getBossMotionElapsedSeconds(now);
+    // 巣の上を漂うように、ゆっくり大きな∞字。
+    state.boss.x = clamp(w * .5 + Math.sin(t * .42) * w * .26, 40, w - 40);
+    state.boss.y = Math.max(66, h * .17) + Math.sin(t * .84) * Math.min(18, h * .025);
+  }
+
+  // ---- 赤い弾幕の浮遊 ----
+  function fireCamillaBloodRing(cm, cfg) {
+    if ((state.enemyBullets || []).length > 110) return;
+    const ox = Number(state.boss.x), oy = Number(state.boss.y) + 18;
+    const offset = cm.ringIndex * 0.21;
+    cm.ringIndex++;
+    for (let i = 0; i < cfg.ringN; i++) {
+      const a = offset + i * Math.PI * 2 / cfg.ringN;
+      const sp = cfg.ringSpeed * (0.88 + Math.random() * 0.24);
+      const pr = makeProjectile('shooting-enemy-bullet shooting-mini-enemy-bullet camilla-blood-bullet',
+        ox, oy, Math.cos(a) * sp, Math.sin(a) * sp, 110);
+      if (!pr) continue;
+      pr.noahNormalWave = true;
+      pr.noahWaveFreq = 2.0 + Math.random() * 1.2;
+      pr.noahWaveAmp = 10 + Math.random() * 8;
+      pr.noahWavePhase = Math.random() * Math.PI * 2;
+      pr.noahWavePerpX = -Math.sin(a);
+      pr.noahWavePerpY = Math.cos(a);
+      appendEnemyProjectile(pr);
+    }
+  }
+
+  // ---- 蜘蛛の巣レーザー ----
+  function createCamillaWeb(cm, cfg, elapsed, w, h, arena) {
+    const cx = Number(state.boss.x), cy = Number(state.boss.y);
+    const spokes = 8, rot = Math.random() * Math.PI / 4;
+    const L = Math.hypot(w, h);
+    const radii = [h * .22, h * .42, h * .64];
+    const segs = [];
+    const pt = (k, r) => ({ x: cx + Math.cos(rot + k * Math.PI * 2 / spokes) * r, y: cy + Math.sin(rot + k * Math.PI * 2 / spokes) * r });
+    for (let k = 0; k < spokes; k++) segs.push([{ x:cx, y:cy }, pt(k, L)]);
+    for (const r of radii) for (let k = 0; k < spokes; k++) segs.push([pt(k, r), pt(k + 1, r)]);
+    const els = [];
+    if (arena) {
+      for (const [a, b] of segs) {
+        const el = document.createElement('div');
+        el.className = 'camilla-web-line';
+        positionShienLine(el, a.x, a.y, b.x, b.y);
+        arena.appendChild(el); els.push(el);
+      }
+    }
+    cm.web = { startAt: elapsed, warn: cfg.webWarn, segs, els, fired:false, hit:false };
+  }
+
+  function updateCamillaWeb(now, cm, elapsed) {
+    const web = cm.web;
+    if (!web) return;
+    const age = elapsed - web.startAt;
+    if (age >= web.warn && !web.fired) {
+      web.fired = true;
+      web.els.forEach(el => el.classList.add('active'));
+      try { shakeShienStrike(); } catch (_) {}
+    }
+    if (web.fired && !web.hit && age < web.warn + CAMILLA_WEB_ACTIVE_MS * .7 &&
+        !state.koTransition && now >= Number(state.player.invulnUntil || 0)) {
+      const pos = { x:Number(state.player.x), y:Number(state.player.y) };
+      if (web.segs.some(([a, b]) => shienSegmentHit(pos, a, b, CAMILLA_WEB_HIT_R))) {
+        const member = getActiveMember();
+        if (member && member.hp > 0) {
+          const before = member.hp;
+          damagePlayer(now, CAMILLA_WEB_DAMAGE, 'raw', normalizeCombatElement(state.boss.element || BOSS.element), 'boss-web');
+          if (member.hp < before) { web.hit = true; triggerPlayerHitScreenShake(); }
+        }
+      }
+    }
+    if (age >= web.warn + CAMILLA_WEB_ACTIVE_MS) {
+      web.els.forEach(el => el.remove());
+      cm.web = null;
+    }
+  }
+
+  // ---- 足元の罠（捕縛） ----
+  function placeCamillaTraps(cm, cfg, elapsed, w, h, arena) {
+    const px = Number(state.player.x), py = Number(state.player.y);
+    for (let i = 0; i < cfg.trapN; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const d = i === 0 ? Math.random() * 36 : 60 + Math.random() * 60;
+      const x = clamp(px + Math.cos(a) * d, 34, w - 34);
+      const y = clamp(py + Math.sin(a) * d, h * .35, h - 30);
+      const el = document.createElement('div');
+      el.className = 'camilla-trap';
+      el.style.translate = `${x.toFixed(1)}px ${y.toFixed(1)}px`;
+      if (arena) arena.appendChild(el);
+      cm.traps.push({ x, y, born: elapsed, el, armed:false });
+    }
+  }
+
+  function clearCamillaBind() {
+    if (state) { state.camillaBindUntil = 0; state.camillaBindPos = null; }
+    const p = document.getElementById(PLAYER_ID);
+    if (p) {
+      p.classList.remove('camilla-bound');
+      p.querySelectorAll('.camilla-bind-web,.camilla-bind-tag').forEach(el => el.remove());
+    }
+  }
+
+  function updateCamillaTraps(now, cm, cfg, elapsed) {
+    const px = Number(state.player.x), py = Number(state.player.y);
+    const bound = now < Number(state.camillaBindUntil || 0);
+    cm.traps = cm.traps.filter(t => {
+      const age = elapsed - t.born;
+      if (age >= CAMILLA_TRAP_LIFE_MS) { t.el.remove(); return false; }
+      if (!t.armed && age >= CAMILLA_TRAP_ARM_MS) { t.armed = true; t.el.classList.add('armed'); }
+      if (t.armed && !bound && !state.koTransition && Math.hypot(px - t.x, py - t.y) <= CAMILLA_TRAP_R) {
+        state.camillaBindUntil = now + cfg.bindMs;
+        state.camillaBindPos = { x:px, y:py };
+        const p = document.getElementById(PLAYER_ID);
+        if (p && !p.querySelector('.camilla-bind-web')) {
+          p.classList.add('camilla-bound');
+          const web = document.createElement('i'); web.className = 'camilla-bind-web'; p.appendChild(web);
+          const tag = document.createElement('span'); tag.className = 'camilla-bind-tag'; tag.textContent = '捕縛'; p.appendChild(tag);
+        }
+        t.el.remove();
+        return false;
+      }
+      return true;
+    });
+    if (!bound && state.camillaBindPos && now >= Number(state.camillaBindUntil || 0)) clearCamillaBind();
+  }
+
+  // ---- 子蜘蛛（吸血） ----
+  function spawnCamillaSpiders(cm, cfg, now) {
+    const def = getShootingEnemy('camilla_spiderling');
+    if (!def) return;
+    for (let i = 0; i < cfg.spiderN; i++) {
+      const enemy = createNormalEnemy(def, now);
+      if (!enemy) continue;
+      enemy.camSpider = true;
+      enemy.camState = 'crawl';
+      enemy.x = Number(state.boss.x) + (i - (cfg.spiderN - 1) / 2) * 24;
+      enemy.y = Number(state.boss.y) + 26;
+      enemy.camSpeed = CAMILLA_SPIDER_SPEED * (0.85 + Math.random() * 0.3);
+      enemy.camSeed = Math.random() * Math.PI * 2;
+      // 正面（自機の射線）を避け、左右の壁際を回り込んでから群がる。
+      const side = (i % 2 === 0 ? -1 : 1) * (Math.random() < .5 ? 1 : -1);
+      enemy.camWaypoint = { x: side < 0 ? 26 + Math.random() * 30 : (getArenaInputRect()?.width || 390) - 26 - Math.random() * 30 };
+      positionUnit(enemy.el, enemy.x, enemy.y);
+      state.normalEnemies.push(enemy);
+      state.normalSpawned = Number(state.normalSpawned || 0) + 1;
+    }
+  }
+
+  // updateNormalEnemies から呼ばれる。子蜘蛛の移動・張り付きだけを担当（吸血は本体側で一括処理）。
+  function updateCamillaSpider(enemy, dt, now) {
+    const stunned = now < Math.max(Number(state.normalEnemyStunUntil || 0), Number(state.fullEnemyStopUntil || 0), Number(state.angeEnemyFreezeUntil || 0));
+    const px = Number(state.player.x), py = Number(state.player.y);
+    if (enemy.camState === 'latched') {
+      enemy.x = px + enemy.latchDx;
+      enemy.y = py + enemy.latchDy;
+    } else if (!stunned && now >= Number(enemy.camRecoverAt || 0)) {
+      // 回り込み中は壁際（自機と同じ高さの少し上）を目指す
+      let tx = px, ty = py;
+      if (enemy.camWaypoint) {
+        tx = enemy.camWaypoint.x; ty = py - 40;
+        if (Math.abs(enemy.x - tx) < 18 && Math.abs(enemy.y - ty) < 40) enemy.camWaypoint = null;
+      }
+      const dx = tx - enemy.x, dy = ty - enemy.y;
+      const d = Math.hypot(dx, dy) || 1;
+      const dp = Math.hypot(px - enemy.x, py - enemy.y);
+      const sp = enemy.camSpeed * dt;
+      const wob = Math.sin(now / 160 + enemy.camSeed) * 0.6;
+      enemy.x += (dx / d) * sp + (-dy / d) * wob;
+      enemy.y += (dy / d) * sp + (dx / d) * wob;
+      if (dp < 24) {
+        const n = state.normalEnemies.filter(e => e && e.camState === 'latched').length;
+        // 足元〜脇腹に張り付く（自機の正面弾には当たりにくい位置）。交代で振り払える。
+        const a = Math.PI / 2 + (n % 5 - 2) * 0.55;
+        enemy.camState = 'latched';
+        enemy.latchDx = Math.cos(a) * 26;
+        enemy.latchDy = 10 + Math.sin(a) * 14;
+        enemy.latchedAt = now;
+        enemy.nextDrainAt = now + 1000;
+        enemy.el.classList.add('camilla-spider-latched');
+      }
+    }
+    positionUnit(enemy.el, enemy.x, enemy.y);
+    positionMiniEnemyHp(enemy);
+  }
+
+  // 吸い終えた子蜘蛛は静かに離れて消える（撃破扱いにはしない）
+  function removeCamillaSpider(e) {
+    e.hp = 0;
+    [e.el, e.hpEl, e.elementEl, e.weaknessBarrierEl].forEach(node => node && node.remove());
+    e.el = null; e.hpEl = null; e.elementEl = null; e.weaknessBarrierEl = null;
+  }
+
+  function spawnCamillaDrainFx(fromX, fromY, arena, healAmount) {
+    if (!arena || !state?.boss) return;
+    const orb = document.createElement('i');
+    orb.className = 'camilla-drain-orb';
+    arena.appendChild(orb);
+    const tx = Number(state.boss.x), ty = Number(state.boss.y);
+    if (typeof orb.animate === 'function') {
+      orb.animate([
+        { transform:`translate3d(${fromX}px,${fromY}px,0)`, opacity:1 },
+        { transform:`translate3d(${(fromX + tx) / 2 + 30}px,${(fromY + ty) / 2}px,0)`, opacity:1, offset:.5 },
+        { transform:`translate3d(${tx}px,${ty}px,0) scale(.5)`, opacity:0 }
+      ], { duration:520, easing:'ease-in' });
+    }
+    setTimeout(() => orb.remove(), 540);
+    if (healAmount > 0) {
+      const num = document.createElement('span');
+      num.className = 'camilla-heal-num';
+      num.textContent = `+${healAmount}`;
+      num.style.transform = `translate3d(${tx + 18}px,${ty - 34}px,0)`;
+      arena.appendChild(num);
+      setTimeout(() => num.remove(), 820);
+    }
+  }
+
+  function updateCamillaDrain(now, cm, arena) {
+    const member = getActiveMember();
+    const spiders = state.normalEnemies.filter(e => e && e.camSpider && e.hp > 0 && e.el);
+    // 交代すると張り付いた子蜘蛛を振り払える（少しの間ひるむ）。
+    if (cm.activeId !== state.activeCharacterId) {
+      cm.activeId = state.activeCharacterId;
+      spiders.forEach(e => {
+        if (e.camState !== 'latched') return;
+        e.camState = 'crawl';
+        e.camRecoverAt = now + 1200;
+        e.x += e.latchDx * 2.4; e.y += e.latchDy * 2.4 - 20;
+        e.el.classList.remove('camilla-spider-latched');
+      });
+      return;
+    }
+    if (!member || member.hp <= 0 || state.koTransition) return;
+    let drained = 0, healed = 0;
+    for (const e of spiders) {
+      if (e.camState !== 'latched') continue;
+      if (now - Number(e.latchedAt || now) >= CAMILLA_LATCH_MAX_MS) { removeCamillaSpider(e); continue; }
+      if (now < Number(e.nextDrainAt || 0)) continue;
+      e.nextDrainAt = now + 1000;
+      const dmg = Math.min(member.hp, Math.max(1, Math.floor(Number(member.hpMax || 0) * CAMILLA_DRAIN_RATE)));
+      member.hp = Math.max(0, member.hp - dmg);
+      drained += dmg;
+      const cap = Number(state.boss.hpMax || state.boss.hp);
+      const raidCap = isRaidStage() && Number(state.raidInitialHp) > 0 ? Number(state.raidInitialHp) : cap;
+      const before = Number(state.boss.hp);
+      const after = Math.min(cap, raidCap, before + CAMILLA_HEAL_PER_TICK);
+      if (after > before) { state.boss.hp = after; healed += Math.round(after - before); }
+      spawnCamillaDrainFx(e.x, e.y, arena, 0);
+    }
+    state.normalEnemies = state.normalEnemies.filter(e => e && (e.el || !e.camSpider));
+    if (drained > 0) {
+      showDamageNumber(state.player.x, state.player.y, drained, 'player', false, '');
+      if (healed > 0) spawnCamillaDrainFx(Number(state.player.x), Number(state.player.y), arena, healed);
+      renderHud();
+      if (member.hp <= 0) beginPlayerDefeat();
+    }
+  }
+
+  function updateCamillaMechanics(now) {
+    if (!isCamillaBattle()) return;
+    const cm = ensureCamillaState();
+    if (!cm) return;
+    const { arena, w, h } = getShienArenaSize();
+    const halted = state.ended || state.finishing || state.koTransition || state.phaseTransition ||
+      !(state.boss && state.boss.hp > 0) || now < getBossLockUntil(now);
+    if (state.phaseTransition || state.ended || state.finishing || !(state.boss && state.boss.hp > 0)) {
+      if (cm.web) { cm.web.els.forEach(el => el.remove()); cm.web = null; }
+    }
+    if (halted) return;
+    const elapsed = camillaElapsed(now);
+    const cfg = CAMILLA_TIER[getCamillaTier()] || CAMILLA_TIER[1];
+
+    if (elapsed >= cm.nextRingAt) { cm.nextRingAt = elapsed + cfg.ringMs; fireCamillaBloodRing(cm, cfg); }
+    if (!cm.web && elapsed >= cm.nextWebAt) { cm.nextWebAt = elapsed + cfg.webMs; createCamillaWeb(cm, cfg, elapsed, w, h, arena); }
+    if (elapsed >= cm.nextTrapAt) { cm.nextTrapAt = elapsed + cfg.trapMs; placeCamillaTraps(cm, cfg, elapsed, w, h, arena); }
+    if (elapsed >= cm.nextSpiderAt) {
+      cm.nextSpiderAt = elapsed + cfg.spiderMs;
+      const alive = state.normalEnemies.filter(e => e && e.camSpider && e.hp > 0).length;
+      if (alive < 8) spawnCamillaSpiders(cm, cfg, now);
+    }
+    updateCamillaWeb(now, cm, elapsed);
+    updateCamillaTraps(now, cm, cfg, elapsed);
+    updateCamillaDrain(now, cm, arena);
+  }
+
   function gameLoop(ts) {
     if (!state || !state.running || state.ended || state.finishing || state.countdown) return;
     syncEnemyMotionFreezeClocks(ts);
@@ -21232,6 +21637,8 @@
     }
     // build1571 RAID シエン: 霞化 / 回転斬り / 出血
     updateShienMechanics(ts);
+    // build1592 RAID カミラ: 浮遊弾 / 巣レーザー / 捕縛罠 / 吸血子蜘蛛
+    updateCamillaMechanics(ts);
 
     // エルテナULTは通常の敵移動が終わった後に吸引を適用。
     // これによりAIの横移動よりブラックホールの集敵を優先する。
