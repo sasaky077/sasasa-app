@@ -32058,7 +32058,13 @@
 
     // RAID BATTLE
     if (stage.raid || stageId.includes('raid')) {
-      return ['RAID BATTLE', getShootingStageInfoBossName(stage)];
+      // build1602: 日替わりボス（シエン/カミラ等）はステージ既定のSIGMAではなく、実際に戦う敵の名前を出す
+      let raidBossName = '';
+      try {
+        const raidEnemy = stage === selectedStage ? getShootingEnemy(selectedEnemyId) : null;
+        raidBossName = String((raidEnemy && raidEnemy.name) || '').trim();
+      } catch (_) {}
+      return ['RAID BATTLE', raidBossName || getShootingStageInfoBossName(stage)];
     }
 
     // ノアはステージ名のみ。旧 STRESS TEST 表記は出さない。

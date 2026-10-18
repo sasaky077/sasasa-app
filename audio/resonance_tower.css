@@ -1,0 +1,1172 @@
+/* ============================================================
+   build1342 — ECHO TOWER full-screen fixed composition.
+   Existing home HUD and bottom navigation remain above this scene.
+   ============================================================ */
+html body #screen-resonance-tower.resonance-tower-screen{
+  position:fixed !important;
+  inset:0 !important;
+  display:none !important;
+  width:100% !important;
+  max-width:430px !important;
+  height:100dvh !important;
+  min-height:100dvh !important;
+  max-height:100dvh !important;
+  padding:0 !important;
+  margin:0 auto !important;
+  box-sizing:border-box !important;
+  overflow:hidden !important;
+  overscroll-behavior:none !important;
+  touch-action:manipulation;
+  z-index:40 !important;
+  isolation:isolate;
+  background:#b8b4ad url('../images/zankyou_bg.webp') center center / cover no-repeat !important;
+  color:#f7eee0;
+  font-family:'Noto Serif JP','Yu Mincho',serif;
+}
+html body #screen-resonance-tower.resonance-tower-screen.active{display:block !important;}
+#screen-resonance-tower .resonance-tower-haze{
+  position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:linear-gradient(90deg,rgba(18,21,26,.53) 0%,rgba(26,26,28,.31) 46%,rgba(26,23,26,.10) 77%),
+    linear-gradient(to bottom,rgba(38,34,36,.17) 0%,transparent 33%,transparent 74%,rgba(24,22,23,.26) 100%);
+}
+#screen-resonance-tower .resonance-tower-composition{
+  position:absolute;z-index:2;
+  top:calc(env(safe-area-inset-top) + 83px);
+  left:clamp(11px,3.5vw,19px);right:clamp(11px,3.5vw,19px);
+  bottom:calc(76px + env(safe-area-inset-bottom) + 7px);
+  min-height:0;overflow:hidden;
+}
+#screen-resonance-tower .resonance-tower-back{
+  position:absolute;z-index:4;left:0;top:0;
+  appearance:none;border:0;border-radius:0;padding:4px 0;
+  color:#fff4db;background:transparent;box-shadow:none;
+  text-shadow:0 1px 5px #28242b,0 0 9px rgba(30,30,30,.8);
+  font:500 clamp(12px,1.7dvh,15px)/1.4 'Noto Serif JP',serif;letter-spacing:.1em;
+  cursor:pointer;
+}
+#screen-resonance-tower .resonance-tower-intro{
+  position:absolute;top:10.5%;left:0;width:56%;z-index:2;
+  text-shadow:0 2px 6px rgba(12,12,16,.7),0 0 12px rgba(12,12,16,.6);
+}
+#screen-resonance-tower .resonance-tower-intro h1{
+  margin:0;color:#fff3dc;
+  font:500 clamp(25px,7.5vw,40px)/1.28 'Noto Serif JP',serif;
+  letter-spacing:.12em;white-space:nowrap;
+}
+#screen-resonance-tower .resonance-tower-english{
+  color:#fff0d2;font:600 clamp(6.5px,1.6vw,9.5px)/1.5 'Cinzel',serif;
+  letter-spacing:.02em;white-space:nowrap;margin-top:8px;
+}
+#screen-resonance-tower .resonance-tower-ornament{display:none !important;}
+#screen-resonance-tower .resonance-tower-intro p{
+  margin:9px 0 0;color:#fff4e1;
+  font:500 clamp(9px,2.5vw,13px)/1.9 'Noto Serif JP',serif;
+  letter-spacing:.07em;
+}
+#screen-resonance-tower .resonance-tower-actions{
+  position:absolute;z-index:3;right:1%;top:10px;
+  display:flex;gap:clamp(7px,2vw,13px);
+}
+#screen-resonance-tower .resonance-tower-menu{
+  appearance:none;display:flex;flex-direction:column;align-items:center;gap:5px;
+  padding:0;border:0;box-shadow:none;background:transparent;
+  color:#302d2b;font:600 clamp(8px,2.2vw,11px)/1.3 'Noto Serif JP',serif;
+  white-space:nowrap;cursor:pointer;text-shadow:0 1px 4px rgba(255,255,255,.9);
+}
+#screen-resonance-tower .resonance-tower-menu-diamond{
+  width:clamp(29px,9vw,40px);height:clamp(29px,9vw,40px);
+  display:flex;align-items:center;justify-content:center;
+  transform:rotate(45deg) scale(.78);
+  background:linear-gradient(145deg,rgba(80,68,58,.92),rgba(150,126,94,.76));
+  border:1px solid #bfa882;
+  box-shadow:0 0 0 2px rgba(60,49,40,.38),0 2px 5px rgba(0,0,0,.33);
+}
+#screen-resonance-tower .resonance-tower-menu-diamond svg{
+  width:72%;height:72%;transform:rotate(-45deg);color:#fff3d2;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.5));
+}
+#screen-resonance-tower .resonance-tower-floor-list{
+  position:absolute;z-index:2;right:0;top:17%;bottom:8%;
+  width:46%;display:grid;
+  grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1.15fr) repeat(9,minmax(0,1fr));
+  gap:clamp(2px,.52dvh,5px);min-height:0;overflow:hidden;
+}
+#screen-resonance-tower .resonance-tower-floor{
+  --floor-bg-position:50%;
+  position:relative;min-height:0;height:100%;width:100%;padding:0 6px;
+  display:flex;align-items:center;justify-content:flex-start;
+  gap:clamp(4px,1.4vw,9px);
+  border:1px solid rgba(225,220,206,.55);border-radius:0;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 2px 4px rgba(13,12,12,.26);
+  background:linear-gradient(90deg,rgba(30,28,30,.79) 0%,rgba(44,40,46,.62) 57%,rgba(19,19,25,.26) 100%),
+      url('../images/zankyou_bg.webp') var(--floor-bg-position) 50% / 220% auto no-repeat;
+  color:#f6eee6;cursor:pointer;text-align:left;overflow:hidden;
+  font-family:'Noto Serif JP',serif;text-shadow:0 1px 3px rgba(0,0,0,.8);
+}
+#screen-resonance-tower .resonance-tower-floor.is-trial{
+  border-color:rgba(208,158,148,.77);
+  background:linear-gradient(90deg,rgba(78,39,41,.91),rgba(122,53,55,.65) 65%,rgba(73,38,46,.48)),
+    url('../images/zankyou_bg.webp') var(--floor-bg-position) 50% / 220% auto no-repeat;
+}
+#screen-resonance-tower .resonance-tower-floor.is-final{
+  background:linear-gradient(90deg,rgba(254,250,234,.97) 0%,rgba(248,235,206,.87) 61%,rgba(250,243,229,.3) 100%),
+    url('../images/zankyou_bg.webp') 50% 35% / 220% auto no-repeat;
+  border-color:#fff1cc;color:#382b21;text-shadow:0 1px 2px rgba(255,255,255,.85);
+}
+#screen-resonance-tower .resonance-tower-floor.is-selected{
+  outline:1px solid rgba(255,236,188,.85);outline-offset:-3px;
+  box-shadow:0 0 0 1px rgba(243,222,165,.58),0 0 12px rgba(252,229,178,.46);
+}
+#screen-resonance-tower .resonance-tower-floor:focus-visible{outline:2px solid #fff0bf;outline-offset:-3px;}
+#screen-resonance-tower .resonance-tower-floor-no{
+  font:400 clamp(17px,5vw,26px)/1 'Cinzel',serif;
+  letter-spacing:-.035em;color:inherit;flex:0 0 36%;
+  white-space:nowrap;
+}
+#screen-resonance-tower .resonance-tower-floor-copy{
+  min-width:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;
+  gap:clamp(0px,.3dvh,4px);
+}
+#screen-resonance-tower .resonance-tower-floor-name{
+  font:500 clamp(9px,2.8vw,13px)/1.2 'Noto Serif JP',serif;letter-spacing:.08em;white-space:nowrap;
+}
+#screen-resonance-tower .resonance-tower-floor-label{
+  font:400 clamp(8px,2.35vw,11px)/1.2 'Noto Serif JP',serif;letter-spacing:.06em;white-space:nowrap;
+}
+#screen-resonance-tower .resonance-tower-floor:not(.is-final) .resonance-tower-floor-label{
+  color:#ffffff;
+}
+#screen-resonance-tower .resonance-tower-floor.is-final .resonance-tower-floor-label{
+  color:#7b5a3d;
+}
+#screen-resonance-tower .resonance-tower-floor.is-trial .resonance-tower-floor-label{
+  border-radius:0;background:rgba(178,74,75,.63);padding:1px 5px;
+}
+#screen-resonance-tower .resonance-tower-trial-tag{display:none;}
+#screen-resonance-tower .resonance-tower-oath{
+  position:absolute;z-index:2;left:0;bottom:calc(2% + 18px);width:51%;
+  box-sizing:border-box;padding:clamp(7px,1.4dvh,14px) 6px 6px;
+  border:1px solid rgba(255,246,219,.55);
+  background:linear-gradient(180deg,rgba(24,22,25,.52),rgba(27,24,26,.70));
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.12),0 4px 13px rgba(0,0,0,.3);
+  color:#fff0d5;text-align:center;text-shadow:0 1px 4px rgba(0,0,0,.8);
+}
+#screen-resonance-tower .resonance-tower-oath-star{
+  color:#edd8a3;font:clamp(17px,4.7vw,29px)/1 'Noto Serif JP',serif;margin-bottom:3px;
+}
+#screen-resonance-tower .resonance-tower-oath h2{
+  margin:0;color:#ffe8bd;
+  font:500 clamp(11px,3.5vw,17px)/1.5 'Noto Serif JP',serif;
+  letter-spacing:.11em;
+}
+#screen-resonance-tower .resonance-tower-oath h2 span{font-size:.75em;font-weight:400;}
+#screen-resonance-tower .resonance-tower-oath p{
+  margin:7px 0 9px;
+  font:400 clamp(8px,2.25vw,11px)/1.7 'Noto Serif JP',serif;
+  letter-spacing:.025em;
+}
+#screen-resonance-tower .resonance-tower-week-note{
+  display:flex;justify-content:center;align-items:center;gap:5px;
+  min-height:26px;border:1px solid rgba(236,217,177,.45);
+  background:rgba(35,31,31,.6);font-size:clamp(8px,2vw,10px);white-space:nowrap;
+}
+#screen-resonance-tower .resonance-tower-week-note small{
+  font-size:clamp(6px,1.6vw,8px);color:#eee0c7;
+}
+#screen-resonance-tower .resonance-tower-availability{
+  position:absolute;bottom:0;left:2px;z-index:3;color:rgba(253,246,230,.72);
+  font:8px/1 'Noto Serif JP',serif;letter-spacing:.02em;
+}
+#screen-resonance-tower .resonance-tower-panel-layer[hidden]{display:none !important;}
+#screen-resonance-tower .resonance-tower-panel-layer{
+  position:absolute;z-index:210;inset:0;display:flex;align-items:center;justify-content:center;
+  padding:20px;box-sizing:border-box;
+}
+#screen-resonance-tower .resonance-tower-panel-shade{
+  position:absolute;inset:0;background:rgba(19,18,22,.64);
+}
+#screen-resonance-tower .resonance-tower-panel{
+  position:relative;z-index:1;width:min(100%,340px);box-sizing:border-box;
+  padding:28px 22px 18px;
+  background:linear-gradient(150deg,rgba(249,246,234,.97),rgba(223,211,190,.97));
+  border:1px solid #d7bd84;box-shadow:0 7px 30px rgba(0,0,0,.35);
+  color:#433a30;text-align:center;
+}
+#screen-resonance-tower .resonance-tower-panel-close{
+  position:absolute;right:9px;top:4px;border:none;box-shadow:none;background:transparent;
+  font-size:25px;color:#796448;cursor:pointer;
+}
+#screen-resonance-tower .resonance-tower-panel-kicker{
+  font:9px/1.5 'Cinzel',serif;letter-spacing:.18em;color:#947858;
+}
+#screen-resonance-tower .resonance-tower-panel h2{font:500 20px/1.5 'Noto Serif JP',serif;margin:10px 0;}
+#screen-resonance-tower .resonance-tower-panel p{font:12px/1.9 'Noto Serif JP',serif;}
+#screen-resonance-tower .resonance-tower-panel-foot{color:#86745a;font-size:10px!important;}
+#screen-resonance-tower .resonance-tower-panel-dismiss{
+  padding:9px 30px;border:1px solid #ad9770;background:rgba(254,252,243,.8);
+  color:#5a4c3a;font:12px 'Noto Serif JP',serif;cursor:pointer;
+}
+@media(max-width:365px){
+  #screen-resonance-tower .resonance-tower-intro h1{font-size:clamp(22px,7.25vw,27px);}
+  #screen-resonance-tower .resonance-tower-floor-no{flex-basis:34%;font-size:clamp(16px,5vw,19px);}
+  #screen-resonance-tower .resonance-tower-floor-name{font-size:9px;}
+  #screen-resonance-tower .resonance-tower-floor-label{font-size:8px;}
+  #screen-resonance-tower .resonance-tower-oath{width:52%;}
+}
+@media(max-height:730px){
+  #screen-resonance-tower .resonance-tower-composition{
+    top:calc(env(safe-area-inset-top) + 78px);
+    bottom:calc(70px + env(safe-area-inset-bottom) + 4px);
+  }
+  #screen-resonance-tower .resonance-tower-floor-list{top:17%;bottom:8%;}
+  #screen-resonance-tower .resonance-tower-intro{top:9%;}
+  #screen-resonance-tower .resonance-tower-intro p{margin-top:5px;}
+  #screen-resonance-tower .resonance-tower-oath{bottom:calc(2% + 18px);padding-top:6px;}
+  #screen-resonance-tower .resonance-tower-oath p{margin:4px 0 6px;}
+}
+@media(max-height:580px){
+  #screen-resonance-tower .resonance-tower-composition{top:calc(env(safe-area-inset-top) + 66px);bottom:calc(62px + env(safe-area-inset-bottom) + 2px);}
+  #screen-resonance-tower .resonance-tower-floor-list{top:17%;bottom:8%;}
+  #screen-resonance-tower .resonance-tower-intro{top:8%;}
+  #screen-resonance-tower .resonance-tower-ornament{height:6px;margin-top:0;}
+  #screen-resonance-tower .resonance-tower-intro p{line-height:1.45;}
+  #screen-resonance-tower .resonance-tower-oath-star{display:none;}
+  #screen-resonance-tower .resonance-tower-oath p{line-height:1.4;}
+  #screen-resonance-tower .resonance-tower-week-note{min-height:19px;}
+}
+
+/* build1417 — Tower progression, sealed party and launch */
+#screen-resonance-tower .resonance-tower-floor.is-locked{opacity:.51;filter:grayscale(.55);}
+#screen-resonance-tower .resonance-tower-floor.is-cleared{
+  border-color:rgba(180,221,187,.82);
+  box-shadow:inset 0 0 0 1px rgba(201,245,198,.12);
+}
+#screen-resonance-tower .resonance-tower-floor.is-cleared .resonance-tower-floor-label{color:#d3efcf;}
+#screen-resonance-tower .resonance-tower-floor.is-current{border-color:rgba(255,228,164,.97);}
+#screen-resonance-tower .resonance-tower-panel p{white-space:pre-line;}
+#screen-resonance-tower .resonance-tower-panel-start{
+  margin:4px auto 13px;padding:12px 22px;display:block;
+  border:1px solid #a48750;background:linear-gradient(#b7985f,#927341);
+  font:600 13px 'Noto Serif JP',serif;letter-spacing:.06em;color:#fff9e9;cursor:pointer;
+}
+#screen-resonance-tower .resonance-tower-panel-start[hidden]{display:none!important;}
+#screen-resonance-tower .resonance-tower-availability{font-size:clamp(8px,2.2vw,11px);max-width:52%;line-height:1.4;}
+#shooting-event-root[data-shooting-stage^="shooting_tower_"] .shooting-character-option-wrap.tower-sealed-character{
+  opacity:.32;filter:grayscale(1);position:relative;
+}
+#shooting-event-root[data-shooting-stage^="shooting_tower_"] .shooting-character-option-wrap.tower-sealed-character::after{
+  content:'封印';position:absolute;top:5px;right:5px;z-index:3;
+  color:#fcf0ce;background:rgba(42,37,51,.9);padding:2px 5px;
+  font:500 10px 'Noto Serif JP',serif;pointer-events:none;
+}
+
+/* build1418 — 出撃前の封印対象確認。編成画面の外側に表示するため body 直下に配置。 */
+.resonance-tower-seal-confirm{
+  position:fixed;inset:0;z-index:300100;
+  display:flex;align-items:center;justify-content:center;
+  box-sizing:border-box;padding:20px 14px;
+  background:rgba(25,22,28,.77);
+  -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+  font-family:'Noto Serif JP',serif;
+}
+.resonance-tower-seal-card{
+  width:min(100%,360px);max-height:min(92dvh,660px);
+  overflow-y:auto;box-sizing:border-box;
+  border:1px solid #d7ba7a;border-radius:0;
+  background:linear-gradient(157deg,#fffdf7,#f4ecdc 63%,#eee3cd);
+  box-shadow:0 16px 44px rgba(0,0,0,.42),inset 0 0 0 2px rgba(255,255,255,.75);
+  padding:23px clamp(14px,5vw,24px) 18px;text-align:center;color:#54402e;
+}
+.resonance-tower-seal-kicker{
+  color:#a18450;font:600 9px/1.5 'Cinzel',serif;letter-spacing:.19em;
+}
+.resonance-tower-seal-card h2{
+  font:600 20px/1.5 'Noto Serif JP',serif;letter-spacing:.09em;margin:7px 0;
+}
+.resonance-tower-seal-floor{
+  font:500 12px/1.5 'Noto Serif JP',serif;color:#856c4b;letter-spacing:.08em;
+}
+.resonance-tower-seal-card p{
+  font:400 12px/1.75 'Noto Serif JP',serif;margin:13px auto 12px;
+}
+.resonance-tower-seal-card strong{font-weight:700;color:#8d6430;}
+.resonance-tower-seal-party{
+  display:flex;align-items:stretch;justify-content:center;gap:clamp(6px,2vw,12px);margin:13px 0;
+}
+.resonance-tower-seal-member{
+  flex:0 1 92px;min-width:0;display:flex;flex-direction:column;align-items:center;gap:5px;
+  padding:7px 4px 6px;border:1px solid rgba(183,152,97,.52);
+  background:linear-gradient(#fffdf9,#f2e6d0);
+}
+.resonance-tower-seal-member img{
+  width:clamp(50px,15vw,70px);height:clamp(50px,15vw,70px);
+  max-width:100%;object-fit:contain;filter:none;
+}
+.resonance-tower-seal-member span{
+  display:block;max-width:100%;overflow-wrap:anywhere;
+  font:500 11px/1.35 'Noto Serif JP',serif;color:#584632;
+}
+.resonance-tower-seal-card .resonance-tower-seal-note{
+  padding:9px 4px;margin:9px 0 15px;
+  border-top:1px solid rgba(151,118,76,.25);border-bottom:1px solid rgba(151,118,76,.25);
+  color:#78634c;font-size:11px;line-height:1.7;
+}
+.resonance-tower-seal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.resonance-tower-seal-actions button{
+  min-height:44px;padding:7px 5px;box-sizing:border-box;border:1px solid #b7a080;
+  border-radius:0;box-shadow:none;font:500 12px/1.3 'Noto Serif JP',serif;
+  letter-spacing:.03em;cursor:pointer;
+}
+.resonance-tower-seal-back{background:#fbf8f0;color:#635341;}
+.resonance-tower-seal-yes{background:linear-gradient(#bba373,#977548);color:white;border-color:#99764c!important;}
+.resonance-tower-seal-actions button:focus-visible{outline:2px solid #ba924a;outline-offset:2px;}
+@media(max-height:650px){
+  .resonance-tower-seal-card{padding-top:15px;padding-bottom:13px;}
+  .resonance-tower-seal-card h2{font-size:18px;}
+  .resonance-tower-seal-card p{margin:8px auto;}
+  .resonance-tower-seal-member img{width:48px;height:48px;}
+}
+
+/* build1420 — 10-floor weekly reward preview */
+#screen-resonance-tower .resonance-tower-panel:has(.resonance-tower-reward-list){
+  max-height:min(85dvh,650px);display:flex;flex-direction:column;overflow:hidden;padding-bottom:14px;
+}
+#screen-resonance-tower .resonance-tower-reward-list{
+  display:flex;flex-direction:column;gap:3px;overflow-y:auto;min-height:0;
+  margin:3px 0 10px;padding:3px 2px;overscroll-behavior:contain;
+}
+#screen-resonance-tower .resonance-tower-reward-row{
+  display:grid;grid-template-columns:36px minmax(0,1fr) auto;align-items:center;gap:5px;
+  min-height:35px;padding:4px 3px;border-bottom:1px solid rgba(151,122,79,.22);
+  text-align:left;font:10px/1.4 'Noto Serif JP',serif;
+}
+#screen-resonance-tower .resonance-tower-reward-floor{font:600 11px 'Cinzel',serif;color:#987244;}
+#screen-resonance-tower .resonance-tower-reward-items{display:flex;flex-wrap:wrap;gap:4px 9px;min-width:0;}
+#screen-resonance-tower .resonance-tower-reward-item{display:inline-flex;gap:3px;align-items:center;color:#584333;white-space:nowrap;font-size:9px;}
+#screen-resonance-tower .resonance-tower-reward-item img{width:19px;height:19px;object-fit:contain;}
+#screen-resonance-tower .resonance-tower-reward-item b{font-size:10px;color:#946a37;}
+#screen-resonance-tower .resonance-tower-reward-symbol{
+  display:inline-flex;align-items:center;justify-content:center;width:24px;height:18px;
+  border:1px solid #c6aa73;color:#a4793a;background:#fff9e7;font:600 9px 'Noto Serif JP',serif;
+}
+#screen-resonance-tower .resonance-tower-reward-claimed{font:9px 'Cinzel',serif;color:#9a7536;}
+#screen-resonance-tower .resonance-tower-panel-foot[hidden]{display:none!important;}
+#summon-detail-btns .tower-limited-ticket-draw{
+  min-height:37px;min-width:0;width:100%;border:1px solid rgba(182,148,80,.72);
+  background:linear-gradient(135deg,#fbf5df,#eadbb4);color:#69502c;
+  font:600 11px/1.3 'Noto Serif JP',serif;white-space:normal;letter-spacing:.025em;
+}
+
+
+/* build1421 — raise oath AND weekly progress as one unit; make progress readable. */
+#screen-resonance-tower .resonance-tower-oath-stack{
+  position:absolute;
+  z-index:3;
+  left:0;
+  bottom:clamp(62px,12dvh,104px);
+  width:51%;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  box-sizing:border-box;
+}
+#screen-resonance-tower .resonance-tower-oath-stack .resonance-tower-oath{
+  position:relative;
+  left:auto;
+  bottom:auto;
+  width:100%;
+  flex:0 0 auto;
+}
+#screen-resonance-tower .resonance-tower-oath-stack .resonance-tower-availability{
+  position:relative;
+  left:auto;
+  bottom:auto;
+  z-index:auto;
+  width:100%;
+  max-width:none;
+  min-height:46px;
+  box-sizing:border-box;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:3px 4px;
+  padding:7px 8px 6px;
+  border:1px solid rgba(255,239,203,.7);
+  background:linear-gradient(135deg,rgba(23,21,28,.91),rgba(34,28,34,.84));
+  box-shadow:0 3px 10px rgba(0,0,0,.26),inset 0 0 0 1px rgba(255,255,255,.09);
+  color:#fff4df;
+  text-shadow:0 1px 3px rgba(0,0,0,.9);
+  font:600 clamp(10px,2.75vw,13px)/1.4 'Noto Serif JP',serif;
+  letter-spacing:.02em;
+  white-space:normal;
+}
+#screen-resonance-tower .resonance-tower-availability-label{
+  color:#ffedd0;
+  font-size:clamp(11px,2.8vw,13px);
+  font-weight:600;
+  white-space:nowrap;
+}
+#screen-resonance-tower .resonance-tower-availability-value{
+  color:#fff8e4;
+  font:700 clamp(18px,5vw,23px)/1.15 'Cinzel','Noto Serif JP',serif;
+  text-align:right;
+  white-space:nowrap;
+}
+#screen-resonance-tower .resonance-tower-availability-next{
+  display:block;
+  grid-column:1 / -1;
+  margin-top:2px;
+  padding-top:4px;
+  border-top:1px solid rgba(255,240,202,.32);
+  color:#ffebc4;
+  font:600 clamp(10px,2.6vw,12px)/1.35 'Noto Serif JP',serif;
+  text-align:left;
+  white-space:nowrap;
+}
+@media(max-width:365px){
+  #screen-resonance-tower .resonance-tower-oath-stack{width:53%;}
+  #screen-resonance-tower .resonance-tower-oath-stack .resonance-tower-availability{padding:6px;}
+}
+@media(max-height:580px){
+  #screen-resonance-tower .resonance-tower-oath-stack{bottom:clamp(49px,11dvh,69px);gap:6px;}
+  #screen-resonance-tower .resonance-tower-oath-stack .resonance-tower-availability{padding-top:5px;padding-bottom:5px;}
+}
+
+/* build1422 — Tower floor readability: restore contrast in every state.
+   Prevent locked rows from becoming translucent (text was washed out as well).
+   CURRENT = parchment + deep ink / OTHER = dark glass + bright type.
+   Keep 10F legible even when it is still locked. */
+html body #screen-resonance-tower.resonance-tower-screen .resonance-tower-floor{
+  opacity:1 !important;
+  filter:none !important;
+  -webkit-filter:none !important;
+  padding:0 clamp(5px,1.8vw,9px);
+  gap:clamp(5px,1.7vw,9px);
+  text-shadow:0 1px 3px rgba(0,0,0,.94) !important;
+  color:#fff5e5 !important;
+  border-color:rgba(220,208,185,.65);
+}
+html body #screen-resonance-tower.resonance-tower-screen .resonance-tower-floor:not(.is-current):not(.is-final):not(.is-trial){
+  background:linear-gradient(90deg,rgba(32,32,37,.91),rgba(48,43,51,.80) 72%,rgba(45,40,48,.68)) !important;
+}
+html body #screen-resonance-tower.resonance-tower-screen .resonance-tower-floor.is-trial:not(.is-current){
+  background:linear-gradient(90deg,rgba(71,37,44,.94),rgba(85,48,53,.83) 70%,rgba(73,42,50,.72)) !important;
+  border-color:rgba(207,169,162,.76);
+}
+html body #screen-resonance-tower.resonance-tower-screen .resonance-tower-floor.is-final:not(.is-current){
+  background:linear-gradient(100deg,rgba(53,42,33,.98),rgba(81,61,42,.94) 64%,rgba(67,51,38,.88)) !important;
+  border:1px solid rgba(236,207,149,.89);
+  color:#fff0d3 !important;
+  text-shadow:0 1px 3px rgba(0,0,0,.9) !important;
+}
+/* Only the current playable floor uses a light selection background. */
+html body #screen-resonance-tower.resonance-tower-screen .resonance-tower-floor.is-current{
+  background:linear-gradient(105deg,rgba(255,252,240,.99),rgba(246,232,203,.98) 72%,rgba(235,210,165,.97)) !important;
+  color:#352719 !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.92) !important;
+  border-color:#c9963d !important;
+  box-shadow:inset 0 0 0 1px rgba(255,252,232,.93),0 0 0 1px rgba(158,119,52,.62) !important;
+}
+html body #screen-resonance-tower.resonance-tower-screen .resonance-tower-floor .resonance-tower-floor-no{
+  flex:0 0 35%;
+  font:600 clamp(18px,5.2vw,25px)/1 'Cinzel','Noto Serif JP',serif !important;
+  letter-spacing:-.025em;
+  color:inherit !important;
+  opacity:1 !important;
+}
+html body #screen-resonance-tower.resonance-tower-screen .resonance-tower-floor .resonance-tower-floor-copy{
+  min-width:0;
+  gap:clamp(1px,.18dvh,2px);
+}
+html body #screen-resonance-tower.resonance-tower-screen .resonance-tower-floor .resonance-tower-floor-name{
+  font:600 clamp(10px,2.7vw,12px)/1.13 'Noto Serif JP',serif !important;
+  letter-spacing:.02em;
+  color:inherit !important;
+}
+html body #screen-resonance-tower.resonance-tower-screen .resonance-tower-floor .resonance-tower-floor-label{
+  font:600 clamp(9px,2.35vw,11px)/1.13 'Noto Serif JP',serif !important;
+  letter-spacing:.015em;
+  color:#f3e5cf !important;
+  background:transparent;
+  padding:0;
+  opacity:1 !important;
+}
+html body #screen-resonance-tower.resonance-tower-screen .resonance-tower-floor.is-current .resonance-tower-floor-no,
+html body #screen-resonance-tower.resonance-tower-screen .resonance-tower-floor.is-current .resonance-tower-floor-name{
+  color:#332518 !important;
+}
+html body #screen-resonance-tower.resonance-tower-screen .resonance-tower-floor.is-current .resonance-tower-floor-label{
+  color:#69471b !important;
+  font-weight:700 !important;
+}
+html body #screen-resonance-tower.resonance-tower-screen .resonance-tower-floor.is-cleared .resonance-tower-floor-label{
+  color:#d2f4cf !important;
+}
+html body #screen-resonance-tower.resonance-tower-screen .resonance-tower-floor.is-final:not(.is-current) .resonance-tower-floor-label{
+  color:#ffe2a6 !important;
+}
+/* Keep smaller handset text readable without squeezing the second line. */
+@media(max-width:365px){
+  html body #screen-resonance-tower.resonance-tower-screen .resonance-tower-floor .resonance-tower-floor-no{
+    flex-basis:34%;font-size:clamp(18px,5.4vw,20px) !important;
+  }
+  html body #screen-resonance-tower.resonance-tower-screen .resonance-tower-floor .resonance-tower-floor-name{
+    font-size:10px !important;
+  }
+  html body #screen-resonance-tower.resonance-tower-screen .resonance-tower-floor .resonance-tower-floor-label{
+    font-size:9px !important;
+  }
+}
+
+
+/* build1424 — Reward overview: compact centered modal with an independent scroll area. */
+#screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview {
+  padding:12px;
+}
+#screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-panel {
+  width:min(100%,390px);
+  height:min(65dvh,402px);
+  min-height:0;
+  max-height:calc(100dvh - 28px - env(safe-area-inset-bottom));
+  padding:14px clamp(10px,3vw,16px) 12px;
+  display:flex;
+  flex-direction:column;
+  gap:0;
+  overflow:hidden;
+  transform:translateY(clamp(0px,2dvh,14px));
+}
+#screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-panel-kicker {
+  flex:0 0 auto;
+  font-size:9px;
+  line-height:1.3;
+}
+#screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview #resonance-tower-panel-title {
+  flex:0 0 auto;
+  margin:5px 0 4px;
+  font-size:clamp(17px,4.4vw,20px);
+  line-height:1.3;
+}
+#screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview #resonance-tower-panel-description {
+  flex:0 0 auto;
+  margin:4px 0 9px;
+  font-size:clamp(10px,2.7vw,12px);
+  line-height:1.55;
+  white-space:pre-line;
+  text-align:center;
+}
+/* Only the ten reward rows scroll. Heading, description and close X stay in place. */
+#screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-list {
+  flex:1 1 0;
+  display:flex;
+  flex-direction:column;
+  gap:0;
+  min-height:0;
+  margin:0;
+  padding:0 3px 0 1px;
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-y;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(157,121,66,.64) transparent;
+}
+#screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-list::-webkit-scrollbar {width:4px;}
+#screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-list::-webkit-scrollbar-thumb {background:rgba(157,121,66,.64);border-radius:3px;}
+#screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-list:focus-visible {outline:1px solid #aa874d;outline-offset:-1px;}
+#screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-row {
+  flex:0 0 auto;
+  box-sizing:border-box;
+  min-height:62px;
+  height:auto;
+  display:grid;
+  grid-template-columns:39px minmax(0,1fr) auto;
+  gap:6px;
+  padding:9px 4px;
+  align-items:center;
+  line-height:1.4;
+  border-bottom:1px solid rgba(142,110,65,.28);
+}
+#screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-floor {
+  font-size:14px;
+  font-weight:700;
+  color:#785328;
+}
+#screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-items {
+  flex-wrap:wrap;
+  gap:7px 9px;
+  align-items:center;
+  min-width:0;
+  overflow:visible;
+}
+#screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-item {
+  gap:5px;
+  min-width:0;
+  max-width:100%;
+  font-size:clamp(12px,3.6vw,14px);
+  line-height:1.4;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  font-weight:600;
+  color:#36291f;
+}
+#screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-item img {
+  flex:none;
+  width:clamp(29px,8.5vw,34px);
+  height:clamp(29px,8.5vw,34px);
+}
+#screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-item b {
+  flex:none;
+  font-size:clamp(12px,3.35vw,13.5px);
+  color:#765126;
+  white-space:nowrap;
+}
+/* Let longer reward names wrap instead of reducing the font size. */
+#screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-item > span:not(.resonance-tower-reward-symbol){
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+/* CLEAR must remain legible even with the pale, translucent modal surface. */
+#screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-claimed {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font:700 10px/1.1 'Cinzel',serif;
+  letter-spacing:.045em;
+  color:#fff !important;
+  background:#37634f;
+  border:1px solid #2c5641;
+  padding:4px 5px;
+  box-shadow:0 1px 2px rgba(30,45,25,.2);
+  white-space:nowrap;
+}
+#screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-symbol {
+  flex:none;
+  width:34px;
+  height:29px;
+  font-size:12px;
+}
+#screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-panel-dismiss,
+#screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-panel-start,
+#screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-panel-foot {
+  display:none !important;
+}
+@media(max-width:365px) {
+  #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-row {
+    grid-template-columns:36px minmax(0,1fr) auto;
+    gap:4px;
+    padding-left:2px;
+    padding-right:2px;
+  }
+  #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-items {gap:6px 5px;}
+  #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-item {gap:4px;}
+}
+
+
+/* build1426 — ECHO TOWER floor challenge only: legible modal, no gameplay changes.
+   Excludes the independently scrolling ten-floor reward overview. */
+#screen-resonance-tower .resonance-tower-panel-layer.is-floor-challenge .resonance-tower-panel{
+  width:min(100%,360px);
+  box-sizing:border-box;
+  padding:clamp(18px,3.3dvh,27px) clamp(13px,4vw,22px) 16px;
+  max-height:min(86dvh,540px);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  background:linear-gradient(155deg,#fbf8ef 0%,#f2ead9 70%,#eae0cc 100%);
+  border-color:#ac874e;
+  color:#342a20;
+}
+#screen-resonance-tower .resonance-tower-panel-layer.is-floor-challenge .resonance-tower-panel-kicker{
+  font:600 clamp(10px,2.9vw,11px)/1.4 'Cinzel',serif;
+  letter-spacing:.13em;
+  color:#806039;
+}
+#screen-resonance-tower .resonance-tower-panel-layer.is-floor-challenge #resonance-tower-panel-title{
+  font:600 clamp(21px,6.3vw,25px)/1.4 'Noto Serif JP',serif;
+  letter-spacing:.06em;
+  color:#372719;
+  margin:9px 0 10px;
+}
+#screen-resonance-tower .resonance-tower-panel-layer.is-floor-challenge #resonance-tower-panel-description{
+  margin:5px 0 12px;
+  font:500 clamp(13px,3.6vw,14.5px)/1.75 'Noto Serif JP',serif;
+  letter-spacing:.015em;
+  color:#433327;
+  white-space:pre-line;
+}
+#screen-resonance-tower .resonance-tower-panel-layer.is-floor-challenge .resonance-tower-reward-list{
+  flex:0 0 auto;
+  margin:3px 0 10px;
+  overflow:visible;
+  padding:0;
+}
+#screen-resonance-tower .resonance-tower-panel-layer.is-floor-challenge .resonance-tower-reward-row{
+  grid-template-columns:39px minmax(0,1fr) auto;
+  min-height:43px;
+  padding:6px 1px;
+  gap:6px;
+  border-top:1px solid rgba(154,123,81,.23);
+  border-bottom:1px solid rgba(154,123,81,.23);
+}
+#screen-resonance-tower .resonance-tower-panel-layer.is-floor-challenge .resonance-tower-reward-floor{
+  font:700 12px/1.3 'Cinzel',serif;
+  color:#815e31;
+}
+#screen-resonance-tower .resonance-tower-panel-layer.is-floor-challenge .resonance-tower-reward-items{
+  gap:6px 8px;
+}
+#screen-resonance-tower .resonance-tower-panel-layer.is-floor-challenge .resonance-tower-reward-item{
+  font:600 clamp(11.5px,3.3vw,13px)/1.4 'Noto Serif JP',serif;
+  color:#3c2e21;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  gap:5px;
+}
+#screen-resonance-tower .resonance-tower-panel-layer.is-floor-challenge .resonance-tower-reward-item img{
+  width:clamp(25px,7.4vw,29px);
+  height:clamp(25px,7.4vw,29px);
+}
+#screen-resonance-tower .resonance-tower-panel-layer.is-floor-challenge .resonance-tower-reward-item b{
+  font-size:clamp(11.5px,3.3vw,13px);
+  color:#765025;
+}
+#screen-resonance-tower .resonance-tower-panel-layer.is-floor-challenge .resonance-tower-panel-foot{
+  margin:6px 0 14px;
+  padding:10px 7px;
+  font:600 clamp(12px,3.3vw,13px)/1.75 'Noto Serif JP',serif !important;
+  color:#4b3523;
+  background:rgba(252,249,240,.9);
+  border-top:1px solid rgba(157,122,68,.48);
+  border-bottom:1px solid rgba(157,122,68,.48);
+  text-align:center;
+  white-space:normal;
+}
+#screen-resonance-tower .resonance-tower-panel-layer.is-floor-challenge .resonance-tower-panel-start{
+  min-height:44px;
+  margin:0 auto 10px;
+  padding:10px clamp(18px,5vw,29px);
+  font:700 clamp(13px,3.75vw,15px)/1.5 'Noto Serif JP',serif;
+  color:#fff9ec;
+  background:linear-gradient(#ac8549,#836031);
+  border-color:#896634;
+}
+#screen-resonance-tower .resonance-tower-panel-layer.is-floor-challenge .resonance-tower-panel-dismiss{
+  min-height:40px;
+  width:100%;
+  font:600 clamp(12px,3.4vw,13.5px)/1.5 'Noto Serif JP',serif;
+  color:#654625;
+  background:#fffbf1;
+  border-color:#bba16f;
+}
+#screen-resonance-tower .resonance-tower-panel-layer.is-floor-challenge .resonance-tower-panel-close{
+  color:#5e452f;
+  font-weight:700;
+}
+@media(max-height:590px){
+  #screen-resonance-tower .resonance-tower-panel-layer.is-floor-challenge .resonance-tower-panel{
+    padding-top:16px;
+    padding-bottom:12px;
+  }
+  #screen-resonance-tower .resonance-tower-panel-layer.is-floor-challenge #resonance-tower-panel-title{
+    margin:6px 0 7px;
+  }
+  #screen-resonance-tower .resonance-tower-panel-layer.is-floor-challenge .resonance-tower-panel-foot{
+    margin-bottom:10px;
+    padding:7px 5px;
+  }
+}
+
+
+/* =========================================================
+   build1451 — ECHO TOWER 報酬一覧（is-reward-overview）刷新
+   - 羊皮紙＋金の細枠／四隅の飾り
+   - 見出し：ECHO TOWER（左右に線）＋大きい「報酬一覧」＋飾り線
+   - 各行：大きい階数「05F」＋縦の区切り（◆）＋大きいアイコン＋名称×数
+   - 突破済みは CLEAR 印
+   ========================================================= */
+/* ユーザーフレームとボトムナビの間に収める */
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview{
+  padding:calc(var(--header-h,72px) + clamp(6px,7dvh,64px)) 12px calc(var(--bottom-nav-h,76px) + 10px);
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-panel{
+  width:min(100%,392px);
+  height:min(100%,600px);
+  max-height:none;
+  padding:22px 14px 14px;
+  transform:none;
+  border:1px solid #c9a868;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg transform='' fill='none' stroke='%23b98a3c' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M3 38 V12 Q3 3 12 3 H38'/%3E%3Cpath d='M8 30 V14 Q8 8 14 8 H30' stroke-width='.8' opacity='.8'/%3E%3Cpath d='M3 12 Q10 12 12 3' stroke-width='1'/%3E%3C/g%3E%3Cg transform=''%3E%3Cpath d='M8 8 L11 5 L14 8 L11 11Z' fill='%23b98a3c'/%3E%3C/g%3E%3C/svg%3E") left 5px top 5px / 30px 30px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg transform='translate(40 0) scale(-1 1)' fill='none' stroke='%23b98a3c' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M3 38 V12 Q3 3 12 3 H38'/%3E%3Cpath d='M8 30 V14 Q8 8 14 8 H30' stroke-width='.8' opacity='.8'/%3E%3Cpath d='M3 12 Q10 12 12 3' stroke-width='1'/%3E%3C/g%3E%3Cg transform='translate(40 0) scale(-1 1)'%3E%3Cpath d='M8 8 L11 5 L14 8 L11 11Z' fill='%23b98a3c'/%3E%3C/g%3E%3C/svg%3E") right 5px top 5px / 30px 30px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg transform='translate(0 40) scale(1 -1)' fill='none' stroke='%23b98a3c' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M3 38 V12 Q3 3 12 3 H38'/%3E%3Cpath d='M8 30 V14 Q8 8 14 8 H30' stroke-width='.8' opacity='.8'/%3E%3Cpath d='M3 12 Q10 12 12 3' stroke-width='1'/%3E%3C/g%3E%3Cg transform='translate(0 40) scale(1 -1)'%3E%3Cpath d='M8 8 L11 5 L14 8 L11 11Z' fill='%23b98a3c'/%3E%3C/g%3E%3C/svg%3E") left 5px bottom 5px / 30px 30px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg transform='translate(40 40) scale(-1 -1)' fill='none' stroke='%23b98a3c' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M3 38 V12 Q3 3 12 3 H38'/%3E%3Cpath d='M8 30 V14 Q8 8 14 8 H30' stroke-width='.8' opacity='.8'/%3E%3Cpath d='M3 12 Q10 12 12 3' stroke-width='1'/%3E%3C/g%3E%3Cg transform='translate(40 40) scale(-1 -1)'%3E%3Cpath d='M8 8 L11 5 L14 8 L11 11Z' fill='%23b98a3c'/%3E%3C/g%3E%3C/svg%3E") right 5px bottom 5px / 30px 30px no-repeat,
+    radial-gradient(ellipse at 50% 0%,rgba(255,255,255,.65),rgba(255,255,255,0) 60%),
+    linear-gradient(170deg,#fbf7ec 0%,#f3ecdc 60%,#ebe1cc 100%);
+  box-shadow:
+    inset 0 0 0 4px rgba(255,253,246,.7),
+    inset 0 0 0 5px rgba(201,168,104,.55),
+    0 10px 34px rgba(0,0,0,.45);
+  color:#33271c;
+  overflow:visible;
+}
+/* top-center ornament */
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-panel::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:-9px;
+  width:56px;
+  height:18px;
+  transform:translateX(-50%);
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 20'%3E%3Cpath d='M2 10 L8 7 L14 10 L8 13Z M66 10 L72 7 L78 10 L72 13Z' fill='%23b98a3c'/%3E%3Cpath d='M40 1 C40.6 7.4 42.6 9.4 49 10 C42.6 10.6 40.6 12.6 40 19 C39.4 12.6 37.4 10.6 31 10 C37.4 9.4 39.4 7.4 40 1Z' fill='%23b98a3c'/%3E%3Ccircle cx='40' cy='10' r='1.6' fill='%23fff8e6'/%3E%3Cpath d='M14 10H31M49 10H66' stroke='%23b98a3c' stroke-width='.8'/%3E%3C/svg%3E") center/contain no-repeat;
+  pointer-events:none;
+}
+/* close × */
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-panel-close{
+  right:12px;
+  top:12px;
+  width:34px;
+  height:34px;
+  padding:0;
+  font:300 30px/1 'Noto Serif JP',serif;
+  color:#6b5032;
+  z-index:3;
+  outline:none;
+  border-radius:50%;
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-panel-close:focus-visible{
+  box-shadow:0 0 0 1px rgba(184,149,90,.45);
+}
+/* kicker with side rules */
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-panel-kicker{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  font:600 10px/1.3 'Cinzel',serif;
+  letter-spacing:.32em;
+  color:#8d6f45;
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-panel-kicker::before,
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-panel-kicker::after{
+  content:"";
+  width:54px;
+  height:7px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 0L10 5L5 10L0 5Z' fill='%23b8955a'/%3E%3C/svg%3E") right center/7px 7px no-repeat,
+    linear-gradient(90deg,rgba(184,149,90,0),rgba(184,149,90,.85)) left center/calc(100% - 9px) 1px no-repeat;
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-panel-kicker::after{
+  transform:scaleX(-1);
+}
+/* title + divider */
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview #resonance-tower-panel-title{
+  position:relative;
+  margin:4px 0 0;
+  padding-bottom:12px;
+  font:700 clamp(22px,6.4vw,27px)/1.3 'Noto Serif JP',serif;
+  letter-spacing:.14em;
+  color:#2f2318;
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview #resonance-tower-panel-title::after{
+  content:"";
+  position:absolute;
+  left:12%;
+  right:12%;
+  bottom:2px;
+  height:10px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 20'%3E%3Cpath d='M2 10 L8 7 L14 10 L8 13Z M66 10 L72 7 L78 10 L72 13Z' fill='%23b98a3c'/%3E%3Cpath d='M40 1 C40.6 7.4 42.6 9.4 49 10 C42.6 10.6 40.6 12.6 40 19 C39.4 12.6 37.4 10.6 31 10 C37.4 9.4 39.4 7.4 40 1Z' fill='%23b98a3c'/%3E%3Ccircle cx='40' cy='10' r='1.6' fill='%23fff8e6'/%3E%3Cpath d='M14 10H31M49 10H66' stroke='%23b98a3c' stroke-width='.8'/%3E%3C/svg%3E") center/44px 10px no-repeat,
+    linear-gradient(90deg,rgba(184,149,90,0),rgba(184,149,90,.75) 25%,rgba(184,149,90,.75) 75%,rgba(184,149,90,0)) center/100% 1px no-repeat;
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview #resonance-tower-panel-description{
+  margin:8px 0 10px;
+  font:500 clamp(11.5px,3.3vw,13px)/1.7 'Noto Serif JP',serif;
+  letter-spacing:.06em;
+  color:#4a3a2b;
+}
+
+/* ---------- list ---------- */
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-list{
+  padding:2px 2px 6px;
+  border-top:1px solid rgba(160,128,78,.35);
+  -webkit-mask-image:linear-gradient(to bottom,#000 0,#000 calc(100% - 16px),transparent 100%);
+  mask-image:linear-gradient(to bottom,#000 0,#000 calc(100% - 16px),transparent 100%);
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-row{
+  position:relative;
+  min-height:72px;
+  grid-template-columns:62px 18px minmax(0,1fr) auto;
+  gap:0 6px;
+  padding:8px 6px 8px 4px;
+  border-bottom:1px solid rgba(160,128,78,.30);
+  background:none;
+}
+/* floor number with a small sparkle below */
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-floor{
+  grid-column:1;
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  font:700 clamp(21px,6vw,25px)/1 'Noto Serif JP','Cinzel',serif;
+  letter-spacing:.01em;
+  color:#3a2a1b;
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-floor::after{
+  content:"";
+  display:block;
+  width:11px;
+  height:11px;
+  margin-top:7px;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10 0 C10.8 7 13 9.2 20 10 C13 10.8 10.8 13 10 20 C9.2 13 7 10.8 0 10 C7 9.2 9.2 7 10 0Z' fill='%23cdb07a'/%3E%3C/svg%3E") center/contain no-repeat;
+  opacity:.85;
+}
+/* vertical divider with a diamond (drawn on the items cell) */
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-row::before{
+  content:"";
+  grid-column:2;
+  grid-row:1;
+  justify-self:center;
+  align-self:stretch;
+  width:9px;
+  margin:4px 0;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 0L10 5L5 10L0 5Z' fill='%23b8955a'/%3E%3C/svg%3E") center/8px 8px no-repeat,
+    linear-gradient(180deg,rgba(184,149,90,0),rgba(184,149,90,.8) 30%,rgba(184,149,90,.8) 70%,rgba(184,149,90,0)) center/1px 100% no-repeat;
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-items{
+  grid-column:3;
+  grid-row:1;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px 12px;
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-item{
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  min-width:0;
+  font:700 clamp(12.5px,3.6vw,14.5px)/1.35 'Noto Serif JP',serif;
+  letter-spacing:.02em;
+  color:#2f2419;
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-item img{
+  flex:none;
+  width:clamp(40px,11.5vw,48px);
+  height:clamp(40px,11.5vw,48px);
+  object-fit:contain;
+  filter:drop-shadow(0 2px 3px rgba(60,40,15,.22));
+}
+/* 10連チケット：横長スロット（画像の上下余白を切って大きく見せる） */
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-item.is-ticket img{
+  width:clamp(64px,18vw,78px);
+  height:clamp(42px,12vw,50px);
+  object-fit:cover;
+  transform:rotate(-4deg);
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-name{
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-name b{
+  margin-left:.45em;
+  font:700 1em/1 'Noto Serif JP',serif;
+  color:#3a2a1b;
+  white-space:nowrap;
+}
+/* 複数アイテムの行：アイコンの下に名前を置いたタイルを横に並べる */
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-row.is-multi .resonance-tower-reward-items{
+  flex-wrap:nowrap;
+  gap:4px;
+  justify-content:flex-start;
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-row.is-multi .resonance-tower-reward-item{
+  flex:0 1 33.3%;
+  flex-direction:column;
+  gap:3px;
+  text-align:center;
+  font-size:clamp(10.5px,3vw,12px);
+  line-height:1.25;
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-row.is-multi .resonance-tower-reward-name b{
+  display:inline-block;
+  margin-left:.25em;
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-row.is-multi .resonance-tower-reward-item img{
+  width:clamp(38px,10.5vw,44px);
+  height:clamp(38px,10.5vw,44px);
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-symbol{
+  width:44px;
+  height:34px;
+  font-size:13px;
+}
+
+/* ---------- cleared ---------- */
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-row.is-cleared .resonance-tower-reward-items,
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-row.is-cleared .resonance-tower-reward-floor{
+  opacity:.5;
+}
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-claimed{
+  grid-column:4;
+  grid-row:1;
+  align-self:center;
+  padding:4px 7px 3px;
+  font:700 10px/1 'Cinzel',serif;
+  letter-spacing:.12em;
+  color:#fff !important;
+  background:linear-gradient(180deg,#4d7a62,#33584a);
+  border:1px solid #2a4a3d;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.22),0 1px 2px rgba(30,45,25,.25);
+  transform:rotate(-6deg);
+}
+
+/* ---------- compact ---------- */
+@media(max-width:365px){
+  html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-panel{padding:20px 10px 12px;}
+  html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-row{
+    grid-template-columns:50px 14px minmax(0,1fr) auto;
+    gap:0 4px;
+    min-height:62px;
+  }
+  html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-floor{font-size:19px;}
+  html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-items{gap:6px 8px;}
+}
+@media(max-height:620px){
+  html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-panel{padding-top:16px;}
+  html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview #resonance-tower-panel-title{font-size:21px;padding-bottom:9px;}
+  html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview #resonance-tower-panel-description{margin:5px 0 7px;}
+  html body #screen-resonance-tower .resonance-tower-panel-layer.is-reward-overview .resonance-tower-reward-row{min-height:60px;padding-top:6px;padding-bottom:6px;}
+}
+}
+/* build1451: 階層詳細（1行表示）でも10連チケットは横長で見せる */
+html body #screen-resonance-tower .resonance-tower-panel-layer.is-floor-challenge .resonance-tower-reward-item.is-ticket img{
+  width:48px;height:32px;object-fit:cover;
+}
+
+/* ============================================================
+   build1460: 限定10連無料TICKETボタンで邂逅のボタン群が上へずれる問題の対策
+   チケットボタンを「お試し」と同じ2行目に並べ、行を増やさない。
+     お試しあり：2行目 = [お試し][無料10連]
+     お試しなし：2行目 = 中央に[無料10連]（お試しと同じ予約高さ）
+   ============================================================ */
+#screen-summon:has(#summon-detail-btns > .tower-limited-ticket-draw){
+  --gacha-actions-h:104px;
+}
+#screen-summon #summon-detail-btns:has(> .tower-limited-ticket-draw){
+  left:50% !important;
+  right:auto !important;
+  bottom:var(--gacha-actions-bottom) !important;
+  transform:translateX(-50%) !important;
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:7px !important;
+  width:min(86vw,350px) !important;
+}
+/* お試しありの時：お試しは左、チケットは右（同じ行） */
+#screen-summon #summon-detail-btns:has(> .tower-limited-ticket-draw) > .gacha-trial-entry{
+  grid-column:1 / 2 !important;
+  grid-row:2 !important;
+  width:100% !important;
+  justify-self:stretch !important;
+}
+#screen-summon #summon-detail-btns > .tower-limited-ticket-draw{
+  grid-column:2 / 3 !important;
+  grid-row:2 !important;
+  width:100% !important;
+  min-width:0 !important;
+  height:40px !important;
+  min-height:40px !important;
+  max-height:40px !important;
+  margin:0 !important;
+  padding:0 8px 0 4px !important;
+  display:flex !important;
+  flex-direction:row !important;
+  flex-wrap:nowrap !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:6px !important;
+  line-height:1 !important;
+  border:1px solid rgba(169,132,71,.85) !important;
+  border-radius:3px !important;
+  background:
+    radial-gradient(ellipse at 50% 15%,rgba(255,246,220,.65),rgba(255,246,220,0) 60%),
+    linear-gradient(180deg,#f3e3b8 0%,#dcbd7c 55%,#c9a35f 100%) !important;
+  box-shadow:inset 0 0 0 1px rgba(255,248,226,.8),0 2px 5px rgba(110,80,30,.25) !important;
+  color:#3a2814 !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+}
+/* お試しなしの時：中央に半分幅で置く */
+#screen-summon #summon-detail-btns:not(:has(> .gacha-trial-entry)) > .tower-limited-ticket-draw{
+  grid-column:1 / -1 !important;
+  width:calc(50% - 4px) !important;
+  justify-self:center !important;
+}
+#screen-summon #summon-detail-btns > .tower-limited-ticket-draw .tower-limited-ticket-icon{
+  flex:0 0 auto;
+  display:block;
+  width:44px;
+  height:30px;
+  margin:0;
+  object-fit:cover;
+  transform:rotate(-6deg);
+  filter:drop-shadow(0 1px 2px rgba(60,40,15,.35));
+}
+#screen-summon #summon-detail-btns > .tower-limited-ticket-draw .tower-limited-ticket-text{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:center;
+  line-height:1.05;
+  min-width:0;
+  margin:0;
+}
+#screen-summon #summon-detail-btns > .tower-limited-ticket-draw .tower-limited-ticket-text b,
+#screen-summon #summon-detail-btns > .tower-limited-ticket-draw .tower-limited-ticket-text small{
+  display:block;
+  margin:0;
+  white-space:nowrap;
+}
+#screen-summon #summon-detail-btns > .tower-limited-ticket-draw .tower-limited-ticket-text b{
+  font:700 14px/1.1 'Noto Serif JP',serif;
+  letter-spacing:.06em;
+}
+#screen-summon #summon-detail-btns > .tower-limited-ticket-draw .tower-limited-ticket-text small{
+  font:700 9px/1.2 'Cinzel','Noto Serif JP',serif;
+  letter-spacing:.08em;
+  color:#5a4020;
+}
+#screen-summon #summon-detail-btns > .tower-limited-ticket-draw:active{
+  transform:translateY(1px);
+  filter:brightness(.97);
+}
+
+/* build1473 — 15 floors. Preserve readable 10-row height and scroll rather than squeezing 15 labels. */
+html body #screen-resonance-tower .resonance-tower-floor-list{
+  grid-template-rows:repeat(15,minmax(39px,39px));
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  touch-action:pan-y;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(241,219,173,.44) transparent;
+  padding:2px 2px 5px;
+}
+html body #screen-resonance-tower .resonance-tower-floor-list .resonance-tower-floor{
+  min-height:39px;
+  height:39px;
+}
+
+/* build1599: 挑戦ルールの週表示を2行に（残り日数／更新時刻） */
+#screen-resonance-tower .resonance-tower-week-note{flex-direction:column;gap:2px;padding:4px 6px;min-height:0;}
+#screen-resonance-tower .resonance-tower-week-note .tower-week-left{display:flex;align-items:center;gap:5px;}
+#screen-resonance-tower .resonance-tower-week-note .tower-week-left b{font-weight:700;color:#fff3d6;}
+
+/* build1599: rule lines never break mid-line */
+#screen-resonance-tower .resonance-tower-oath p.tower-oath-lines{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:clamp(8px,calc((51vw - 16px) / 20.5),11px);letter-spacing:0;line-height:1.7;}
+#screen-resonance-tower .resonance-tower-oath p.tower-oath-lines span{display:block;white-space:nowrap;}
