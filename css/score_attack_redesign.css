@@ -637,3 +637,36 @@ html body:not(.ui-immersive) #score-attack-root.score-attack-app-page button.sco
   html body:not(.ui-immersive) #score-attack-root.score-attack-app-page button.score-attack-start{height:50px !important;}
   html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-ranking-nav{min-height:38px !important;margin-bottom:6px !important;}
 }
+
+/* ---------- build1577: プレイヤー名をつぶさない ----------
+   名前とパーティを横並び → 名前を上段・パーティを下段に。
+   名前が中央列の幅をまるごと使えるので、7文字まで省略されずに出る。
+   行の高さは従来（66px）のまま。 */
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-row-main{
+  grid-template-columns:minmax(0,1fr) !important;
+  grid-template-rows:auto auto !important;
+  align-content:center !important;
+  justify-items:start !important;
+  gap:4px !important;
+  padding:6px 8px 6px 10px !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-row-main > b{
+  display:block !important;
+  width:100% !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+  font-size:13px !important;
+  line-height:1.25 !important;
+  letter-spacing:.04em !important;
+}
+html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-row-main .score-attack-party span{
+  flex:0 0 32px !important;
+  width:32px !important;
+  height:32px !important;
+}
+@media (max-width:365px){
+  html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-row-main{padding:5px 5px 5px 7px !important;gap:3px !important;}
+  html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-row-main > b{font-size:12px !important;}
+  html body:not(.ui-immersive) #score-attack-root.score-attack-app-page .score-attack-row-main .score-attack-party span{flex-basis:28px !important;width:28px !important;height:28px !important;}
+}
