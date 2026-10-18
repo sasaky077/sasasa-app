@@ -154,7 +154,7 @@
       }
     }
     const week=$('screen-resonance-tower')?.querySelector('.resonance-tower-week-note small');
-    if(week) week.textContent='月曜05:00（日本時間）更新';
+    if(week) week.textContent='日曜12:00（日本時間）更新';
   }
   async function refresh(){
     try{
@@ -184,7 +184,7 @@
       return descriptions[number-1]+'\n所持キャラから1〜3体を編成。封印中 '+used+'体。';
     }
     if(kind==='ranking') return 'ランキングは初版では未公開です。階層進行と週次封印はサーバーで保存されます。';
-    return '各階層の初回突破報酬です。\n毎週月曜05:00にリセットされます。';
+    return '各階層の初回突破報酬です。\n毎週日曜12:00にリセットされます。';
   }
   function openPanel(kind,number){
     const layer=$('resonance-tower-panel-layer');if(!layer)return;

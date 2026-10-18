@@ -442,7 +442,7 @@
 
     // ------------------------------------------------------------
     // DAILY RAID - シエン（build1570）
-    // 紫煙をまとう剣士。突進と重い一撃（violence_v1）。闇属性。
+    // 紫煙をまとう剣士。月の5技を使う専用AI。闇属性。
     // 共有HPはSupabaseの日次レイド値で上書きされる。
     // ------------------------------------------------------------
     [SHOOTING_ENEMY_ID.RAID_SHIEN]: Object.freeze({
@@ -462,11 +462,11 @@
       contactDamage: 280,
       chargeSpeed: 600,
 
-      behavior: 'violence_v1',
-      // build1571: 霞化(7秒実体→4秒無敵) / 回転斬り / 出血。shooting_core.js updateShienMechanics。
+      behavior: 'shien_blade_v2',
+      // build1583: 満月斬り/半月斬り/逆半月斬り/一閃/三巴。霞化と斬撃出血は継続。
       shienMechanics: true,
-      // 突進の当たり判定は表示サイズに比例するため、イリシュ（CH02-4）と同じ1.15に留める。
-      uiScale: 1.15,
+      // 実表示倍率は shooting_core の味方立ち絵基準で算出。
+      uiScale: 1.0,
     }),
     [SHOOTING_ENEMY_ID.RAID_CAMILLA]: Object.freeze({
       id: SHOOTING_ENEMY_ID.RAID_CAMILLA,
