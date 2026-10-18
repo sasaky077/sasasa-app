@@ -375,3 +375,127 @@ html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby .d
   html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby .daily-raid-hpmeta{display:none!important}
   html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby #daily-raid-start{min-height:44px!important}
 }
+
+/* =========================================================
+   build1600 儚さ寄せ：名前を控えめに・フレームを半透明にして背景を透かす
+   ========================================================= */
+#daily-raid-root{
+  --rt-plate:rgba(255,255,255,.34); --rt-plate-2:rgba(255,255,255,.18);
+  --rt-deep-a:rgba(26,24,32,.72); --rt-mid-a:rgba(61,57,70,.62);
+  --rt-text-halo:0 0 6px rgba(255,255,255,.95),0 0 2px rgba(255,255,255,.9);
+}
+#daily-raid-root[data-raid-theme="shien"]{--rt-deep-a:rgba(47,22,99,.70); --rt-mid-a:rgba(106,61,182,.56);}
+#daily-raid-root[data-raid-theme="camilla"]{--rt-deep-a:rgba(86,12,26,.72); --rt-mid-a:rgba(163,23,47,.56);}
+
+/* 共通プレート：薄く、軽く */
+html body #daily-raid-root#daily-raid-root[data-raid-theme] :is(
+  .daily-raid-attempt-overview,
+  .daily-raid-lobby .drt-hp-card,
+  .daily-raid-lobby .drt-break-card,
+  .daily-raid-lobby .daily-raid-team-meta,
+  .daily-raid-lobby .daily-raid-progress,
+  .daily-raid-lobby .daily-raid-members,
+  .daily-raid-lobby #daily-raid-start,
+  .daily-raid-lobby #daily-raid-finalize-best
+){
+  border-color:rgba(201,163,95,.62)!important;
+  box-shadow:inset 0 0 0 3px rgba(255,255,255,.28),inset 0 0 0 4px rgba(201,163,95,.22),0 2px 10px rgba(0,0,0,.06)!important;
+  -webkit-backdrop-filter:blur(1.5px)!important;backdrop-filter:blur(1.5px)!important;
+}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] :is(.drt-hp-card,.drt-break-card,.daily-raid-team-meta,.daily-raid-progress,.daily-raid-members,#daily-raid-start)::before{opacity:.7!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-attempt-overview{
+  background:linear-gradient(180deg,rgba(255,255,255,.52),rgba(255,255,255,.36))!important;
+  box-shadow:inset 0 0 0 1px rgba(201,163,95,.7),inset 0 0 0 4px rgba(255,255,255,.3)!important;
+}
+/* プレート上の文字は白いにじみで読みやすさを保つ */
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby :is(.drt-hp-card,.drt-break-card,.daily-raid-team-meta,.daily-raid-progress,.daily-raid-members) :is(small,strong,span,b,em,p,div){
+  text-shadow:var(--rt-text-halo)!important;
+}
+
+/* タブ：未選択はほぼ透明、選択中も色ガラス風に */
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-swipe-tab{
+  background:linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,.18))!important;
+  border-color:rgba(201,163,95,.55)!important;box-shadow:inset 0 0 0 3px rgba(255,255,255,.22)!important;
+}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-swipe-tab:not(.is-active) :is(small,span,.drt-tab-sub){
+  color:#7d6f60!important;-webkit-text-fill-color:#7d6f60!important;text-shadow:var(--rt-text-halo)!important;
+}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-swipe-tab.is-active{
+  background:linear-gradient(135deg,var(--rt-deep-a) 0%,var(--rt-mid-a) 70%,var(--rt-deep-a) 100%)!important;
+  box-shadow:inset 0 0 0 2px rgba(232,211,162,.35),0 2px 10px var(--rt-glow)!important;
+  -webkit-backdrop-filter:blur(2px)!important;backdrop-filter:blur(2px)!important;
+}
+
+/* ボス名：小さく・細く・字間を広げて余白で見せる */
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-hero-copy strong{
+  font-weight:500!important;font-size:clamp(30px,9.2vw,40px)!important;letter-spacing:.16em!important;line-height:1.15!important;
+  -webkit-text-stroke:0!important;
+  text-shadow:0 0 12px rgba(255,255,255,.9),0 0 26px rgba(255,255,255,.6)!important;
+  opacity:.92!important;
+}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-hero-copy small{
+  font-weight:600!important;font-size:10px!important;letter-spacing:.4em!important;
+}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-hero-copy span{
+  font-weight:500!important;font-size:clamp(12px,3.6vw,15px)!important;letter-spacing:.14em!important;
+  color:#3a3140!important;-webkit-text-fill-color:#3a3140!important;margin-top:6px!important;
+}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-hero-copy::after{opacity:.7!important}
+
+/* HP：数字は少し軽く、ゲージの空きも半透明に */
+html body #daily-raid-root#daily-raid-root[data-raid-theme] #daily-raid-hptext .drt-hp-now{font-weight:600!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-hp-card .daily-raid-hpbar{
+  background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.48))!important;
+}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] #daily-raid-hpfill{opacity:.9!important}
+
+/* ボタン類 */
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby #daily-raid-start:disabled{
+  background:linear-gradient(180deg,rgba(255,255,255,.4),rgba(255,255,255,.24))!important;
+}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby #daily-raid-start:not(:disabled){
+  background:linear-gradient(135deg,var(--rt-deep-a),var(--rt-mid-a) 70%,var(--rt-deep-a))!important;
+}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby #daily-raid-start b{font-weight:600!important;letter-spacing:.2em!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby #daily-raid-piece-exchange{
+  background:linear-gradient(135deg,var(--rt-deep-a),var(--rt-mid-a) 70%,var(--rt-deep-a))!important;
+  box-shadow:inset 0 0 0 1px rgba(232,211,162,.35)!important;font-weight:600!important;
+}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby .drp-table-open{
+  background:rgba(255,255,255,.45)!important;box-shadow:none!important;
+}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby .daily-raid-member{
+  background:linear-gradient(180deg,rgba(255,255,255,.42),rgba(255,255,255,.26))!important;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.25)!important;
+}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby .daily-raid-team-meta strong{font-weight:600!important}
+
+@media (max-height:760px){
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-hero-copy strong{font-size:clamp(28px,8.4vw,36px)!important}
+}
+
+/* build1601: 「残り挑戦をスキップ」が出る時はバトル開始と横並びで分け合う */
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby .daily-raid-actions.can-finalize-early{
+  gap:8px!important;padding-left:14px!important;padding-right:14px!important;height:auto!important;min-height:0!important;
+}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby .daily-raid-actions.can-finalize-early :is(#daily-raid-start,#daily-raid-finalize-best){
+  flex:1 1 0!important;width:auto!important;min-width:0!important;max-width:none!important;
+  min-height:56px!important;height:auto!important;margin:0!important;padding:6px 8px!important;
+}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby .daily-raid-actions.can-finalize-early #daily-raid-finalize-best{
+  flex:0.85 1 0!important;
+  display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:4px!important;
+  color:#2b2118!important;
+}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby #daily-raid-finalize-best span{
+  margin:0!important;font:600 10px/1 "Cinzel","Noto Serif JP",serif!important;letter-spacing:.06em!important;white-space:nowrap!important;
+  color:var(--rt-gold-3)!important;-webkit-text-fill-color:var(--rt-gold-3)!important;text-shadow:var(--rt-text-halo)!important;
+}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby #daily-raid-finalize-best b{
+  margin:0!important;font:600 clamp(11px,3.4vw,14px)/1.15 "Noto Serif JP",serif!important;letter-spacing:.04em!important;white-space:nowrap!important;
+  color:#2b2118!important;-webkit-text-fill-color:#2b2118!important;text-shadow:var(--rt-text-halo)!important;
+}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby .daily-raid-actions.can-finalize-early #daily-raid-start b{
+  font-size:clamp(17px,5.2vw,22px)!important;letter-spacing:.12em!important;
+}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby .daily-raid-actions.can-finalize-early #daily-raid-start span{display:none!important}
