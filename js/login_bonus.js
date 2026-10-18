@@ -19,6 +19,10 @@
 
   var modal = null;
   var isClaiming = false;
+  // build1620: 画面を開いたら自動で本日分を受け取る。受け取った直後の演出用に日付を控える。
+  var justClaimedDay = 0;
+  var autoClaimTimer = 0;
+  var autoClaimFailed = false;
 
   function getUserId(){
     return String(localStorage.getItem('zukan_user_id') || '').trim().toLowerCase();
@@ -279,11 +283,7 @@
   async function claimLoginBonus(){
     if(isClaiming) return;
     isClaiming = true;
-    var btn = document.querySelector('#screen-bonus .bonus-card-action');
-    if(btn){
-      btn.disabled = true;
-      btn.textContent = '受け取り中...';
-    }
+    autoClaimFailed = false;
 
     try {
       var sb = window.zsSupabase;
@@ -306,7 +306,10 @@
       }
 
       markServerClaimedToday();
+      justClaimedDay = day;
       var rewardQty = Math.max(0, Number(row.reward_quantity != null ? row.reward_quantity : reward.qty));
+      // build1620: ここから先は表示の更新だけ。失敗しても「受け取り失敗」扱いにしない（付与はサーバーで確定済み）
+      try {
       var refreshedProfile = await fetchState();
       if(window.userProfile){
         if(refreshedProfile && refreshedProfile.gem != null) window.userProfile.gem = Number(refreshedProfile.gem || 0);
@@ -323,16 +326,18 @@
       }
 
       if(typeof window.updateMainUI === 'function') window.updateMainUI();
+      if(typeof window.refreshSpecialTicketUI === 'function') window.refreshSpecialTicketUI();
+      } catch(refreshError) {
+        console.warn('[LoginBonus] post-claim UI refresh failed:', refreshError);
+      }
       updateBonusHomeNotice(false);
       await renderBonusPage();
-      if(typeof window.refreshSpecialTicketUI === 'function') window.refreshSpecialTicketUI();
       if(typeof window.showToast === 'function') window.showToast('ログインボーナス：' + reward.name + ' ×' + rewardQty);
     } catch(error) {
       console.error('[LoginBonus] claim failed:', error);
-      if(btn){
-        btn.disabled = false;
-        btn.textContent = 'もう一度試す';
-      }
+      autoClaimFailed = true;
+      var retry = document.querySelector('#screen-bonus .bonus-card-retry');
+      if(retry) retry.hidden = false;
       if(typeof window.showToast === 'function') window.showToast('受け取りに失敗しました。通信状況をご確認ください。');
     } finally {
       isClaiming = false;
@@ -360,7 +365,7 @@
       html +=       '<h3>ログインボーナス</h3>';
       html +=       '<p class="bonus-card-sub">— 今日も、世界のどこかで、きっと誰かが祈っている —</p>';
       html +=     '</div>';
-      html +=     '<button type="button" class="bonus-archive-btn" aria-label="受取済み一覧">受取済み一覧</button>';
+      html +=     '<button type="button" class="bonus-card-close" aria-label="閉じる" onclick="closeBonusScreen()">×</button>';
       html +=   '</div>';
       html +=   '<div class="bonus-mixed-row">';
       for(var i = 1; i <= 7; i++){
@@ -373,6 +378,8 @@
         if(isClaimed) cls.push('is-claimed');
         if(isNext) cls.push('is-next');
         if(isTodayClaimed) cls.push('is-today-claimed');
+        if(justClaimedDay && claimedToday && i === lastDay) cls.push('is-just-claimed');
+        if(justClaimedDay && claimedToday && isNext) cls.push('is-just-next');
         html += '<div class="' + cls.join(' ') + '">';
         html +=   '<div class="bonus-day-head"><span class="bonus-day-label"><em>DAY</em><b>' + i + '</b></span></div>';
         if(isClaimed) html += '<i class="bonus-day-mark bonus-day-mark-claimed" aria-hidden="true">受取済み</i>';
@@ -387,11 +394,20 @@
       html +=   '</div>';
       html +=   '<div class="bonus-card-foot">';
       html +=     '<div class="bonus-card-note">毎日 0:00（JST）に更新されます<br>DAY 1〜6：育成素材（結晶）<br>DAY 7：SPECIAL TICKET -ノア- ×1</div>';
-      html +=     '<button type="button" class="bonus-card-action" onclick="openLoginBonusFromBonusPage()"' + (claimedToday ? ' disabled' : '') + '>' + (claimedToday ? '受取済み' : '受け取る') + '</button>';
+      html +=     '<button type="button" class="bonus-card-retry" onclick="openLoginBonusFromBonusPage()"' + (autoClaimFailed && !claimedToday ? '' : ' hidden') + '>受け取りに失敗しました　タップで再試行</button>';
       html +=   '</div>';
       html += '</section>';
       list.innerHTML = html;
+      justClaimedDay = 0;
       updateBonusHomeNotice(!claimedToday);
+      // build1620: 未受取なら、本日分（NEXT）を一瞬見せてから自動で受け取る
+      clearTimeout(autoClaimTimer);
+      if(!claimedToday && !autoClaimFailed){
+        autoClaimTimer = setTimeout(function(){
+          var screen = document.getElementById('screen-bonus');
+          if(screen && screen.classList.contains('active')) claimLoginBonus();
+        }, 650);
+      }
     } catch(error) {
       console.error('[LoginBonus] bonus page render failed:', error);
       list.innerHTML = '<div class="bonus-page-error">ボーナス状況の取得に失敗しました。</div>';
@@ -435,6 +451,11 @@
     await renderBonusPage();
   }
 
+  function closeBonusScreen(){
+    clearTimeout(autoClaimTimer);
+    if(typeof window.showMainTab === 'function') window.showMainTab('main');
+  }
+
   async function openLoginBonusFromBonusPage(){
     // ［受け取る］でも旧ポップアップへ遷移せず、この画面で確定する。
     await claimLoginBonus();
@@ -459,5 +480,6 @@
   window.openBonusScreen = openBonusScreen;
   window.renderBonusPage = renderBonusPage;
   window.openLoginBonusFromBonusPage = openLoginBonusFromBonusPage;
+  window.closeBonusScreen = closeBonusScreen;
   window.refreshBonusHomeNotice = refreshBonusHomeNotice;
 })();
