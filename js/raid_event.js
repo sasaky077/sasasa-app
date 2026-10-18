@@ -1256,8 +1256,22 @@
     '#daily-raid-recruit-cancel'
   ].join(',');
 
+  // build1596: ロビー（ENEMY INFO / RAID INFO）はボス別テーマのスキン（css/raid_theme.css）で描くため、
+  // 旧来の「白膜を inline !important で強制」する処理を適用しない（入口・参加選択・ルールは従来どおり）。
+  const RAID_THEME_SKIN = true;
+  const RAID_CANONICAL_PROPS = ['background','background-color','background-image','border','border-radius','box-shadow',
+    'backdrop-filter','-webkit-backdrop-filter','filter','opacity','mix-blend-mode','background-blend-mode','-webkit-mask-image','mask-image'];
+  function stripRaidSurfaceStyle(el){
+    if(el.getAttribute('data-raid-canonical-surface')!=='1') return;
+    el.removeAttribute('data-raid-canonical-surface');
+    RAID_CANONICAL_PROPS.forEach(prop=>el.style.removeProperty(prop));
+    el.querySelectorAll('strong,b,span,small').forEach(node=>{
+      ['color','-webkit-text-fill-color','text-shadow'].forEach(prop=>node.style.removeProperty(prop));
+    });
+  }
   function forceRaidSurfaceStyle(el){
     if(!el || !el.style) return;
+    if(RAID_THEME_SKIN && el.closest && el.closest('#daily-raid-lobby')){ stripRaidSurfaceStyle(el); return; }
     el.setAttribute('data-raid-canonical-surface','1');
     const set=(prop,value)=>el.style.setProperty(prop,value,'important');
     const isCancel = el.id === 'daily-raid-recruit-cancel';
@@ -1342,6 +1356,7 @@
     if(root){ applyRaidCanonicalSurfaces(root); bindRaidSurfaceObserver(root); return root; }
     root=document.createElement('div');
     root.id='daily-raid-root';
+    root.dataset.raidTheme='sigma';
     root.setAttribute('aria-hidden','true');
     root.innerHTML=`
       <div class="daily-raid-page">
@@ -1380,10 +1395,10 @@
           <div class="daily-raid-swipe-shell">
             <nav class="daily-raid-swipe-tabs raid-surface" aria-label="レイド情報切替">
               <button type="button" class="daily-raid-swipe-tab raid-surface is-active" data-raid-page="0" aria-selected="true">
-                <small>01</small><span>ENEMY INFO</span>
+                <small>01</small><span>ENEMY INFO<em class="drt-tab-sub">エネミー情報</em></span>
               </button>
               <button type="button" class="daily-raid-swipe-tab raid-surface" data-raid-page="1" aria-selected="false">
-                <small>02</small><span>RAID INFO</span>
+                <small>02</small><span>RAID INFO<em class="drt-tab-sub">レイド情報</em></span>
               </button>
             </nav>
 
@@ -1398,14 +1413,19 @@
                   </section>
 
                   <section class="daily-raid-hpbox raid-surface">
+                    <div class="drt-hp-card">
                     <div class="daily-raid-hphead"><div><small>現在のHP</small></div><strong id="daily-raid-hptext">-- / 100,000</strong></div>
                     <div class="daily-raid-hpbar"><i id="daily-raid-hpfill"></i><em id="daily-raid-hppending" aria-hidden="true"></em><span></span></div>
+                    </div>
+                    <div class="drt-break-card">
+                    <div class="drt-break-title">BREAK</div>
                     <div class="daily-raid-hpforecast" id="daily-raid-hpforecast" hidden></div>
                     <div class="daily-raid-break" id="daily-raid-break" hidden>
                       <small>BREAK</small>
                       <div class="daily-raid-break-bar"><i id="daily-raid-break-fill"></i></div>
                       <b id="daily-raid-break-pct">0%</b>
                       <span id="daily-raid-break-text">--</span>
+                    </div>
                     </div>
                     <div class="daily-raid-hpmeta"><b id="daily-raid-status">CONNECTING...</b><span>RESET 00:00 JST</span></div>
                   </section>
@@ -2100,6 +2120,8 @@
   function renderBossHero(root,status){
     if(status&&status.boss&&status.boss.key) writeCachedBoss(status.boss);
     const def=getBossDef(status);
+    // build1596: ボス別テーマ（sigma=黒 / shien=紫 / camilla=赤）。css/raid_theme.css
+    root.dataset.raidTheme=RAID_BOSS_DEFS[def.key]?def.key:'sigma';
     root.querySelectorAll('[data-raid-boss-name]').forEach(el=>{ el.textContent=def.name; });
     root.querySelectorAll('[data-raid-boss-line]').forEach(el=>{ el.textContent=def.line||''; });
     // build1580: 入口画面（チーム未所属）のボス画像も含めて差し替える
@@ -2430,7 +2452,8 @@
     const bestDamage=n(me.best_damage);
     const members=Array.isArray(status&&status.members)?status.members:[];
 
-    root.querySelector('#daily-raid-hptext').textContent=`${fmt(hp)} / ${fmt(maxHp)}`;
+    // build1596: 現在HPを大きく・最大HPを小さく（テーマスキン用に分けて出力）
+    root.querySelector('#daily-raid-hptext').innerHTML=`<em class="drt-hp-now">${fmt(hp)}</em><span class="drt-hp-max"> / ${fmt(maxHp)}</span>`;
     root.querySelector('#daily-raid-hpfill').style.transform=`scaleX(${Math.max(0,Math.min(1,hp/maxHp))})`;
     renderForecast(root,status,hp,maxHp,cleared);
     renderBreakAndRank(root,status,cleared);
