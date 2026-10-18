@@ -23927,8 +23927,8 @@
     // build812: RESULT処理中にstage参照が変化してもDAILY判定を揺らさない。
     const dailyQuestAtResult = isDailyQuestStage();
 
-    // RESULTへ入るタイミングで戦闘BGMを短くフェードアウト。
-    fadeOutShootingBattleBgm(520, true);
+    // RESULTへ入るタイミングで戦闘BGMをゆっくりフェードアウト（build1622: 0.52秒→1.8秒）。
+    fadeOutShootingBattleBgm(1800, true);
 
     // CH04専用ギミックはRESULTへ持ち越さない。
     clearChapter4FinalItem();
@@ -24981,6 +24981,7 @@
   function stopShootingBattleBgm(resetPosition) {
     cancelShootingBattleBgmFade();
     getAllShootingBattleBgmTracks().forEach(audio => {
+      if (window.ZsBgmFade) window.ZsBgmFade.cancel(audio);
       try { audio.pause(); } catch (_) {}
       if (resetPosition) {
         try { audio.currentTime = 0; } catch (_) {}
@@ -25003,6 +25004,7 @@
 
     getAllShootingBattleBgmTracks().forEach(audio => {
       if (audio !== target) {
+        if (window.ZsBgmFade) window.ZsBgmFade.cancel(audio);
         try { audio.pause(); } catch (_) {}
         try { audio.currentTime = 0; } catch (_) {}
       }
@@ -25014,6 +25016,8 @@
     target.muted = false;
     target.volume = getShootingBattleBgmVolume();
     if (target.paused) {
+      // build1622: バトル開始時はふわっと入る
+      if (window.ZsBgmFade) window.ZsBgmFade.fadeIn(target, options.restart ? 900 : 400, getShootingBattleBgmVolume());
       const p = target.play();
       if (p && typeof p.catch === 'function') {
         p.catch(err => console.warn('[shooting BGM] play failed:', err));
@@ -25036,6 +25040,15 @@
     if (!playing.length) {
       stopShootingBattleBgm(!!resetPosition);
       updateShootingBattleBgmMenuUi();
+      return;
+    }
+
+    // build1622: iOSでも効くフェード（Web Audio）。無い環境は下の従来処理。
+    if (window.ZsBgmFade) {
+      const restoreVolume = getShootingBattleBgmVolume();
+      playing.forEach(audio => window.ZsBgmFade.fadeOut(audio, durationMs, {
+        reset: !!resetPosition, restoreVolume, onDone: updateShootingBattleBgmMenuUi,
+      }));
       return;
     }
 
@@ -25305,7 +25318,7 @@
 
     // ABORT MISSIONを短く見せた後、白へフェードアウト。
     await sleepShootingAbort(720);
-    fadeOutShootingBattleBgm(520, true);
+    fadeOutShootingBattleBgm(1200, true);
     overlay.classList.add('fadeout');
     await sleepShootingAbort(650);
 
@@ -26131,7 +26144,7 @@
 
     // 通常RETRYは「再度ステージへ入る」演出を挟む。
     // CH01-04のアルノ戦RETRYだけは負けイベントを飛ばし、戦闘開始台詞へ直行する。
-    fadeOutShootingBattleBgm(180, true);
+    fadeOutShootingBattleBgm(700, true);
     beginShootingStageTransitionMask();
     const stageIcatchPromise = chapter104ArnoRetry
       ? Promise.resolve()
@@ -26238,7 +26251,7 @@
     }
 
     // PAUSEからの途中退出などでも戦闘BGMを残さない。
-    fadeOutShootingBattleBgm(resultWasVisible ? 220 : 160, true);
+    fadeOutShootingBattleBgm(resultWasVisible ? 1000 : 800, true);
 
     // SCORE ATTACKのRESULT画面から「戻る」を押した場合だけ、
     // ホームではなく「すこあた！」イベント画面へ戻す。
