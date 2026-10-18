@@ -14725,3 +14725,55 @@ html body #shooting-event-root[data-raid-boss="shooting_raid_camilla"] :is(.shoo
 @media (prefers-reduced-motion:reduce){
   .summon-item-v2 .si-ring,.summon-item-v2 .si-spark,.summon-item-v2 .si-gem::after{animation:none}
 }
+
+/* build1613 — スマイル ULT「びっくり箱」: 本体座標はpositionUnitだけが管理する。 */
+#shooting-event-root .shooting-smile-box{
+  position:absolute;left:0;top:0;width:108px;height:108px;z-index:18;
+  pointer-events:none;overflow:visible;transform-origin:center center;
+}
+#shooting-event-root .shooting-smile-box img{
+  position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:contain;
+  filter:drop-shadow(0 0 10px rgba(255,211,83,.75)) drop-shadow(0 7px 6px rgba(61,48,23,.4));
+  animation:smileBoxAppear .32s ease-out both;
+}
+#shooting-event-root .smile-box-halo{position:absolute;inset:4px;border-radius:50%;
+  border:2px solid rgba(255,225,108,.6);box-shadow:0 0 17px rgba(255,216,98,.65);
+  animation:smileBoxHalo 1.2s ease-in-out infinite alternate}
+#shooting-event-root .smile-box-timer{position:absolute;bottom:0;left:16%;width:68%;height:4px;
+  background:linear-gradient(90deg,#fff4a0,#ffc64c);border-radius:5px;
+  box-shadow:0 0 7px rgba(255,221,100,.85);transform-origin:left center;
+  animation:smileBoxTimer 3s linear forwards}
+#shooting-event-root .shooting-smile-box.smile-box-hit .smile-box-halo{animation:smileBoxHit .2s ease-out}
+#shooting-event-root .shooting-smile-box-explosion{
+  position:absolute;left:0;top:0;z-index:48;width:var(--smile-blast-size,284px);
+  height:var(--smile-blast-size,284px);border-radius:50%;pointer-events:none;
+}
+#shooting-event-root .shooting-smile-box-explosion .smile-blast-core,
+#shooting-event-root .shooting-smile-box-explosion .smile-blast-ring{position:absolute;inset:0;border-radius:50%}
+#shooting-event-root .shooting-smile-box-explosion .smile-blast-core{
+  background:radial-gradient(circle,#fffef6 0%,rgba(255,245,155,.96) 17%,rgba(255,201,56,.65) 35%,rgba(255,215,72,0) 70%);
+  animation:smileBlast .63s ease-out forwards}
+#shooting-event-root .shooting-smile-box-explosion .smile-blast-ring{
+  border:4px solid rgba(255,237,152,.95);box-shadow:0 0 24px rgba(255,208,56,.85);
+  animation:smileBlastRing .62s ease-out forwards}
+#shooting-event-root .shooting-smile-box-explosion .smile-blast-star{
+  position:absolute;left:50%;top:50%;font-size:64px;line-height:1;color:#fff2b2;
+  text-shadow:0 0 25px #ffc93b;animation:smileBlastStar .6s ease-out forwards}
+/* ULTゲージ用だけ色を追加。サイズ/配置/回転/拾い演出は既存のミモザ共通CSS。 */
+#shooting-event-root .summon-item-v2.si-kind-ult,
+#shooting-event-root .summon-item-burst.si-kind-ult{
+  --c1:#f3c43a;--c2:#fff6c6;--c3:#af7b10;
+  --ca:rgba(245,203,72,.55);--cb:rgba(245,203,72,.22);--cs:rgba(175,123,16,.8)}
+@keyframes smileBoxAppear{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
+@keyframes smileBoxHalo{from{opacity:.35;transform:scale(.91)}to{opacity:.85;transform:scale(1.03)}}
+@keyframes smileBoxHit{from{opacity:1;box-shadow:0 0 28px rgba(255,255,180,1)}to{opacity:.6;box-shadow:0 0 12px rgba(255,216,98,.55)}}
+@keyframes smileBoxTimer{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+@keyframes smileBlast{from{opacity:1;transform:scale(.25)}to{opacity:0;transform:scale(1)}}
+@keyframes smileBlastRing{from{opacity:1;transform:scale(.15)}to{opacity:0;transform:scale(1)}}
+@keyframes smileBlastStar{from{opacity:1;transform:translate(-50%,-50%) scale(.4) rotate(0)}to{opacity:0;transform:translate(-50%,-50%) scale(1.5) rotate(100deg)}}
+@media(prefers-reduced-motion:reduce){#shooting-event-root .shooting-smile-box img,
+  #shooting-event-root .smile-box-halo{animation:none}}
+
+/* PAUSEではバトル時刻と同様、箱の残り時間演出も静止する。 */
+#shooting-event-root.is-shooting-paused .shooting-smile-box *,
+#shooting-event-root.is-shooting-paused .shooting-smile-box{animation-play-state:paused!important}

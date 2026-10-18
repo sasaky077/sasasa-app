@@ -4289,6 +4289,7 @@
       chapter6Barriers: [],
       collectibles: [],
       mimosaItems: [],
+      smileBoxes: [],
       boss: {
         x: 0, y: 42,
         element: isSelectedBaseStage(SHOOTING_STAGE_ID.CH01_04)
@@ -4682,12 +4683,14 @@
   function clearProjectiles() {
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
+    clearSmileBoxes();
     arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-rose-fortress,.shooting-remna-trap-preview,.shooting-conjure-preview,.shooting-conjure-deploy-projectile,.shooting-conjure-turret,.shooting-conjure-ult-turret,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-sui-time-domain,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning,.shooting-ch07-complete-shield,.shooting-ch07-torii').forEach(el => el.remove());
     clearEnemyBulletCanvas();
     if (state) {
       state.bullets = [];
       state.enemyBullets = [];
       state.clarineDecoys = [];
+      state.smileBoxes = [];
       state.greshaBurnField = null;
       state.ignisLaserEl = null;
       state.ignisFireWheel = null;
@@ -18141,6 +18144,9 @@
 
     state.enemyBullets = state.enemyBullets.filter(p => {
       if (!p || !p.el) return false;
+      // 1フレームで箱をすり抜ける高速弾も遮蔽するため始点を保存。
+      const smileBulletStartX = Number(p.x || 0);
+      const smileBulletStartY = Number(p.y || 0);
 
       // トイフェルULT中：敵弾は通常の移動・当たり判定を行わず、
       // 現在位置に近い左右どちらかのブラックホールへ吸収される。
@@ -18367,6 +18373,13 @@
       const offscreenMargin = isChapter03BossStage() ? 10 : 30;
       if (!p.dangerRicochet && !p.dangerDrift && !p.ambushBounce && (p.y > h + offscreenMargin || p.x < -offscreenMargin || p.x > w + offscreenMargin || p.y < -offscreenMargin)) { p.el.remove(); return false; }
       const r = getUnitRect(p, arenaRect);
+
+      // スマイルの箱：描画と共有するアリーナ中心座標で貫通防止。
+      // 敵弾の前フレーム位置→現在位置を判定し、Canvas弾も同一経路で吸収する。
+      if (tryBlockEnemyBulletWithSmileBox(p, smileBulletStartX, smileBulletStartY, now)) {
+        p.el.remove();
+        return false;
+      }
 
       // ミトULT召喚獣は独立したHP付きユニットとして敵弾を受ける。
       if (tryDamageMitoSummonFromEnemyBullet(p, arenaRect, now)) {
@@ -19907,9 +19920,11 @@
     atk: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l3.2 4.6h-2.1V14h-2.2V7.6H8.8z"/><path d="M7 16.2h10v2.2H7z"/></svg>',
     heal: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5h4v5h5v4h-5v5h-4v-5H5v-4h5z"/></svg>',
     invincible: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 2.6v5.6c0 4.4-3 7.8-7 9.8-4-2-7-5.4-7-9.8V5.6z"/></svg>',
+    // ULT全回復も既存アイテムと同じ宝石・光輪UIを使用する。
+    ult: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2L4 13h7l-1 9 10-13h-7l1-7z"/></svg>',
     heart: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.2l-1.4-1.3C5.6 14.4 2.6 11.7 2.6 8.3 2.6 5.6 4.7 3.6 7.3 3.6c1.6 0 3.2.8 4.7 2.4 1.5-1.6 3.1-2.4 4.7-2.4 2.6 0 4.7 2 4.7 4.7 0 3.4-3 6.1-8 10.6z"/></svg>',
   });
-  const SUMMON_ITEM_TAG = Object.freeze({ atk:'ATK', heal:'HEAL', invincible:'GUARD', heart:'HEAL' });
+  const SUMMON_ITEM_TAG = Object.freeze({ atk:'ATK', heal:'HEAL', invincible:'GUARD', heart:'HEAL', ult:'ULT' });
   function applySummonItemLook(el, kind) {
     if (!el) return;
     const k = SUMMON_ITEM_ICON[kind] ? kind : 'heal';
@@ -20237,6 +20252,11 @@
       showHealNumber(member.hp - hpBefore, member);
     } else if (item.kind === 'invincible') {
       member.invincibleUntil = now + Number(item.invincibleDurationMs || 3000);
+    } else if (item.kind === 'ult') {
+      // 取得者のゲージを本人の必要量まで即回復（ほかのパーティには波及しない）。
+      const active = getCurrentCharacter();
+      member.burst = Math.max(0, Number(active?.burstNeed || 0));
+      member.ultReadyNotified = false;
     }
 
     showShootingItemEffectNotice(item.label, item.detail);
@@ -21659,6 +21679,7 @@
     if (!state.koTransition) updateMovement(dt, ts);
     updateAinaStealth(ts);
     updateHaoTrigger(ts);
+    updateSmileBoxes(ts);
     updateConjurePlacementPreview(ts);
     updateRemnaTrapPlacementPreview(ts);
     updateConjureDeployments(dt, ts);
@@ -25857,7 +25878,7 @@
       console.warn('[shooting trial] start rejected:', reason, { characterId:id });
       return false;
     };
-    if (id !== 36 && id !== 40 && id !== 101) return rejectTrial('unsupported-character');
+    if (id !== 36 && id !== 40 && id !== 56 && id !== 101) return rejectTrial('unsupported-character');
     if (!SHOOTING_CHARACTERS[id]) return rejectTrial('character-definition-missing');
     const existing = document.getElementById(ROOT_ID);
     if (existing && existing.classList.contains('open')) return rejectTrial('another-battle-open');
@@ -30357,6 +30378,159 @@
     applyUltDamage(Math.max(0, Number(c.atk || 0)) * Math.max(0, Number(c.ultDamageAtkMultiplier ?? 2.0)), true, c);
   }
 
+  // ============================================================
+  // build1613: スマイル ULT「びっくり箱」
+  // ハオと同じ arena(x,y) / positionUnit の座標系を描画・弾遮蔽・爆発・ドロップで共有。
+  // CSSのアニメーションは子要素だけで行い、positionUnitのtranslateを上書きしない。
+  // ============================================================
+  const SMILE_BOX_HALF_WIDTH = 44; // 遮蔽は箱の中央88×76px。飾りリボンを判定から除く。
+  const SMILE_BOX_HALF_HEIGHT = 38;
+  function clearSmileBoxes() {
+    if (!state) return;
+    (state.smileBoxes || []).forEach(box => box?.el?.remove());
+    state.smileBoxes = [];
+  }
+
+  function tryBlockEnemyBulletWithSmileBox(bullet, fromX, fromY, now) {
+    if (!state || !Array.isArray(state.smileBoxes) || !state.smileBoxes.length) return false;
+    const toX = Number(bullet.x || 0);
+    const toY = Number(bullet.y || 0);
+    // getUnitRect と同じく弾サイズは既存の半径キャッシュを使う。
+    const hw = Math.max(0, Number(bullet._hw || bullet.canvasHalfWidth || 0));
+    const hh = Math.max(0, Number(bullet._hh || bullet.canvasHalfHeight || 0));
+    for (const box of state.smileBoxes) {
+      if (!box || !box.el?.isConnected || now >= box.explodeAt) continue;
+      const t = segmentAabbEntryT(
+        fromX, fromY, toX, toY,
+        box.x - SMILE_BOX_HALF_WIDTH - hw, box.x + SMILE_BOX_HALF_WIDTH + hw,
+        box.y - SMILE_BOX_HALF_HEIGHT - hh, box.y + SMILE_BOX_HALF_HEIGHT + hh
+      );
+      if (t === null) continue;
+      if (now - Number(box.lastHitFxAt || 0) >= 110) {
+        box.lastHitFxAt = now;
+        box.el.classList.remove('smile-box-hit');
+        void box.el.offsetWidth;
+        box.el.classList.add('smile-box-hit');
+      }
+      return true;
+    }
+    return false;
+  }
+
+  function spawnSmileExplosionFx(x, y, radius) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const fx = document.createElement('div');
+    fx.className = 'shooting-smile-box-explosion';
+    fx.style.setProperty('--smile-blast-size', `${Math.round(radius * 2)}px`);
+    fx.innerHTML = '<span class="smile-blast-core"></span><span class="smile-blast-ring"></span><span class="smile-blast-star">✦</span>';
+    arena.appendChild(fx);
+    positionUnit(fx, x, y);
+    setTimeout(() => fx.remove(), 650);
+  }
+
+  function spawnSmileRandomItem(box, now) {
+    const layer = document.getElementById('shooting-collectible-layer');
+    if (!layer || !state) return;
+    // 4種類は均等抽選。箱の中心（爆発の中心）に出し、拾うまでは残す。
+    const kinds = ['atk', 'invincible', 'heal', 'ult'];
+    const kind = kinds[Math.floor(Math.random() * kinds.length)];
+    const owner = box.owner;
+    const el = document.createElement('div');
+    el.className = `shooting-mimosa-item mimosa-item-${kind}`;
+    applySummonItemLook(el, kind);
+    layer.appendChild(el);
+    const item = {
+      uid: `smile_${kind}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      sourceType:'smile_surprise_box', el, x:box.x, y:box.y, kind,
+      label: kind === 'atk' ? 'ATK UP' : kind === 'invincible' ? 'INVINCIBLE'
+        : kind === 'heal' ? 'HP HEAL' : 'ULT MAX',
+      detail: kind === 'atk' ? 'ATK ×1.5 / 5秒' : kind === 'invincible' ? '3秒無敵'
+        : kind === 'heal' ? '最大HP 33%回復' : 'ULTゲージ全回復',
+      atkBuffMultiplier: Number(owner.smileItemAtkMultiplier ?? 1.5),
+      atkBuffDurationMs: Number(owner.smileItemAtkDurationMs ?? 5000),
+      invincibleDurationMs: Number(owner.smileItemInvincibleDurationMs ?? 3000),
+      healPercent: Number(owner.smileItemHealPercent ?? 0.33),
+      spawnedAt: now,
+    };
+    state.mimosaItems.push(item);
+    positionUnit(el, box.x, box.y);
+  }
+
+  function explodeSmileBox(box, now) {
+    if (!state || state.ended || state.finishing) return;
+    const damage = Math.max(0, Number(box.owner.atk || 0)) * Math.max(0, Number(box.damageMultiplier || 3));
+    const radius = Math.max(30, Number(box.blastRadius || 142));
+    const element = getUltAttackElement(box.owner);
+    box.el?.remove();
+    spawnSmileExplosionFx(box.x, box.y, radius);
+
+    // BOSSの増援も含め、座標が爆風内の敵に1回だけ命中させる。
+    for (const enemy of (state.normalEnemies || []).slice()) {
+      if (!enemy || enemy.hp <= 0 || !enemy.el) continue;
+      const hitPadding = Math.max(18, Math.min(48, Number(enemy._hw || 27)));
+      if (Math.hypot(Number(enemy.x || 0) - box.x, Number(enemy.y || 0) - box.y) > radius + hitPadding) continue;
+      const targetElement = getCombatTargetElement(enemy);
+      damageNormalEnemy(enemy, applyElementDamage(damage, element, targetElement), now, true,
+        getElementDamageReaction(element, targetElement));
+    }
+    state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
+    if (!isNormalBattle() && state.boss && state.boss.hp > 0) {
+      const boss = state.boss;
+      const bossSize = document.getElementById(BOSS_ID)?.getBoundingClientRect();
+      const bossPadding = Math.min(75, Math.max(28, Number(bossSize?.width || 0) * .3));
+      if (Math.hypot(Number(boss.x || 0) - box.x, Number(boss.y || 0) - box.y) <= radius + bossPadding) {
+        applyUltDamage(damage, true, box.owner);
+      }
+    }
+    spawnSmileRandomItem(box, now);
+    if (isNormalBattle()) evaluateNormalMission(now);
+    renderHud();
+  }
+
+  function updateSmileBoxes(now) {
+    if (!state || !Array.isArray(state.smileBoxes) || !state.smileBoxes.length) return;
+    if (state.ended || state.finishing) { clearSmileBoxes(); return; }
+    // 配列を先に更新。爆発から次のULT発動が起きても旧要素は残らない。
+    const expired = [];
+    state.smileBoxes = state.smileBoxes.filter(box => {
+      if (!box?.el?.isConnected) return false;
+      if (now < box.explodeAt) return true;
+      expired.push(box);
+      return false;
+    });
+    expired.forEach(box => explodeSmileBox(box, now));
+  }
+
+  function useSmileSurpriseBoxUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+    showUltCut(c.ultName || 'びっくり箱', c.effectKey, c);
+    ultScreenFlash('ult-flash-eri', c);
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const width = Math.max(120, Number(arena.clientWidth || 0));
+    const height = Math.max(120, Number(arena.clientHeight || 0));
+    const x = clamp(Number(state.player.x ?? width * .5), 60, Math.max(60, width - 60));
+    const y = clamp(Number(state.player.y ?? height * .75) - Number(c.smileBoxOffsetY ?? 90),
+      60, Math.max(60, height - 60));
+    const el = document.createElement('div');
+    el.className = 'shooting-smile-box';
+    el.setAttribute('aria-label', 'スマイル ULT びっくり箱');
+    el.innerHTML = '<span class="smile-box-halo"></span><img src="images/chara_56_box.webp" alt="" draggable="false"><span class="smile-box-timer"></span>';
+    el.style.left = '0px';
+    el.style.top = '0px';
+    arena.appendChild(el);
+    positionUnit(el, x, y);
+    const now = performance.now();
+    state.smileBoxes.push({
+      el, x, y, owner:c, explodeAt:now + Math.max(100, Number(c.smileBoxDurationMs ?? 3000)),
+      blastRadius:Math.max(30, Number(c.smileBoxBlastRadius ?? 142)),
+      damageMultiplier:Math.max(0, Number(c.smileBoxDamageMultiplier ?? 3)),
+      lastHitFxAt:0,
+    });
+    state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), now + 250);
+  }
+
   // build1312: ハオULT『天機・五刻の雷』。盤面固定の成長トリガーを自キャラが回収すると全体落雷。
   const HAO_TRIGGER_DEFAULT_MULTIPLIERS = Object.freeze([1.0, 1.8, 3.0, 4.0, 5.0]);
 
@@ -30865,6 +31039,7 @@
       c.ultType === 'painter_dark_paint_bomb'
     ) usePainterElementSpreadUlt(c);
     else if (c.ultType === 'hao_fivefold_trigger') useHaoUlt(c);
+    else if (c.ultType === 'smile_surprise_box') useSmileSurpriseBoxUlt(c);
     else if (c.ultType === 'aina_stealth') useAinaStealthUlt(c);
     else if (c.ultType === 'forbidden_shock') useNinaUlt(c); // 旧ニーナ落雷演出を70%威力で再利用
     else if (c.ultType === 'nina_output_max' || c.ultType === 'nina_lightning_storm') useNinaOutputMax(c);

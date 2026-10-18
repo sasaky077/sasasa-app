@@ -52,7 +52,7 @@
     LEONA_CROSS: 39,
     KUREHA: 41,
     KYOU: 42, SUZU: 43, MELORIA: 44, KIRIMARU: 45, AIRENA: 46,
-    LINLIN: 47, MUUMUU: 48, MEGMEG: 49, CHACHA: 51, RUIRUI: 53, HAO: 54, TOWA: 101, // ID52 is reserved for Noah (existing saves/RPC)
+    LINLIN: 47, MUUMUU: 48, MEGMEG: 49, CHACHA: 51, RUIRUI: 53, HAO: 54, SMILE: 56, TOWA: 101, // ID52 is reserved for Noah (existing saves/RPC)
   });
 
   // ============================================================
@@ -110,7 +110,7 @@
     40: 'sr', // オリビア（限定ピックアップSR）
     41: 'sr',  // シャオラン
     42: 'r', 43: 'r', 44: 'r', 45: 'r', 46: 'r',
-    47: 'r', 48: 'r', 49: 'r', 51: 'r', 53: 'r', 54: 'sr', 101: 'sr',
+    47: 'r', 48: 'r', 49: 'r', 51: 'r', 53: 'r', 54: 'sr', 56: 'sr', 101: 'sr',
   });
 
   // 現行互換：R はSRに対して基本性能(HP/ATK)を20%落とす。育成/凸の新倍率は別フェーズで統合予定。
@@ -1284,6 +1284,25 @@
     "portraitImage": "images/chara_54.webp",
     "homeImage": "images/chara_54_cut.webp",
     "upImage": "images/chara_54_up.webp",
+    "homeScale": 0.82,
+    "homeOffsetX": 0,
+    "homeOffsetY": -24,
+    "hidden": false
+  },
+  // build1613: SR 光属性・道化師スマイル（ID56）。既存キャラと同じ画像パス規則。
+  "56": {
+    "id": 56,
+    "name": "スマイル",
+    "element": "light",
+    "hp": 615,
+    "atk": 285,
+    "image": "images/chara_56_battle_back.webp",
+    "panelImage": "images/chara_56_panel.webp",
+    "cutinImage": "images/chara_56_cutin.webp",
+    "uiScale": { "panel": 1, "battleBack": 1.2, "battleUp": 1 },
+    "portraitImage": "images/chara_56.webp",
+    "homeImage": "images/chara_56_cut.webp",
+    "upImage": "images/chara_56_up.webp",
     "homeScale": 0.82,
     "homeOffsetX": 0,
     "homeOffsetY": -24,
@@ -2852,6 +2871,28 @@
     haoTriggerUpgradeMs: 2000, haoTriggerSafetyMs: 500,
     haoTriggerMultipliers: [1.0, 1.8, 3.0, 4.0, 5.0],
     burstNeed: 30, ultGainPerHit: 0.476,
+  });
+
+  // build1613: スマイル (ID56) — 光 SR / LASER L / びっくり箱。
+  // 入手経路は未設定。ガチャ排出枠や配布処理には追加しない。
+  SHOOTING_CHARACTERS[CHARACTER_ID.SMILE] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE,
+    id: CHARACTER_ID.SMILE, effectKey: 'smile',
+    label: 'LASER L / SURPRISE BOX',
+    description: '光属性LASER L。ULT「びっくり箱」で前方に敵弾を遮る箱を設置。3秒後に爆発し、周囲へATK×3の光属性ダメージ。ATK UP・無敵・HP回復・ULT全回復のいずれかのアイテムを1個残す。',
+    shotType: 'laser', shotStyle: 'smile', laserSize: 'L',
+    fireRate: 95, laserWidth: 16, laserHitWidth: 50,
+    laserDamageAtkRate: 0.105, laserVisualHoldMs: 130,
+    ultName: 'びっくり箱',
+    ultDescription: '前方に弾幕を遮る箱を3秒間設置。時間経過で範囲内の敵にATK×3.0の光属性ダメージ。ATK×1.5（5秒）・無敵（3秒）・HP33%回復・ULT全回復のいずれか1つをランダムで出現させる。',
+    ultType: 'smile_surprise_box', ultBaseType: 'summon',
+    ultAddons: ['bullet_block', 'damage', 'item_summon'],
+    smileBoxDurationMs: 3000, smileBoxOffsetY: 90,
+    smileBoxDamageMultiplier: 3.0, smileBoxBlastRadius: 142,
+    smileItemAtkMultiplier: 1.5, smileItemAtkDurationMs: 5000,
+    smileItemInvincibleDurationMs: 3000, smileItemHealPercent: 0.33,
+    burstNeed: 32, ultGainPerHit: 0.676,
+    coreTop: '38%', shotOffsetY: 42,
   });
 
   // build1532: トワ (ID101) — 闇 SR / CHARGE M / 常闇。

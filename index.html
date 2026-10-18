@@ -421,7 +421,7 @@
   <link rel="stylesheet" href="css/towa_dark_gacha.css?v=1552">
   <link rel="stylesheet" href="css/towa_notice.css?v=1556">
   <link rel="stylesheet" href="css/towa_preflight.css?v=1548-towa-black-burgundy">
-  <link rel="stylesheet" href="css/shooting_event.css?v=1595-summon-items">
+  <link rel="stylesheet" href="css/shooting_event.css?v=1613-smile">
   <link rel="stylesheet" href="css/shot_fx.css?v=1557-shot-fx">
   <link rel="stylesheet" href="css/tower15_boss.css?v=1485-tower15">
   <link rel="stylesheet" href="css/daily_stage_select.css?v=1388-shared-card">
@@ -6838,6 +6838,21 @@ document.addEventListener('touchend', function (e) {
   const GACHA_PICKUP_OLIVIA_R_RATE = GACHA_R_RATE;
   const GACHA_PICKUP_OLIVIA_MATERIAL_RATE = GACHA_MATERIAL_RATE;
 
+  // 限定ピックアップ邂逅（スマイル） build1614
+  // スマイル(56) 1.2%、恒常SR5体 各0.96%。ニーナ・オリビアと同じ提供割合（SR計6%）。
+  const GACHA_PICKUP_SMILE_ID = 56;
+  const GACHA_PICKUP_SMILE_SR_RATE_MAP = {
+    56: GACHA_PICKUP_INDIVIDUAL_RATE, // スマイル 1.2%
+    2:  (GACHA_SR_RATE - GACHA_PICKUP_INDIVIDUAL_RATE) / 5,
+    31: (GACHA_SR_RATE - GACHA_PICKUP_INDIVIDUAL_RATE) / 5,
+    11: (GACHA_SR_RATE - GACHA_PICKUP_INDIVIDUAL_RATE) / 5,
+    7:  (GACHA_SR_RATE - GACHA_PICKUP_INDIVIDUAL_RATE) / 5,
+    54: (GACHA_SR_RATE - GACHA_PICKUP_INDIVIDUAL_RATE) / 5
+  };
+  const GACHA_PICKUP_SMILE_SR_TOTAL_RATE = Object.keys(GACHA_PICKUP_SMILE_SR_RATE_MAP).reduce(function(total, key){
+    return total + Number(GACHA_PICKUP_SMILE_SR_RATE_MAP[key] || 0);
+  }, 0);
+
   // 進化素材枠。6種を均等抽選。
   const GACHA_EVOLUTION_MATERIAL_IDS = [
     'kyoumei_stone',
@@ -6916,6 +6931,31 @@ document.addEventListener('touchend', function (e) {
       srCharacterIds: [GACHA_PICKUP_OLIVIA_ID].concat(GACHA_PERMANENT_SR_IDS),
       rCharacterIds: GACHA_R_IDS,
       pityCharacterIds: [GACHA_PICKUP_OLIVIA_ID].concat(GACHA_PERMANENT_SR_IDS),
+      disablePity: false,
+      disableTenGuarantee: true,
+      commonMaterialIds: GACHA_EVOLUTION_MATERIAL_IDS,
+      itemMixed: true
+    },
+    {
+      id: 'gacha_08',
+      category: 'normal',
+      poolType: 'pickup',
+      title: '限定邂逅',
+      detailTitle: 'SMILE PICKUP ENCOUNTER',
+      desc: 'SR6% / R64% / 進化素材30%。スマイル1.2%・恒常SR各0.96%。',
+      thumbTitle: 'スマイルPU',
+      img: 'images/gacha_banner_05.webp',
+      cost: 5,
+      srRate: GACHA_PICKUP_SMILE_SR_TOTAL_RATE,
+      rRate: GACHA_R_RATE,
+      materialRate: GACHA_MATERIAL_RATE,
+      characterRateMap: GACHA_PICKUP_SMILE_SR_RATE_MAP,
+      pickupCharaId: GACHA_PICKUP_SMILE_ID,
+      limitedCharacterIds: [GACHA_PICKUP_SMILE_ID],
+      limitedRCharacterIds: [],
+      srCharacterIds: [GACHA_PICKUP_SMILE_ID].concat(GACHA_PERMANENT_SR_IDS),
+      rCharacterIds: GACHA_R_IDS,
+      pityCharacterIds: [GACHA_PICKUP_SMILE_ID].concat(GACHA_PERMANENT_SR_IDS),
       disablePity: false,
       disableTenGuarantee: true,
       commonMaterialIds: GACHA_EVOLUTION_MATERIAL_IDS,
@@ -7474,7 +7514,7 @@ document.addEventListener('touchend', function (e) {
   async function refreshTowerLimitedTicketButton(){
     const btns=document.getElementById('summon-detail-btns');
     const currentId=currentGachaId;
-    if(!btns || !['gacha_03','gacha_05'].includes(currentId))return;
+    if(!btns || !['gacha_03','gacha_05','gacha_08'].includes(currentId))return;
     try{
       const response=await sb.rpc('get_tower_limited_ticket_balance');
       if(response.error)throw response.error;
@@ -7601,8 +7641,8 @@ document.addEventListener('touchend', function (e) {
     }
 
     // Single-character pickup trial only (not the multi-character limited banner).
-    if(btns && gacha.poolType === 'pickup' && (gacha.id === 'gacha_03' || gacha.id === 'gacha_05')){
-      var trialId = gacha.id === 'gacha_03' ? 36 : 40;
+    if(btns && gacha.poolType === 'pickup' && (gacha.id === 'gacha_03' || gacha.id === 'gacha_05' || gacha.id === 'gacha_08')){
+      var trialId = gacha.id === 'gacha_03' ? 36 : (gacha.id === 'gacha_08' ? 56 : 40);
       btns.insertAdjacentHTML('beforeend', '<button type="button" class="gacha-trial-entry" onclick="ZeraphiaGachaTrial.start('+trialId+')" aria-label="使ってみる"><img src="images/gacha_trial_button.webp" alt="使ってみる TRIAL BATTLE - お試し戦"></button>');
     }
 
@@ -11607,7 +11647,7 @@ function goHome(){
 
    function summonAction(count,useTowerTicket){
   currentSummonCount = count || 1;
-  towerLimitedTicketDraw=useTowerTicket===true && currentSummonCount===10 && ['gacha_03','gacha_05'].includes(currentGachaId);
+  towerLimitedTicketDraw=useTowerTicket===true && currentSummonCount===10 && ['gacha_03','gacha_05','gacha_08'].includes(currentGachaId);
 
   userProfile.used_gachas = userProfile.used_gachas || [];
 
@@ -19715,7 +19755,7 @@ function fadeOutOpeningBgm(){
 
 
 
-<script src="js/shooting_characters.js?v=1603-sigma-test"></script>
+<script src="js/shooting_characters.js?v=1613-smile"></script>
 <script src="js/story_scenario.js?v=1522-ch08-4stages"></script>
 <script src="js/story_novel.js?v=1510-aina-seeker-trial"></script>
 <script src="js/stage_select.js?v=1512-ch704-spider-horde"></script>
@@ -19952,12 +19992,12 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1606-shinju-breath"></script>
+<script src="js/shooting_event.js?v=1614-smile-gacha"></script>
 <script src="js/shooting_party_filter.js?v=1472-filter-screen-exit-reset"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1606-shinju-breath"></script>
 <script src="js/skin_system.js?v=1477-skin-battle"></script>
-<script src="js/item_management.js?v=1488-retired-origin-wing"></script>
+<script src="js/item_management.js?v=1614-smile-gacha"></script>
 
 <script id="zeraphia-service-worker-register-v1">
 (function(){
@@ -21641,6 +21681,6 @@ html body #global-user-frame .hud-sweep-line-player::after{
 })();
 </script>
 
-<script src="js/gacha_trial.js?v=1303-real-shooting-trial"></script>
+<script src="js/gacha_trial.js?v=1614-smile-gacha"></script>
 </body>
 </html>

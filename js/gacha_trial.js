@@ -4,7 +4,7 @@
   let pending = false;
   async function start(characterId) {
     const id = Number(characterId);
-    if (id !== 36 && id !== 40 || pending) return false;
+    if (id !== 36 && id !== 40 && id !== 56 || pending) return false;
     pending = true;
     try {
       if (window.__sasaphiaShootingModulesReady) await window.__sasaphiaShootingModulesReady;
