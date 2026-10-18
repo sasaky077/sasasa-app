@@ -14883,3 +14883,14 @@ html body #shooting-event-root[data-shooting-stage^="shooting_tower_"] :is(.shoo
   color:#f6f0ff!important;
   text-shadow:0 0 3px rgba(20,10,40,.95),0 0 7px rgba(30,15,60,.85)!important;
 }
+
+/* =========================================================
+   build1626 レイド カミラ：最初から味方と同じ大きさで表示
+   （従来は戦闘開始後にJSで小さくしていたため、登場時に一瞬大きく見えていた）
+   ========================================================= */
+#shooting-event-root[data-raid-boss="shooting_raid_camilla"] #shooting-boss{
+  width:74px!important;height:126px!important;object-fit:contain!important;
+}
+@media(min-width:700px){
+  #shooting-event-root[data-raid-boss="shooting_raid_camilla"] #shooting-boss{width:82px!important;height:140px!important}
+}

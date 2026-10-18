@@ -421,7 +421,7 @@
   <link rel="stylesheet" href="css/towa_dark_gacha.css?v=1552">
   <link rel="stylesheet" href="css/towa_notice.css?v=1556">
   <link rel="stylesheet" href="css/towa_preflight.css?v=1548-towa-black-burgundy">
-  <link rel="stylesheet" href="css/shooting_event.css?v=1623-tower-bg">
+  <link rel="stylesheet" href="css/shooting_event.css?v=1626-raid-fix">
   <link rel="stylesheet" href="css/shot_fx.css?v=1557-shot-fx">
   <link rel="stylesheet" href="css/tower15_boss.css?v=1485-tower15">
   <link rel="stylesheet" href="css/daily_stage_select.css?v=1388-shared-card">
@@ -18897,18 +18897,11 @@ function playBgm(){
     return;
   }
 
-  // build1622: フェードアウト途中で戻ってきた場合は、止めずにフェードインし直す
-  if(window.ZsBgmFade && (bgm.__zsFadeTimer || bgm.__zsFadeRaf)){
-    window.ZsBgmFade.fadeIn(bgm, 600, bgmVolume / 100);
-    return;
-  }
   if(!bgm.paused) return;
 
   applyBgmVolume();
 
   if(isAudioEnabled('main_bgm')){
-    // build1622: バトルなどから戻った時もふわっと入る（iOSでも効くフェード）
-    if(window.ZsBgmFade) window.ZsBgmFade.fadeIn(bgm, 1400, bgmVolume / 100);
     bgm.play().catch(function(e){
       console.log('BGM再生待機:', e);
     });
@@ -18924,11 +18917,6 @@ function stopBgm(){
     bgmFadeInterval = null;
   }
 
-  // build1622: ホームBGMもすぱっと切らず、短くフェードアウト
-  if(window.ZsBgmFade && !bgm.paused){
-    window.ZsBgmFade.fadeOut(bgm, 600, { restoreVolume: bgmVolume / 100 });
-    return;
-  }
   bgm.pause();
 }
 
@@ -18951,10 +18939,7 @@ function fadeInBgm(){
   var target = bgmVolume / 100;
   var vol = 0;
 
-  // build1622: iOSでは volume のフェードが効かないため共通のフェードを使う
-  var useSharedFade = !!window.ZsBgmFade;
-  if(useSharedFade) window.ZsBgmFade.fadeIn(bgm, 1400, target);
-  else bgm.volume = 0;
+  bgm.volume = 0;
 
   if(isAudioEnabled('main_bgm')){
     var playPromise = bgm.play();
@@ -18977,7 +18962,6 @@ function fadeInBgm(){
   } else {
     return;
   }
-  if(useSharedFade) return;
 
   bgmFadeInterval = setInterval(function(){
     vol += 0.05;
@@ -20013,7 +19997,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1625-camilla"></script>
+<script src="js/shooting_event.js?v=1626-raid-fix"></script>
 <script src="js/shooting_party_filter.js?v=1472-filter-screen-exit-reset"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1606-shinju-breath"></script>
@@ -21537,7 +21521,6 @@ html body #global-user-frame .hud-sweep-line-player::after{
 <!-- build1448: ホーム左右メニュー（アイコン＋文字＋金線） -->
 <script src="js/home_menu_redesign.js?v=1448-home-menu-icons"></script>
 <script src="js/notice_dot.js?v=1618-notice-dot"></script>
-<script src="js/bgm_fade.js?v=1622-bgm-fade"></script>
 
 <script id="sasaphia-root-scroll-guard-build752">
 (function(){
