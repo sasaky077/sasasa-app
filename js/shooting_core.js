@@ -9281,6 +9281,7 @@
       Math.max(1, Number(mitoMember.hpMax || before || 1)),
       before + Math.max(0, Number(amount || 0))
     );
+    showHealNumber(mitoMember.hp - before, mitoMember);
     return Math.max(0, mitoMember.hp - before);
   }
 
@@ -18383,7 +18384,8 @@
         const fortressRect = getUnitRect(roseFortress, arenaRect);
         if (rectsHit(r, fortressRect, 0, 8)) {
           const rose = getBattleCharacter(CHARACTER_ID.ROSE);
-          healRoseActiveCharacter(Number(rose?.fortressBulletHealMaxHpRate || 0.03));
+          // build1595: 敵弾1発ごとに最大HPの0.7〜1.0%をランダムに回復
+          healRoseActiveCharacter(0.007 + Math.random() * 0.003);
           p.el.remove();
           return false;
         }
@@ -19897,6 +19899,76 @@
     document.head.appendChild(style);
   }
 
+  // ============================================================
+  // build1595: 召喚アイテム（ミモザ / アイレナ / アンジェのハート）共通の見た目。
+  // 光輪・回転リング・カット宝石・アイコン・きらめき・ラベル。CSSは shooting_event.css（summon-item-v2）。
+  // ============================================================
+  const SUMMON_ITEM_ICON = Object.freeze({
+    atk: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l3.2 4.6h-2.1V14h-2.2V7.6H8.8z"/><path d="M7 16.2h10v2.2H7z"/></svg>',
+    heal: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5h4v5h5v4h-5v5h-4v-5H5v-4h5z"/></svg>',
+    invincible: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 2.6v5.6c0 4.4-3 7.8-7 9.8-4-2-7-5.4-7-9.8V5.6z"/></svg>',
+    heart: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.2l-1.4-1.3C5.6 14.4 2.6 11.7 2.6 8.3 2.6 5.6 4.7 3.6 7.3 3.6c1.6 0 3.2.8 4.7 2.4 1.5-1.6 3.1-2.4 4.7-2.4 2.6 0 4.7 2 4.7 4.7 0 3.4-3 6.1-8 10.6z"/></svg>',
+  });
+  const SUMMON_ITEM_TAG = Object.freeze({ atk:'ATK', heal:'HEAL', invincible:'GUARD', heart:'HEAL' });
+  function applySummonItemLook(el, kind) {
+    if (!el) return;
+    const k = SUMMON_ITEM_ICON[kind] ? kind : 'heal';
+    el.classList.add('summon-item-v2', `si-kind-${k}`);
+    el.innerHTML =
+      '<span class="si-aura"></span><span class="si-ring"></span>' +
+      `<span class="si-gem">${SUMMON_ITEM_ICON[k]}</span>` +
+      '<span class="si-spark s1"></span><span class="si-spark s2"></span><span class="si-spark s3"></span>' +
+      `<b class="si-tag">${SUMMON_ITEM_TAG[k]}</b>`;
+  }
+  // 取得した瞬間の光の弾け（0.45秒で自動削除）
+  function spawnSummonItemPickupFx(item) {
+    const layer = document.getElementById('shooting-collectible-layer') || document.getElementById('shooting-arena');
+    if (!layer || !item) return;
+    const kind = item.sourceType === 'ange_heart' ? 'heart' : (SUMMON_ITEM_ICON[item.kind] ? item.kind : 'heal');
+    const fx = document.createElement('div');
+    fx.className = `summon-item-burst si-kind-${kind}`;
+    fx.innerHTML = '<i></i><i></i>';
+    layer.appendChild(fx);
+    positionUnit(fx, Number(item.x || 0), Number(item.y || 0));
+    setTimeout(() => fx.remove(), 480);
+  }
+
+  // ============================================================
+  // build1595: 回復量の表示。HPゲージ周辺のランダムな位置に小さく「+10」を出す（回復効果全般で共通）。
+  // ============================================================
+  function showHealNumber(amount, member) {
+    const value = Math.round(Number(amount || 0));
+    if (!(value > 0) || !state) return;
+    if (member && Number(member.id) !== Number(state.activeCharacterId)) return;
+    const root = document.getElementById(ROOT_ID);
+    if (!root) return;
+    const candidates = ['#shooting-hp-side-gauge', '#shooting-hp-side .shooting-hp-side-track', '#shooting-player-hp-bar'];
+    let rect = null;
+    for (const sel of candidates) {
+      const el = root.querySelector(sel);
+      if (!el) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) { rect = r; break; }
+    }
+    if (!rect) return;
+    const live = root.querySelectorAll('.shooting-heal-number');
+    if (live.length > 16) live[0].remove();
+    const rootRect = root.getBoundingClientRect();
+    const vertical = rect.height > rect.width;
+    const spreadX = vertical ? 30 : rect.width * .5;
+    const spreadY = vertical ? rect.height * .45 : 14;
+    const cx = rect.left + rect.width / 2 - rootRect.left + (Math.random() - .5) * 2 * spreadX;
+    const cy = rect.top + rect.height / 2 - rootRect.top + (Math.random() - .5) * 2 * spreadY;
+    const el = document.createElement('span');
+    el.className = 'shooting-heal-number';
+    el.textContent = `+${value}`;
+    el.style.left = `${cx.toFixed(1)}px`;
+    el.style.top = `${cy.toFixed(1)}px`;
+    el.style.setProperty('--hn-dx', `${((Math.random() - .5) * 14).toFixed(1)}px`);
+    root.appendChild(el);
+    setTimeout(() => el.remove(), 900);
+  }
+
   function getAngeHeartSpawnPositions(count, w, h) {
     const positions = [];
     const existing = (state?.mimosaItems || [])
@@ -19947,7 +20019,7 @@
       const el = document.createElement('div');
       el.className = 'shooting-ange-heart';
       el.setAttribute('aria-hidden', 'true');
-      el.innerHTML = '<span class="ange-heart-shape">♥</span>';
+      applySummonItemLook(el, 'heart');
       layer.appendChild(el);
 
       const item = {
@@ -20092,7 +20164,7 @@
     defs.forEach(def => {
       const el = document.createElement('div');
       el.className = `shooting-mimosa-item ${def.cls}`;
-      el.innerHTML = '<i></i>';
+      applySummonItemLook(el, def.kind);
       layer.appendChild(el);
 
       // 盤面内のランダム位置。HUDや自機初期位置に極端に近づかない範囲に収める。
@@ -20139,6 +20211,7 @@
 
       if (rectsHit(item.el.getBoundingClientRect(), coreRect, -5, -3)) {
         applyMimosaItemEffect(item, now);
+        spawnSummonItemPickupFx(item);
         item.el.remove();
         return false;
       }
@@ -20159,7 +20232,9 @@
       member.atkBuffUntil = now + Number(item.atkBuffDurationMs || 10000);
     } else if (item.kind === 'heal') {
       const healAmount = Math.round(Number(member.hpMax || 0) * Number(item.healPercent || 0.30));
+      const hpBefore = Number(member.hp || 0);
       member.hp = Math.min(member.hpMax, member.hp + healAmount);
+      showHealNumber(member.hp - hpBefore, member);
     } else if (item.kind === 'invincible') {
       member.invincibleUntil = now + Number(item.invincibleDurationMs || 3000);
     }
@@ -27415,7 +27490,9 @@
 
     const hpMax = Math.max(0, Number(member.hpMax || 0));
     const heal = Math.max(1, Math.round(hpMax * rate));
-    member.hp = Math.min(hpMax, Number(member.hp || 0) + heal);
+    const hpBefore = Number(member.hp || 0);
+    member.hp = Math.min(hpMax, hpBefore + heal);
+    showHealNumber(member.hp - hpBefore, member);
     renderHud();
   }
 
@@ -30736,7 +30813,7 @@
       Math.max(65, arena.clientHeight - 65));
     const el = document.createElement('div');
     el.className = 'shooting-mimosa-item mimosa-item-atk';
-    el.innerHTML = '<i></i>';
+    applySummonItemLook(el, 'atk');
     layer.appendChild(el);
     const item = {
       uid: `airena_atk_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,

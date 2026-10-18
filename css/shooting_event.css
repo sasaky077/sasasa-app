@@ -14650,3 +14650,78 @@ html body #shooting-event-root[data-raid-boss="shooting_raid_camilla"] :is(.shoo
   color:#fff3ea!important;
   text-shadow:0 0 3px rgba(40,0,10,.95),0 0 7px rgba(60,0,15,.85)!important;
 }
+
+/* =========================================================
+   build1595 召喚アイテム（ミモザ / アイレナ / アンジェ）共通デザイン
+   光輪＋回転する光のリング＋カット宝石＋アイコン＋きらめき＋ラベル
+   ========================================================= */
+#shooting-event-root .summon-item-v2{
+  width:46px!important;height:46px!important;border:0!important;background:none!important;box-shadow:none!important;
+  border-radius:0!important;filter:none!important;overflow:visible!important;
+}
+#shooting-event-root .summon-item-v2::before,#shooting-event-root .summon-item-v2::after{content:none!important;display:none!important}
+.summon-item-v2.si-kind-atk{--c1:#ff7a4d;--c2:#ffe1cf;--c3:#b13d1b;--ca:rgba(255,122,77,.55);--cb:rgba(255,122,77,.22);--cs:rgba(177,61,27,.8)}
+.summon-item-v2.si-kind-heal,.summon-item-burst.si-kind-heal{--c1:#3fc27a;--c2:#dcffe9;--c3:#1b7342;--ca:rgba(63,194,122,.55);--cb:rgba(63,194,122,.22);--cs:rgba(27,115,66,.8)}
+.summon-item-v2.si-kind-invincible,.summon-item-burst.si-kind-invincible{--c1:#8d79ff;--c2:#ebe6ff;--c3:#4632b4;--ca:rgba(141,121,255,.55);--cb:rgba(141,121,255,.22);--cs:rgba(70,50,180,.8)}
+.summon-item-v2.si-kind-heart,.summon-item-burst.si-kind-heart{--c1:#ff6f9f;--c2:#ffe3ee;--c3:#b4265a;--ca:rgba(255,111,159,.55);--cb:rgba(255,111,159,.22);--cs:rgba(180,38,90,.8)}
+.summon-item-burst.si-kind-atk{--c1:#ff7a4d;--c2:#ffe1cf;--c3:#b13d1b}
+.summon-item-v2 > span,.summon-item-v2 > b{position:absolute;pointer-events:none}
+.summon-item-v2 .si-aura{inset:-12px;border-radius:50%;
+  background:radial-gradient(circle,var(--ca) 0%,var(--cb) 42%,transparent 70%);
+  animation:siAura 1.3s ease-in-out infinite alternate}
+.summon-item-v2 .si-ring{inset:1px;border-radius:50%;
+  background:conic-gradient(from 0deg,transparent 0 14deg,var(--c1) 14deg 70deg,transparent 70deg 120deg,var(--c3) 120deg 170deg,transparent 170deg 236deg,var(--c1) 236deg 292deg,transparent 292deg);
+  -webkit-mask:radial-gradient(circle closest-side,transparent 74%,#000 78%,#000 94%,transparent 100%);
+          mask:radial-gradient(circle closest-side,transparent 74%,#000 78%,#000 94%,transparent 100%);
+  animation:siSpin 2.6s linear infinite}
+.summon-item-v2 .si-gem{inset:7px;display:flex;align-items:center;justify-content:center;
+  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);
+  background:
+    linear-gradient(135deg,rgba(255,255,255,.95) 0 18%,transparent 18% 100%),
+    linear-gradient(135deg,var(--c2) 0%,var(--c1) 46%,var(--c3) 100%)}
+.summon-item-v2 .si-gem::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.75) 46%,transparent 58%);
+  background-size:220% 100%;animation:siShine 1.9s ease-in-out infinite}
+.summon-item-v2 .si-gem svg{position:relative;z-index:1;width:17px;height:17px;fill:#fff;
+  filter:drop-shadow(0 1px 1px var(--cs))}
+.summon-item-v2 .si-spark{width:5px;height:5px;left:50%;top:50%;margin:-2.5px;border-radius:50%;
+  background:#fff;box-shadow:0 0 6px var(--c1),0 0 2px #fff;animation:siOrbit 2.2s linear infinite}
+.summon-item-v2 .si-spark.s2{animation-delay:-.73s;width:4px;height:4px}
+.summon-item-v2 .si-spark.s3{animation-delay:-1.46s;width:3px;height:3px}
+.summon-item-v2 .si-tag{left:50%;top:100%;transform:translate(-50%,1px);white-space:nowrap;
+  font:700 8px/1 'Cinzel','Noto Serif JP',serif;letter-spacing:.12em;color:#fff;
+  padding:2px 5px 2px 6px;border-radius:6px;background:var(--c3);
+  box-shadow:0 0 0 1px var(--c2),0 2px 6px rgba(0,0,0,.25)}
+@keyframes siAura{from{opacity:.65;transform:scale(.92)}to{opacity:1;transform:scale(1.08)}}
+@keyframes siSpin{to{transform:rotate(360deg)}}
+@keyframes siShine{0%,40%{background-position:120% 0}100%{background-position:-120% 0}}
+@keyframes siOrbit{
+  0%{transform:rotate(0deg) translateX(23px) scale(.6);opacity:0}
+  20%{opacity:1}
+  80%{opacity:1}
+  100%{transform:rotate(360deg) translateX(23px) scale(1);opacity:0}}
+/* アンジェのハートは点滅（寿命間近）を維持 */
+#shooting-event-root .shooting-ange-heart.summon-item-v2.is-expiring{animation:angeHeartBlink .34s steps(1,end) infinite}
+/* 取得時の光の弾け */
+.summon-item-burst{position:absolute;left:0;top:0;width:0;height:0;z-index:35;pointer-events:none}
+.summon-item-burst i{position:absolute;left:-30px;top:-30px;width:60px;height:60px;border-radius:50%;
+  border:3px solid var(--c1);box-shadow:0 0 14px var(--c1),inset 0 0 10px var(--c2);
+  animation:siBurst .45s ease-out forwards}
+.summon-item-burst i:nth-child(2){border-width:2px;border-color:var(--c2);animation-delay:.06s}
+@keyframes siBurst{from{transform:scale(.3);opacity:1}to{transform:scale(1.5);opacity:0}}
+
+/* =========================================================
+   build1595 回復量の表示（HPゲージ周辺にランダム配置）
+   ========================================================= */
+.shooting-heal-number{position:absolute;z-index:60;pointer-events:none;white-space:nowrap;transform:translate(-50%,-50%);
+  font:700 12px/1 'Cinzel','Noto Serif JP',serif;letter-spacing:.02em;color:#1f9a55;
+  text-shadow:0 0 3px #fff,0 0 6px rgba(255,255,255,.95),0 1px 0 #fff;
+  animation:healNumberRise .85s cubic-bezier(.2,.7,.3,1) forwards}
+@keyframes healNumberRise{
+  0%{opacity:0;translate:0 4px;scale:.7}
+  18%{opacity:1;scale:1.1}
+  35%{scale:1}
+  100%{opacity:0;translate:var(--hn-dx,0px) -22px}}
+@media (prefers-reduced-motion:reduce){
+  .summon-item-v2 .si-ring,.summon-item-v2 .si-spark,.summon-item-v2 .si-gem::after{animation:none}
+}

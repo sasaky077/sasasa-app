@@ -1846,7 +1846,7 @@
     fortressForwardOffsetY: 92,
     fortressContactIntervalMs: 250,
     fortressContactDamageAtkRate: 1.0,
-    fortressBulletHealMaxHpRate: 0.03,
+    fortressBulletHealMaxHpRate: 0.01, // build1595: 実際は1発ごとに0.7〜1.0%のランダム（shooting_core.js）
 
     // ---- 廃止済み旧「花園の息吹」設定（別系統に影響させない）----
     flowerImage: 'images/chara_09_battle_flower.webp',
@@ -3067,7 +3067,7 @@
       case 'toyfel_double_black_hole':
         return '画面の左右端にブラックホールを2つ、' + sec(c.toyfelBlackHoleDurationMs, 7000) + '間展開。近くの敵弾を吸い込んで消す。';
       case 'rose_fortress':
-        return '前方に画面幅の防御壁を' + sec(c.fortressDurationMs, 5000) + '間設置。通常の敵弾を防ぐたび操作キャラの最大HPの' + pct(c.fortressBulletHealMaxHpRate, 0.03) + 'を回復し、触れた敵に' + sec(c.fortressContactIntervalMs, 250) + 'ごとに' + atk(c.fortressContactDamageAtkRate, 1.0) + 'のダメージ。' + note('WARNING・HEAVY・レーザーは防げない。展開中は通常ショット停止');
+        return '前方に画面幅の防御壁を' + sec(c.fortressDurationMs, 5000) + '間設置。通常の敵弾を防ぐたび操作キャラの最大HPの0.7〜1%をランダムに回復し、触れた敵に' + sec(c.fortressContactIntervalMs, 250) + 'ごとに' + atk(c.fortressContactDamageAtkRate, 1.0) + 'のダメージ。' + note('WARNING・HEAVY・レーザーは防げない。展開中は通常ショット停止');
       case 'aina_stealth':
         return sec(c.ainaStealthDurationMs, 10000) + '間、敵に狙われなくなる（発動時の位置を狙わせる）。効果中は通常ショットの威力が' + mul(c.ainaStealthShotMultiplier, 1.3) + '。' + note('敵弾は消えず、無敵にもならない');
 
