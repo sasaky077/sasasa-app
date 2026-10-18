@@ -912,6 +912,11 @@
     xRate: .50, yRate: .34, widthRate: .76, height: 24,
     moveRangeRate: 0, moveSpeed: 0, contactDamage: 55,
   })]);
+  // build1616: スマイル試遊専用。画面中央の高さに左右2枚の分割壁（中央に射線の隙間）。
+  const GACHA_TRIAL_SMILE_WALL = Object.freeze([
+    Object.freeze({ xRate: .25, yRate: .50, widthRate: .36, height: 22, moveRangeRate: 0, moveSpeed: 0, contactDamage: 55 }),
+    Object.freeze({ xRate: .75, yRate: .50, widthRate: .36, height: 22, moveRangeRate: 0, moveSpeed: 0, contactDamage: 55 }),
+  ]);
 
   function resolveSelectedStage(options) {
     if (options && options.stageId) selectedStageId = String(options.stageId);
@@ -6018,7 +6023,7 @@
                   : ((isFacelessStage() || isFacelessBullet)
                     ? 'faceless'
                     : (isGachaTrialStage()
-                    ? (gachaTrialCharacterId === 36 ? 'faceless' : 'ch03')
+                    ? ((gachaTrialCharacterId === 36 || gachaTrialCharacterId === 56) ? 'faceless' : 'ch03')
                     : (storyChapter ? `ch0${storyChapter}` : 'normal'))))))));
       const p = {
         el: virtualEl,
@@ -12675,6 +12680,13 @@
       if (isGachaTrialStage() && gachaTrialCharacterId === 36) {
         def = Object.assign({}, def, { element: 'dark' });
       }
+      // build1616: トワ試遊は光属性、スマイル試遊は闇属性の敵にする。
+      if (isGachaTrialStage() && gachaTrialCharacterId === 101) {
+        def = Object.assign({}, def, { element: 'light' });
+      }
+      if (isGachaTrialStage() && gachaTrialCharacterId === 56) {
+        def = Object.assign({}, def, { element: 'dark' });
+      }
 
       // build1241: 通常戦でスポーン順ごとの属性指定を許可する。
       // CH03-03は同じMINI_03を、木→火→水→闇→光の5属性で1体ずつ出す。
@@ -12818,7 +12830,11 @@
   // ============================================================
   function getChapter6BarrierConfig() {
     // 試遊専用の壁はオリビア(ID40)だけ。CH06/DAILYの判定には一切影響させない。
-    if (isGachaTrialStage()) return gachaTrialCharacterId === 40 ? GACHA_TRIAL_OLIVIA_WALL : [];
+    if (isGachaTrialStage()) {
+      if (gachaTrialCharacterId === 40) return GACHA_TRIAL_OLIVIA_WALL;
+      if (gachaTrialCharacterId === 56) return GACHA_TRIAL_SMILE_WALL;
+      return [];
+    }
     if (selectedStage && Array.isArray(selectedStage.chapter6Barriers) && selectedStage.chapter6Barriers.length) {
       const timedWall = selectedStage.towerTimedWall;
       if (timedWall && state) {
@@ -25837,7 +25853,8 @@
     const root = document.getElementById(ROOT_ID);
     if (!root) return false;
     root.dataset.gachaTrial = '1';
-    if (gachaTrialCharacterId === 40) {
+    if (gachaTrialCharacterId === 40 || gachaTrialCharacterId === 56) {
+      // スマイルの分割壁もオリビア試遊と同じ白金の壁デザインを使う
       root.dataset.gachaOliviaWall = '1';
       ensureGachaTrialOliviaWallStyle();
     }

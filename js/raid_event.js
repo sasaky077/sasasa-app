@@ -1480,7 +1480,7 @@
               <div><b>05</b><span>討伐ランク：C 討伐 / B ブレイク達成 / A＋合計BEST120% / S＋合計BEST150%</span></div>
               <div><b>06</b><span>討伐後、挑戦したメンバーは報酬を受け取れる。S ボスの欠片／A 聖霊花(R)／B 進化素材ランダム2つ／C コイン。一覧はRAID INFOの「報酬一覧」</span></div>
               <div><b>07</b><span>累計討伐ボーナス：討伐した日数が節目に届くと結晶。30回ごとにくり返し、累計50回・100回は結晶100</span></div>
-              <div><b>08</b><span>ボスの欠片を集めると、そのボスが仲間になる</span></div>
+              <div><b>08</b><span>ボスの欠片を集めると、そのボスを入手できる。</span></div>
             </div>
           </section>
         </div>
@@ -2202,7 +2202,7 @@
       <div class="drp-bar"><i style="transform:scaleX(${ratio})"></i></div>
       ${hasNext?`<div class="drp-next"><span>あと${fmt(next-total)}回（${fmt(next)}回目）</span><b>${esc(itemsText(pr.next_items))}</b></div>`:`<div class="drp-next"><span>累計討伐ボーナスをすべて達成</span></div>`}
       ${n(status.rank_reward&&status.rank_reward.unclaimed_count)>0?`<div class="drp-piece drp-claim"><span style="grid-column:1/3">未受取の討伐報酬<small>${fmt(status.rank_reward.unclaimed_count)}件 · 受け取ると累計に加算されます</small></span><button type="button" id="daily-raid-claim-pending">受け取る</button></div>`:''}
-      ${boss&&boss.piece_item_id?`<div class="drp-piece"><img src="${esc(def.pieceImage||'')}" alt="" onerror="this.style.visibility='hidden'"><span>${esc(def.name)}の欠片<small>${fmt(have)} / ${fmt(need)}　S討伐で1個・${fmt(need)}個で仲間に</small></span><button type="button" id="daily-raid-piece-exchange" ${canExchange?'':'disabled'}>交換</button></div>`:''}`;
+      ${boss&&boss.piece_item_id?`<div class="drp-piece"><img src="${esc(def.pieceImage||'')}" alt="" onerror="this.style.visibility='hidden'"><span>${esc(def.name)}の欠片<small>${fmt(have)} / ${fmt(need)}　S討伐で1個獲得<br>${fmt(need)}個獲得でキャラ入手。</small></span><button type="button" id="daily-raid-piece-exchange" ${canExchange?'':'disabled'}>交換</button></div>`:''}`;
     const ex=box.querySelector('#daily-raid-piece-exchange');
     if(ex) ex.addEventListener('click',()=>exchangeBossPiece(status));
     const tb=box.querySelector('#daily-raid-reward-table-open');

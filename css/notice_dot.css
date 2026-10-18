@@ -1,0 +1,76 @@
+/* =========================================================
+   build1618 — 通知ドットの共通化
+   - 見た目は1種類（色・フチ・影）。形は「数字なしの点」と「数字ありのバッジ」の2つだけ
+   - 脈動などのアニメーションはすべて無し
+   - 位置は各メニューの「アイコン右上」（レイドバトルと同じ）。座標は notice_dot.js が
+     アイコンの実寸から --zs-dot-top / --zs-dot-right を設定する（下は初期値）
+   ========================================================= */
+:root{
+  --zs-dot-bg:#e33434;
+  --zs-dot-border:#fff8ec;
+  --zs-dot-shadow:0 2px 6px rgba(80,0,0,.34),0 0 0 1px rgba(125,24,24,.14);
+  --zs-dot-size:13px;
+  --zs-badge-h:18px;
+}
+
+/* ---------- ホームメニューの通知（アンカー内） ---------- */
+html body #screen-main#screen-main .home-menu-notice-anchor > .home-notice-badge,
+html body #screen-main#screen-main .home-menu-notice-anchor > .shinju-home-entry-badge,
+html body #screen-main#screen-main .home-menu-notice-anchor > .bonus-home-entry-notice,
+html body #screen-main#screen-main .home-menu-notice-anchor > .friend-notice-dot,
+html body #screen-main#screen-main .home-menu-notice-anchor > .raid-notice-dot,
+html body #screen-main#screen-main #resonance-tower-home-entry > .towa-memory-notice-dot{
+  position:absolute!important;
+  top:var(--zs-dot-top,10px)!important;
+  right:var(--zs-dot-right,80px)!important;
+  left:auto!important;bottom:auto!important;
+  margin:0!important;
+  box-sizing:border-box!important;
+  background:var(--zs-dot-bg)!important;
+  border:2px solid var(--zs-dot-border)!important;
+  box-shadow:var(--zs-dot-shadow)!important;
+  border-radius:999px!important;
+  opacity:1!important;
+  transform:none!important;translate:none!important;scale:none!important;
+  animation:none!important;transition:none!important;
+  filter:none!important;
+  pointer-events:none!important;
+  z-index:41!important;
+}
+
+/* 数字なしの点（レイド・ボーナス・トワの記憶、または数字が空のとき） */
+html body #screen-main#screen-main .home-menu-notice-anchor > .raid-notice-dot,
+html body #screen-main#screen-main .home-menu-notice-anchor > .bonus-home-entry-notice,
+html body #screen-main#screen-main #resonance-tower-home-entry > .towa-memory-notice-dot,
+html body #screen-main#screen-main .home-menu-notice-anchor > .zs-dot-plain{
+  width:var(--zs-dot-size)!important;height:var(--zs-dot-size)!important;
+  min-width:var(--zs-dot-size)!important;min-height:var(--zs-dot-size)!important;
+  padding:0!important;font-size:0!important;line-height:0!important;color:transparent!important;
+}
+
+/* 数字ありのバッジ（お知らせ・神聖樹・フレンド） */
+html body #screen-main#screen-main .home-menu-notice-anchor > .home-notice-badge:not(.zs-dot-plain),
+html body #screen-main#screen-main .home-menu-notice-anchor > .shinju-home-entry-badge:not(.zs-dot-plain),
+html body #screen-main#screen-main .home-menu-notice-anchor > .friend-notice-dot:not(.zs-dot-plain){
+  height:var(--zs-badge-h)!important;min-height:var(--zs-badge-h)!important;
+  min-width:var(--zs-badge-h)!important;width:auto!important;
+  padding:0 5px!important;
+  align-items:center!important;justify-content:center!important;
+  font:700 11px/1 "Cinzel","Noto Sans JP",sans-serif!important;
+  color:#fff!important;-webkit-text-fill-color:#fff!important;
+  text-shadow:0 1px 1px rgba(80,0,0,.35)!important;letter-spacing:0!important;
+}
+
+/* 表示・非表示の条件は各機能のまま（ここでは見た目だけを上書き） */
+html body #screen-main#screen-main .raid-home-entry .raid-notice-dot:not(.show){display:none!important}
+html body #screen-main#screen-main #resonance-tower-home-entry > .towa-memory-notice-dot[hidden]{display:none!important}
+
+/* ---------- 下部ナビ「キャラ」の通知（位置は既存のまま、見た目だけ統一） ---------- */
+html body:not(.ui-immersive) #bottom-nav-shared.bottom-nav > #bnav-zukan-notice.bottom-nav-notice-overlay{
+  width:var(--zs-dot-size)!important;height:var(--zs-dot-size)!important;
+  min-width:var(--zs-dot-size)!important;min-height:var(--zs-dot-size)!important;
+  background:var(--zs-dot-bg)!important;
+  border:2px solid var(--zs-dot-border)!important;
+  box-shadow:var(--zs-dot-shadow)!important;
+  animation:none!important;
+}

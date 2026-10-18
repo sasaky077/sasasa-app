@@ -499,3 +499,40 @@ html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby .d
   font-size:clamp(17px,5.2vw,22px)!important;letter-spacing:.12em!important;
 }
 html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby .daily-raid-actions.can-finalize-early #daily-raid-start span{display:none!important}
+
+/* =========================================================
+   build1617: RAID RULE モーダル
+   - 上部HUD（RANK）と下部ナビを避けた高さに収め、項目部分だけスクロール
+   - 右上の × はお知らせモーダルと同じ菱形フレーム（共通デザイン）
+   ========================================================= */
+html body #daily-raid-root#daily-raid-root .daily-raid-rule-modal{
+  z-index:400!important;
+  padding:calc(env(safe-area-inset-top) + 86px) 16px calc(92px + env(safe-area-inset-bottom))!important;
+  box-sizing:border-box!important;
+}
+html body #daily-raid-root#daily-raid-root .daily-raid-rule-dialog{
+  display:flex!important;flex-direction:column!important;
+  max-height:100%!important;box-sizing:border-box!important;overflow:hidden!important;
+  padding:18px 16px 14px!important;
+}
+html body #daily-raid-root#daily-raid-root .daily-raid-rule-heading{flex:0 0 auto!important;padding-right:44px!important}
+html body #daily-raid-root#daily-raid-root .daily-raid-rule-modal-grid{
+  flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;overscroll-behavior:contain!important;
+  -webkit-overflow-scrolling:touch!important;padding-right:4px!important;
+}
+html body #daily-raid-root#daily-raid-root .daily-raid-rule-close{
+  position:absolute!important;top:8px!important;right:8px!important;z-index:4!important;
+  width:40px!important;height:40px!important;min-width:0!important;padding:0!important;
+  border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;
+  color:#4a3826!important;-webkit-text-fill-color:#4a3826!important;
+  font:300 26px/40px 'Noto Serif JP',serif!important;text-align:center!important;isolation:isolate!important;
+}
+html body #daily-raid-root#daily-raid-root .daily-raid-rule-close::before{
+  content:""!important;position:absolute!important;inset:6px!important;z-index:-1!important;
+  border:1px solid #c4a066!important;background:linear-gradient(135deg,#fffdf7,#efe6d3)!important;
+  box-shadow:0 0 0 2px rgba(255,253,246,.9),0 0 0 3px rgba(196,160,102,.45),0 2px 5px rgba(80,55,20,.18)!important;
+  transform:rotate(45deg)!important;
+}
+@media (max-height:640px){
+  html body #daily-raid-root#daily-raid-root .daily-raid-rule-modal{padding-top:calc(env(safe-area-inset-top) + 74px)!important;padding-bottom:calc(80px + env(safe-area-inset-bottom))!important}
+}
