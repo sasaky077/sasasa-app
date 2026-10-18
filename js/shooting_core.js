@@ -5558,8 +5558,8 @@
     // ============================================================
     const TAU = Math.PI * 2;
     const ELEMENTS = ['neutral','fire','aqua','wood','light','dark'];
-    const orbs = {}, trails = {}, lasers = [], dangers = [], curtains = [];
-    for (const k of ELEMENTS) { orbs[k] = []; trails[k] = []; }
+    const orbs = {}, raidOrbs = {}, trails = {}, lasers = [], dangers = [], curtains = [];
+    for (const k of ELEMENTS) { orbs[k] = []; raidOrbs[k] = []; trails[k] = []; }
     for (const p of bullets) {
       if (!p || !p.canvasRendered) continue;
       const kind = p.canvasKind;
@@ -5567,7 +5567,8 @@
       if (kind === 'raid-laser') { lasers.push(p); continue; }
       const el = getEnemyProjectileElement(p);
       const key = orbs[el] ? el : 'neutral';
-      orbs[key].push(p);
+      // build1590: レイド弾は装飾付きの専用スプライト（花弁リング）で描く
+      if (kind === 'raid') raidOrbs[key].push(p); else orbs[key].push(p);
       if (kind === 'ch04') {
         trails[key].push(p);
         if (p.canvasCurtain) curtains.push(p);
@@ -5618,6 +5619,18 @@
       }
     }
 
+    // --- RAID弾（専用スプライト。回転なしの静止画を貼るだけなので負荷は通常弾と同じ） ---
+    for (const key of ELEMENTS) {
+      const list = raidOrbs[key];
+      if (!list.length) continue;
+      let lastR = -1, sprite = null, half = 0;
+      for (const p of list) {
+        const r = Math.round(Number(p.canvasRadius || 6.2) * 2) / 2;
+        if (r !== lastR) { sprite = getRaidBulletSprite(key, r, dpr); half = sprite.__half; lastR = r; }
+        ctx.drawImage(sprite, Number(p.x || 0) - half, Number(p.y || 0) - half, half * 2, half * 2);
+      }
+    }
+
     // CH04「弾の壁」の帯（従来どおり）
     if (curtains.length) {
       let sumY = 0;
@@ -5653,29 +5666,164 @@
       }
     }
 
-    // --- RAIDレーザー（BOSS属性色） ---
+    // --- RAIDレーザー（build1590: 属性色のエネルギー槍スプライト＋先端の光球＋走る光） ---
     if (lasers.length) {
-      ctx.lineCap = 'round';
-      for (const key of ELEMENTS) {
-        const palette = ENEMY_PROJECTILE_ELEMENT_VISUAL[key];
-        const list = lasers.filter(p => getEnemyProjectileElement(p) === key);
-        if (!list.length) continue;
-        const path = () => {
-          ctx.beginPath();
-          for (const p of list) {
-            const angle = Math.atan2(Number(p.vy || 0), Number(p.vx || 0));
-            const dx = Math.cos(angle) * 135, dy = Math.sin(angle) * 135;
-            const x = Number(p.x || 0), y = Number(p.y || 0);
-            ctx.moveTo(x - dx, y - dy);
-            ctx.lineTo(x + dx, y + dy);
-          }
-        };
-        path(); ctx.strokeStyle = palette.halo; ctx.lineWidth = 9; ctx.stroke();
-        path(); ctx.strokeStyle = palette.main; ctx.lineWidth = 3.4; ctx.stroke();
-        path(); ctx.strokeStyle = palette.core; ctx.lineWidth = 1.4; ctx.stroke();
+      const nowMs = performance.now();
+      const flicker = 0.9 + 0.1 * Math.sin(nowMs / 45);
+      for (const p of lasers) {
+        const key = getEnemyProjectileElement(p);
+        const lance = getRaidLaserSprite(ENEMY_PROJECTILE_ELEMENT_VISUAL[key] ? key : 'neutral', dpr);
+        const head = getRaidLaserHeadSprite(ENEMY_PROJECTILE_ELEMENT_VISUAL[key] ? key : 'neutral', dpr);
+        const angle = Math.atan2(Number(p.vy || 0), Number(p.vx || 0));
+        const x = Number(p.x || 0), y = Number(p.y || 0);
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        ctx.globalAlpha = flicker;
+        ctx.drawImage(lance, -lance.__hw, -lance.__hh, lance.__hw * 2, lance.__hh * 2);
+        // 槍の上を後方へ流れる光（2つ）
+        ctx.globalAlpha = 0.85;
+        for (let k = 0; k < 2; k++) {
+          const t = ((nowMs / 260) + k * 0.5) % 1;
+          const sx = 120 - t * 240;
+          const sc = 0.45 + 0.25 * (1 - t);
+          ctx.drawImage(head, sx - head.__half * sc, -head.__half * sc, head.__half * 2 * sc, head.__half * 2 * sc);
+        }
+        // 先端の光球
+        ctx.globalAlpha = 1;
+        const hs = 1 + 0.12 * Math.sin(nowMs / 70);
+        ctx.drawImage(head, 135 - head.__half * hs, -head.__half * hs, head.__half * 2 * hs, head.__half * 2 * hs);
+        ctx.restore();
       }
-      ctx.lineCap = 'butt';
+      ctx.globalAlpha = 1;
     }
+  }
+
+  // ---- build1590: RAID専用スプライト（属性×DPRごとに1回だけ生成） ----
+  function getRaidBulletSprite(element, r, dpr) {
+    const key = 'ro|' + element + '|' + r + '|' + dpr;
+    let sprite = ENEMY_BULLET_SPRITE_CACHE.get(key);
+    if (sprite) return sprite;
+    const pal = ENEMY_PROJECTILE_ELEMENT_VISUAL[element] || ENEMY_PROJECTILE_ELEMENT_VISUAL.neutral;
+    const outer = r * 2.25;
+    const { c, g } = makeSpriteCanvas(outer + 1, dpr);
+    // 外光
+    const glow = g.createRadialGradient(0, 0, r * 0.6, 0, 0, outer);
+    glow.addColorStop(0, pal.halo.replace(/[\d.]+\)$/, '0.70)'));
+    glow.addColorStop(1, pal.halo.replace(/[\d.]+\)$/, '0)'));
+    g.fillStyle = glow;
+    g.beginPath(); g.arc(0, 0, outer, 0, TAU_CONST); g.fill();
+    // 6枚の花弁（葉）
+    g.fillStyle = pal.main;
+    g.globalAlpha = 0.85;
+    for (let i = 0; i < 6; i++) {
+      const a = i * TAU_CONST / 6;
+      g.save(); g.rotate(a);
+      g.beginPath();
+      g.moveTo(r * 0.7, 0);
+      g.quadraticCurveTo(r * 1.35, -r * 0.42, r * 1.85, 0);
+      g.quadraticCurveTo(r * 1.35, r * 0.42, r * 0.7, 0);
+      g.fill();
+      g.restore();
+    }
+    g.globalAlpha = 1;
+    // 暗い縁取り
+    g.fillStyle = 'rgba(22,14,30,.55)';
+    g.beginPath(); g.arc(0, 0, r + 0.9, 0, TAU_CONST); g.fill();
+    // 本体
+    const body = g.createRadialGradient(-r * 0.32, -r * 0.36, r * 0.08, 0, 0, r);
+    body.addColorStop(0, pal.core);
+    body.addColorStop(0.45, pal.main);
+    body.addColorStop(1, pal.shadow || pal.main);
+    g.fillStyle = body;
+    g.beginPath(); g.arc(0, 0, r, 0, TAU_CONST); g.fill();
+    // 内側の明るいリング＋外周の細いリング
+    g.strokeStyle = pal.ring;
+    g.lineWidth = Math.max(0.8, r * 0.16);
+    g.beginPath(); g.arc(0, 0, r * 0.8, 0, TAU_CONST); g.stroke();
+    g.globalAlpha = 0.55;
+    g.lineWidth = 0.9;
+    g.beginPath(); g.arc(0, 0, r * 1.95, 0, TAU_CONST); g.stroke();
+    g.globalAlpha = 1;
+    // ハイライト
+    g.fillStyle = 'rgba(255,255,255,.85)';
+    g.beginPath(); g.arc(-r * 0.3, -r * 0.32, r * 0.24, 0, TAU_CONST); g.fill();
+    ENEMY_BULLET_SPRITE_CACHE.set(key, c);
+    return c;
+  }
+
+  function getRaidLaserSprite(element, dpr) {
+    const key = 'rl|' + element + '|' + dpr;
+    let sprite = ENEMY_BULLET_SPRITE_CACHE.get(key);
+    if (sprite) return sprite;
+    const pal = ENEMY_PROJECTILE_ELEMENT_VISUAL[element] || ENEMY_PROJECTILE_ELEMENT_VISUAL.neutral;
+    const L = 135, H = 13;          // 半長・半幅（当たり判定は従来どおり）
+    const c = document.createElement('canvas');
+    c.width = Math.ceil((L * 2 + 8) * dpr); c.height = Math.ceil((H * 2) * dpr);
+    c.__hw = (L * 2 + 8) / 2; c.__hh = H;
+    const g = c.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.translate(c.__hw, H);
+    // 外光（後ろほど細く薄い）
+    const tail = g.createLinearGradient(-L, 0, L, 0);
+    tail.addColorStop(0, pal.halo.replace(/[\d.]+\)$/, '0)'));
+    tail.addColorStop(0.35, pal.halo.replace(/[\d.]+\)$/, '0.45)'));
+    tail.addColorStop(1, pal.halo.replace(/[\d.]+\)$/, '0.85)'));
+    g.fillStyle = tail;
+    g.beginPath();
+    g.moveTo(-L, 0); g.quadraticCurveTo(0, -H, L, -H * 0.85);
+    g.lineTo(L, H * 0.85); g.quadraticCurveTo(0, H, -L, 0);
+    g.fill();
+    // 本体（先端に向かって太くなる槍）
+    const bodyG = g.createLinearGradient(-L, 0, L, 0);
+    bodyG.addColorStop(0, 'rgba(255,255,255,0)');
+    bodyG.addColorStop(0.3, pal.main);
+    bodyG.addColorStop(1, pal.main);
+    g.fillStyle = bodyG;
+    g.beginPath();
+    g.moveTo(-L, 0); g.quadraticCurveTo(0, -H * 0.42, L, -H * 0.4);
+    g.lineTo(L, H * 0.4); g.quadraticCurveTo(0, H * 0.42, -L, 0);
+    g.fill();
+    // 芯
+    const coreG = g.createLinearGradient(-L, 0, L, 0);
+    coreG.addColorStop(0, 'rgba(255,255,255,0)');
+    coreG.addColorStop(0.45, pal.core);
+    coreG.addColorStop(1, '#ffffff');
+    g.fillStyle = coreG;
+    g.beginPath();
+    g.moveTo(-L * 0.8, 0); g.quadraticCurveTo(0, -H * 0.16, L, -H * 0.15);
+    g.lineTo(L, H * 0.15); g.quadraticCurveTo(0, H * 0.16, -L * 0.8, 0);
+    g.fill();
+    // 節（エネルギーの継ぎ目）
+    g.strokeStyle = pal.ring; g.lineWidth = 1; g.globalAlpha = 0.6;
+    for (let x = -L * 0.4; x < L; x += 26) {
+      const hh = H * (0.25 + 0.15 * ((x + L) / (2 * L)));
+      g.beginPath(); g.moveTo(x, -hh); g.lineTo(x + 5, 0); g.lineTo(x, hh); g.stroke();
+    }
+    g.globalAlpha = 1;
+    ENEMY_BULLET_SPRITE_CACHE.set(key, c);
+    return c;
+  }
+
+  function getRaidLaserHeadSprite(element, dpr) {
+    const key = 'rh|' + element + '|' + dpr;
+    let sprite = ENEMY_BULLET_SPRITE_CACHE.get(key);
+    if (sprite) return sprite;
+    const pal = ENEMY_PROJECTILE_ELEMENT_VISUAL[element] || ENEMY_PROJECTILE_ELEMENT_VISUAL.neutral;
+    const R = 13;
+    const { c, g } = makeSpriteCanvas(R + 1, dpr);
+    const glow = g.createRadialGradient(0, 0, 0, 0, 0, R);
+    glow.addColorStop(0, '#ffffff');
+    glow.addColorStop(0.28, pal.core);
+    glow.addColorStop(0.55, pal.halo.replace(/[\d.]+\)$/, '0.75)'));
+    glow.addColorStop(1, pal.halo.replace(/[\d.]+\)$/, '0)'));
+    g.fillStyle = glow;
+    g.beginPath(); g.arc(0, 0, R, 0, TAU_CONST); g.fill();
+    // 十字のきらめき
+    g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 1.2;
+    g.beginPath(); g.moveTo(-R * 0.95, 0); g.lineTo(R * 0.95, 0); g.moveTo(0, -R * 0.6); g.lineTo(0, R * 0.6); g.stroke();
+    ENEMY_BULLET_SPRITE_CACHE.set(key, c);
+    return c;
   }
 
   // ---- 敵弾スプライト（属性×半径×DPRごとに1回だけ描画してキャッシュ） ----

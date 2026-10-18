@@ -429,6 +429,8 @@
       name: 'SIGMA-IX',
       displayName: 'RAID ENEMY　SIGMA-IX',
       image: 'images/raid_enemy_01_battle.webp',
+      // build1590: 木属性（レイドのボス表と同じ）。敵弾・レーザーも木属性になる。
+      element: 'wood',
 
       // 共有HPはSupabaseの日次レイド値で上書き。
       gaugeHp: 33334,
