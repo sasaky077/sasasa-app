@@ -20446,10 +20446,7 @@
     clearShienTechniqueFx(sh);
     sh.slot = frame.slot;sh.target = null;sh.struck=false;sh.dashed=[];sh.hit=false;
     if (!arena) return;
-    sh.caption=document.createElement('div');
-    sh.caption.className='shien-technique-caption';
-    sh.caption.textContent=frame.name;
-    arena.appendChild(sh.caption);
+    // build1589: 技名は表示しない（予告モーションだけで読ませる）
     if (frame.index === 5) {
       sh.wave=document.createElement('div');
       sh.wave.className='shien-wave preview';
