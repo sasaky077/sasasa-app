@@ -8024,10 +8024,12 @@
 
     const countdown = document.createElement('span');
     countdown.className = 'shooting-remna-trap-countdown';
-    countdown.textContent = '3';
+    // build1640: 爆発までの秒数（限界突破Lv1で2秒）に合わせて初期表示する。
+    const trapStartCount = Math.max(1, Math.min(3, Math.ceil(Math.max(500, Number(p.trapCountdownMs || 3000)) / 1000)));
+    countdown.textContent = String(trapStartCount);
     p.el.appendChild(countdown);
     p.trapCountdownEl = countdown;
-    p.trapLastCountdownValue = 3;
+    p.trapLastCountdownValue = trapStartCount;
 
     if (!Number.isFinite(Number(p.trapExplodeAt))) {
       p.trapExplodeAt = Number(now || performance.now()) + Math.max(500, Number(p.trapCountdownMs || 3000));
