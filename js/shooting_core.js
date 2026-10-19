@@ -24297,6 +24297,54 @@
     );
   }
 
+  // build1627: ガチャ試遊（トワ/スマイル/他PU）だけ、ウィンドウ捕捉段階でも
+  // 継続中の指を追跡する。ゲーム領域外へ移動した時や演出レイヤーがtouchmoveを
+  // 止めても追従を維持。イベントを二重処理しないため同じEventは一度だけ転送。
+  const gachaTrialForwardedEvents = new WeakSet();
+  let removeGachaTrialInputContinuity = null;
+  function installGachaTrialInputContinuity() {
+    if (removeGachaTrialInputContinuity) removeGachaTrialInputContinuity();
+    const forward = (e) => {
+      if (!isGachaTrialStage() || !state || state.ended || state.finishing || state.paused) return;
+      if (gachaTrialForwardedEvents.has(e)) return;
+
+      if (e.type === 'touchstart') {
+        // 通常の開始はarena/footerの既存イベントで処理する。
+        // WebKitの一時cancel後だけ、別レイヤーからのtouchstartも再接続する。
+        const root = document.getElementById(ROOT_ID);
+        if (!nativeTouchActive || !nativeTouchCancelTimer || !root || !root.contains(e.target) ||
+            isShootingUiInteractionTarget(e.target)) return;
+        onNativeTouchStart(e);
+      } else if (e.type === 'touchmove') {
+        if (!nativeTouchActive) return;
+        onNativeTouchMove(e);
+      } else if (e.type === 'touchend') {
+        if (!nativeTouchActive) return;
+        onNativeTouchEnd(e);
+      } else if (e.type === 'touchcancel') {
+        if (!nativeTouchActive) return;
+        onNativeTouchCancel(e);
+      } else if (e.type === 'pointermove') {
+        if (!pointerActive || !pointerIsTouch || !isTouchLikePointer(e)) return;
+        onPointerMove(e);
+      } else if (e.type === 'pointerup' || e.type === 'pointercancel') {
+        if (!pointerActive || !pointerIsTouch || !isTouchLikePointer(e)) return;
+        onPointerUp(e);
+      } else {
+        return;
+      }
+      // window(capture)で先に処理した場合、arena/footer(bubble)で再処理しない。
+      gachaTrialForwardedEvents.add(e);
+    };
+    const types = ['touchstart','touchmove','touchend','touchcancel',
+                   'pointermove','pointerup','pointercancel'];
+    types.forEach(type => window.addEventListener(type, forward, { capture:true, passive:false }));
+    removeGachaTrialInputContinuity = () => {
+      types.forEach(type => window.removeEventListener(type, forward, true));
+      removeGachaTrialInputContinuity = null;
+    };
+  }
+
   function onPointerDown(e) {
     if (!state || state.ended || state.finishing || state.paused) return;
 
@@ -24389,6 +24437,7 @@
   }
 
   function onPointerMove(e) {
+    if (isGachaTrialStage() && gachaTrialForwardedEvents.has(e)) return;
     if (!pointerActive || !state || state.ended || state.finishing || state.paused) return;
     if (activePointerId !== null && e.pointerId !== activePointerId) return;
 
@@ -24426,8 +24475,14 @@
       }
     }
 
-    lastPointerClientX = e.clientX;
-    lastPointerClientY = e.clientY;
+    // build1627: iOSのPointer fallbackではapplyTouchDelta()が前回座標との差分を使う。
+    // updatePointer()より先にlastPointerClientを書き換えるとdx/dyが常に0になり、
+    // touchcancel後やTouch Events断線中に指が動いても自機が止まる。
+    // mouseは絶対座標なので従来の記録を残すが、touch座標はapplyTouchDelta()内だけで更新する。
+    if (!pointerIsTouch && !isTouchLikePointer(e)) {
+      lastPointerClientX = e.clientX;
+      lastPointerClientY = e.clientY;
+    }
 
     // ultCutinActive中でも入力基準だけ更新する。
     updatePointer(e);
@@ -24435,6 +24490,7 @@
   }
 
   function onPointerUp(e) {
+    if (isGachaTrialStage() && gachaTrialForwardedEvents.has(e)) return;
     if (activePointerId !== null && e.pointerId !== activePointerId) return;
 
     // build1072:
@@ -24623,6 +24679,7 @@
   }
 
   function onNativeTouchStart(e) {
+    if (isGachaTrialStage() && gachaTrialForwardedEvents.has(e)) return;
     if (!state || state.ended || state.finishing || state.paused) return;
 
     // パーティ選択/ボタン/RESULT上のタッチは、スクロールやクリックを優先。
@@ -24686,6 +24743,7 @@
   }
 
   function onNativeTouchMove(e) {
+    if (isGachaTrialStage() && gachaTrialForwardedEvents.has(e)) return;
     if (!nativeTouchActive || !state || state.ended || state.finishing || state.paused) return;
 
     clearNativeTouchCancelTimer();
@@ -24733,6 +24791,7 @@
   }
 
   function onNativeTouchEnd(e) {
+    if (isGachaTrialStage() && gachaTrialForwardedEvents.has(e)) return;
     if (!nativeTouchActive) return;
 
     let stillAlive = false;
@@ -24772,6 +24831,7 @@
   }
 
   function onNativeTouchCancel(e) {
+    if (isGachaTrialStage() && gachaTrialForwardedEvents.has(e)) return;
     if (!nativeTouchActive) return;
 
     // iOSでは実際の離指ではなく、一時的なWebKit都合でtouchcancelが来ることがある。
@@ -25866,6 +25926,7 @@
     const root = document.getElementById(ROOT_ID);
     if (!root) return false;
     root.dataset.gachaTrial = '1';
+    installGachaTrialInputContinuity();
     if (gachaTrialCharacterId === 40 || gachaTrialCharacterId === 56) {
       // スマイルの分割壁もオリビア試遊と同じ白金の壁デザインを使う
       root.dataset.gachaOliviaWall = '1';
@@ -26224,6 +26285,8 @@
     // 塔の確認中にゲーム画面を閉じても、出撃に進まない。
     if (window.ResonanceTower?.cancelSealConfirmation) window.ResonanceTower.cancelSealConfirmation();
     const leavingGachaTrial = isGachaTrialStage();
+    // 試遊のウィンドウ捕捉リスナーは退出時に必ず破棄する。
+    if (removeGachaTrialInputContinuity) removeGachaTrialInputContinuity();
     // RESULT画面から戻る時だけ、1秒かけて白へフェードしてから前画面へ戻す。
     // 戦闘中の退出・編成画面のキャンセルには適用しない。
     const resultElBeforeClose = document.getElementById('shooting-result');
