@@ -103,6 +103,7 @@
     SCORE_ATTACK_NORMAL: 'shooting_score_attack_normal',
     SCORE_ATTACK_HARD: 'shooting_score_attack_hard',
     OVERSEER_AMBUSH: 'shooting_event_overseer_ambush',
+    RHYTHM_TEST: 'shooting_event_rhythm_test', // build1630 リズム弾幕（試作）
   });
 
   // ============================================================
@@ -1249,6 +1250,35 @@
         type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
         text: '理想郷 -ノア-を耐えきれ',
       }),
+      playable: true,
+    }),
+
+
+    // ============================================================
+    // build1630: SPECIAL STAGE 律動（リズム弾幕・試作）
+    // 曲「仮面舞踏会」の拍どおりに弾の壁（ゲート）が届く。チケット消費・報酬なし。
+    // ============================================================
+    [SHOOTING_STAGE_ID.RHYTHM_TEST]: Object.freeze({
+      id: SHOOTING_STAGE_ID.RHYTHM_TEST,
+      chapter: 0,
+      stageNo: 30,
+      eventId: 'rhythm_test',
+      eventTitle: '律動',
+      difficultyLabel: 'RHYTHM TEST',
+      type: 'boss',
+      background: 'images/battle_bg_01.webp',
+      introImage: 'images/rhythm_masquerade_battle_start.webp',
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.RHYTHM_GATE]),
+      bossElement: 'dark',
+      enemyElement: 'dark',
+      mission: Object.freeze({
+        type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
+        text: '弾幕の穴をたどって進め',
+      }),
+      // build1636: 通常クリア報酬は「強化素材・金」×2で固定（ランダムドロップなし）。
+      // 初回クリアの結晶×10はサーバー（finish_secure_shooting_run）側で付与。
+      fixedItemDrops: Object.freeze([Object.freeze({ id: 'level_exp_large', count: 2 })]),
+      firstClearGems: 10,
       playable: true,
     }),
 

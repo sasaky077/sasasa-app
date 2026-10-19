@@ -421,7 +421,7 @@
   <link rel="stylesheet" href="css/towa_dark_gacha.css?v=1552">
   <link rel="stylesheet" href="css/towa_notice.css?v=1556">
   <link rel="stylesheet" href="css/towa_preflight.css?v=1548-towa-black-burgundy">
-  <link rel="stylesheet" href="css/shooting_event.css?v=1626b-raid-fix">
+  <link rel="stylesheet" href="css/shooting_event.css?v=1636-rhythm-boss">
   <link rel="stylesheet" href="css/shot_fx.css?v=1557-shot-fx">
   <link rel="stylesheet" href="css/tower15_boss.css?v=1485-tower15">
   <link rel="stylesheet" href="css/daily_stage_select.css?v=1388-shared-card">
@@ -3433,6 +3433,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 <!-- build776: SHOOTING battle BGM. Stage entry warms only the selected track. -->
 <!-- build1621: バトルBGM（ボス3曲／雑魚3曲／残響の塔3曲）。使う曲だけ戦闘開始時に読み込む -->
 <audio id="bgm-battle-boss-01" class="bgm-battle-track" src="audio/bgm_battle_boss_01.mp3?v=1621" preload="none" loop></audio>
+<audio id="bgm-rhythm-01" class="bgm-battle-track" src="audio/bgm_rhythm_01.mp3?v=1630" preload="none" loop></audio>
 <audio id="bgm-battle-boss-02" class="bgm-battle-track" src="audio/bgm_battle_boss_02.mp3?v=1621" preload="none" loop></audio>
 <audio id="bgm-battle-boss-03" class="bgm-battle-track" src="audio/bgm_battle_boss_03.mp3?v=1621" preload="none" loop></audio>
 <audio id="bgm-battle-normal-01" class="bgm-battle-track" src="audio/bgm_battle_normal_01.mp3?v=1621" preload="none" loop></audio>
@@ -3653,6 +3654,19 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
             </span>
             <span class="junkou-special-art" aria-hidden="true">
               <img src="images/icon_event_99.webp" alt="">
+            </span>
+            <span class="junkou-special-play" aria-hidden="true"><img src="images/special_play_button.webp" alt=""></span>
+          </button>
+
+          <!-- build1630: リズム弾幕（試作） -->
+          <button type="button" class="junkou-special-card junkou-special-card-event shooting-entry-card rhythm-stage-card" onclick="openShootingEvent({stageId:'shooting_event_rhythm_test'})" aria-label="SPECIAL STAGE 律動">
+            <span class="junkou-special-copy">
+              <span class="junkou-special-kicker">SPECIAL STAGE · TEST</span>
+              <span class="junkou-special-rule" aria-hidden="true"></span>
+              <span class="junkou-special-title">律動 -仮面舞踏会-</span>
+            </span>
+            <span class="junkou-special-art" aria-hidden="true">
+              <img src="images/rhythm_masquerade_battle_start.webp?v=1635" alt="">
             </span>
             <span class="junkou-special-play" aria-hidden="true"><img src="images/special_play_button.webp" alt=""></span>
           </button>
@@ -19997,7 +20011,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1627-ios-gacha-input"></script>
+<script src="js/shooting_event.js?v=1636-rhythm-boss"></script>
 <script src="js/shooting_party_filter.js?v=1472-filter-screen-exit-reset"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1628-public-raid"></script>

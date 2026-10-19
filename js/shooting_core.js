@@ -1177,6 +1177,8 @@
   }
 
   function getResponsiveBossDisplayScale() {
+    // build1636: 律動のBOSS（リズム）は自キャラと同じ大きさ。
+    if (BOSS && BOSS.behavior === 'rhythm_gate_v1') return getResponsiveCombatScaleProfile().player;
     if (BOSS && (BOSS.shienMechanics || BOSS.camillaMechanics)) {
       // 味方の立ち絵(最大122px x ベース1.2倍)と同じ高さを基準にする。
       return 1.16 * getResponsiveCombatScaleProfile().player;
@@ -5554,6 +5556,12 @@
     ctx.imageSmoothingEnabled = true;
 
     const bullets = (state && state.enemyBullets) || [];
+    // build1631: 弾幕の通路（弾の列として描く）
+    if (isRhythmStage()) {
+      const rhythmBars = [];
+      for (const p of bullets) if (p && p.canvasKind === 'rhythm-bar') rhythmBars.push(p);
+      drawRhythmOverlay(ctx, rhythmBars);
+    }
     if (!bullets.length) return;
 
     // ============================================================
@@ -5574,6 +5582,7 @@
       const kind = p.canvasKind;
       if (kind === 'danger') { dangers.push(p); continue; }
       if (kind === 'raid-laser') { lasers.push(p); continue; }
+      if (kind === 'rhythm-bar') continue;
       const el = getEnemyProjectileElement(p);
       const key = orbs[el] ? el : 'neutral';
       // build1590: レイド弾は装飾付きの専用スプライト（花弁リング）で描く
@@ -5992,6 +6001,7 @@
       const isFacelessBullet = className.includes('shooting-faceless-bullet');
       const isScoreAttackBullet = className.includes('shooting-score-attack-bullet');
       const isRaidLaser = className.includes('shooting-raid-green-laser');
+      const isRhythmBar = className.includes('shooting-rhythm-bar');
       const isRaidBullet = isRaidStage();
       // STORY以外（塔・デイリー・イベント等）は、従来の塔08-10Fと同じCH03系の見た目で描く。
       const storyChapter = getCanvasStoryChapter() || 3;
@@ -6008,7 +6018,7 @@
           : (isScoreAttackBullet
             ? 7
             : (isRaidBullet ? 6.2 : (storyChapter === 2 && isHeavyBullet ? 8.4 : (storyChapter === 4 ? 6.2 : 5.8)))));
-      const canvasKind = isDanger
+      const canvasKind = isRhythmBar ? 'rhythm-bar' : isDanger
         ? 'danger'
         : (isFacelessObjectBullet
           ? 'faceless-object'
@@ -14415,6 +14425,379 @@
   // WAVE(=state.boss.phase)が進むほど、間隔を詰めて弾数を増やす。
   // ENEMY_BULLET_HARD_LIMIT(既存の安全装置)が最終的な歯止めになる。
   // ============================================================
+  // ============================================================
+  // build1634: 律動 × 仮面舞踏会 —「弾幕の階段」ステージ（列の横流れ・上下の揺れ付き）
+  //  ・通常のBOSS戦。横一列の弾幕が拍ごとに高速で降り、列ごとに1か所だけ2〜4発分の穴がある。
+  //    穴の位置は列ごとにカクッと飛び、階段状につながる。それを素早くたどって進む。
+  //  ・曲は3/4拍子（ワルツ）・約197BPM（後半ほど少し速い）。拍の時刻表で隙間の動きを合わせる。
+  //  ・見た目は弾の列。当たり判定は列ごとに左右2本の帯（軽量化のため）。判定表示はなし。
+  // ============================================================
+  const RHYTHM_SONG_ID = 'bgm-rhythm-01';
+  const RHYTHM_BEATS_MS = Object.freeze([151,471,791,1111,1432,1752,2073,2393,2713,3032,3351,3669,3985,4300,4615,4928,5241,5553,5864,6173,6482,6789,7096,7403,7709,8014,8319,8623,8928,9234,9539,9844,10149,10454,10760,11066,11373,11681,11988,12296,12604,12913,13221,13529,13837,14145,14454,14763,15072,15381,15690,15999,16307,16615,16921,17228,17535,17841,18146,18452,18758,19064,19370,19675,19980,20285,20590,20895,21200,21505,21811,22116,22421,22725,23030,23335,23639,23944,24248,24552,24856,25161,25467,25772,26077,26382,26687,26991,27295,27600,27905,28210,28515,28820,29124,29429,29734,30039,30343,30647,30951,31255,31559,31863,32168,32473,32777,33081,33386,33690,33994,34299,34603,34908,35212,35516,35821,36125,36430,36734,37038,37343,37647,37951,38256,38560,38865,39170,39474,39778,40083,40387,40692,40996,41300,41605,41909,42214,42518,42822,43127,43431,43735,44040,44345,44649,44954,45258,45562,45866,46169,46473,46777,47081,47385,47689,47993,48297,48601,48904,49208,49511,49815,50119,50423,50728,51032,51336,51641,51945,52250,52554,52859,53163,53467,53772,54076,54381,54685,54989,55293,55597,55902,56206,56510,56815,57119,57423,57727,58032,58337,58641,58946,59250,59555,59859,60164,60468,60773,61077,61382,61686,61991,62295,62600,62904,63208,63513,63817,64121,64426,64730,65035,65340,65644,65949,66253,66557,66861,67165,67470,67774,68078,68382,68686,68990,69294,69598,69902,70206,70509,70813,71116,71420,71723,72026,72329,72633,72936,73240,73543,73846,74149,74452,74754,75057,75361,75664,75967,76271,76574,76878,77182,77485,77788,78092,78395,78699,79002,79305,79608,79912,80215,80519,80822,81125,81428,81730,82033,82336,82639,82943,83246,83549,83852,84155,84458,84762,85065,85368,85671,85974,86277,86580,86883,87186,87490,87793,88096,88399,88702,89004,89307,89609,89912,90215,90518,90820,91123,91425,91728,92030,92333,92635,92938,93240,93543,93845,94148,94450,94753,95056,95359,95662,95964,96267,96570,96873,97176,97479,97782,98085,98387,98690,98993,99296,99598,99901,100203,100506,100808,101110,101412,101714,102016,102319,102621,102923,103225,103527,103829,104131,104433,104735,105037,105339,105642,105944,106246,106548,106850,107152,107454,107756,108058,108360,108662,108963,109265,109566,109868,110170,110472,110774,111076,111378,111681,111983,112285,112587,112889,113192,113494,113797,114099,114402,114706,115009,115312,115615,115917,116220,116522,116825,117127,117430,117732,118034,118336,118639,118941,119243,119545,119846,120148,120450,120751,121053,121355,121656,121958,122260,122561,122863,123165,123467,123769,124071,124373,124675,124977,125278,125580,125882,126184,126485,126787,127089,127391,127693,127995,128297,128598,128900,129201,129503,129805,130107,130408,130710,131011,131313,131615,131917,132218,132520,132821,133123,133424,133726,134027,134329,134631,134932,135234,135535,135837,136138,136440,136742,137044,137346,137648,137950,138252,138554,138857,139158,139460,139762,140064,140367,140669,140971,141273,141574,141876,142177,142478,142778,143079,143380,143680,143981,144282,144582,144883,145184,145485,145785,146086,146387,146687,146988,147289,147590,147891,148192,148493,148795,149096,149397,149699,149999,150300,150601,150902,151202,151503,151803,152104,152404,152704,153004,153304,153604,153904,154203,154503,154802,155102,155402,155702,156002,156302,156602,156902,157201,157501,157801,158102,158402,158702,159002,159302,159602,159902,160202,160502,160802,161102,161402,161702,162002,162302,162602,162902,163202,163502,163802,164103,164403,164703,165003,165304,165604,165903,166202,166502,166801,167100,167400,167699,167997,168296,168594,168893,169191,169489,169787,170085,170384,170682,170981,171280,171578,171876,172174,172473,172771,173069,173368,173666,173964,174263,174561,174859,175158,175456,175754,176052,176350,176648,176946,177244,177543,177841,178139,178437,178736,179034,179332,179630,179929,180226,180525,180823,181122,181421,181721,182021,182323,182624,182926,183227,183529,183831,184134,184437,184740,185043,185347,185650,185954,186258,186562,186865,187166,187467,187767,188066,188366,188665,188962,189259,189555,189852,190148,190444,190740,191036,191331,191626,191922,192218,192514,192811,193108,193406,193704,194003,194302,194601,194901,195200,195500,195798,196097,196394,196691,196988,197284,197579,197875,198171,198466,198760,199053,199344,199634,199923]);
+  const RHYTHM_DOWNBEAT_INDEX = 2;              // 拍2が1小節目の1拍目
+  const RHYTHM_SONG_MS = 199944;
+  const RHYTHM_AUDIO_OFFSET_MS = 0;            // 実機で音と通路の動きがずれる場合の補正
+  const RHYTHM_TRAVEL_MS = 900;                // 出現から自機ライン（画面の80%）まで
+  const RHYTHM_LINE_RATE = 0.80;
+  const RHYTHM_SPAWN_Y = -8;
+  const RHYTHM_ORB_R = 6;                      // 弾の半径（見た目・当たり判定の高さ）
+
+  // 小節番号ごとの区間 [開始小節, 種類, 穴の動き, 列の動き]
+  //  種類  rest: 弾なし / walk: 1小節に1列 / step・waltz: 1拍に1列 / sweep・snake: 半拍に1列
+  //  穴    random: ランダム / stairs: 同じ向きへ一段ずつ / zigzag: 小節ごとに向きを反転 / snake: うねる
+  //  列    none / slide: 列ごと横へ流れて定位置に止まる / bob: 降りる途中で少し上がる・下がる / both
+  const RHYTHM_SONG_SECTIONS = Object.freeze([
+    [0, 'rest'],
+    [2, 'walk', 'random', 'none'],        // イントロ
+    [12, 'rest'],
+    [18, 'step', 'random', 'none'],       // Aメロ（慣らし）
+    [32, 'step', 'random', 'bob'],        // Aメロ後半：列が呼吸し始める
+    [46, 'waltz', 'stairs', 'slide'],     // サビ前〜サビ：階段＋横流れ
+    [88, 'sweep', 'zigzag', 'bob'],       // サビの山
+    [96, 'snake', 'snake', 'slide'],      // バイオリンソロ：うねる穴が横へ流れる
+    [120, 'waltz', 'stairs', 'bob'],
+    [136, 'sweep', 'zigzag', 'slide'],
+    [152, 'rest'],                        // 曲が落ちる所
+    [156, 'waltz', 'random', 'both'],     // ブリッジ：揺れと流れが混ざって読みにくい
+    [175, 'sweep', 'mix', 'both'],        // 最後のサビ：全部入り
+    [188, 'step', 'random', 'bob'],
+    [192, 'sweep', 'mix', 'both'],
+    [200, 'step', 'stairs', 'slide'],     // アウトロ
+    [212, 'rest'],
+  ]);
+
+  function isRhythmStage() {
+    return !!(BOSS && BOSS.behavior === 'rhythm_gate_v1');
+  }
+
+  function getRhythmSongSection(bar) {
+    let sec = RHYTHM_SONG_SECTIONS[0];
+    for (const entry of RHYTHM_SONG_SECTIONS) if (bar >= entry[0]) sec = entry;
+    return { kind: sec[1], path: sec[2] || 'random', motion: sec[3] || 'none' };
+  }
+
+  function rhythmBeatMs(index) {
+    const n = RHYTHM_BEATS_MS.length;
+    if (index < n) return RHYTHM_BEATS_MS[Math.max(0, index)];
+    const last = RHYTHM_BEATS_MS[n - 1], step = (last - RHYTHM_BEATS_MS[n - 9]) / 8;
+    return last + (index - n + 1) * step;
+  }
+
+  // 弾の列は横一列のマス目（列数固定）。穴＝弾の抜けたマス。
+  const RHYTHM_COLS = 24;
+  // 区間ごとの列の間隔(拍)・穴の数(マス)・1列で穴が飛べる最大マス数
+  //  横移動の最高速が約350px/秒（375px幅）を超えないように飛び幅を決めている。
+  const RHYTHM_ROW_RULES = Object.freeze({
+    walk:  { every: 3,   hole: 4, jump: 9 },
+    step:  { every: 1,   hole: 3, jump: 6 },
+    waltz: { every: 1,   hole: 3, jump: 7 },
+    sweep: { every: 0.5, hole: 3, jump: 3 },
+    snake: { every: 0.5, hole: 2, jump: 2 },
+  });
+
+  // 毎回同じ並びになる乱数（周回ごとに種を変える）
+  function rhythmRandom(seed) {
+    let a = seed >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) >>> 0;
+      let t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // 拍番号（小数可）→ 曲頭からの時刻
+  function rhythmBeatTimeAt(beat) {
+    const i = Math.floor(beat), f = beat - i;
+    return rhythmBeatMs(i) + (rhythmBeatMs(i + 1) - rhythmBeatMs(i)) * f;
+  }
+
+  // 1曲分の列。{ t: 自機ラインへの到達時刻, col: 到達時の穴の左端マス, hole: 穴のマス数,
+  //              slide: 出現時の穴のずれ(マス。到達までに0へ), bob: 途中の上下の揺れ(px) }
+  function buildRhythmRows(loopIndex, phase) {
+    const rand = rhythmRandom(0x5eed + loopIndex * 7919);
+    const tighten = (Math.max(1, phase) >= 3 ? 1 : 0) + (loopIndex >= 1 ? 1 : 0);
+    const base = loopIndex * RHYTHM_SONG_MS;
+    const rows = [];
+    const barCount = Math.floor((RHYTHM_BEATS_MS.length - RHYTHM_DOWNBEAT_INDEX) / 3);
+    let col = Math.floor(RHYTHM_COLS / 2) - 1;
+    let dir = 1;
+    let snakePhase = 0;
+    let prevKind = 'rest';
+    let sinceStart = 0;
+    let rowNo = 0;
+    for (let bar = 0; bar < barCount; bar++) {
+      const sec = getRhythmSongSection(bar);
+      if (sec.kind === 'rest') { prevKind = 'rest'; continue; }
+      if (prevKind === 'rest') sinceStart = 0;
+      prevKind = sec.kind;
+      const rule = RHYTHM_ROW_RULES[sec.kind];
+      const b0 = RHYTHM_DOWNBEAT_INDEX + bar * 3;
+      // mix は4小節ごとに 階段→ジグザグ→蛇行→ランダム と切り替える
+      const path = sec.path === 'mix' ? ['stairs', 'zigzag', 'snake', 'random'][Math.floor(bar / 4) % 4] : sec.path;
+      if (path === 'zigzag') dir = bar % 2 ? -1 : 1;
+      for (let k = 0; k < 3; k += rule.every) {
+        if (k > 0 && rule.every === 3) break;
+        const hole = Math.max(2, rule.hole - tighten) + (sinceStart === 0 ? 3 : (sinceStart === 1 ? 1 : 0));
+        const maxCol = RHYTHM_COLS - hole - 1;
+        const strong = k === 0;
+        let next = col;
+        if (path === 'stairs') {
+          next = col + dir * Math.max(1, Math.ceil(rule.jump / 2));
+        } else if (path === 'zigzag') {
+          next = col + dir * rule.jump;
+        } else if (path === 'snake') {
+          snakePhase += Math.PI * 2 / 10;
+          next = Math.round(maxCol / 2 + (maxCol / 2 - 2) * Math.sin(snakePhase));
+          const lim = rule.jump;
+          next = Math.max(col - lim, Math.min(col + lim, next));
+        } else {
+          const maxJump = strong ? rule.jump : Math.max(1, Math.ceil(rule.jump * 0.6));
+          let step = Math.round((rand() * 2 - 1) * maxJump);
+          if (Math.abs(step) < (strong ? 2 : 1)) step = (rand() < 0.5 ? -1 : 1) * (strong ? 2 : 1);
+          next = col + step;
+        }
+        // 端で跳ね返し、向きも反転
+        if (next < 1) { next = 1 + (1 - next); dir = 1; }
+        if (next > maxCol) { next = maxCol - (next - maxCol); dir = -1; }
+        col = Math.max(1, Math.min(maxCol, next));
+
+        // 列の動き
+        const motion = sec.motion === 'both' ? (rowNo % 2 ? 'slide' : 'bob') : sec.motion;
+        let slide = 0, bob = 0;
+        if (motion === 'slide') {
+          // 小節ごとに流れる向きを反転（←●●●●← / →●●●●→）。出現位置が画面外に出ないよう制限
+          const want = (bar % 2 ? 1 : -1) * (sec.kind === 'snake' ? 3 : 5);
+          slide = Math.max(1 - col, Math.min(maxCol - col, want));
+        } else if (motion === 'bob') {
+          // 1列おきに「少し上がる」「少し下がる」。列の間隔に合わせて振れ幅を決める
+          const amp = rule.every >= 1 ? 34 : 20;
+          bob = (rowNo % 2 ? 1 : -1) * amp;
+        }
+        rows.push({ t: base + rhythmBeatTimeAt(b0 + k), col, hole, slide, bob });
+        sinceStart++;
+        rowNo++;
+      }
+    }
+    return rows;
+  }
+
+  // ---------- 曲と時計 ----------
+  function getRhythmSongElement() {
+    return document.getElementById(RHYTHM_SONG_ID);
+  }
+
+  // PAUSE中は曲も止める（通路は曲の再生位置に従うため）。
+  function pauseRhythmSong() {
+    const el = getRhythmSongElement();
+    if (el && !el.paused) { try { el.pause(); } catch (_) {} }
+  }
+  function resumeRhythmSong() {
+    if (!isRhythmStage()) return;
+    playShootingBattleBgm({ restart: false });
+  }
+
+  // 曲の再生位置(ms)。曲がループしたら周回数を足して単調増加にする。
+  function readRhythmSongClock(r, dtMs) {
+    const el = getRhythmSongElement();
+    const playing = !!(el && !el.paused && el.readyState >= 2 && isShootingBattleBgmEnabled());
+    if (playing) {
+      r.waitMs = 0;
+      const raw = Number(el.currentTime || 0) * 1000;
+      if (r.lastRawMs > 0 && raw + 2000 < r.lastRawMs) r.loopCount++;
+      r.lastRawMs = raw;
+      const songMs = r.loopCount * RHYTHM_SONG_MS + raw - RHYTHM_AUDIO_OFFSET_MS;
+      const predicted = r.clockMs + dtMs;
+      r.clockMs = Math.abs(songMs - predicted) > 60 ? songMs : predicted + (songMs - predicted) * 0.15;
+      r.usingSong = true;
+      return;
+    }
+    // 曲の読み込み待ちは最大3秒。BGMオフ・再生失敗時はゲーム内時計で進める。
+    r.waitMs = Number(r.waitMs || 0) + dtMs;
+    if (isShootingBattleBgmEnabled() && el && r.waitMs < 3000) return;
+    r.clockMs += dtMs;
+  }
+
+  // ---------- 弾の列（当たり判定は左右2本の帯。見た目は等間隔の弾） ----------
+  // colF: 穴の左端マス（小数可。横に流れる間は連続的に動く）
+  function layoutRhythmRow(row, w) {
+    const pitch = w / RHYTHM_COLS;
+    const colF = row.colF;
+    const leftEdge = Math.max(0, (colF - 0.5) * pitch + RHYTHM_ORB_R);
+    const rightEdge = Math.min(w, (colF + row.hole + 0.5) * pitch - RHYTHM_ORB_R);
+    const [left, right] = row.bars;
+    if (left) {
+      const hw = Math.max(1, leftEdge / 2);
+      left.x = leftEdge / 2; left.canvasHalfWidth = hw; left._hw = hw; left.rhythmSide = 'left';
+      left.rhythmFrom = (colF - 0.5) * pitch; left.rhythmPitch = pitch;   // 穴の左隣の弾の中心
+    }
+    if (right) {
+      const hw = Math.max(1, (w - rightEdge) / 2);
+      right.x = rightEdge + (w - rightEdge) / 2; right.canvasHalfWidth = hw; right._hw = hw; right.rhythmSide = 'right';
+      right.rhythmFrom = (colF + row.hole + 0.5) * pitch; right.rhythmPitch = pitch; // 穴の右隣の弾の中心
+    }
+  }
+
+  function spawnRhythmRow(ev, w) {
+    const damage = Number(BOSS.bulletDamage || 240);
+    const bars = [];
+    for (let i = 0; i < 2; i++) {
+      const p = makeProjectile('shooting-enemy-bullet shooting-rhythm-bar', w * 0.5, RHYTHM_SPAWN_Y, 0, 0, damage);
+      if (!p) continue;
+      p.canvasHalfHeight = RHYTHM_ORB_R;
+      p._hh = RHYTHM_ORB_R;
+      if (appendEnemyProjectile(p)) bars.push(p);
+    }
+    if (!bars.length) return null;
+    const row = {
+      arrive: ev.arriveMs, col: ev.col, hole: ev.hole,
+      slide: Number(ev.slide || 0), bob: Number(ev.bob || 0),
+      colF: ev.col + Number(ev.slide || 0), bars,
+    };
+    layoutRhythmRow(row, w);
+    return row;
+  }
+
+  function updateRhythmStage(ts) {
+    if (!state || !isRhythmStage() || state.ended || state.finishing) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const w = Math.max(1, arena.clientWidth);
+    const h = Math.max(1, arena.clientHeight);
+    let r = state.rhythm;
+    if (!r) {
+      r = state.rhythm = {
+        clockMs: 0, lastTs: ts, lastRawMs: 0, loopCount: 0, waitMs: 0, usingSong: false,
+        loopIndex: -1, chart: [], chartIndex: 0, rows: [],
+      };
+    }
+    const dtMs = Math.max(0, Math.min(50, ts - r.lastTs));
+    r.lastTs = ts;
+    readRhythmSongClock(r, dtMs);
+    const nowMs = r.clockMs;
+
+    // 曲の周回ごとに列の並びを作る（2周目・PHASE3は穴が1マス狭い）
+    while (r.chartIndex >= r.chart.length) {
+      r.loopIndex++;
+      r.chart = buildRhythmRows(r.loopIndex, Number(state.boss && state.boss.phase || 1))
+        .map(e => Object.assign({}, e, { arriveMs: e.t }));
+      r.chartIndex = 0;
+    }
+
+    // 出現（BREAK演出・KO切替中・撃破後は出さない）
+    const blocked = !!(state.phaseTransition || state.koTransition) || !(state.boss && state.boss.hp > 0);
+    while (r.chartIndex < r.chart.length && nowMs >= r.chart[r.chartIndex].arriveMs - RHYTHM_TRAVEL_MS) {
+      const ev = r.chart[r.chartIndex++];
+      if (blocked || nowMs > ev.arriveMs - RHYTHM_TRAVEL_MS + 200) continue;
+      const row = spawnRhythmRow(ev, w);
+      if (row) r.rows.push(row);
+    }
+
+    // 位置更新：基本は全列同じ速さ。横流れ・上下の揺れは自機ラインに届く時点で0になる
+    const lineY = h * RHYTHM_LINE_RATE;
+    const pxPerMs = (lineY - RHYTHM_SPAWN_Y) / RHYTHM_TRAVEL_MS;
+    r.rows = r.rows.filter(row => {
+      const alive = row.bars.filter(p => p && p.el && p.el.__canvasAlive !== false);
+      if (!alive.length) return false;
+      const prog = Math.max(0, Math.min(1, 1 - (row.arrive - nowMs) / RHYTHM_TRAVEL_MS));
+      let y = lineY + (nowMs - row.arrive) * pxPerMs;
+      if (row.bob) y += row.bob * Math.sin(Math.PI * prog);
+      if (row.slide) {
+        const rest = 1 - prog;
+        row.colF = row.col + row.slide * rest * rest;   // なめらかに減速して定位置へ
+        layoutRhythmRow(row, w);
+      }
+      alive.forEach(p => { p.y = y; p.vx = 0; p.vy = 0; });
+      return y < h + 40;
+    });
+  }
+
+  // ---------- 見た目：輪郭のない光の弾（aura） ----------
+  // 中心だけ白く、外へ向かって属性色がやわらかく溶ける。当たり判定（半径6）より一回り大きく光る。
+  const RHYTHM_AURA_R = 13;
+  function getRhythmAuraSprite(element, dpr) {
+    const key = 'aura|' + element + '|' + dpr;
+    let sprite = ENEMY_BULLET_SPRITE_CACHE.get(key);
+    if (sprite) return sprite;
+    const pal = ENEMY_PROJECTILE_ELEMENT_VISUAL[element] || ENEMY_PROJECTILE_ELEMENT_VISUAL.neutral;
+    const R = RHYTHM_AURA_R;
+    const { c, g } = makeSpriteCanvas(R + 1, dpr);
+    const rgba = (hex, a) => {
+      const n = parseInt(hex.slice(1), 16);
+      return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+    };
+    const grad = g.createRadialGradient(0, 0, 0, 0, 0, R);
+    grad.addColorStop(0.00, 'rgba(255,255,255,0.98)');
+    grad.addColorStop(0.16, rgba(pal.core, 0.95));
+    grad.addColorStop(0.34, rgba(pal.main, 0.72));
+    grad.addColorStop(0.58, rgba(pal.main, 0.30));
+    grad.addColorStop(0.80, rgba(pal.main, 0.10));
+    grad.addColorStop(1.00, rgba(pal.main, 0));
+    g.fillStyle = grad;
+    g.beginPath(); g.arc(0, 0, R, 0, Math.PI * 2); g.fill();
+    ENEMY_BULLET_SPRITE_CACHE.set(key, c);
+    return c;
+  }
+
+  // 拍に合わせた明滅（直前の拍から 1→0。小節の頭は強め）
+  function rhythmPulseAt(nowMs) {
+    const songMs = ((nowMs % RHYTHM_SONG_MS) + RHYTHM_SONG_MS) % RHYTHM_SONG_MS;
+    if (songMs < RHYTHM_BEATS_MS[0]) return 0;
+    let lo = 0, hi = RHYTHM_BEATS_MS.length - 1;
+    while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (RHYTHM_BEATS_MS[mid] <= songMs) lo = mid; else hi = mid - 1; }
+    const since = songMs - RHYTHM_BEATS_MS[lo];
+    const strong = (lo - RHYTHM_DOWNBEAT_INDEX) % 3 === 0;
+    return Math.pow(Math.max(0, 1 - since / 280), 2) * (strong ? 1 : 0.5);
+  }
+
+  // 敵弾Canvasへ、帯をマス目の「光の弾の列」として描く。
+  function drawRhythmOverlay(ctx, bars) {
+    if (!bars.length || !isRhythmStage()) return;
+    const dpr = Number(ctx.canvas.__shootingDpr || 1);
+    const r = state && state.rhythm;
+    const pulse = r ? rhythmPulseAt(Number(r.clockMs || 0)) : 0;
+    ctx.save();
+    let lastKey = '', sprite = null, half = 0, pal = null;
+    for (const p of bars) {
+      const key = getEnemyProjectileElement(p);
+      if (key !== lastKey) {
+        const k = ENEMY_PROJECTILE_ELEMENT_VISUAL[key] ? key : 'neutral';
+        sprite = getRhythmAuraSprite(k, dpr);
+        half = sprite.__half;
+        pal = ENEMY_PROJECTILE_ELEMENT_VISUAL[k];
+        lastKey = key;
+      }
+      if (typeof p.rhythmFrom !== 'number') continue;
+      const pitch = Number(p.rhythmPitch || 16);
+      const y = Number(p.y || 0);
+      const wArena = ctx.canvas.width / dpr;
+      // 穴の隣の弾から外側へ並べる（横に流れても間隔は一定）
+      const xs = [];
+      if (p.rhythmSide === 'left') {
+        for (let x = p.rhythmFrom; x > -pitch; x -= pitch) xs.push(x);
+      } else {
+        for (let x = p.rhythmFrom; x < wArena + pitch; x += pitch) xs.push(x);
+      }
+      if (!xs.length) continue;
+      const x0 = Math.min(xs[0], xs[xs.length - 1]), x1 = Math.max(xs[0], xs[xs.length - 1]);
+      // 列全体をつなぐ淡い光の帯
+      // 上下は縁が出ないようグラデーションで消す
+      const band = ctx.createLinearGradient(0, y - 10, 0, y + 10);
+      band.addColorStop(0, 'rgba(0,0,0,0)');
+      band.addColorStop(0.5, pal.halo);
+      band.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.globalAlpha = 0.5 + 0.35 * pulse;
+      ctx.fillStyle = band;
+      ctx.fillRect(x0 - pitch * 0.4, y - 10, x1 - x0 + pitch * 0.8, 20);
+      // 光の弾（拍で少しふくらむ）
+      ctx.globalAlpha = 0.88 + 0.12 * pulse;
+      const s = half * (1 + 0.14 * pulse);
+      for (const x of xs) ctx.drawImage(sprite, x - s, y - s, s * 2, s * 2);
+    }
+    ctx.restore();
+  }
+
   function fireBulletHellTest(now) {
     const phase = state.boss.phase || 1;
     const speed = Number(BOSS.bulletSpeed || 230);
@@ -17054,6 +17437,8 @@
       deferBossAttackResume(lockedUntil);
       return;
     }
+    // build1630: リズム弾幕は譜面のゲートだけ（updateRhythmStageで出現）。
+    if (isRhythmStage()) return;
     // build1485: 塔15F BOSSは専用パターンのみ（汎用WARNING攻撃は使わない）。
     if (BOSS && BOSS.behavior === 'tower15_echo_v1') {
       fireTower15Boss(now);
@@ -21763,6 +22148,8 @@
     updateShienMechanics(ts);
     // build1592 RAID カミラ: 浮遊弾 / 巣レーザー / 捕縛罠 / 吸血子蜘蛛
     updateCamillaMechanics(ts);
+    // build1630: リズム弾幕（譜面・仮ドラム・判定）
+    updateRhythmStage(ts);
 
     // エルテナULTは通常の敵移動が終わった後に吸引を適用。
     // これによりAIの横移動よりブラックホールの集敵を優先する。
@@ -21856,6 +22243,10 @@
       meta.kicker = 'SCORE ATTACK';
       meta.title = 'すこあちゃん';
       meta.sub = selectedStage.difficultyLabel || '';
+    } else if (isRhythmStage()) {
+      meta.kicker = 'SPECIAL STAGE';
+      meta.title = BOSS.name || 'リズム';
+      meta.sub = '仮面舞踏会';
     } else if (BOSS && BOSS.behavior === 'tower15_echo_v1') {
       meta.kicker = 'ECHO TOWER 15F';
       meta.title = BOSS.name || 'トワ';
@@ -23556,6 +23947,16 @@
           count: Math.max(1, Number(row && row.quantity || 1))
         };
       }).filter(row => row && row.material && row.material.id);
+    } else if (Array.isArray(selectedStage && selectedStage.fixedItemDrops)) {
+      // build1636: ステージ固定の通常報酬（律動：強化素材・金×2）。
+      const levelExpDefs = {
+        level_exp_small:  { id:'level_exp_small',  name:'強化素材・銅', image:'images/item_exp_bronze.webp', rewardType:'level_exp' },
+        level_exp_medium: { id:'level_exp_medium', name:'強化素材・銀', image:'images/item_exp_silver.webp', rewardType:'level_exp' },
+        level_exp_large:  { id:'level_exp_large',  name:'強化素材・金', image:'images/item_exp_gold.webp',   rewardType:'level_exp' },
+      };
+      itemDrops = selectedStage.fixedItemDrops
+        .map(row => ({ material: levelExpDefs[String(row && row.id || '')], count: Math.max(1, Number(row && row.count || 1)) }))
+        .filter(row => row.material);
     } else if (scoreAttackFixedReward) {
       // すこあた！は従来の固定報酬感を維持しつつ、最大3枠以内。
       itemDrops = pickShootingEvolutionRewards(2).map(material => ({ material, count: 1 }));
@@ -23575,7 +23976,7 @@
 
     // build1249: CH02-03以降は経験値強化素材を別枠で0～2個追加。
     // 既存の進化素材ドロップはそのまま残す。
-    if (!dailyQuestReward && !scoreAttackFixedReward && !isRaidStage() && !isFacelessStage()) {
+    if (!dailyQuestReward && !scoreAttackFixedReward && !isRaidStage() && !isFacelessStage() && !Array.isArray(selectedStage && selectedStage.fixedItemDrops)) {
       itemDrops = itemDrops.concat(pickStoryLevelExpMaterialDrops());
     }
 
@@ -24944,12 +25345,15 @@
     normal:  Object.freeze(['bgm-battle-normal-01', 'bgm-battle-normal-02', 'bgm-battle-normal-03']),
     tower:   Object.freeze(['bgm-battle-tower-01', 'bgm-battle-tower-02']),
     tower15: Object.freeze(['bgm-battle-tower-03']),
+    // build1630: リズム弾幕「仮面舞踏会」
+    rhythm:  Object.freeze(['bgm-rhythm-01']),
   });
   let shootingBattleBgmSessionActive = false;
   let shootingBattleBgmFadeRaf = 0;
   let shootingBattleBgmPick = { key: '', id: '' };
 
   function getShootingBattleBgmPoolKey() {
+    if (isRhythmStage()) return 'rhythm';
     if (isResonanceTowerStage()) return Number(selectedStage && selectedStage.stageNo) === 15 ? 'tower15' : 'tower';
     if (selectedStage && selectedStage.type === 'normal') return 'normal';
     return 'boss';
@@ -25246,6 +25650,7 @@
 
     state.paused = false;
     state.pauseStartedAt = 0;
+    if (isRhythmStage()) resumeRhythmSong();
     resetEnemyMotionFreezeSampling(now);
     const pauseRoot = document.getElementById(ROOT_ID);
     if (pauseRoot) pauseRoot.classList.remove('is-shooting-paused');
@@ -25268,6 +25673,8 @@
 
     state.paused = true;
     state.pauseStartedAt = performance.now();
+    // build1630: リズム弾幕は譜面が曲の再生位置に従うので、PAUSE中は曲も止める。
+    if (isRhythmStage()) pauseRhythmSong();
     const pauseRoot = document.getElementById(ROOT_ID);
     if (pauseRoot) pauseRoot.classList.add('is-shooting-paused');
     pointerActive = false;

@@ -14896,3 +14896,32 @@ html body #shooting-event-root[data-shooting-stage^="shooting_tower_"] :is(.shoo
   #shooting-event-root[data-raid-boss="shooting_raid_camilla"] #shooting-boss,
   #shooting-event-root[data-raid-boss="shooting_raid_shien"] #shooting-boss{width:82px!important;height:140px!important}
 }
+
+/* build1630: リズム弾幕の判定表示（PERFECT / GOOD） */
+#shooting-event-root .shooting-rhythm-judge{
+  position:absolute;z-index:40;pointer-events:none;
+  transform:translateX(-50%);
+  font-family:'Cinzel','Times New Roman',serif;font-weight:700;letter-spacing:.12em;
+  font-size:15px;white-space:nowrap;
+  animation:shootingRhythmJudge .6s ease-out forwards;
+}
+#shooting-event-root .shooting-rhythm-judge.is-perfect{
+  color:#fff;font-size:17px;
+  text-shadow:0 0 6px #b48cff,0 0 14px #8054ae,0 1px 0 #3a2160;
+}
+#shooting-event-root .shooting-rhythm-judge.is-good{
+  color:#f3ecff;
+  text-shadow:0 0 5px rgba(128,84,174,.8),0 1px 0 #3a2160;
+}
+@keyframes shootingRhythmJudge{
+  0%{opacity:0;transform:translate(-50%,6px) scale(.86);}
+  18%{opacity:1;transform:translate(-50%,0) scale(1.08);}
+  40%{transform:translate(-50%,-4px) scale(1);}
+  100%{opacity:0;transform:translate(-50%,-22px) scale(1);}
+}
+
+/* build1636: 律動（仮面舞踏会）— BOSS（リズム）は自キャラと同じ枠(74×126)で、最初から確定サイズで表示（カミラ/シエンと同じく最初から確定サイズ） */
+#shooting-event-root[data-shooting-stage="shooting_event_rhythm_test"] #shooting-boss{width:74px!important;height:126px!important;object-fit:contain!important;}
+@media (min-width:700px){#shooting-event-root[data-shooting-stage="shooting_event_rhythm_test"] #shooting-boss{width:82px!important;height:140px!important;}}
+/* ステージ選択のサムネ：縦長イラストの顔が切れないよう上寄せで切り抜く */
+#screen-ninmu.junkou-rebuilt .rhythm-stage-card .junkou-special-art img{object-position:50% 22% !important;}

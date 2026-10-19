@@ -55,6 +55,8 @@
     OVERSEER_AMBUSH: 'shooting_overseer_ambush',
     // build1485: 残響の塔15F BOSS
     TOWER15_BOSS: 'shooting_tower15_boss',
+    // build1630: リズム弾幕（試作）
+    RHYTHM_GATE: 'shooting_rhythm_gate',
   });
 
   // ============================================================
@@ -552,6 +554,24 @@
       bulletDamage: 240,
       behavior: 'tower15_echo_v1',
       uiScale: 1.1,
+    }),
+
+    // build1630: SPECIAL STAGE 律動（リズム弾幕・試作）。弾は譜面のゲートのみ。
+    [SHOOTING_ENEMY_ID.RHYTHM_GATE]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.RHYTHM_GATE,
+      kind: 'boss',
+      implemented: true,
+      name: 'リズム',
+      displayName: 'SPECIAL STAGE　リズム',
+      image: 'images/rhythm_masquerade_battle.webp',
+      element: 'dark',
+      gaugeHp: 10000,   // build1636: 1PHASE 1万 × 3 = 3万
+      gauges: 3,
+      bulletSpeed: 0,
+      fireRate: 0,
+      bulletDamage: 240,
+      behavior: 'rhythm_gate_v1',
+      uiScale: 1.0,
     }),
 
     [SHOOTING_ENEMY_ID.NOAH]: Object.freeze({
