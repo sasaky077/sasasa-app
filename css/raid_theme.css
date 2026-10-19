@@ -553,3 +553,14 @@ html body #daily-raid-root#daily-raid-root[data-raid-theme="camilla"] :is(.daily
   color:#ffd9a8!important;-webkit-text-fill-color:#ffd9a8!important;
   text-shadow:0 0 2px rgba(60,0,10,.95),0 0 6px rgba(90,0,20,.8)!important;
 }
+
+/* build1628: globally visible raid room browser refresh action */
+#daily-raid-root .daily-raid-join-head .daily-raid-refresh{
+  align-self:flex-end; margin-top:10px; min-height:34px; padding:6px 15px;
+  border:1px solid rgba(174,144,83,.54); border-radius:7px;
+  background:linear-gradient(180deg,rgba(255,251,238,.13),rgba(217,181,105,.07));
+  color:#ded2ba; font:600 11px/1.2 'Noto Serif JP',serif;
+  letter-spacing:.06em; cursor:pointer; touch-action:manipulation;
+}
+#daily-raid-root .daily-raid-join-head .daily-raid-refresh:active{opacity:.7}
+#daily-raid-root .daily-raid-join-head .daily-raid-refresh:focus-visible{outline:2px solid #d8ba76;outline-offset:2px}

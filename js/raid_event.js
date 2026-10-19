@@ -1373,21 +1373,21 @@
         <section class="daily-raid-entry" id="daily-raid-entry">
           <div class="daily-raid-entry-hero">
             <img src="images/raid_enemy_01.webp" alt="テスト">
-            <div><small>RAID BATTLE</small><strong data-raid-boss-name>テスト</strong><span>募集するか、フレンドの募集へ参加してください。</span></div>
+            <div><small>RAID BATTLE</small><strong data-raid-boss-name>テスト</strong><span>全国のプレイヤーとレイドに挑戦できます。</span></div>
           </div>
           <div class="daily-raid-mode-grid">
             <button type="button" class="daily-raid-mode-card is-host raid-surface" id="daily-raid-recruit-btn">
-              <small>HOST</small><strong>募集する</strong><span>自分のレイドを作成してフレンドを募集</span><b>募集しながらプレイ可能</b>
+              <small>HOST</small><strong>募集する</strong><span>自分のレイドを全国に公開して募集</span><b>募集しながらプレイ可能</b>
             </button>
             <button type="button" class="daily-raid-mode-card is-join raid-surface" id="daily-raid-join-btn">
-              <small>JOIN</small><strong>参加する</strong><span>募集中のフレンドレイドから選択</span><b>空きのある募集のみ表示</b>
+              <small>JOIN</small><strong>参加する</strong><span>全国の公開レイドから選択</span><b>空きのある募集のみ表示</b>
             </button>
           </div>
           <div class="daily-raid-entry-note">募集主は、まだ誰も参加しておらず一度も挑戦していない間だけ募集を取り消せます。参加後・挑戦後は当日のチームで固定されます。</div>
         </section>
 
         <section class="daily-raid-join-select" id="daily-raid-join-select" hidden>
-          <div class="daily-raid-join-head"><small>FRIEND RAID</small><strong>参加するレイドを選択</strong><span>フレンドが現在募集しているレイドです。</span></div>
+          <div class="daily-raid-join-head"><small>PUBLIC RAID</small><strong>全国の公開レイド</strong><span>フレンド登録不要。空きのあるレイドに参加できます。</span><button type="button" id="daily-raid-refresh" class="daily-raid-refresh" aria-label="公開募集一覧を更新">↻ 更新</button></div>
           <div class="daily-raid-room-list" id="daily-raid-room-list"></div>
         </section>
 
@@ -1481,6 +1481,7 @@
               <div><b>06</b><span>討伐後、挑戦したメンバーは報酬を受け取れる。S ボスの欠片／A 聖霊花(R)／B 進化素材ランダム2つ／C コイン。一覧はRAID INFOの「報酬一覧」</span></div>
               <div><b>07</b><span>累計討伐ボーナス：討伐した日数が節目に届くと結晶。30回ごとにくり返し、累計50回・100回は結晶100</span></div>
               <div><b>08</b><span>ボスの欠片を集めると、そのボスを入手できる。</span></div>
+              <div><b>09</b><span>公開レイドは全国のプレイヤーが参加できます（フレンド登録は不要）。</span></div>
             </div>
           </section>
         </div>
@@ -1495,6 +1496,7 @@
     });
     root.querySelector('#daily-raid-recruit-btn').addEventListener('click',startRecruiting);
     root.querySelector('#daily-raid-join-btn').addEventListener('click',showJoinList);
+    root.querySelector('#daily-raid-refresh').addEventListener('click',showJoinList);
     root.querySelector('#daily-raid-start').addEventListener('click',start);
     root.querySelector('#daily-raid-finalize-best').addEventListener('click',skipRemainingAttempts);
     root.querySelector('#daily-raid-recruit-cancel').addEventListener('click',cancelRecruitment);
@@ -1786,7 +1788,7 @@
     try{
       const rooms=normalizeStatus(await rpc('list_recruiting_friend_raids',{p_user_id:uid()}))||[];
       if(!Array.isArray(rooms)||!rooms.length){
-        list.innerHTML='<div class="daily-raid-room-empty raid-surface"><strong>現在募集中のフレンドはいません</strong><span>フレンドが「募集する」を選ぶと、ここに表示されます。</span></div>'; applyRaidCanonicalSurfaces(root);
+        list.innerHTML='<div class="daily-raid-room-empty raid-surface"><strong>現在募集中のレイドはありません</strong><span>全国の誰かが「募集する」を選ぶと、ここに表示されます。</span></div>'; applyRaidCanonicalSurfaces(root);
         return;
       }
       list.innerHTML=rooms.map(room=>{
@@ -2466,7 +2468,7 @@
     root.querySelector('#daily-raid-member-count').textContent=`${members.length} / 4`;
     root.querySelector('#daily-raid-attempt-count').textContent=admin?'∞ / 3':`${attemptCount} / 3`;
     const teamName=root.querySelector('#daily-raid-team-name');
-    if(teamName) teamName.textContent=status&&status.is_host?'あなたの募集レイド':`${status&&status.host_display_name||'フレンド'}のレイド`;
+    if(teamName) teamName.textContent=status&&status.is_host?'あなたの募集レイド':`${status&&status.host_display_name||'プレイヤー'}のレイド`;
 
     const hostActions=root.querySelector('#daily-raid-host-actions');
     const cancelBtn=root.querySelector('#daily-raid-recruit-cancel');
@@ -2483,7 +2485,7 @@
     else if(allFinished) stat.textContent=`本日のBEST確定 · ${fmt(bestDamage)} DAMAGE`;
     else if(inBattle) stat.textContent=`${attemptCount} / 3 挑戦中`;
     else if(attemptCount>0) stat.textContent=`${attemptCount} / 3 完了 · 暫定BEST ${fmt(bestDamage)} DAMAGE`;
-    else stat.textContent=status&&status.recruiting&&status.is_host?'フレンド募集中 · そのまま挑戦可能':'挑戦可能 · 3回中BESTを採用';
+    else stat.textContent=status&&status.recruiting&&status.is_host?'全国に公開中 · そのまま挑戦可能':'挑戦可能 · 3回中BESTを採用';
     stat.setAttribute('data-state',admin?'admin':cleared?'clear':allFinished?'done':inBattle?'active':'ready');
 
     const list=root.querySelector('#daily-raid-member-list');
@@ -2499,7 +2501,7 @@
       const host=String(m.user_id||'')===String(status&&status.host_user_id||'');
       return `<div class="daily-raid-member${mine?' is-me':''}${done?' is-done':''}${active?' is-active':''}"><span class="daily-raid-member-no">${mine?'YOU':host?'HOST':'ALLY'}</span>${panel}<div class="daily-raid-member-copy"><strong>${esc(m.display_name||m.user_id||'PLAYER')}</strong><small class="daily-raid-member-state">${esc(state)}</small><div class="daily-raid-member-damage"><span>BEST</span><b>${best>0?fmt(best):'—'}</b></div></div></div>`;
     });
-    while(rows.length<4) rows.push('<div class="daily-raid-member is-empty"><span class="daily-raid-member-no">ALLY</span><div class="daily-raid-member-copy"><strong>EMPTY</strong><small>フレンド枠</small></div><b>OPEN</b></div>');
+    while(rows.length<4) rows.push('<div class="daily-raid-member is-empty"><span class="daily-raid-member-no">ALLY</span><div class="daily-raid-member-copy"><strong>EMPTY</strong><small>参加枠</small></div><b>OPEN</b></div>');
     list.innerHTML=rows.join('');
     applyRaidCanonicalSurfaces(root);
 
