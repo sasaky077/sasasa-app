@@ -14921,7 +14921,58 @@ html body #shooting-event-root[data-shooting-stage^="shooting_tower_"] :is(.shoo
 }
 
 /* build1636: 律動（仮面舞踏会）— BOSS（リズム）は自キャラと同じ枠(74×126)で、最初から確定サイズで表示（カミラ/シエンと同じく最初から確定サイズ） */
-#shooting-event-root[data-shooting-stage="shooting_event_rhythm_test"] #shooting-boss{width:74px!important;height:126px!important;object-fit:contain!important;}
-@media (min-width:700px){#shooting-event-root[data-shooting-stage="shooting_event_rhythm_test"] #shooting-boss{width:82px!important;height:140px!important;}}
+#shooting-event-root:is([data-shooting-stage="shooting_event_rhythm_test"],[data-shooting-stage="shooting_event_rhythm_advanced"]) #shooting-boss{width:74px!important;height:126px!important;object-fit:contain!important;}
+@media (min-width:700px){#shooting-event-root:is([data-shooting-stage="shooting_event_rhythm_test"],[data-shooting-stage="shooting_event_rhythm_advanced"]) #shooting-boss{width:82px!important;height:140px!important;}}
 /* ステージ選択のサムネ：縦長イラストの顔が切れないよう上寄せで切り抜く */
 #screen-ninmu.junkou-rebuilt .rhythm-stage-card .junkou-special-art img{object-position:50% 22% !important;}
+
+/* build1637: 難易度選択（無貌の天使・律動）のクリア済みバッジ。STORYの ✓ CLEAR と同じ見た目 */
+#shooting-faceless-stage-select.zfs-screen .zss-clear-badge{
+  flex:0 0 auto;
+  padding:3px 5px 4px;
+  color:#805628;
+  background:linear-gradient(180deg,#fff9ec,#f4e6c9);
+  border:1px solid rgba(177,131,62,.68);
+  font:600 10px/1 "Cinzel",serif;
+  letter-spacing:.03em;
+  white-space:nowrap;
+}
+
+/* build1638: 難易度選択の見出し。戻るボタン（左上固定・幅約82px）と左右対称に余白を取り、
+   長い見出しは JS で文字サイズを縮める。「律動 -仮面舞踏会-」は 主題＋副題 の2段にする */
+html body :is(#shooting-faceless-stage-select,#noah-stage-select).zfs-screen .zfs-heading{
+  box-sizing:border-box !important;
+  width:100% !important;
+  max-width:100% !important;
+  padding:0 92px !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+}
+html body #shooting-faceless-stage-select.zfs-screen .zfs-heading.zfs-heading-split{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  gap:1px !important;
+  margin-top:4px !important;
+  line-height:1.05 !important;
+}
+html body #shooting-faceless-stage-select.zfs-screen .zfs-heading-split .zfs-heading-main{
+  font:600 clamp(22px,6.2vw,28px)/1.1 'Noto Serif JP',serif;
+  letter-spacing:.18em;
+  padding-left:.18em;
+}
+html body #shooting-faceless-stage-select.zfs-screen .zfs-heading-split .zfs-heading-sub{
+  display:flex;align-items:center;gap:7px;
+  font:500 11px/1.2 'Noto Serif JP',serif;
+  letter-spacing:.32em;
+  padding-left:.32em;
+  color:#8a5f35;
+}
+html body #shooting-faceless-stage-select.zfs-screen .zfs-heading-split .zfs-heading-sub::before,
+html body #shooting-faceless-stage-select.zfs-screen .zfs-heading-split .zfs-heading-sub::after{
+  content:'';width:14px;height:1px;background:rgba(154,106,53,.55);
+}
+/* 右欄（RANK / HIGH SCORE）へ移したWAVE/PHASE数はクリア条件の後ろに小さく */
+#shooting-faceless-stage-select.zfs-screen .zfs-phase-note{
+  margin-left:3px;font-size:.9em;color:#7a6a55;white-space:nowrap;
+}

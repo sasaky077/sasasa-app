@@ -103,7 +103,8 @@
     SCORE_ATTACK_NORMAL: 'shooting_score_attack_normal',
     SCORE_ATTACK_HARD: 'shooting_score_attack_hard',
     OVERSEER_AMBUSH: 'shooting_event_overseer_ambush',
-    RHYTHM_TEST: 'shooting_event_rhythm_test', // build1630 リズム弾幕（試作）
+    RHYTHM_TEST: 'shooting_event_rhythm_test',         // 律動 -仮面舞踏会- 最上級（3PHASE）
+    RHYTHM_ADVANCED: 'shooting_event_rhythm_advanced', // build1637 律動 -仮面舞踏会- 上級（2PHASE・少し遅い）
   });
 
   // ============================================================
@@ -1264,7 +1265,8 @@
       stageNo: 30,
       eventId: 'rhythm_test',
       eventTitle: '律動',
-      difficultyLabel: 'RHYTHM TEST',
+      difficultyLabel: '最上級',
+      rhythm: Object.freeze({ difficulty: 'super', travelMs: 900, holeBonus: 0 }),
       type: 'boss',
       background: 'images/battle_bg_01.webp',
       introImage: 'images/rhythm_masquerade_battle_start.webp',
@@ -1279,6 +1281,32 @@
       // 初回クリアの結晶×10はサーバー（finish_secure_shooting_run）側で付与。
       fixedItemDrops: Object.freeze([Object.freeze({ id: 'level_exp_large', count: 2 })]),
       firstClearGems: 10,
+      playable: true,
+    }),
+
+    [SHOOTING_STAGE_ID.RHYTHM_ADVANCED]: Object.freeze({
+      id: SHOOTING_STAGE_ID.RHYTHM_ADVANCED,
+      chapter: 0,
+      stageNo: 31,
+      eventId: 'rhythm_test',
+      eventTitle: '律動',
+      difficultyLabel: '上級',
+      // 上級：落ちる速さを約2割遅く、穴を1マス広く、2PHASEまで
+      rhythm: Object.freeze({ difficulty: 'advanced', travelMs: 1120, holeBonus: 1 }),
+      type: 'boss',
+      background: 'images/battle_bg_01.webp',
+      introImage: 'images/rhythm_masquerade_battle_start.webp',
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.RHYTHM_GATE_ADVANCED]),
+      bossElement: 'dark',
+      enemyElement: 'dark',
+      mission: Object.freeze({
+        type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
+        text: '弾幕の穴をたどって進め',
+      }),
+      // build1636: 通常クリア報酬は「強化素材・金」×2で固定（ランダムドロップなし）。
+      // 初回クリアの結晶×10はサーバー（finish_secure_shooting_run）側で付与。
+      fixedItemDrops: Object.freeze([Object.freeze({ id: 'level_exp_large', count: 2 })]),
+      firstClearGems: 5,
       playable: true,
     }),
 

@@ -57,6 +57,7 @@
     TOWER15_BOSS: 'shooting_tower15_boss',
     // build1630: リズム弾幕（試作）
     RHYTHM_GATE: 'shooting_rhythm_gate',
+    RHYTHM_GATE_ADVANCED: 'shooting_rhythm_gate_advanced', // build1637 上級（2PHASE）
   });
 
   // ============================================================
@@ -567,6 +568,24 @@
       element: 'dark',
       gaugeHp: 10000,   // build1636: 1PHASE 1万 × 3 = 3万
       gauges: 3,
+      bulletSpeed: 0,
+      fireRate: 0,
+      bulletDamage: 240,
+      behavior: 'rhythm_gate_v1',
+      uiScale: 1.0,
+    }),
+
+    // build1637: 律動 上級。最上級と同じリズムで2PHASEまで。
+    [SHOOTING_ENEMY_ID.RHYTHM_GATE_ADVANCED]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.RHYTHM_GATE_ADVANCED,
+      kind: 'boss',
+      implemented: true,
+      name: 'リズム',
+      displayName: 'SPECIAL STAGE　リズム',
+      image: 'images/rhythm_masquerade_battle.webp',
+      element: 'dark',
+      gaugeHp: 10000,
+      gauges: 2,
       bulletSpeed: 0,
       fireRate: 0,
       bulletDamage: 240,

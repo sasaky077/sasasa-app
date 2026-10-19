@@ -14470,6 +14470,15 @@
     return !!(BOSS && BOSS.behavior === 'rhythm_gate_v1');
   }
 
+  // build1637: 難易度別の設定（ステージ定義の rhythm）。上級は遅く・穴が広い。
+  function getRhythmStageConfig() {
+    const cfg = (selectedStage && selectedStage.rhythm) || {};
+    return {
+      travelMs: Math.max(500, Number(cfg.travelMs || RHYTHM_TRAVEL_MS)),
+      holeBonus: Math.max(0, Math.floor(Number(cfg.holeBonus || 0))),
+    };
+  }
+
   function getRhythmSongSection(bar) {
     let sec = RHYTHM_SONG_SECTIONS[0];
     for (const entry of RHYTHM_SONG_SECTIONS) if (bar >= entry[0]) sec = entry;
@@ -14517,7 +14526,7 @@
   //              slide: 出現時の穴のずれ(マス。到達までに0へ), bob: 途中の上下の揺れ(px) }
   function buildRhythmRows(loopIndex, phase) {
     const rand = rhythmRandom(0x5eed + loopIndex * 7919);
-    const tighten = (Math.max(1, phase) >= 3 ? 1 : 0) + (loopIndex >= 1 ? 1 : 0);
+    const tighten = (Math.max(1, phase) >= 3 ? 1 : 0) + (loopIndex >= 1 ? 1 : 0) - getRhythmStageConfig().holeBonus;
     const base = loopIndex * RHYTHM_SONG_MS;
     const rows = [];
     const barCount = Math.floor((RHYTHM_BEATS_MS.length - RHYTHM_DOWNBEAT_INDEX) / 3);
@@ -14687,20 +14696,21 @@
 
     // 出現（BREAK演出・KO切替中・撃破後は出さない）
     const blocked = !!(state.phaseTransition || state.koTransition) || !(state.boss && state.boss.hp > 0);
-    while (r.chartIndex < r.chart.length && nowMs >= r.chart[r.chartIndex].arriveMs - RHYTHM_TRAVEL_MS) {
+    const travelMs = getRhythmStageConfig().travelMs;
+    while (r.chartIndex < r.chart.length && nowMs >= r.chart[r.chartIndex].arriveMs - travelMs) {
       const ev = r.chart[r.chartIndex++];
-      if (blocked || nowMs > ev.arriveMs - RHYTHM_TRAVEL_MS + 200) continue;
+      if (blocked || nowMs > ev.arriveMs - travelMs + 200) continue;
       const row = spawnRhythmRow(ev, w);
       if (row) r.rows.push(row);
     }
 
     // 位置更新：基本は全列同じ速さ。横流れ・上下の揺れは自機ラインに届く時点で0になる
     const lineY = h * RHYTHM_LINE_RATE;
-    const pxPerMs = (lineY - RHYTHM_SPAWN_Y) / RHYTHM_TRAVEL_MS;
+    const pxPerMs = (lineY - RHYTHM_SPAWN_Y) / travelMs;
     r.rows = r.rows.filter(row => {
       const alive = row.bars.filter(p => p && p.el && p.el.__canvasAlive !== false);
       if (!alive.length) return false;
-      const prog = Math.max(0, Math.min(1, 1 - (row.arrive - nowMs) / RHYTHM_TRAVEL_MS));
+      const prog = Math.max(0, Math.min(1, 1 - (row.arrive - nowMs) / travelMs));
       let y = lineY + (nowMs - row.arrive) * pxPerMs;
       if (row.bob) y += row.bob * Math.sin(Math.PI * prog);
       if (row.slide) {
@@ -22610,6 +22620,7 @@
 
     const gimmicks = [];
     if (stage.spiderHorde) gimmicks.push({ id:'ch704Horde', label:'小蜘蛛の大群・接触連撃' });
+    if (stage.rhythm) gimmicks.push({ id:'rhythm', label:'リズム弾幕' });
     const barrierElements = getStageBarrierPreviewElements(stage);
     const isDailyAdvanced = !!(
       (stage.dailyQuest && stage.dailyQuest.level === 'advanced') ||
@@ -22865,6 +22876,113 @@
     }).join('');
   }
 
+  // ============================================================
+  // build1637: クリア済み表示（無貌の天使・律動の難易度選択）
+  //  端末内の記録（勝利時に即記録）＋サーバーの初回クリア記録を合わせて判定する。
+  // ============================================================
+  function getShootingClearedStorageKey() {
+    return 'zeraphia_shooting_cleared_v1:' + String(getShootingUserId() || 'guest');
+  }
+  function readShootingClearedStages() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(getShootingClearedStorageKey()) || '[]');
+      return new Set(Array.isArray(raw) ? raw.map(String) : []);
+    } catch (_) { return new Set(); }
+  }
+  function writeShootingClearedStages(set) {
+    try { localStorage.setItem(getShootingClearedStorageKey(), JSON.stringify(Array.from(set))); } catch (_) {}
+  }
+  function markShootingStageCleared(stageId) {
+    const id = String(stageId || '');
+    if (!id) return;
+    const set = readShootingClearedStages();
+    if (set.has(id)) return;
+    set.add(id);
+    writeShootingClearedStages(set);
+  }
+  // build1638: 難易度選択の右欄（ストーリーと同じ RANK / HIGH SCORE）
+  function getShootingBestRankStorageKey() {
+    return 'zeraphia_shooting_best_rank_v1:' + String(getShootingUserId() || 'guest');
+  }
+  function readShootingBestRanks() {
+    try { return JSON.parse(localStorage.getItem(getShootingBestRankStorageKey()) || '{}') || {}; } catch (_) { return {}; }
+  }
+  function shootingRankOrder(rank) {
+    const list = RESULT_RANK_THRESHOLDS.map(t => String(t.rank));
+    const i = list.indexOf(String(rank || ''));
+    return i < 0 ? list.length + 1 : i;   // 小さいほど上位
+  }
+  function saveShootingBestRank(stageId, rank) {
+    const id = String(stageId || '');
+    if (!id || !rank) return;
+    const map = readShootingBestRanks();
+    if (map[id] && shootingRankOrder(map[id]) <= shootingRankOrder(rank)) return;
+    map[id] = String(rank);
+    try { localStorage.setItem(getShootingBestRankStorageKey(), JSON.stringify(map)); } catch (_) {}
+  }
+  function buildEventStageRecordHtml(stageId) {
+    const rank = String(readShootingBestRanks()[String(stageId || '')] || '');
+    const rankClass = rank ? ` rank-${rank.toLowerCase()}` : ' rank-none';
+    const high = getLocalShootingHighScore(String(stageId || ''));
+    return `
+        <div class="zss-record" aria-label="ベスト記録">
+          <div class="zss-record-rank${rankClass}"><span>RANK</span><b>${rank || '—'}</b></div>
+          <div class="zss-record-score"><span>HIGH SCORE</span><b>${formatShootingScore(high)}</b></div>
+        </div>`;
+  }
+  function buildStageClearBadgeHtml(stageId) {
+    return readShootingClearedStages().has(String(stageId || ''))
+      ? '<span class="zss-clear-badge" aria-label="クリア済み">✓ CLEAR</span>'
+      : '';
+  }
+  // サーバーの初回クリア記録を取り込み、開いている難易度選択のバッジを更新する。
+  let shootingClearedSyncPromise = null;
+  function syncShootingClearedStagesFromServer() {
+    if (shootingClearedSyncPromise) return shootingClearedSyncPromise;
+    const sb = window.zsSupabase;
+    if (!sb || typeof sb.rpc !== 'function') return Promise.resolve();
+    shootingClearedSyncPromise = (async () => {
+      try {
+        const res = await sb.rpc('get_my_cleared_shooting_stages');
+        if (res && res.error) throw res.error;
+        const rows = Array.isArray(res && res.data) ? res.data : [];
+        const set = readShootingClearedStages();
+        rows.forEach(row => {
+          const id = typeof row === 'string' ? row : (row && row.stage_id);
+          if (id) set.add(String(id));
+        });
+        writeShootingClearedStages(set);
+        document.querySelectorAll('#shooting-faceless-stage-select [data-stage-id]').forEach(card => {
+          const id = card.getAttribute('data-stage-id');
+          const nameRow = card.querySelector('.zss-card-name-row');
+          if (nameRow && set.has(id) && !nameRow.querySelector('.zss-clear-badge')) {
+            nameRow.insertAdjacentHTML('beforeend', buildStageClearBadgeHtml(id));
+          }
+        });
+      } catch (err) {
+        console.warn('[shooting] cleared stage sync failed:', err && (err.message || err));
+      } finally {
+        shootingClearedSyncPromise = null;
+      }
+    })();
+    return shootingClearedSyncPromise;
+  }
+
+  // build1638: 見出しが長い（8文字以上など）ときは、戻るボタンに掛からない幅まで文字を縮める。
+  function fitStageSelectHeading(overlay) {
+    const h = overlay && overlay.querySelector('.zfs-heading');
+    if (!h) return;
+    const target = h.querySelector('.zfs-heading-main') || h;
+    target.style.fontSize = '';
+    let size = parseFloat(getComputedStyle(target).fontSize) || 24;
+    let guard = 0;
+    while (h.scrollWidth > h.clientWidth + 1 && size > 14 && guard++ < 20) {
+      size -= 1;
+      target.style.fontSize = size + 'px';
+      target.style.letterSpacing = '.04em';
+    }
+  }
+
   function buildFacelessStageCard(stageId, number, title) {
     const stage = getShootingStage(stageId);
     const mission = stage?.mission?.text || 'フェイスレスを撃破';
@@ -22873,12 +22991,12 @@
     const firstClearGems = stage?.faceless?.difficulty === 'super' ? 10 : 5;
     const attrs = buildStageSelectAttributePreview(stageId);
     return `
-      <div class="zss-card zss-story-shooting-card zfs-card" role="button" tabindex="0"
+      <div class="zss-card zss-story-shooting-card zfs-card" role="button" tabindex="0" data-stage-id="${stageId}"
            onclick="openFacelessStage('${stageId}')"
            onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openFacelessStage('${stageId}');}">
         <div class="zss-card-no" aria-hidden="true"><span>✧</span><b>${number}</b><span>✧</span></div>
         <div class="zss-card-body">
-          <div class="zss-card-name-row"><span class="zss-card-name">${title}</span></div>
+          <div class="zss-card-name-row"><span class="zss-card-name">${title}</span>${buildStageClearBadgeHtml(stageId)}</div>
           <div class="zss-mission">クリア条件：${mission}</div>
           <div class="zss-card-row zss-card-row-gimmick">
             <span class="zss-card-label">GIMMICK</span>
@@ -22898,10 +23016,7 @@
             </span>
           </div>
         </div>
-        <div class="zss-record zfs-record" aria-label="全${waveCount}WAVE">
-          <div class="zss-record-rank"><span>TOTAL WAVE</span><b>${waveCount}</b></div>
-          <div class="zss-record-score"><span>SPECIAL</span><b>BOSS</b></div>
-        </div>
+        ${buildEventStageRecordHtml(stageId)}
         <span class="zss-arrow" aria-hidden="true">›</span>
       </div>`;
   }
@@ -22929,10 +23044,101 @@
         </div>
       </div>`;
     document.body.appendChild(overlay);
+    fitStageSelectHeading(overlay);
+    void syncShootingClearedStagesFromServer();
     if (!immediate) requestAnimationFrame(() => overlay.classList.add('show'));
     else requestAnimationFrame(() => { if (overlay.isConnected) overlay.style.transition = ''; });
     return true;
   }
+
+  // ============================================================
+  // build1637: 律動 -仮面舞踏会- 難易度選択（無貌の天使と同じ画面構成）
+  //  巡行 → 律動 → 上級/最上級 → パーティ編成。編成の「戻る」はこの画面へ戻る。
+  // ============================================================
+  function openRhythmStage(stageId) {
+    if (typeof window.requireChapter03ContentUnlock === 'function' && !window.requireChapter03ContentUnlock()) return false;
+    window.__shootingReturnContext = { type: 'rhythmStageSelect' };
+    closeFacelessStageSelect();
+    window.openShootingEvent({ stageId: String(stageId || '') });
+  }
+
+  function buildRhythmStageCard(stageId, number, title) {
+    const stage = getShootingStage(stageId);
+    const enemyId = stage && Array.isArray(stage.enemyIds) ? stage.enemyIds[0] : '';
+    const enemy = enemyId && window.ShootingEnemies ? window.ShootingEnemies.getShootingEnemy(enemyId) : null;
+    const phases = Math.max(1, Number(enemy && enemy.gauges || 3));
+    const mission = stage?.mission?.text || 'リズムを撃破';
+    const firstClearGems = Math.max(0, Number(stage?.firstClearGems || 5));
+    const fixed = Array.isArray(stage?.fixedItemDrops) ? stage.fixedItemDrops : [];
+    const goldCount = fixed.filter(row => row && row.id === 'level_exp_large').reduce((sum, row) => sum + Number(row.count || 0), 0);
+    const attrs = buildStageSelectAttributePreview(stageId);
+    return `
+      <div class="zss-card zss-story-shooting-card zfs-card" role="button" tabindex="0" data-stage-id="${stageId}"
+           onclick="openRhythmStage('${stageId}')"
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openRhythmStage('${stageId}');}">
+        <div class="zss-card-no" aria-hidden="true"><span>✧</span><b>${number}</b><span>✧</span></div>
+        <div class="zss-card-body">
+          <div class="zss-card-name-row"><span class="zss-card-name">${title}</span>${buildStageClearBadgeHtml(stageId)}</div>
+          <div class="zss-mission">クリア条件：${mission}</div>
+          <div class="zss-card-row zss-card-row-gimmick">
+            <span class="zss-card-label">GIMMICK</span>
+            <span class="zss-gimmicks">${buildFacelessGimmickHtml(stageId)}</span>
+          </div>
+          ${attrs ? `<div class="zfs-attributes">${attrs}</div>` : ''}
+          <div class="zss-card-row zss-card-row-reward">
+            <span class="zss-card-label">主な報酬</span>
+            <span class="zss-rewards">
+              <span class="zss-reward-chip" title="プレイヤーEXP"><span class="zss-reward-icon"><img src="images/icon_exp.webp" alt="プレイヤーEXP"></span></span>
+              ${goldCount ? `<span class="zss-reward-chip zfs-first-clear-gem" title="強化素材・金 ×${goldCount}" aria-label="強化素材・金 ${goldCount}個">
+                <span class="zss-reward-icon"><img src="images/item_exp_gold.webp" alt="強化素材・金"></span>
+                <span class="zfs-gem-count">×${goldCount}</span>
+              </span>` : ''}
+              <span class="zss-reward-chip zfs-first-clear-gem" title="初回クリア報酬：結晶 ×${firstClearGems}" aria-label="初回のみ 結晶 ${firstClearGems}個">
+                <span class="zss-reward-icon"><img src="images/icon_gem.webp" alt="結晶"></span>
+                <span class="zfs-gem-count">×${firstClearGems}</span>
+                <span class="zfs-first-label">初回のみ</span>
+              </span>
+            </span>
+          </div>
+        </div>
+        ${buildEventStageRecordHtml(stageId)}
+        <span class="zss-arrow" aria-hidden="true">›</span>
+      </div>`;
+  }
+
+  function showRhythmStageSelect(options = {}) {
+    if (typeof window.requireChapter03ContentUnlock === 'function' && !window.requireChapter03ContentUnlock()) return false;
+    closeFacelessStageSelect();
+    const immediate = !!(options && options.immediate);
+    const overlay = document.createElement('div');
+    // 無貌の天使と同じ画面（idとCSSを共用）。閉じる処理も共通。
+    overlay.id = 'shooting-faceless-stage-select';
+    overlay.className = 'zfs-screen zfs-rhythm';
+    if (immediate) { overlay.classList.add('show'); overlay.style.transition = 'none'; }
+    overlay.innerHTML = `
+      <div class="zfs-surface">
+        <div class="zfs-pagehead">
+          <button type="button" class="zfs-back" onclick="closeFacelessStageSelect()" aria-label="戻る">〈 戻る</button>
+          <h2 class="zfs-heading zfs-heading-split"><span class="zfs-heading-main">律動</span><span class="zfs-heading-sub">仮面舞踏会</span></h2>
+          <div class="zfs-ornament" aria-hidden="true"><span>✦</span></div>
+        </div>
+        <div class="zfs-scroll">
+          <div class="zfs-list" aria-label="律動・難易度選択">
+            ${buildRhythmStageCard(SHOOTING_STAGE_ID.RHYTHM_ADVANCED, '01', '上級')}
+            ${buildRhythmStageCard(SHOOTING_STAGE_ID.RHYTHM_TEST, '02', '最上級')}
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    fitStageSelectHeading(overlay);
+    void syncShootingClearedStagesFromServer();
+    if (!immediate) requestAnimationFrame(() => overlay.classList.add('show'));
+    else requestAnimationFrame(() => { if (overlay.isConnected) overlay.style.transition = ''; });
+    return true;
+  }
+
+  window.openRhythmStage = openRhythmStage;
+  window.showRhythmStageSelect = showRhythmStageSelect;
 
   window.closeFacelessStageSelect = closeFacelessStageSelect;
   window.openFacelessStage = openFacelessStage;
@@ -24092,6 +24298,9 @@
       return;
     }
 
+    // build1637: クリア済み表示用に端末へ記録（無貌の天使・律動の難易度選択で使用）
+    markShootingStageCleared(state && state.stageId || (selectedStage && selectedStage.id));
+    saveShootingBestRank(state && state.stageId || (selectedStage && selectedStage.id), getResultRank(state && state.score, true));
     const drops = buildAndGrantShootingClearRewards();
     section.style.display = '';
 
@@ -26413,6 +26622,11 @@
     // 引数なし起動は常に従来のオーバーシア単戦へ戻す。
     const hasExplicitStage = !!(options && options.stageId);
     const hasExplicitEnemy = !!(options && options.enemyId);
+    // build1637: 律動 -仮面舞踏会- は難易度選択から。
+    if (!hasExplicitStage && options && options.rhythmSelect) {
+      showRhythmStageSelect();
+      return;
+    }
     if (!hasExplicitStage && !hasExplicitEnemy) {
       showFacelessStageSelect();
       return;
@@ -26742,6 +26956,9 @@
     const returningToDailyStageSelect = !!(
       returnContext && returnContext.type === 'dailyStageSelect'
     );
+    const returningToRhythmStageSelect = !!(
+      returnContext && returnContext.type === 'rhythmStageSelect'
+    );
     const returningToRaidLobby = !!(returnContext && returnContext.type === 'raidLobby');
     // build1437: 楽園 -ノア- も、編成/RESULTから戻ったら直前のステージ選択へ戻す。
     const returningToNoahStageSelect = !!(
@@ -26768,6 +26985,9 @@
     // その後で④のshooting rootを破棄することで、背面の②特別巡行を一瞬も見せない。
     if (returningToFacelessStageSelect) {
       showFacelessStageSelect({ immediate: true });
+      closeDailyStageSelect();
+    } else if (returningToRhythmStageSelect) {
+      showRhythmStageSelect({ immediate: true });
       closeDailyStageSelect();
     } else if (returningToDailyStageSelect) {
       showDailyStageSelect({ immediate: true });
