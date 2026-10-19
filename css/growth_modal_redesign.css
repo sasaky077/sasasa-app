@@ -541,3 +541,9 @@ html body #character-levelup-modal .chara-level-material-meta i{font-size:10px;}
   html body #character-levelup-modal .chara-level-material-stepper button{width:29px !important;height:29px !important;font-size:17px !important;}
   html body #character-levelup-modal .chara-level-material-stepper span{height:29px !important;min-width:26px !important;font-size:14px !important;}
 }
+
+/* build1641: 限界突破の効果名は「\n」で改行できる（<br>は安全のため文字として表示されるので使わない） */
+html body .lb-bonus-summary,
+html body .lb-next-bonus-title,
+html body .gacha-resonance-current b,
+html body .gacha-resonance-overview-row .effect{white-space:pre-line !important;}
