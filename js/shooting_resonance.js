@@ -226,7 +226,21 @@
     36: genericSet('ニーナ'),
     37: genericSet('トイフェル'),
     38: genericSet('クロエ'),
-    39: genericSet('レムナクロス'),
+    // build1639: レオナクロス専用。Lv3でTRAPの爆発範囲が大きく広がり、使用感が変わる。
+    39: Object.freeze({
+      1: bonus('基礎共鳴', 'HP・ATK +4%', 'レオナクロスの基礎HPとATKが4%上昇する。', [
+        { type:'statRate', hp:0.04, atk:0.04 }
+      ]),
+      2: bonus('射撃増幅', '通常攻撃ダメージ +30%', 'TRAPの通常攻撃ダメージを30%強化する。', [
+        { type:'profileMultiply', field:'shotPowerRate', multiplier:1.30 }
+      ]),
+      3: bonus('広域起爆', 'TRAP爆発範囲 150%', 'TRAPの爆発範囲を1.5倍に拡大する。', [
+        { type:'profileMultiply', field:'trapExplosionRadius', multiplier:1.50 }
+      ]),
+      4: bonus('深層同調', 'ULTゲージ獲得量 +20%', '命中時のULTゲージ獲得量を20%増加する。', [
+        { type:'profileMultiply', field:'ultGainPerHit', multiplier:1.20 }
+      ])
+    }),
     40: genericSet('オリビア'),
 
     28: genericSet('ミモザ'),

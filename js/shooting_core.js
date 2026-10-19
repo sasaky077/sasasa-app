@@ -8102,14 +8102,17 @@
     return 0;
   }
 
-  function creditRemnaTrapHits(p, hitCount, now) {
+  function creditRemnaTrapHits(p, hitCount, now, ultGainMultiplier = 1) {
     if (!p || hitCount <= 0) return;
     const ownerId = p.ownerId || state.activeCharacterId;
     const chara = getBattleCharacter(ownerId) || getCurrentCharacter();
     state.shotsHit = Number(state.shotsHit || 0) + hitCount;
     for (let i = 0; i < hitCount; i++) registerComboHit(ownerId, now);
-    grantUltGaugeForHits(chara, hitCount, ownerId);
+    grantUltGaugeForHits(chara, hitCount, ownerId, ultGainMultiplier);
   }
+
+  // build1639: レオナクロスのULTが溜まりにくかったため、TRAP爆発の命中はULTゲージを2倍獲得する。
+  const REMNA_TRAP_EXPLOSION_ULT_GAIN_MULTIPLIER = 2;
 
   function explodeRemnaTrap(p, now) {
     if (!state || !p || p.trapExploded) return 0;
@@ -8138,7 +8141,7 @@
       }
     }
     state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
-    creditRemnaTrapHits(p, hits, now);
+    creditRemnaTrapHits(p, hits, now, REMNA_TRAP_EXPLOSION_ULT_GAIN_MULTIPLIER);
     if (isNormalBattle()) evaluateNormalMission(now);
     renderHud();
     return hits;
