@@ -8113,8 +8113,20 @@
     grantUltGaugeForHits(chara, hitCount, ownerId, ultGainMultiplier);
   }
 
-  // build1639: レオナクロスのULTが溜まりにくかったため、TRAP爆発の命中はULTゲージを2倍獲得する。
-  const REMNA_TRAP_EXPLOSION_ULT_GAIN_MULTIPLIER = 2;
+  // build1642: TRAP爆発のULTゲージは「爆発1回あたり」で付与する。
+  //  ・1体目に当たった時点で通常1Hitの4倍（ボス戦でも約18秒で満タン）
+  //  ・2体目以降は1体につき通常1Hit分ずつ加算（雑魚戦で溜まりすぎないよう控えめ）
+  const REMNA_TRAP_EXPLOSION_FIRST_HIT_GAIN = 4;
+  const REMNA_TRAP_EXPLOSION_EXTRA_HIT_GAIN = 1;
+  function creditRemnaTrapExplosion(p, hits, now) {
+    if (!p || hits <= 0) return;
+    const ownerId = p.ownerId || state.activeCharacterId;
+    const chara = getBattleCharacter(ownerId) || getCurrentCharacter();
+    state.shotsHit = Number(state.shotsHit || 0) + hits;
+    for (let i = 0; i < hits; i++) registerComboHit(ownerId, now);
+    const gainUnits = REMNA_TRAP_EXPLOSION_FIRST_HIT_GAIN + REMNA_TRAP_EXPLOSION_EXTRA_HIT_GAIN * (hits - 1);
+    grantUltGaugeForHits(chara, 1, ownerId, gainUnits);
+  }
 
   function explodeRemnaTrap(p, now) {
     if (!state || !p || p.trapExploded) return 0;
@@ -8143,7 +8155,7 @@
       }
     }
     state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
-    creditRemnaTrapHits(p, hits, now, REMNA_TRAP_EXPLOSION_ULT_GAIN_MULTIPLIER);
+    creditRemnaTrapExplosion(p, hits, now);
     if (isNormalBattle()) evaluateNormalMission(now);
     renderHud();
     return hits;

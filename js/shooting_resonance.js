@@ -238,7 +238,7 @@
       3: bonus('広域起爆', 'TRAP爆発範囲 150%', 'TRAPの爆発範囲を1.5倍に拡大する。', [
         { type:'profileMultiply', field:'trapExplosionRadius', multiplier:1.50 }
       ]),
-      4: bonus('深層同調', 'ULTゲージ獲得量 +20%\nTRAP設置上限 3個→4個', '命中時のULTゲージ獲得量を20%増加し、同時に置けるTRAPが4個になる。', [
+      4: bonus('深層同調', 'ULTゲージ獲得量 +20%\nTRAP設置数 3→4', '命中時のULTゲージ獲得量を20%増加し、同時に置けるTRAPが4個になる。', [
         { type:'profileMultiply', field:'ultGainPerHit', multiplier:1.20 },
         { type:'profileSet', field:'trapMaxPlaced', value:4 }
       ])
