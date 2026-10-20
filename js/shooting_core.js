@@ -21730,10 +21730,11 @@
       @media(min-width:700px){#shooting-event-root #shooting-boss.shien-blade-boss{
         width:82px !important;height:140px !important;
       }}
+      /* build1643: 軽量化（iPhoneでカクつく対策）。動き続けるBOSSへの blur / drop-shadow は毎フレーム再描画が重いので外す */
       #shooting-event-root #shooting-boss.shien-smoke{
         opacity:.34 !important;
-        filter:blur(1.2px) saturate(.6) brightness(1.15) drop-shadow(0 0 14px rgba(170,90,255,.9)) !important;
-        transition:opacity .35s ease,filter .35s ease;
+        filter:saturate(.6) brightness(1.15) !important;
+        transition:opacity .35s ease;
       }
       .shien-smoke-fx{position:absolute;left:0;top:0;width:168px;height:168px;
         margin:-84px 0 0 -84px;z-index:10;pointer-events:none;opacity:0;
@@ -21767,6 +21768,8 @@
         box-shadow:0 0 35px #ac60e9,inset 0 0 32px rgba(222,183,255,.68);
         animation:shienCut .48s ease-out both}
       @keyframes shienZonePulse{from{opacity:.5}to{opacity:.88}}
+      /* build1643: 点滅し続ける予告範囲は専用レイヤーにして、点滅のたびに描き直さない */
+      .shien-technique-zone,.shien-safe-zone,.shien-dash-path{will-change:opacity}
       @keyframes shienCut{0%{opacity:1;filter:brightness(1.8)}100%{opacity:0;filter:brightness(1)}}
       .shien-dash-path{position:absolute;left:0;top:0;height:var(--shien-band,52px);margin-top:calc(var(--shien-band,52px) / -2);
         transform-origin:0 50%;z-index:9;box-sizing:border-box;border-radius:999px;
@@ -21779,15 +21782,14 @@
         animation:shienDashFlash .46s ease-out both}
       @keyframes shienDashPath{from{opacity:.36}to{opacity:.94}}
       @keyframes shienDashFlash{from{opacity:1}to{opacity:0}}
+      /* build1643: 予告中は小刻みに震えるため、二重の drop-shadow をやめて明るさの点滅だけにする（軽量化） */
       #shooting-event-root #shooting-boss.shien-blade-boss.shien-dash-warning{
-        filter:brightness(1.35) drop-shadow(0 0 13px rgba(245,207,255,.95))
-          drop-shadow(0 0 19px rgba(154,72,230,.90)) !important;
+        filter:brightness(1.4) !important;
         animation:shienBladeCharge .17s ease-in-out infinite alternate;
       }
       @keyframes shienBladeCharge{from{opacity:.72}to{opacity:1}}
       .shien-split-clone{position:absolute;z-index:9;left:0;top:0;pointer-events:none;
-        width:128px;height:128px;object-fit:contain;opacity:.78;
-        filter:drop-shadow(0 0 10px #ba80ec) saturate(.78);will-change:transform}
+        width:128px;height:128px;object-fit:contain;opacity:.72;will-change:transform} /* build1643: 分身のfilterを外して軽量化 */
       @media(min-width:700px){.shien-split-clone{width:142px;height:142px}} /* build1643: BOSS本体と同じ枠 */
       /* build1585: 満月の円周をはっきり */
       .shien-technique-zone.full{border:3px solid rgba(160,70,225,.95);
@@ -21825,31 +21827,37 @@
         background:linear-gradient(180deg,rgba(150,60,220,.08),rgba(176,90,240,.22),rgba(150,60,220,.08));
         animation:shienZonePulse .3s ease-in-out infinite alternate}
       /* 斬撃命中時の白い閃光 */
-      .shien-hit-flash{position:absolute;inset:0;z-index:30;pointer-events:none;
+      .shien-hit-flash{position:absolute;inset:0;z-index:30;pointer-events:none;will-change:opacity;
         background:radial-gradient(circle at var(--fx,50%) var(--fy,70%),rgba(255,255,255,.75),rgba(230,190,255,.25) 35%,transparent 65%);
         animation:shienHitFlash .22s ease-out forwards}
       @keyframes shienHitFlash{from{opacity:1}to{opacity:0}}
-      #shooting-event-root #shooting-player.shien-bleeding img{filter:drop-shadow(0 0 6px rgba(230,30,50,.85))}
+      /* build1643: 軽量化（iPhone SE2で画面全体がカクつく対策）。毎フレーム動く自機にfilterを掛けると毎回描き直しになるので、
+         足元の赤いリング（専用レイヤーで拡縮・点滅のみ）に置き換え */
+      #shooting-event-root #shooting-player.shien-bleeding::after{content:"";position:absolute;left:50%;bottom:2px;width:60px;height:16px;
+        margin-left:-30px;border-radius:50%;border:2px solid rgba(230,40,60,.9);box-sizing:border-box;pointer-events:none;z-index:3;
+        will-change:transform,opacity;animation:shienBleedRing 1s ease-in-out infinite}
+      @keyframes shienBleedRing{0%,100%{transform:scale(.9);opacity:.65}50%{transform:scale(1.08);opacity:1}}
       .shien-bleed-tag{position:absolute;left:50%;top:-14px;transform:translateX(-50%);z-index:3;white-space:nowrap;
         font-size:10px;font-weight:700;letter-spacing:.06em;color:#fff;background:rgba(170,16,36,.86);
         border:1px solid rgba(255,170,170,.7);border-radius:8px;padding:1px 7px;pointer-events:none;
-        animation:shienBleedPulse 1s ease-in-out infinite}
+        will-change:opacity;animation:shienBleedTagPulse 1s ease-in-out infinite}
+      @keyframes shienBleedTagPulse{0%,100%{opacity:.82}50%{opacity:1}}
       .shien-bleed-tag small{font-size:8px;font-weight:600;opacity:.85;margin-left:4px}
       /* build1586: 出血の継続ダメージ演出 */
-      .shien-blood-drop{position:absolute;left:0;top:0;width:var(--bs,10px);height:var(--bs,10px);margin:calc(var(--bs,10px) / -2) 0 0 calc(var(--bs,10px) / -2);z-index:13;box-shadow:0 0 4px rgba(200,10,30,.6);
+      .shien-blood-drop{position:absolute;left:0;top:0;width:var(--bs,10px);height:var(--bs,10px);margin:calc(var(--bs,10px) / -2) 0 0 calc(var(--bs,10px) / -2);z-index:13;will-change:transform,opacity;
         border-radius:50% 50% 50% 0;background:radial-gradient(circle at 35% 35%,#ff8a8a,#c4121f 55%,#7a0710);
         pointer-events:none;animation:shienBloodDrop .55s cubic-bezier(.2,.6,.4,1) forwards}
       @keyframes shienBloodDrop{
         0%{transform:translate3d(var(--bx),var(--by),0) scale(.6);opacity:1}
         60%{opacity:1}
         100%{transform:translate3d(calc(var(--bx) + var(--dx)),calc(var(--by) + var(--dy)),0) scale(.25);opacity:0}}
-      .shien-bleed-vignette{position:absolute;inset:0;z-index:29;pointer-events:none;
+      .shien-bleed-vignette{position:absolute;inset:0;z-index:29;pointer-events:none;will-change:opacity;
         background:radial-gradient(ellipse at 50% 55%,transparent 52%,rgba(190,16,32,.22) 74%,rgba(150,8,20,.55) 100%);
         animation:shienBleedVignette .42s ease-out forwards}
       @keyframes shienBleedVignette{0%{opacity:0}25%{opacity:1}100%{opacity:0}}
       .shien-bleed-gauge{position:absolute;inset:0;pointer-events:none;z-index:1;
         background:repeating-linear-gradient(135deg,rgba(214,24,44,.62) 0 5px,rgba(150,10,24,.18) 5px 10px);
-        background-size:14px 14px;animation:shienBleedGauge .9s linear infinite,shienBleedGaugePulse 1s ease-in-out infinite}
+        background-size:14px 14px;will-change:opacity;animation:shienBleedGaugePulse 1s ease-in-out infinite} /* build1643: 斜線の流れ（毎フレーム再描画）をやめ点滅のみ */
       @keyframes shienBleedGauge{from{background-position:0 0}to{background-position:0 14px}}
       @keyframes shienBleedGaugePulse{0%,100%{opacity:.55}50%{opacity:1}}
       #shooting-event-root.shien-bleed-hp .shooting-hp-side-track,
@@ -22373,7 +22381,7 @@
     const arena = document.getElementById('shooting-arena');
     if (!arena || !state?.player) return;
     const x = Number(state.player.x) || 0, y = Number(state.player.y) || 0;
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < 5; i++) { // build1643: 9→5個（軽量化）
       const d = document.createElement('i');
       d.className = 'shien-blood-drop';
       const a = -Math.PI * (0.15 + Math.random() * 0.7) + (Math.random() < .5 ? 0 : Math.PI * 0.08);
