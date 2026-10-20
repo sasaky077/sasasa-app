@@ -336,7 +336,8 @@
     { key:'camilla',  name:'カミラ',         from:30 },
     { key:'shien',    name:'シエン',         from:30 },
     { key:'rhythm',   name:'仮面舞踏会',     from:40 },
-    { key:'towa',     name:'トワ',           from:40 }
+    { key:'towa',     name:'トワ',           from:40 },
+    { key:'inori',    name:'イノリ',         from:10 }   // build1643: レムナント：イノリ
   ]);
   function seededRandom(seed, n){
     let x = (Math.imul((seed >>> 0) ^ 0x9e3779b9, 2654435761) + Math.imul(n, 40503)) >>> 0;

@@ -1267,20 +1267,13 @@
     return getNormalEnemyBaseDisplayScale(enemyDef) * getResponsiveCombatScaleProfile().normalEnemy;
   }
 
+  // build1643: BOSSの表示サイズを全ステージで統一（敵画像はすべて500×500で揃えているため）。
+  //  基準は CH03-04 リヴィア：128px（PC幅は142px）の枠 × uiScale 1.18 × 端末幅に応じた倍率。
+  //  以前はステージ・敵ごとの uiScale / bossVisualScale / 自キャラ基準などが混在し、
+  //  律動のリズム・オーバーシア・トワ・カミラ・シエン等が小さく表示されていた。
+  const BOSS_UNIFIED_DISPLAY_SCALE = 1.18;
   function getResponsiveBossDisplayScale() {
-    // build1636: 律動のBOSS（リズム）は自キャラと同じ大きさ。
-    if (BOSS && BOSS.behavior === 'rhythm_gate_v1') return getResponsiveCombatScaleProfile().player;
-    // build1643: PHASE差し替え立ち絵で「自キャラと同じ大きさ」指定のもの
-    { const v = getActiveBossPhaseVisual(); if (v && v.size === 'player') return getResponsiveCombatScaleProfile().player; }
-    if (BOSS && (BOSS.shienMechanics || BOSS.camillaMechanics)) {
-      // 味方の立ち絵(最大122px x ベース1.2倍)と同じ高さを基準にする。
-      return 1.16 * getResponsiveCombatScaleProfile().player;
-    }
-    // CH01-04 / CH02-04 はステージごとのBOSS表示倍率を使用する。攻撃定義は変更しない。
-    const base = Math.max(0.1, Number(BOSS && BOSS.uiScale || 1));
-    const stageVisualScale = Math.max(0.1, Number(selectedStage?.bossVisualScale || 1));
-    if (!isResponsiveBossStage()) return base * stageVisualScale;
-    return base * stageVisualScale * getResponsiveCombatScaleProfile().boss;
+    return BOSS_UNIFIED_DISPLAY_SCALE * getResponsiveCombatScaleProfile().boss;
   }
 
   function refreshResponsiveCombatUnitScales() {
@@ -4335,6 +4328,7 @@
     document.getElementById('shooting-towa-darkness')?.remove();
     removeTower10ReverseBanner();
     removeOverseerWatchDom();
+    removeInoriDom();
     // 旧バトルのITEM表示が何らかの経路で残っていても、新state作成前にDOM側を掃除する。
     purgeChapter4ItemDom();
 
@@ -4746,6 +4740,7 @@
 
     state.activeCharacterId = id;
     selectedCharacterId = id;
+    clearInoriSlow(); // build1643: イノリの鈍化はキャラ交代で解除
     state.switchReadyAt = forced ? now + 800 : now + SWITCH_COOLDOWN_MS;
     state.player.invulnUntil = Math.max(state.player.invulnUntil || 0, now + 260);
     state.lastShotAt = -9999;
@@ -8561,6 +8556,8 @@
     if (isChapter403FireWallStage() && state && !state.ch403BarrierBroken && normalizeCombatElement(targetElement) === 'fire' && normalizedAttackElement !== 'aqua' && !ignoreStageImmunity) {
       return 0;
     }
+    // build1643: イノリの全属性バリア。張っている間は本体へのダメージを一切通さない（鳥居は対象外）。
+    if (!incoming && isInoriBarrierUp() && combatElementTarget && combatElementTarget === state.boss) return 0;
 
     // build1023:
     // 無属性は全属性へ常に等倍で通る共通ルール。
@@ -8613,6 +8610,7 @@
     const ignoreStageImmunity = !!(options && options.ignoreStageImmunity);
 
     if (isChapter403FireWallStage() && state && !state.ch403BarrierBroken && normalizeCombatElement(targetElement) === 'fire' && normalizedAttackElement !== 'aqua' && !ignoreStageImmunity) return 'immune';
+    if (isInoriBarrierUp() && combatElementTarget && combatElementTarget === state.boss && !(options && options.incoming)) return 'immune';
 
     if (
       normalizedAttackElement !== 'neutral' &&
@@ -12554,6 +12552,8 @@
     const cfg = getBossAddsConfig();
     // build1592: カミラは子蜘蛛（通常敵として扱い、自機弾で撃ち落とせる）を召喚する。
     if (isCamillaBattle()) return true;
+    // build1643: イノリの鳥居も通常敵として扱う（自機弾・ULTが当たる）。召喚は updateInoriMechanics が管理。
+    if (isInoriBattle()) return true;
     return !!(cfg && Array.isArray(cfg.enemyIds) && cfg.enemyIds.length);
   }
 
@@ -12745,7 +12745,8 @@
       : NaN;
     const stageEnemyHp = Number(cfg.enemyHp);
     // build1643: 位相回遊の監視の眼は階層に応じたHP
-    const watcherHp = enemyDef.behavior === 'po_watcher_v1' ? Number(selectedStage?.phaseOdyssey?.watcherHp || 0) : 0;
+    const watcherHp = enemyDef.behavior === 'po_watcher_v1' ? Number(selectedStage?.phaseOdyssey?.watcherHp || 0)
+      : (enemyDef.behavior === 'inori_torii_v1' ? getInoriToriiHp() : 0); // build1643: イノリの鳥居も階層・ステージ指定のHP
     const enemyHp = watcherHp > 0
       ? watcherHp
       : Number.isFinite(Number(enemyDef.ch404Hp)) && enemyDef.ch404Hp != null
@@ -12962,6 +12963,265 @@
   //  ・自機が視界に入っている間だけ、画面上の全ての敵弾が自機へ追従する
   //  ・視界から外れる／監視の眼を倒すと、敵弾はその時の向きのまま直進に戻る
   // ============================================================
+  // ============================================================
+  // build1643 レムナント「イノリ」（位相回遊で先行実装）
+  //  ・全属性バリア：張っている間、イノリ本体はどの攻撃も通らない（IMMUNE）
+  //  ・開幕にイノリの左右・少し後方へ鳥居を2基召喚。鳥居はイノリに追従し、攻撃が通る
+  //  ・鳥居は3秒おきに真下へ極太レーザー（予兆→照射）
+  //  ・鳥居を2基とも破壊すると7秒間バリアが消え、その後鳥居が2基とも復活してバリアが戻る
+  //  ・本体：WARNING弾（共通）／渦巻弾幕／鈍化の呪い弾（当たると出場中キャラの移動速度50%、交代で解除）
+  // ============================================================
+  function getInoriConfig() {
+    return (BOSS && BOSS.inoriMechanics && selectedStage && selectedStage.type !== 'normal') ? BOSS.inoriMechanics : null;
+  }
+  function isInoriBattle() { return !!getInoriConfig(); }
+  function isInoriBarrierUp() {
+    return !!(state && state.inori && state.inori.barrierUp && isInoriBattle());
+  }
+  function getInoriToriiHp() {
+    const po = Number(selectedStage?.phaseOdyssey?.toriiHp || 0);
+    if (po > 0) return po;
+    const stageHp = Number(selectedStage?.inoriToriiHp || 0);
+    if (stageHp > 0) return stageHp;
+    const def = getShootingEnemy(window.ShootingEnemies?.SHOOTING_ENEMY_ID?.INORI_TORII || 'shooting_inori_torii');
+    return Math.max(1, Number(def && def.hp || 1500));
+  }
+  function getAliveInoriTorii() {
+    return (state && Array.isArray(state.normalEnemies) ? state.normalEnemies : [])
+      .filter(e => e && e.hp > 0 && e.def && e.def.behavior === 'inori_torii_v1');
+  }
+  // 鳥居はイノリの左右・少し後方へ付き従う。レーザーの予兆〜照射中だけはその場に留まり（射線が動かない）、
+  // 終わったら滑らかにイノリの横へ戻る。snap=true は召喚時の即配置。
+  function placeInoriTorii(enemy, w, snap) {
+    const cfg = getInoriConfig() || {};
+    const side = Number(enemy.inoriSide || 1);
+    const off = Math.min(Number(cfg.toriiOffsetX || 92), w * 0.26);
+    const tx = clamp(Number(state.boss.x || w * .5) + side * off, 40, Math.max(40, w - 40));
+    const ty = Math.max(70, Number(state.boss.y || 80) - Number(cfg.toriiBackY || 18));
+    if (snap) { enemy.x = tx; enemy.y = ty; }
+    else if (performance.now() >= Number(enemy.inoriHoldUntil || 0)) {
+      enemy.x += (tx - enemy.x) * 0.12;
+      enemy.y += (ty - enemy.y) * 0.12;
+    }
+    enemy.baseX = enemy.x; enemy.baseY = enemy.y;
+  }
+  function spawnInoriTorii(now) {
+    const arena = document.getElementById('shooting-arena');
+    const def = getShootingEnemy(window.ShootingEnemies?.SHOOTING_ENEMY_ID?.INORI_TORII || 'shooting_inori_torii');
+    if (!arena || !def) return;
+    const w = arena.clientWidth;
+    [-1, 1].forEach(side => {
+      const enemy = createNormalEnemy(def, now);
+      if (!enemy) return;
+      enemy.inoriSide = side;
+      enemy.el.classList.add('inori-torii');
+      placeInoriTorii(enemy, w, true);
+      positionUnit(enemy.el, enemy.x, enemy.y);
+      positionMiniEnemyHp(enemy);
+      state.normalEnemies.push(enemy);
+    });
+    state.inori.toriiSpawned = true;
+    state.inori.nextLaserAt = now + 1600; // 出現直後は少し待ってから初撃
+  }
+  function syncInoriBarrierDom() {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena || !state || !state.inori) return;
+    let el = document.getElementById('inori-barrier');
+    if (!state.inori.barrierUp || !(state.boss && state.boss.hp > 0)) { if (el) el.remove(); return; }
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'inori-barrier';
+      el.className = 'inori-barrier';
+      el.setAttribute('aria-hidden', 'true');
+      el.innerHTML = '<i></i><b>ALL ELEMENT BARRIER</b>';
+      arena.appendChild(el);
+    }
+    const boss = document.getElementById(BOSS_ID);
+    const base = Math.max(Number(boss && boss.offsetWidth || 126), Number(boss && boss.offsetHeight || 126));
+    const size = Math.round(base * Math.max(.1, Number(getResponsiveBossDisplayScale() || 1)) * 1.12);
+    el.style.width = size + 'px';
+    el.style.height = size + 'px';
+    el.style.transform = `translate3d(${Number(state.boss.x || 0)}px,${Number(state.boss.y || 0)}px,0) translate(-50%,-50%)`;
+  }
+  function syncInoriBreakBadge(now) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena || !state || !state.inori) return;
+    let el = document.getElementById('inori-break-badge');
+    if (state.inori.barrierUp) { if (el) el.remove(); return; }
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'inori-break-badge';
+      el.className = 'inori-break-badge';
+      el.innerHTML = '<span>BARRIER BREAK</span><strong>全属性バリア消失</strong><em></em>';
+      arena.appendChild(el);
+    }
+    const left = Math.max(0, Number(state.inori.reviveAt || 0) - now) / 1000;
+    const em = el.querySelector('em');
+    if (em) em.textContent = '鳥居復活まで ' + left.toFixed(1) + 's';
+  }
+  function fireInoriToriiLasers(now) {
+    const cfg = getInoriConfig() || {};
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const width = Math.max(24, Number(cfg.laserWidth || 56));
+    const warnMs = Math.max(300, Number(cfg.laserWarnMs || 900));
+    const fireMs = Math.max(200, Number(cfg.laserFireMs || 520));
+    getAliveInoriTorii().forEach(torii => {
+      torii.inoriHoldUntil = now + warnMs + fireMs; // 予兆〜照射中は鳥居を動かさない
+      const el = document.createElement('div');
+      el.className = 'inori-torii-laser is-warn';
+      el.setAttribute('aria-hidden', 'true');
+      const topY = Number(torii.y || 0) + 34;
+      el.style.left = `${Number(torii.x || 0)}px`;
+      el.style.top = `${topY}px`;
+      el.style.width = `${width}px`;
+      el.innerHTML = '<i></i>';
+      arena.appendChild(el);
+      state.inori.beams.push({
+        el, x: Number(torii.x || 0), topY, width,
+        fireAt: now + Math.max(300, Number(cfg.laserWarnMs || 900)),
+        endAt: now + Math.max(300, Number(cfg.laserWarnMs || 900)) + Math.max(200, Number(cfg.laserFireMs || 520)),
+        firing: false, hit: false,
+      });
+    });
+  }
+  function updateInoriBeams(now) {
+    const cfg = getInoriConfig() || {};
+    state.inori.beams = (state.inori.beams || []).filter(beam => {
+      if (!beam || !beam.el || !beam.el.isConnected) return false;
+      if (now >= beam.endAt) { beam.el.remove(); return false; }
+      if (!beam.firing && now >= beam.fireAt) {
+        beam.firing = true;
+        beam.el.classList.remove('is-warn');
+        beam.el.classList.add('is-fire');
+      }
+      if (beam.firing && !beam.hit && state.player && Number(state.player.y || 0) >= beam.topY &&
+          Math.abs(Number(state.player.x || 0) - beam.x) <= beam.width * 0.5 + 6 &&
+          now >= Number(state.player.invulnUntil || 0)) {
+        beam.hit = true;
+        damagePlayer(now, Math.max(1, Number(cfg.laserDamage || 350)), 'boss-heavy',
+          normalizeCombatElement(state?.boss?.element || BOSS?.element), 'enemy-bullet');
+      }
+      return true;
+    });
+  }
+  function fireInoriCurse(now) {
+    if (!state || !state.boss) return;
+    const aim = getEnemyAimPosition();
+    const base = Math.atan2(aim.y - state.boss.y, aim.x - state.boss.x);
+    const speed = 172;
+    [-0.24, 0, 0.24].forEach(offset => {
+      const a = base + offset;
+      const p = makeProjectile('shooting-enemy-bullet shooting-inori-curse-bullet',
+        state.boss.x, state.boss.y + 30, Math.cos(a) * speed, Math.sin(a) * speed, Number(BOSS.bulletDamage || 190));
+      if (!p) return;
+      p.inoriSlow = true;
+      p.attackElement = 'dark';
+      p.element = 'dark';
+      p.canvasRadius = 11; // 紫の大きな呪い弾
+      p.canvasHalfWidth = 11; p.canvasHalfHeight = 11;
+      state.enemyBullets.push(p);
+    });
+    showFacelessBattleCut('鈍化の呪い', 'INORI');
+  }
+  // 呪い弾が出場中キャラへ当たった：そのキャラの移動速度を下げる（交代で解除）
+  function applyInoriSlow(now) {
+    if (!state || !state.inori) return;
+    const member = getActiveMember();
+    if (!member || now < Number(member.invincibleUntil || 0)) return;
+    state.inori.slowMemberId = Number(state.activeCharacterId);
+    syncInoriSlowDom();
+  }
+  function clearInoriSlow() {
+    if (!state || !state.inori || !state.inori.slowMemberId) return;
+    state.inori.slowMemberId = 0;
+    syncInoriSlowDom();
+  }
+  function isInoriSlowActive() {
+    return !!(state && state.inori && state.inori.slowMemberId &&
+      Number(state.inori.slowMemberId) === Number(state.activeCharacterId));
+  }
+  function getPlayerMoveMultiplier() {
+    if (!isInoriSlowActive()) return 1;
+    return Math.max(0.1, Math.min(1, Number(getInoriConfig()?.slowMultiplier || 0.5)));
+  }
+  function syncInoriSlowDom() {
+    const on = isInoriSlowActive();
+    document.getElementById(PLAYER_ID)?.classList.toggle('inori-slowed', on);
+    const arena = document.getElementById('shooting-arena');
+    let tag = document.getElementById('inori-slow-tag');
+    if (!on) { if (tag) tag.remove(); return; }
+    if (!tag && arena) {
+      tag = document.createElement('div');
+      tag.id = 'inori-slow-tag';
+      tag.className = 'inori-slow-tag';
+      tag.innerHTML = '<strong>鈍化</strong><span>移動速度50%ダウン ─ キャラ交代で解除</span>';
+      arena.appendChild(tag);
+    }
+  }
+  function removeInoriDom() {
+    document.querySelectorAll('#inori-barrier, #inori-break-badge, #inori-slow-tag, .inori-torii-laser').forEach(el => el.remove());
+    document.getElementById(PLAYER_ID)?.classList.remove('inori-slowed');
+    if (state && state.inori) { state.inori.beams = []; state.inori.slowMemberId = 0; }
+  }
+  function updateInoriMechanics(dt, now, bossHalted) {
+    const cfg = getInoriConfig();
+    if (!cfg || !state || state.ended || state.finishing || !state.boss) return;
+    if (!state.inori) {
+      state.inori = {
+        barrierUp: true, toriiSpawned: false, reviveAt: 0, nextLaserAt: 0,
+        nextCurseAt: now + Math.max(1000, Number(cfg.slowFirstMs || 6500)), beams: [], slowMemberId: 0,
+      };
+      spawnInoriTorii(now);
+    }
+    const inori = state.inori;
+    const alive = getAliveInoriTorii();
+
+    // 鳥居2基とも破壊 → バリア消失（7秒）
+    if (inori.barrierUp && inori.toriiSpawned && !alive.length) {
+      inori.barrierUp = false;
+      inori.reviveAt = now + Math.max(1000, Number(cfg.barrierDownMs || 7000));
+      (inori.beams || []).forEach(b => b.el && b.el.remove());
+      inori.beams = [];
+      showFacelessBattleCut('BARRIER BREAK', '全属性バリア消失');
+    }
+    // 7秒後、鳥居が2基とも復活してバリアが戻る
+    if (!inori.barrierUp && now >= inori.reviveAt && state.boss.hp > 0) {
+      inori.barrierUp = true;
+      spawnInoriTorii(now);
+      showFacelessBattleCut('TORII REVIVE', '鳥居が再び顕現');
+    }
+
+    // 敵の全体停止（スタン系ULT）・BREAK演出中は、レーザーと呪いの新規発動を止める（予約は後ろへずらす）
+    const stopUntil = Math.max(
+      Number(state.normalEnemyStunUntil || 0), Number(state.fullEnemyStopUntil || 0), Number(state.angeEnemyFreezeUntil || 0));
+    const paused = bossHalted || now < stopUntil || state.phaseTransition || state.koTransition;
+    if (paused) {
+      if (inori.nextLaserAt && inori.nextLaserAt < now + 400) inori.nextLaserAt = now + 400;
+      if (inori.nextCurseAt < now + 400) inori.nextCurseAt = now + 400;
+    } else {
+      if (inori.barrierUp && alive.length && inori.nextLaserAt && now >= inori.nextLaserAt) {
+        inori.nextLaserAt = now + Math.max(1000, Number(cfg.laserEveryMs || 3000));
+        fireInoriToriiLasers(now);
+      }
+      if (now >= inori.nextCurseAt && state.boss.hp > 0) {
+        inori.nextCurseAt = now + Math.max(3000, Number(cfg.slowEveryMs || 11000));
+        fireInoriCurse(now);
+      }
+    }
+    updateInoriBeams(now);
+
+    // バリアは「どの攻撃も通らない」。ダメージ計算側でも0にしているが、属性計算を通らない経路の保険としてHPを固定。
+    if (inori.barrierUp) {
+      if (!(inori.hpLock > 0)) inori.hpLock = Number(state.boss.hp || 0);
+      if (state.boss.hp < inori.hpLock) state.boss.hp = inori.hpLock;
+    } else {
+      inori.hpLock = 0;
+    }
+    syncInoriBarrierDom();
+    syncInoriBreakBadge(now);
+  }
+
   function getOverseerWatchConfig() {
     return (state && BOSS && BOSS.overseerWatch && !isNormalBattle()) ? BOSS.overseerWatch : null;
   }
@@ -13591,6 +13851,7 @@
     }
     const def = enemy.def || {};
     if (def.behavior === 'po_watcher_v1') return; // 監視の眼は攻撃しない
+    if (def.behavior === 'inori_torii_v1') return; // 鳥居の攻撃（レーザー）は updateInoriMechanics
 
     // v212 generic elemental angels
     if (def.behavior === 'generic_element_shot_v1') {
@@ -14077,6 +14338,13 @@
       if (!enemy || !enemy.el) return;
       if (enemy.camSpider) { updateCamillaSpider(enemy, dt, now); return; }
       const def = enemy.def || {};
+      // build1643: イノリの鳥居は常にイノリの左右・少し後方に付き従う（移動AI・射撃なし。レーザーは本体側で管理）
+      if (def.behavior === 'inori_torii_v1') {
+        placeInoriTorii(enemy, w);
+        positionUnit(enemy.el, enemy.x, enemy.y);
+        positionMiniEnemyHp(enemy);
+        return;
+      }
 
       // build1157: CH01-02の貫通チュートリアルは3体を縦一列に固定する。
       // ジグのレーザーが複数体を貫通することを視覚的に学べるよう、移動・攻撃もしない。
@@ -17944,6 +18212,48 @@
     }
   }
 
+  // build1643: イノリの通常攻撃＝渦巻弾幕。PHASEが進むと腕の本数が増え、逆回転の渦を重ねる。
+  function fireInoriBoss(now) {
+    if (!state || !state.boss) return;
+    const phase = Math.max(1, Number(state.boss.phase || 1));
+    const ordinary = state.enemyBullets.reduce((n, p) => (p && p.el && !p.el.classList.contains('shooting-danger-bullet')) ? n + 1 : n, 0);
+    if (ordinary >= (phase >= 3 ? 118 : 100)) return;
+    const fireRate = phase >= 3 ? 760 : (phase === 2 ? 860 : 960);
+    if (now - state.lastBossShotAt < getStageAdjustedEnemyFireInterval(fireRate)) return;
+    state.lastBossShotAt = now;
+    const idx = (state.inoriSpiralIndex = Number(state.inoriSpiralIndex || 0) + 1);
+    const originX = Number(state.boss.x || 0);
+    const originY = Number(state.boss.y || 0) + 30;
+    const spiral = (arms, reverse, radialSpeed, angularSpeed, startShift, tone) => {
+      const start = idx * 0.37 + startShift;
+      for (let i = 0; i < arms; i++) {
+        const a = start + Math.PI * 2 * i / arms;
+        const p = makeProjectile('shooting-enemy-bullet shooting-beautiful-bullet shooting-beautiful-spiral shooting-inori-spiral',
+          originX, originY, Math.cos(a) * radialSpeed, Math.sin(a) * radialSpeed, BOSS.bulletDamage);
+        if (!p) continue;
+        p.canvasTone = tone;
+        p.beautifulSpiral = true;
+        p.beautifulAge = 0;
+        p.beautifulOriginX = originX;
+        p.beautifulOriginY = originY;
+        p.beautifulStartAngle = a;
+        p.beautifulAngularSpeed = (reverse ? -1 : 1) * angularSpeed;
+        p.beautifulRadialSpeed = radialSpeed;
+        state.enemyBullets.push(p);
+      }
+    };
+    const reverse = idx % 2 === 0;
+    if (phase === 1) {
+      spiral(7, reverse, 140, 0.40, 0, 1);
+    } else if (phase === 2) {
+      spiral(9, reverse, 150, 0.46, 0, 1);
+      if (idx % 3 === 0) spiral(5, !reverse, 118, 0.62, Math.PI / 5, 2);
+    } else {
+      spiral(10, reverse, 158, 0.50, 0, 1);
+      spiral(6, !reverse, 124, 0.66, Math.PI / 6, 2);
+    }
+  }
+
   function fireBoss(now) {
     // BOSSの射撃経路をひとつの入口で抑止。個別ロック中は他のADDを止めない。
     if (!state || !state.boss) return;
@@ -18001,6 +18311,10 @@
     }
     if (BOSS && BOSS.behavior === 'barrage_v1') {
       fireBarrageBoss(now);
+      return;
+    }
+    if (BOSS && BOSS.behavior === 'inori_v1') {
+      fireInoriBoss(now);
       return;
     }
     if (BOSS && BOSS.behavior === 'beautiful_boss_v1') {
@@ -18445,8 +18759,9 @@
         state.player.y = pointerY;
       } else {
         // PCマウスは従来の少し滑らかな追従を維持。
-        state.player.x += (pointerX - state.player.x) * Math.min(1, dt * 18);
-        state.player.y += (pointerY - state.player.y) * Math.min(1, dt * 18);
+        const followRate = Math.min(1, dt * 18 * getPlayerMoveMultiplier());
+        state.player.x += (pointerX - state.player.x) * followRate;
+        state.player.y += (pointerY - state.player.y) * followRate;
       }
     } else {
       let dx = 0, dy = 0;
@@ -18456,8 +18771,9 @@
       if (keys.ArrowDown || keys.s || keys.S) dy += 1;
       if (dx || dy) {
         const l = Math.hypot(dx, dy) || 1;
-        state.player.x += dx / l * c.moveSpeed * dt;
-        state.player.y += dy / l * c.moveSpeed * dt;
+        const moveMul = getPlayerMoveMultiplier(); // build1643: 鈍化
+        state.player.x += dx / l * c.moveSpeed * moveMul * dt;
+        state.player.y += dy / l * c.moveSpeed * moveMul * dt;
       }
     }
     applyBarrierKnock(dt, minY, maxY);
@@ -19353,6 +19669,7 @@
           : rectsHit(r, playerCoreRect, 0, 1);
 
         if (hitPlayerCore) {
+          if (p.inoriSlow) applyInoriSlow(now); // build1643: イノリの鈍化の呪い弾
           damagePlayer(now, p.damage, classifyIncomingAttack(p), getIncomingAttackElement(p), 'enemy-bullet');
           if (p.ambushPersistent) {
             // WAVE2の常駐WARNINGは被弾しても消えない。
@@ -19583,7 +19900,7 @@
       : applyElementDamage(incomingDamage, normalizedAttackElement, targetElement, { ignoreStageImmunity:true, incoming:true });
     const elementReaction = isLethal
       ? ''
-      : getElementDamageReaction(normalizedAttackElement, targetElement, { ignoreStageImmunity:true });
+      : getElementDamageReaction(normalizedAttackElement, targetElement, { ignoreStageImmunity:true, incoming:true });
     // build1643: 位相回遊のみ、位相による敵ATK強化・被ダメージ軽減・バリア吸収を適用（即死弾は対象外）。
     const phaseOdyssey = isLethal ? null : getPhaseOdysseyApi();
     const phaseAdjustedDamage = phaseOdyssey && typeof phaseOdyssey.modifyIncomingDamage === 'function'
@@ -21453,9 +21770,9 @@
       }
       @keyframes shienBladeCharge{from{opacity:.72}to{opacity:1}}
       .shien-split-clone{position:absolute;z-index:9;left:0;top:0;pointer-events:none;
-        width:74px;height:126px;object-fit:contain;opacity:.78;
+        width:128px;height:128px;object-fit:contain;opacity:.78;
         filter:drop-shadow(0 0 10px #ba80ec) saturate(.78);will-change:transform}
-      @media(min-width:700px){.shien-split-clone{width:82px;height:140px}}
+      @media(min-width:700px){.shien-split-clone{width:142px;height:142px}} /* build1643: BOSS本体と同じ枠 */
       /* build1585: 満月の円周をはっきり */
       .shien-technique-zone.full{border:3px solid rgba(160,70,225,.95);
         box-shadow:0 0 0 2px rgba(255,255,255,.35),0 0 22px rgba(176,82,238,.65),inset 0 0 26px rgba(150,60,220,.28)}
@@ -22665,6 +22982,8 @@
         }
         // build1643: オーバーシアの監視（視界に入っている間だけ敵弾が追従）
         updateOverseerWatch(dt, ts, bossGrabbed || bossStunned);
+        // build1643: イノリ（鳥居・全属性バリア・レーザー・鈍化）
+        updateInoriMechanics(dt, ts, bossGrabbed || bossStunned);
         if (!bossGrabbed && !bossStunned && (!isScoreAttackStage() || state.boss.hp > 0)) {
           fireBoss(ts);
         }
@@ -22732,7 +23051,7 @@
     const root = document.getElementById(ROOT_ID);
     const visual = getActiveBossPhaseVisual();
     if (root) {
-      if (visual && visual.size === 'player') root.setAttribute('data-boss-visual', 'player');
+      if ((visual && visual.size === 'player') || (BOSS && BOSS.unitSize === 'player' && selectedStage && selectedStage.type !== 'normal')) root.setAttribute('data-boss-visual', 'player');
       else root.removeAttribute('data-boss-visual');
     }
     if (!boss || !BOSS || !BOSS.phaseVisuals) return;
@@ -25096,6 +25415,7 @@
 
     // CH04専用ギミックはRESULTへ持ち越さない。
     removeOverseerWatchDom();
+    removeInoriDom();
     clearChapter4FinalItem();
     purgeChapter4ItemDom();
     clearChapter43RestoreItem();
@@ -25766,13 +26086,15 @@
     const dx = Number.isFinite(prevX) ? (x - prevX) : 0;
     const dy = Number.isFinite(prevY) ? (y - prevY) : 0;
 
+    // build1643: 鈍化中は指の移動量に対してキャラの移動量が減る（移動速度ダウン）
+    const moveMul = getPlayerMoveMultiplier();
     pointerX = clamp(
-      pointerX + (isHorizontalControlReversed() ? -dx : dx),
+      pointerX + (isHorizontalControlReversed() ? -dx : dx) * moveMul,
       30,
       r.width - 30
     );
     pointerY = clamp(
-      pointerY + dy,
+      pointerY + dy * moveMul,
       34,
       r.height - 38
     );
@@ -26113,6 +26435,8 @@
     tower15: Object.freeze(['bgm-battle-tower-03']),
     // build1630: リズム弾幕「仮面舞踏会」
     rhythm:  Object.freeze(['bgm-rhythm-01']),
+    // build1643: 和風ボス（レムナント：イノリ）
+    japan:   Object.freeze(['bgm-battle-japan-01']),
   });
   let shootingBattleBgmSessionActive = false;
   let shootingBattleBgmFadeRaf = 0;
@@ -26120,6 +26444,8 @@
 
   function getShootingBattleBgmPoolKey() {
     if (isRhythmStage()) return 'rhythm';
+    // build1643: 敵定義で曲を指定（イノリ＝japan）
+    if (BOSS && BOSS.bgmPool && SHOOTING_BGM_POOLS[BOSS.bgmPool] && selectedStage && selectedStage.type !== 'normal') return BOSS.bgmPool;
     if (isResonanceTowerStage()) return Number(selectedStage && selectedStage.stageNo) === 15 ? 'tower15' : 'tower';
     if (selectedStage && selectedStage.type === 'normal') return 'normal';
     return 'boss';
@@ -27266,6 +27592,7 @@
       bossImage.style.display = selectedStage && selectedStage.type === 'normal' ? 'none' : '';
     }
     root.removeAttribute('data-boss-visual');
+    syncBossPhaseVisual();
     preloadBossPhaseVisuals();
     ensureBossWeaknessBarrier();
     root.setAttribute('data-shooting-stage', selectedStage ? selectedStage.id : '');

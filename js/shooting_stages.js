@@ -335,6 +335,8 @@
     shien:    Object.freeze({ name:'シエン',         enemy:SHOOTING_ENEMY_ID.RAID_SHIEN }),
     rhythm:   Object.freeze({ name:'仮面舞踏会',     tpl:'shooting_event_rhythm_advanced', lateTpl:'shooting_event_rhythm_test', lateFrom:70 }),
     towa:     Object.freeze({ name:'トワ',           tpl:'shooting_tower_15' }),
+    // build1643: レムナント：イノリ（STORYより先に位相回遊で実装）
+    inori:    Object.freeze({ name:'イノリ',         enemy:SHOOTING_ENEMY_ID.INORI, inori:true }),
   });
   const PHASE_ODYSSEY_DEFAULT_BOSS = 'mirage';
   // 報酬・チケット・スコア系の設定はボス戦に持ち込まない
@@ -403,6 +405,7 @@
       phaseOdyssey: Object.freeze({
         floor: f, templateFloor: 0, tier: tune.scale.tier, boss: key, bossName: def.name,
         watcherHp: def.overseer ? Math.round(1100 * tune.scale.hpScale) : 0,
+        toriiHp: def.inori ? Math.round(1300 * tune.scale.hpScale) : 0,
         hpScale: tune.scale.hpScale, atkScale: tune.atkScale, bossGauges: gaugeHps.length,
       }),
       playable: true,

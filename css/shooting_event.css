@@ -15005,3 +15005,109 @@ html body #shooting-faceless-stage-select.zfs-screen .zfs-heading-split .zfs-hea
 }
 @keyframes rhythmNoteRing{0%{opacity:1;transform:translate(-50%,-50%) scale(.3);}100%{opacity:0;transform:translate(-50%,-50%) scale(1.25);}}
 @keyframes rhythmNoteFlash{0%{opacity:1;transform:translate(-50%,-50%) scale(.6);}100%{opacity:0;transform:translate(-50%,-50%) scale(1.8);}}
+
+/* ============================================================
+   build1643 レムナント：イノリ
+   全属性バリア／鳥居／鳥居レーザー／鈍化の呪い
+   ============================================================ */
+/* 全属性バリア：五属性の光が巡る結界（本体位置はJSで毎フレーム同期） */
+#shooting-event-root .inori-barrier{
+  position:absolute;left:0;top:0;z-index:10;pointer-events:none;border-radius:50%;
+  will-change:transform;
+}
+#shooting-event-root .inori-barrier > i{
+  position:absolute;inset:0;border-radius:50%;
+  background:conic-gradient(from 0deg,rgba(232,88,70,.55),rgba(67,174,232,.55),rgba(98,184,94,.55),rgba(231,198,78,.6),rgba(128,84,174,.55),rgba(232,88,70,.55));
+  -webkit-mask:radial-gradient(circle,transparent 60%,#000 62%,#000 69%,transparent 71%);
+          mask:radial-gradient(circle,transparent 60%,#000 62%,#000 69%,transparent 71%);
+  filter:blur(.4px) drop-shadow(0 0 6px rgba(255,248,220,.75));
+  animation:inori-barrier-spin 6s linear infinite;
+}
+#shooting-event-root .inori-barrier::before{
+  content:"";position:absolute;inset:6%;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,252,240,0) 55%,rgba(255,250,232,.20) 72%,rgba(255,246,222,.05) 100%);
+  box-shadow:inset 0 0 18px rgba(255,244,214,.45);
+  animation:inori-barrier-breathe 2.4s ease-in-out infinite;
+}
+#shooting-event-root .inori-barrier > b{
+  position:absolute;left:50%;bottom:-4px;transform:translateX(-50%);white-space:nowrap;
+  font:700 7.5px/1 'Cinzel',serif;letter-spacing:.22em;color:#fff7e3;
+  text-shadow:0 0 4px rgba(120,80,30,.9),0 1px 2px rgba(0,0,0,.6);opacity:.9;
+}
+@keyframes inori-barrier-spin{to{transform:rotate(360deg);}}
+@keyframes inori-barrier-breathe{0%,100%{opacity:.7;}50%{opacity:1;}}
+
+/* 鳥居：通常敵の枠を使う（66px基準×uiScale）。神聖な白い光 */
+#shooting-event-root .shooting-mini-enemy.inori-torii{
+  filter:drop-shadow(0 0 8px rgba(255,246,220,.75)) drop-shadow(0 6px 8px rgba(70,60,40,.25));
+}
+
+/* 鳥居レーザー：予兆（細い紅白の線）→ 照射（極太の光柱） */
+#shooting-event-root .inori-torii-laser{
+  position:absolute;bottom:0;z-index:11;pointer-events:none;transform:translateX(-50%);
+}
+#shooting-event-root .inori-torii-laser > i{position:absolute;inset:0;display:block;}
+#shooting-event-root .inori-torii-laser.is-warn > i{
+  left:50%;width:4px;transform:translateX(-50%);
+  background:repeating-linear-gradient(180deg,rgba(214,40,52,.95) 0 10px,rgba(255,250,240,.95) 10px 20px);
+  box-shadow:0 0 10px rgba(214,40,52,.7);
+  animation:inori-laser-warn .18s steps(2) infinite;
+}
+#shooting-event-root .inori-torii-laser.is-warn::before{ /* 照射範囲の薄い帯 */
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(90deg,rgba(214,40,52,0),rgba(214,40,52,.14) 20%,rgba(214,40,52,.14) 80%,rgba(214,40,52,0));
+  border-left:1px dashed rgba(214,40,52,.55);border-right:1px dashed rgba(214,40,52,.55);
+}
+#shooting-event-root .inori-torii-laser.is-fire > i{
+  background:linear-gradient(90deg,rgba(214,40,52,0) 0%,rgba(230,70,70,.85) 8%,rgba(255,236,200,.95) 26%,#fffef8 50%,rgba(255,236,200,.95) 74%,rgba(230,70,70,.85) 92%,rgba(214,40,52,0) 100%);
+  box-shadow:0 0 22px rgba(255,220,170,.9),0 0 42px rgba(214,40,52,.55);
+  animation:inori-laser-fire .52s ease-out both;
+}
+@keyframes inori-laser-warn{50%{opacity:.35;}}
+@keyframes inori-laser-fire{0%{transform:scaleX(.25);opacity:.4;}18%{transform:scaleX(1.08);opacity:1;}80%{transform:scaleX(1);opacity:1;}100%{transform:scaleX(.6);opacity:0;}}
+
+/* バリア消失バッジ（鳥居復活までの残り時間） */
+#shooting-event-root .inori-break-badge{
+  position:absolute;left:50%;top:22%;transform:translateX(-50%);z-index:40;pointer-events:none;
+  display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 16px 7px;
+  background:linear-gradient(90deg,rgba(120,20,30,0),rgba(140,24,36,.86) 18%,rgba(160,32,44,.9) 50%,rgba(140,24,36,.86) 82%,rgba(120,20,30,0));
+  color:#fff4ea;text-align:center;white-space:nowrap;
+}
+#shooting-event-root .inori-break-badge span{font:700 9px/1 'Cinzel',serif;letter-spacing:.28em;color:#ffd9a8;}
+#shooting-event-root .inori-break-badge strong{font:700 13px/1.2 'Noto Serif JP',serif;letter-spacing:.12em;}
+#shooting-event-root .inori-break-badge em{font:600 10px/1.2 'Noto Serif JP',serif;font-style:normal;color:#ffe9cf;}
+
+/* 鈍化：出場中キャラに紫の鎖のような揺らぎ＋画面下に解除方法を表示 */
+#shooting-event-root #shooting-player.inori-slowed img{
+  filter:drop-shadow(0 0 6px rgba(128,84,174,.95)) saturate(.75) brightness(.92) !important;
+}
+#shooting-event-root #shooting-player.inori-slowed::after{
+  content:"";position:absolute;left:50%;bottom:4px;width:62px;height:16px;transform:translateX(-50%);
+  border-radius:50%;border:2px solid rgba(150,100,200,.85);box-shadow:0 0 10px rgba(128,84,174,.8);
+  animation:inori-slow-ring 1.1s ease-in-out infinite;pointer-events:none;z-index:3;
+}
+@keyframes inori-slow-ring{0%,100%{transform:translateX(-50%) scale(.9);opacity:.7;}50%{transform:translateX(-50%) scale(1.08);opacity:1;}}
+#shooting-event-root .inori-slow-tag{
+  position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:40;pointer-events:none;
+  display:flex;align-items:center;gap:8px;padding:5px 12px;border-radius:999px;white-space:nowrap;
+  background:rgba(48,26,72,.86);border:1px solid rgba(185,139,223,.85);box-shadow:0 0 12px rgba(128,84,174,.5);
+  color:#f3e8ff;
+}
+#shooting-event-root .inori-slow-tag strong{font:700 12px/1 'Noto Serif JP',serif;letter-spacing:.12em;color:#e2c8ff;}
+#shooting-event-root .inori-slow-tag span{font:500 10px/1.2 'Noto Serif JP',serif;letter-spacing:.02em;}
+@media (prefers-reduced-motion: reduce){
+  #shooting-event-root .inori-barrier > i,#shooting-event-root .inori-barrier::before,#shooting-event-root #shooting-player.inori-slowed::after{animation:none;}
+}
+
+/* ============================================================
+   build1643: BOSSの表示枠を全ステージで統一（基準：CH03-04 リヴィア）
+   枠 128×128px（PC幅 142×142px）＋ JS側の --enemy-scale（1.18 × 端末倍率）。
+   ステージ別に枠を変えていた指定（律動・カミラ/シエン・無貌の天使・CH04・レイド「テスト」・
+   自キャラ基準の差し替え立ち絵など）より優先させるため、IDを重ねて詳細度を上げている。
+   ============================================================ */
+html body #shooting-event-root #shooting-boss#shooting-boss{
+  width:128px!important;height:128px!important;object-fit:contain!important;
+}
+@media (min-width:700px){
+  html body #shooting-event-root #shooting-boss#shooting-boss{width:142px!important;height:142px!important;}
+}

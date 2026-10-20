@@ -61,6 +61,8 @@
     // build1643: ボス「オーバーシア」と、その配下「監視の眼」（STORY CH08-04・位相回遊）
     PO_OVERSEER: 'shooting_po_overseer',
     PO_WATCHER: 'shooting_po_watcher',
+    INORI: 'shooting_remnant_inori',       // build1643 レムナント：イノリ（位相回遊で先行実装。STORYは今後）
+    INORI_TORII: 'shooting_inori_torii',   // イノリが召喚する鳥居
   });
 
   // ============================================================
@@ -413,6 +415,42 @@
       element: 'neutral', attackType: 'none', image: 'images/phase_odyssey_watcher.webp',
       hp: 1200, moveSpeed: 26, scoreValue: 400, behavior: 'po_watcher_v1', uiScale: 0.86,
       visionRangeRate: 0.62, visionHalfAngleDeg: 19, sweepRad: 0.85, sweepSpeed: 0.55,
+    }),
+
+    // ------------------------------------------------------------
+    // build1643: レムナント：イノリ
+    //  全属性バリア（鳥居2基を破壊すると7秒間消える→鳥居が2基とも復活）。
+    //  本体は WARNING弾（共通）・渦巻弾幕・鈍化の呪い弾（当たると出場中キャラの移動速度50%ダウン、交代で解除）。
+    // ------------------------------------------------------------
+    [SHOOTING_ENEMY_ID.INORI]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.INORI,
+      kind: 'boss', implemented: true,
+      name: 'イノリ', displayName: 'REMNANT　イノリ',
+      image: 'images/remnant_inori_battle.webp', element: 'light',
+      gaugeHps: Object.freeze([10000, 12000, 14000]), gauges: 3,
+      bulletSpeed: 240, fireRate: 980, bulletDamage: 190,
+      behavior: 'inori_v1', uiScale: 1.0,
+      unitSize: 'player',      // 表示は自キャラと同じ大きさ
+      bgmPool: 'japan',        // audio/bgm_battle_japan_01.mp3
+      inoriMechanics: Object.freeze({
+        toriiOffsetX: 92,       // 鳥居：イノリの左右（px）
+        toriiBackY: 18,         // 鳥居：イノリより少し後方（上）
+        laserEveryMs: 3000,     // 鳥居レーザーの周期
+        laserWarnMs: 900,       // 照射前の予兆
+        laserFireMs: 520,       // 照射時間
+        laserWidth: 56,         // 極太レーザーの幅（px）
+        laserDamage: 350,       // 被弾ダメージ（BOSS大技相当）
+        barrierDownMs: 7000,    // 鳥居2基破壊後、バリアが消えている時間（その後鳥居が復活）
+        slowFirstMs: 6500,      // 鈍化の呪い弾：初回
+        slowEveryMs: 11000,     // 鈍化の呪い弾：周期
+        slowMultiplier: 0.5,    // 鈍化中の移動速度
+      }),
+    }),
+    [SHOOTING_ENEMY_ID.INORI_TORII]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.INORI_TORII, kind: 'normal', implemented: true,
+      name: '鳥居', displayName: 'TORII　鳥居',
+      element: 'neutral', attackType: 'none', image: 'images/remnant_inori_torii.webp',
+      hp: 1500, moveSpeed: 0, scoreValue: 300, behavior: 'inori_torii_v1', uiScale: 1.55,
     }),
 
     [SHOOTING_ENEMY_ID.CH08_GUARDIAN]: Object.freeze({
