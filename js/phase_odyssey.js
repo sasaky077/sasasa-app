@@ -1215,7 +1215,30 @@
     render();
   }
 
+  // build1643: ボス戦以外の背景（battle_bg_01〜03）をシャッフルで配る。
+  //  3枚を混ぜた山から順に引き、山が尽きたら混ぜ直す（直前と同じ背景が続かないようにする）。
+  //  同じ階層を開き直した時（編成画面→戦闘、再開など）は同じ背景のまま。
+  const BG_COUNT = 3;
+  let bgBag = [];
+  let bgLast = 0;
+  const bgByFloor = new Map();
+  function pickBackground(floor){
+    const f = toInt(floor, 0);
+    if (bgByFloor.has(f)) return bgByFloor.get(f);
+    if (!bgBag.length) {
+      bgBag = Array.from({ length: BG_COUNT }, (_, i) => i + 1);
+      for (let i = bgBag.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [bgBag[i], bgBag[j]] = [bgBag[j], bgBag[i]]; }
+      if (bgBag[0] === bgLast && bgBag.length > 1) [bgBag[0], bgBag[1]] = [bgBag[1], bgBag[0]];
+    }
+    const n = bgBag.shift();
+    bgLast = n;
+    bgByFloor.set(f, n);
+    if (bgByFloor.size > 30) bgByFloor.delete(bgByFloor.keys().next().value);
+    return n;
+  }
+
   window.PhaseOdyssey = Object.freeze({
+    pickBackground,
     STAGE_PREFIX, TEMPLATES,
     isStageId, stageIdForFloor, getRunMembers, applyToProfile, getCarryover, onBattleReset,
     modifyIncomingDamage, onDamageTaken, getUltGainMultiplier, beginFloor, finishFloor,

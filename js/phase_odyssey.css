@@ -1,0 +1,791 @@
+/* ============================================================
+   build1643 — 位相回遊 / PHASE ODYSSEY
+   トップ（挑戦準備）画面・編成選択・強化選択・戦闘中バッジ。
+   すべて #screen-phase-odyssey / .po-* / .phase-odyssey-* にスコープし、既存画面へ波及させない。
+   上部プレイヤーHUDと下部ナビは共通UIをそのまま表示する。
+   ============================================================ */
+html body #screen-phase-odyssey.phase-odyssey-screen{
+  --po-ink:#2f2b45;
+  --po-ink-soft:#57506b;
+  --po-gold:#b08a49;
+  --po-gold-soft:#d6bd8a;
+  --po-gold-deep:#8a6830;
+  --po-navy:#272b52;
+  --po-navy-2:#3a3f73;
+  --po-paper:rgba(251,248,241,.94);
+  --po-paper-2:rgba(246,241,230,.92);
+  --po-top:calc(var(--header-h, 76px) + 0px);
+  --po-bottom:calc(76px + env(safe-area-inset-bottom, 0px));
+  position:fixed !important;
+  inset:0 !important;
+  display:none !important;
+  width:100% !important;
+  max-width:430px !important;
+  height:100dvh !important;
+  margin:0 auto !important;
+  padding:0 !important;
+  box-sizing:border-box !important;
+  overflow:hidden !important;
+  overscroll-behavior:none !important;
+  z-index:40 !important;
+  isolation:isolate;
+  background:#efecf3 !important;
+  color:var(--po-ink);
+  font-family:'Noto Serif JP','Yu Mincho',serif;
+}
+html body #screen-phase-odyssey.phase-odyssey-screen.active{display:block !important;}
+#screen-phase-odyssey *,#screen-phase-odyssey *::before,#screen-phase-odyssey *::after{box-sizing:border-box;}
+
+/* 背景：白い廃聖堂を淡く敷く */
+#screen-phase-odyssey .po-backdrop{
+  position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:
+    linear-gradient(180deg,rgba(244,241,248,.18) 0%,rgba(244,241,248,.66) 34%,rgba(246,243,238,.80) 62%,rgba(240,236,232,.72) 100%),
+    url('../images/phase_odyssey_hero.webp?v=1643') 50% 100% / auto 62% no-repeat,
+    radial-gradient(ellipse at 50% 30%,#f8f6fb 0%,#e8e4ef 60%,#dcd6e4 100%);
+}
+#screen-phase-odyssey .po-backdrop::after{
+  content:"";position:absolute;inset:0;
+  background:url('../images/phase_odyssey_hero.webp?v=1643') 50% 0 / cover no-repeat;
+  opacity:.28;filter:blur(6px) saturate(.8);
+  mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,.5) 45%,transparent 75%);
+  -webkit-mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,.5) 45%,transparent 75%);
+}
+
+#screen-phase-odyssey .po-composition{
+  position:absolute;z-index:2;
+  /* メインビジュアルを上部HUDの裏まで敷く（HUDの白いぼかし帯は位相回遊では出さない） */
+  top:0;left:0;right:0;bottom:var(--po-bottom);
+  display:flex;flex-direction:column;min-height:0;
+}
+/* ---------- コンテンツ：横スライドの2ページ ----------
+   1ページ目＝挑戦状況＋出撃メンバー／2ページ目＝ルール＋強化の一例。
+   縦に全部収まる端末（.is-fit、JSで判定）では、スライドせず1画面にまとめて表示する。 */
+#screen-phase-odyssey .po-pager{
+  position:relative;flex:1 1 auto;min-height:0;overflow:hidden;
+}
+#screen-phase-odyssey .po-track{
+  display:flex;height:100%;
+  overflow-x:auto;overflow-y:hidden;
+  scroll-snap-type:x mandatory;
+  overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+#screen-phase-odyssey .po-track::-webkit-scrollbar{display:none;}
+#screen-phase-odyssey .po-page{
+  flex:0 0 100%;width:100%;height:100%;min-width:0;
+  scroll-snap-align:start;scroll-snap-stop:always;
+  /* 縦には動かさない（横スワイプのみ）。強化が増えて収まらない時だけ .is-vscroll で縦に送れる */
+  overflow:hidden;touch-action:pan-x;
+  padding:0 10px 8px;
+  scrollbar-width:none;
+}
+#screen-phase-odyssey .po-page::-webkit-scrollbar{display:none;}
+/* 高さが足りない時（JSが判定）：装飾チップを畳み、前回結果の行も詰める */
+#screen-phase-odyssey .po-pager:not(.is-fit) .po-page.is-tight .po-status .po-chip{display:none;}
+#screen-phase-odyssey .po-pager:not(.is-fit) .po-page.is-tight .po-stat + .po-stat::before{bottom:4px;}
+#screen-phase-odyssey .po-pager:not(.is-fit) .po-page.is-tight .po-last-note{margin-top:5px;padding-top:4px;font-size:10.5px;}
+#screen-phase-odyssey .po-pager:not(.is-fit) .po-page.is-tight .po-party-slots{padding-top:8px;}
+#screen-phase-odyssey .po-page.is-vscroll{overflow-y:auto;overscroll-behavior-y:contain;touch-action:pan-x pan-y;-webkit-overflow-scrolling:touch;}
+/* JSが算出した立ち絵枠の幅（ページに収めるための縮小） */
+#screen-phase-odyssey .po-pager:not(.is-fit) .po-page[style*="--po-slot-w"] .po-slot{width:var(--po-slot-w) !important;}
+/* 画面のその他の部分も縦方向のドラッグでページ全体が揺れないように */
+#screen-phase-odyssey .po-hero,#screen-phase-odyssey .po-pager-nav,#screen-phase-odyssey .po-start-dock{touch-action:manipulation;}
+#screen-phase-odyssey .po-pager.is-fit{touch-action:manipulation;}
+/* 1画面にまとめる表示（縦長の端末） */
+#screen-phase-odyssey .po-pager.is-fit{overflow:hidden;}
+#screen-phase-odyssey .po-pager.is-fit::-webkit-scrollbar{display:none;}
+#screen-phase-odyssey .po-pager.is-fit .po-track{display:block;height:auto;overflow:visible;}
+#screen-phase-odyssey .po-pager.is-fit .po-page{height:auto;overflow:visible;padding-bottom:0;touch-action:manipulation;}
+#screen-phase-odyssey .po-pager.is-fit .po-page + .po-page{padding-bottom:8px;}
+
+/* ページ切替タブ（スライドと連動） */
+#screen-phase-odyssey .po-pager-nav{
+  flex:0 0 auto;display:flex;justify-content:center;gap:8px;padding:3px 0 0;
+}
+#screen-phase-odyssey .po-pager.is-fit ~ .po-pager-nav{display:none;}
+#screen-phase-odyssey .po-pager-tab{
+  display:inline-flex;align-items:center;gap:5px;
+  min-width:64px;height:24px;padding:0 10px;border-radius:999px;
+  border:1px solid rgba(176,138,73,.55);
+  background:rgba(251,248,241,.82);
+  font:600 10.5px/1 'Noto Serif JP',serif;letter-spacing:.12em;color:var(--po-ink-soft);
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:background .2s,color .2s,border-color .2s;
+}
+#screen-phase-odyssey .po-pager-tab i{
+  display:block;width:6px;height:6px;border-radius:3px;background:rgba(87,80,107,.35);
+  transition:width .2s,background .2s;
+}
+#screen-phase-odyssey .po-pager-tab.is-active{
+  color:#fff7e6;border-color:rgba(214,189,138,.9);
+  background:linear-gradient(180deg,var(--po-navy-2),var(--po-navy));
+}
+#screen-phase-odyssey .po-pager-tab.is-active i{width:14px;background:#e3c88e;}
+
+/* 戻る：共通の戻るボタン画像・位置に合わせる */
+html body #screen-phase-odyssey .po-back{
+  position:fixed !important;
+  left:var(--zb-back-x, 12px) !important;
+  top:var(--zb-back-y, calc(var(--header-h, 72px) + 8px)) !important;
+  z-index:6 !important;
+  width:82px !important;height:35px !important;padding:0 !important;
+  border:0 !important;border-radius:0 !important;box-shadow:none !important;
+  background:transparent url('../images/button_back.webp?v=1444-unified') center/100% 100% no-repeat !important;
+  font-size:0 !important;color:transparent !important;text-indent:-9999px !important;overflow:hidden !important;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+}
+html body #screen-phase-odyssey .po-back:active{transform:translateY(1px);filter:brightness(.96);}
+@media(max-width:365px){html body #screen-phase-odyssey .po-back{width:75px !important;height:32px !important;}}
+
+/* ---------- メインビジュアル ---------- */
+#screen-phase-odyssey .po-hero{
+  position:relative;
+  flex:0 0 auto;
+  margin:0;
+  height:calc(var(--po-top) + clamp(160px, 42.4vw, 200px));
+  box-shadow:0 4px 10px rgba(40,34,70,.18);
+  z-index:3;
+  overflow:hidden;
+  border-bottom:1px solid rgba(176,138,73,.45);
+}
+#screen-phase-odyssey .po-hero-art{
+  position:absolute;inset:0;
+  background:url('../images/phase_odyssey_hero.webp?v=1643') 50% 50% / cover no-repeat, #3b3d6b;
+}
+#screen-phase-odyssey .po-hero-art::before{ /* 左の濃紺パネル（モックの題字帯） */
+  content:"";position:absolute;inset:0;
+  background:
+    linear-gradient(90deg,rgba(24,26,58,.93) 0%,rgba(30,32,68,.86) 34%,rgba(36,38,76,.55) 50%,rgba(40,40,80,0) 64%),
+    linear-gradient(180deg,rgba(255,255,255,.25) 0%,rgba(255,255,255,0) 14%,rgba(255,255,255,0) 82%,rgba(245,242,236,.55) 100%);
+}
+#screen-phase-odyssey .po-hero-art::after{ /* 位相ゲートの光 */
+  content:"";position:absolute;right:6%;top:6%;width:52%;aspect-ratio:1;
+  background:radial-gradient(circle,rgba(255,240,205,.30) 0%,rgba(205,180,255,.16) 38%,rgba(205,180,255,0) 70%);
+  animation:po-gate-glow 5.5s ease-in-out infinite;
+  pointer-events:none;
+}
+@keyframes po-gate-glow{0%,100%{opacity:.55;transform:scale(.97);}50%{opacity:1;transform:scale(1.03);}}
+@media (prefers-reduced-motion: reduce){#screen-phase-odyssey .po-hero-art::after{animation:none;}}
+#screen-phase-odyssey .po-hero-panel{
+  position:absolute;z-index:2;left:0;top:0;bottom:0;width:62%;
+  /* タイトルはビジュアルの下寄せ。上部は戻るボタンのスペースとして空ける */
+  padding:calc(var(--po-top) + 50px) 0 clamp(12px,3.6vw,18px) clamp(14px,4.2vw,20px);
+  display:flex;flex-direction:column;justify-content:flex-end;
+  color:#fff7e6;
+  text-shadow:0 1px 4px rgba(12,12,30,.55);
+}
+#screen-phase-odyssey .po-title-row{display:flex;align-items:center;gap:clamp(4px,1.5vw,8px);margin-top:0;}
+#screen-phase-odyssey .po-compass{flex:0 0 auto;width:clamp(40px,12.5vw,56px);height:auto;color:#d9bd7f;filter:drop-shadow(0 1px 3px rgba(0,0,0,.45));}
+#screen-phase-odyssey .po-title{
+  margin:0;color:#fffaf0;
+  font:600 clamp(26px,8.4vw,38px)/1.08 'Noto Serif JP',serif;letter-spacing:.06em;white-space:nowrap;
+}
+#screen-phase-odyssey .po-title-en{
+  margin-top:3px;color:#efe2c5;
+  font:500 clamp(7.5px,2.35vw,10.5px)/1.2 'Cinzel',serif;letter-spacing:.24em;white-space:nowrap;
+}
+
+/* ---------- カード共通 ---------- */
+#screen-phase-odyssey .po-card{
+  position:relative;
+  margin-top:8px;
+  padding:10px 11px 10px;
+  background:linear-gradient(180deg,var(--po-paper),var(--po-paper-2));
+  border:1px solid rgba(176,138,73,.62);
+  box-shadow:inset 0 0 0 3px rgba(255,255,255,.6),inset 0 0 0 4px rgba(176,138,73,.32),0 4px 14px rgba(58,48,92,.12);
+}
+#screen-phase-odyssey .po-card::before,#screen-phase-odyssey .po-card::after{ /* 角飾り */
+  content:"";position:absolute;width:12px;height:12px;pointer-events:none;
+  border:1.5px solid var(--po-gold);
+}
+#screen-phase-odyssey .po-card::before{left:-1px;top:-1px;border-right:0;border-bottom:0;}
+#screen-phase-odyssey .po-card::after{right:-1px;bottom:-1px;border-left:0;border-top:0;}
+
+/* ---------- ステータスカード ---------- */
+#screen-phase-odyssey .po-status{
+  display:grid;grid-template-columns:1.15fr 1fr 1fr;align-items:stretch;
+  padding:9px 6px 9px;
+}
+#screen-phase-odyssey .po-stat{
+  position:relative;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:5px;
+  min-width:0;padding:0 4px;
+}
+#screen-phase-odyssey .po-stat + .po-stat::before{
+  content:"";position:absolute;left:0;top:4px;bottom:34px;width:1px;
+  background:linear-gradient(180deg,rgba(176,138,73,0),rgba(176,138,73,.65) 20%,rgba(176,138,73,.65) 80%,rgba(176,138,73,0));
+}
+#screen-phase-odyssey .po-stat-label{font:600 clamp(10px,2.9vw,12.5px)/1.3 'Noto Serif JP',serif;letter-spacing:.08em;color:var(--po-ink-soft);white-space:nowrap;}
+#screen-phase-odyssey .po-best-plate{
+  position:relative;display:flex;align-items:baseline;justify-content:center;gap:5px;
+  width:100%;max-width:148px;height:38px;padding:0 14px;
+  background:linear-gradient(180deg,var(--po-navy-2),var(--po-navy));
+  clip-path:polygon(9% 0,91% 0,100% 50%,91% 100%,9% 100%,0 50%);
+  color:#f6ecd6;
+}
+#screen-phase-odyssey .po-best-plate::before{
+  content:"";position:absolute;inset:2px;
+  clip-path:polygon(9% 0,91% 0,100% 50%,91% 100%,9% 100%,0 50%);
+  border:1px solid rgba(214,189,138,.85);
+  background:transparent;pointer-events:none;
+}
+#screen-phase-odyssey .po-best-plate{align-items:center;box-shadow:inset 0 0 0 1px rgba(214,189,138,.6);}
+#screen-phase-odyssey .po-best-word{font:600 clamp(9px,2.6vw,11.5px)/1 'Cinzel',serif;letter-spacing:.16em;color:#e8d6aa;}
+#screen-phase-odyssey .po-best-plate strong{font:600 clamp(20px,6vw,26px)/1 'Cinzel','Noto Serif JP',serif;letter-spacing:.02em;color:#fff8e8;}
+#screen-phase-odyssey .po-best-plate small{font:600 clamp(11px,3vw,14px)/1 'Cinzel',serif;color:#f1e3c2;margin-left:-2px;}
+#screen-phase-odyssey .po-floor-value{display:flex;align-items:baseline;gap:5px;height:38px;color:var(--po-ink);}
+#screen-phase-odyssey .po-floor-value span{font:600 clamp(10px,2.9vw,13px)/1 'Cinzel',serif;letter-spacing:.06em;}
+#screen-phase-odyssey .po-floor-value strong{font:500 clamp(30px,9vw,40px)/1 'Cinzel','Noto Serif JP',serif;letter-spacing:.01em;}
+#screen-phase-odyssey .po-state-value{display:flex;align-items:center;justify-content:center;height:38px;}
+#screen-phase-odyssey .po-state-value strong{
+  position:relative;padding:0 6px 3px;
+  font:700 clamp(16px,4.8vw,21px)/1.15 'Noto Serif JP',serif;letter-spacing:.1em;color:var(--po-ink);white-space:nowrap;
+}
+#screen-phase-odyssey .po-state-value strong::after{
+  content:"";position:absolute;left:0;right:0;bottom:-2px;height:1px;
+  background:linear-gradient(90deg,rgba(176,138,73,0),rgba(176,138,73,.9),rgba(176,138,73,0));
+}
+#screen-phase-odyssey .po-state-value strong[data-state="select"]{color:#7a4f9a;}
+#screen-phase-odyssey .po-state-value strong[data-state="suspended"],
+#screen-phase-odyssey .po-state-value strong[data-state="battle"]{color:#8a5a2a;}
+#screen-phase-odyssey .po-state-value strong[data-state="ended"],
+#screen-phase-odyssey .po-state-value strong[data-state="idle"]{color:var(--po-ink-soft);}
+#screen-phase-odyssey .po-chip{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:78%;padding:4px 10px;border-radius:999px;
+  font:600 clamp(9.5px,2.75vw,11.5px)/1.25 'Noto Serif JP',serif;letter-spacing:.1em;color:#4b4357;white-space:nowrap;
+  background:linear-gradient(180deg,#fdfbf6,#eee6d6);
+  border:1px solid rgba(176,138,73,.7);
+  box-shadow:inset 0 1px 0 #fff,0 1px 2px rgba(80,62,30,.12);
+}
+#screen-phase-odyssey .po-last-note{
+  grid-column:1 / -1;margin:8px 4px 0;padding-top:7px;
+  border-top:1px dashed rgba(176,138,73,.4);
+  font:500 11px/1.5 'Noto Serif JP',serif;color:#6c5a3f;text-align:center;letter-spacing:.04em;
+}
+
+/* ---------- セクション見出し ---------- */
+#screen-phase-odyssey .po-section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;margin:0 2px 4px;}
+#screen-phase-odyssey .po-section-head h2{margin:0;font:700 clamp(16px,4.7vw,21px)/1.15 'Noto Serif JP',serif;letter-spacing:.08em;color:var(--po-ink);}
+#screen-phase-odyssey .po-section-en{display:block;margin-top:2px;font:500 clamp(7.5px,2.1vw,9.5px)/1.2 'Cinzel',serif;letter-spacing:.3em;color:#8d7f9c;}
+#screen-phase-odyssey .po-section-head p{margin:0 0 3px;font:500 clamp(9px,2.6vw,11.5px)/1.4 'Noto Serif JP',serif;color:var(--po-ink-soft);letter-spacing:.02em;text-align:right;}
+#screen-phase-odyssey .po-section-head.is-compact{margin-bottom:4px;padding-bottom:5px;border-bottom:1px solid rgba(176,138,73,.35);}
+#screen-phase-odyssey .po-section-head.is-compact h2{font-size:clamp(14px,4vw,17px);}
+
+/* ---------- 出撃メンバー ---------- */
+#screen-phase-odyssey .po-party{
+  background:
+    linear-gradient(90deg,rgba(250,247,241,.5) 0%,rgba(250,247,241,.93) 24%,rgba(250,247,241,.93) 76%,rgba(250,247,241,.5) 100%),
+    url('../images/phase_odyssey_hero.webp?v=1643') 50% 82% / cover no-repeat;
+}
+#screen-phase-odyssey .po-party-slots{display:flex;justify-content:center;gap:clamp(10px,3.4vw,16px);padding:9px 0 0;}
+#screen-phase-odyssey .po-slot{
+  position:relative;flex:0 0 auto;
+  width:clamp(74px,20.5vw,90px);aspect-ratio:170 / 208;
+  padding:0;border:0;background:none;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+#screen-phase-odyssey .po-slot:active{transform:translateY(1px);}
+#screen-phase-odyssey .po-slot-frame{
+  position:absolute;inset:0;overflow:hidden;display:block;
+  background:#f1ede6 url('../images/phase_odyssey_slot_empty.webp?v=1643') center / 100% 100% no-repeat;
+  box-shadow:0 3px 8px rgba(58,48,92,.16);
+}
+#screen-phase-odyssey .po-slot.is-filled .po-slot-frame{
+  background:linear-gradient(180deg,#fbf8f1,#efe7d7);
+  border:1px solid rgba(176,138,73,.85);
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.75),inset 0 0 0 3px rgba(176,138,73,.4),0 3px 8px rgba(58,48,92,.18);
+}
+#screen-phase-odyssey .po-slot-portrait{position:absolute;inset:4px 4px 18px;width:calc(100% - 8px);height:calc(100% - 22px);object-fit:cover;object-position:50% 18%;}
+#screen-phase-odyssey .po-slot-name{
+  position:absolute;left:0;right:0;bottom:3px;text-align:center;
+  font:600 clamp(9px,2.6vw,11px)/1.2 'Noto Serif JP',serif;color:var(--po-ink);letter-spacing:.04em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 3px;
+}
+#screen-phase-odyssey .po-slot-top{
+  position:absolute;z-index:2;left:50%;top:-9px;transform:translateX(-50%);
+  display:flex;align-items:center;justify-content:center;
+  width:24px;height:26px;color:var(--po-navy);
+  filter:drop-shadow(0 1px 1px rgba(255,255,255,.9));
+}
+#screen-phase-odyssey .po-slot-top svg{width:100%;height:100%;}
+#screen-phase-odyssey .po-slot-element{width:22px;height:22px;object-fit:contain;border-radius:50%;background:#fff;box-shadow:0 0 0 1px rgba(176,138,73,.8),0 1px 3px rgba(0,0,0,.2);}
+#screen-phase-odyssey .po-slot-bars{position:absolute;left:6px;right:6px;bottom:19px;display:grid;gap:2px;}
+#screen-phase-odyssey .po-slot-bar{display:block;height:4px;background:rgba(39,43,82,.25);border-radius:2px;overflow:hidden;position:relative;}
+#screen-phase-odyssey .po-slot-bar::after{content:"";position:absolute;left:0;top:0;bottom:0;width:calc(var(--v,0) * 100%);border-radius:2px;}
+#screen-phase-odyssey .po-slot-bar.is-hp::after{background:linear-gradient(90deg,#5fb37a,#8fd49b);}
+#screen-phase-odyssey .po-slot-bar.is-ult::after{background:linear-gradient(90deg,#e0a91c,#ffe066);}
+#screen-phase-odyssey .po-slot.is-empty::after{
+  content:"＋";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  font:300 22px/1 'Noto Serif JP',serif;color:rgba(87,80,107,.45);pointer-events:none;
+}
+#screen-phase-odyssey .po-slot.is-locked{cursor:default;}
+#screen-phase-odyssey .po-build-list{display:flex;flex-wrap:wrap;justify-content:center;gap:5px;margin-top:10px;}
+#screen-phase-odyssey .po-build-list[hidden]{display:none;}
+#screen-phase-odyssey .po-build-chip{
+  display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:999px;
+  font:600 10px/1.3 'Noto Serif JP',serif;color:#fff;letter-spacing:.03em;
+  background:var(--po-navy);border:1px solid rgba(214,189,138,.8);
+}
+#screen-phase-odyssey .po-build-chip.is-attack{background:linear-gradient(180deg,#5b3d6b,#3d2a4d);}
+#screen-phase-odyssey .po-build-chip.is-defense{background:linear-gradient(180deg,#3c4f7a,#2a3858);}
+#screen-phase-odyssey .po-build-chip.is-support{background:linear-gradient(180deg,#4a3f7f,#322a5c);}
+#screen-phase-odyssey .po-build-chip b{font:600 9.5px/1 'Cinzel',serif;color:#f1dca8;}
+#screen-phase-odyssey .po-retire{
+  display:block;margin:9px auto 0;padding:4px 12px;
+  border:0;background:none;cursor:pointer;
+  font:500 11px/1.4 'Noto Serif JP',serif;color:#8a6a50;letter-spacing:.06em;
+  text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(138,106,80,.5);
+}
+#screen-phase-odyssey .po-retire[hidden]{display:none;}
+
+/* ---------- ルール / 強化例 ---------- */
+#screen-phase-odyssey .po-info-row{display:grid;grid-template-columns:minmax(0,45fr) minmax(0,55fr);gap:7px;margin-top:8px;}
+#screen-phase-odyssey .po-info-row .po-card{margin-top:0;padding:9px 8px 8px;}
+#screen-phase-odyssey .po-rule-list{list-style:none;margin:0;padding:0;}
+#screen-phase-odyssey .po-rule-list li{
+  display:flex;align-items:center;gap:6px;padding:5px 0;
+  font:600 clamp(8.2px,2.3vw,10.2px)/1.35 'Noto Serif JP',serif;color:var(--po-ink);letter-spacing:-.03em;
+}
+#screen-phase-odyssey .po-rule-list li + li{border-top:1px dotted rgba(176,138,73,.45);}
+#screen-phase-odyssey .po-rule-icon{
+  flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  width:clamp(22px,6vw,26px);height:clamp(22px,6vw,26px);border-radius:50%;
+  color:#f3e6c6;background:radial-gradient(circle at 35% 30%,#4a4f86,#23264b);
+  box-shadow:0 0 0 1.5px rgba(214,189,138,.9),0 0 0 3px rgba(255,255,255,.7),0 2px 4px rgba(0,0,0,.2);
+}
+#screen-phase-odyssey .po-rule-icon svg{width:62%;height:62%;}
+#screen-phase-odyssey .po-example-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;}
+#screen-phase-odyssey .po-example-list li{display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0;}
+#screen-phase-odyssey .po-example-list img{width:100%;aspect-ratio:140 / 120;object-fit:cover;display:block;box-shadow:0 2px 5px rgba(39,43,82,.2);}
+#screen-phase-odyssey .po-example-list strong{margin-top:4px;font:700 clamp(7.5px,2.2vw,9.6px)/1.3 'Noto Serif JP',serif;color:var(--po-ink);white-space:nowrap;letter-spacing:0;}
+#screen-phase-odyssey .po-example-list span{margin-top:2px;font:500 clamp(6.6px,1.8vw,8px)/1.4 'Noto Serif JP',serif;color:var(--po-ink-soft);letter-spacing:-.04em;white-space:nowrap;}
+/* スライド表示の2ページ目：ルールと強化例を全幅で縦に並べ、文字を大きくする */
+#screen-phase-odyssey .po-pager:not(.is-fit) .po-info-row{grid-template-columns:minmax(0,1fr);gap:8px;}
+#screen-phase-odyssey .po-pager:not(.is-fit) .po-info-row .po-card{padding:11px 12px 10px;}
+#screen-phase-odyssey .po-pager:not(.is-fit) .po-rule-list li{padding:7px 2px;gap:10px;font-size:clamp(11px,3.3vw,13.5px);letter-spacing:.02em;}
+#screen-phase-odyssey .po-pager:not(.is-fit) .po-rule-icon{width:30px;height:30px;}
+#screen-phase-odyssey .po-pager:not(.is-fit) .po-example-list{gap:10px;padding:2px 4px 0;}
+#screen-phase-odyssey .po-pager:not(.is-fit) .po-example-list strong{margin-top:6px;font-size:clamp(10px,3vw,12.5px);}
+#screen-phase-odyssey .po-pager:not(.is-fit) .po-example-list span{font-size:clamp(8.5px,2.5vw,10.5px);letter-spacing:0;}
+
+/* ---------- 挑戦開始ボタン ---------- */
+#screen-phase-odyssey .po-start-dock{
+  flex:0 0 auto;display:flex;justify-content:center;
+  padding:6px 10px 7px;
+  background:none;
+}
+#screen-phase-odyssey .po-start{
+  position:relative;width:min(64%,272px);height:52px;padding:0 24px;
+  border:0;cursor:pointer;color:#fffaf0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  background:linear-gradient(180deg,#454a82 0%,#2c3060 52%,#23264c 100%);
+  clip-path:polygon(7% 0,93% 0,100% 50%,93% 100%,7% 100%,0 50%);
+  filter:drop-shadow(0 4px 8px rgba(30,30,70,.35));
+  -webkit-tap-highlight-color:transparent;
+}
+#screen-phase-odyssey .po-start::before{
+  content:"";position:absolute;inset:3px;
+  clip-path:polygon(7% 0,93% 0,100% 50%,93% 100%,7% 100%,0 50%);
+  background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,0) 50%);
+  box-shadow:inset 0 0 0 1px rgba(226,201,146,.95);
+  pointer-events:none;
+}
+#screen-phase-odyssey .po-start::after{
+  content:"";position:absolute;inset:0;
+  clip-path:polygon(7% 0,93% 0,100% 50%,93% 100%,7% 100%,0 50%,1.6% 50%,7.6% 96%,92.4% 96%,98.4% 50%,92.4% 4%,7.6% 4%,1.6% 50%,0 50%);
+  background:linear-gradient(90deg,#b48d4c,#f1dba5 50%,#b48d4c);
+  pointer-events:none;
+}
+#screen-phase-odyssey .po-start:active{transform:translateY(1px);filter:drop-shadow(0 2px 4px rgba(30,30,70,.35)) brightness(1.06);}
+#screen-phase-odyssey .po-start-jp{position:relative;z-index:1;font:600 clamp(18px,5.4vw,23px)/1.1 'Noto Serif JP',serif;letter-spacing:.32em;margin-right:-.32em;text-shadow:0 1px 3px rgba(0,0,0,.4);}
+#screen-phase-odyssey .po-start-en{position:relative;z-index:1;display:flex;align-items:center;gap:6px;font:600 8.5px/1 'Cinzel',serif;letter-spacing:.32em;color:#e5d2a3;}
+#screen-phase-odyssey .po-start-en::before,#screen-phase-odyssey .po-start-en::after{content:"";width:18px;height:1px;background:rgba(229,210,163,.75);}
+
+/* ---------- モーダル（body直下。上部HUD・下部ナビより前面） ---------- */
+#phase-odyssey-layer *,#phase-odyssey-layer *::before,#phase-odyssey-layer *::after{box-sizing:border-box;}
+#phase-odyssey-layer{
+  --po-ink:#2f2b45;--po-ink-soft:#57506b;--po-gold:#b08a49;--po-gold-deep:#8a6830;--po-navy:#272b52;
+  position:fixed;inset:0;z-index:300100;margin:0 auto;max-width:430px;box-sizing:border-box;
+  font-family:'Noto Serif JP','Yu Mincho',serif;color:var(--po-ink);
+  display:flex;align-items:center;justify-content:center;
+  padding:calc(env(safe-area-inset-top,0px) + 16px) 14px calc(env(safe-area-inset-bottom,0px) + 16px);
+  background:rgba(24,22,44,.62);
+  backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+  animation:po-fade .18s ease-out;
+}
+#phase-odyssey-layer[hidden]{display:none;}
+@keyframes po-fade{from{opacity:0;}to{opacity:1;}}
+#phase-odyssey-layer .po-sheet{
+  position:relative;width:min(100%,400px);max-height:100%;
+  display:flex;flex-direction:column;min-height:0;
+  padding:18px 14px 14px;
+  background:linear-gradient(180deg,#fbf8f1,#f2ecdf);
+  border:1px solid rgba(176,138,73,.85);
+  box-shadow:inset 0 0 0 3px #fff,inset 0 0 0 4px rgba(176,138,73,.45),0 18px 40px rgba(10,8,30,.45);
+  color:var(--po-ink);
+}
+#phase-odyssey-layer .po-sheet-kicker{font:600 9.5px/1.3 'Cinzel',serif;letter-spacing:.24em;color:var(--po-gold-deep);text-align:center;}
+#phase-odyssey-layer .po-sheet-title{margin:5px 0 0;font:700 20px/1.3 'Noto Serif JP',serif;letter-spacing:.12em;text-align:center;color:var(--po-ink);}
+#phase-odyssey-layer .po-sheet-sub{margin:7px 0 0;font:500 12px/1.75 'Noto Serif JP',serif;color:var(--po-ink-soft);text-align:center;white-space:pre-line;}
+#phase-odyssey-layer .po-sheet-foot{margin:10px 0 0;font:500 11px/1.5 'Noto Serif JP',serif;color:#7b6a52;text-align:center;}
+#phase-odyssey-layer .po-sheet-actions{display:flex;gap:10px;justify-content:center;margin-top:14px;flex:0 0 auto;}
+#phase-odyssey-layer .po-btn{
+  min-width:112px;padding:10px 16px;cursor:pointer;
+  font:600 13px/1.2 'Noto Serif JP',serif;letter-spacing:.1em;color:var(--po-ink);
+  background:linear-gradient(180deg,#fffdf8,#ece4d3);
+  border:1px solid rgba(176,138,73,.8);
+  box-shadow:inset 0 1px 0 #fff,0 2px 4px rgba(60,46,20,.12);
+}
+#phase-odyssey-layer .po-btn.is-primary{color:#fff8e8;background:linear-gradient(180deg,#454a82,#262a55);border-color:#c9a96a;box-shadow:inset 0 0 0 1px rgba(226,201,146,.6),0 2px 6px rgba(30,30,70,.3);}
+#phase-odyssey-layer .po-btn:disabled{opacity:.5;cursor:default;}
+#phase-odyssey-layer .po-btn:active:not(:disabled){transform:translateY(1px);}
+
+/* 強化選択 */
+#phase-odyssey-layer.is-buff .po-sheet,#phase-odyssey-layer.is-status .po-sheet{padding-top:20px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;}
+#phase-odyssey-layer .po-buff-cards{display:grid;gap:9px;margin-top:14px;flex:0 0 auto;}
+#phase-odyssey-layer .po-buff-card{
+  display:grid;grid-template-columns:72px minmax(0,1fr);align-items:center;gap:11px;
+  width:100%;padding:8px 10px 8px 8px;text-align:left;cursor:pointer;
+  background:linear-gradient(180deg,#fffdf8,#f1eadb);
+  border:1px solid rgba(176,138,73,.75);
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.8),0 2px 6px rgba(40,30,60,.12);
+  color:var(--po-ink);
+  animation:po-card-in .32s ease-out both;
+}
+#phase-odyssey-layer .po-buff-card:nth-child(2){animation-delay:.06s;}
+#phase-odyssey-layer .po-buff-card:nth-child(3){animation-delay:.12s;}
+@keyframes po-card-in{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+#phase-odyssey-layer .po-buff-card:active{transform:translateY(1px);box-shadow:0 0 0 2px #c9a35a,0 0 12px rgba(201,163,90,.6);}
+#phase-odyssey-layer .po-buff-art img{display:block;width:72px;height:62px;object-fit:cover;box-shadow:0 2px 4px rgba(39,43,82,.25);}
+#phase-odyssey-layer .po-buff-copy{display:flex;flex-direction:column;gap:2px;min-width:0;}
+#phase-odyssey-layer .po-buff-cat{font:600 10px/1.3 'Noto Serif JP',serif;letter-spacing:.1em;color:var(--po-gold-deep);}
+#phase-odyssey-layer .po-buff-card.is-defense .po-buff-cat{color:#3c5b8a;}
+#phase-odyssey-layer .po-buff-card.is-support .po-buff-cat{color:#6a4f9a;}
+#phase-odyssey-layer .po-buff-name{font:700 15px/1.3 'Noto Serif JP',serif;letter-spacing:.05em;}
+#phase-odyssey-layer .po-buff-desc{font:500 11px/1.5 'Noto Serif JP',serif;color:var(--po-ink-soft);}
+
+/* 低い画面ではビジュアルを詰める */
+@media (max-height:700px){
+  #screen-phase-odyssey .po-hero{height:calc(var(--po-top) + 124px);}
+  #screen-phase-odyssey .po-hero-panel{padding-top:calc(var(--po-top) + 46px);padding-bottom:9px;}
+  #screen-phase-odyssey .po-start{height:48px;}
+  #screen-phase-odyssey .po-start-dock{padding:4px 10px 5px;}
+}
+@media (max-height:620px){
+  #screen-phase-odyssey .po-hero{height:calc(var(--po-top) + 112px);}
+  #screen-phase-odyssey .po-hero-panel{padding-top:calc(var(--po-top) + 44px);padding-bottom:6px;}
+  #screen-phase-odyssey .po-compass{width:38px;}
+  #screen-phase-odyssey .po-title{font-size:27px;}
+}
+
+/* スライド表示：ページ内の余白は出撃メンバー欄が受け持ち、立ち絵枠を少し大きく中央に */
+#screen-phase-odyssey .po-pager:not(.is-fit) .po-page{display:flex;flex-direction:column;}
+#screen-phase-odyssey .po-pager:not(.is-fit) .po-page > *{flex:0 0 auto;}
+#screen-phase-odyssey .po-pager:not(.is-fit) .po-page > .po-party{flex:1 0 auto;display:flex;flex-direction:column;}
+#screen-phase-odyssey .po-pager:not(.is-fit) .po-party-slots{flex:1 0 auto;align-items:center;padding-bottom:4px;}
+#screen-phase-odyssey .po-pager:not(.is-fit) .po-slot{width:clamp(74px,24vw,104px);}
+@media (max-height:700px){
+  #screen-phase-odyssey .po-pager:not(.is-fit) .po-slot{width:clamp(66px,19vw,84px);}
+  /* 低い画面の2ページ目は、ルールと強化例を横並び（元のレイアウト）にして1ページに収める */
+  #screen-phase-odyssey .po-pager:not(.is-fit) .po-info-row{grid-template-columns:minmax(0,45fr) minmax(0,55fr);gap:7px;}
+  #screen-phase-odyssey .po-pager:not(.is-fit) .po-info-row .po-card{padding:9px 8px 8px;}
+  #screen-phase-odyssey .po-pager:not(.is-fit) .po-rule-list li{padding:6px 0;gap:6px;font-size:clamp(8.6px,2.45vw,10.4px);letter-spacing:-.03em;}
+  #screen-phase-odyssey .po-pager:not(.is-fit) .po-rule-icon{width:clamp(22px,6vw,26px);height:clamp(22px,6vw,26px);}
+  #screen-phase-odyssey .po-pager:not(.is-fit) .po-example-list{gap:4px;padding:0;}
+  #screen-phase-odyssey .po-pager:not(.is-fit) .po-example-list strong{margin-top:4px;font-size:clamp(7.5px,2.2vw,9.6px);}
+  #screen-phase-odyssey .po-pager:not(.is-fit) .po-example-list span{font-size:clamp(6.6px,1.8vw,8px);letter-spacing:-.04em;}
+}
+@media (max-height:620px){
+  #screen-phase-odyssey .po-pager:not(.is-fit) .po-slot{width:clamp(58px,16.5vw,72px);}
+  #screen-phase-odyssey .po-pager:not(.is-fit) .po-party-slots{padding-top:6px;}
+  #screen-phase-odyssey .po-card{margin-top:6px;}
+  #screen-phase-odyssey .po-status{padding:6px 6px 7px;}
+  #screen-phase-odyssey .po-stat{gap:3px;}
+  #screen-phase-odyssey .po-party{padding-top:8px;padding-bottom:7px;}
+}
+
+/* ============================================================
+   巡行の左タブ「位相回遊」（独立コンテンツの入口）
+   ============================================================ */
+#screen-ninmu.junkou-rebuilt .junkou-tabs .junkou-tab.phase-odyssey-tab{
+  background:
+    linear-gradient(140deg,rgba(32,34,72,.70),rgba(58,48,104,.52)),
+    url('../images/phase_odyssey_hero.webp?v=1643') 72% 45% / cover no-repeat !important;
+  border-color:rgba(214,189,138,.9) !important;
+  outline-color:rgba(255,246,220,.55) !important;
+}
+#screen-ninmu.junkou-rebuilt .junkou-tabs .junkou-tab.phase-odyssey-tab .junkou-tab-icon{color:#ecd59a !important;text-shadow:0 0 6px rgba(255,230,160,.6) !important;}
+#screen-ninmu.junkou-rebuilt .junkou-tabs .junkou-tab.phase-odyssey-tab .ninmu-cat-jp{color:#fff8ea !important;text-shadow:0 1px 3px rgba(10,10,30,.85) !important;}
+#screen-ninmu.junkou-rebuilt .junkou-tabs .junkou-tab.phase-odyssey-tab .ninmu-cat-en{color:#e6d3a6 !important;text-shadow:0 1px 2px rgba(10,10,30,.8) !important;}
+#screen-ninmu.junkou-rebuilt .junkou-tabs .junkou-tab.phase-odyssey-tab::before,
+#screen-ninmu.junkou-rebuilt .junkou-tabs .junkou-tab.phase-odyssey-tab::after{color:rgba(236,213,154,.95) !important;}
+
+/* ============================================================
+   戦闘中バッジ（階層・バリア残量）
+   ============================================================ */
+#shooting-event-root .po-battle-badge{
+  position:absolute;z-index:27;left:8px;top:calc(env(safe-area-inset-top,0px) + 102px);
+  display:flex;flex-direction:column;align-items:flex-start;gap:3px;pointer-events:none;opacity:.92;
+}
+#shooting-event-root:not(.battle-hud-visible) .po-battle-badge,
+#shooting-event-root:has(.shooting-result.show) .po-battle-badge{display:none;}
+#shooting-event-root .po-battle-badge span{
+  padding:2px 8px;border-radius:999px;
+  font:600 9px/1.4 'Cinzel','Noto Serif JP',serif;letter-spacing:.1em;color:#fff7e3;
+  background:rgba(39,43,82,.78);border:1px solid rgba(214,189,138,.8);
+}
+#shooting-event-root .po-battle-badge .po-battle-shield{background:rgba(70,120,190,.85);}
+#shooting-event-root .po-battle-badge .po-battle-shield[hidden]{display:none;}
+#shooting-event-root .po-battle-badge.is-pulse .po-battle-shield{animation:po-shield-pulse .45s ease-out;}
+@keyframes po-shield-pulse{0%{transform:scale(1.18);box-shadow:0 0 12px rgba(150,200,255,.9);}100%{transform:none;box-shadow:none;}}
+
+/* ============================================================
+   戦闘画面：残響の塔テンプレートを流用する階層の見た目を塔と揃える
+   （ステージIDが shooting_tower_* ではないため、ID指定の既存CSSを位相回遊にも適用）
+   ============================================================ */
+#shooting-event-root[data-shooting-stage^="shooting_phase_odyssey_"] .shooting-bg{
+  background-image:url('../images/bg_battle_tower_01.webp'),url('../images/battle_bg_01.webp');
+  background-size:cover;background-position:center;
+  filter:none;opacity:.9;
+}
+#shooting-event-root[data-shooting-stage^="shooting_phase_odyssey_"] .shooting-wash{
+  background:linear-gradient(180deg,rgba(248,245,252,.78) 0%,rgba(248,245,252,.55) 15%,rgba(248,245,252,0) 27%,rgba(0,0,0,0) 100%);
+}
+html body #shooting-event-root[data-shooting-stage^="shooting_phase_odyssey_"] :is(.shooting-hp-side-label,.shooting-hp-side-value,.shooting-ult-side-label,.shooting-hp-side-copy,.shooting-ult-side-copy,.shooting-ult-side-copy span,.shooting-hp-side-copy span){
+  color:#f6f0ff!important;
+  text-shadow:0 0 3px rgba(20,10,40,.95),0 0 7px rgba(30,15,60,.85)!important;
+}
+#shooting-event-root[data-shooting-stage^="shooting_phase_odyssey_"] #shooting-tower10-reverse-banner{
+  position:absolute;left:50%;top:clamp(108px,22%,185px);transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-width:210px;max-width:calc(100% - 24px);box-sizing:border-box;
+  padding:10px 24px 8px;z-index:55;pointer-events:none;
+  background:linear-gradient(90deg,rgba(21,13,40,.18),rgba(28,16,51,.87) 16%,rgba(28,16,51,.87) 84%,rgba(21,13,40,.18));
+  border-top:1px solid rgba(255,221,174,.8);border-bottom:1px solid rgba(255,221,174,.8);
+  animation:tower10ReverseNotice .4s ease-out both;
+}
+
+/* ---------- 味方の状態（強化選択・挑戦中の状態確認） ---------- */
+#phase-odyssey-layer .po-status-details{margin-top:12px;border-top:1px solid rgba(176,138,73,.4);padding-top:8px;flex:0 0 auto;}
+#phase-odyssey-layer .po-status-details > summary{
+  list-style:none;cursor:pointer;text-align:center;
+  font:600 11.5px/1.6 'Noto Serif JP',serif;letter-spacing:.06em;color:var(--po-gold-deep);
+}
+#phase-odyssey-layer .po-status-details > summary::-webkit-details-marker{display:none;}
+#phase-odyssey-layer .po-status-details > summary::after{content:'▾';margin-left:6px;display:inline-block;transition:transform .15s;}
+#phase-odyssey-layer .po-status-details:not([open]) > summary::after{transform:rotate(-90deg);}
+#phase-odyssey-layer .po-status-panel{margin-top:8px;padding:10px 10px 8px;background:rgba(255,255,255,.62);border:1px solid rgba(176,138,73,.45);}
+#phase-odyssey-layer .po-status-head{display:flex;align-items:baseline;gap:8px;margin-bottom:6px;}
+#phase-odyssey-layer .po-status-title{font:700 13px/1.3 'Noto Serif JP',serif;letter-spacing:.08em;color:var(--po-ink);}
+#phase-odyssey-layer .po-status-en{font:500 8.5px/1 'Cinzel',serif;letter-spacing:.24em;color:#8d7f9c;}
+#phase-odyssey-layer .po-status-members{display:grid;gap:6px;}
+#phase-odyssey-layer .po-status-member{display:grid;grid-template-columns:46px minmax(0,1fr);gap:8px;align-items:center;padding:5px 6px;background:linear-gradient(180deg,#fffdf8,#f4eee2);border:1px solid rgba(176,138,73,.35);}
+#phase-odyssey-layer .po-status-member.is-down{opacity:.6;}
+#phase-odyssey-layer .po-status-face{position:relative;width:46px;height:46px;overflow:hidden;border:1px solid rgba(176,138,73,.7);background:#fff;}
+#phase-odyssey-layer .po-status-face > img:first-child{width:100%;height:100%;object-fit:cover;object-position:50% 15%;}
+#phase-odyssey-layer .po-status-element{position:absolute;left:2px;top:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 0 0 1px rgba(176,138,73,.7);}
+#phase-odyssey-layer .po-status-body{display:grid;gap:2px;min-width:0;}
+#phase-odyssey-layer .po-status-name{font:700 12px/1.3 'Noto Serif JP',serif;color:var(--po-ink);}
+#phase-odyssey-layer .po-status-bars{display:grid;gap:2px;}
+#phase-odyssey-layer .po-status-line{display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:center;gap:5px;}
+#phase-odyssey-layer .po-status-line b{font:600 8.5px/1 'Cinzel',serif;letter-spacing:.06em;color:#6a6080;}
+#phase-odyssey-layer .po-status-line i{position:relative;display:block;height:5px;border-radius:3px;background:rgba(39,43,82,.18);overflow:hidden;}
+#phase-odyssey-layer .po-status-line i::after{content:"";position:absolute;inset:0 auto 0 0;width:calc(var(--v,0) * 100%);border-radius:3px;}
+#phase-odyssey-layer .po-status-line.is-hp i::after{background:linear-gradient(90deg,#5fb37a,#8fd49b);}
+#phase-odyssey-layer .po-status-line.is-ult i::after{background:linear-gradient(90deg,#e0a91c,#ffe066);}
+#phase-odyssey-layer .po-status-line em{font:500 9.5px/1 'Cinzel','Noto Serif JP',serif;font-style:normal;color:var(--po-ink-soft);white-space:nowrap;min-width:64px;text-align:right;}
+#phase-odyssey-layer .po-status-stat{font:600 10px/1.3 'Cinzel','Noto Serif JP',serif;color:var(--po-ink);letter-spacing:.03em;}
+#phase-odyssey-layer .po-status-stat small{font-size:9px;color:#3f8a55;}
+#phase-odyssey-layer .po-status-buffs{margin-top:8px;}
+#phase-odyssey-layer .po-status-sub{display:block;font:600 11px/1.4 'Noto Serif JP',serif;color:var(--po-ink);margin-bottom:5px;}
+#phase-odyssey-layer .po-status-chips{display:flex;flex-wrap:wrap;gap:5px;}
+#phase-odyssey-layer .po-status-chip{display:inline-flex;flex-direction:column;gap:1px;padding:4px 8px;border:1px solid rgba(214,189,138,.85);color:#fff;background:linear-gradient(180deg,#4a3f7f,#322a5c);}
+#phase-odyssey-layer .po-status-chip.is-attack{background:linear-gradient(180deg,#5b3d6b,#3d2a4d);}
+#phase-odyssey-layer .po-status-chip.is-defense{background:linear-gradient(180deg,#3c4f7a,#2a3858);}
+#phase-odyssey-layer .po-status-chip b{font:700 10.5px/1.25 'Noto Serif JP',serif;letter-spacing:.03em;}
+#phase-odyssey-layer .po-status-chip span{font:500 9px/1.3 'Noto Serif JP',serif;color:#efe2c2;}
+#phase-odyssey-layer .po-status-none{font:500 10.5px/1.4 'Noto Serif JP',serif;color:var(--po-ink-soft);}
+#phase-odyssey-layer .po-status-note{margin:7px 0 0;font:500 9.5px/1.4 'Noto Serif JP',serif;color:#7b6a52;}
+#phase-odyssey-layer.is-status .po-status-panel{margin-top:12px;}
+#phase-odyssey-layer .po-buff-card:focus{outline:none;}
+#phase-odyssey-layer .po-buff-card:focus-visible{box-shadow:0 0 0 2px #c9a35a,0 0 10px rgba(201,163,90,.5);}
+
+/* ---------- 強化のレア度（★1〜★3）・対象外（はずれ） ---------- */
+#phase-odyssey-layer .po-buff-art{position:relative;}
+#phase-odyssey-layer .po-buff-tier{
+  position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);
+  padding:1px 7px;border-radius:999px;white-space:nowrap;
+  font:700 9.5px/1.4 'Cinzel','Noto Serif JP',serif;letter-spacing:.04em;
+  color:#5d4a2c;background:linear-gradient(180deg,#f3ece0,#d9ccb4);border:1px solid #b9a37c;
+}
+#phase-odyssey-layer .po-buff-card.is-q2 .po-buff-tier{color:#2f3c5c;background:linear-gradient(180deg,#f1f5fb,#c9d4e6);border-color:#8fa1c2;}
+#phase-odyssey-layer .po-buff-card.is-q3 .po-buff-tier{color:#5a3a00;background:linear-gradient(180deg,#fff3c4,#e5bf5a);border-color:#b98a22;box-shadow:0 0 6px rgba(229,191,90,.8);}
+#phase-odyssey-layer .po-buff-card.is-q3{
+  border-color:#c9a03e;
+  background:linear-gradient(180deg,#fffaf0,#f6ead0);
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.85),0 0 0 1px rgba(229,191,90,.6),0 0 14px rgba(229,191,90,.45);
+}
+#phase-odyssey-layer .po-buff-target{margin-top:2px;font:600 10px/1.4 'Noto Serif JP',serif;color:#3f7a52;}
+#phase-odyssey-layer .po-buff-target.is-miss{color:#a0473a;}
+#phase-odyssey-layer .po-buff-card.is-miss{background:linear-gradient(180deg,#f7f4ee,#ebe5da);}
+#phase-odyssey-layer .po-buff-card.is-miss .po-buff-art img{filter:grayscale(.55) brightness(.92);}
+#phase-odyssey-layer .po-status-chip.is-q3 b::first-letter{color:#ffd877;}
+#phase-odyssey-layer .po-status-chip.is-miss{opacity:.55;}
+#phase-odyssey-layer .po-status-shot{margin-left:8px;font:600 9px/1.3 'Cinzel',serif;color:#5b5378;letter-spacing:.05em;}
+#screen-phase-odyssey .po-build-chip.is-q3{box-shadow:0 0 0 1px #e5bf5a,0 0 6px rgba(229,191,90,.6);}
+
+/* ---------- RESULT：スコアの代わりに「○階踏破」 ---------- */
+#shooting-event-root .shooting-result-po-floor{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  margin:10px auto 12px;padding:12px 18px 10px;min-width:62%;
+  border-top:1px solid rgba(176,138,73,.55);border-bottom:1px solid rgba(176,138,73,.55);
+  background:linear-gradient(90deg,rgba(255,250,238,0),rgba(255,250,238,.9) 18%,rgba(255,250,238,.9) 82%,rgba(255,250,238,0));
+}
+#shooting-event-root .shooting-result-po-main{
+  font:700 clamp(30px,9vw,40px)/1.15 'Noto Serif JP',serif;letter-spacing:.08em;color:#2f2b45;
+  text-shadow:0 1px 0 #fff,0 0 12px rgba(229,191,90,.35);
+}
+#shooting-event-root .shooting-result-po-floor[data-win="false"] .shooting-result-po-main{color:#4a3f55;}
+#shooting-event-root .shooting-result-po-sub{font:600 12px/1.5 'Noto Serif JP',serif;letter-spacing:.06em;color:#7a6542;}
+html body #shooting-event-root #shooting-result.is-phase-odyssey :is(.shooting-result-rank-wrap,.shooting-result-stats){display:none!important;}
+/* RESULTから再挑戦はしない（進行はトップ画面から） */
+html body #shooting-event-root #shooting-result.is-phase-odyssey #shooting-result-retry{display:none!important;}
+#phase-odyssey-layer .po-sheet-foot.is-boss{color:#8a2f3a;font-weight:700;letter-spacing:.06em;}
+/* レイドボスを位相回遊のボス戦で使う時も、レイドと同じ表示サイズ（登場時に大きく見えないように） */
+#shooting-event-root:is([data-shooting-stage$="_camilla"],[data-shooting-stage$="_shien"])[data-shooting-stage^="shooting_phase_odyssey_"] #shooting-boss{
+  width:74px!important;height:126px!important;object-fit:contain!important;
+}
+@media(min-width:700px){
+  #shooting-event-root:is([data-shooting-stage$="_camilla"],[data-shooting-stage$="_shien"])[data-shooting-stage^="shooting_phase_odyssey_"] #shooting-boss{width:82px!important;height:140px!important;}
+}
+
+/* ============================================================
+   オーバーシア：監視の眼の視界・監視中の表示（敵弾追従）
+   ============================================================ */
+#shooting-event-root .po-watch-cone{
+  position:absolute;left:0;top:0;z-index:4;pointer-events:none;
+  transform-origin:0 50%;
+  clip-path:polygon(0 50%,100% 0,100% 100%);
+  background:
+    radial-gradient(ellipse at 0 50%,rgba(255,236,170,.62) 0%,rgba(255,228,160,.34) 50%,rgba(255,224,150,.12) 100%);
+  transition:background-color .15s;
+  will-change:transform;
+}
+#shooting-event-root .po-watch-cone.is-seeing{
+  background:radial-gradient(ellipse at 0 50%,rgba(255,110,100,.72) 0%,rgba(255,80,80,.42) 50%,rgba(255,70,70,.16) 100%);
+}
+#shooting-event-root .po-watch-cone.is-frozen{opacity:.35;}
+#shooting-event-root .po-watch-alert{
+  position:absolute;left:50%;top:clamp(150px,24%,200px);transform:translateX(-50%);z-index:31;pointer-events:none;
+  padding:3px 14px;font:700 12px/1.5 'Noto Serif JP',serif;letter-spacing:.2em;color:#fff3f0;white-space:nowrap;
+  background:linear-gradient(90deg,rgba(120,20,30,0),rgba(140,24,36,.82) 18%,rgba(140,24,36,.82) 82%,rgba(120,20,30,0));
+  animation:po-alert-pulse 1s ease-in-out infinite;
+}
+@keyframes po-alert-pulse{50%{opacity:.6;}}
+/* 見られている間：画面の縁を赤く（敵弾が追従していることの合図） */
+#shooting-event-root .po-watch-vignette{
+  position:absolute;inset:0;z-index:28;pointer-events:none;
+  box-shadow:inset 0 0 46px 10px rgba(200,40,50,.38);
+  animation:po-alert-pulse 1s ease-in-out infinite;
+}
+
+/* ============================================================
+   上部HUD・下部ナビ：位相回遊の画面だけ白いぼかし帯を外し、文字を縁取りで読ませる
+   ============================================================ */
+html body:not(.ui-immersive):has(#screen-phase-odyssey.active) #global-user-frame.global-user-frame::before,
+html body:not(.ui-immersive):has(#screen-phase-odyssey.active) #bottom-nav-shared.bottom-nav::before,
+html body:has(#screen-phase-odyssey.active) #global-user-frame .hud-info::before,
+html body:has(#screen-phase-odyssey.active) #global-user-frame .hud-resource::before{
+  content:none !important;display:none !important;
+}
+/* HUDの裏（メインビジュアル上端）だけ、ごく薄く暗くして白文字の土台にする */
+#screen-phase-odyssey .po-hero-art::before{
+  background:
+    linear-gradient(180deg,rgba(16,16,40,.62) 0%,rgba(16,16,40,.34) calc(var(--po-top) * .7),rgba(16,16,40,0) calc(var(--po-top) + 24px)),
+    linear-gradient(90deg,rgba(24,26,58,.93) 0%,rgba(30,32,68,.86) 34%,rgba(36,38,76,.55) 50%,rgba(40,40,80,0) 64%),
+    linear-gradient(180deg,rgba(255,255,255,0) 82%,rgba(245,242,236,.55) 100%) !important;
+}
+html body:has(#screen-phase-odyssey.active) #global-user-frame .hud-name{
+  color:#fff8ea !important;
+  text-shadow:0 1px 2px rgba(10,10,30,.95),0 0 8px rgba(10,10,30,.75) !important;
+}
+html body:has(#screen-phase-odyssey.active) #global-user-frame .hud-res-val,
+html body:has(#screen-phase-odyssey.active) #global-user-frame .hud-gem-plus-btn{
+  color:#fff6e2 !important;
+  text-shadow:0 1px 2px rgba(10,10,30,.95),0 0 7px rgba(10,10,30,.8) !important;
+}
+html body:has(#screen-phase-odyssey.active) #global-user-frame .hud-resource{
+  background:radial-gradient(ellipse 70% 90% at 50% 60%,rgba(14,14,36,.42),rgba(14,14,36,0) 100%) !important;
+}
+html body:has(#screen-phase-odyssey.active) #global-user-frame .hud-res-icon{
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.6));
+}
+html body:has(#screen-phase-odyssey.active) #global-user-frame .hud-lv-circle{
+  box-shadow:0 0 0 1px rgba(255,255,255,.35),0 2px 10px rgba(0,0,0,.45) !important;
+}
+html body:has(#screen-phase-odyssey.active) #bottom-nav-shared .bottom-nav-label{
+  text-shadow:0 0 4px rgba(255,255,255,.95),0 0 9px rgba(255,255,255,.85) !important;
+}
+html body:has(#screen-phase-odyssey.active) #bottom-nav-shared .bottom-nav-item > img{
+  filter:drop-shadow(0 1px 3px rgba(40,30,20,.35));
+}
+#screen-phase-odyssey .po-build-chip.is-more{cursor:pointer;color:#4b4357;background:linear-gradient(180deg,#fdfbf6,#eee6d6);border-color:rgba(176,138,73,.8);}
+/* 取得済み強化の一覧が長くなっても、状態画面の中でスクロールする */
+#phase-odyssey-layer .po-status-chips{max-height:min(38dvh,260px);overflow-y:auto;overscroll-behavior:contain;padding-right:2px;}
+#screen-phase-odyssey .po-floor-value strong[data-len="3"]{font-size:clamp(24px,7vw,31px);}
+#screen-phase-odyssey .po-floor-value strong[data-len="4"]{font-size:clamp(19px,5.6vw,25px);}
+/* 位相回遊ではRANKも白文字（濃い背景に飲まれないよう濃い縁取り） */
+html body:has(#screen-phase-odyssey.active) #global-user-frame .hud-lv-label,
+html body:has(#screen-phase-odyssey.active) #global-user-frame .hud-lv-num{
+  color:#fff8ea !important;
+  -webkit-text-fill-color:#fff8ea !important;
+  background:none !important;
+  text-shadow:0 1px 2px rgba(10,10,30,.95),0 0 7px rgba(10,10,30,.8) !important;
+}
+
+/* ============================================================
+   お知らせ：コンテンツへのリンクボタン（位相回遊など）
+   ============================================================ */
+#notice-modal .notice-link-row{display:flex;justify-content:flex-end;margin-top:10px;}
+#notice-modal .notice-link-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:8px 14px 8px 16px;cursor:pointer;
+  font:600 12.5px/1.2 'Noto Serif JP',serif;letter-spacing:.08em;color:#fff8ea;
+  background:linear-gradient(180deg,#454a82,#262a55);
+  border:1px solid #c9a96a;
+  box-shadow:inset 0 0 0 1px rgba(226,201,146,.55),0 2px 6px rgba(30,30,70,.22);
+}
+#notice-modal .notice-link-btn b{font:400 16px/1 serif;color:#e8d29c;}
+#notice-modal .notice-link-btn:active{transform:translateY(1px);filter:brightness(1.06);}
+
+/* build1643: 属性バリア警戒（次のバリア階層と突破可否） */
+#phase-odyssey-layer .po-barrier-warn{
+  margin-top:6px;padding:6px 10px;border-radius:6px;
+  font:600 11px/1.5 'Noto Serif JP',serif;letter-spacing:.02em;text-align:left;
+  color:#4d5a3a;background:rgba(232,244,220,.85);border:1px solid rgba(120,160,90,.55);
+}
+#phase-odyssey-layer .po-barrier-warn.is-danger{
+  color:#7a2a24;background:rgba(253,234,228,.92);border-color:rgba(196,96,80,.7);
+}
+#phase-odyssey-layer .po-barrier-warn.is-top{margin:0 0 10px;}
+
+/* build1643: 位相回遊のプレイ中、指の追従・タップ判定が途切れる対策。
+   アリーナ内の演出・敵・ギミックDOMがタッチの対象になり、その要素が消えると
+   （撃破・演出終了など）以後のtouchmoveがどこにも届かなくなるため、
+   戦闘中はアリーナ配下をすべてタッチ対象外にして、常にアリーナ自身が指を受け取るようにする。
+   ボタン・パーティ選択・RESULTは従来どおり操作できる。 */
+#shooting-event-root.battle-hud-visible[data-shooting-stage^="shooting_phase_odyssey_"] #shooting-arena *:not(button):not(button *):not(.shooting-character-select):not(.shooting-character-select *):not(.shooting-result):not(.shooting-result *){
+  pointer-events:none!important;
+}
+#shooting-event-root.battle-hud-visible[data-shooting-stage^="shooting_phase_odyssey_"] #shooting-arena{
+  touch-action:none;
+}
+
+/* build1643: 位相回遊のボス戦以外の背景（battle_bg_01〜03 をシャッフル。data-po-bg はJSが付与） */
+#shooting-event-root[data-shooting-stage^="shooting_phase_odyssey_"][data-po-bg] .shooting-bg{
+  background-size:cover;background-position:center;filter:none;opacity:.9;
+}
+#shooting-event-root[data-shooting-stage^="shooting_phase_odyssey_"][data-po-bg="1"] .shooting-bg{background-image:url('../images/battle_bg_01.webp');}
+#shooting-event-root[data-shooting-stage^="shooting_phase_odyssey_"][data-po-bg="2"] .shooting-bg{background-image:url('../images/battle_bg_02.webp'),url('../images/battle_bg_01.webp');}
+#shooting-event-root[data-shooting-stage^="shooting_phase_odyssey_"][data-po-bg="3"] .shooting-bg{background-image:url('../images/battle_bg_03.webp'),url('../images/battle_bg_01.webp');}

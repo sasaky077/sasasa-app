@@ -769,3 +769,23 @@ html body:has(#screen-phase-odyssey.active) #global-user-frame .hud-lv-num{
   color:#7a2a24;background:rgba(253,234,228,.92);border-color:rgba(196,96,80,.7);
 }
 #phase-odyssey-layer .po-barrier-warn.is-top{margin:0 0 10px;}
+
+/* build1643: 位相回遊のプレイ中、指の追従・タップ判定が途切れる対策。
+   アリーナ内の演出・敵・ギミックDOMがタッチの対象になり、その要素が消えると
+   （撃破・演出終了など）以後のtouchmoveがどこにも届かなくなるため、
+   戦闘中はアリーナ配下をすべてタッチ対象外にして、常にアリーナ自身が指を受け取るようにする。
+   ボタン・パーティ選択・RESULTは従来どおり操作できる。 */
+#shooting-event-root.battle-hud-visible[data-shooting-stage^="shooting_phase_odyssey_"] #shooting-arena *:not(button):not(button *):not(.shooting-character-select):not(.shooting-character-select *):not(.shooting-result):not(.shooting-result *){
+  pointer-events:none!important;
+}
+#shooting-event-root.battle-hud-visible[data-shooting-stage^="shooting_phase_odyssey_"] #shooting-arena{
+  touch-action:none;
+}
+
+/* build1643: 位相回遊のボス戦以外の背景（battle_bg_01〜03 をシャッフル。data-po-bg はJSが付与） */
+#shooting-event-root[data-shooting-stage^="shooting_phase_odyssey_"][data-po-bg] .shooting-bg{
+  background-size:cover;background-position:center;filter:none;opacity:.9;
+}
+#shooting-event-root[data-shooting-stage^="shooting_phase_odyssey_"][data-po-bg="1"] .shooting-bg{background-image:url('../images/battle_bg_01.webp');}
+#shooting-event-root[data-shooting-stage^="shooting_phase_odyssey_"][data-po-bg="2"] .shooting-bg{background-image:url('../images/battle_bg_02.webp'),url('../images/battle_bg_01.webp');}
+#shooting-event-root[data-shooting-stage^="shooting_phase_odyssey_"][data-po-bg="3"] .shooting-bg{background-image:url('../images/battle_bg_03.webp'),url('../images/battle_bg_01.webp');}

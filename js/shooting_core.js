@@ -25803,12 +25803,18 @@
   // build1627: ガチャ試遊（トワ/スマイル/他PU）だけ、ウィンドウ捕捉段階でも
   // 継続中の指を追跡する。ゲーム領域外へ移動した時や演出レイヤーがtouchmoveを
   // 止めても追従を維持。イベントを二重処理しないため同じEventは一度だけ転送。
+  // build1643: 位相回遊でも有効化（プレイ中に指の追従・タップ判定が途切れる対策）。
+  //  演出DOM（ギミック・弾・ダメージ表示など）の生成/削除や一時的なtouchcancelで
+  //  arena側にtouchmoveが届かなくなっても、window捕捉で同じ指の入力を拾い続ける。
+  function isInputContinuityStage() {
+    return isGachaTrialStage() || isPhaseOdysseyStage();
+  }
   const gachaTrialForwardedEvents = new WeakSet();
   let removeGachaTrialInputContinuity = null;
   function installGachaTrialInputContinuity() {
     if (removeGachaTrialInputContinuity) removeGachaTrialInputContinuity();
     const forward = (e) => {
-      if (!isGachaTrialStage() || !state || state.ended || state.finishing || state.paused) return;
+      if (!isInputContinuityStage() || !state || state.ended || state.finishing || state.paused) return;
       if (gachaTrialForwardedEvents.has(e)) return;
 
       if (e.type === 'touchstart') {
@@ -25940,7 +25946,7 @@
   }
 
   function onPointerMove(e) {
-    if (isGachaTrialStage() && gachaTrialForwardedEvents.has(e)) return;
+    if (isInputContinuityStage() && gachaTrialForwardedEvents.has(e)) return;
     if (!pointerActive || !state || state.ended || state.finishing || state.paused) return;
     if (activePointerId !== null && e.pointerId !== activePointerId) return;
 
@@ -25993,7 +25999,7 @@
   }
 
   function onPointerUp(e) {
-    if (isGachaTrialStage() && gachaTrialForwardedEvents.has(e)) return;
+    if (isInputContinuityStage() && gachaTrialForwardedEvents.has(e)) return;
     if (activePointerId !== null && e.pointerId !== activePointerId) return;
 
     // build1072:
@@ -26184,7 +26190,7 @@
   }
 
   function onNativeTouchStart(e) {
-    if (isGachaTrialStage() && gachaTrialForwardedEvents.has(e)) return;
+    if (isInputContinuityStage() && gachaTrialForwardedEvents.has(e)) return;
     if (!state || state.ended || state.finishing || state.paused) return;
 
     // パーティ選択/ボタン/RESULT上のタッチは、スクロールやクリックを優先。
@@ -26248,7 +26254,7 @@
   }
 
   function onNativeTouchMove(e) {
-    if (isGachaTrialStage() && gachaTrialForwardedEvents.has(e)) return;
+    if (isInputContinuityStage() && gachaTrialForwardedEvents.has(e)) return;
     if (!nativeTouchActive || !state || state.ended || state.finishing || state.paused) return;
 
     clearNativeTouchCancelTimer();
@@ -26296,7 +26302,7 @@
   }
 
   function onNativeTouchEnd(e) {
-    if (isGachaTrialStage() && gachaTrialForwardedEvents.has(e)) return;
+    if (isInputContinuityStage() && gachaTrialForwardedEvents.has(e)) return;
     if (!nativeTouchActive) return;
 
     let stillAlive = false;
@@ -26336,7 +26342,7 @@
   }
 
   function onNativeTouchCancel(e) {
-    if (isGachaTrialStage() && gachaTrialForwardedEvents.has(e)) return;
+    if (isInputContinuityStage() && gachaTrialForwardedEvents.has(e)) return;
     if (!nativeTouchActive) return;
 
     // iOSでは実際の離指ではなく、一時的なWebKit都合でtouchcancelが来ることがある。
@@ -27370,6 +27376,7 @@
     clearEltenaBlackHole();
     resetState();
     applyPhaseOdysseyCarryover();
+    if (isPhaseOdysseyStage()) installGachaTrialInputContinuity(); // build1643: 指の追従の途切れ対策
     // v163: issue/restore a server-side run token before battle can produce a first-clear reward.
     void beginSecureShootingRun();
     clearProjectiles();
@@ -27612,6 +27619,13 @@
     preloadBossPhaseVisuals();
     ensureBossWeaknessBarrier();
     root.setAttribute('data-shooting-stage', selectedStage ? selectedStage.id : '');
+    // build1643: 位相回遊のボス戦以外は、背景 battle_bg_01〜03 をシャッフルで使う
+    {
+      const poFloor = isPhaseOdysseyStage() ? Number(selectedStage.stageNo || 0) : 0;
+      const poApi = poFloor ? getPhaseOdysseyApi() : null;
+      if (poFloor && poFloor % 10 !== 0 && poApi && typeof poApi.pickBackground === 'function') root.setAttribute('data-po-bg', String(poApi.pickBackground(poFloor)));
+      else root.removeAttribute('data-po-bg');
+    }
     if (isRaidStage() && BOSS?.id) root.setAttribute('data-raid-boss', BOSS.id); else root.removeAttribute('data-raid-boss');
     root.setAttribute('data-battle-type', selectedStage ? selectedStage.type : 'boss');
     applyShootingUiLayout(shootingUiLayoutType);
