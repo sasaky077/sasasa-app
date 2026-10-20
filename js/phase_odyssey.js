@@ -74,6 +74,11 @@
                     desc:v=>`ULTゲージの回収量が${v}%上昇する。`, short:v=>`ULT回収 +${v}%` },
     start_ult:    { cat:'support', w:6, max:5, range:[10, 25], name:()=>'開幕チャージ',
                     desc:v=>`各階層の開始時、全員のULTゲージが${v}%増加する。`, short:v=>`開始時ULT +${v}%` },
+    // build1643: 属性バリア対策（編成を変えられない位相回遊で「詰み」をbuildで回避できるように）
+    barrier_pierce: { cat:'attack', w:5, max:4, range:[20, 45], name:()=>'破魔の刻印',
+                    desc:v=>`属性バリアに阻まれる攻撃も、与ダメージの${v}%が通るようになる（合計最大100%）。`, short:v=>`バリア貫通 ${v}%` },
+    barrier_break: { cat:'attack', w:4, max:5, cond:'barrier', fixedTier:2, name:c=>`${ELEMENT_LABEL[c]}属性バリア破り`,
+                    desc:(v,c)=>`${ELEMENT_LABEL[c]}属性バリアを張った敵に、どの属性の攻撃でも等倍で通るようになる。`, short:(v,c)=>`${ELEMENT_LABEL[c]}バリア破り` },
     ult_max_next: { cat:'support', w:3, max:99, once:true, fixedTier:3, name:()=>'臨界解放',
                     desc:()=>`次の階層の開始時、全員のULTゲージがMAXになる。使い切り。`, short:()=>`次の階層 ULT MAX` }
   });
@@ -135,7 +140,7 @@
     const tpl = TEMPLATES[raw.t];
     const out = { t:raw.t, v:Math.max(0, toInt(raw.v, 0)), q:Math.max(1, Math.min(3, toInt(raw.q, 1))) };
     if (raw.used) out.used = true;
-    if (tpl.cond === 'element') {
+    if (tpl.cond === 'element' || tpl.cond === 'barrier') {
       if (!ELEMENTS.includes(raw.c)) return null;
       out.c = raw.c;
     } else if (tpl.cond === 'shot') {
@@ -265,6 +270,13 @@
     if (tpl.cond === 'element') {
       const mine = members.map(primaryElement).filter(e => ELEMENTS.includes(e));
       out.c = (mine.length && Math.random() < 0.6) ? pick(mine) : pick(ELEMENTS);
+    } else if (tpl.cond === 'barrier') {
+      // 編成では破れない属性バリアを優先（近い階層に出るものをさらに優先）
+      const threat = nextBarrierThreat(rec, rec.current_floor + 1, 10);
+      const uncovered = ELEMENTS.filter(e => !partyBreaksBarrier(e, rec) && !hasBarrierBreak(e, rec));
+      const soon = threat ? threat.uncovered.filter(e => !hasBarrierBreak(e, rec)) : [];
+      out.c = soon.length && Math.random() < 0.8 ? pick(soon)
+        : (uncovered.length && Math.random() < 0.75 ? pick(uncovered) : pick(ELEMENTS));
     } else if (tpl.cond === 'shot') {
       const mine = members.map(shotGroupOf);
       const first = (mine.length && Math.random() < 0.6) ? pick(mine) : pick(SHOT_GROUP_KEYS);
@@ -274,6 +286,75 @@
     return out;
   }
   function sameOffer(a, b){ return a.t === b.t && JSON.stringify(a.c || null) === JSON.stringify(b.c || null); }
+
+  // ------------------------------------------------------------
+  // build1643: 属性バリア（弱点属性以外はIMMUNE）への対策
+  //  ・編成に弱点を突ける属性（または無属性）がいれば破れる
+  //  ・強化「破魔の刻印」（バリア越しに与ダメージの一部が通る）／「○属性バリア破り」（その属性のバリアに等倍で通る）
+  //  ・近い階層に「今の編成では破れないバリア」があり対策も無ければ、3択に必ず1つ対策を混ぜる
+  //  ・次に来るバリア階層と、突破できるかを強化選択画面・状態画面に表示する
+  // ------------------------------------------------------------
+  const BARRIER_BREAKER = Object.freeze({ fire:'aqua', aqua:'wood', wood:'fire', light:'dark', dark:'light' });
+  function memberElements(rec){ return (rec || load()).selected_members.map(id => primaryElement(getChar(id))); }
+  function partyBreaksBarrier(element, rec){
+    const els = memberElements(rec);
+    return els.includes('neutral') || els.includes(BARRIER_BREAKER[element]);
+  }
+  function hasBarrierBreak(element, rec){
+    return (rec || load()).build_list.some(b => b && !b.used && b.t === 'barrier_break' && b.c === element);
+  }
+  // バリア越しに通る割合（0〜1）。「○属性バリア破り」があれば1。
+  function barrierPierceRate(element, rec){
+    const r = rec || load();
+    if (hasBarrierBreak(element, r)) return 1;
+    return Math.min(1, sumOf('barrier_pierce', r));
+  }
+  function barrierElementsForFloor(floor, rec){
+    try {
+      const S = window.ShootingStages;
+      if (!S || typeof S.getShootingStage !== 'function') return [];
+      const id = STAGE_PREFIX + String(floor) + (isBossFloor(floor) ? '_' + bossForFloor(floor, rec).key : '');
+      const stage = S.getShootingStage(id);
+      if (!stage) return [];
+      const out = new Set();
+      const add = v => { const e = String(v || '').toLowerCase(); if (ELEMENTS.includes(e)) out.add(e); };
+      if (stage.weaknessOnlyElement) add(stage.weaknessOnlyElement);
+      if (stage.weaknessOnlyEnemies) {
+        const seq = stage.normalBattle && stage.normalBattle.enemyElementSequence;
+        if (Array.isArray(seq) && seq.length) seq.forEach(add);
+        else (stage.enemyIds || []).forEach(eid => {
+          const def = window.ShootingEnemies && window.ShootingEnemies.getShootingEnemy ? window.ShootingEnemies.getShootingEnemy(eid) : null;
+          add(def && def.element);
+        });
+      }
+      const bossId = Array.isArray(stage.enemyIds) ? stage.enemyIds[0] : '';
+      const bossDef = isBossFloor(floor) && window.ShootingEnemies && window.ShootingEnemies.getShootingEnemy
+        ? window.ShootingEnemies.getShootingEnemy(bossId) : null;
+      if (bossDef && bossDef.camillaMechanics) add('fire'); // カミラは火の属性バリアを纏う
+      return [...out];
+    } catch (_) { return []; }
+  }
+  // fromFloor から span 階先までで最初の属性バリア階層。uncovered は「編成でも強化でも十分に破れない属性」。
+  function nextBarrierThreat(rec, fromFloor, span){
+    const r = rec || load();
+    const from = Math.max(1, toInt(fromFloor, 1));
+    for (let f = from; f < from + Math.max(1, span); f++) {
+      const els = barrierElementsForFloor(f, r);
+      if (!els.length) continue;
+      const uncovered = els.filter(e => !partyBreaksBarrier(e, r) && barrierPierceRate(e, r) < 0.5);
+      return { floor: f, elements: els, uncovered };
+    }
+    return null;
+  }
+  function barrierStatusText(rec){
+    const r = rec || load();
+    const threat = nextBarrierThreat(r, Math.max(1, r.current_floor + (r.run_status === 'select' ? 1 : 0)), 10);
+    if (!threat) return '';
+    const names = threat.elements.map(e => ELEMENT_LABEL[e]).join('・');
+    if (!threat.uncovered.length) return `属性バリア警戒：FLOOR ${threat.floor}（${names}）　突破できます`;
+    const need = threat.uncovered.map(e => `${ELEMENT_LABEL[e]}→${ELEMENT_LABEL[BARRIER_BREAKER[e]]}`).join('・');
+    return `属性バリア警戒：FLOOR ${threat.floor}（${names}）　編成では突破できません（弱点：${need}）。強化で対策を`;
+  }
   function rollChoices(rec){
     const keys = Object.keys(TEMPLATES).filter(t => {
       if (countOf(t, rec) >= TEMPLATES[t].max) return false;
@@ -299,6 +380,14 @@
       const relaxed = Object.keys(TEMPLATES).filter(t => !(t === 'ult_max_next' && rec.next_ult_max));
       for (let guard = 0; picked.length < 3 && guard < 20; guard++) take(relaxed);
     }
+    // build1643: 5階以内に「今の編成では破れない属性バリア」が来るのに対策が無いなら、3択に必ず対策を1つ混ぜる
+    const threat = nextBarrierThreat(rec, rec.current_floor + 1, 5);
+    if (threat && threat.uncovered.length && !picked.some(b => b.t === 'barrier_pierce' || b.t === 'barrier_break')) {
+      const target = threat.uncovered.find(e => !hasBarrierBreak(e, rec)) || threat.uncovered[0];
+      const fix = Math.random() < 0.6 ? Object.assign(rollBuff('barrier_break', rec), { c: target }) : rollBuff('barrier_pierce', rec);
+      const slot = Math.max(0, picked.findIndex(b => TEMPLATES[b.t] && TEMPLATES[b.t].cat === 'attack'));
+      if (picked.length) picked[slot] = fix; else picked.push(fix);
+    }
     for (let i = picked.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [picked[i], picked[j]] = [picked[j], picked[i]];
@@ -307,7 +396,7 @@
   }
   function clearHealRate(rec){ return BASE_CLEAR_HEAL_RATE + sumOf('clear_heal', rec); }
   // 表示用：同じ種類・同じ条件の強化をまとめて合計値にする（取得数が増えても一覧が膨らまない）
-  const TOTAL_CAP = Object.freeze({ damage_cut:40, barrier:40, move_speed:30 });
+  const TOTAL_CAP = Object.freeze({ damage_cut:40, barrier:40, move_speed:30, barrier_pierce:100 });
   function groupBuffs(rec){
     const map = new Map();
     (rec || load()).build_list.forEach(b => {
@@ -881,12 +970,18 @@
     groups.forEach(g => {
       const targets = buffTargets(g, rec);
       const chip = el('span', 'po-status-chip is-' + buffCategory(g) + ' is-q' + g.q + (targets.length ? '' : ' is-miss'));
+      const condNote = TEMPLATES[g.t].cond && TEMPLATES[g.t].cond !== 'barrier' ? `（対象${targets.length}人）` : '';
       chip.append(el('b', '', `${TIER[g.q].label} ${buffName(g)}${g.n > 1 ? ' ×' + g.n : ''}`),
-        el('span', '', buffShort(g) + (TOTAL_CAP[g.t] && g.v >= TOTAL_CAP[g.t] ? '（上限）' : '') + (TEMPLATES[g.t].cond ? `（対象${targets.length}人）` : '')));
+        el('span', '', buffShort(g) + (TOTAL_CAP[g.t] && g.v >= TOTAL_CAP[g.t] ? '（上限）' : '') + condNote));
       chips.append(chip);
     });
     buffBox.append(chips);
     wrap.append(buffBox);
+    // build1643: 次の属性バリア階層と突破可否（buildで対策できるように先に知らせる）
+    if (!(options && options.selecting)) {
+      const warn = barrierStatusText(rec);
+      if (warn) wrap.append(el('p', 'po-status-note po-barrier-warn' + (warn.includes('突破できません') ? ' is-danger' : ''), warn));
+    }
     const heal = Math.min(100, Math.round(clearHealRate(rec) * 100));
     wrap.append(el('p', 'po-status-note', options && options.selecting
       ? `※HPは階層クリア時の回復（最大HPの${heal}%）を反映済み`
@@ -914,12 +1009,15 @@
     if (!rec.pending_choices.length) { rec.pending_choices = rollChoices(rec); save({ cloud:false }); }
     openModal('buff', sheet => {
       sheetHead(sheet, `FLOOR ${rec.current_floor} CLEAR`, '強化を選択', '次の階層へ進む前に、報酬を1つ選んでください');
+      // build1643: 次の属性バリア階層と突破可否を、強化を選ぶ前に見えるよう一番上に出す
+      const warn = barrierStatusText(rec);
+      if (warn) sheet.append(el('p', 'po-barrier-warn is-top' + (warn.includes('突破できません') ? ' is-danger' : ''), warn));
       const cards = el('div', 'po-buff-cards');
       rec.pending_choices.forEach((b, index) => {
         const tpl = TEMPLATES[b.t];
         if (!tpl) return;
         const targets = buffTargets(b, rec);
-        const miss = !!tpl.cond && !targets.length;
+        const miss = !!tpl.cond && tpl.cond !== 'barrier' && !targets.length;
         const card = el('button', 'po-buff-card is-' + tpl.cat + ' is-q' + b.q + (miss ? ' is-miss' : ''));
         card.type = 'button';
         const art = el('span', 'po-buff-art');
@@ -930,7 +1028,10 @@
         copy.append(meta);
         copy.append(el('strong', 'po-buff-name', tpl.name(b.c)));
         copy.append(el('span', 'po-buff-desc', tpl.desc(b.v, b.c)));
-        if (tpl.cond) {
+        if (tpl.cond === 'barrier') {
+          const ok = partyBreaksBarrier(b.c, rec);
+          copy.append(el('span', 'po-buff-target' + (ok ? ' is-miss' : ''), ok ? '編成で突破済みの属性です' : '対象：味方全員（編成では突破できない属性）'));
+        } else if (tpl.cond) {
           const names = targets.map(id => (getChar(id) || {}).name || '').filter(Boolean);
           copy.append(el('span', 'po-buff-target' + (miss ? ' is-miss' : ''), miss ? '対象：編成内にいません' : `対象：${names.join('・')}`));
         }
@@ -1120,7 +1221,15 @@
     modifyIncomingDamage, onDamageTaken, getUltGainMultiplier, beginFloor, finishFloor,
     getDraftMembers, prepareBattle, bossForFloor: f => Object.assign({}, bossForFloor(f)),
     getState: () => JSON.parse(JSON.stringify(load())),
-    open, close, render, openBuffSelect, openStatus
+    open, close, render, openBuffSelect, openStatus,
+    // build1643: 属性バリアを越えて通るダメージの割合（0〜1）。挑戦中の位相回遊の戦闘でのみ使われる。
+    getBarrierPierce: element => {
+      const rec = load();
+      if (!isRunActive(rec)) return 0;
+      const e = String(element || '').toLowerCase();
+      return ELEMENTS.includes(e) ? barrierPierceRate(e, rec) : 0;
+    },
+    getBarrierThreat: () => nextBarrierThreat(load(), Math.max(1, load().current_floor), 10)
   });
   window.openPhaseOdyssey = open;
   window.closePhaseOdyssey = close;

@@ -758,3 +758,14 @@ html body:has(#screen-phase-odyssey.active) #global-user-frame .hud-lv-num{
 }
 #notice-modal .notice-link-btn b{font:400 16px/1 serif;color:#e8d29c;}
 #notice-modal .notice-link-btn:active{transform:translateY(1px);filter:brightness(1.06);}
+
+/* build1643: 属性バリア警戒（次のバリア階層と突破可否） */
+#phase-odyssey-layer .po-barrier-warn{
+  margin-top:6px;padding:6px 10px;border-radius:6px;
+  font:600 11px/1.5 'Noto Serif JP',serif;letter-spacing:.02em;text-align:left;
+  color:#4d5a3a;background:rgba(232,244,220,.85);border:1px solid rgba(120,160,90,.55);
+}
+#phase-odyssey-layer .po-barrier-warn.is-danger{
+  color:#7a2a24;background:rgba(253,234,228,.92);border-color:rgba(196,96,80,.7);
+}
+#phase-odyssey-layer .po-barrier-warn.is-top{margin:0 0 10px;}

@@ -1006,6 +1006,14 @@
   function isPhaseOdysseyStage() {
     return !!(selectedStage && selectedStage.eventId === 'phase_odyssey' && selectedStage.phaseOdyssey);
   }
+  // build1643: 位相回遊の属性バリア対策（0〜1）。位相回遊以外では常に0。
+  function getPhaseOdysseyBarrierPierce(targetElement) {
+    if (!isPhaseOdysseyStage()) return 0;
+    const api = getPhaseOdysseyApi();
+    if (!api || typeof api.getBarrierPierce !== 'function') return 0;
+    try { return Math.max(0, Math.min(1, Number(api.getBarrierPierce(normalizeCombatElement(targetElement))) || 0)); }
+    catch (_) { return 0; }
+  }
   function getPhaseOdysseyApi() {
     return (isPhaseOdysseyStage() && window.PhaseOdyssey) ? window.PhaseOdyssey : null;
   }
@@ -8568,7 +8576,10 @@
       isStageWeaknessOnlyTarget(targetElement) &&
       rate <= ELEMENT_DAMAGE_RATE.neutral + 0.001
     ) {
-      return 0;
+      // build1643: 位相回遊の強化「破魔の刻印」「○属性バリア破り」：バリア越しに一部（または等倍）が通る
+      const pierce = incoming ? 0 : getPhaseOdysseyBarrierPierce(targetElement);
+      if (pierce <= 0) return 0;
+      return applyHitComboDamage(base * pierce * getRaidBreakDamageMultiplier());
     }
 
     const elemental = base * rate * (incoming ? 1 : getRaidBreakDamageMultiplier());
@@ -8617,7 +8628,12 @@
       !ignoreStageImmunity &&
       isStageWeaknessOnlyTarget(targetElement) &&
       rate <= ELEMENT_DAMAGE_RATE.neutral + 0.001
-    ) return 'immune';
+    ) {
+      // build1643: 位相回遊のバリア対策強化がある場合は IMMUNE ではなく「軽減」表示（等倍なら表示なし）
+      const pierce = (options && options.incoming) ? 0 : getPhaseOdysseyBarrierPierce(targetElement);
+      if (pierce >= 1) return '';
+      return pierce > 0 ? 'resist' : 'immune';
+    }
 
     if (rate > ELEMENT_DAMAGE_RATE.neutral + 0.001) return 'weak';
     if (rate < ELEMENT_DAMAGE_RATE.neutral - 0.001) return 'resist';
