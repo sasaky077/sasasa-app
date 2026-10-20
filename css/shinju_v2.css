@@ -236,6 +236,19 @@ html body #shinju-overlay#shinju-overlay .shinju-offer-all:disabled{
 }
 html body #shinju-overlay#shinju-overlay .shinju-offer-all:disabled::before{filter:grayscale(1) brightness(1.8)!important;opacity:.8!important}
 
+/* build1643: 奉納バーを廃止。加護カードの下端に「自動で創世ptになる」案内だけを置く（カードの角の丸みを引き継ぐ） */
+html body #shinju-overlay#shinju-overlay .shinju-auto-note{
+  display:flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;
+  margin:0!important;padding:9px 12px 10px!important;
+  font:500 11.5px/1.4 "Noto Serif JP",serif!important;letter-spacing:.06em!important;color:#8f7c5c!important;text-align:center!important;
+  background:linear-gradient(180deg,rgba(252,248,238,.9),rgba(250,245,233,.92))!important;
+  border:1px solid rgba(194,160,98,.8)!important;border-top:0!important;border-radius:0 0 10px 10px!important;
+  box-shadow:inset 0 0 0 3px rgba(255,255,255,.6)!important;position:relative!important;
+}
+html body #shinju-overlay#shinju-overlay .shinju-auto-note::before{
+  content:''!important;flex:0 0 auto!important;width:20px!important;height:20px!important;background:var(--sj-leaf) center/contain no-repeat!important;
+}
+
 /* 低い画面 */
 @media (max-height:700px){
   html body #shinju-overlay#shinju-overlay .shinju-visual-wrap{min-height:40dvh!important}

@@ -55,14 +55,14 @@
       bossId: 'enemy_01',
       bossName: '竜型レムナント',
       itemName: '白糸の創世片',
-      itemDesc: '白糸の残響から剥離した創世資源。神樹へ奉納できる。',
+      itemDesc: '白糸の残響から剥離した創世資源。入手すると自動で神樹の創世ptになる。',
       exp: 140,
     },
     sakiel: {
       bossId: 'enemy_sakiel_roguelite',
       bossName: '大天使 サキエル',
       itemName: '天使核・サキエル',
-      itemDesc: 'サキエルの残響から得た創世核。神樹へ奉納できる。',
+      itemDesc: 'サキエルの残響から得た創世核。入手すると自動で神樹の創世ptになる。',
       exp: 180,
     },
   };
@@ -106,7 +106,61 @@
     shinjuServerReady = true;
     writeStateLocal(state);
     window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: getViewState(state) }));
+    scheduleAutoConvert();
     return getViewState(state);
+  }
+
+  // ------------------------------------------------------------
+  // build1643: 「奉納」アクションを廃止。
+  //  聖樹の息吹（神聖樹の資源）はサーバーで受け取り待ちに入った時点で、自動で創世ptへ変換する。
+  //  変換そのものは従来の奉納RPC（offer_all_shinju_secure）をそのまま使うため、サーバー側の変更は不要。
+  //  受け取り待ちが見つかるたび（起動時・報酬獲得後の同期・クラウド復元後）に、画面操作なしで実行する。
+  // ------------------------------------------------------------
+  let autoConvertBusy = false;
+  let autoConvertTimer = 0;
+  let autoConvertBlockedUntil = 0;
+  function scheduleAutoConvert() {
+    if (autoConvertTimer || autoConvertBusy) return;
+    const s = authoritativeState;
+    if (!s || !Array.isArray(s.inventory) || !s.inventory.length) return;
+    if (Date.now() < autoConvertBlockedUntil) return;
+    autoConvertTimer = setTimeout(() => { autoConvertTimer = 0; void autoConvertPending(); }, 120);
+  }
+  async function autoConvertPending() {
+    if (autoConvertBusy) return null;
+    const before = getViewState(readState());
+    if (!before.inventory.length) return null;
+    const sb = window.zsSupabase;
+    if (!sb || typeof sb.rpc !== 'function') return null;
+    autoConvertBusy = true;
+    try {
+      const res = await sb.rpc('offer_all_shinju_secure');
+      if (res && res.error) throw res.error;
+      let data = res ? res.data : null;
+      if (typeof data === 'string') {
+        try { data = JSON.parse(data); } catch (_) {}
+      }
+      const convertedCount = Math.max(0, Number(data && data.offered_count_now || 0));
+      const gainedPt = Math.max(0, Number(data && data.offered_exp || 0));
+      // 変換できなかった（サーバー側で対象なし等）場合は、同じ受け取り待ちで繰り返し呼ばないよう少し待つ
+      if (!convertedCount) autoConvertBlockedUntil = Date.now() + 60000;
+      autoConvertBusy = false;
+      const after = applyServerPayload(data);
+      const ov = document.getElementById('shinju-overlay');
+      if (ov && ov.classList.contains('active')) renderOverlay();
+      renderHomeEntry();
+      if (convertedCount) {
+        if (after.isMax && !before.isMax) setTimeout(showGameClearOverlay, 260);
+        else if (after.stage > before.stage) showTinyToast(`神樹が成長した：${after.stage} / 5`);
+        else if (gainedPt > 0) showTinyToast(`聖樹の息吹が神聖樹に還った　創世pt +${gainedPt}`);
+      }
+      return after;
+    } catch (err) {
+      autoConvertBusy = false;
+      autoConvertBlockedUntil = Date.now() + 30000; // 通信失敗時は30秒後以降の同期で再試行
+      console.warn('[ShinjuProgress] auto convert failed:', err && (err.message || err));
+      return null;
+    }
   }
 
   async function refreshFromServer() {
@@ -377,14 +431,7 @@
             </div>
             <div class="shinju-blessing-slots" id="shinju-blessing-slots"></div>
           </section>
-          <div class="shinju-offering-bar" id="shinju-offering-bar">
-            <div class="shinju-offering-state">
-              <span class="shinju-offering-label">奉納可能</span>
-              <strong id="shinju-pending-count">0</strong>
-              <small id="shinju-pending-exp"></small>
-            </div>
-            <button class="shinju-offer-all" id="shinju-offer-all" type="button" onclick="ShinjuProgress.offerAllFromUI()">すべて奉納</button>
-          </div>
+          <p class="shinju-auto-note">聖樹の息吹は手に入れると自動で創世ptになります</p>
         </div>
       </div>
     `;
@@ -408,16 +455,16 @@
     `;
 
     const label = s.isMax ? '創世完了' : `成長度 ${s.stage}/5`;
-    const itemText = s.pendingNutrition > 0 ? `奉納待ち ${s.pendingNutrition}` : '奉納待ちなし';
+    // build1643: 奉納を廃止（聖樹の息吹は自動で創世ptになる）ため、「奉納待ち」バッジは出さない
+    const itemText = `創世pt ${Math.max(0, Number(s.pt || 0))}`;
     box.setAttribute('aria-label', `神樹へ移動。${label}。${itemText}`);
     box.title = `神樹へ / ${label} / ${itemText}`;
     const badge = box.querySelector('.shinju-home-entry-badge');
     if (badge) {
-      const count = Math.max(0, Number(s.pendingNutrition || 0));
-      badge.textContent = count > 99 ? '99+' : (count > 0 ? String(count) : '');
-      badge.setAttribute('aria-hidden', count > 0 ? 'false' : 'true');
+      badge.textContent = '';
+      badge.setAttribute('aria-hidden', 'true');
     }
-    box.classList.toggle('has-items', s.pendingItemCount > 0);
+    box.classList.remove('has-items');
     box.classList.toggle('is-clear', s.isMax);
   }
 
@@ -435,6 +482,7 @@
     const field = ov.querySelector('#shinju-aura-field');
     if (!field) return;
 
+    // build1643: 受け取り待ちは自動変換されるので、通常は0（変換までの一瞬だけ光が漂う）
     const count = Math.min(SHINJU_AURA_POSITIONS.length, Math.max(0, Number(state.pendingItemCount || 0)));
     field.classList.toggle('is-empty', count === 0);
 
@@ -819,7 +867,7 @@
         <h3 class="shinju-help-sub">神樹の成長</h3>
         <ol class="shinju-blessing-help-list">${treeRows}</ol>
         <ul class="shinju-blessing-help-notes">
-          <li>聖樹の息吹を奉納すると創世ptになります</li>
+          <li>聖樹の息吹は手に入れると自動で創世ptになります</li>
           <li>HP / ATK：SLOTのキャラの最終ステータスに加算</li>
           <li>ULT還元：ULT発動直後、必要ゲージの一部が戻る</li>
           <li>SLOTに置くキャラの入れ替えは無料です</li>
@@ -952,104 +1000,11 @@
     return result;
   }
 
+  // build1643: 奉納ボタンは廃止。互換のため残し、受け取り待ちの自動変換を即時実行するだけ。
   async function offerAllFromUI() {
-    const ov = ensureOverlay();
-    const before = await refreshFromServer();
-    if (!before.inventory.length) {
-      showTinyToast('奉納できる創世資源がありません');
-      renderOverlay();
-      return { ok:false, reason:'empty', state:before };
-    }
-    if (ov.dataset.offering === '1') return { ok:false, reason:'busy', state:before };
-
-    ov.dataset.offering = '1';
-    updateOfferingMeta(ov, before);
-    await animateAuraOffering(ov);
-
-    try {
-      const sb = window.zsSupabase;
-      if (!sb || typeof sb.rpc !== 'function') throw new Error('Supabase unavailable');
-
-      const res = await sb.rpc('offer_all_shinju_secure');
-      if (res && res.error) throw res.error;
-      let data = res ? res.data : null;
-      if (typeof data === 'string') {
-        try { data = JSON.parse(data); } catch (_) {}
-      }
-      const after = applyServerPayload(data);
-      const offeredCount = Math.max(0, Number(data && data.offered_count_now || 0));
-      const totalExp = Math.max(0, Number(data && data.offered_exp || 0));
-
-      if (!offeredCount) {
-        delete ov.dataset.offering;
-        ov.classList.remove('is-offering');
-        renderOverlay();
-        showTinyToast('奉納できる創世資源がありません');
-        return { ok:false, reason:'empty', state:after };
-      }
-
-      const result = {
-        ok:true,
-        items:before.inventory.slice(),
-        totalExp,
-        before,
-        after,
-        levelUp:after.stage > before.stage,
-        reachedMax:after.isMax && !before.isMax
-      };
-
-      const stage = ov.querySelector('#shinju-stage');
-      const expLabel = ov.querySelector('#shinju-exp-label');
-      const expPercent = ov.querySelector('#shinju-exp-percent');
-      const fill = ov.querySelector('#shinju-progress-fill');
-
-      const applyAfterLabels = () => {
-        if (stage) stage.innerHTML = `${escapeHtml(after.stageLabel)}<i class="shinju-stage-sep" aria-hidden="true">◆</i>${after.stage} / ${after.maxStage}`;
-        if (expLabel) expLabel.textContent = after.isMax
-          ? `神樹EXP ${after.exp} / ${after.totalRequiredExp}`
-          : `神樹EXP ${after.exp} / ${after.nextStageExp}`;
-        if (expPercent) expPercent.textContent = after.isMax ? 'MAX' : `${Math.round(after.progress)}%`;
-      };
-
-      if (fill) {
-        fill.style.width = `${before.progress}%`;
-        void fill.offsetWidth;
-        if (result.levelUp) {
-          requestAnimationFrame(() => { fill.style.width = '100%'; });
-          setTimeout(() => {
-            applyAfterLabels();
-            fill.style.transition = 'none';
-            fill.style.width = '0%';
-            void fill.offsetWidth;
-            fill.style.transition = '';
-            requestAnimationFrame(() => { fill.style.width = `${after.progress}%`; });
-          }, 520);
-        } else {
-          applyAfterLabels();
-          requestAnimationFrame(() => { fill.style.width = `${after.progress}%`; });
-        }
-      } else {
-        applyAfterLabels();
-      }
-
-      ov.classList.add('shinju-gauge-receive');
-      setTimeout(() => ov.classList.remove('shinju-gauge-receive'), result.levelUp ? 1250 : 760);
-      setTimeout(() => {
-        delete ov.dataset.offering;
-        ov.classList.remove('is-offering');
-        renderOverlay();
-        showOfferFeedback(result);
-      }, result.levelUp ? 1320 : 820);
-
-      return result;
-    } catch (err) {
-      delete ov.dataset.offering;
-      ov.classList.remove('is-offering');
-      renderOverlay();
-      showTinyToast('奉納処理に失敗しました');
-      console.warn('[ShinjuProgress] secure offer failed:', err && (err.message || err));
-      return { ok:false, reason:'server_error', state:getViewState(readState()) };
-    }
+    await refreshFromServer();
+    const after = await autoConvertPending();
+    return after ? { ok:true, state:after } : { ok:false, reason:'empty', state:getViewState(readState()) };
   }
 
   function resetForDebug() {
@@ -1098,6 +1053,7 @@
       renderHomeEntry();
       const ov = document.getElementById('shinju-overlay');
       if (ov && ov.classList.contains('active')) renderOverlay();
+      scheduleAutoConvert(); // build1643: 受け取り待ちがあれば自動で創世ptへ
     } catch (err) {
       console.warn('[ShinjuProgress] cloud apply failed:', err);
     }
