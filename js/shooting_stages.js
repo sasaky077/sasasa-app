@@ -280,6 +280,192 @@
     });
   }
 
+  // build1643 — 位相回遊 / PHASE ODYSSEY：無限階層。
+  // 既存の残響の塔の階層構成（敵AI・ギミック）をテンプレートとして流用し、
+  // 階層ごとに敵HP・出現数・弾速を段階強化する。敵ATKは stage.phaseOdyssey.atkScale を
+  // 戦闘側の被ダメ計算で乗算する。報酬付与は持たない（塔の封印・進行にも一切触れない）。
+  const PHASE_ODYSSEY_STAGE_PREFIX = 'shooting_phase_odyssey_';
+  const PHASE_ODYSSEY_MAX_FLOOR = 9999;
+  //   1〜3F：軽め / 4〜6F：中級 / 7〜9F：難しめ / 10Fごと：ボス
+  const PHASE_ODYSSEY_TEMPLATE_CYCLES = Object.freeze([
+    Object.freeze([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
+    Object.freeze([4, 5, 6, 7, 8, 9, 11, 12, 13, 14]),
+    Object.freeze([7, 8, 9, 11, 12, 13, 6, 9, 12, 15]),
+  ]);
+  const PHASE_ODYSSEY_BOSS_ROTATION = Object.freeze([10, 14, 15]);
+  function getPhaseOdysseyTemplateFloor(floor) {
+    const f = Math.max(1, Math.floor(Number(floor) || 1));
+    const cycle = Math.floor((f - 1) / 10);
+    const pos = (f - 1) % 10;
+    if (cycle >= PHASE_ODYSSEY_TEMPLATE_CYCLES.length && pos === 9) {
+      return PHASE_ODYSSEY_BOSS_ROTATION[cycle % PHASE_ODYSSEY_BOSS_ROTATION.length];
+    }
+    return PHASE_ODYSSEY_TEMPLATE_CYCLES[Math.min(cycle, PHASE_ODYSSEY_TEMPLATE_CYCLES.length - 1)][pos];
+  }
+  // 位相（5階ごと）を跨ぐたびに強化幅が上がる。31F以降は周回ごとにさらに乗算。
+  function getPhaseOdysseyScaling(floor) {
+    const f = Math.max(1, Math.floor(Number(floor) || 1));
+    const tier = Math.floor((f - 1) / 5);
+    const cycle = Math.floor((f - 1) / 10);
+    const late = Math.max(0, cycle - 2);
+    return Object.freeze({
+      floor: f,
+      tier: tier + 1,
+      hpScale: Math.round(Math.min(50, (1 + 0.03 * (f - 1) + 0.07 * tier) * Math.pow(1.12, late)) * 1000) / 1000,
+      atkScale: Math.round(Math.min(4, (1 + 0.02 * (f - 1) + 0.05 * tier) * Math.pow(1.08, late)) * 1000) / 1000,
+      bulletSpeedScale: Math.round((1 + Math.min(0.15, 0.015 * tier)) * 1000) / 1000,
+      extraEnemies: Math.min(3, cycle),
+    });
+  }
+  const phaseOdysseyStageCache = new Map();
+  // ------------------------------------------------------------
+  // build1643: 10階ごとのボス戦。既存ボス（STORY・残響の塔・レイド・律動）の行動・ギミックを流用し、
+  // HP・ゲージ数（=PHASE数。カミラ/シエン等はPHASEでギミック段階が上がる）・被ダメ倍率を
+  // 「その階層」に合わせて作り直す。オリジナルの難易度は使わない。
+  // どのボスが出るかは window.PhaseOdyssey がrunごとに抽選し、ステージIDの末尾キーで渡す。
+  // ------------------------------------------------------------
+  const PHASE_ODYSSEY_BOSSES = Object.freeze({
+    dragon:   Object.freeze({ name:'竜型レムナント', tpl:'shooting_ch01_04' }),
+    irish:    Object.freeze({ name:'イリシュ',       tpl:'shooting_ch02_04' }),
+    mirage:   Object.freeze({ name:'ミラージュ',     tpl:'shooting_tower_10' }),
+    livia:    Object.freeze({ name:'リヴィア',       tpl:'shooting_tower_14' }),
+    overseer: Object.freeze({ name:'オーバーシア',   enemy:SHOOTING_ENEMY_ID.PO_OVERSEER, overseer:true }),
+    camilla:  Object.freeze({ name:'カミラ',         enemy:SHOOTING_ENEMY_ID.RAID_CAMILLA }),
+    shien:    Object.freeze({ name:'シエン',         enemy:SHOOTING_ENEMY_ID.RAID_SHIEN }),
+    rhythm:   Object.freeze({ name:'仮面舞踏会',     tpl:'shooting_event_rhythm_advanced', lateTpl:'shooting_event_rhythm_test', lateFrom:70 }),
+    towa:     Object.freeze({ name:'トワ',           tpl:'shooting_tower_15' }),
+  });
+  const PHASE_ODYSSEY_DEFAULT_BOSS = 'mirage';
+  // 報酬・チケット・スコア系の設定はボス戦に持ち込まない
+  const PHASE_ODYSSEY_BOSS_STRIP_KEYS = Object.freeze(['fixedItemDrops', 'firstClearGems', 'specialTicketCost', 'baseStageId',
+    'raid', 'scoreAttack', 'bossTotalHp', 'bossGaugeHp', 'survivalBoss', 'timeLimitSeconds', 'bossGauges', 'storyReplay']);
+  function getPhaseOdysseyBossTuning(floor, enemyDef) {
+    const scale = getPhaseOdysseyScaling(floor);
+    const bossNo = Math.max(1, Math.floor(floor / 10));
+    // 合計HP：10F≈13,400 / 20F≈17,800 / 30F≈22,200 …（位相のHP倍率に比例）
+    const totalHp = Math.round(10000 * scale.hpScale);
+    // ゲージ（PHASE）数：〜40Fは最大2、50F以降はオリジナルどおり（最大3）
+    const maxGauges = floor >= 50 ? 3 : 2;
+    // ボスごとの弾ダメージ差を均し、階層の敵ATK倍率に合わせる。最初のボスだけ少し控えめ。
+    const baseDamage = Math.max(1, Number(enemyDef && enemyDef.bulletDamage || 210));
+    const atkScale = Math.round(scale.atkScale * Math.max(0.8, Math.min(1.25, 210 / baseDamage)) * (bossNo === 1 ? 0.9 : 1) * 1000) / 1000;
+    return { scale, totalHp, maxGauges, atkScale, bossNo };
+  }
+  function makePhaseOdysseyBossStage(f, requestedKey) {
+    const key = PHASE_ODYSSEY_BOSSES[requestedKey] ? requestedKey : PHASE_ODYSSEY_DEFAULT_BOSS;
+    const def = PHASE_ODYSSEY_BOSSES[key];
+    const tplId = def.lateTpl && f >= def.lateFrom ? def.lateTpl : def.tpl;
+    const tpl = tplId ? SHOOTING_STAGES[tplId] : null;
+    const base = tpl ? { ...tpl } : {
+      type: 'boss', background: 'images/battle_bg_01.webp', enemyIds: Object.freeze([def.enemy]),
+    };
+    if (def.overseer) {
+      // オーバーシア：自ユニットと同程度の表示サイズ。監視の眼は最大3体まで同時に出現し、倒しても補充される。
+      base.introImage = 'images/phase_odyssey_overseer_intro.webp';
+      base.bossVisualScale = 0.7;
+      base.bossAdds = Object.freeze({
+        enemyIds: Object.freeze([SHOOTING_ENEMY_ID.PO_WATCHER]),
+        totalEnemies: 0, maxActive: 3, startDelayMs: 2200, spawnIntervalMs: Math.max(3200, 6500 - Math.floor(f / 10) * 300),
+      });
+    }
+    PHASE_ODYSSEY_BOSS_STRIP_KEYS.forEach(k => { delete base[k]; });
+    const enemyId = Array.isArray(base.enemyIds) && base.enemyIds.length ? base.enemyIds[0] : def.enemy;
+    const enemyDef = typeof window.ShootingEnemies.getShootingEnemy === 'function'
+      ? window.ShootingEnemies.getShootingEnemy(enemyId) : null;
+    const tune = getPhaseOdysseyBossTuning(f, enemyDef);
+    // 元のゲージ比率を保ったまま、階層の合計HPへ配分する
+    let original = Array.isArray(tpl && tpl.bossGaugeHps) ? tpl.bossGaugeHps.slice() : null;
+    if (!original && enemyDef) {
+      if (Array.isArray(enemyDef.gaugeHps) && enemyDef.gaugeHps.length) original = enemyDef.gaugeHps.slice();
+      else {
+        const count = Math.max(1, Math.floor(Number((tpl && tpl.bossGauges) || enemyDef.gauges || 1)));
+        original = Array.from({ length: count }, () => Math.max(1, Number(enemyDef.gaugeHp || enemyDef.hp || 1)));
+      }
+    }
+    if (!original || !original.length) original = [1, 1];
+    const used = original.slice(0, Math.max(1, Math.min(original.length, tune.maxGauges))).map(v => Math.max(1, Number(v) || 1));
+    const sum = used.reduce((a, b) => a + b, 0);
+    const gaugeHps = used.map(v => Math.max(1, Math.round(tune.totalHp * v / sum)));
+    return Object.freeze({
+      ...base,
+      id: PHASE_ODYSSEY_STAGE_PREFIX + f + '_' + key,
+      chapter: 0,
+      stageNo: f,
+      type: 'boss',
+      enemyIds: Object.freeze([enemyId]),
+      eventId: 'phase_odyssey',
+      eventTitle: '位相回遊',
+      name: '第' + f + '階層',
+      difficultyLabel: 'FLOOR ' + f + ' / BOSS',
+      bossGaugeHps: Object.freeze(gaugeHps),
+      mission: Object.freeze({ type: SHOOTING_MISSION_TYPE.BOSS_CLEAR, text: def.name + 'を撃破' }),
+      phaseOdyssey: Object.freeze({
+        floor: f, templateFloor: 0, tier: tune.scale.tier, boss: key, bossName: def.name,
+        watcherHp: def.overseer ? Math.round(1100 * tune.scale.hpScale) : 0,
+        hpScale: tune.scale.hpScale, atkScale: tune.atkScale, bossGauges: gaugeHps.length,
+      }),
+      playable: true,
+    });
+  }
+
+  function makePhaseOdysseyStage(floor, bossKey) {
+    const f = Math.max(1, Math.min(PHASE_ODYSSEY_MAX_FLOOR, Math.floor(Number(floor) || 1)));
+    if (f % 10 === 0) {
+      const cacheKey = f + '_' + String(bossKey || '');
+      if (!phaseOdysseyStageCache.has(cacheKey)) phaseOdysseyStageCache.set(cacheKey, makePhaseOdysseyBossStage(f, bossKey));
+      return phaseOdysseyStageCache.get(cacheKey);
+    }
+    if (phaseOdysseyStageCache.has(f)) return phaseOdysseyStageCache.get(f);
+    const templateFloor = getPhaseOdysseyTemplateFloor(f);
+    const base = makeResonanceTowerStage(templateFloor);
+    const scale = getPhaseOdysseyScaling(f);
+    const stage = {
+      ...base,
+      id: PHASE_ODYSSEY_STAGE_PREFIX + f,
+      chapter: 0,
+      stageNo: f,
+      eventId: 'phase_odyssey',
+      eventTitle: '位相回遊',
+      name: '第' + f + '階層',
+      difficultyLabel: 'FLOOR ' + f + (base.type === 'boss' ? ' / BOSS' : ''),
+      phaseOdyssey: Object.freeze({
+        floor: f, templateFloor, tier: scale.tier,
+        hpScale: scale.hpScale, atkScale: scale.atkScale,
+      }),
+      playable: true,
+    };
+    if (base.normalBattle) {
+      const nb = { ...base.normalBattle };
+      if (Number.isFinite(Number(nb.enemyHp))) nb.enemyHp = Math.round(Number(nb.enemyHp) * scale.hpScale);
+      if (Number.isFinite(Number(nb.enemyBulletSpeed))) nb.enemyBulletSpeed = Math.round(Number(nb.enemyBulletSpeed) * scale.bulletSpeedScale);
+      if (Number.isFinite(Number(nb.totalEnemies)) && !base.swarmBattle) nb.totalEnemies = Number(nb.totalEnemies) + scale.extraEnemies;
+      stage.normalBattle = Object.freeze(nb);
+    }
+    if (base.swarmBattle && Number.isFinite(Number(base.swarmBattle.guardHp))) {
+      stage.swarmBattle = Object.freeze({ ...base.swarmBattle, guardHp: Math.round(Number(base.swarmBattle.guardHp) * scale.hpScale) });
+    }
+    if (base.type === 'boss') {
+      let gauges = Array.isArray(base.bossGaugeHps) ? base.bossGaugeHps.slice() : null;
+      if (!gauges) {
+        const bossId = Array.isArray(base.enemyIds) ? base.enemyIds[0] : '';
+        const def = typeof window.ShootingEnemies.getShootingEnemy === 'function'
+          ? window.ShootingEnemies.getShootingEnemy(bossId) : null;
+        if (def && Array.isArray(def.gaugeHps) && def.gaugeHps.length) gauges = def.gaugeHps.slice();
+        else if (def) {
+          const count = Math.max(1, Math.floor(Number(def.gauges || 1)));
+          const hp = Math.max(1, Number(def.gaugeHp || def.hp || 1));
+          gauges = Array.from({ length: count }, () => hp);
+        }
+      }
+      if (gauges && gauges.length) {
+        stage.bossGaugeHps = Object.freeze(gauges.map(v => Math.max(1, Math.round(Number(v || 1) * scale.hpScale))));
+      }
+    }
+    const frozen = Object.freeze(stage);
+    phaseOdysseyStageCache.set(f, frozen);
+    return frozen;
+  }
+
   const SHOOTING_STAGES = Object.freeze({
     ...Object.fromEntries(Array.from({length:15},(_,i)=>{const n=i+1;return ['shooting_tower_'+String(n).padStart(2,'0'),makeResonanceTowerStage(n)];})),
     // 本編の敵・ショット・ULT・操作系を共用するが、通常ステージには登録しない試遊専用ステージ。
@@ -1024,13 +1210,19 @@
       id:SHOOTING_STAGE_ID.CH08_04, chapter:8, stageNo:4,
       get name(){return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch08_04?.stageTitle || '応答';},
       type:'boss', background:'images/battle_bg_01.webp',
-      enemyIds:Object.freeze([SHOOTING_ENEMY_ID.CH08_GUARDIAN]),
+      // build1643: 塔の守護者を「オーバーシア」に差し替え（専用バトル画像・イントロ）。HPは従来どおり。
+      enemyIds:Object.freeze([SHOOTING_ENEMY_ID.PO_OVERSEER]),
       bossGauges:2,
       bossGaugeHps:Object.freeze([9500,12500]),
-      // 専用イラストが未提供のため、既存のレムナント画像を一時的に共用。
-      bossBattleImage:'images/remnant_03_battle.webp',
-      bossVisualScale:1.03,
-      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.BOSS_CLEAR,text:'塔の守護者を撃破し、円盤への道を開く'}),playable:true
+      introImage:'images/phase_odyssey_overseer_intro.webp',
+      // 自ユニットと同程度の表示サイズ
+      bossVisualScale:0.7,
+      // 監視の眼：最大3体、倒しても補充。視界に入っている間だけ敵弾が追従する。
+      bossAdds:Object.freeze({
+        enemyIds:Object.freeze([SHOOTING_ENEMY_ID.PO_WATCHER]),
+        totalEnemies:0, maxActive:3, startDelayMs:2600, spawnIntervalMs:7000,
+      }),
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.BOSS_CLEAR,text:'オーバーシアを撃破し、円盤への道を開く'}),playable:true
     }),
 
     // ============================================================
@@ -1426,13 +1618,13 @@
       enemyIds: Object.freeze([SHOOTING_ENEMY_ID.OVERSEER_AMBUSH]),
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
-        text: 'オーバーシア（亜種）を撃破',
+        text: '竜型レムナント（亜種）を撃破',
       }),
       guaranteedRewards: Object.freeze([
         Object.freeze({
           type: 'material',
           id: 'overseer_blk_core',
-          name: 'オーバーシア亜種の心核',
+          name: '竜型レムナント亜種の心核',
           image: 'images/item_overseer_blk_core.webp',
           count: 1,
           detail: '特殊強化素材',
@@ -1488,6 +1680,9 @@
 
   function getShootingStage(stageId) {
     const id = String(stageId || '');
+    // build1643: 位相回遊は階層番号から動的に生成（SHOOTING_STAGES一覧には登録しない）。
+    const phaseOdysseyMatch = id.match(/^shooting_phase_odyssey_(\d{1,4})(?:_([a-z]+))?$/);
+    if (phaseOdysseyMatch) return makePhaseOdysseyStage(Number(phaseOdysseyMatch[1]), phaseOdysseyMatch[2] || '');
     if (id.startsWith('shooting_beginner_')) {
       return makeBeginnerStage(SHOOTING_STAGES[fromBeginnerStageId(id)] || null);
     }
@@ -1529,5 +1724,7 @@
     fromBeginnerStageId,
     getShootingChapter01Stages,
     getShootingStagePrimaryEnemy,
+    getPhaseOdysseyScaling,
+    PHASE_ODYSSEY_BOSSES,
   });
 })();

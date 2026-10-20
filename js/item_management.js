@@ -27,7 +27,7 @@
     soul_vessel_dark:{name:'魂の器(闇)',img:'images/item_soul_vessel_dark.webp',desc:'闇属性の魂を受け止める神具。'},
     soul_vessel_light:{name:'魂の器(光)',img:'images/item_soul_vessel_light.webp',desc:'光属性の魂を受け止める神具。'},
     seihai:{name:'聖なる盃',img:'images/item_seihai.webp',desc:'神聖な力を湛えた進化用素材。'},
-    overseer_blk_core:{name:'オーバーシア亜種の心核',img:'images/item_overseer_blk_core.webp',desc:'特殊強化に使用する異質な心核。'},
+    overseer_blk_core:{name:'竜型レムナント亜種の心核',img:'images/item_overseer_blk_core.webp',desc:'特殊強化に使用する異質な心核。'},
     soul_vessel_mystis:{name:'魂の器(MYSTIS)',img:'',desc:'旧式の進化素材。'},
     soul_vessel_chaos:{name:'魂の器(CHAOS)',img:'',desc:'旧式の進化素材。'}
   };

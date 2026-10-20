@@ -1001,6 +1001,97 @@
       window.ResonanceTower.isReplayFloor(Number(selectedStage.stageNo)));
   }
 
+  // build1643: 位相回遊（3人固定・無限階層のローグライト）。
+  // run状態・強化・保存は window.PhaseOdyssey だけが所有し、ここでは戦闘への受け渡しのみ行う。
+  function isPhaseOdysseyStage() {
+    return !!(selectedStage && selectedStage.eventId === 'phase_odyssey' && selectedStage.phaseOdyssey);
+  }
+  function getPhaseOdysseyApi() {
+    return (isPhaseOdysseyStage() && window.PhaseOdyssey) ? window.PhaseOdyssey : null;
+  }
+  // 戦闘開始時：前階層から持ち越したHP・ULTゲージ（比率）を反映し、戦闘内の一時状態を初期化。
+  function applyPhaseOdysseyCarryover() {
+    const api = getPhaseOdysseyApi();
+    if (!api || !state || !Array.isArray(state.party)) return;
+    state.party.forEach(member => {
+      if (!member) return;
+      const carry = typeof api.getCarryover === 'function' ? api.getCarryover(member.id) : null;
+      if (!carry) return;
+      const c = getBattleCharacter(member.id) || {};
+      const hpMax = Math.max(1, Number(member.hpMax || 1));
+      if (Number.isFinite(Number(carry.hpRatio))) {
+        member.hp = Math.max(1, Math.min(hpMax, Math.round(hpMax * clamp(Number(carry.hpRatio), 0, 1))));
+      }
+      const need = Math.max(0, Number(c.burstNeed || 0));
+      if (need > 0 && Number.isFinite(Number(carry.ultRatio))) {
+        member.burst = Math.min(need, need * clamp(Number(carry.ultRatio), 0, 1));
+        if (member.burst >= need) member.ultReadyNotified = true;
+      }
+    });
+    if (typeof api.onBattleReset === 'function') api.onBattleReset(selectedStage);
+  }
+  // build1643: 位相回遊はスコアを使わない（評価は到達階層のみ）。表示用の最高踏破階層。
+  function getPhaseOdysseyBestFloor() {
+    try { return Math.max(0, Number(window.PhaseOdyssey?.getState?.()?.best_floor || 0)); } catch (_) { return 0; }
+  }
+  // RESULT：SCORE・RANK・MAX COMBOを隠し、「○階踏破」を表示する。他ステージでは要素を除去して元に戻す。
+  function renderPhaseOdysseyResult(win) {
+    const card = document.querySelector('#shooting-result .shooting-result-card');
+    if (!card) return;
+    const active = isPhaseOdysseyStage();
+    const rankWrap = card.querySelector('.shooting-result-rank-wrap');
+    const stats = card.querySelector('.shooting-result-stats');
+    // 既存CSSが display を !important で指定しているため important で上書きする
+    [rankWrap, stats].forEach(node => {
+      if (!node) return;
+      if (active) node.style.setProperty('display', 'none', 'important');
+      else node.style.removeProperty('display');
+    });
+    document.getElementById('shooting-result')?.classList.toggle('is-phase-odyssey', active);
+    let box = card.querySelector('.shooting-result-po-floor');
+    if (!active) { if (box) box.remove(); return; }
+    if (!box) {
+      box = document.createElement('div');
+      box.className = 'shooting-result-po-floor';
+      const anchor = card.querySelector('#shooting-result-stage-label');
+      if (anchor) anchor.insertAdjacentElement('afterend', box); else card.prepend(box);
+    }
+    const floor = Math.max(1, Math.floor(Number(selectedStage && selectedStage.stageNo || 1)));
+    const cleared = win ? floor : floor - 1;
+    const best = getPhaseOdysseyBestFloor();
+    box.innerHTML = '';
+    const main = document.createElement('strong');
+    main.className = 'shooting-result-po-main';
+    main.textContent = `${cleared}階踏破`;
+    const sub = document.createElement('span');
+    sub.className = 'shooting-result-po-sub';
+    sub.textContent = (win ? `FLOOR ${floor} クリア` : `FLOOR ${floor} で力尽きた`) + (best ? `　／　最高 ${best}階` : '');
+    box.append(main, sub);
+    box.dataset.win = win ? 'true' : 'false';
+  }
+  // RESULT確定：勝敗と各メンバーのHP/ULTを渡す。報酬・スコア送信・初回クリア判定は行わない。
+  function finishPhaseOdysseyFloor(win) {
+    const unconfirmed = { phaseOdysseyConfirmed:false, firstClearClaimed:false, firstClearAmount:0, highScore:0 };
+    const api = window.PhaseOdyssey;
+    if (!api || typeof api.finishFloor !== 'function') return Promise.resolve(unconfirmed);
+    const party = (state && Array.isArray(state.party) ? state.party : []).filter(Boolean).map(m => {
+      const c = getBattleCharacter(m.id) || {};
+      return {
+        id: Number(m.id), hp: Number(m.hp || 0), hpMax: Number(m.hpMax || 0),
+        burst: Number(m.burst || 0), burstNeed: Number(c.burstNeed || 0),
+      };
+    });
+    try {
+      return Promise.resolve(api.finishFloor({
+        floor: Number(selectedStage && selectedStage.stageNo || 0),
+        win: !!win, party, score: Number(state && state.score || 0),
+      }) || unconfirmed);
+    } catch (err) {
+      console.error('[phase odyssey] finish failed', err);
+      return Promise.resolve(unconfirmed);
+    }
+  }
+
   function isFacelessStage() {
     return !!(selectedStage && selectedStage.eventId === 'faceless' && selectedStage.faceless);
   }
@@ -1140,7 +1231,7 @@
       bossName.includes('レムナント') ||
       bossName.includes('竜型レムナント') ||
       bossName.includes('白い影') ||
-      bossName.includes('オーバーシア') || // 亜種は従来名のまま
+      bossName.includes('オーバーシア') || // CH08-04 / 位相回遊のオーバーシア
       bossName.includes('イリシュ') ||  // 旧データ互換
       bossName.includes('リヴィア') ||
       bossName.includes('サキエル')
@@ -2132,6 +2223,11 @@
   }
 
   function getSelectedStoryFixedPartyIds() {
+    // build1643: 位相回遊はrun開始時の3人で固定（編成画面では変更不可）。
+    if (isPhaseOdysseyStage()) {
+      const runIds = getPhaseOdysseyApi()?.getRunMembers?.();
+      return Array.isArray(runIds) && runIds.length ? runIds.map(Number) : null;
+    }
     if (!isStoryShootingStage() || !selectedStage) return null;
     const key = String(selectedStage.baseStageId || selectedStage.id || '')
       .toLowerCase()
@@ -2323,6 +2419,8 @@
 
   function isShootingPartyReady() {
     if (selectedPartyIds.length < 1 || selectedPartyIds.length > PARTY_SIZE) return false;
+    // build1643: 位相回遊は必ず3人で出撃。
+    if (isPhaseOdysseyStage() && selectedPartyIds.length !== PARTY_SIZE) return false;
 
     const fixedStoryParty = getSelectedStoryFixedPartyIds();
     if (fixedStoryParty) {
@@ -2687,7 +2785,13 @@
         partySubtitle.textContent = isSpecialEvent ? String(selectedStage?.difficultyLabel || '') : String(selectedStage?.name || selectedStage?.displayName || '');
         partySubtitle.style.display = partySubtitle.textContent ? '' : 'none';
       }
-      if (partyScore) partyScore.textContent = formatShootingScore(selectedStageHighScore);
+      if (partyScore) {
+        // build1643: 位相回遊はHIGH SCOREの代わりに最高踏破階層
+        const poBest = isPhaseOdysseyStage() ? getPhaseOdysseyBestFloor() : 0;
+        partyScore.textContent = isPhaseOdysseyStage() ? (poBest ? `${poBest}階` : '--') : formatShootingScore(selectedStageHighScore);
+        const partyScoreLabel = partyScore.parentElement && partyScore.parentElement.querySelector('span');
+        if (partyScoreLabel) partyScoreLabel.textContent = isPhaseOdysseyStage() ? '最高踏破' : 'HIGH SCORE';
+      }
     }
     if (score) {
       if (inBattle) {
@@ -2695,9 +2799,14 @@
           const raidHp = Math.max(0, Math.floor(Number(state.boss.hp || 0)));
           const raidMaxHp = Math.max(1, Math.floor(Number(state.boss.hpMax || selectedRaidContext?.maxHp || 100000)));
           setBattleScorePlate(score, `BOSS HP / ${raidMaxHp.toLocaleString('ja-JP')}`, raidHp.toLocaleString('ja-JP'));
+        } else if (isPhaseOdysseyStage()) {
+          setBattleScorePlate(score, 'PHASE ODYSSEY', `FLOOR ${Number(selectedStage?.stageNo || 1)}`);
         } else {
           setBattleScorePlate(score, 'SCORE', formatShootingScore(state?.score || 0));
         }
+      } else if (isPhaseOdysseyStage()) {
+        const poBest = getPhaseOdysseyBestFloor();
+        score.innerHTML = `<span class="shooting-high-score-label">最高踏破</span><strong class="shooting-high-score-value">${poBest ? poBest + '階' : '--'}</strong>`;
       } else {
         score.innerHTML = `<span class="shooting-high-score-label">HIGH SCORE</span><strong class="shooting-high-score-value">${formatShootingScore(selectedStageHighScore)}</strong>`;
       }
@@ -2708,6 +2817,7 @@
   async function loadShootingHighScore() {
     const stageId = selectedStage?.id || '';
     if (!stageId) return 0;
+    if (isPhaseOdysseyStage()) { selectedStageHighScore = 0; setShootingStageHeader(false); return 0; }
 
     selectedStageHighScore = getLocalShootingHighScore(stageId);
     setShootingStageHeader(false);
@@ -2750,6 +2860,7 @@
     const scoreValue = Math.max(0, Math.floor(Number(value || 0)));
     if (!stageId) return null;
     if (isResonanceTowerStage()) return window.ResonanceTower.finishRun(!!win);
+    if (isPhaseOdysseyStage()) return finishPhaseOdysseyFloor(!!win);
 
     // Local display remains responsive; cloud ranking is server-confirmed below.
     if (scoreValue > getLocalShootingHighScore(stageId)) writeLocalShootingHighScore(stageId, scoreValue);
@@ -2985,7 +3096,7 @@
     }
   }
 
-  function buildResonatedCharacterProfile(id) {
+  function buildResonatedCharacterProfile(id, options) {
     const numericId = Number(id);
     const base = SHOOTING_CHARACTERS[numericId] || SHOOTING_CHARACTERS[CHARACTER_ID.ERI];
     // 試遊専用の仮想最大育成。所有インスタンス・アイテム・編成は一切書き換えない。
@@ -3036,6 +3147,13 @@
       }
     } catch (err) {
       console.warn('[shooting] shinju blessing profile skipped:', err);
+    }
+
+    // build1643: 位相回遊の強化（ATK・ショット威力・最大HP・移動速度）はrun中の戦闘だけに乗せる。
+    const phaseOdyssey = (options && options.skipPhaseOdyssey) ? null : getPhaseOdysseyApi();
+    if (phaseOdyssey && typeof phaseOdyssey.applyToProfile === 'function') {
+      try { profile = phaseOdyssey.applyToProfile(profile, numericId) || profile; }
+      catch (err) { console.warn('[shooting] phase odyssey profile skipped:', err); }
     }
 
     return profile;
@@ -3208,7 +3326,8 @@
   }
 
   function saveShootingResumeState(reason) {
-    if (isGachaTrialStage() || suppressShootingResumeSave) return false;
+    // build1643: 位相回遊は階層単位でrunを保存する（戦闘途中の復帰データは作らない）。
+    if (isGachaTrialStage() || isPhaseOdysseyStage() || suppressShootingResumeSave) return false;
     try {
       const noLivingParty = !!(
         state &&
@@ -3711,7 +3830,9 @@
     if (isChapter101TutorialStage()) return;
 
     const safeGainMultiplier = Math.max(0, Number.isFinite(Number(gainMultiplier)) ? Number(gainMultiplier) : 1);
-    const gain = getUltGainAmountPerHit(c) * Math.max(1, Number(hitCount || 1)) * safeGainMultiplier;
+    // build1643: 位相回遊の「ULT回収量上昇」。通常ステージでは常に1。
+    const phaseOdysseyUltRate = Math.max(0, Number(getPhaseOdysseyApi()?.getUltGainMultiplier?.() || 1));
+    const gain = getUltGainAmountPerHit(c) * Math.max(1, Number(hitCount || 1)) * safeGainMultiplier * phaseOdysseyUltRate;
     const wasReady = member.burst >= c.burstNeed;
     member.burst = Math.min(c.burstNeed, member.burst + gain);
     if (!wasReady && member.burst >= c.burstNeed && !member.ultReadyNotified) {
@@ -4099,7 +4220,11 @@
 
     const ruleText = document.getElementById('shooting-party-rule-text');
     if (ruleText) {
-      if (isResonanceTowerStage()) {
+      if (isPhaseOdysseyStage()) {
+        ruleText.textContent = fixedStoryParty
+          ? `位相回遊 · FLOOR ${Number(selectedStage.stageNo || 1)} / 編成固定・HPとULTは次の階層へ持ち越し`
+          : '位相回遊 · 所持キャラから3人を選択 / 開始後は敗北まで編成固定';
+      } else if (isResonanceTowerStage()) {
         ruleText.textContent = isResonanceTowerReplay()
           ? '残響の塔 · CLEAR再挑戦 / 所持キャラ自由編成 / 報酬・封印なし'
           : '残響の塔 · 最大3人 / 勝利すると使用キャラは週内封印';
@@ -4154,6 +4279,7 @@
     document.getElementById(ROOT_ID)?.classList.remove('towa-dark-background');
     document.getElementById('shooting-towa-darkness')?.remove();
     removeTower10ReverseBanner();
+    removeOverseerWatchDom();
     // 旧バトルのITEM表示が何らかの経路で残っていても、新state作成前にDOM側を掃除する。
     purgeChapter4ItemDom();
 
@@ -4923,6 +5049,8 @@
           const raidHp = Math.max(0, Math.floor(Number(state.boss?.hp || 0)));
           const raidMaxHp = Math.max(1, Math.floor(Number(state.boss?.hpMax || selectedRaidContext?.maxHp || 100000)));
           setBattleScorePlate(score, `BOSS HP / ${raidMaxHp.toLocaleString('ja-JP')}`, raidHp.toLocaleString('ja-JP'));
+        } else if (isPhaseOdysseyStage()) {
+          setBattleScorePlate(score, 'PHASE ODYSSEY', `FLOOR ${Number(selectedStage?.stageNo || 1)}`);
         } else {
           setBattleScorePlate(score, 'SCORE', formatShootingScore(state.score));
         }
@@ -12560,7 +12688,11 @@
       ? Number(hpSequence[spawnIndex % hpSequence.length])
       : NaN;
     const stageEnemyHp = Number(cfg.enemyHp);
-    const enemyHp = Number.isFinite(Number(enemyDef.ch404Hp)) && enemyDef.ch404Hp != null
+    // build1643: 位相回遊の監視の眼は階層に応じたHP
+    const watcherHp = enemyDef.behavior === 'po_watcher_v1' ? Number(selectedStage?.phaseOdyssey?.watcherHp || 0) : 0;
+    const enemyHp = watcherHp > 0
+      ? watcherHp
+      : Number.isFinite(Number(enemyDef.ch404Hp)) && enemyDef.ch404Hp != null
       ? Math.max(1, Number(enemyDef.ch404Hp))
       : Number.isFinite(sequencedHp)
       ? Math.max(1, sequencedHp)
@@ -12767,6 +12899,110 @@
     if (!spawnOne()) return;
     state.normalLastSpawnAt = now;
   }
+
+  // ============================================================
+  // build1643 ボス「オーバーシア」（STORY CH08-04 / 位相回遊）：監視ギミック
+  //  ・配下「監視の眼」（最大3体）が首振りしながら扇形の視界を持つ
+  //  ・自機が視界に入っている間だけ、画面上の全ての敵弾が自機へ追従する
+  //  ・視界から外れる／監視の眼を倒すと、敵弾はその時の向きのまま直進に戻る
+  // ============================================================
+  function getOverseerWatchConfig() {
+    return (state && BOSS && BOSS.overseerWatch && !isNormalBattle()) ? BOSS.overseerWatch : null;
+  }
+  function removeOverseerWatchDom() {
+    document.querySelectorAll('.po-watch-cone, .po-watch-alert, .po-watch-vignette').forEach(el => el.remove());
+    document.getElementById(ROOT_ID)?.classList.remove('po-watched');
+    if (state) { state.poWatchCones = null; state.poWatched = false; }
+  }
+  function isPointInWatcherSight(enemy, px, py, h, now) {
+    const def = enemy.def || {};
+    const range = h * Number(def.visionRangeRate || .6);
+    const dx = px - enemy.x, dy = py - enemy.y;
+    if (dx * dx + dy * dy > range * range) return false;
+    let diff = Math.atan2(dy, dx) - Number(enemy.poFacing || Math.PI / 2);
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    return Math.abs(diff) <= (Number(def.visionHalfAngleDeg || 19) * Math.PI / 180);
+  }
+  function updateOverseerWatch(dt, now, bossHalted) {
+    const cfg = getOverseerWatchConfig();
+    if (!cfg) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena || !state.player) return;
+    const layer = document.getElementById('shooting-normal-enemy-layer') || arena;
+    const w = arena.clientWidth, h = arena.clientHeight;
+    if (!state.poWatchCones) state.poWatchCones = new Map();
+    const cones = state.poWatchCones;
+    const alive = new Set();
+    let seen = false;
+    const px = Number(state.player.x || 0), py = Number(state.player.y || 0);
+    (state.normalEnemies || []).forEach(enemy => {
+      if (!enemy || enemy.hp <= 0 || !enemy.def || enemy.def.behavior !== 'po_watcher_v1') return;
+      alive.add(enemy.uid);
+      const def = enemy.def;
+      const age = Math.max(0, (now - Number(enemy.spawnedAt || now)) / 1000);
+      // 監視の眼が出現演出中・停止中でも首振りは続ける（停止系ULT中は止める）
+      const frozen = now < getNormalEnemyLockUntil(enemy, now);
+      if (!frozen) enemy.poFacing = Math.PI / 2 + Math.sin(age * Number(def.sweepSpeed || .55) + enemy.phaseSeed) * Number(def.sweepRad || .85);
+      if (enemy.poFacing == null) enemy.poFacing = Math.PI / 2;
+      const range = h * Number(def.visionRangeRate || .6);
+      const half = Number(def.visionHalfAngleDeg || 19) * Math.PI / 180;
+      const coneH = Math.max(20, 2 * range * Math.tan(half));
+      let cone = cones.get(enemy.uid);
+      if (!cone || !cone.isConnected) {
+        cone = document.createElement('div');
+        cone.className = 'po-watch-cone';
+        cone.setAttribute('aria-hidden', 'true');
+        layer.insertBefore(cone, layer.firstChild);
+        cones.set(enemy.uid, cone);
+      }
+      const inSight = !frozen && !bossHalted && isPointInWatcherSight(enemy, px, py, h, now);
+      if (inSight) seen = true;
+      cone.style.width = `${range}px`;
+      cone.style.height = `${coneH}px`;
+      cone.style.transform = `translate3d(${enemy.x}px,${enemy.y - coneH / 2}px,0) rotate(${enemy.poFacing}rad)`;
+      cone.classList.toggle('is-seeing', inSight);
+      cone.classList.toggle('is-frozen', frozen);
+    });
+    cones.forEach((el, uid) => { if (!alive.has(uid)) { el.remove(); cones.delete(uid); } });
+
+    state.poWatched = seen;
+    document.getElementById(ROOT_ID)?.classList.toggle('po-watched', seen);
+    let alert = arena.querySelector('.po-watch-alert');
+    if (seen && !alert) {
+      alert = document.createElement('div');
+      alert.className = 'po-watch-alert';
+      alert.setAttribute('aria-hidden', 'true');
+      alert.textContent = '監視されている ― 敵弾が追従';
+      const vignette = document.createElement('div');
+      vignette.className = 'po-watch-vignette';
+      vignette.setAttribute('aria-hidden', 'true');
+      arena.append(vignette, alert);
+    } else if (!seen && alert) {
+      alert.remove();
+      arena.querySelectorAll('.po-watch-vignette').forEach(el => el.remove());
+    }
+  }
+  // 見られている間だけ、敵弾の向きを自機へ少しずつ曲げる（速さは変えない）
+  function steerEnemyBulletToPlayer(p, moveDt) {
+    const cfg = getOverseerWatchConfig();
+    if (!cfg || !state.poWatched || !p || p.poNoHoming) return;
+    const vx = Number(p.vx), vy = Number(p.vy);
+    if (!Number.isFinite(vx) || !Number.isFinite(vy)) return;
+    const speed = Math.hypot(vx, vy);
+    if (speed < 1) return;
+    const aim = getEnemyAimPosition();
+    const desired = Math.atan2(Number(aim.y || 0) - Number(p.y || 0), Number(aim.x || 0) - Number(p.x || 0));
+    let cur = Math.atan2(vy, vx);
+    let diff = desired - cur;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    const maxTurn = Math.max(0.2, Number(cfg.homingTurnRadPerSec || 2.4)) * Math.max(0, moveDt);
+    cur += clamp(diff, -maxTurn, maxTurn);
+    p.vx = Math.cos(cur) * speed;
+    p.vy = Math.sin(cur) * speed;
+  }
+
 
   function spawnBossAdds(now) {
     if (isNormalBattle() || !hasBossAdds() || state.finishing || state.ended) return;
@@ -13298,6 +13534,7 @@
       return;
     }
     const def = enemy.def || {};
+    if (def.behavior === 'po_watcher_v1') return; // 監視の眼は攻撃しない
 
     // v212 generic elemental angels
     if (def.behavior === 'generic_element_shot_v1') {
@@ -13994,6 +14231,10 @@
         // 弾幕担当の雑魚。上空で横移動しながら、交差する角度を作る。
         enemy.x = clamp(enemy.baseX + Math.sin(age * 1.08 + enemy.phaseSeed) * Math.min(72, w * .18), 36, w - 36);
         enemy.y = Math.max(76, Math.min(h * .34, enemy.baseY)) + Math.sin(age * .76 + enemy.phaseSeed * 1.7) * 14;
+      } else if (def.behavior === 'po_watcher_v1') {
+        // build1643: 監視の眼。上空〜中段をゆっくり漂い、視界（扇形）を首振りさせる。
+        enemy.x = clamp(enemy.baseX + Math.sin(age * .35 + enemy.phaseSeed) * Math.min(92, w * .22), 40, w - 40);
+        enemy.y = clamp(Math.max(96, Math.min(h * .30, enemy.baseY)) + Math.sin(age * .27 + enemy.phaseSeed * 1.3) * h * .06, 84, h * .40);
       } else if (def.behavior === 'mini_beautiful_v1') {
         // CH04は発射源まで忙しくしない。ゆったり左右へ漂い、幾何学模様を崩さない。
         enemy.x = clamp(enemy.baseX + Math.sin(age * .58 + enemy.phaseSeed) * Math.min(54, w * .13), 36, w - 36);
@@ -14543,6 +14784,9 @@
   //              slide: 出現時の穴のずれ(マス。到達までに0へ), bob: 途中の上下の揺れ(px) }
   function buildRhythmRows(loopIndex, phase) {
     const rand = rhythmRandom(0x5eed + loopIndex * 7919);
+    // build1643: 音符（♪）の配置は別系統の乱数。穴の並び（既存の譜面）は一切変えない。
+    const noteRand = rhythmRandom(0x9a7e + loopIndex * 104729);
+    let lastNoteRow = -9;
     const tighten = (Math.max(1, phase) >= 3 ? 1 : 0) + (loopIndex >= 1 ? 1 : 0) - getRhythmStageConfig().holeBonus;
     const base = loopIndex * RHYTHM_SONG_MS;
     const rows = [];
@@ -14601,7 +14845,17 @@
           const amp = rule.every >= 1 ? 34 : 20;
           bob = (rowNo % 2 ? 1 : -1) * amp;
         }
-        rows.push({ t: base + rhythmBeatTimeAt(b0 + k), col, hole, slide, bob });
+        // 音符：おおよそ3列に1回。穴の端から3〜6マス離れた位置に置き、音符の左右1マスずつも空ける
+        // （●　♪　●）。穴との間には必ず弾が1つ以上残る。
+        // note は「穴の左端マスからの相対マス」。負なら穴の左側、hole以上なら右側。
+        let note = null;
+        if (rowNo - lastNoteRow >= 2 && noteRand() < 0.38) {
+          const dist = 3 + Math.floor(noteRand() * 4);
+          const rel = noteRand() < 0.5 ? -dist : hole - 1 + dist;
+          const cell = col + rel;
+          if (cell >= 2 && cell <= RHYTHM_COLS - 3) { note = rel; lastNoteRow = rowNo; }
+        }
+        rows.push({ t: base + rhythmBeatTimeAt(b0 + k), col, hole, slide, bob, note });
         sinceStart++;
         rowNo++;
       }
@@ -14612,6 +14866,33 @@
   // ---------- 曲と時計 ----------
   function getRhythmSongElement() {
     return document.getElementById(RHYTHM_SONG_ID);
+  }
+
+  // build1643: 律動で「タイトルBGMが流れた」報告への対策。
+  // 端末・Service Workerのキャッシュ不整合などで、律動の<audio>に別の曲が読み込まれていた場合、
+  // 曲の長さで検出し、キャッシュを避けたURLで1回だけ読み込み直す。
+  let rhythmSongVerified = false;
+  function verifyRhythmSongSource() {
+    if (rhythmSongVerified) return;
+    const el = getRhythmSongElement();
+    if (!el) return;
+    const check = () => {
+      const dur = Number(el.duration);
+      if (!Number.isFinite(dur) || dur <= 0) return;
+      rhythmSongVerified = true;
+      if (Math.abs(dur * 1000 - RHYTHM_SONG_MS) <= 5000) return;
+      console.warn('[rhythm] unexpected song duration, reloading without cache:', dur);
+      try {
+        const wasPlaying = !el.paused;
+        const url = new URL(el.getAttribute('src') || 'audio/bgm_rhythm_01.mp3', location.href);
+        url.searchParams.set('r', String(Date.now()));
+        el.src = url.href;
+        el.load();
+        if (wasPlaying) playShootingBattleBgm({ restart: true });
+      } catch (err) { console.warn('[rhythm] song reload failed', err); }
+    };
+    if (el.readyState >= 1) check();
+    else el.addEventListener('loadedmetadata', check, { once: true });
   }
 
   // PAUSE中は曲も止める（通路は曲の再生位置に従うため）。
@@ -14647,9 +14928,35 @@
 
   // ---------- 弾の列（当たり判定は左右2本の帯。見た目は等間隔の弾） ----------
   // colF: 穴の左端マス（小数可。横に流れる間は連続的に動く）
+  function setRhythmBarSegment(p, side, a, b, from, to, pitch) {
+    if (!p) return;
+    const lo = Math.max(0, Math.min(a, b)), hi = Math.max(lo + 2, Math.max(a, b));
+    const hw = Math.max(1, (hi - lo) / 2);
+    p.x = lo + hw; p.canvasHalfWidth = hw; p._hw = hw; p.rhythmSide = side;
+    p.rhythmFrom = from; p.rhythmTo = to; p.rhythmPitch = pitch;
+  }
   function layoutRhythmRow(row, w) {
     const pitch = w / RHYTHM_COLS;
     const colF = row.colF;
+    // build1643: 音符のある列は、音符とその左右1マス（計3マス）の弾と当たり判定を抜く（帯を2本に分ける）
+    if (row.note != null && row.bars.length >= 3) {
+      const n = colF + row.note;                 // 音符のマス（小数可）
+      const R = RHYTHM_ORB_R;
+      const leftEdge = Math.max(0, (colF - 0.5) * pitch + R);
+      const rightStart = Math.min(w, (colF + row.hole + 0.5) * pitch - R);
+      const [b0, b1, b2] = row.bars;
+      if (row.note < 0) {
+        setRhythmBarSegment(b0, 'left', 0, (n - 1.5) * pitch + R, (n - 1.5) * pitch, null, pitch);
+        setRhythmBarSegment(b1, 'left', (n + 2.5) * pitch - R, leftEdge, (colF - 0.5) * pitch, (n + 2.5) * pitch, pitch);
+        setRhythmBarSegment(b2, 'right', rightStart, w, (colF + row.hole + 0.5) * pitch, null, pitch);
+      } else {
+        setRhythmBarSegment(b0, 'left', 0, leftEdge, (colF - 0.5) * pitch, null, pitch);
+        setRhythmBarSegment(b1, 'right', rightStart, (n - 1.5) * pitch + R, (colF + row.hole + 0.5) * pitch, (n - 1.5) * pitch, pitch);
+        setRhythmBarSegment(b2, 'right', (n + 2.5) * pitch - R, w, (n + 2.5) * pitch, null, pitch);
+      }
+      row.noteX = (n + 0.5) * pitch;
+      return;
+    }
     const leftEdge = Math.max(0, (colF - 0.5) * pitch + RHYTHM_ORB_R);
     const rightEdge = Math.min(w, (colF + row.hole + 0.5) * pitch - RHYTHM_ORB_R);
     const [left, right] = row.bars;
@@ -14668,7 +14975,8 @@
   function spawnRhythmRow(ev, w) {
     const damage = Number(BOSS.bulletDamage || 240);
     const bars = [];
-    for (let i = 0; i < 2; i++) {
+    const barCount = ev.note != null ? 3 : 2;
+    for (let i = 0; i < barCount; i++) {
       const p = makeProjectile('shooting-enemy-bullet shooting-rhythm-bar', w * 0.5, RHYTHM_SPAWN_Y, 0, 0, damage);
       if (!p) continue;
       p.canvasHalfHeight = RHYTHM_ORB_R;
@@ -14680,6 +14988,7 @@
       arrive: ev.arriveMs, col: ev.col, hole: ev.hole,
       slide: Number(ev.slide || 0), bob: Number(ev.bob || 0),
       colF: ev.col + Number(ev.slide || 0), bars,
+      note: bars.length >= 3 ? ev.note : null, noteTaken: false, noteX: 0, y: RHYTHM_SPAWN_Y,
     };
     layoutRhythmRow(row, w);
     return row;
@@ -14693,6 +15002,7 @@
     const h = Math.max(1, arena.clientHeight);
     let r = state.rhythm;
     if (!r) {
+      verifyRhythmSongSource();
       r = state.rhythm = {
         clockMs: 0, lastTs: ts, lastRawMs: 0, loopCount: 0, waitMs: 0, usingSong: false,
         loopIndex: -1, chart: [], chartIndex: 0, rows: [],
@@ -14736,8 +15046,117 @@
         layoutRhythmRow(row, w);
       }
       alive.forEach(p => { p.y = y; p.vx = 0; p.vy = 0; });
+      row.y = y;
+      if (row.note != null && !row.noteTaken) tryCollectRhythmNote(row, ts);
       return y < h + 40;
     });
+  }
+
+  // ---------- build1643: 音符（♪）の取得 ----------
+  // 取ると ATK×1.5（5秒）/ 無敵（3秒）/ ULT満タン / HP33%回復 のどれかが発動する（ミモザのアイテムと同じ効果処理）。
+  const RHYTHM_NOTE_EFFECTS = Object.freeze([
+    Object.freeze({ kind:'atk', label:'ATK UP', detail:'ATK ×1.5 / 5秒', atkBuffMultiplier:1.5, atkBuffDurationMs:5000 }),
+    Object.freeze({ kind:'invincible', label:'INVINCIBLE', detail:'無敵 / 3秒', invincibleDurationMs:3000 }),
+    Object.freeze({ kind:'ult', label:'ULT MAX', detail:'ULTゲージ満タン' }),
+    Object.freeze({ kind:'heal', label:'HP HEAL', detail:'HP 33%回復', healPercent:0.33 }),
+  ]);
+  function tryCollectRhythmNote(row, now) {
+    if (!state || !state.player || state.koTransition || state.ended || state.finishing) return;
+    if (Math.abs(Number(row.y || 0) - Number(state.player.y || 0)) > 70) return;
+    const core = document.getElementById('shooting-player-core');
+    const arena = document.getElementById('shooting-arena');
+    if (!core || !arena) return;
+    const cr = core.getBoundingClientRect(), ar = arena.getBoundingClientRect();
+    const cx = (cr.left + cr.right) / 2 - ar.left, cy = (cr.top + cr.bottom) / 2 - ar.top;
+    const pitch = Math.max(1, arena.clientWidth) / RHYTHM_COLS;
+    if (Math.abs(cx - row.noteX) > pitch * 1.3 || Math.abs(cy - row.y) > 18) return;
+    row.noteTaken = true;
+    const effect = RHYTHM_NOTE_EFFECTS[Math.floor(Math.random() * RHYTHM_NOTE_EFFECTS.length)];
+    applyMimosaItemEffect(Object.assign({}, effect), now);
+    const notice = document.getElementById(ROOT_ID)?.querySelector('.shooting-item-effect-notice span');
+    if (notice) notice.textContent = '♪ RHYTHM BONUS';
+    spawnRhythmNoteBurst(row.noteX, row.y);
+  }
+  function spawnRhythmNoteBurst(x, y) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const fx = document.createElement('div');
+    fx.className = 'shooting-rhythm-note-burst';
+    fx.setAttribute('aria-hidden', 'true');
+    fx.innerHTML = '<i></i><i></i><b></b>';
+    fx.style.transform = `translate3d(${x}px,${y}px,0)`;
+    arena.appendChild(fx);
+    setTimeout(() => fx.remove(), 700);
+  }
+  // 音符の見た目：金の八分音符＋柔らかな光輪。Canvasに一度だけ描いてキャッシュする。
+  const RHYTHM_NOTE_R = 17;
+  function getRhythmNoteSprite(dpr) {
+    const key = 'rhythm-note|' + dpr;
+    let sprite = ENEMY_BULLET_SPRITE_CACHE.get(key);
+    if (sprite) return sprite;
+    const R = RHYTHM_NOTE_R;
+    const { c, g } = makeSpriteCanvas(R + 2, dpr);
+    // 光輪
+    const halo = g.createRadialGradient(0, 0, 0, 0, 0, R + 1);
+    halo.addColorStop(0, 'rgba(255,248,220,.85)');
+    halo.addColorStop(0.35, 'rgba(255,214,120,.45)');
+    halo.addColorStop(0.7, 'rgba(240,180,80,.14)');
+    halo.addColorStop(1, 'rgba(240,180,80,0)');
+    g.fillStyle = halo;
+    g.beginPath(); g.arc(0, 0, R + 1, 0, Math.PI * 2); g.fill();
+    // 細い金の輪
+    g.strokeStyle = 'rgba(255,236,180,.85)';
+    g.lineWidth = 0.9;
+    g.beginPath(); g.arc(0, 0, R * 0.78, 0, Math.PI * 2); g.stroke();
+    // 八分音符（符頭・符幹・旗）
+    const body = new Path2D();
+    body.ellipse(-3.2, 6.2, 4.6, 3.4, -0.42, 0, Math.PI * 2);
+    body.rect(0.6, -9.5, 1.9, 15.8);
+    body.moveTo(2.5, -9.5);
+    body.bezierCurveTo(5.8, -7.2, 9.4, -5.6, 7.6, -0.6);
+    body.bezierCurveTo(7.4, -3.4, 5.2, -4.6, 2.5, -5.2);
+    body.closePath();
+    const fill = g.createLinearGradient(-6, -10, 8, 10);
+    fill.addColorStop(0, '#fffbea');
+    fill.addColorStop(0.42, '#f6d27a');
+    fill.addColorStop(1, '#b07a26');
+    g.shadowColor = 'rgba(255,214,120,.95)';
+    g.shadowBlur = 5;
+    g.fillStyle = fill;
+    g.fill(body);
+    g.shadowBlur = 0;
+    g.lineWidth = 0.8;
+    g.strokeStyle = 'rgba(110,70,20,.85)';
+    g.stroke(body);
+    // 符頭のハイライト
+    g.fillStyle = 'rgba(255,255,255,.85)';
+    g.beginPath(); g.ellipse(-4.6, 5.2, 1.5, 0.9, -0.42, 0, Math.PI * 2); g.fill();
+    ENEMY_BULLET_SPRITE_CACHE.set(key, c);
+    return c;
+  }
+  function drawRhythmNotes(ctx, r, pulse, dpr) {
+    if (!r || !Array.isArray(r.rows)) return;
+    const sprite = getRhythmNoteSprite(dpr);
+    const half = sprite.__half;
+    const t = performance.now() / 1000;
+    for (const row of r.rows) {
+      if (row.note == null || row.noteTaken || !Number.isFinite(row.noteX)) continue;
+      const x = row.noteX, y = Number(row.y || 0);
+      const s = half * (1 + 0.12 * pulse);
+      ctx.globalAlpha = 1;
+      ctx.drawImage(sprite, x - s, y - s, s * 2, s * 2);
+      // 周りを回るきらめき（4点）
+      ctx.fillStyle = 'rgba(255,246,214,.95)';
+      for (let i = 0; i < 4; i++) {
+        const a = t * 2.2 + i * Math.PI / 2;
+        const rr = RHYTHM_NOTE_R * 0.95;
+        const sx = x + Math.cos(a) * rr, sy = y + Math.sin(a) * rr * 0.9;
+        const k = 1.6 + 0.6 * Math.sin(t * 6 + i);
+        ctx.beginPath();
+        ctx.moveTo(sx, sy - k * 1.6); ctx.lineTo(sx + k * 0.55, sy); ctx.lineTo(sx, sy + k * 1.6); ctx.lineTo(sx - k * 0.55, sy);
+        ctx.closePath(); ctx.fill();
+      }
+    }
   }
 
   // ---------- 見た目：輪郭のない光の弾（aura） ----------
@@ -14801,10 +15220,14 @@
       const wArena = ctx.canvas.width / dpr;
       // 穴の隣の弾から外側へ並べる（横に流れても間隔は一定）
       const xs = [];
+      // build1643: rhythmTo があれば（音符で分かれた内側の帯）そこで止める
+      const to = typeof p.rhythmTo === 'number' ? p.rhythmTo : null;
       if (p.rhythmSide === 'left') {
-        for (let x = p.rhythmFrom; x > -pitch; x -= pitch) xs.push(x);
+        const stop = to != null ? to - 0.01 : -pitch;
+        for (let x = p.rhythmFrom; x > stop; x -= pitch) xs.push(x);
       } else {
-        for (let x = p.rhythmFrom; x < wArena + pitch; x += pitch) xs.push(x);
+        const stop = to != null ? to + 0.01 : wArena + pitch;
+        for (let x = p.rhythmFrom; x < stop; x += pitch) xs.push(x);
       }
       if (!xs.length) continue;
       const x0 = Math.min(xs[0], xs[xs.length - 1]), x1 = Math.max(xs[0], xs[xs.length - 1]);
@@ -14822,6 +15245,7 @@
       const s = half * (1 + 0.14 * pulse);
       for (const x of xs) ctx.drawImage(sprite, x - s, y - s, s * 2, s * 2);
     }
+    drawRhythmNotes(ctx, r, pulse, dpr);
     ctx.restore();
   }
 
@@ -16608,7 +17032,7 @@
 
 
   // ============================================================
-  // RANDOM AMBUSH - オーバーシア（亜種）
+  // RANDOM AMBUSH - 竜型レムナント（亜種）
   // ============================================================
   function clearAmbushObjects() {
     if (!state) return;
@@ -16880,7 +17304,7 @@
     state.boss.gaugeHp = hp;
     state.boss.gauges = 1;
     state.boss.phase = 1;
-    showFacelessBattleCut('WAVE 2','OVERSEER VARIANT');
+    showFacelessBattleCut('WAVE 2','DRAGON REMNANT VARIANT');
     renderHud();
 
     setTimeout(() => {
@@ -16958,7 +17382,7 @@
     ) {
       // v184: 乱入WAVE2終盤攻撃は即死ではなく、
       // そのWAVEの通常弾ダメージの2倍に抑える。
-      // v185: オーバーシア亜種WAVE2終盤の強化弾は600固定。
+      // v185: 竜型レムナント亜種WAVE2終盤の強化弾は600固定。
       // 通常弾400との差は1.5倍に留め、即死級にはしない。
       const heavyDamage = 600;
       damagePlayer(now, heavyDamage, 'raw', normalizeCombatElement(state?.boss?.element || BOSS?.element));
@@ -17119,7 +17543,7 @@
       return 8200;
     }
 
-    // CHAPTER01-04 オーバーシアだけはWAVE2/3の危険攻撃頻度も
+    // CHAPTER01-04 竜型レムナントだけはWAVE2/3の危険攻撃頻度も
     // 通常弾と同じく1段階ずつ弱体化する。
     if (
       selectedStage &&
@@ -17526,7 +17950,7 @@
 
     const phase = state.boss.phase || 1;
 
-    // CHAPTER01-04 オーバーシア難易度調整:
+    // CHAPTER01-04 竜型レムナント難易度調整:
     // WAVE1は従来維持。
     // WAVE2は旧WAVE1相当、WAVE3は旧WAVE2相当に1段階ずつ弱体化。
     // HP / ダメージ自体は変えず、弾数・連射間隔・弾速で避けやすくする。
@@ -18634,6 +19058,8 @@
       }
 
       const moveDt = dt * getShiinaEnemyBulletSpeedMultiplier(p, now);
+      // build1643 オーバーシア：監視の眼に見られている間だけ全ての敵弾が追従型になる
+      if (state.poWatched) steerEnemyBulletToPlayer(p, moveDt);
 
       // CH04の▼弾。ゆるく横揺れしながら落下する。
       if (p.chapter4CurtainDrift) {
@@ -19093,8 +19519,14 @@
     const elementReaction = isLethal
       ? ''
       : getElementDamageReaction(normalizedAttackElement, targetElement, { ignoreStageImmunity:true });
-    const appliedDamage = Math.min(member.hp, Math.max(0, elementAdjustedDamage));
+    // build1643: 位相回遊のみ、位相による敵ATK強化・被ダメージ軽減・バリア吸収を適用（即死弾は対象外）。
+    const phaseOdyssey = isLethal ? null : getPhaseOdysseyApi();
+    const phaseAdjustedDamage = phaseOdyssey && typeof phaseOdyssey.modifyIncomingDamage === 'function'
+      ? phaseOdyssey.modifyIncomingDamage(elementAdjustedDamage, member, now)
+      : elementAdjustedDamage;
+    const appliedDamage = Math.min(member.hp, Math.max(0, phaseAdjustedDamage));
     member.hp = Math.max(0, member.hp - appliedDamage);
+    if (phaseOdyssey && typeof phaseOdyssey.onDamageTaken === 'function') phaseOdyssey.onDamageTaken(member, appliedDamage, now);
     showDamageNumber(state.player.x, state.player.y, appliedDamage, 'player', false, elementReaction);
     if (isNormalBattle()) evaluateNormalMission(now);
     state.player.invulnUntil = now + 1150;
@@ -22166,6 +22598,8 @@
           spawnBossAdds(ts);
           updateNormalEnemies(dt, ts);
         }
+        // build1643: オーバーシアの監視（視界に入っている間だけ敵弾が追従）
+        updateOverseerWatch(dt, ts, bossGrabbed || bossStunned);
         if (!bossGrabbed && !bossStunned && (!isScoreAttackStage() || state.boss.hp > 0)) {
           fireBoss(ts);
         }
@@ -22264,7 +22698,7 @@
     if (isAmbushStage()) {
       meta.kicker = 'EMERGENCY ENCOUNTER';
       meta.title = '???';
-      meta.sub = 'OVERSEER VARIANT';
+      meta.sub = 'DRAGON REMNANT VARIANT';
       meta.image = selectedStage.introImage || 'images/remnant_01_blk_battle_start.webp';
     } else if (isScoreAttackStage()) {
       meta.kicker = 'SCORE ATTACK';
@@ -22284,6 +22718,11 @@
       meta.title = '理想郷：ノア';
       meta.sub = '楽園 -ノア-';
       meta.image = selectedStage.introImage || 'images/noah_battle_start.webp';
+    } else if (BOSS && BOSS.overseerWatch) {
+      meta.kicker = isPhaseOdysseyStage() ? 'PHASE ODYSSEY' : 'TOWER GUARDIAN';
+      meta.title = BOSS.name || 'オーバーシア';
+      meta.sub = 'THE OVERSEER';
+      meta.image = selectedStage.introImage || 'images/phase_odyssey_overseer_intro.webp';
     } else if (isSelectedBaseStage(SHOOTING_STAGE_ID.CH01_04) || lower.includes('remnant_01')) {
       meta.kicker = 'REMNANT 01';
       meta.title = '竜型レムナント';
@@ -23980,7 +24419,7 @@
   // v163: first-clear gem reward must be tied to a server-issued shooting run.
   // A stage_id alone is no longer enough to claim gems from the console.
   async function beginSecureShootingRun() {
-    if (!state || !state.stageId || isDailyQuestStage() || isResonanceTowerStage()) return null;
+    if (!state || !state.stageId || isDailyQuestStage() || isResonanceTowerStage() || isPhaseOdysseyStage()) return null;
     if (state.secureRunToken) return state.secureRunToken;
     if (state.secureRunPromise) return state.secureRunPromise;
 
@@ -24107,7 +24546,7 @@
   }
 
   function buildAndGrantShootingClearRewards() {
-    if (isResonanceTowerStage()) return [];
+    if (isResonanceTowerStage() || isPhaseOdysseyStage()) return [];
     if (!state || state.clearRewardsGranted) return Array.isArray(state && state.clearRewards) ? state.clearRewards : [];
     state.clearRewardsGranted = true;
 
@@ -24306,7 +24745,7 @@
     const list = document.getElementById('shooting-result-reward-list');
     const note = document.getElementById('shooting-result-reward-note');
     if (!section || !list) return;
-    if (isResonanceTowerStage()) {section.style.display='none';list.innerHTML='';return;}
+    if (isResonanceTowerStage() || isPhaseOdysseyStage()) {section.style.display='none';list.innerHTML='';return;}
 
     if (!win) {
       section.style.display = 'none';
@@ -24534,6 +24973,9 @@
   function getShootingResultStageLabel() {
     const stage = selectedStage;
     if (!stage) return '';
+    if (stage.eventId === 'phase_odyssey') {
+      return `${String(stage.eventTitle || '位相回遊').trim()} ｜ FLOOR ${Math.max(1, Math.floor(Number(stage.stageNo || 1)))}`;
+    }
     if (stage.eventId === 'resonance_tower') {
       const floor = Math.max(0, Math.floor(Number(stage.stageNo || 0)));
       const floorLabel = String(stage.difficultyLabel || '').trim() || `${String(floor).padStart(2, '0')}F`;
@@ -24560,6 +25002,7 @@
     fadeOutShootingBattleBgm(520, true);
 
     // CH04専用ギミックはRESULTへ持ち越さない。
+    removeOverseerWatchDom();
     clearChapter4FinalItem();
     purgeChapter4ItemDom();
     clearChapter43RestoreItem();
@@ -24626,7 +25069,7 @@
     // build1081: RESULTを閉じるまで勝敗を保持し、STORY後半ノベル判定に使う。
     state.lastResultWin = !!win;
     // 敗北/中断では上書きしない。実際に出撃したメンバー順を保持する。
-    if (win && !isResonanceTowerReplay()) {
+    if (win && !isResonanceTowerReplay() && !isPhaseOdysseyStage()) {
       saveShootingLastClearParty(
         state.stageId || selectedStage?.id,
         Array.isArray(state.initialPartyIds) && state.initialPartyIds.length
@@ -24643,7 +25086,7 @@
     if (dailyQuestAtResult) {
       if (raidRow) raidRow.style.display = 'none';
       if (retryBtn) retryBtn.style.display = 'none';
-    } else if (isResonanceTowerStage()) {
+    } else if (isResonanceTowerStage() || isPhaseOdysseyStage()) {
       if (raidRow) raidRow.style.display = 'none';
       if (retryBtn) retryBtn.style.display = 'none';
     } else if (isRaidStage()) {
@@ -24678,7 +25121,8 @@
       }
     }
     // STORY進捗へシューティング結果を通知。
-    try {
+    // build1643: 位相回遊の階層は無限に増えるため、STORY記録・各種イベントへは通知しない。
+    if (!isPhaseOdysseyStage()) try {
       window.dispatchEvent(new CustomEvent('shooting-stage-result', {
         detail: {
           stageId: state.stageId || (selectedStage && selectedStage.id) || null,
@@ -24702,7 +25146,9 @@
       const c = getBattleCharacter(m.id);
       return `<span class="shooting-result-member${markDown && m.hp <= 0 ? ' down' : ''}" title="${c.name}"><img src="${c.panelImage || c.image}" alt="${c.name}"><b>${value}${suffix}</b></span>`;
     };
-    if (kicker) kicker.textContent = isResonanceTowerReplay() ? 'FREE REPLAY · NO REWARDS' : (win ? '' : 'MISSION FAILED');
+    if (kicker) kicker.textContent = isPhaseOdysseyStage()
+      ? (win ? 'PHASE ODYSSEY · FLOOR CLEAR' : 'PHASE ODYSSEY · RUN END')
+      : (isResonanceTowerReplay() ? 'FREE REPLAY · NO REWARDS' : (win ? '' : 'MISSION FAILED'));
     if (title) title.textContent = 'RESULT';
     if (stageLabel) {
       stageLabel.textContent = getShootingResultStageLabel();
@@ -24722,6 +25168,7 @@
       rank.textContent = rankLetter;
       rank.setAttribute('data-rank', rankLetter);
     }
+    renderPhaseOdysseyResult(!!win);
     renderShootingClearRewards(!!win);
 
     // build1082:
@@ -25642,7 +26089,13 @@
     if (!audio) return;
     try {
       audio.preload = 'auto';
-      if (audio.readyState < 2) audio.load();
+      // build1643: 読み込み中に load() を重ねない。同じ音声URLへ範囲リクエストが重なると
+      // Chrome の HTTP キャッシュが ERR_CACHE_OPERATION_NOT_SUPPORTED で失敗することがある。
+      const loading = audio.networkState === 2; // NETWORK_LOADING
+      if (audio.readyState < 2 && !loading && !audio.dataset.bgmWarmed) {
+        audio.dataset.bgmWarmed = '1';
+        audio.load();
+      }
     } catch (_) {}
   }
 
@@ -25760,6 +26213,9 @@
 
     shootingBattleBgmFadeRaf = requestAnimationFrame(step);
   }
+
+  // build1643: BGMガード（js/bgm_guard.js）が「戦闘BGMを鳴らしてよい状態か」を判定するために公開。
+  window.isShootingBattleBgmSessionActive = function () { return !!shootingBattleBgmSessionActive; };
 
   window.syncShootingBattleBgm = function () {
     updateShootingBattleBgmMenuUi();
@@ -26389,7 +26845,7 @@
     }
     if (isStoryShootingStage()) ensureStoryEriLeader();
     if (!isShootingPartyReady()) return;
-    const towerBattleStart=isResonanceTowerStage();
+    const towerBattleStart=isResonanceTowerStage() || isPhaseOdysseyStage(); // 二重タップ防止（位相回遊も確認ダイアログを挟む）
     if (towerBattleStart && towerBattleStartPending) return;
     if (towerBattleStart) towerBattleStartPending=true;
     try {
@@ -26445,6 +26901,23 @@
       const accepted=await window.ResonanceTower.prepareBattle(Number(selectedStage.stageNo),selectedPartyIds);
       if (!accepted) return;
     }
+    // build1643: 位相回遊。未開始なら確認ダイアログのうえrunを開始し、
+    // 挑戦中なら現在階層・固定編成とrunの一致を確認してから出撃。
+    if (isPhaseOdysseyStage()) {
+      const api = window.PhaseOdyssey;
+      const confirmedStageId = String(selectedStage?.id || '');
+      const confirmedPartyIds = selectedPartyIds.map(Number);
+      let accepted = false;
+      try {
+        accepted = !!(api && typeof api.prepareBattle === 'function' &&
+          await api.prepareBattle(Number(selectedStage.stageNo), confirmedPartyIds));
+      } catch (err) {
+        console.warn('[phase odyssey] prepare failed', err);
+      }
+      if (!accepted || String(selectedStage?.id || '') !== confirmedStageId ||
+          !document.getElementById(ROOT_ID)?.classList.contains('open')) return;
+      selectedPartyIds = confirmedPartyIds;
+    }
 
     // 使用キャラランキング用。編成された各キャラを1出撃として記録。
     // 集計保存はゲーム開始をブロックしない。
@@ -26461,6 +26934,7 @@
     selectedCharacterId = selectedPartyIds[0];
     clearEltenaBlackHole();
     resetState();
+    applyPhaseOdysseyCarryover();
     // v163: issue/restore a server-side run token before battle can produce a first-clear reward.
     void beginSecureShootingRun();
     clearProjectiles();
@@ -26636,7 +27110,7 @@
 
     // 特別巡行の既存導線は openShootingEvent() を引数なしで呼ぶ。
     // STORYで最後に選んだstageIdを引き継がないよう、
-    // 引数なし起動は常に従来のオーバーシア単戦へ戻す。
+    // 引数なし起動は常に従来の無貌の天使（ステージ選択）へ戻す。
     const hasExplicitStage = !!(options && options.stageId);
     const hasExplicitEnemy = !!(options && options.enemyId);
     // build1637: 律動 -仮面舞踏会- は難易度選択から。
@@ -26750,6 +27224,14 @@
     } else if (isStoryReplayBattle() || isFreeStoryPartyStage()) {
       selectedPartyIds = [];
       selectedCharacterId = firstOwned || CHARACTER_ID.ERI;
+    } else if (isPhaseOdysseyStage()) {
+      // build1643: 位相回遊の挑戦開始前は共通パーティ選択で3人を自由編成（前回の3人を初期配置）。
+      const draft = getPhaseOdysseyApi()?.getDraftMembers?.();
+      selectedPartyIds = (Array.isArray(draft) ? draft : [])
+        .map(Number)
+        .filter(id => isShootingCharacterAvailableForCurrentParty(id))
+        .slice(0, PARTY_SIZE);
+      selectedCharacterId = selectedPartyIds[0] || firstOwned || CHARACTER_ID.ERI;
     } else {
       selectedCharacterId = firstOwned || CHARACTER_ID.ERI;
     }
@@ -26777,6 +27259,12 @@
     });
   };
 
+  // build1643: 位相回遊の状態表示用。共鳴・レベル・神聖樹まで反映した育成値（位相回遊の強化は含めない）。
+  window.getShootingCharacterGrowthProfile = function (id) {
+    try { return buildResonatedCharacterProfile(Number(id), { skipPhaseOdyssey: true }); }
+    catch (_) { return null; }
+  };
+
   window.restartShootingEvent = async function (options = {}) {
     if (isGachaTrialStage()) return startGachaTrialBattle();
     // build1169: CH01-04でアルノ戦まで到達したGAME OVERのRETRYは、
@@ -26801,6 +27289,10 @@
     // UI表示が何らかの理由で崩れても、処理側で二重出撃を必ず止める。
     if (isResonanceTowerStage()) {
       if (typeof window.showToast==='function') window.showToast('残響の塔は階層画面から再出撃してください');
+      return;
+    }
+    if (isPhaseOdysseyStage()) {
+      if (typeof window.showToast==='function') window.showToast('位相回遊はトップ画面から進行してください');
       return;
     }
     if (isDailyQuestStage()) {
@@ -26963,7 +27455,7 @@
     // 先に退避してからクリアし、古い戻り先が次回起動へ残らないようにする。
     const returnContext = window.__shootingReturnContext || null;
     window.__shootingReturnContext = null;
-    if (returnContext && returnContext.type === 'resonanceTower' && resultWasVisible) {
+    if (returnContext && (returnContext.type === 'resonanceTower' || returnContext.type === 'phaseOdyssey') && resultWasVisible) {
       try { await (state?.secureFinalizePromise || Promise.resolve()); } catch (err) { console.warn('[tower] finalization not confirmed',err); }
     }
 
@@ -27093,6 +27585,11 @@
     }
     if (returnContext && returnContext.type === 'resonanceTower') {
       if (typeof window.openResonanceTower==='function') window.openResonanceTower();
+      clearShootingResultExitFade();
+      return;
+    }
+    if (returnContext && returnContext.type === 'phaseOdyssey') {
+      if (typeof window.openPhaseOdyssey==='function') window.openPhaseOdyssey();
       clearShootingResultExitFade();
       return;
     }
@@ -33025,6 +33522,11 @@
         raidBossName = String((raidEnemy && raidEnemy.name) || '').trim();
       } catch (_) {}
       return ['RAID BATTLE', raidBossName || getShootingStageInfoBossName(stage)];
+    }
+
+    // build1643: 位相回遊は階層番号を表示。
+    if (stage.eventId === 'phase_odyssey') {
+      return ['PHASE ODYSSEY', `FLOOR ${stageNo}`, stage.type === 'boss' ? `BOSS ${String(stage.phaseOdyssey?.bossName || '位相の守護者')}` : ''];
     }
 
     // ノアはステージ名のみ。旧 STRESS TEST 表記は出さない。

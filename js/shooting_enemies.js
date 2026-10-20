@@ -58,6 +58,9 @@
     // build1630: リズム弾幕（試作）
     RHYTHM_GATE: 'shooting_rhythm_gate',
     RHYTHM_GATE_ADVANCED: 'shooting_rhythm_gate_advanced', // build1637 上級（2PHASE）
+    // build1643: ボス「オーバーシア」と、その配下「監視の眼」（STORY CH08-04・位相回遊）
+    PO_OVERSEER: 'shooting_po_overseer',
+    PO_WATCHER: 'shooting_po_watcher',
   });
 
   // ============================================================
@@ -389,6 +392,29 @@
 
     // CH08 final boss: the identity of the tower's guard remains unknown.
     // Uses existing barrage_v1 behavior and placeholder art until dedicated art is supplied.
+    // build1643: ボス「オーバーシア」（STORY CH08-04の塔の守護者／位相回遊20F〜）。弾幕は barrage_v1。
+    // 配下の監視の眼（PO_WATCHER）の視界に自機が入っている間だけ、全ての敵弾が自機へ追従する（処理は shooting_core.js）。
+    [SHOOTING_ENEMY_ID.PO_OVERSEER]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.PO_OVERSEER,
+      kind: 'boss', implemented: true,
+      name: 'オーバーシア', displayName: 'OVERSEER　オーバーシア',
+      image: 'images/phase_odyssey_overseer_battle.webp', element: 'light',
+      gaugeHps: Object.freeze([9500, 12500]), gauges: 2,
+      bulletSpeed: 250, fireRate: 920, bulletDamage: 175,
+      behavior: 'barrage_v1', uiScale: 1.0,
+      overseerWatch: Object.freeze({
+        homingTurnRadPerSec: 2.4, // 見られている間、敵弾が1秒あたりに曲がれる角度（速さは変えない）
+      }),
+    }),
+    // 監視の眼：攻撃はしない。首振りしながら扇形の視界で自機を探す。撃破すると視界も消える。
+    [SHOOTING_ENEMY_ID.PO_WATCHER]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.PO_WATCHER, kind: 'normal', implemented: true,
+      name: '監視の眼', displayName: 'WATCHER　監視の眼',
+      element: 'neutral', attackType: 'none', image: 'images/phase_odyssey_watcher.webp',
+      hp: 1200, moveSpeed: 26, scoreValue: 400, behavior: 'po_watcher_v1', uiScale: 0.86,
+      visionRangeRate: 0.62, visionHalfAngleDeg: 19, sweepRad: 0.85, sweepSpeed: 0.55,
+    }),
+
     [SHOOTING_ENEMY_ID.CH08_GUARDIAN]: Object.freeze({
       id: SHOOTING_ENEMY_ID.CH08_GUARDIAN,
       kind: 'boss', implemented: true,
@@ -650,14 +676,14 @@
       uiScale: 1.20,
     }),
     // ------------------------------------------------------------
-    // RANDOM AMBUSH - OVERSEER VARIANT
+    // RANDOM AMBUSH - 竜型レムナント（亜種）。内部IDは互換のため overseer_ambush のまま
     // ------------------------------------------------------------
     [SHOOTING_ENEMY_ID.OVERSEER_AMBUSH]: Object.freeze({
       id: SHOOTING_ENEMY_ID.OVERSEER_AMBUSH,
       kind: 'boss',
       implemented: true,
-      name: 'オーバーシア（亜種）',
-      displayName: 'EMERGENCY　オーバーシア（亜種）',
+      name: '竜型レムナント（亜種）',
+      displayName: 'EMERGENCY　竜型レムナント（亜種）',
       image: 'images/remnant_01_blk_battle.webp',
       gaugeHp: 2500,
       gauges: 1,

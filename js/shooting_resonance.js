@@ -71,10 +71,10 @@
     }),
     overseer_blk_core: Object.freeze({
       id: 'overseer_blk_core',
-      name: 'オーバーシア亜種の心核',
+      name: '竜型レムナント亜種の心核',
       shortName: '亜種の心核',
       img: 'images/item_overseer_blk_core.webp',
-      desc: 'オーバーシア亜種から回収された異質な心核。今後の特殊強化に使用する素材。'
+      desc: '竜型レムナント亜種から回収された異質な心核。今後の特殊強化に使用する素材。'
     })
   });
 
