@@ -14921,8 +14921,12 @@ html body #shooting-event-root[data-shooting-stage^="shooting_tower_"] :is(.shoo
 }
 
 /* build1636: 律動（仮面舞踏会）— BOSS（リズム）は自キャラと同じ枠(74×126)で、最初から確定サイズで表示（カミラ/シエンと同じく最初から確定サイズ） */
-#shooting-event-root:is([data-shooting-stage="shooting_event_rhythm_test"],[data-shooting-stage="shooting_event_rhythm_advanced"]) #shooting-boss{width:74px!important;height:126px!important;object-fit:contain!important;}
-@media (min-width:700px){#shooting-event-root:is([data-shooting-stage="shooting_event_rhythm_test"],[data-shooting-stage="shooting_event_rhythm_advanced"]) #shooting-boss{width:82px!important;height:140px!important;}}
+#shooting-event-root:is([data-shooting-stage="shooting_event_rhythm_test"],[data-shooting-stage="shooting_event_rhythm_advanced"],[data-shooting-stage="shooting_event_rhythm_ultra"]) #shooting-boss{width:74px!important;height:126px!important;object-fit:contain!important;}
+@media (min-width:700px){#shooting-event-root:is([data-shooting-stage="shooting_event_rhythm_test"],[data-shooting-stage="shooting_event_rhythm_advanced"],[data-shooting-stage="shooting_event_rhythm_ultra"]) #shooting-boss{width:82px!important;height:140px!important;}}
+/* build1643: PHASE差し替え立ち絵「自キャラと同じ大きさ」（レイド「テスト」PHASE3など）。
+   立ち絵は横に広がる正方形のため、高さを自キャラ枠（126px / 140px）に合わせ、幅は同じ値の正方形にする。 */
+#shooting-event-root[data-boss-visual="player"] #shooting-boss{width:126px!important;height:126px!important;object-fit:contain!important;}
+@media (min-width:700px){#shooting-event-root[data-boss-visual="player"] #shooting-boss{width:140px!important;height:140px!important;}}
 /* ステージ選択のサムネ：縦長イラストの顔が切れないよう上寄せで切り抜く */
 #screen-ninmu.junkou-rebuilt .rhythm-stage-card .junkou-special-art img{object-position:50% 22% !important;}
 

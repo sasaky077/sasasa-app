@@ -1270,6 +1270,8 @@
   function getResponsiveBossDisplayScale() {
     // build1636: 律動のBOSS（リズム）は自キャラと同じ大きさ。
     if (BOSS && BOSS.behavior === 'rhythm_gate_v1') return getResponsiveCombatScaleProfile().player;
+    // build1643: PHASE差し替え立ち絵で「自キャラと同じ大きさ」指定のもの
+    { const v = getActiveBossPhaseVisual(); if (v && v.size === 'player') return getResponsiveCombatScaleProfile().player; }
     if (BOSS && (BOSS.shienMechanics || BOSS.camillaMechanics)) {
       // 味方の立ち絵(最大122px x ベース1.2倍)と同じ高さを基準にする。
       return 1.16 * getResponsiveCombatScaleProfile().player;
@@ -4781,6 +4783,7 @@
 
     // 端末の実バトル領域が確定した時点で表示倍率を再計算。
     refreshResponsiveCombatUnitScales();
+    syncBossPhaseVisual(); // build1643: 開始時点（共有HPが既にPHASE3のレイド・中断再開）でも立ち絵を合わせる
     state.player.x = w * 0.5;
     state.player.y = h * 0.82;
     state.boss.x = w * 0.5;
@@ -18130,6 +18133,7 @@
       boss.classList.add('phase-change');
       setTimeout(() => boss.classList.remove('phase-change'), 700);
     }
+    syncBossPhaseVisual();
     if (root) {
       root.setAttribute('data-boss-phase', String(phase));
       root.classList.remove('boss-phase-flash');
@@ -22717,7 +22721,34 @@
   }
 
 
+  // build1643: PHASEごとの立ち絵差し替え（敵定義の phaseVisuals）。例：レイド「テスト」はPHASE3から別画像。
+  function getActiveBossPhaseVisual() {
+    const map = BOSS && BOSS.phaseVisuals;
+    if (!map || !state || !state.boss) return null;
+    return map[Number(state.boss.phase || 1)] || null;
+  }
+  function syncBossPhaseVisual() {
+    const boss = document.getElementById(BOSS_ID);
+    const root = document.getElementById(ROOT_ID);
+    const visual = getActiveBossPhaseVisual();
+    if (root) {
+      if (visual && visual.size === 'player') root.setAttribute('data-boss-visual', 'player');
+      else root.removeAttribute('data-boss-visual');
+    }
+    if (!boss || !BOSS || !BOSS.phaseVisuals) return;
+    const src = getSelectedBossImage();
+    if (src && boss.getAttribute('src') !== src) boss.src = src;
+    boss.style.setProperty('--enemy-scale', String(getResponsiveBossDisplayScale()));
+  }
+  function preloadBossPhaseVisuals() {
+    const map = BOSS && BOSS.phaseVisuals;
+    if (!map) return;
+    Object.keys(map).forEach(k => { if (map[k] && map[k].image) void preloadShootingImage(map[k].image, 7000); });
+  }
+
   function getSelectedBossImage() {
+    const phaseVisual = getActiveBossPhaseVisual();
+    if (phaseVisual && phaseVisual.image) return String(phaseVisual.image);
     // SCORE ATTACKだけ専用ボス画像に差し替える。
     // 同じenemyIdを使う他ステージ（楽園 -ノア-等）の画像は変更しない。
     if (isScoreAttackStage()) return 'images/scoata_boss.webp';
@@ -27234,6 +27265,8 @@
       bossImage.style.setProperty('--enemy-scale', String(getResponsiveBossDisplayScale()));
       bossImage.style.display = selectedStage && selectedStage.type === 'normal' ? 'none' : '';
     }
+    root.removeAttribute('data-boss-visual');
+    preloadBossPhaseVisuals();
     ensureBossWeaknessBarrier();
     root.setAttribute('data-shooting-stage', selectedStage ? selectedStage.id : '');
     if (isRaidStage() && BOSS?.id) root.setAttribute('data-raid-boss', BOSS.id); else root.removeAttribute('data-raid-boss');

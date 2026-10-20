@@ -470,6 +470,10 @@
       bulletDamage: 190,
       behavior: 'barrage_v1',
       uiScale: 1.12,
+      // build1643: 3ゲージ目（PHASE3）から立ち絵を差し替え。大きさは自キャラと同じ。
+      phaseVisuals: Object.freeze({
+        3: Object.freeze({ image: 'images/raid_enemy_01_battle_p3.webp', size: 'player' }),
+      }),
     }),
 
     // ------------------------------------------------------------
