@@ -15111,3 +15111,22 @@ html body #shooting-event-root #shooting-boss#shooting-boss{
 @media (min-width:700px){
   html body #shooting-event-root #shooting-boss#shooting-boss{width:142px!important;height:142px!important;}
 }
+
+/* ============================================================
+   build1643: 全ステージ共通 ─ プレイ中に指の追従・タップ判定が途切れる対策
+   アリーナ内に後から追加される演出・敵・ギミックDOMがタッチの受け手になると、
+   その要素が消えた瞬間（撃破・演出終了など）から指の動きがゲームに届かなくなる。
+   戦闘中はアリーナ配下をタッチ対象外にし、常にアリーナ自身が指を受け取るようにする。
+   操作が必要なもの（ボタン・パーティ選択・RESULT・交代レール・ポーズ・キャラ詳細・アルノの連打）は除外。
+   ============================================================ */
+#shooting-event-root.battle-hud-visible #shooting-arena *:not(:is(
+  button,
+  .shooting-character-select, .shooting-character-select *,
+  .shooting-result, .shooting-result *,
+  .shooting-switch-rail, .shooting-switch-rail *,
+  .shooting-pause-menu, .shooting-pause-menu *,
+  .shooting-character-info-modal, .shooting-character-info-modal *,
+  .shooting-arno-slash-overlay, .shooting-arno-slash-overlay *
+)){
+  pointer-events:none!important;
+}

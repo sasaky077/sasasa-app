@@ -25803,11 +25803,12 @@
   // build1627: ガチャ試遊（トワ/スマイル/他PU）だけ、ウィンドウ捕捉段階でも
   // 継続中の指を追跡する。ゲーム領域外へ移動した時や演出レイヤーがtouchmoveを
   // 止めても追従を維持。イベントを二重処理しないため同じEventは一度だけ転送。
-  // build1643: 位相回遊でも有効化（プレイ中に指の追従・タップ判定が途切れる対策）。
-  //  演出DOM（ギミック・弾・ダメージ表示など）の生成/削除や一時的なtouchcancelで
-  //  arena側にtouchmoveが届かなくなっても、window捕捉で同じ指の入力を拾い続ける。
+  // build1643: 全ステージで有効化（プレイ中に指の追従・タップ判定が途切れる対策）。
+  //  元はガチャ試遊だけの仕組み。演出DOMの生成/削除・指がアリーナ外（HUD・下部バー）へ出た時・
+  //  一時的なtouchcancelでarena側にtouchmoveが届かなくなっても、window捕捉で同じ指の入力を拾い続ける。
+  //  シューティング画面を開いている間だけ登録し、閉じる時に必ず解除する。
   function isInputContinuityStage() {
-    return isGachaTrialStage() || isPhaseOdysseyStage();
+    return !!selectedStage;
   }
   const gachaTrialForwardedEvents = new WeakSet();
   let removeGachaTrialInputContinuity = null;
@@ -27376,7 +27377,6 @@
     clearEltenaBlackHole();
     resetState();
     applyPhaseOdysseyCarryover();
-    if (isPhaseOdysseyStage()) installGachaTrialInputContinuity(); // build1643: 指の追従の途切れ対策
     // v163: issue/restore a server-side run token before battle can produce a first-clear reward.
     void beginSecureShootingRun();
     clearProjectiles();
@@ -27619,6 +27619,7 @@
     preloadBossPhaseVisuals();
     ensureBossWeaknessBarrier();
     root.setAttribute('data-shooting-stage', selectedStage ? selectedStage.id : '');
+    installGachaTrialInputContinuity(); // build1643: 全ステージ共通の指の追従の途切れ対策（閉じる時に解除）
     // build1643: 位相回遊のボス戦以外は、背景 battle_bg_01〜03 をシャッフルで使う
     {
       const poFloor = isPhaseOdysseyStage() ? Number(selectedStage.stageNo || 0) : 0;
