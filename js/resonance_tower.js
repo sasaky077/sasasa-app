@@ -391,7 +391,48 @@
     });
     return finishPromise;
   }
-  window.ResonanceTower=Object.freeze({isTowerStageId:id=>/^shooting_tower_(?:0[1-9]|1[0-5])$/.test(String(id||'')),isReplayFloor,isCharacterAvailable,confirmSealParty,cancelSealConfirmation,prepareBattle,finishRun,refresh});
+  // build1643: 戦闘中にアプリが落ちた場合の復帰。
+  //  出撃トークン（attempt）は戦闘の中断データ（sasaphia_shooting_resume_v1）に一緒に保存し、
+  //  再開時にここで復元する。復元しないと、①進行データ未取得のため編成が全員「封印扱い」で再開できない
+  //  ②勝利してもトークンが無く塔の進行・報酬・封印が確定しない、の2点が起きていた。
+  function getResumeAttempt(){
+    if(!attempt) return null;
+    return attempt.replay
+      ? {replay:true,floor:Number(attempt.floor),party:(attempt.party||[]).map(Number)}
+      : {token:String(attempt.token||''),floor:Number(attempt.floor),party:(attempt.party||[]).map(Number)};
+  }
+  function validSaved(saved,floor){
+    return !!(saved && Number(saved.floor)===Number(floor) && Array.isArray(saved.party) &&
+      saved.party.length>=1 && saved.party.length<=3 && (saved.replay || String(saved.token||'')));
+  }
+  async function restoreAttempt(saved,floor){
+    floor=Number(floor);
+    if(!validSaved(saved,floor)) return false;
+    // 封印・解放の判定にサーバーの進行データが必要（起動直後は未取得）
+    if(!progress && !(await refresh())) return false;
+    if(saved.replay){
+      if(!cleared(floor)) return false;
+      replayFloor=floor;
+      attempt={replay:true,floor,party:saved.party.map(Number)};
+    }else{
+      // 出撃済みの挑戦は、まだ未突破の現在階層であるはず。突破済み＝既に確定した挑戦なので復帰しない。
+      if(!available(floor)) return false;
+      replayFloor=0;
+      attempt={token:String(saved.token),floor,party:saved.party.map(Number)};
+    }
+    finishPromise=null;
+    return true;
+  }
+  // 中断データを破棄した時：サーバー上の挑戦を「敗北」で閉じる（敗北・中断は封印も進行もなし）。
+  async function abandonAttempt(saved){
+    if(!saved || saved.replay || !String(saved.token||'')) return;
+    try{
+      const {data,error}=await rpcClient().rpc('finish_resonance_tower_run',{p_token:String(saved.token),p_win:false});
+      if(error) throw error;
+      if(data?.state) progress=data.state;
+    }catch(err){ console.warn('[tower] abandon attempt not confirmed',err); }
+  }
+  window.ResonanceTower=Object.freeze({isTowerStageId:id=>/^shooting_tower_(?:0[1-9]|1[0-5])$/.test(String(id||'')),isReplayFloor,isCharacterAvailable,confirmSealParty,cancelSealConfirmation,prepareBattle,finishRun,refresh,getResumeAttempt,restoreAttempt,abandonAttempt});
   window.openResonanceTower=function(){
     replayFloor=0;attempt=null;finishPromise=null;
     if(typeof window.requireChapter03ContentUnlock!=='function'||!window.requireChapter03ContentUnlock())return;

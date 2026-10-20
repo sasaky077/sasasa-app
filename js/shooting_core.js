@@ -3322,6 +3322,14 @@
       facelessWave: Number(state.facelessWave || 0),
       raidInitialHp: Number(state.raidInitialHp || 0),
       raidDamageDealt: Number(state.raidDamageDealt || 0),
+      // build1643: サーバーが発行した挑戦トークン類。メモリ上にしか無かったため、
+      // 落ちて再開すると報酬・進行の確定ができなかった（塔・ノア・デイリー・初回クリア報酬）。
+      secureRunToken: String(state.secureRunToken || ''),
+      dailyQuestRunToken: isDailyQuestStage() ? String(activeDailyQuestRunToken || state.dailyQuestRunToken || '') : '',
+      noahAttemptId: isNoahStage() ? String(window.__noahAttemptId || '') : '',
+      towerAttempt: (isResonanceTowerStage() && window.ResonanceTower && typeof window.ResonanceTower.getResumeAttempt === 'function')
+        ? window.ResonanceTower.getResumeAttempt()
+        : null,
     };
   }
 
@@ -3452,6 +3460,14 @@
       state.scoreAttackBossRespawnAt = 0;
     }
 
+    // build1643: 挑戦トークン類を復元（報酬・進行を、出撃した挑戦のまま確定できるようにする）
+    if (snapshot.secureRunToken) state.secureRunToken = String(snapshot.secureRunToken);
+    if (isDailyQuestStage() && snapshot.dailyQuestRunToken) {
+      activeDailyQuestRunToken = String(snapshot.dailyQuestRunToken);
+      state.dailyQuestRunToken = activeDailyQuestRunToken;
+    }
+    if (isNoahStage() && snapshot.noahAttemptId) window.__noahAttemptId = String(snapshot.noahAttemptId);
+
     if (isRaidStage()) {
       state.raidInitialHp = Math.max(Number(snapshot.raidInitialHp || 0), Number(state.boss?.hp || 0));
       state.raidDamageDealt = Math.max(0, Number(snapshot.raidDamageDealt || 0));
@@ -3532,11 +3548,48 @@
     }
   }
 
-  function tryRestoreShootingBattle() {
+  function isTowerResumeSnapshot(snapshot) {
+    return !!(snapshot && window.ResonanceTower && typeof window.ResonanceTower.isTowerStageId === 'function' &&
+      window.ResonanceTower.isTowerStageId(snapshot.stageId));
+  }
+  function towerFloorFromSnapshot(snapshot) {
+    const m = String(snapshot && snapshot.stageId || '').match(/(\d+)$/);
+    return m ? Number(m[1]) : 0;
+  }
+
+  async function tryRestoreShootingBattle() {
     const snapshot = readShootingResumeState();
     if (!snapshot) return false;
     // すでにシューティング画面を開いている場合は自動介入しない。
     if (document.getElementById(ROOT_ID)?.classList.contains('open')) return false;
+
+    // build1643: 残響の塔は、出撃トークンとサーバーの進行データを復元できる場合だけ再開できる。
+    if (isTowerResumeSnapshot(snapshot)) {
+      const tower = window.ResonanceTower;
+      if (!snapshot.towerAttempt || typeof tower.restoreAttempt !== 'function') {
+        // 旧版の中断データ（トークン未保存）は復帰しても塔の進行を確定できないため破棄する
+        clearShootingResumeState();
+        if (typeof window.showToast === 'function') window.showToast('中断した残響の塔の挑戦は再開できませんでした（敗北・中断扱いで封印はされません）');
+        return false;
+      }
+      if (!window.confirm('中断した残響の塔の挑戦があります。\n途中から再開しますか？')) {
+        void tower.abandonAttempt?.(snapshot.towerAttempt);
+        clearShootingResumeState();
+        return false;
+      }
+      let restored = false;
+      try { restored = await tower.restoreAttempt(snapshot.towerAttempt, towerFloorFromSnapshot(snapshot)); }
+      catch (err) { console.warn('[tower] resume restore failed', err); }
+      if (!restored) {
+        clearShootingResumeState();
+        if (typeof window.showToast === 'function') window.showToast('残響の塔の挑戦を再開できませんでした（通信状態を確認してください）');
+        return false;
+      }
+      if (document.getElementById(ROOT_ID)?.classList.contains('open')) return false;
+      window.__shootingReturnContext = snapshot.returnContext || { type: 'resonanceTower' };
+      window.openShootingEvent({ stageId: snapshot.stageId, resumeSnapshot: snapshot });
+      return true;
+    }
 
     const label = snapshot.raidContext ? '中断したDAILY RAIDがあります。\n途中から再開しますか？' : '中断したバトルがあります。\n途中から再開しますか？';
     if (!window.confirm(label)) {
@@ -14734,6 +14787,7 @@
     return {
       travelMs: Math.max(500, Number(cfg.travelMs || RHYTHM_TRAVEL_MS)),
       holeBonus: Math.max(0, Math.floor(Number(cfg.holeBonus || 0))),
+      notes: cfg.notes !== false, // build1643: 超級は音符（♪）なし
     };
   }
 
@@ -14786,7 +14840,10 @@
     const rand = rhythmRandom(0x5eed + loopIndex * 7919);
     // build1643: 音符（♪）の配置は別系統の乱数。穴の並び（既存の譜面）は一切変えない。
     const noteRand = rhythmRandom(0x9a7e + loopIndex * 104729);
-    let lastNoteRow = -9;
+    const notesEnabled = getRhythmStageConfig().notes;
+    // 音符はおおよそ15列に1回（12〜18列おき）。最初の1個は曲の序盤（6〜11列目あたり）。
+    let lastNoteRow = -6;
+    let noteGap = 12 + Math.floor(noteRand() * 7);
     const tighten = (Math.max(1, phase) >= 3 ? 1 : 0) + (loopIndex >= 1 ? 1 : 0) - getRhythmStageConfig().holeBonus;
     const base = loopIndex * RHYTHM_SONG_MS;
     const rows = [];
@@ -14845,15 +14902,19 @@
           const amp = rule.every >= 1 ? 34 : 20;
           bob = (rowNo % 2 ? 1 : -1) * amp;
         }
-        // 音符：おおよそ3列に1回。穴の端から3〜6マス離れた位置に置き、音符の左右1マスずつも空ける
-        // （●　♪　●）。穴との間には必ず弾が1つ以上残る。
+        // 音符：おおよそ15列に1回。穴の端から3〜6マス離れた位置に置き、音符の左右1マスずつも空ける
+        // （●　♪　●）。穴との間には必ず弾が1つ以上残る。置けない列なら次の列で再挑戦。
         // note は「穴の左端マスからの相対マス」。負なら穴の左側、hole以上なら右側。
         let note = null;
-        if (rowNo - lastNoteRow >= 2 && noteRand() < 0.38) {
+        if (notesEnabled && rowNo - lastNoteRow >= noteGap) {
           const dist = 3 + Math.floor(noteRand() * 4);
           const rel = noteRand() < 0.5 ? -dist : hole - 1 + dist;
           const cell = col + rel;
-          if (cell >= 2 && cell <= RHYTHM_COLS - 3) { note = rel; lastNoteRow = rowNo; }
+          if (cell >= 2 && cell <= RHYTHM_COLS - 3) {
+            note = rel;
+            lastNoteRow = rowNo;
+            noteGap = 12 + Math.floor(noteRand() * 7);
+          }
         }
         rows.push({ t: base + rhythmBeatTimeAt(b0 + k), col, hole, slide, bob, note });
         sinceStart++;
@@ -23582,6 +23643,7 @@
           <div class="zfs-list" aria-label="律動・難易度選択">
             ${buildRhythmStageCard(SHOOTING_STAGE_ID.RHYTHM_ADVANCED, '01', '上級')}
             ${buildRhythmStageCard(SHOOTING_STAGE_ID.RHYTHM_TEST, '02', '最上級')}
+            ${buildRhythmStageCard(SHOOTING_STAGE_ID.RHYTHM_ULTRA, '03', '超級')}
           </div>
         </div>
       </div>`;

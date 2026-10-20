@@ -417,7 +417,7 @@
 #detail-modal.is-gacha-pickup-preview #detail-name{display:none!important}
 </style>
   <link rel="stylesheet" href="css/resonance_tower.css?v=1599-tower-rule">
-  <link rel="stylesheet" href="css/phase_odyssey.css?v=1643-phase-odyssey">
+  <link rel="stylesheet" href="css/phase_odyssey.css?v=1643-po-title">
   <link rel="stylesheet" href="css/towa_encounter.css?v=1553-rates-visible">
   <link rel="stylesheet" href="css/towa_dark_gacha.css?v=1552">
   <link rel="stylesheet" href="css/towa_notice.css?v=1556">
@@ -3802,7 +3802,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
   <div class="po-backdrop" aria-hidden="true"></div>
   <main class="po-composition">
     <button type="button" class="po-back" data-po-back aria-label="巡行へ戻る">〈 戻る</button>
-    <!-- build1643: タイトル部は固定。以降のカードのみ .po-scroll 内でスクロール -->
+    <!-- build1643: タイトル部は固定。以降は横スライドの2ページ（縦に全部収まる端末では1画面にまとめて表示） -->
     <section class="po-hero" aria-label="位相回遊 PHASE ODYSSEY">
       <div class="po-hero-art" aria-hidden="true"></div>
       <div class="po-hero-panel">
@@ -3813,11 +3813,11 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
             <div class="po-title-en">PHASE ODYSSEY</div>
           </div>
         </div>
-        <div class="po-divider" aria-hidden="true"><i></i><b>✦</b><i></i></div>
-        <p class="po-copy">三人の絆で、幾重の世界を踏破せよ。</p>
       </div>
     </section>
-    <div class="po-scroll">
+    <div class="po-pager" data-po-pager>
+     <div class="po-track" data-po-track>
+     <div class="po-page" data-po-page="0" aria-label="挑戦状況・出撃メンバー">
       <section class="po-card po-status" aria-label="挑戦状況">
         <div class="po-stat">
           <span class="po-stat-label">最高到達記録</span>
@@ -3846,7 +3846,8 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
         <div class="po-build-list" data-po-builds hidden aria-label="取得済みの強化"></div>
         <button type="button" class="po-retire" data-po-retire hidden>挑戦を終了する</button>
       </section>
-
+     </div>
+     <div class="po-page" data-po-page="1" aria-label="ルール・強化の一例">
       <div class="po-info-row">
         <section class="po-card po-rules" aria-label="今回のルール">
           <header class="po-section-head is-compact"><div><h2>今回のルール</h2><span class="po-section-en">RULE</span></div></header>
@@ -3865,6 +3866,12 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
           </ul>
         </section>
       </div>
+     </div>
+     </div>
+    </div>
+    <div class="po-pager-nav" data-po-pager-nav role="tablist" aria-label="表示ページ">
+      <button type="button" class="po-pager-tab is-active" data-po-goto="0" role="tab" aria-selected="true"><i aria-hidden="true"></i><span>挑戦</span></button>
+      <button type="button" class="po-pager-tab" data-po-goto="1" role="tab" aria-selected="false"><i aria-hidden="true"></i><span>ルール</span></button>
     </div>
     <div class="po-start-dock">
       <button type="button" class="po-start" data-po-start aria-label="挑戦開始">
@@ -4756,6 +4763,22 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 // =========================================================
 
 window.NOTICE_ITEMS = [
+  {
+    id: 'notice_phase_odyssey_release_20261020',
+    date: '2026.10.20',
+    title: '新コンテンツ「位相回遊」をリリースしました',
+    body: '新コンテンツ「位相回遊 -PHASE ODYSSEY-」をリリースしました。\n\n■ 最初に選んだ3人で、敗北するまで階層を進み続けるエンドレス連覇型コンテンツです\n■ 階層をクリアするたびに、3つの強化から1つを選んで編成を強くできます（レア度や対象の属性・ショット種は毎回変わります）\n■ HPとULTゲージは次の階層へ引き継がれます\n■ 10階層ごとにボスが登場。深い階層ほど敵が強くなります\n\n巡行画面の「位相回遊」タブから挑戦できます（CHAPTER03-04クリアで解放）。\n\nリリースを記念して、結晶5個をプレゼントします。',
+    reward: {
+      type: 'gem',
+      claimId: 'notice_phase_odyssey_release_20261020',
+      amount: 5
+    },
+    link: {
+      label: '位相回遊へ',
+      target: 'phase_odyssey'
+    },
+    hidden: false
+  },
   {
     id: 'notice_daily_raid_renewal_20261018',
     date: '2026.10.18',
@@ -5771,6 +5794,35 @@ window.NOTICE_ITEMS = [
     `;
   }
 
+  // build1643: お知らせのリンクボタン。target はコンテンツ名（下の NOTICE_LINK_TARGETS で定義）。
+  const NOTICE_LINK_TARGETS = {
+    phase_odyssey: function () {
+      if (typeof window.openPhaseOdyssey === 'function') window.openPhaseOdyssey();
+    }
+  };
+  function renderNoticeLink(item) {
+    const link = item && item.link;
+    if (!link || !NOTICE_LINK_TARGETS[link.target]) return '';
+    return `
+      <div class="notice-link-row">
+        <button type="button" class="notice-link-btn" data-notice-link="${escapeHtml(link.target)}">
+          <span>${escapeHtml(link.label || '移動する')}</span><b aria-hidden="true">›</b>
+        </button>
+      </div>
+    `;
+  }
+  function openNoticeLinkTarget(target) {
+    const open = NOTICE_LINK_TARGETS[target];
+    if (!open) return;
+    // 解放前のコンテンツは、お知らせを閉じずに案内だけ出す
+    if (target === 'phase_odyssey' && typeof window.isChapter03ContentUnlocked === 'function' && !window.isChapter03ContentUnlocked()) {
+      if (typeof window.showChapter03ContentLockMessage === 'function') window.showChapter03ContentLockMessage();
+      return;
+    }
+    if (typeof window.closeNoticeModal === 'function') window.closeNoticeModal();
+    open();
+  }
+
   async function claimNoticeReward(itemId, button) {
     const item = (window.NOTICE_ITEMS || []).find(function (entry) {
       return entry && entry.id === itemId;
@@ -6190,9 +6242,22 @@ window.NOTICE_ITEMS = [
           </div>
           <div class="notice-body">${escapeHtml(item.body || '')}</div>
           ${renderReward(item)}
+          ${renderNoticeLink(item)}
         </div>
       `;
     }).join('');
+
+    // build1643: お知らせから各コンテンツへ移動するリンク
+    list.querySelectorAll('[data-notice-link]').forEach(function (button) {
+      button.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        const itemEl = button.closest('[data-notice-id]');
+        const noticeId = itemEl ? itemEl.getAttribute('data-notice-id') : '';
+        if (noticeId) { markNoticeAsRead(noticeId); updateNoticeBadge(); }
+        openNoticeLinkTarget(button.getAttribute('data-notice-link'));
+      });
+    });
 
     // お知らせ本文をタップしたその1件だけ既読にする。
     list.querySelectorAll('[data-notice-id]').forEach(function (itemEl) {
@@ -20098,7 +20163,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1643-phase-odyssey"></script>
+<script src="js/shooting_event.js?v=1643-resume-fix"></script>
 <script src="js/shooting_party_filter.js?v=1472-filter-screen-exit-reset"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1628-public-raid"></script>
@@ -20125,8 +20190,8 @@ window.returnToTitleScreen = function(){
 </script>
 
 <script src="js/score_attack.js?v=1530-score-cap-safe"></script>
-<script src="js/resonance_tower.js?v=1606-shinju-breath"></script>
-<script src="js/phase_odyssey.js?v=1643-phase-odyssey"></script>
+<script src="js/resonance_tower.js?v=1643-resume-fix"></script>
+<script src="js/phase_odyssey.js?v=1643-po-fit"></script>
 <script src="js/towa_encounter.js?v=1554-notice"></script>
 <script src="js/towa_notice.js?v=1554"></script>
 <script src="js/towa_dark_gacha.js?v=1560-soul-flame"></script>

@@ -554,6 +554,120 @@
     if (retire) retire.hidden = !active;
     const note = root.querySelector('[data-po-party-note]');
     if (note) note.textContent = active ? '挑戦中は編成を変更できません。' : '最初に選んだ3人で最後まで挑戦します。';
+    layoutPager();
+  }
+
+  // ------------------------------------------------------------
+  // コンテンツの横スライド（2ページ）
+  //  縦に全部収まる端末では .is-fit にして1画面にまとめて表示。収まらない端末だけ横スライド。
+  // ------------------------------------------------------------
+  function pagerEls(){
+    const root = screen();
+    if (!root) return null;
+    const pager = root.querySelector('[data-po-pager]');
+    const track = root.querySelector('[data-po-track]');
+    return pager && track ? { root, pager, track } : null;
+  }
+  function layoutPager(){
+    const els = pagerEls();
+    if (!els || !els.root.classList.contains('active')) return;
+    const { pager, track } = els;
+    const keepPage = currentPage();
+    pager.classList.add('is-fit');
+    const avail = pager.clientHeight;
+    if (avail <= 0) return; // 非表示中は判定しない
+    const fits = track.scrollHeight <= avail + 1;
+    pager.classList.toggle('is-fit', fits);
+    if (!fits) {
+      fitPagesVertically(pager);
+      track.scrollLeft = keepPage * track.clientWidth;
+      setActivePage(keepPage);
+    } else {
+      pager.querySelectorAll('.po-page').forEach(page => { page.classList.remove('is-vscroll', 'is-tight'); page.style.removeProperty('--po-slot-w'); });
+    }
+  }
+  // 各ページが縦に数px〜数十pxだけはみ出して「微妙に上下スクロールできる」状態を防ぐ。
+  // 立ち絵枠を縮めて収め、それでも大きくはみ出す時（強化が大量など）だけ縦スクロールを許可する。
+  // 段階：①立ち絵枠を少し縮める → ②まだ足りなければ装飾チップ（編成固定など）を畳んで詰め、枠も再計算
+  function shrinkSlotsToFit(page, minW){
+    page.style.removeProperty('--po-slot-w');
+    let over = page.scrollHeight - page.clientHeight;
+    const slot = page.querySelector('.po-slot');
+    if (over > 0 && slot) {
+      const w = slot.getBoundingClientRect().width;
+      // 枠の縦横比 170:208。はみ出し分の高さを幅に換算して縮める（下限まで）
+      const next = Math.max(minW, Math.floor(w - (over + 2) * 170 / 208));
+      if (next < w) {
+        page.style.setProperty('--po-slot-w', next + 'px');
+        over = page.scrollHeight - page.clientHeight;
+      }
+    }
+    return over;
+  }
+  function fitPagesVertically(pager){
+    pager.querySelectorAll('.po-page').forEach(page => {
+      page.classList.remove('is-vscroll', 'is-tight');
+      let over = shrinkSlotsToFit(page, 64);
+      if (over > 1) {
+        page.classList.add('is-tight');
+        over = shrinkSlotsToFit(page, 54);
+      }
+      page.classList.toggle('is-vscroll', over > 1);
+      if (over <= 1) page.scrollTop = 0;
+    });
+  }
+  let pagerPage = 0;
+  function currentPage(){ return pagerPage; }
+  function setActivePage(index){
+    pagerPage = index;
+    const els = pagerEls();
+    if (!els) return;
+    els.root.querySelectorAll('[data-po-goto]').forEach(btn => {
+      const on = Number(btn.dataset.poGoto) === index;
+      btn.classList.toggle('is-active', on);
+      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+  }
+  function gotoPage(index, smooth){
+    const els = pagerEls();
+    if (!els) return;
+    const { track } = els;
+    const left = index * track.clientWidth;
+    try { track.scrollTo({ left, behavior: smooth ? 'smooth' : 'auto' }); } catch (_) { track.scrollLeft = left; }
+    setActivePage(index);
+  }
+  function resetPager(){
+    const els = pagerEls();
+    if (!els) return;
+    els.pager.scrollTop = 0;
+    els.root.querySelectorAll('.po-page').forEach(p => { p.scrollTop = 0; });
+    els.track.scrollLeft = 0;
+    setActivePage(0);
+  }
+  function bindPager(root){
+    const track = root.querySelector('[data-po-track]');
+    if (track) {
+      let raf = 0;
+      track.addEventListener('scroll', () => {
+        if (raf) return;
+        raf = requestAnimationFrame(() => {
+          raf = 0;
+          const w = track.clientWidth || 1;
+          const idx = Math.max(0, Math.min(1, Math.round(track.scrollLeft / w)));
+          if (idx !== pagerPage) setActivePage(idx);
+        });
+      }, { passive: true });
+    }
+    root.querySelector('[data-po-pager-nav]')?.addEventListener('click', e => {
+      const btn = e.target.closest('[data-po-goto]');
+      if (btn) gotoPage(Number(btn.dataset.poGoto) || 0, true);
+    });
+    let resizeTimer = 0;
+    const relayout = () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(layoutPager, 120); };
+    window.addEventListener('resize', relayout);
+    window.addEventListener('orientationchange', relayout);
+    try { document.fonts && document.fonts.ready && document.fonts.ready.then(layoutPager); } catch (_) {}
+    root.querySelectorAll('.po-page img').forEach(img => { if (!img.complete) img.addEventListener('load', relayout, { once: true }); });
   }
   const SLOT_ORNAMENTS = [
     '<svg viewBox="0 0 24 32" aria-hidden="true"><path d="M12 1v30M6 8h12M8 14h8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M12 1l2.6 3.4L12 7 9.4 4.4z" fill="currentColor"/></svg>',
@@ -973,9 +1087,9 @@
     battle = null;
     closeModal();
     if (typeof window.showMainTab === 'function') window.showMainTab('phase-odyssey');
-    const scroller = screen() && screen().querySelector('.po-scroll');
-    if (scroller) scroller.scrollTop = 0;
+    resetPager();
     render();
+    requestAnimationFrame(layoutPager); // 画面の表示（active）反映後に、収まるかを判定し直す
     if (rec.run_status === 'select') setTimeout(openBuffSelect, 260);
   }
   function close(){
@@ -995,6 +1109,7 @@
     root.querySelector('[data-po-start]')?.addEventListener('click', onStartPressed);
     root.querySelector('[data-po-retire]')?.addEventListener('click', retireRun);
     root.querySelector('[data-po-back]')?.addEventListener('click', close);
+    bindPager(root);
     render();
   }
 
