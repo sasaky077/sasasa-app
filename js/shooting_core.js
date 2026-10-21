@@ -3274,9 +3274,11 @@
       : Number(livingParty[0].id);
 
     const now = performance.now();
+    const battleNow = state.paused && Number(state.pauseStartedAt) > 0
+      ? Math.min(now, Number(state.pauseStartedAt)) : now;
     const elapsedMs = state.countdown
       ? Math.max(0, Number(state.resumeElapsedMsPending || 0))
-      : Math.max(0, now - Number(state.startedAt || now));
+      : Math.max(0, battleNow - Number(state.startedAt || battleNow));
 
     return {
       version: SHOOTING_RESUME_VERSION,
@@ -3323,6 +3325,9 @@
       swarmLargeDefeated: Number(state.swarmLargeDefeated || 0),
       swarmGuardDefeated: Number(state.swarmGuardDefeated || 0),
       facelessWave: Number(state.facelessWave || 0),
+      bossX: Number(state.boss?.x || 0),
+      bossY: Number(state.boss?.y || 0),
+      normalLastSpawnAgoMs: Math.max(0, battleNow - Number(state.normalLastSpawnAt || battleNow)),
       raidInitialHp: Number(state.raidInitialHp || 0),
       raidDamageDealt: Number(state.raidDamageDealt || 0),
       // build1643: サーバーが発行した挑戦トークン類。メモリ上にしか無かったため、
@@ -3330,6 +3335,7 @@
       secureRunToken: String(state.secureRunToken || ''),
       dailyQuestRunToken: isDailyQuestStage() ? String(activeDailyQuestRunToken || state.dailyQuestRunToken || '') : '',
       noahAttemptId: isNoahStage() ? String(window.__noahAttemptId || '') : '',
+      phaseOdysseyFloor: isPhaseOdysseyStage() ? Number(selectedStage.stageNo || 0) : 0,
       towerAttempt: (isResonanceTowerStage() && window.ResonanceTower && typeof window.ResonanceTower.getResumeAttempt === 'function')
         ? window.ResonanceTower.getResumeAttempt()
         : null,
@@ -3337,8 +3343,8 @@
   }
 
   function saveShootingResumeState(reason) {
-    // build1643: 位相回遊は階層単位でrunを保存する（戦闘途中の復帰データは作らない）。
-    if (isGachaTrialStage() || isPhaseOdysseyStage() || suppressShootingResumeSave) return false;
+    // Unintentional interruptions keep a checkpoint in all modes including Phase Odyssey.
+    if (isGachaTrialStage() || suppressShootingResumeSave) return false;
     try {
       const noLivingParty = !!(
         state &&
@@ -3403,6 +3409,17 @@
       : selectedPartyIds[0];
     selectedBlessingId = snapshot.selectedBlessingId || null;
 
+    // Refuse to apply an old run to an unrelated/new Phase Odyssey run.
+    if (isPhaseOdysseyStage()) {
+      const po = window.PhaseOdyssey?.getState?.();
+      if (!po || !['battle', 'suspended'].includes(po.run_status) ||
+          Number(po.current_floor) !== Number(snapshot.phaseOdysseyFloor || 0) ||
+          po.selected_members.join(',') !== selectedPartyIds.join(',')) {
+        console.error('[phase odyssey] saved run and snapshot do not match');
+        return false;
+      }
+    }
+
     // SCORE ATTACKは戦闘開始時のサーバーattemptをそのまま復元する。
     // 新しいattemptを再開時/終了時に作り直すと、経過時間検証と不整合になる。
     if (isScoreAttackStage()) {
@@ -3421,6 +3438,7 @@
 
     // 現行マスター/共鳴値でstateの骨格を作り直してから、保存値だけ重ねる。
     resetState();
+    if (isPhaseOdysseyStage()) applyPhaseOdysseyCarryover();
     state.activeCharacterId = selectedCharacterId;
     state.resumeElapsedMsPending = Math.max(0, Number(snapshot.elapsedMs || 0));
     state.score = Math.max(0, Number(snapshot.score || 0));
@@ -3436,6 +3454,9 @@
     state.swarmLargeDefeated = Math.max(0, Number(snapshot.swarmLargeDefeated || 0));
     state.swarmGuardDefeated = Math.max(0, Number(snapshot.swarmGuardDefeated || 0));
     state.facelessWave = Math.max(state.facelessWave || 0, Number(snapshot.facelessWave || 0));
+    if (Number.isFinite(Number(snapshot.normalLastSpawnAgoMs))) {
+      state.normalLastSpawnAt = now - Math.max(0, Number(snapshot.normalLastSpawnAgoMs));
+    }
 
     if (snapshot.boss && state.boss) {
       state.boss.hp = Math.max(0, Math.min(Number(snapshot.boss.hpMax || state.boss.hpMax), Number(snapshot.boss.hp || 0)));
@@ -3446,6 +3467,8 @@
       }
       state.boss.gauges = Math.max(1, Number(snapshot.boss.gauges || state.boss.gauges));
       state.boss.phase = Math.max(1, Math.min(state.boss.gauges, Number(snapshot.boss.phase || 1)));
+      if (Number.isFinite(Number(snapshot.bossX)) && Number(snapshot.bossX) > 0) state.boss.x = Number(snapshot.bossX);
+      if (Number.isFinite(Number(snapshot.bossY)) && Number(snapshot.bossY) > 0) state.boss.y = Number(snapshot.bossY);
     }
 
     if (isScoreAttackStage() && state.boss) {
@@ -3575,17 +3598,14 @@
         if (typeof window.showToast === 'function') window.showToast('中断した残響の塔の挑戦は再開できませんでした（敗北・中断扱いで封印はされません）');
         return false;
       }
-      if (!window.confirm('中断した残響の塔の挑戦があります。\n途中から再開しますか？')) {
-        void tower.abandonAttempt?.(snapshot.towerAttempt);
-        clearShootingResumeState();
-        return false;
-      }
+      // Stage 2: unintentional interruption must not offer a discard path.
+      // Keep the original tower attempt and resume it automatically.
       let restored = false;
       try { restored = await tower.restoreAttempt(snapshot.towerAttempt, towerFloorFromSnapshot(snapshot)); }
       catch (err) { console.warn('[tower] resume restore failed', err); }
       if (!restored) {
-        clearShootingResumeState();
-        if (typeof window.showToast === 'function') window.showToast('残響の塔の挑戦を再開できませんでした（通信状態を確認してください）');
+        // Preserve the snapshot for a later attempt (e.g. after reconnecting).
+        if (typeof window.showToast === 'function') window.showToast('残響の塔の復帰を保留しました。通信状態を確認してください');
         return false;
       }
       if (document.getElementById(ROOT_ID)?.classList.contains('open')) return false;
@@ -3594,16 +3614,21 @@
       return true;
     }
 
-    const label = snapshot.raidContext ? '中断したDAILY RAIDがあります。\n途中から再開しますか？' : '中断したバトルがあります。\n途中から再開しますか？';
-    if (!window.confirm(label)) {
-      // 「いいえ」を選んだ中断データは明示的に破棄する。
-      // 残したままだと次回起動時にも同じ再開確認が繰り返し表示される。
-      // build1561: DAILY RAIDはサーバー上で挑戦開始済みのため、破棄時もそこまでの
-      // ダメージで挑戦を終了させる。送らないと「挑戦中」のまま残り、ロビーが進めなくなる。
-      finishDiscardedRaidAttempt(snapshot);
-      clearShootingResumeState();
-      return false;
+    if (window.PhaseOdyssey && typeof window.PhaseOdyssey.isStageId === 'function' &&
+        window.PhaseOdyssey.isStageId(snapshot.stageId)) {
+      const run = window.PhaseOdyssey.getState?.();
+      const floor = Number(snapshot.phaseOdysseyFloor || 0);
+      if (!run || !['battle', 'suspended'].includes(run.run_status) ||
+          Number(run.current_floor) !== floor ||
+          window.PhaseOdyssey.stageIdForFloor(floor) !== snapshot.stageId) {
+        // The prior run has ended or advanced; an obsolete snapshot must not resurrect it.
+        clearShootingResumeState();
+        return false;
+      }
     }
+
+    // Stage 2: Resume without a confirmation dialog or an abandon option.
+    // Raid attempts remain attached to their original server context.
 
     window.__shootingReturnContext = snapshot.returnContext || (snapshot.raidContext ? { type: 'raidLobby' } : null);
     window.openShootingEvent({
@@ -26707,12 +26732,28 @@
     setShootingStageHeader(!!inBattle);
   }
 
+  // Only Phase Odyssey forbids voluntary exit while the battle is unresolved.
+  // All other modes retain the standard ABORT MISSION / close cleanup flow.
+  function isShootingBattleUnresolved() {
+    return !!(state && !state.ended && !state.finishing &&
+      (state.running || state.countdown || state.paused));
+  }
+  function rejectShootingBattleAbandon() {
+    if (!isPhaseOdysseyStage() || !isShootingBattleUnresolved()) return false;
+    const message = '位相回遊では、途中終了ができません。';
+    if (typeof window.showToast === 'function') window.showToast(message);
+    else window.alert(message);
+    return true;
+  }
+
   function ensureShootingPauseMenu() {
     const root = document.getElementById(ROOT_ID);
     if (!root) return null;
 
     let menu = root.querySelector('#shooting-pause-menu');
     if (menu) {
+      const exitAction = menu.querySelector('.shooting-pause-exit');
+      if (exitAction) exitAction.hidden = isPhaseOdysseyStage();
       updateShootingBattleBgmMenuUi();
       updateShootingUiFlipMenuUi();
       return menu;
@@ -26734,11 +26775,12 @@
           <span>UI反転　</span><strong id="shooting-pause-ui-flip-status">標準</strong>
         </button>
         <button type="button" class="shooting-pause-action shooting-pause-exit" onclick="exitShootingStageFromPause()">ステージを終了する</button>
-        <button type="button" class="shooting-pause-action" onclick="restartShootingStageFromPause()">最初からやり直す</button>
         <button type="button" class="shooting-pause-action shooting-pause-close" onclick="closeShootingPauseMenu()">閉じる</button>
       </section>
     `;
     root.appendChild(menu);
+    const exitAction = menu.querySelector('.shooting-pause-exit');
+    if (exitAction) exitAction.hidden = isPhaseOdysseyStage();
     updateShootingBattleBgmMenuUi();
     updateShootingUiFlipMenuUi();
     return menu;
@@ -26832,6 +26874,7 @@
   };
 
   window.restartShootingStageFromPause = function () {
+    if (rejectShootingBattleAbandon()) return;
     const menu = document.getElementById('shooting-pause-menu');
     if (menu) {
       menu.classList.remove('show');
@@ -26867,6 +26910,7 @@
   }
 
   window.exitShootingStageFromPause = async function () {
+    if (rejectShootingBattleAbandon()) return;
     if (shootingAbortMissionRunning) return;
     shootingAbortMissionRunning = true;
 
@@ -27727,6 +27771,7 @@
   };
 
   window.restartShootingEvent = async function (options = {}) {
+    if (rejectShootingBattleAbandon()) return;
     if (isGachaTrialStage()) return startGachaTrialBattle();
     // build1169: CH01-04でアルノ戦まで到達したGAME OVERのRETRYは、
     // 負けイベントを再生せず「属性相性か…」のアルノ戦開始台詞から再開する。
@@ -27873,6 +27918,7 @@
   };
 
   window.closeShootingEvent = async function () {
+    if (rejectShootingBattleAbandon()) return;
     // 塔の確認中にゲーム画面を閉じても、出撃に進まない。
     if (window.ResonanceTower?.cancelSealConfirmation) window.ResonanceTower.cancelSealConfirmation();
     const leavingGachaTrial = isGachaTrialStage();
