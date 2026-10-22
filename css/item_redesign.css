@@ -425,11 +425,11 @@ html body #screen-item.item-screen .item-row-other:has(.item-exchange-open-btn) 
 /* ============================================================
    build1475 — 聖霊花交換所モーダル（完成図準拠）
    ============================================================ */
-html body #spirit-flower-exchange-modal .item-exchange-backdrop{
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-backdrop{
   background:rgba(56,44,28,.30) !important;
   backdrop-filter:blur(3px) !important;-webkit-backdrop-filter:blur(3px) !important;
 }
-html body #spirit-flower-exchange-modal .item-exchange-dialog{
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-dialog{
   display:flex !important;
   flex-direction:column !important;
   align-items:stretch !important;
@@ -452,7 +452,7 @@ html body #spirit-flower-exchange-modal .item-exchange-dialog{
   color:#2f2116 !important;
 }
 /* 四隅の飾り角 */
-html body #spirit-flower-exchange-modal .item-exchange-dialog::before{
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-dialog::before{
   content:"";
   position:absolute;inset:6px;
   pointer-events:none;
@@ -463,7 +463,7 @@ html body #spirit-flower-exchange-modal .item-exchange-dialog::before{
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Cpath d='M29 1v20l-8 8H1' fill='none' stroke='%23c19a55' stroke-width='1.3'/%3E%3Cpath d='M24 8v10.5L18.5 24H8' fill='none' stroke='%23dcc28c' stroke-width='.9'/%3E%3Ccircle cx='21' cy='21' r='1.6' fill='%23c19a55'/%3E%3C/svg%3E") right bottom/24px 24px no-repeat;
 }
 /* 下辺中央の小さな飾り */
-html body #spirit-flower-exchange-modal .item-exchange-dialog::after{
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-dialog::after{
   content:"";
   position:absolute;left:50%;bottom:-7px;
   width:56px;height:14px;transform:translateX(-50%);
@@ -471,7 +471,7 @@ html body #spirit-flower-exchange-modal .item-exchange-dialog::after{
   pointer-events:none;
 }
 /* 上部の聖花の紋章（アーチ＋花＋光条） */
-html body #spirit-flower-exchange-modal .item-exchange-emblem{
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-emblem{
   position:absolute;
   left:50%;top:-30px;
   width:96px;height:58px;
@@ -481,7 +481,7 @@ html body #spirit-flower-exchange-modal .item-exchange-emblem{
   filter:drop-shadow(0 2px 3px rgba(120,84,26,.18));
 }
 /* 閉じる（丸い金枠） */
-html body #spirit-flower-exchange-modal .item-exchange-close{
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-close{
   right:-6px !important;top:-6px !important;
   width:36px !important;height:36px !important;
   display:flex !important;align-items:center !important;justify-content:center !important;
@@ -495,7 +495,7 @@ html body #spirit-flower-exchange-modal .item-exchange-close{
   z-index:3 !important;
 }
 /* タイトル */
-html body #spirit-flower-exchange-modal .item-exchange-dialog h2{
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-dialog h2{
   order:0;
   margin:2px 0 6px !important;
   text-align:center !important;
@@ -505,7 +505,7 @@ html body #spirit-flower-exchange-modal .item-exchange-dialog h2{
   text-indent:.16em !important;
   text-shadow:0 1px 0 #fff !important;
 }
-html body #spirit-flower-exchange-modal .item-exchange-kicker{
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-kicker{
   display:flex !important;
   align-items:center !important;
   justify-content:center !important;
@@ -516,18 +516,18 @@ html body #spirit-flower-exchange-modal .item-exchange-kicker{
   letter-spacing:.3em !important;
   white-space:nowrap !important;
 }
-html body #spirit-flower-exchange-modal .item-exchange-kicker::before,
-html body #spirit-flower-exchange-modal .item-exchange-kicker::after{
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-kicker::before,
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-kicker::after{
   content:"";
   flex:1 1 auto;max-width:76px;height:12px;
   background:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10 0 11.8 8.2 20 10 11.8 11.8 10 20 8.2 11.8 0 10 8.2 8.2Z' fill='%23c19a55'/%3E%3C/svg%3E") var(--s,right) center/11px 11px no-repeat,
     linear-gradient(90deg,var(--a,transparent),var(--b,rgba(193,154,85,.85))) center/calc(100% - 4px) 1px no-repeat;
 }
-html body #spirit-flower-exchange-modal .item-exchange-kicker::after{--s:left;--a:rgba(193,154,85,.85);--b:transparent;}
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-kicker::after{--s:left;--a:rgba(193,154,85,.85);--b:transparent;}
 
 /* 所持数バー */
-html body #spirit-flower-exchange-modal .item-exchange-owned{
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-owned{
   flex:0 0 auto;
   position:relative;
   display:grid !important;
@@ -543,29 +543,29 @@ html body #spirit-flower-exchange-modal .item-exchange-owned{
     linear-gradient(180deg,#fffaf0,#f5ead3) !important;
   box-shadow:inset 0 0 0 3px rgba(255,253,246,.92),inset 0 0 0 4px rgba(198,164,102,.4),0 2px 6px rgba(110,78,26,.10) !important;
 }
-html body #spirit-flower-exchange-modal .item-exchange-owned::after{
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-owned::after{
   content:"";
   grid-column:3;grid-row:1;
   width:1px;height:26px;
   background:linear-gradient(180deg,transparent,rgba(166,128,62,.6),transparent);
 }
-html body #spirit-flower-exchange-modal .item-exchange-owned img{
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-owned img{
   grid-column:1;
   width:clamp(34px,10vw,42px) !important;height:clamp(34px,10vw,42px) !important;
   object-fit:contain !important;
   filter:drop-shadow(0 2px 3px rgba(90,64,26,.22));
 }
-html body #spirit-flower-exchange-modal .item-exchange-owned span{
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-owned span{
   grid-column:2;
   display:flex !important;align-items:baseline !important;gap:8px !important;
   color:#3a2a1b !important;
   font:600 clamp(12.5px,3.6vw,14.5px)/1.2 "Noto Serif JP",serif !important;
   white-space:nowrap !important;
 }
-html body #spirit-flower-exchange-modal .item-exchange-owned span small{
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-owned span small{
   color:#6f5c45;font:500 10px/1 "Noto Serif JP",serif;letter-spacing:.06em;
 }
-html body #spirit-flower-exchange-modal .item-exchange-owned strong{
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-owned strong{
   grid-column:4;
   min-width:52px;text-align:center;
   color:#2b1e13 !important;
@@ -573,7 +573,7 @@ html body #spirit-flower-exchange-modal .item-exchange-owned strong{
 }
 
 /* 交換リスト */
-html body #spirit-flower-exchange-modal .item-exchange-list{
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-list{
   flex:1 1 auto !important;
   min-height:0 !important;
   max-height:none !important;
@@ -586,10 +586,10 @@ html body #spirit-flower-exchange-modal .item-exchange-list{
   scrollbar-width:thin;
   scrollbar-color:rgba(150,128,96,.55) transparent;
 }
-html body #spirit-flower-exchange-modal .item-exchange-list::-webkit-scrollbar{width:3px;}
-html body #spirit-flower-exchange-modal .item-exchange-list::-webkit-scrollbar-thumb{background:rgba(150,128,96,.55);border-radius:3px;}
-html body #spirit-flower-exchange-modal .item-exchange-group-title{display:none !important;}
-html body #spirit-flower-exchange-modal .item-exchange-row{
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-list::-webkit-scrollbar{width:3px;}
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-list::-webkit-scrollbar-thumb{background:rgba(150,128,96,.55);border-radius:3px;}
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-group-title{display:none !important;}
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-row{
   flex:0 0 auto;
   display:grid !important;
   grid-template-columns:clamp(40px,11.5vw,46px) minmax(0,1fr) auto auto !important;
@@ -604,7 +604,7 @@ html body #spirit-flower-exchange-modal .item-exchange-row{
   box-shadow:0 0 0 1px rgba(214,196,160,.55),0 2px 5px rgba(90,66,30,.07) !important;
   opacity:1 !important;
 }
-html body #spirit-flower-exchange-modal .item-exchange-reward-icon{
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-reward-icon{
   width:100% !important;height:auto !important;aspect-ratio:1/1;
   border:1px solid rgba(198,164,102,.7) !important;
   border-radius:2px !important;
@@ -612,22 +612,22 @@ html body #spirit-flower-exchange-modal .item-exchange-reward-icon{
   box-shadow:inset 0 0 0 2px rgba(255,255,255,.85) !important;
   overflow:hidden !important;
 }
-html body #spirit-flower-exchange-modal .item-exchange-reward-icon img{
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-reward-icon img{
   width:90% !important;height:90% !important;max-width:none !important;max-height:none !important;object-fit:contain !important;
 }
-html body #spirit-flower-exchange-modal .item-exchange-reward-icon.is-placeholder span{color:#b49a6c;font:600 16px/1 "Cinzel",serif;}
-html body #spirit-flower-exchange-modal .item-exchange-copy strong{
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-reward-icon.is-placeholder span{color:#b49a6c;font:600 16px/1 "Cinzel",serif;}
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-copy strong{
   color:#2b1e13 !important;
   font:700 clamp(11.5px,3.3vw,13.5px)/1.3 "Noto Serif JP",serif !important;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
-html body #spirit-flower-exchange-modal .item-exchange-copy span{
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-copy span{
   margin-top:3px !important;
   color:#6f604e !important;
   font:500 clamp(8.5px,2.4vw,9.6px)/1.4 "Noto Serif JP",serif !important;
 }
 /* 必要数（花アイコン＋数）：左右に細い区切り線 */
-html body #spirit-flower-exchange-modal .item-exchange-cost{
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-cost{
   position:relative;
   display:flex;align-items:center;justify-content:center;gap:3px;
   width:clamp(50px,14.5vw,60px);
@@ -637,16 +637,16 @@ html body #spirit-flower-exchange-modal .item-exchange-cost{
   border-right:1px solid rgba(190,166,120,.5);
   height:28px;
 }
-html body #spirit-flower-exchange-modal .item-exchange-cost img{
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-cost img{
   width:clamp(17px,5vw,21px);height:clamp(17px,5vw,21px);object-fit:contain;
 }
-html body #spirit-flower-exchange-modal .item-exchange-cost b{
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-cost b{
   color:#2b1e13;
   font:600 clamp(13px,3.8vw,15.5px)/1 "Cinzel","Noto Serif JP",serif;
 }
-html body #spirit-flower-exchange-modal .item-exchange-cost.is-short b{color:#a5432f;}
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-cost.is-short b{color:#a5432f;}
 /* 交換ボタン（ブロンズ） */
-html body #spirit-flower-exchange-modal .item-exchange-btn{
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-btn{
   width:clamp(56px,17vw,68px) !important;
   height:clamp(28px,8vw,32px) !important;
   padding:0 !important;
@@ -660,7 +660,7 @@ html body #spirit-flower-exchange-modal .item-exchange-btn{
   text-shadow:0 1px 1px rgba(60,38,10,.6) !important;
   opacity:1 !important;
 }
-html body #spirit-flower-exchange-modal .item-exchange-btn:disabled{
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-btn:disabled{
   border-color:rgba(160,150,135,.8) !important;
   background:linear-gradient(180deg,#e8e4dc,#d5cfc4) !important;
   box-shadow:inset 0 0 0 2px rgba(255,255,255,.55) !important;
@@ -669,9 +669,9 @@ html body #spirit-flower-exchange-modal .item-exchange-btn:disabled{
   font-size:clamp(10px,2.9vw,11.5px) !important;
   letter-spacing:.04em !important;text-indent:.04em !important;
 }
-html body #spirit-flower-exchange-modal .item-exchange-row.is-disabled .item-exchange-copy,
-html body #spirit-flower-exchange-modal .item-exchange-row.is-disabled .item-exchange-reward-icon{opacity:.6;}
-html body #spirit-flower-exchange-modal .item-exchange-note{
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-row.is-disabled .item-exchange-copy,
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-row.is-disabled .item-exchange-reward-icon{opacity:.6;}
+html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-note{
   flex:0 0 auto;
   margin:8px 0 0 !important;
   color:#8d7d68 !important;
@@ -679,11 +679,11 @@ html body #spirit-flower-exchange-modal .item-exchange-note{
   text-align:center !important;
 }
 @media (max-width:360px){
-  html body #spirit-flower-exchange-modal .item-exchange-row{gap:0 6px !important;padding:5px 6px !important;}
-  html body #spirit-flower-exchange-modal .item-exchange-cost{padding:0 3px;width:46px;}
-  html body #spirit-flower-exchange-modal .item-exchange-copy strong{white-space:normal;}
-  html body #spirit-flower-exchange-modal .item-exchange-dialog{padding-top:30px !important;}
-  html body #spirit-flower-exchange-modal .item-exchange-kicker{margin-bottom:8px !important;}
+  html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-row{gap:0 6px !important;padding:5px 6px !important;}
+  html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-cost{padding:0 3px;width:46px;}
+  html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-copy strong{white-space:normal;}
+  html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-dialog{padding-top:30px !important;}
+  html body :is(#spirit-flower-exchange-modal,#spirit-flower-sr-exchange-modal) .item-exchange-kicker{margin-bottom:8px !important;}
 }
 
 /* ============================================================

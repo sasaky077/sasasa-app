@@ -4142,6 +4142,22 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
       <p class="item-exchange-note">交換後のアイテムは直接アイテムBOXへ加算されます。</p>
     </section>
   </div>
+  <div id="spirit-flower-sr-exchange-modal" class="item-exchange-modal" hidden aria-hidden="true">
+    <div class="item-exchange-backdrop" data-flower-sr-exchange-close></div>
+    <section class="item-exchange-dialog" role="dialog" aria-modal="true" aria-labelledby="spirit-flower-sr-exchange-title">
+      <span class="item-exchange-emblem" aria-hidden="true"></span>
+      <button type="button" class="item-exchange-close" data-flower-sr-exchange-close aria-label="閉じる">×</button>
+      <h2 id="spirit-flower-sr-exchange-title">聖霊花(SR)交換所</h2>
+      <small class="item-exchange-kicker">SPIRIT FLOWER EXCHANGE</small>
+      <div class="item-exchange-owned">
+        <img src="images/item_flower_sr.webp" alt="">
+        <span><small>所持</small>聖霊花(SR)</span>
+        <strong id="flower-sr-exchange-owned">0</strong>
+      </div>
+      <div id="spirit-flower-sr-exchange-list" class="item-exchange-list"></div>
+      <p class="item-exchange-note">交換後のアイテムは直接アイテムBOXへ加算されます。</p>
+    </section>
+  </div>
 </div>
 
 <div id="screen-summon" class="screen">
@@ -20169,7 +20185,7 @@ window.returnToTitleScreen = function(){
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1628-public-raid"></script>
 <script src="js/skin_system.js?v=1477-skin-battle"></script>
-<script src="js/item_management.js?v=1643-dragon-name"></script>
+<script src="js/item_management.js?v=1646-sr-exchange-modal"></script>
 
 <script id="zeraphia-service-worker-register-v1">
 (function(){

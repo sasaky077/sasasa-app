@@ -87,6 +87,17 @@
     }
   ];
 
+  // build1645: SR確定単発チケット。抽選はサーバーで行う。
+  OTHER_ITEMS.push({id:'sr_guaranteed_ticket',source:'inventory',name:'SR確定ガチャTICKET',
+    img:'images/gacha_ticket_10.webp',kicker:'SR GUARANTEED',
+    desc:'恒常SRから1体確定で獲得できる単発チケット。',tag:'ガチャ'});
+
+  const FLOWER_SR_EXCHANGES = [
+    {id:'noah_ticket_1',cost:1,name:'ノア挑戦チケット ×1',img:'images/special_stage_ticket.webp',desc:'SPECIAL STAGE「理想郷 -ノア-」へ挑戦'},
+    {id:'flower_r_3',cost:1,name:'聖霊花(R) ×3',img:'images/item_flower_r.webp',desc:'聖霊花(R)を3個獲得'},
+    {id:'sr_ticket_1',cost:5,name:'SR確定ガチャTICKET ×1',img:'images/gacha_ticket_10.webp',desc:'恒常SRが1体確定する単発チケット'}
+  ];
+
   const FLOWER_R_EXCHANGES = [
     {
       group:'R ×1',
@@ -398,8 +409,8 @@
         const actionHtml=isFlowerR
           ? '<div class="item-row-actions item-row-actions-other"><button class="item-exchange-open-btn" type="button" data-open-flower-exchange>交換</button></div>'
           : (isFlowerSR
-              ? '<div class="item-row-actions item-row-actions-other"><button class="item-exchange-open-btn" type="button" disabled>未実装</button></div>'
-              : '');
+              ? '<div class="item-row-actions item-row-actions-other"><button class="item-exchange-open-btn" type="button" data-open-flower-sr-exchange>交換</button></div>'
+              : (meta.id==='sr_guaranteed_ticket' ? '<div class="item-row-actions item-row-actions-other"><button class="item-exchange-open-btn" type="button" data-use-sr-ticket '+(qty<=0?'disabled':'')+'>使う</button></div>' : ''));
 
         return ''+
           '<article class="item-row item-row-other'+(qty<=0?' is-zero':'')+'">'+
@@ -476,6 +487,10 @@
     state.loading=true;
     const list=document.getElementById('item-management-list');
     if(list) list.innerHTML='<div class="item-management-loading">読み込み中...</div>';
+    const srList=document.getElementById('spirit-flower-sr-exchange-list');
+    if(srList)srList.addEventListener('click',e=>{const btn=e.target.closest('[data-flower-sr-exchange-id]');if(btn&&!btn.disabled)exchangeFlowerSR(btn.dataset.flowerSrExchangeId);});
+    document.querySelectorAll('[data-flower-sr-exchange-close]').forEach(el=>el.addEventListener('click',closeFlowerSRExchange));
+
     const refreshBtn=document.getElementById('item-refresh-btn');
     if(refreshBtn) refreshBtn.disabled=true;
 
@@ -759,6 +774,76 @@
     }
   }
 
+  function closeFlowerSRExchange(){
+    const modal=document.getElementById('spirit-flower-sr-exchange-modal');
+    if(modal){modal.hidden=true;modal.setAttribute('aria-hidden','true');}
+  }
+  function renderFlowerSRExchange(){
+    const list=document.getElementById('spirit-flower-sr-exchange-list');
+    if(!list) return;
+    const owned=Math.max(0,Math.floor(Number(state.items.flower_sr||0)));
+    const count=document.getElementById('flower-sr-exchange-owned');
+    if(count)count.textContent=fmt(owned);
+    list.innerHTML=FLOWER_SR_EXCHANGES.map(item=>
+      '<article class="item-exchange-row">'+
+       '<div class="item-exchange-reward-icon"><img src="'+escapeHtml(item.img)+'" alt=""></div>'+
+       '<div class="item-exchange-copy"><strong>'+escapeHtml(item.name)+'</strong><span>'+escapeHtml(item.desc)+'</span></div>'+
+       '<div class="item-exchange-cost'+(owned<item.cost?' is-short':'')+'"><img src="images/item_flower_sr.webp" alt=""><b>'+fmt(item.cost)+'</b></div>'+
+       '<button type="button" class="item-exchange-btn" data-flower-sr-exchange-id="'+escapeHtml(item.id)+'" '+(state.exchanging||owned<item.cost?'disabled':'')+'>交換</button>'+
+      '</article>'
+    ).join('');
+  }
+  function openFlowerSRExchange(){
+    renderFlowerSRExchange();
+    const modal=document.getElementById('spirit-flower-sr-exchange-modal');
+    if(modal){modal.hidden=false;modal.setAttribute('aria-hidden','false');}
+  }
+  async function exchangeFlowerSR(exchangeId){
+    if(state.exchanging)return;
+    const def=FLOWER_SR_EXCHANGES.find(x=>x.id===exchangeId);
+    if(!def)return;
+    if(Number(state.items.flower_sr||0)<def.cost){toast('聖霊花(SR)が不足しています');return;}
+    if(!window.confirm('聖霊花(SR) ×'+def.cost+' を消費して\n「'+def.name+'」に交換しますか？'))return;
+    state.exchanging=true;renderFlowerSRExchange();
+    try{
+      const client=window.zsSupabase;
+      if(!client||typeof client.rpc!=='function')throw new Error('サーバーへ接続できません');
+      const res=await client.rpc('exchange_spirit_flower_sr',{p_exchange_id:exchangeId});
+      if(res&&res.error)throw res.error;
+      let data=res&&res.data; if(typeof data==='string')data=JSON.parse(data);
+      if(!data||data.ok===false)throw new Error((data&&data.message)||'交換に失敗しました');
+      await fetchSnapshot();
+      if(typeof window.loadInventoryFromSupabase==='function'){
+        const userId=String(localStorage.getItem('zukan_user_id')||'').trim();
+        if(userId)try{await window.loadInventoryFromSupabase(userId)}catch(_){}
+      }
+      render();renderFlowerSRExchange();
+      try{window.dispatchEvent(new CustomEvent('sasaphia:growth-resources-changed'))}catch(_){}
+      toast('交換しました：'+def.name);
+    }catch(err){console.error('[ItemManagement] SR exchange failed',err);toast(err&&err.message||'交換に失敗しました');}
+    finally{state.exchanging=false;renderFlowerSRExchange();}
+  }
+  async function useSRTicket(){
+    if(state.exchanging||Number(state.items.sr_guaranteed_ticket||0)<1)return;
+    if(!window.confirm('SR確定ガチャTICKETを1枚使って恒常SRを1体獲得しますか？'))return;
+    state.exchanging=true;
+    try{
+      const client=window.zsSupabase;
+      if(!client||typeof client.rpc!=='function')throw new Error('サーバーへ接続できません');
+      const res=await client.rpc('use_sr_guaranteed_ticket');
+      if(res&&res.error)throw res.error;
+      let data=res&&res.data;if(typeof data==='string')data=JSON.parse(data);
+      if(!data||data.ok===false)throw new Error((data&&data.message)||'チケットを使用できませんでした');
+      await fetchSnapshot();
+      const userId=String(localStorage.getItem('zukan_user_id')||'').trim();
+      if(userId&&typeof window.loadInventoryFromSupabase==='function')try{await window.loadInventoryFromSupabase(userId)}catch(_){}
+      render();
+      try{window.dispatchEvent(new CustomEvent('sasaphia:growth-resources-changed'))}catch(_){}
+      toast(data.converted?'SR確定：'+data.character_name+'（完凸分を聖霊花(SR)へ変換）':'SR確定：'+data.character_name+' を獲得！');
+    }catch(err){console.error('[ItemManagement] SR ticket use failed',err);toast(err&&err.message||'チケットを使用できませんでした');}
+    finally{state.exchanging=false;render();}
+  }
+
   // build1489: 限定衣装プレビュー（chara_XX_b_cut.webp）。画像が無ければ衣装パネル画像を表示。
   function openSkinPreview(characterId){
     const id=Number(characterId||0);
@@ -821,7 +906,10 @@
         const exchangeOpen=e.target.closest('[data-open-flower-exchange]');
         if(exchangeOpen && !exchangeOpen.disabled){
           openFlowerExchange();
+          return;
         }
+        if(e.target.closest('[data-open-flower-sr-exchange]')){openFlowerSRExchange();return;}
+        if(e.target.closest('[data-use-sr-ticket]')){useSRTicket();return;}
       });
     }
 
