@@ -7130,6 +7130,7 @@ document.addEventListener('touchend', function (e) {
     }
     if(centerTitleJp){
       centerTitleJp.textContent =
+        gacha.poolType === 'premium' ? '超特別邂逅' :
         gacha.poolType === 'pickup' ? '限定邂逅' :
         (gacha.poolType === 'limited' ? '特別邂逅' : '通常邂逅');
     }

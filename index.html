@@ -3393,7 +3393,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 <link rel="stylesheet" href="css/notice_dot.css?v=1618-notice-dot">
 <link rel="stylesheet" href="css/home_icon_size.css?v=1619-home-icon">
 <link rel="stylesheet" href="css/bonus_auto.css?v=1620-bonus-auto">
-</head>
+<style id="premium-sr-single-style">#screen-summon #summon-detail-btns:has(> .btn-gacha-premium){display:flex!important;justify-content:center!important;grid-template-columns:none!important}#screen-summon .btn-gacha-premium{display:block;width:min(78%,360px);min-height:56px;flex:0 0 auto;padding:0;border:none;background:none;box-shadow:none;margin:0 auto}#screen-summon .btn-gacha-premium img{display:block;width:100%;height:auto}#screen-summon:has([data-gacha-id="gacha_sr_ticket"]) #pity-counter{display:none!important}</style></head>
 <body>
   <div class="global-user-frame" id="global-user-frame">
   <div class="hud-left">
@@ -7054,7 +7054,44 @@ document.addEventListener('touchend', function (e) {
     'soul_vessel_light'
   ];
 
+  // build1648: 超特別邂逅／所持チケット専用（SR13体均等、天井なし）
+  const PREMIUM_SR_IDS = [36,40,54,41,9,33,4,2,56,31,7,11,8];
+  const PREMIUM_SR_GACHA_ID = 'gacha_sr_ticket';
+  function premiumSRTicketCount(){
+    if(Number.isFinite(Number(window.__premiumSRTicketCount)))
+      return Math.max(0,Math.floor(Number(window.__premiumSRTicketCount)));
+    const cached=window.ItemManagement&&typeof window.ItemManagement.getCount==='function'
+      ? Number(window.ItemManagement.getCount('sr_guaranteed_ticket')) : NaN;
+    return Number.isFinite(cached)?Math.max(0,Math.floor(cached)):0;
+  }
+  async function refreshPremiumSRTicketCount(){
+    const client=window.zsSupabase;
+    if(!client||typeof client.rpc!=='function')return;
+    try{
+      const res=await client.rpc('get_my_inventory_snapshot');
+      if(res&&res.error)throw res.error;
+      const data=res&&res.data;
+      if(data&&data.items){
+        window.__premiumSRTicketCount=Math.max(0,Number(data.items.sr_guaranteed_ticket||0));
+        if(document.getElementById('screen-summon')?.classList.contains('active'))renderSummonBanners();
+      }
+    }catch(err){console.warn('[Premium SR] ticket refresh failed',err);}
+  }
+  window.addEventListener('sasaphia:growth-resources-changed',function(){
+    if(document.getElementById('screen-summon')?.classList.contains('active'))refreshPremiumSRTicketCount();
+  });
+
   const GACHA_BANNERS = [
+    {
+      id:'gacha_sr_ticket',category:'premium',poolType:'premium',title:'超特別邂逅',
+      detailTitle:'SR GUARANTEED ENCOUNTER',
+      desc:'SR確定ガチャTICKET ×1／SR13体が各1/13（約7.6923%）／天井なし',
+      thumbTitle:'超特別',img:'images/gacha_banner_premium_01.webp',cost:0,
+      srRate:1,rRate:0,materialRate:0,
+      srCharacterIds:PREMIUM_SR_IDS,rCharacterIds:[],limitedCharacterIds:[],limitedRCharacterIds:[],
+      pityCharacterIds:[],disablePity:true,disableTenGuarantee:true,
+      commonMaterialIds:[],itemMixed:false
+    },
     {
       id: 'gacha_02',
       category: 'normal',
@@ -7209,6 +7246,7 @@ document.addEventListener('touchend', function (e) {
     var used = userProfile.used_gachas || [];
     return GACHA_BANNERS.filter(function(gacha){
       if(gacha.hidden === true) return false;
+      if(gacha.id===PREMIUM_SR_GACHA_ID && premiumSRTicketCount()<=0)return false;
       if(gacha.category === 'once' && used.includes(gacha.id)) return false;
       return true;
     });
@@ -7633,8 +7671,9 @@ document.addEventListener('touchend', function (e) {
 
     if(subtitle){
       subtitle.textContent =
+        gacha.poolType === 'premium' ? '超特別邂逅' :
         gacha.poolType === 'pickup' ? '限定邂逅' :
-        (gacha.poolType === 'limited' ? '特別邂逅' : '通常邂逅');
+        (gacha.poolType === 'premium' ? '超特別邂逅' : (gacha.poolType === 'limited' ? '特別邂逅' : '通常邂逅'));
     }
     var srRateBox = document.getElementById('gacha-rate-sr');
     var rRateBox = document.getElementById('gacha-rate-r');
@@ -7759,11 +7798,13 @@ document.addEventListener('touchend', function (e) {
     var centerTitleJp = document.getElementById('summon-center-title-jp');
     if(centerTitleEn){
       centerTitleEn.textContent =
+        gacha.poolType === 'premium' ? 'SR GUARANTEED' :
         gacha.poolType === 'pickup' ? 'PICKUP GACHA' :
         (gacha.poolType === 'limited' ? 'LIMITED GACHA' : 'STANDARD GACHA');
     }
     if(centerTitleJp){
       centerTitleJp.textContent =
+        gacha.poolType === 'premium' ? '超特別邂逅' :
         gacha.poolType === 'pickup' ? '限定邂逅' :
         (gacha.poolType === 'limited' ? '特別邂逅' : '通常邂逅');
     }
@@ -7782,15 +7823,20 @@ document.addEventListener('touchend', function (e) {
     if(title) title.textContent = gacha.detailTitle || gacha.title || '';
     if(desc)  desc.textContent  = gacha.desc || '';
 
+    var pityCounter=document.getElementById('pity-counter');
+    if(pityCounter)pityCounter.style.display=gacha.category==='premium'?'none':'';
     var pityNote = document.querySelector('#pity-counter + .pity-note');
     if(pityNote){
+      pityNote.style.display=gacha.category==='premium'?'none':'';
       pityNote.textContent = '天井到達：SRキャラ 1体確定';
     }
 
     // ボタン切り替え
     var gemImg = '<img src="images/icon_gem.webp" class="btn-gacha-gem-icon">';
     if(btns){
-      if(gacha.category === 'once'){
+      if(gacha.category === 'premium'){
+        btns.innerHTML='<button type="button" class="btn-gacha btn-gacha-single btn-gacha-premium" onclick="summonAction(1)" aria-label="SR確定ガチャを引く"><img src="images/gacha_btn_super_special.webp" alt="SR確定ガチャを引く"></button>';
+      } else if(gacha.category === 'once'){
         btns.innerHTML =
           '<button class="btn-gacha btn-gacha-ten btn-gacha-guaranteed" onclick="summonAction(10)">' +
             '<span class="btn-gacha-guarantee-badge">UR確定</span>' +
@@ -11697,6 +11743,7 @@ function goHome(){
       return;
     }
 
+    if(name === 'summon')refreshPremiumSRTicketCount();
     if(name === 'summon' && typeof refreshGachaTutorialStatus === 'function'){
       refreshGachaTutorialStatus().then(function(){
         if(typeof renderSummonBanners === 'function') renderSummonBanners();
@@ -11866,26 +11913,30 @@ function goHome(){
   // build1505: 確認画像の各欄を所持数/必要数と連動。無料/チケット時は結晶を減らさない。
   var gemBalance = Math.max(0, Math.floor(Number(userProfile.gem) || 0));
   var crystalCost = Math.max(0, Math.floor(Number(cost) || 0));
-  var paymentIsFree = tutorialFreeDraw || towerLimitedTicketDraw;
+  var paymentIsPremium=currentGacha.id===PREMIUM_SR_GACHA_ID;
+  if(paymentIsPremium && premiumSRTicketCount()<=0){showToast('SR確定ガチャTICKETが不足しています');refreshPremiumSRTicketCount();return;}
+  var paymentIsFree = tutorialFreeDraw || towerLimitedTicketDraw || paymentIsPremium;
   var actualCrystalCost = paymentIsFree ? 0 : crystalCost;
   var fmtConfirmNum = function(number){ return Math.max(0,Number(number) || 0).toLocaleString('ja-JP'); };
   var messageNode = document.getElementById('summon-confirm-text');
-  if (towerLimitedTicketDraw) {
+  if (paymentIsPremium){
+    messageNode.textContent='SR確定ガチャTICKETを1枚使用して、SR確定ガチャを引きます。';
+  } else if (towerLimitedTicketDraw) {
     messageNode.innerHTML = '無料10連TICKETを1枚使用して<br>限定邂逅を10回引きます。';
   } else if (tutorialFreeDraw) {
     messageNode.innerHTML = '初回無料で通常邂逅の10連を<br>回します。';
   } else {
     messageNode.innerHTML = '結晶を <strong class="zgc-message-amount">' + fmtConfirmNum(actualCrystalCost) + '</strong> 個消費して<br>ガチャを回します。';
   }
-  document.getElementById('zgc-cost-label').textContent = towerLimitedTicketDraw ? '使用TICKET' : '消費結晶';
-  document.getElementById('zgc-cost-value').textContent = towerLimitedTicketDraw ? '1' : fmtConfirmNum(actualCrystalCost);
-  document.getElementById('zgc-cost-icon').src = towerLimitedTicketDraw ? 'images/gacha_ticket_10.webp' : 'images/icon_gem.webp';
+  document.getElementById('zgc-cost-label').textContent = (towerLimitedTicketDraw||paymentIsPremium) ? '使用TICKET' : '消費結晶';
+  document.getElementById('zgc-cost-value').textContent = (towerLimitedTicketDraw||paymentIsPremium) ? '1' : fmtConfirmNum(actualCrystalCost);
+  document.getElementById('zgc-cost-icon').src = paymentIsPremium ? 'images/gacha_ticket_10.webp' : (towerLimitedTicketDraw ? 'images/gacha_ticket_10.webp' : 'images/icon_gem.webp');
   document.getElementById('zgc-current-balance').textContent = fmtConfirmNum(gemBalance);
   document.getElementById('zgc-after-balance').textContent = fmtConfirmNum(gemBalance - actualCrystalCost);
-  document.getElementById('summon-confirm-modal').classList.toggle('zgc-is-ticket', towerLimitedTicketDraw);
+  document.getElementById('summon-confirm-modal').classList.toggle('zgc-is-ticket', towerLimitedTicketDraw||paymentIsPremium);
   document.getElementById('summon-confirm-modal').classList.toggle('zgc-is-free', tutorialFreeDraw);
 
-  if(!tutorialFreeDraw && !towerLimitedTicketDraw && userProfile.gem < cost){
+  if(!tutorialFreeDraw && !towerLimitedTicketDraw && !paymentIsPremium && userProfile.gem < cost){
   isSummoning = false;
 
   var standby = document.getElementById('summon-standby');
@@ -12244,7 +12295,7 @@ Promise.resolve(normalSummon(currentSummonCount)).catch(function(error){
     isGachaTutorialFreeDraw(currentGacha, count)
   );
 
-  if(!tutorialFreeDraw && !towerLimitedTicketDraw && userProfile.gem < cost){
+  if(!tutorialFreeDraw && !towerLimitedTicketDraw && currentGacha.id!==PREMIUM_SR_GACHA_ID && userProfile.gem < cost){
     recoverSummonUI();
     document.getElementById('paywall-modal').classList.add('active');
     return;
@@ -12252,7 +12303,9 @@ Promise.resolve(normalSummon(currentSummonCount)).catch(function(error){
 
   // 通常邂逅チュートリアルの初回10連だけ、専用SECURITY DEFINER RPCで無料化。
   // 無料判定・CH03-04クリア確認・一度きり制御はサーバー側を正とする。
-  var drawResult = tutorialFreeDraw
+  var drawResult = currentGacha.id===PREMIUM_SR_GACHA_ID
+    ? await sb.rpc('draw_sr_guaranteed_ticket')
+    : tutorialFreeDraw
     ? await sb.rpc('draw_gacha_tutorial_free')
     : towerLimitedTicketDraw
       ? await sb.rpc('redeem_tower_limited_ten_ticket',{p_gacha_id:currentGacha.id})
@@ -12260,7 +12313,8 @@ Promise.resolve(normalSummon(currentSummonCount)).catch(function(error){
           p_gacha_id: currentGacha.id,
           p_count: count
         });
-  if(!drawResult?.error){towerLimitedTicketDraw=false;}
+  if(!drawResult?.error){towerLimitedTicketDraw=false;
+    if(currentGacha.id===PREMIUM_SR_GACHA_ID){window.__premiumSRTicketCount=Math.max(0,premiumSRTicketCount()-1);}}
 
   if(drawResult && drawResult.error){
     var drawMessage = String(drawResult.error.message || '');
@@ -12321,6 +12375,9 @@ Promise.resolve(normalSummon(currentSummonCount)).catch(function(error){
     }
   }
 
+  if(currentGacha.id===PREMIUM_SR_GACHA_ID){
+    window.__premiumSRTicketCount=Math.max(0,Number(window.__premiumSRTicketCount||0));
+  }
   renderSummonBanners();
   updateSummonGemUI();
   updateMainUI();
@@ -20054,7 +20111,7 @@ function fadeOutOpeningBgm(){
   <link rel="stylesheet" href="css/home_menu_redesign.css?v=1449-tower-blur">
   <link rel="stylesheet" href="css/content_lock.css?v=1484-css-lock">
   <link rel="stylesheet" href="css/notice_redesign.css?v=1453-notice-mock">
-  <link rel="stylesheet" href="css/item_redesign.css?v=1647-sr-wrap">
+  <link rel="stylesheet" href="css/item_redesign.css?v=1648-premium-sr-ticket">
   <link rel="stylesheet" href="css/friend_redesign.css?v=1476-friend-mock">
   <link rel="stylesheet" href="css/chara_detail_redesign.css?v=1481-dps">
   <link rel="stylesheet" href="css/zukan_detail_scroll_lock.css?v=1500-portrait-fixed">
@@ -20185,7 +20242,7 @@ window.returnToTitleScreen = function(){
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1628-public-raid"></script>
 <script src="js/skin_system.js?v=1477-skin-battle"></script>
-<script src="js/item_management.js?v=1646-sr-exchange-modal"></script>
+<script src="js/item_management.js?v=1648-premium-sr-ticket"></script>
 
 <script id="zeraphia-service-worker-register-v1">
 (function(){

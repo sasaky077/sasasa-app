@@ -90,7 +90,7 @@
   // build1645: SR確定単発チケット。抽選はサーバーで行う。
   OTHER_ITEMS.push({id:'sr_guaranteed_ticket',source:'inventory',name:'SR確定ガチャTICKET',
     img:'images/gacha_ticket_10.webp',kicker:'SR GUARANTEED',
-    desc:'恒常SRから1体確定で獲得できる単発チケット。',tag:'ガチャ'});
+    desc:'指定SR13体から1体確定。邂逅の「超特別邂逅」から使用。',tag:'ガチャ'});
 
   const FLOWER_SR_EXCHANGES = [
     {id:'noah_ticket_1',cost:1,name:'ノア挑戦チケット ×1',img:'images/special_stage_ticket.webp',desc:'SPECIAL STAGE「理想郷 -ノア-」へ挑戦'},
@@ -410,7 +410,7 @@
           ? '<div class="item-row-actions item-row-actions-other"><button class="item-exchange-open-btn" type="button" data-open-flower-exchange>交換</button></div>'
           : (isFlowerSR
               ? '<div class="item-row-actions item-row-actions-other"><button class="item-exchange-open-btn" type="button" data-open-flower-sr-exchange>交換</button></div>'
-              : (meta.id==='sr_guaranteed_ticket' ? '<div class="item-row-actions item-row-actions-other"><button class="item-exchange-open-btn" type="button" data-use-sr-ticket '+(qty<=0?'disabled':'')+'>使う</button></div>' : ''));
+              : (meta.id==='sr_guaranteed_ticket' ? '' : ''));
 
         return ''+
           '<article class="item-row item-row-other'+(qty<=0?' is-zero':'')+'">'+
