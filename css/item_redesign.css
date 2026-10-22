@@ -732,3 +732,44 @@ html body #item-skin-preview .item-skin-preview-close{
   border-radius:50% !important;padding:0 0 2px !important;display:flex !important;align-items:center !important;justify-content:center !important;
   border:1px solid #b88a3c !important;background:radial-gradient(circle,#fffdf6,#f6ecd6) !important;outline:none !important;
 }
+
+/* build1647 — SR exchange: show complete item names/descriptions without truncation */
+html body #spirit-flower-sr-exchange-modal .item-exchange-row{
+  min-height:60px !important;
+  height:auto !important;
+  grid-template-columns:clamp(36px,10.5vw,44px) minmax(0,1fr) clamp(40px,12vw,52px) clamp(52px,15vw,62px) !important;
+  gap:0 clamp(4px,1.6vw,7px) !important;
+  padding:8px 6px !important;
+}
+html body #spirit-flower-sr-exchange-modal .item-exchange-copy{
+  min-width:0 !important;
+  overflow:visible !important;
+  white-space:normal !important;
+}
+html body #spirit-flower-sr-exchange-modal .item-exchange-copy strong{
+  display:block !important;
+  white-space:normal !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+  overflow-wrap:anywhere !important;
+  word-break:normal !important;
+  line-height:1.45 !important;
+  font-size:clamp(10px,2.9vw,12.5px) !important;
+}
+html body #spirit-flower-sr-exchange-modal .item-exchange-copy span{
+  display:block !important;
+  white-space:normal !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+  overflow-wrap:anywhere !important;
+  line-height:1.5 !important;
+}
+html body #spirit-flower-sr-exchange-modal .item-exchange-cost{
+  width:100% !important;
+  min-width:0 !important;
+  padding:0 2px !important;
+}
+html body #spirit-flower-sr-exchange-modal .item-exchange-btn{
+  width:100% !important;
+  min-width:0 !important;
+}
