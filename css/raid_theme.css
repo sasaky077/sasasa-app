@@ -564,3 +564,26 @@ html body #daily-raid-root#daily-raid-root[data-raid-theme="camilla"] :is(.daily
 }
 #daily-raid-root .daily-raid-join-head .daily-raid-refresh:active{opacity:.7}
 #daily-raid-root .daily-raid-join-head .daily-raid-refresh:focus-visible{outline:2px solid #d8ba76;outline-offset:2px}
+
+/* build1651 — レイド個人BEST：6桁以上でも数字を欠けさせない */
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-member .daily-raid-member-copy {
+  min-width:0 !important;
+  max-width:100% !important;
+}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-member .daily-raid-member-damage {
+  min-width:0 !important;
+  max-width:100% !important;
+  flex-wrap:wrap !important;
+  white-space:normal !important;
+  column-gap:5px;
+  row-gap:3px;
+}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-member .daily-raid-member-damage b {
+  min-width:0 !important;
+  max-width:100% !important;
+  font-size:clamp(12px,3.6vw,16px) !important;
+  line-height:1.15 !important;
+  letter-spacing:-.035em !important;
+  overflow-wrap:anywhere !important;
+  word-break:break-word !important;
+}
