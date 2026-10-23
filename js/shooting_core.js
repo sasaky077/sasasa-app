@@ -26849,8 +26849,20 @@
     return !!(state && !state.ended && !state.finishing &&
       (state.running || state.countdown || state.paused));
   }
+  // build1653: Selecting PARTY does not commit a Phase Odyssey run.
+  // The lock begins only after pressing the battle START button. A resumed
+  // battle may already be live, so also check the actual party screen state.
+  let phaseOdysseyBattleCommitted = false;
+  function phaseOdysseyExitLocked() {
+    if (!isPhaseOdysseyStage()) return false;
+    if (phaseOdysseyBattleCommitted) return true;
+    // While PARTY selection is displayed, leaving must remain possible even
+    // if an old state object's running/countdown flags are not yet cleared.
+    if (document.getElementById('shooting-character-select')?.classList.contains('show')) return false;
+    return isShootingBattleUnresolved();
+  }
   function rejectShootingBattleAbandon() {
-    if (!isPhaseOdysseyStage() || !isShootingBattleUnresolved()) return false;
+    if (!phaseOdysseyExitLocked()) return false;
     const message = '位相回遊では、途中終了ができません。';
     if (typeof window.showToast === 'function') window.showToast(message);
     else window.alert(message);
@@ -27522,6 +27534,8 @@
       if (!accepted || String(selectedStage?.id || '') !== confirmedStageId ||
           !document.getElementById(ROOT_ID)?.classList.contains('open')) return;
       selectedPartyIds = confirmedPartyIds;
+      // The player has confirmed sortie; no voluntary exit from here onward.
+      phaseOdysseyBattleCommitted = true;
     }
 
     // 使用キャラランキング用。編成された各キャラを1出撃として記録。
@@ -27700,6 +27714,8 @@
   };
 
   window.openShootingEvent = function (options = {}) {
+    // Opening PARTY is not a battle start. Reset the previous sortie lock.
+    phaseOdysseyBattleCommitted = false;
     lastTapAt = 0;
 
     const requestedStageId = String(options && options.stageId || '');
@@ -27855,6 +27871,7 @@
     applySelectedCharacterToUi();
 
     if (options && options.resumeSnapshot) {
+      if (isPhaseOdysseyStage()) phaseOdysseyBattleCommitted = true;
       requestAnimationFrame(() => {
         if (!applyShootingResumeSnapshot(options.resumeSnapshot)) {
           clearShootingResumeState();
@@ -28030,6 +28047,7 @@
 
   window.closeShootingEvent = async function () {
     if (rejectShootingBattleAbandon()) return;
+    phaseOdysseyBattleCommitted = false;
     // 塔の確認中にゲーム画面を閉じても、出撃に進まない。
     if (window.ResonanceTower?.cancelSealConfirmation) window.ResonanceTower.cancelSealConfirmation();
     const leavingGachaTrial = isGachaTrialStage();
