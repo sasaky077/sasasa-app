@@ -3394,6 +3394,108 @@
     }
   }
 
+  // build1652: 位相回遊の復帰では、画像のロード・デコードと描画を待ってから開始する。
+  // 処理待ちの間は state.running=false を維持するため、時間・敵AI・弾幕は進まない。
+  let phaseResumeLoadingToken = 0;
+  function showPhaseResumeLoading() {
+    const root = document.getElementById(ROOT_ID);
+    if (!root) return null;
+    root.querySelector('#po-battle-resume-loading')?.remove();
+    const layer = document.createElement('div');
+    layer.id = 'po-battle-resume-loading';
+    layer.setAttribute('role', 'status');
+    layer.setAttribute('aria-live', 'polite');
+    layer.style.cssText = 'position:absolute;inset:0;z-index:2147483000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:rgba(15,12,29,.93);color:#f6efdf;text-align:center;font-family:"Noto Serif JP",serif;pointer-events:auto;';
+    layer.innerHTML = '<div style="width:42px;height:42px;border:2px solid rgba(243,228,188,.28);border-top-color:#f0d7a3;border-radius:50%;animation:poResumeSpin 1.1s linear infinite"></div><strong style="font-size:19px;letter-spacing:.12em">復帰処理中…</strong><span id="po-resume-message" style="font-size:12px;line-height:1.8;letter-spacing:.05em;color:#ddd2bb">戦闘画像を読み込んでいます<br>そのままお待ちください</span>';
+    if (!document.getElementById('po-resume-spin-style')) {
+      const style = document.createElement('style');
+      style.id = 'po-resume-spin-style';
+      style.textContent = '@keyframes poResumeSpin{to{transform:rotate(360deg)}}';
+      document.head.appendChild(style);
+    }
+    root.appendChild(layer);
+    return layer;
+  }
+  function collectPhaseResumeImages(root) {
+    const urls = new Set();
+    const add = value => {
+      if (!value || value === 'none') return;
+      const re = /url\(\s*['"]?([^'"\)]+)['"]?\s*\)/g;
+      let match;
+      while ((match = re.exec(String(value)))) urls.add(match[1].trim());
+    };
+    // Visible battle layers and their pseudo-elements (stage BG is often a CSS background).
+    const nodes = [root, ...root.querySelectorAll('*')];
+    for (const el of nodes) {
+      if (!el.isConnected || (el !== root && !el.getClientRects().length)) continue;
+      if (el instanceof HTMLImageElement && el.getAttribute('src')) urls.add(el.currentSrc || el.src);
+      try {
+        const css = getComputedStyle(el);
+        add(css.backgroundImage);
+        if (nodes.length < 350) {
+          add(getComputedStyle(el, '::before').backgroundImage);
+          add(getComputedStyle(el, '::after').backgroundImage);
+        }
+      } catch (_) {}
+    }
+    const bossSrc = getSelectedBossImage();
+    if (bossSrc) urls.add(bossSrc);
+    const stage = selectedStage;
+    (Array.isArray(stage?.enemyIds) ? stage.enemyIds : []).forEach(id => {
+      const enemy = typeof getShootingEnemy === 'function' ? getShootingEnemy(id) : null;
+      if (enemy?.image) urls.add(enemy.image);
+    });
+    return [...urls].filter(src => src && !src.startsWith('data:') && !src.startsWith('blob:'));
+  }
+  function decodePhaseResumeImage(src, timeout = 12000) {
+    return new Promise(resolve => {
+      const img = new Image();
+      let finished = false;
+      const done = ok => { if (finished) return; finished = true; clearTimeout(timer); resolve(ok); };
+      const timer = setTimeout(() => done(false), timeout);
+      img.onload = () => {
+        if (typeof img.decode === 'function') img.decode().then(() => done(true), () => done(img.naturalWidth > 0));
+        else done(true);
+      };
+      img.onerror = () => done(false);
+      img.src = src;
+      if (img.complete && img.naturalWidth > 0) {
+        if (typeof img.decode === 'function') img.decode().then(() => done(true), () => done(true));
+        else done(true);
+      }
+    });
+  }
+  async function finishPhaseResumeLoading(layer, token) {
+    if (!layer) return;
+    const root = document.getElementById(ROOT_ID);
+    const urls = collectPhaseResumeImages(root);
+    const results = await Promise.all(urls.map(url => decodePhaseResumeImage(url)));
+    if (token !== phaseResumeLoadingToken || !layer.isConnected || !state || state.ended) return;
+    const failed = results.filter(ok => !ok).length;
+    const message = layer.querySelector('#po-resume-message');
+    if (failed) {
+      // Do not begin a battle with invisible enemies or backgrounds. Let the user retry.
+      if (message) message.innerHTML = '一部の画像を読み込めませんでした<br>通信状態をご確認ください';
+      const retry = document.createElement('button');
+      retry.type = 'button';
+      retry.textContent = '再読み込み';
+      retry.style.cssText = 'padding:10px 28px;border:1px solid #c1a16d;background:#f5edda;color:#312817;border-radius:4px;font:600 14px "Noto Serif JP",serif;';
+      retry.onclick = () => {
+        if (token !== phaseResumeLoadingToken || !layer.isConnected) return;
+        retry.remove();
+        if (message) message.innerHTML = '戦闘画像を再読み込みしています<br>そのままお待ちください';
+        void finishPhaseResumeLoading(layer, token);
+      };
+      layer.appendChild(retry);
+      return;
+    }
+    // Decode completes before the browser paints. Wait for two paint opportunities.
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    if (token !== phaseResumeLoadingToken || !layer.isConnected || !state || state.ended) return;
+    layer.remove();
+    runStartCountdown();
+  }
+
   function applyShootingResumeSnapshot(snapshot) {
     if (!snapshot || !state) return false;
     const now = performance.now();
@@ -3551,7 +3653,16 @@
     renderHud();
 
     // 保存データは再開開始後も更新される。再開中に再度落ちても続きから戻れる。
-    runStartCountdown();
+    if (isPhaseOdysseyStage()) {
+      // 戦闘開始は画像ロード・デコードと描画がすべて終わってから。
+      const token = ++phaseResumeLoadingToken;
+      state.running = false;
+      state.countdown = true;
+      const layer = showPhaseResumeLoading();
+      void finishPhaseResumeLoading(layer, token);
+    } else {
+      runStartCountdown();
+    }
     return true;
   }
 
