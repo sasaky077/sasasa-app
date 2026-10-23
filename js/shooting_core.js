@@ -26402,9 +26402,8 @@
     if (isInputContinuityStage() && gachaTrialForwardedEvents.has(e)) return;
     if (!nativeTouchActive || !state || state.ended || state.finishing || state.paused) return;
 
-    clearNativeTouchCancelTimer();
-    nativeTouchPointerFallback = false;
-
+    // build1654: 他の指から来たtouchmoveではキャンセル待機やPointer代替を解除しない。
+    // 対象指の生存を確認してから復帰扱いにする。
     let t = findActiveTouch(e.touches);
     // WebKitがidentifierだけ差し替えたような異常系では、残っている1本を継続指として採用。
     if (!t && e.touches && e.touches.length === 1) {
@@ -26423,6 +26422,9 @@
       return;
     }
     if (!t) return;
+
+    clearNativeTouchCancelTimer();
+    nativeTouchPointerFallback = false;
 
     // Pointer Eventsがpointercancelで切れていても、touchmoveで即復旧。
     if (!pointerActive) {
@@ -26465,8 +26467,9 @@
       return;
     }
 
-    clearNativeTouchCancelTimer();
-
+    // build1654: touchendはchangedTouchesに操作中identifierが含まれる場合だけ
+    // 本当の離指とみなす。他の指の終了イベントが来ても射撃・移動を止めない。
+    // WebKitがidentifierだけ失った異常系はcancel猶予とPointer側に委ねる。
     let endedTouch = null;
     if (e.changedTouches) {
       for (let i = 0; i < e.changedTouches.length; i += 1) {
@@ -26477,11 +26480,13 @@
       }
     }
 
-    finishNativeTouchInteraction(
-      endedTouch ? endedTouch.clientX : lastPointerClientX,
-      endedTouch ? endedTouch.clientY : lastPointerClientY,
-      false
-    );
+    if (!endedTouch) {
+      if (e.cancelable) { try { e.preventDefault(); } catch (_) {} }
+      return;
+    }
+
+    clearNativeTouchCancelTimer();
+    finishNativeTouchInteraction(endedTouch.clientX, endedTouch.clientY, false);
 
     if (e.cancelable) { try { e.preventDefault(); } catch (_) {} }
   }
@@ -26489,6 +26494,19 @@
   function onNativeTouchCancel(e) {
     if (isInputContinuityStage() && gachaTrialForwardedEvents.has(e)) return;
     if (!nativeTouchActive) return;
+
+    // build1654: 操作していない指だけのcancelは無視。
+    // 他の指のキャンセルで射撃・移動の状態を失わないようにする。
+    if (e.changedTouches && e.changedTouches.length) {
+      let cancelsActiveTouch = false;
+      for (let i = 0; i < e.changedTouches.length; i += 1) {
+        if (e.changedTouches[i].identifier === activeTouchIdentifier) {
+          cancelsActiveTouch = true;
+          break;
+        }
+      }
+      if (!cancelsActiveTouch) return;
+    }
 
     // iOSでは実際の離指ではなく、一時的なWebKit都合でtouchcancelが来ることがある。
     // ここで即pointerActiveを落とさず短い猶予を設け、touchmove/touchstartが戻れば継続。
