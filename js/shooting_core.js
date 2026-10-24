@@ -26873,6 +26873,13 @@
   let phaseOdysseyBattleCommitted = false;
   function phaseOdysseyExitLocked() {
     if (!isPhaseOdysseyStage()) return false;
+    // build1655: RESULT has completed the battle; returning to the Phase Odyssey
+    // lobby is progression, not an in-battle abandon.  build1653 kept the
+    // committed flag set and accidentally blocked the RESULT back button.
+    const resultScreen = document.getElementById('shooting-result');
+    if (resultScreen && (resultScreen.classList.contains('show') ||
+        resultScreen.getAttribute('aria-hidden') === 'false')) return false;
+    if (state && (state.ended || state.finishing)) return false;
     if (phaseOdysseyBattleCommitted) return true;
     // While PARTY selection is displayed, leaving must remain possible even
     // if an old state object's running/countdown flags are not yet cleared.
