@@ -22588,9 +22588,9 @@
   // 時間はBOSSモーション時計で数えるので、停止ULT中は進まない。
   // ============================================================
   const CAMILLA_TIER = Object.freeze({
-    1:{ ringMs:1500, ringN:8,  ringSpeed:58, webMs:9000, webWarn:1100, trapMs:7500, trapN:2, bindMs:1400, spiderMs:13000, spiderN:3 },
-    2:{ ringMs:1250, ringN:10, ringSpeed:64, webMs:8000, webWarn:1000, trapMs:6500, trapN:2, bindMs:1600, spiderMs:11000, spiderN:3 },
-    3:{ ringMs:1000, ringN:12, ringSpeed:70, webMs:7000, webWarn:850,  trapMs:5500, trapN:3, bindMs:1800, spiderMs:9000,  spiderN:4 },
+    1:{ ringMs:1500, ringN:8,  ringSpeed:58, webMs:9000, webWarn:1100, trapMs:7500, trapN:2, bindMs:1400, spiderMs:13000, spiderN:6 },
+    2:{ ringMs:1250, ringN:10, ringSpeed:64, webMs:8000, webWarn:1000, trapMs:6500, trapN:2, bindMs:1600, spiderMs:11000, spiderN:6 },
+    3:{ ringMs:1000, ringN:12, ringSpeed:70, webMs:7000, webWarn:850,  trapMs:5500, trapN:3, bindMs:1800, spiderMs:9000,  spiderN:8 },
   });
   const CAMILLA_WEB_ACTIVE_MS = 600;
   const CAMILLA_WEB_DAMAGE = 260;
@@ -22671,7 +22671,7 @@
     clearCamillaBind();
     state.camilla = {
       ringIndex:0, nextRingAt:1500, nextWebAt:5200, nextTrapAt:3600, nextSpiderAt:8000,
-      web:null, traps:[], activeId:state.activeCharacterId,
+      web:null, traps:[], activeId:state.activeCharacterId, camillaWarningsPlaced:false,
     };
     return state.camilla;
   }
@@ -22939,6 +22939,33 @@
     }
   }
 
+  // build1656: レイド・カミラ最終PHASEのみ。壁反射する即死WARNINGを3発維持。
+  // 塔15Fの常駐WARNINGと同様、削除された分は次の更新で補充する。
+  function maintainCamillaLastPhaseWarnings(cm) {
+    if (getCamillaTier() !== 3) return;
+    const bullets = state.enemyBullets || [];
+    let alive = bullets.filter(p => p && p.camillaLastWarning && p.el && p.el.isConnected).length;
+    if (alive >= 3) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const w = arena.clientWidth || 390;
+    const startIndex = alive;
+    for (let i = startIndex; i < 3; i++) {
+      const a = -Math.PI / 2 + (i - 1) * 0.85;
+      const speed = 110;
+      const p = makeProjectile(
+        'shooting-enemy-bullet shooting-danger-bullet shooting-tower15-warning',
+        clamp(Number(state.boss.x), 24, w - 24), Number(state.boss.y) + 20,
+        Math.cos(a) * speed, Math.sin(a) * speed, 999999
+      );
+      if (!p) break;
+      p.camillaLastWarning = true;
+      p.ambushBounce = true;
+      p.ambushPersistent = true;
+      state.enemyBullets.push(p);
+    }
+  }
+
   function updateCamillaMechanics(now) {
     if (!isCamillaBattle()) return;
     const cm = ensureCamillaState();
@@ -22959,8 +22986,9 @@
     if (elapsed >= cm.nextSpiderAt) {
       cm.nextSpiderAt = elapsed + cfg.spiderMs;
       const alive = state.normalEnemies.filter(e => e && e.camSpider && e.hp > 0).length;
-      if (alive < 8) spawnCamillaSpiders(cm, cfg, now);
+      if (alive < 16) spawnCamillaSpiders(cm, cfg, now);
     }
+    maintainCamillaLastPhaseWarnings(cm);
     updateCamillaWeb(now, cm, elapsed);
     updateCamillaTraps(now, cm, cfg, elapsed);
     updateCamillaDrain(now, cm, arena);
