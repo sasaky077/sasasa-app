@@ -1597,7 +1597,7 @@
       bossGaugeHps: Object.freeze([12000, 14000]),
       // growthMs：配下（樹獣・芽吹き）の成長時間／bossGrowthMs：女王が開花するまでの移動時間
       // build1663: 移動による成長は遅く、「成長の実」が主な成長源。実を壊せばカミラ無しでも成長を抑えられる。
-      verdant: Object.freeze({ growthMs: 12000, bossGrowthMs: 45000,
+      verdant: Object.freeze({ growthMs: 12000, bossGrowthMs: 45000, enemyBulletCap: 130, // build1666: 通常弾の上限
         seeds: Object.freeze({ firstAtMs: 5000, intervalMs: 7000, max: 2, hp: 900, ripenMs: 7000,
           queenBoost: 0.22, addBoost: 0.5, addReach: 46 }) }),
       bossAdds: Object.freeze({
@@ -1624,7 +1624,7 @@
       bossElement: 'wood',
       enemyElement: 'wood',
       bossGaugeHps: Object.freeze([14000, 16000, 18000]),
-      verdant: Object.freeze({ growthMs: 9000, bossGrowthMs: 34000,
+      verdant: Object.freeze({ growthMs: 9000, bossGrowthMs: 34000, enemyBulletCap: 110, // build1666: 通常弾の上限（最上級）
         seeds: Object.freeze({ firstAtMs: 4000, intervalMs: 5500, max: 3, hp: 1300, ripenMs: 6000,
           queenBoost: 0.25, addBoost: 0.5, addReach: 46 }) }),
       bossAdds: Object.freeze({

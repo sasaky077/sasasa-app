@@ -15240,3 +15240,34 @@ html body #shooting-event-root #shooting-boss#shooting-boss{
   font:700 9px/1 'Noto Serif JP',serif;font-style:normal;letter-spacing:.08em;color:#f4ffe4;
   text-shadow:0 0 3px rgba(30,70,10,.95),0 1px 2px rgba(0,0,0,.6);
 }
+
+/* ============================================================
+   build1666: 軽量化（樹獣の森・最上級で重くなる対策）
+   ============================================================ */
+/* 開花した女王：光の重ねがけ（2重の影フィルター）をやめて1つに */
+#shooting-event-root #shooting-boss.verdant-bloomed{
+  filter:drop-shadow(0 0 9px rgba(140,230,100,.75));
+}
+/* 成長した配下：影フィルターを小さく */
+#shooting-event-root .shooting-mini-enemy.verdant-grown{
+  filter:drop-shadow(0 0 4px rgba(120,220,90,.9));
+}
+/* グレシャ「焼野原」（全ステージ共通）：
+   ぼかしをかけた層を拡縮アニメしていたため、毎フレームぼかしを描き直していた。
+   拡縮をやめて不透明度だけのアニメに。1秒ごとの「全体を明るくする」フィルターも、光の層の不透明度で代用 */
+html body #shooting-event-root .shooting-gresha-burn-field .gresha-burn-glow{
+  animation:greshaBurnGlowLite 1.15s ease-in-out infinite alternate!important;
+  will-change:opacity;
+}
+@keyframes greshaBurnGlowLite{from{opacity:.62}to{opacity:1}}
+html body #shooting-event-root .shooting-gresha-burn-field.tick{
+  filter:none!important;
+}
+html body #shooting-event-root .shooting-gresha-burn-field.tick .gresha-burn-glow{
+  animation:none!important;opacity:1!important;
+}
+html body #shooting-event-root .shooting-gresha-burn-field .gresha-ember{
+  box-shadow:none!important;
+  background:radial-gradient(circle,#fff0c4 0 35%,rgba(255,140,60,.85) 60%,transparent 72%)!important;
+  width:7px!important;height:7px!important;
+}

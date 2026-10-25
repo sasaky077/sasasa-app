@@ -4151,10 +4151,29 @@
       }
     }
 
+    // build1666: 自機弾は同じ見た目なら同じ大きさ。生成のたびに getBoundingClientRect（強制レイアウト）を呼ばず、
+    //  クラス名＋画面幅ごとに一度だけ測って使い回す。グレシャ等の多連射でフレームが重くなる主因だった。
+    const cls = entry.el.classList;
+    const cacheable = !!(cls && cls.contains('shooting-bullet') && !cls.contains('shooting-enemy-bullet'));
+    if (cacheable) {
+      const key = entry.el.className + '|' + window.innerWidth + 'x' + window.innerHeight;
+      const hit = unitSizeCache.get(key);
+      if (hit) { entry._hw = hit[0]; entry._hh = hit[1]; return; }
+      const r = entry.el.getBoundingClientRect();
+      entry._hw = r.width / 2;
+      entry._hh = r.height / 2;
+      if (r.width > 0 && r.height > 0) {
+        if (unitSizeCache.size > 200) unitSizeCache.clear();
+        unitSizeCache.set(key, [entry._hw, entry._hh]);
+      }
+      return;
+    }
+
     const r = entry.el.getBoundingClientRect();
     entry._hw = r.width / 2;
     entry._hh = r.height / 2;
   }
+  const unitSizeCache = new Map();
 
   // arenaRectはフレーム内で使い回す(呼び出し側で1回だけ取得する想定)。
   // x/yはarena基準のローカル座標なので、getBoundingClientRect()と同じ
@@ -5542,14 +5561,24 @@
     state.score += state.storyScoreClearBonus + state.storyScoreTimeBonus + state.storyScoreSurvivalBonus;
   }
 
+  // build1666: 命中ごとに offsetWidth で強制レイアウトしてアニメを再始動していたのをやめる。
+  //  クラスの付け直しは次のフレームで行い、通常の脈動は約0.12秒に1回までに間引く（節目の演出は必ず出す）。
+  let comboPulseRaf = 0, comboPulseAt = 0, comboPulseTimer = 0;
   function pulseCombo(milestone) {
     const combo = document.getElementById('shooting-combo');
     if (!combo) return;
+    const now = performance.now();
+    if (!milestone && now - comboPulseAt < 120) return;
+    comboPulseAt = now;
     combo.classList.remove('pulse', 'milestone');
-    void combo.offsetWidth;
-    combo.classList.add('pulse');
-    if (milestone) combo.classList.add('milestone');
-    setTimeout(() => combo.classList.remove('pulse', 'milestone'), milestone ? 520 : 220);
+    if (comboPulseRaf) cancelAnimationFrame(comboPulseRaf);
+    comboPulseRaf = requestAnimationFrame(() => {
+      comboPulseRaf = 0;
+      combo.classList.add('pulse');
+      if (milestone) combo.classList.add('milestone');
+      clearTimeout(comboPulseTimer);
+      comboPulseTimer = setTimeout(() => combo.classList.remove('pulse', 'milestone'), milestone ? 520 : 220);
+    });
   }
 
   function resetCombo(silent = false) {
@@ -5878,6 +5907,7 @@
     return virtual;
   }
 
+  const lastArenaSize = { w: 0, h: 0, at: 0 };
   function ensureEnemyBulletCanvas() {
     const arena = document.getElementById('shooting-arena');
     if (!arena) return null;
@@ -5903,8 +5933,10 @@
       arena.appendChild(canvas);
     }
 
-    const cssWidth = Math.max(1, arena.clientWidth);
-    const cssHeight = Math.max(1, arena.clientHeight);
+    // build1666: 同じフレームで測ったアリーナの大きさを使い回す（描画のたびに強制レイアウトしない）
+    const fresh = performance.now() - lastArenaSize.at < 120 && lastArenaSize.w > 0;
+    const cssWidth = Math.max(1, fresh ? lastArenaSize.w : arena.clientWidth);
+    const cssHeight = Math.max(1, fresh ? lastArenaSize.h : arena.clientHeight);
     // 弾幕ゲームは描画ピクセル数を最優先で抑える。
     // ノアは弾数が多いため1x固定、その他Canvas弾幕も最大1.25xに制限する。
     // UI/キャラ画像には影響せず、敵弾Canvasだけを軽量化する。
@@ -13078,11 +13110,19 @@
 
     enemy.hpEl.classList.toggle('low', ratio <= .30);
 
+    // build1666: 強制レイアウト（offsetWidth）をやめ、次のフレームで付け直す。同じ敵へは約0.12秒に1回まで
     if (flash) {
-      enemy.hpEl.classList.remove('hit');
-      void enemy.hpEl.offsetWidth;
-      enemy.hpEl.classList.add('hit');
-      setTimeout(() => enemy.hpEl && enemy.hpEl.classList.remove('hit'), 180);
+      const now = performance.now();
+      if (now - Number(enemy.hpFlashAt || 0) >= 120) {
+        enemy.hpFlashAt = now;
+        const hpEl = enemy.hpEl;
+        hpEl.classList.remove('hit');
+        requestAnimationFrame(() => {
+          if (!hpEl.isConnected) return;
+          hpEl.classList.add('hit');
+          setTimeout(() => hpEl.classList.remove('hit'), 180);
+        });
+      }
     }
   }
 
@@ -13862,8 +13902,17 @@
     });
   }
 
+  // build1666: 樹獣の森は全員が育ち切ると弾が一気に増えるため、ステージ全体で通常弾の上限を設ける（WARNING等の危険弾は対象外）
+  function isVerdantBulletCapReached() {
+    const cap = Number(selectedStage && selectedStage.verdant && selectedStage.verdant.enemyBulletCap || 0);
+    if (!(cap > 0) || !state) return false;
+    let n = 0;
+    for (const p of state.enemyBullets) { if (p && p.el && !isProtectedEnemyProjectile(p)) n++; }
+    return n >= cap;
+  }
   function shootNormalEnemyProjectile(enemy, angle, speed, damage, className) {
     if (!enemy || !state) return null;
+    if (isVerdantBulletCapReached()) return null;
     const now = performance.now();
     const lockedUntil = getNormalEnemyLockUntil(enemy, now);
     if (now < lockedUntil) {
@@ -14828,6 +14877,11 @@
   // build1659: 敵画像（<img>）には疑似要素が描けないため、捕縛中の敵ごとに蜘蛛の巣の表示要素を重ねて追従させる。
   function syncCamillaBoundWebVisual(now) {
     if (!state) return;
+    // build1666: 誰も捕縛されておらず、表示中の巣もなければ何もしない（毎フレームのDOM走査・計測を避ける）
+    const anyBound = (state.normalEnemies || []).some(e => e && now < Number(e.camillaWebRootUntil || 0)) ||
+      !!(state.boss && now < Number(state.boss.camillaWebRootUntil || 0));
+    if (!anyBound && !state.camillaWebFxActive) return;
+    state.camillaWebFxActive = anyBound;
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
     const sync = (holder, x, y, size, bound) => {
@@ -14884,9 +14938,14 @@
       const moved = Math.hypot(Number(enemy.x) - lx, Number(enemy.y) - ly) > 0.01; // 捕縛・スタン中は座標が完全に止まる
       if (moved) enemy.verdantGrowthMs = Number(enemy.verdantGrowthMs || 0) + Math.max(0, dt) * 1000;
       const ratio = Math.max(0, Math.min(1, Number(enemy.verdantGrowthMs || 0) / growthMs));
-      const bar = enemy.hpEl && enemy.hpEl.querySelector('.verdant-growth-bar b');
-      if (bar) bar.style.transform = `scaleX(${ratio.toFixed(3)})`;
-      if (enemy.hpEl) enemy.hpEl.classList.toggle('is-verdant-halted', !moved);
+      // build1666: 変化した時だけDOMへ書く
+      const pct = Math.round(ratio * 100) / 100;
+      if (enemy.verdantBarPct !== pct) {
+        enemy.verdantBarPct = pct;
+        const bar = enemy.hpEl && enemy.hpEl.querySelector('.verdant-growth-bar b');
+        if (bar) bar.style.transform = `scaleX(${pct})`;
+      }
+      if (enemy.hpEl && enemy.verdantHalted !== !moved) { enemy.verdantHalted = !moved; enemy.hpEl.classList.toggle('is-verdant-halted', !moved); }
       if (ratio >= 1) growVerdantEnemy(enemy, now);
     });
   }
@@ -15011,14 +15070,19 @@
       seed._hw = Math.max(Number(seed._hw || 0), 20);
       seed._hh = Math.max(Number(seed._hh || 0), 20);
       const ratio = Math.max(0, Math.min(1, (now - Number(seed.seedBornAt || now)) / ripenMs));
-      seed.el.style.setProperty('--seed-ripe', ratio.toFixed(3));
-      // 熟すほど大きく（位置ずれしないよう、配置用の --enemy-scale で拡大する）
-      seed.el.style.setProperty('--enemy-scale', (Math.max(.1, Number(seed.displayScale || 1)) * (.72 + ratio * .42)).toFixed(3));
-      seed.el.classList.toggle('is-ripening', ratio >= .7);
-      if (seed.hpEl) {
-        const rb = seed.hpEl.querySelector('.verdant-seed-ripe b');
-        if (rb) rb.style.transform = `scaleX(${ratio.toFixed(3)})`;
-        seed.hpEl.classList.toggle('is-ripening', ratio >= .7);
+      // build1666: 見た目の更新は10段階に間引く（光の再描画を毎フレーム起こさない）
+      const step = Math.floor(ratio * 10) / 10;
+      if (seed.seedVisualStep !== step) {
+        seed.seedVisualStep = step;
+        seed.el.style.setProperty('--seed-ripe', String(step));
+        // 熟すほど大きく（位置ずれしないよう、配置用の --enemy-scale で拡大する）
+        seed.el.style.setProperty('--enemy-scale', (Math.max(.1, Number(seed.displayScale || 1)) * (.72 + step * .42)).toFixed(3));
+        seed.el.classList.toggle('is-ripening', step >= .7);
+        if (seed.hpEl) {
+          const rb = seed.hpEl.querySelector('.verdant-seed-ripe b');
+          if (rb) rb.style.transform = `scaleX(${step})`;
+          seed.hpEl.classList.toggle('is-ripening', step >= .7);
+        }
       }
       // 熟す前に配下が触れたら、その配下が吸収
       const add = (state.normalEnemies || []).find(e => e && e !== seed && e.el && e.hp > 0 && e.def &&
@@ -15063,12 +15127,15 @@
       el.innerHTML = '<span>開花まで</span><i><b></b></i>';
       arena.appendChild(el);
     }
-    el.classList.toggle('is-halted', !moved);
-    const bar = el.querySelector('b');
-    if (bar) bar.style.transform = `scaleX(${ratio.toFixed(3)})`;
-    const bossEl = document.getElementById(BOSS_ID);
-    const halfH = Math.max(50, Number(bossEl && bossEl.offsetHeight || 128) * Math.max(.1, Number(getResponsiveBossDisplayScale() || 1)) * 0.5);
-    positionUnit(el, Number(state.boss.x || 0), Number(state.boss.y || 0) + halfH + 4);
+    if (el.__halted !== !moved) { el.__halted = !moved; el.classList.toggle('is-halted', !moved); }
+    const pct = Math.round(ratio * 200) / 200;
+    if (el.__pct !== pct) { el.__pct = pct; const bar = el.querySelector('b'); if (bar) bar.style.transform = `scaleX(${pct})`; }
+    // build1666: ボスの高さは毎フレーム測らない（レイアウト再計算を避ける）。初回と開花時だけ測ってキャッシュ
+    if (!(state.verdantBossHalfH > 0)) {
+      const bossEl = document.getElementById(BOSS_ID);
+      state.verdantBossHalfH = Math.max(50, Number(bossEl && bossEl.offsetHeight || 128) * Math.max(.1, Number(getResponsiveBossDisplayScale() || 1)) * 0.5);
+    }
+    positionUnit(el, Number(state.boss.x || 0), Number(state.boss.y || 0) + state.verdantBossHalfH + 4);
     if (ratio >= 1) bloomVerdantQueen(now);
   }
   function bloomVerdantQueen(now) {
@@ -15089,6 +15156,7 @@
       const src = getSelectedBossImage();
       bossEl.src = src;
       bossEl.classList.add('verdant-bloomed');
+      state.verdantBossHalfH = 0; // build1666: 開花後の大きさで測り直す
     }
     showFacelessBattleCut('開花', '樹獣の女王が目覚めた');
     renderHud();
@@ -15108,12 +15176,19 @@
     });
   }
 
+  // build1666: アリーナの大きさは直近のフレームで測った値を使う（毎フレームの強制レイアウトを避ける）
+  function getCachedArenaSize(arena) {
+    if (performance.now() - lastArenaSize.at < 120 && lastArenaSize.w > 0) return lastArenaSize;
+    lastArenaSize.w = arena.clientWidth; lastArenaSize.h = arena.clientHeight; lastArenaSize.at = performance.now();
+    return lastArenaSize;
+  }
   function updateNormalEnemies(dt, now) {
     if (!isNormalBattle() && !hasBossAdds()) return;
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
-    const w = arena.clientWidth;
-    const h = arena.clientHeight;
+    const arenaSize = getCachedArenaSize(arena);
+    const w = arenaSize.w;
+    const h = arenaSize.h;
     let swarmTargets = null;
 
     state.normalEnemies.forEach(enemy => {
@@ -19062,6 +19137,7 @@
     const phase = Math.max(1, Number(state.boss.phase || 1));
     const ordinary = state.enemyBullets.reduce((n, p) => (p && p.el && !p.el.classList.contains('shooting-danger-bullet')) ? n + 1 : n, 0);
     if (ordinary >= (grown ? 120 : 96)) return;
+    if (isVerdantBulletCapReached()) return; // build1666
     const rate = (grown ? 900 : 1300) - (phase - 1) * 90;
     if (now - state.lastBossShotAt < getStageAdjustedEnemyFireInterval(rate)) return;
     state.lastBossShotAt = now;
@@ -19807,6 +19883,7 @@
 
     // 読み取りは連続して行う。ここより後は同じフレーム内で再読込しない。
     const arenaRect = arena.getBoundingClientRect();
+    lastArenaSize.w = arena.clientWidth; lastArenaSize.h = arena.clientHeight; lastArenaSize.at = performance.now(); // build1666
     const playerRect = player.getBoundingClientRect();
     const playerCoreRect = playerCore.getBoundingClientRect();
     const bossRect = boss && !isNormalBattle() ? boss.getBoundingClientRect() : null;
