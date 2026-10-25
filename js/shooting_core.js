@@ -12762,7 +12762,7 @@
   // ============================================================
   // CH07-3 群がる強化個体（swarmBattle）
   // 弾は撃たない。一番近い味方オブジェクト（TRAP設置済み / デコイ / ミト召喚獣 / 自機）へ這い寄る。
-  // 自機・召喚獣へは既存の接触判定でダメージ。デコイには群がって削る。TRAPは3秒後に爆発する囮。
+  // 自機・召喚獣へは既存の接触判定でダメージ。デコイ（build1668〜壊れない）には群がるだけ。TRAPは3秒後に爆発する囮。
   // ============================================================
   function getSwarmBattleConfig() {
     return (selectedStage && selectedStage.swarmBattle) || null;
@@ -12989,15 +12989,7 @@
     enemy.x = clamp(enemy.x, 24, w - 24);
     enemy.y = clamp(enemy.y, 60, Math.max(70, maxY));
 
-    // デコイには群がって削る（自機・召喚獣は既存の接触判定でダメージ）
-    if (best.kind === 'decoy' && best.ref && bestD < 34) {
-      const decoy = best.ref;
-      decoy.hp = Math.max(0, Number(decoy.hp || 0) - Number(cfg.objectContactDps || 60) * dt * (enemy.swarmRole === 'large' ? 2 : 1));
-      if (decoy.hp <= 0 && decoy.el) {
-        breakClarineDecoy(decoy, getClarineDecoyConfig());
-        state.clarineDecoys = (state.clarineDecoys || []).filter(d => d && d.el);
-      }
-    }
+    // build1668: クラリネのデコイは壊れない（群れは引き寄せられるだけ）。
   }
 
   // 残響の塔13F限定：三頭狼は群れに参加せず、画面上部を左右に往復し5WAYを2秒ごとに放つ。
@@ -20552,6 +20544,11 @@
         p.el.remove();
         return false;
       }
+      // build1668: クラリネのデコイも同じ線分判定で敵弾を遮断（HPなし）。
+      if (tryBlockEnemyBulletWithClarineDecoy(p, smileBulletStartX, smileBulletStartY, now)) {
+        p.el.remove();
+        return false;
+      }
 
       // ミトULT召喚獣は独立したHP付きユニットとして敵弾を受ける。
       if (tryDamageMitoSummonFromEnemyBullet(p, arenaRect, now)) {
@@ -20576,25 +20573,6 @@
         }
       }
 
-      const hitDecoy = (state.clarineDecoys || []).find(decoy =>
-        decoy && decoy.el && rectsHit(r, getUnitRect(decoy, arenaRect), 12, 8)
-      );
-      if (hitDecoy) {
-        const c = getClarineDecoyConfig();
-        hitDecoy.hp = Math.max(0, hitDecoy.hp - Number(p.damage || 0));
-        if (hitDecoy.el) {
-          hitDecoy.el.classList.remove('hit');
-          void hitDecoy.el.offsetWidth;
-          hitDecoy.el.classList.add('hit');
-          setTimeout(() => hitDecoy.el && hitDecoy.el.classList.remove('hit'), 120);
-        }
-        p.el.remove();
-        if (hitDecoy.hp <= 0) {
-          breakClarineDecoy(hitDecoy, c);
-          state.clarineDecoys = state.clarineDecoys.filter(decoy => decoy && decoy.el);
-        }
-        return false;
-      }
 
       const moonlightInvulnerable = getCurrentCharacter().id === CHARACTER_ID.HAYATE && now < (state.hayateMoonlightUntil || 0);
       if (!moonlightInvulnerable && now >= state.player.invulnUntil) {
@@ -30914,167 +30892,134 @@
     updateIgnisFireWheel(now);
   }
 
+  // ============================================================
+  // build1668: クラリネ ULT「空想遊戯」を刷新（スマイルの箱に近い仕様）
+  //  ・自機の目の前にバトルユニットと同じ大きさのデコイを1体だけ置く（動かない）
+  //  ・4秒間居座り、その間は敵弾を遮断（HPなし・壊れない）
+  //  ・0.21秒ごとに8方向へ散弾。爆発はせず、時間で消える
+  //  ・遮断は前フレーム位置→現在位置の線分判定（スマイルと同じ）で高速弾の貫通も防ぐ
+  // ============================================================
   function getClarineDecoyConfig() {
     return getBattleCharacter(CHARACTER_ID.CLARINE) || {};
   }
 
-  function removeClarineDecoy(decoy, expired) {
+  function removeClarineDecoy(decoy) {
     if (!decoy) return;
     if (decoy.el) {
       const el = decoy.el;
-      el.classList.remove('hit');
-      el.classList.add(expired ? 'expired' : 'defeated');
-      setTimeout(() => el.remove(), expired ? 260 : 520);
+      el.classList.add('expired');
+      setTimeout(() => el.remove(), 260);
       decoy.el = null;
     }
   }
 
-  function spawnClarineExplosionVisual(x, y) {
-    const arena = document.getElementById('shooting-arena');
-    if (!arena) return;
-    const burst = document.createElement('div');
-    burst.className = 'shooting-clarine-decoy-burst';
-    burst.innerHTML = '<i></i><b></b><span></span>';
-    arena.appendChild(burst);
-    positionUnit(burst, x, y);
-    requestAnimationFrame(() => burst.classList.add('show'));
-    setTimeout(() => burst.remove(), 760);
+  function clearClarineDecoys() {
+    if (!state) return;
+    (state.clarineDecoys || []).forEach(d => d?.el?.remove());
+    state.clarineDecoys = [];
   }
 
-  function applyClarineExplosionDamage(x, y, c) {
-    const now = performance.now();
-    const radius = Number(c.decoyExplosionRadius || 124);
-    const damage = Number(c.atk || 0) * Number(c.decoyExplosionDamageMultiplier || 2.2);
-
-    spawnClarineExplosionVisual(x, y);
-
-    if (isNormalBattle()) {
-      const targets = [...(state.normalEnemies || [])];
-      targets.forEach(enemy => {
-        if (!enemy || !enemy.el || enemy.hp <= 0) return;
-        const dist = Math.hypot((enemy.x || 0) - x, (enemy.y || 0) - y);
-        if (dist <= radius) {
-          const targetElement = getCombatTargetElement(enemy);
-          const finalDamage = applyElementDamage(damage, getUltAttackElement(c), targetElement);
-          damageNormalEnemy(enemy, finalDamage, now, true, getElementDamageReaction(getUltAttackElement(c), targetElement));
-        }
-      });
-      state.normalEnemies = state.normalEnemies.filter(enemy => enemy && enemy.hp > 0);
-      evaluateNormalMission(now);
-      return;
-    }
-
-    if (!state.boss || state.boss.hp <= 0) return;
-    const dist = Math.hypot((state.boss.x || 0) - x, (state.boss.y || 0) - y);
-    if (dist > radius + 20) return;
-    const targetElement = getCombatTargetElement(state.boss);
-    const finalDamage = applyElementDamage(damage, getUltAttackElement(c), targetElement);
-    const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(finalDamage || 0)));
-    state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
-    updateBossPhase();
-    createHit(x, y, true);
-    showBossDamageNumber(appliedDamage, true, getElementDamageReaction(getUltAttackElement(c), targetElement));
-    flashBossHit(true);
-    if (!addScoreAttackDamageScore(appliedDamage)) {
-      addLegacyCombatScore(Math.round(damage * 100));
-    }
-    renderHud();
-    if (state.boss.hp <= 0) beginBossDefeat();
-  }
-
-  function breakClarineDecoy(decoy, c) {
-    if (!decoy || !decoy.el) return;
-    const x = decoy.x;
-    const y = decoy.y;
-    removeClarineDecoy(decoy, false);
-    applyClarineExplosionDamage(x, y, c);
-  }
-
-  function getClarineSpawnPoint(index) {
-    const arena = document.getElementById('shooting-arena');
-    if (!arena || !state) return { x: 180, y: 180 };
-
-    const w = arena.clientWidth;
-    const h = arena.clientHeight;
-    const cfg = getClarineDecoyConfig();
-
-    const minX = 56;
-    const maxX = Math.max(minX + 10, w - 56);
-    const minY = 84;
-    const maxY = Math.max(minY + 10, h * Number(cfg.decoyYMaxRatio || 0.47));
-
-    let x = minX + Math.random() * (maxX - minX);
-    let y = minY + Math.random() * (maxY - minY);
-
-    const others = (state.clarineDecoys || []).filter(d => d && d.el);
-    if (others.length) {
-      const nearest = others[0];
-      const dist = Math.hypot(x - nearest.x, y - nearest.y);
-      if (dist < 88) {
-        x = nearest.x < w * 0.5 ? clamp(nearest.x + 110, minX, maxX) : clamp(nearest.x - 110, minX, maxX);
-        y = clamp(nearest.y + (Math.random() > .5 ? 30 : -30), minY, maxY);
+  function tryBlockEnemyBulletWithClarineDecoy(bullet, fromX, fromY, now) {
+    if (!state || !Array.isArray(state.clarineDecoys) || !state.clarineDecoys.length) return false;
+    const toX = Number(bullet.x || 0);
+    const toY = Number(bullet.y || 0);
+    const hw = Math.max(0, Number(bullet._hw || bullet.canvasHalfWidth || 0));
+    const hh = Math.max(0, Number(bullet._hh || bullet.canvasHalfHeight || 0));
+    for (const d of state.clarineDecoys) {
+      if (!d || !d.el || now >= d.expireAt) continue;
+      const t = segmentAabbEntryT(
+        fromX, fromY, toX, toY,
+        d.x - d.blockHalfW - hw, d.x + d.blockHalfW + hw,
+        d.y - d.blockHalfH - hh, d.y + d.blockHalfH + hh
+      );
+      if (t === null) continue;
+      // 被弾の光：再スタートのためのレイアウト読み（offsetWidth）を使わず Web Animations で鳴らす
+      if (now - Number(d.lastHitFxAt || 0) >= 110) {
+        d.lastHitFxAt = now;
+        try {
+          d.img?.animate([{ filter:'brightness(1.7)' }, { filter:'brightness(1)' }], { duration:120, easing:'ease-out' });
+        } catch (_) {}
       }
+      return true;
     }
-
-    return { x, y };
+    return false;
   }
 
-  function createClarineDecoy(c, index, now) {
+  // 大きさ＝発動時のクラリネのバトルユニット（表示中の画像の実寸）。発動時に1回だけ測る。
+  function getClarineUnitDisplaySize() {
+    const img = document.querySelector('#shooting-player img');
+    let w = 0, h = 0;
+    // 画像の読み込み前・失敗時は実寸が当てにならないので既定サイズを使う
+    if (img && img.complete && img.naturalWidth > 0) {
+      const r = img.getBoundingClientRect();
+      w = r.width; h = r.height;
+    }
+    if (!(w > 24 && h > 40)) {
+      const wide = window.innerWidth >= 700;
+      w = wide ? 76 : 70; h = wide ? 136 : 122;
+    }
+    return { w, h };
+  }
+
+  function createClarineDecoy(c, now) {
     const arena = document.getElementById('shooting-arena');
     if (!arena || !state) return null;
+    const width = Math.max(120, Number(arena.clientWidth || 0));
+    const height = Math.max(120, Number(arena.clientHeight || 0));
+    const size = getClarineUnitDisplaySize();
+    const halfW = size.w / 2, halfH = size.h / 2;
+    // 自機のすぐ前（自機の上端とデコイの下端が少し離れる位置）
+    const gap = Number(c.decoyFrontGap ?? 10);
+    const x = clamp(Number(state.player.x ?? width * .5), halfW + 6, Math.max(halfW + 6, width - halfW - 6));
+    const y = clamp(Number(state.player.y ?? height * .75) - (size.h + gap),
+      halfH + 40, Math.max(halfH + 40, height - halfH - 6));
 
-    const pt = getClarineSpawnPoint(index);
-    const el = document.createElement('img');
+    const el = document.createElement('div');
     el.className = 'shooting-clarine-decoy';
-    el.src = c.decoyImage || 'images/chara_27_battle_decoy.webp';
-    el.alt = 'デコイ';
-    el.draggable = false;
+    el.style.width = `${Math.round(size.w)}px`;
+    el.style.height = `${Math.round(size.h)}px`;
+    const img = document.createElement('img');
+    img.src = c.decoyImage || 'images/chara_27_battle_decoy.webp';
+    img.alt = 'デコイ';
+    img.draggable = false;
+    el.appendChild(img);
     arena.appendChild(el);
+    positionUnit(el, x, y);
+    requestAnimationFrame(() => el.classList.add('show'));
 
-    const decoy = {
+    const blockW = Math.max(0.4, Math.min(1, Number(c.decoyBlockWidthRate ?? 0.86)));
+    const blockH = Math.max(0.4, Math.min(1, Number(c.decoyBlockHeightRate ?? 0.9)));
+    return {
       id: `clarine_decoy_${++state.clarineDecoySeq}`,
       ownerId: c.id,
-      x: pt.x,
-      y: pt.y,
-      el,
-      hp: Number(c.decoyHp || 520),
-      hpMax: Number(c.decoyHp || 520),
-      expireAt: now + Number(c.decoyDurationMs || 6000),
-      nextShotAt: now + 120 + index * 80,
-      fireIntervalMs: Number(c.decoyFireIntervalMs || 210),
-      shotsPerBurst: Number(c.decoyShotsPerBurst || 4),
+      x, y, el, img,
+      // 敵の群れ（蜘蛛など）がデコイを狙う判定用。HPは減らない。
+      hp: 1,
+      blockHalfW: halfW * blockW,
+      blockHalfH: halfH * blockH,
+      _hw: halfW, _hh: halfH,
+      expireAt: now + Math.max(500, Number(c.decoyDurationMs || 4000)),
+      nextShotAt: now + 120,
+      fireIntervalMs: Math.max(60, Number(c.decoyFireIntervalMs || 210)),
+      ways: Math.max(1, Math.floor(Number(c.decoyShotWays || 8))),
       bulletSpeed: Number(c.decoyBulletSpeed || 300),
       bulletDamage: Number(c.decoyBulletDamage || 1.2),
-      driftSeed: Math.random() * Math.PI * 2,
+      lastHitFxAt: 0,
     };
-
-    positionUnit(el, decoy.x, decoy.y);
-    requestAnimationFrame(() => el.classList.add('show'));
-    // height:autoで画像の実サイズに依存するため、ロード完了後に1回だけ実測する。
-    if (el.complete) {
-      measureUnitSize(decoy);
-    } else {
-      el.addEventListener('load', () => measureUnitSize(decoy), { once: true });
-    }
-    return decoy;
   }
 
   function fireClarineDecoyBurst(decoy, c) {
     if (!state || !decoy || !decoy.el) return;
-
     const attrClass = getCharacterBulletClass(c);
     const cls = 'shooting-bullet shooting-bullet-clarine-decoy' + attrClass;
-
-    for (let i = 0; i < Math.max(1, decoy.shotsPerBurst); i++) {
-      const angle = Math.random() * Math.PI * 2;
+    // 8方向（真上から45°ごと）
+    for (let i = 0; i < decoy.ways; i++) {
+      const angle = -Math.PI / 2 + (i / decoy.ways) * Math.PI * 2;
       const p = makeProjectile(
-        cls,
-        decoy.x,
-        decoy.y,
+        cls, decoy.x, decoy.y,
         Math.cos(angle) * decoy.bulletSpeed,
         Math.sin(angle) * decoy.bulletSpeed,
-        decoy.bulletDamage,
-        decoy.ownerId
+        decoy.bulletDamage, decoy.ownerId
       );
       if (p) {
         // ULTそのものが次のULTゲージやCOMBOを生まないようにする。
@@ -31087,22 +31032,15 @@
   }
 
   function updateClarineDecoys(dt, now) {
-    if (!state) return;
+    if (!state || !Array.isArray(state.clarineDecoys) || !state.clarineDecoys.length) return;
+    if (state.ended || state.finishing) { clearClarineDecoys(); return; }
     const c = getClarineDecoyConfig();
-
-    state.clarineDecoys = (state.clarineDecoys || []).filter(decoy => {
+    state.clarineDecoys = state.clarineDecoys.filter(decoy => {
       if (!decoy || !decoy.el) return false;
-
       if (now >= decoy.expireAt) {
-        removeClarineDecoy(decoy, true);
+        removeClarineDecoy(decoy);
         return false;
       }
-
-      const driftT = now / 1000;
-      const renderX = decoy.x + Math.sin(driftT * 1.25 + decoy.driftSeed) * 4;
-      const renderY = decoy.y + Math.cos(driftT * 1.6 + decoy.driftSeed) * 3;
-      positionUnit(decoy.el, renderX, renderY);
-
       if (now >= decoy.nextShotAt) {
         fireClarineDecoyBurst(decoy, c);
         decoy.nextShotAt = now + decoy.fireIntervalMs;
@@ -31119,19 +31057,11 @@
     const now = performance.now();
     state.ultLockUntil = now + 320;
 
-    // 同時に存在できるデコイ数を制限。
-    // ULTを再使用しても既存分を含めて最大2体まで。
-    state.clarineDecoys = (state.clarineDecoys || []).filter(decoy => decoy && decoy.el);
-
-    const maxActive = Math.max(1, Math.floor(Number(c.decoyMaxActive || 2)));
-    const summonCount = Math.max(1, Math.floor(Number(c.decoyCount || 2)));
-    const remainingSlots = Math.max(0, maxActive - state.clarineDecoys.length);
-    const count = Math.min(summonCount, remainingSlots);
-
-    for (let i = 0; i < count; i++) {
-      const decoy = createClarineDecoy(c, i, now);
-      if (decoy) state.clarineDecoys.push(decoy);
-    }
+    // デコイは常に1体。残っている間に再発動したら、古い方を消して新しく置き直す。
+    (state.clarineDecoys || []).forEach(d => removeClarineDecoy(d));
+    state.clarineDecoys = [];
+    const decoy = createClarineDecoy(c, now);
+    if (decoy) state.clarineDecoys.push(decoy);
 
     renderHud();
   }

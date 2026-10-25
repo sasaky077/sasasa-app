@@ -156,9 +156,10 @@
       3: bonus('空想同調', 'ULTゲージ獲得量 +15%', '命中時のULTゲージ獲得量を15%増加する。', [
         { type:'profileMultiply', field:'ultGainPerHit', multiplier:1.15 }
       ]),
-      4: bonus('終わらない遊戯', 'デコイHP +40%・持続8秒', 'デコイHPを40%増加し、持続時間を6秒から8秒へ延長する。', [
-        { type:'profileMultiply', field:'decoyHp', multiplier:1.40 },
-        { type:'profileSet', field:'decoyDurationMs', value:8000 }
+      // build1668: ULT刷新（HPなし・4秒）に合わせて、散弾ダメージ+40%・持続5秒に変更
+      4: bonus('終わらない遊戯', '散弾ダメージ +40%・持続5秒', 'デコイの散弾ダメージを40%強化し、持続時間を4秒から5秒へ延長する。', [
+        { type:'profileMultiply', field:'decoyBulletDamage', multiplier:1.40 },
+        { type:'profileSet', field:'decoyDurationMs', value:5000 }
       ])
     }),
 

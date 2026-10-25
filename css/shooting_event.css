@@ -2092,11 +2092,21 @@
 }
 .shooting-clarine-decoy{
   position:absolute;
+  left:0;
+  top:0;
   z-index:22;
-  width:66px;
-  height:auto;
+  width:70px;
+  height:122px;
   opacity:0;
   filter:drop-shadow(0 6px 12px rgba(111,86,146,.25));
+  pointer-events:none;
+}
+/* build1668: デコイはクラリネのバトルユニットと同じ大きさ（JSが発動時の実寸を width/height に入れる） */
+.shooting-clarine-decoy img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:contain;
   pointer-events:none;
 }
 .shooting-clarine-decoy.show{

@@ -1716,8 +1716,8 @@
     id: CHARACTER_ID.CLARINE,
     effectKey: 'clarine',
     label: 'DECOY / CHAOS BARRAGE',
-    description: '低火力の4ライン円環射撃。ULTはHP520のデコイを2体・6秒召喚。各デコイは0.21秒ごとに4発（1発1.2ダメージ）を乱射し、消滅時にATKの220%範囲ダメージを与える。',
-    ultDescription: 'HP520のデコイを2体、6秒間召喚する。各デコイは約0.21秒ごとに4発の全方位弾（1発固定1.2ダメージ）を放つ。敵弾で破壊された場合、周囲へATK×2.2の爆発ダメージを与える。',
+    description: '低火力の4ライン円環射撃。ULTは自機の目の前に大きなデコイを1体・4秒設置。デコイは敵弾を遮りながら、0.21秒ごとに8方向へ散弾（1発1.2ダメージ）を撃ち続ける。',
+    ultDescription: '自機の目の前に、バトルユニットと同じ大きさのデコイを1体、4秒間設置する。デコイは敵弾を遮断しながら、約0.21秒ごとに8方向へ散弾（1発固定1.2ダメージ）を撃ち続け、時間が来ると消える。',
     ultName: '空想遊戯',
     ultType: 'clarine_decoy',
     moveSpeed: 400,
@@ -1741,18 +1741,15 @@
     coreTop: '38%',
     shotOffsetY: 38,
 
-    // ---- ULT / デコイ設定 ----
-    decoyCount: 2,
-    decoyMaxActive: 2,
-    decoyDurationMs: 6000,
-    decoyHp: 520,
+    // ---- ULT / デコイ設定（build1668：1体・4秒・敵弾遮断・8方向散弾・爆発なし） ----
+    decoyDurationMs: 4000,
     decoyFireIntervalMs: 210,
-    decoyShotsPerBurst: 4,
+    decoyShotWays: 8,
     decoyBulletSpeed: 300,
     decoyBulletDamage: 1.2,
-    decoyExplosionRadius: 124,
-    decoyExplosionDamageMultiplier: 2.2,
-    decoyYMaxRatio: 0.47,
+    decoyFrontGap: 10,
+    decoyBlockWidthRate: 0.86,
+    decoyBlockHeightRate: 0.9,
     decoyImage: 'images/chara_27_battle_decoy.webp',
   });
 
@@ -3166,7 +3163,7 @@
       case 'mito_summon_double':
         return '自身のHP・ATK・通常ショットを引き継ぐ召喚獣を' + sec(c.summonDurationMs, 8000) + '間召喚。召喚獣は自動で移動・射撃し、最後まで耐えると残りHP分だけ本体を回復。' + note('召喚獣の攻撃ではULTゲージが増えない');
       case 'clarine_decoy':
-        return 'HP' + String(num(c.decoyHp, 520)) + 'のデコイを' + String(num(c.decoyCount, 2)) + '体、' + sec(c.decoyDurationMs, 6000) + '間召喚。デコイは' + sec(c.decoyFireIntervalMs, 210) + 'ごとに全方位へ' + String(num(c.decoyShotsPerBurst, 4)) + '発撃つ（1発' + fmtNum(c.decoyBulletDamage) + 'ダメージ）。敵弾で壊されると周囲に' + atk(c.decoyExplosionDamageMultiplier, 2.2) + 'のダメージ。';
+        return '自機の目の前に大きなデコイを1体、' + sec(c.decoyDurationMs, 4000) + '間設置。デコイは敵弾を遮りながら、' + sec(c.decoyFireIntervalMs, 210) + 'ごとに' + String(num(c.decoyShotWays, 8)) + '方向へ散弾を撃つ（1発' + fmtNum(c.decoyBulletDamage) + 'ダメージ）。' + note('壊れず、爆発もしない');
       case 'conjure_homing_battery':
         return '左右に追従砲台を' + sec(c.conjureUltDurationMs, 5000) + '間召喚。各砲台が' + sec(c.conjureUltShotIntervalMs, 200) + 'ごとにホーミング弾を撃つ（各' + String(num(c.conjureUltShotsPerSide, 25)) + '発・1発' + atk(c.conjureUltDamageAtkMultiplier, 0.3) + 'のダメージ）。' + note('ULT中も通常の砲台は使える');
       default: return null;
