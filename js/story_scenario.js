@@ -6644,12 +6644,20 @@
         "location": "scene_disk.webp"
       },
       {
-        "speaker": "アルノ",
-        "left": "アルノ",
+        "speaker": "アイナ",
+        "left": "アイナ",
         "right": "",
-        "text": "……退くな。",
+        "text": "はい。しかし…\n数の利はこちらにあります。",
+        "location": "scene_disk.webp"
+      },
+            {
+        "speaker": "アイナ",
+        "left": "アイナ",
+        "right": "",
+        "text": "迎え打ちましょう。",
         "location": "scene_disk.webp"
       }
+
     ],
     "post": [
       {
@@ -6671,14 +6679,14 @@
         "speaker": "ミモザ",
         "left": "ミモザ",
         "right": "",
-        "text": "今なら触れられるかもしれない。でも、無理はしないで。",
+        "text": "今なら触れられるかもしれない。\nでも、無理はしないで。",
         "location": "scene_disk.webp"
       },
       {
         "speaker": "",
         "left": "",
         "right": "",
-        "text": "エリが円盤に手を伸ばすと、七つの塔を結ぶ光の線が浮かび上がった。",
+        "text": "エリが円盤に手を伸ばすと、\n七つの塔を結ぶ光の線が浮かび上がった。",
         "location": "scene_disk.webp",
         "narration": true
       },
@@ -6693,7 +6701,7 @@
         "speaker": "",
         "left": "",
         "right": "",
-        "text": "聞き取れたのは、言葉ではなく、遠くから響く呼吸のような音だけだった。",
+        "text": "聞き取れたのは、言葉ではなく、\n遠くから響く呼吸のような音だけだった。",
         "location": "scene_disk.webp",
         "narration": true
       },
@@ -6723,15 +6731,23 @@
         "speaker": "",
         "left": "",
         "right": "",
-        "text": "塔から遠く離れた場所。九人の知らない誰かが、記録を閉じた。",
+        "text": "塔から遠く離れた場所。\n九人の知らない誰かが、記録を閉じた。",
         "location": "scene_many_tower.webp",
         "narration": true
       },
       {
-        "speaker": "",
+        "speaker": "???",
         "left": "",
         "right": "",
-        "text": "「観察を継続する……」",
+        "text": "データは取れた。\nアンカーは…\n順調に育っている。",
+        "location": "scene_many_tower.webp",
+        "narration": true
+      },
+            {
+        "speaker": "???",
+        "left": "",
+        "right": "",
+        "text": "そうか。それは素晴らしい…",
         "location": "scene_many_tower.webp",
         "narration": true
       }
