@@ -24967,6 +24967,7 @@
         // カウントダウン中から指を置いたままでも、
         // 現在位置を基準に相対ドラッグをそのまま継続する。
         rebaseTouchDragToPlayer();
+        beginHeldShotAfterCountdown(performance.now()); // build1660: 指を置いたままSTART → 溜め撃ちもすぐ開始
 
         prevTs = performance.now();
         if (isChapter101TutorialStage()) {
@@ -26621,6 +26622,7 @@
     // マウスは絶対座標追従なので、バー上のクリックで自機を下端へワープさせない。
     const fromFooter = isShootingFooterDragTarget(e.target);
     if (fromFooter && !touchLike) return;
+    heldInputFromFooter = fromFooter; // build1660
 
     // すでに別の指で操作中なら、その指以外のpointerdownは移動入力に使わない。
     if (
@@ -26891,6 +26893,7 @@
     const wasActive = pointerActive;
     const releasePointerId = state ? state.miaChargePointerId : null;
 
+    unbindNativeTouchTarget();
     nativeTouchActive = false;
     nativeTouchPointerFallback = false;
     activeTouchIdentifier = null;
@@ -26943,6 +26946,49 @@
     }
   }
 
+  // build1660: カウントダウン中から指を置いたままSTARTを迎えた場合、
+  //  通常ショットは「触れている間」なので即座に撃ち始めるが、CHARGE（溜め撃ち）・CONJURE・TRAPは
+  //  指を置いた瞬間（touchstart/pointerdown）にしか溜め・設置プレビューを始めていなかったため、
+  //  もう一度タップし直すまで撃てなかった。START時点で指が触れていれば、ここで開始する。
+  let heldInputFromFooter = false;
+  function beginHeldShotAfterCountdown(now) {
+    if (!state || !pointerActive || state.countdown || !state.running || state.ended || state.finishing) return;
+    if (heldInputFromFooter) return; // 下部バー（交代ボタン）起点では溜め・設置を始めない（従来どおり）
+    const c = getCurrentCharacter();
+    if (!c) return;
+    if (c.shotType === 'charge' && !state.miaChargeStartedAt) beginMiaCharge(null, now);
+    else if (c.shotType === 'conjure' && !state.conjurePlacementPreview) beginConjurePlacementPreview(now);
+    else if (c.shotType === 'trap' && !state.remnaTrapPlacementPreview) beginRemnaTrapPlacementPreview(now);
+  }
+
+  // build1660: iOS Safari では、指を置いた要素（touchstartのtarget）がDOMから外れると、
+  //  以後のtouchmove/touchend/touchcancelはその「外れた要素」にだけ届き、window/arenaには一切届かない。
+  //  （演出・HUD・交代レール等の再描画で指の下の要素が作り直された瞬間に、追従と射撃が止まる原因）
+  //  指を置いた要素そのものにもリスナーを付け、DOMから外れても同じ指の入力を受け取り続ける。
+  //  window捕捉・arena側と同じEventを二重処理しないよう、処理済みEventは共通のWeakSetで除外する。
+  let nativeTouchBoundTarget = null;
+  const nativeTouchTargetRelay = (e) => {
+    if (gachaTrialForwardedEvents.has(e)) return;
+    if (!state || state.ended || state.finishing || state.paused || !nativeTouchActive) return;
+    if (e.type === 'touchmove') onNativeTouchMove(e);
+    else if (e.type === 'touchend') onNativeTouchEnd(e);
+    else if (e.type === 'touchcancel') onNativeTouchCancel(e);
+    else return;
+    gachaTrialForwardedEvents.add(e);
+  };
+  function unbindNativeTouchTarget() {
+    const t = nativeTouchBoundTarget;
+    nativeTouchBoundTarget = null;
+    if (!t) return;
+    ['touchmove','touchend','touchcancel'].forEach(type => { try { t.removeEventListener(type, nativeTouchTargetRelay, false); } catch (_) {} });
+  }
+  function bindNativeTouchTarget(target) {
+    if (!target || typeof target.addEventListener !== 'function' || target === nativeTouchBoundTarget) return;
+    unbindNativeTouchTarget();
+    nativeTouchBoundTarget = target;
+    ['touchmove','touchend','touchcancel'].forEach(type => target.addEventListener(type, nativeTouchTargetRelay, { passive:false }));
+  }
+
   function onNativeTouchStart(e) {
     if (isInputContinuityStage() && gachaTrialForwardedEvents.has(e)) return;
     if (!state || state.ended || state.finishing || state.paused) return;
@@ -26977,6 +27023,7 @@
     nativeTouchPointerFallback = false;
     activeTouchIdentifier = t.identifier;
     lastNativeTouchMoveAt = performance.now();
+    bindNativeTouchTarget(e.target); // build1660: 指の下の要素が消えても入力を受け続ける
 
     // PointerEventが未開始/途中で切れていた場合はここで入力状態を復元。
     if (!pointerActive || restartingAfterCancel) {
@@ -26997,6 +27044,7 @@
     }
 
     const fromFooterTouch = isShootingFooterDragTarget(e.target);
+    if (!restartingAfterCancel) heldInputFromFooter = fromFooterTouch; // build1660
     if (!fromFooterTouch && !state.countdown && getCurrentCharacter().shotType === 'conjure' && !state.conjurePlacementPreview) {
       beginConjurePlacementPreview(performance.now());
     }
@@ -28808,6 +28856,7 @@
     pointerIsTouch = false;
     nativeTouchPointerFallback = false;
     nativeTouchActive = false;
+    unbindNativeTouchTarget();
     activeTouchIdentifier = null;
     clearNativeTouchCancelTimer();
     keys = Object.create(null);

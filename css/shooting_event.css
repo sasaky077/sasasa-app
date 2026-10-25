@@ -15187,3 +15187,13 @@ html body #shooting-event-root #shooting-boss#shooting-boss{
 #shooting-event-root #shooting-boss.verdant-bloomed{
   filter:drop-shadow(0 0 10px rgba(140,230,100,.85)) drop-shadow(0 0 18px rgba(255,170,210,.45));
 }
+
+/* ============================================================
+   build1660: 戦闘中の表示専用HUD（BOSS名・HPバー・PHASE・タイマー・ミッション）はタッチを素通しする。
+   これらはアリーナの上に重なっているが、アリーナの外の要素なので、ここに指を置くと
+   移動・射撃の入力が始まらなかった（BOSS戦＝塔・レイド・位相回遊で画面上部が反応しない）。
+   ============================================================ */
+#shooting-event-root.battle-hud-visible :is(.shooting-boss-hud, .shooting-battle-timer, .shooting-mission-hud),
+#shooting-event-root.battle-hud-visible :is(.shooting-boss-hud, .shooting-battle-timer, .shooting-mission-hud) *{
+  pointer-events:none!important;
+}
