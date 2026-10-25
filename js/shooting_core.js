@@ -13227,7 +13227,8 @@
     const stageEnemyHp = Number(cfg.enemyHp);
     // build1643: 位相回遊の監視の眼は階層に応じたHP
     const watcherHp = enemyDef.behavior === 'po_watcher_v1' ? Number(selectedStage?.phaseOdyssey?.watcherHp || 0)
-      : (enemyDef.behavior === 'inori_torii_v1' ? getInoriToriiHp() : 0); // build1643: イノリの鳥居も階層・ステージ指定のHP
+      : (enemyDef.behavior === 'inori_torii_v1' ? getInoriToriiHp()
+        : (enemyDef.behavior === 'verdant_seed_v1' ? Number(selectedStage?.verdant?.seeds?.hp || 0) : 0)); // build1643: イノリの鳥居も階層・ステージ指定のHP／build1663: 成長の実
     const enemyHp = watcherHp > 0
       ? watcherHp
       : Number.isFinite(Number(enemyDef.ch404Hp)) && enemyDef.ch404Hp != null
@@ -13812,7 +13813,7 @@
     const startDelay = Math.max(0, Number(cfg.startDelayMs || 0));
 
     if (total > 0 && state.normalSpawned >= total) return;
-    if (state.normalEnemies.length >= maxActive) return;
+    if (state.normalEnemies.filter(e => !(e && e.def && e.def.behavior === 'verdant_seed_v1')).length >= maxActive) return; // build1663: 成長の実は配下の数に含めない
     if (now - state.startedAt < startDelay) return;
     if (now - state.normalLastSpawnAt < interval) return;
 
@@ -14348,6 +14349,7 @@
       return;
     }
     if (def.behavior === 'inori_torii_v1') return; // 鳥居の攻撃（レーザー）は updateInoriMechanics
+    if (def.behavior === 'verdant_seed_v1') return; // build1663: 成長の実は攻撃しない
 
     // v212 generic elemental angels
     if (def.behavior === 'generic_element_shot_v1') {
@@ -14925,8 +14927,108 @@
   }
 
   // build1659: 樹獣の女王の成長（動いている間だけ溜まる。満タンで「開花」）
+  // ------------------------------------------------------------
+  // build1663: 成長の実
+  //  一定間隔で戦場に実る（同時に最大 max 個）。ripenMs で熟すと、女王が蔓で吸い上げて成長ゲージが queenBoost 分進む。
+  //  熟す前に配下（樹獣・芽吹き）が触れると、その配下の成長ゲージが addBoost 分進む。
+  //  撃ち壊せば何も起きない ＝ 「止める」以外にも成長を阻止できる手段。
+  // ------------------------------------------------------------
+  function getVerdantSeedConfig() {
+    return (selectedStage && selectedStage.verdant && selectedStage.verdant.seeds) || null;
+  }
+  function getVerdantSeeds() {
+    return (state && state.normalEnemies || []).filter(e => e && e.el && e.hp > 0 && e.def && e.def.behavior === 'verdant_seed_v1');
+  }
+  function removeVerdantSeed(seed) {
+    if (!seed) return;
+    [seed.el, seed.hpEl, seed.elementEl, seed.weaknessBarrierEl].forEach(n => { try { n && n.remove(); } catch (_) {} });
+    if (seed.camWebFx) { try { seed.camWebFx.remove(); } catch (_) {} seed.camWebFx = null; }
+    seed.hp = 0;
+    state.normalEnemies = state.normalEnemies.filter(e => e !== seed);
+  }
+  function spawnVerdantSeed(now) {
+    const arena = document.getElementById('shooting-arena');
+    const def = getShootingEnemy(window.ShootingEnemies?.SHOOTING_ENEMY_ID?.VERDANT_SEED || 'shooting_verdant_seed');
+    if (!arena || !def || !state || !state.boss) return;
+    const w = arena.clientWidth, h = arena.clientHeight;
+    // 女王から離れた位置に実らせる（出た瞬間に吸われないように）
+    let x = w * .5, y = h * .36;
+    for (let i = 0; i < 8; i++) {
+      x = w * (.12 + Math.random() * .76);
+      y = h * (.27 + Math.random() * .22);
+      if (Math.hypot(x - Number(state.boss.x || 0), y - Number(state.boss.y || 0)) > 110) break;
+    }
+    const seed = createNormalEnemy(def, now);
+    if (!seed) return;
+    state.verdantSeedSerial = Number(state.verdantSeedSerial || 0) + 1;
+    seed.uid = 'verdant_seed_' + state.verdantSeedSerial;
+    seed.x = seed.baseX = x; seed.y = seed.baseY = y;
+    seed.seedBornAt = now;
+    seed.el.classList.add('verdant-seed');
+    positionUnit(seed.el, x, y);
+    positionMiniEnemyHp(seed);
+    state.normalEnemies.push(seed);
+  }
+  function showVerdantAbsorbFx(seed, tx, ty, label) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const dx = tx - seed.x, dy = ty - seed.y, len = Math.hypot(dx, dy);
+    if (len > 8) {
+      const vine = document.createElement('div');
+      vine.className = 'verdant-seed-vine';
+      vine.style.width = len + 'px';
+      vine.style.transform = `translate3d(${seed.x}px,${seed.y}px,0) rotate(${Math.atan2(dy, dx)}rad)`;
+      arena.appendChild(vine);
+      setTimeout(() => { try { vine.remove(); } catch (_) {} }, 520);
+    }
+    const pop = document.createElement('div');
+    pop.className = 'verdant-grow-pop';
+    pop.textContent = label;
+    positionUnit(pop, tx, ty - 34);
+    arena.appendChild(pop);
+    setTimeout(() => { try { pop.remove(); } catch (_) {} }, 1100);
+  }
+  function updateVerdantSeeds(now) {
+    const cfg = getVerdantSeedConfig();
+    if (!cfg || !state || !state.boss || isNormalBattle() || state.ended || state.finishing || state.boss.hp <= 0) return;
+    const seeds = getVerdantSeeds();
+    // 実る
+    if (!state.verdantNextSeedAt) state.verdantNextSeedAt = state.startedAt + Math.max(0, Number(cfg.firstAtMs || 5000));
+    if (now >= state.verdantNextSeedAt) {
+      if (seeds.length < Math.max(1, Number(cfg.max || 2))) spawnVerdantSeed(now);
+      state.verdantNextSeedAt = now + Math.max(1500, Number(cfg.intervalMs || 7000));
+    }
+    const ripenMs = Math.max(1500, Number(cfg.ripenMs || 7000));
+    const growthCfg = selectedStage.verdant || {};
+    const reach = Math.max(10, Number(cfg.addReach || 46));
+    for (const seed of seeds) {
+      // 画像の読み込み前・失敗時でも撃てるよう、当たり判定は最低限の大きさを保証
+      seed._hw = Math.max(Number(seed._hw || 0), 20);
+      seed._hh = Math.max(Number(seed._hh || 0), 20);
+      const ratio = Math.max(0, Math.min(1, (now - Number(seed.seedBornAt || now)) / ripenMs));
+      seed.el.style.setProperty('--seed-ripe', ratio.toFixed(3));
+      seed.el.classList.toggle('is-ripening', ratio >= .7);
+      // 熟す前に配下が触れたら、その配下が吸収
+      const add = (state.normalEnemies || []).find(e => e && e !== seed && e.el && e.hp > 0 && e.def &&
+        e.def.verdantGrowth && !e.verdantGrown && Math.hypot(e.x - seed.x, e.y - seed.y) <= reach);
+      if (add) {
+        add.verdantGrowthMs = Number(add.verdantGrowthMs || 0) + Math.max(1000, Number(growthCfg.growthMs || 8000)) * Number(cfg.addBoost || .5);
+        showVerdantAbsorbFx(seed, add.x, add.y, '吸収！');
+        removeVerdantSeed(seed);
+        continue;
+      }
+      // 熟したら女王が吸い上げる（開花後は吸い上げても何も起きないが、実は消える）
+      if (ratio >= 1) {
+        if (!state.verdantQueenGrown) {
+          state.verdantQueenGrowthMs = Number(state.verdantQueenGrowthMs || 0) + Math.max(2000, Number(growthCfg.bossGrowthMs || 18000)) * Number(cfg.queenBoost || .22);
+        }
+        showVerdantAbsorbFx(seed, Number(state.boss.x || 0), Number(state.boss.y || 0), state.verdantQueenGrown ? '吸収' : '成長が進んだ！');
+        removeVerdantSeed(seed);
+      }
+    }
+  }
   function removeVerdantDom() {
-    document.querySelectorAll('#verdant-boss-growth, .verdant-grow-pop').forEach(el => el.remove());
+    document.querySelectorAll('#verdant-boss-growth, .verdant-grow-pop, .verdant-seed-vine').forEach(el => el.remove());
   }
   function updateVerdantBossGrowth(dt, now) {
     const cfg = selectedStage && selectedStage.verdant;
@@ -15007,6 +15109,12 @@
       if (enemy.camSpider) { updateCamillaSpider(enemy, dt, now); return; }
       const def = enemy.def || {};
       // build1643: イノリの鳥居は常にイノリの左右・少し後方に付き従う（移動AI・射撃なし。レーザーは本体側で管理）
+      if (def.behavior === 'verdant_seed_v1') { // build1663: 成長の実は動かない（熟し具合は updateVerdantSeeds）
+        enemy.x = enemy.baseX; enemy.y = enemy.baseY;
+        positionUnit(enemy.el, enemy.x, enemy.y);
+        positionMiniEnemyHp(enemy);
+        return;
+      }
       if (def.behavior === 'inori_torii_v1') {
         placeInoriTorii(enemy, w);
         positionUnit(enemy.el, enemy.x, enemy.y);
@@ -20491,6 +20599,7 @@
     if (isNormalBattle()) {
       const hitEnemy = state.normalEnemies.find(enemy => {
         if (!enemy || !enemy.el || enemy.hp <= 0) return false;
+        if (enemy.def?.behavior === 'verdant_seed_v1') return false; // build1663
         // Dedicated CHARGE zako only deals contact damage while actually dashing.
         if (
           enemy.def?.behavior === 'generic_element_charge_v1' &&
@@ -20534,6 +20643,18 @@
         }
       }
       return;
+    }
+
+    // build1663: 樹獣の森（ボス戦）は配下の接触も有効（樹獣は突進中のみ）。従来はボス戦で配下の接触判定がなく、突進が素通りしていた。
+    if (selectedStage && selectedStage.verdant && hasBossAdds()) {
+      const hitAdd = (state.normalEnemies || []).find(enemy => enemy && enemy.el && enemy.hp > 0 &&
+        enemy.def?.behavior !== 'verdant_seed_v1' &&
+        !(enemy.def?.behavior === 'generic_element_charge_v1' && enemy.attackState !== 'dash') &&
+        rectsHit(playerRect, getUnitRect(enemy, arenaRectForContact), 14, 9));
+      if (hitAdd) {
+        damagePlayer(now, Number(hitAdd.def && (hitAdd.def.contactDamage || hitAdd.def.bulletDamage)) || 85, 'normal', getCombatTargetElement(hitAdd));
+        return;
+      }
     }
 
     if (!boss || !bossRect || !state.boss || state.boss.hp <= 0) return;
@@ -23781,6 +23902,7 @@
     }
     // build1659: 樹獣の女王（動いている間だけ成長→開花）。捕縛の位置戻し後に判定する。
     updateVerdantBossGrowth(dt, ts);
+    updateVerdantSeeds(ts); // build1663: 成長の実
     // エルテナULTは通常の敵移動が終わった後に吸引を適用。
     // これによりAIの横移動よりブラックホールの集敵を優先する。
     updateEltenaBlackHole(dt, ts);
@@ -24280,6 +24402,7 @@
     if (stage.verdant) {
       gimmicks.push({ id:'verdantCharge', label:'突進' });
       gimmicks.push({ id:'verdantGrowth', label:'動くと成長' });
+      if (stage.verdant.seeds) gimmicks.push({ id:'verdantSeed', label:'成長の実' }); // build1663
     }
     const barrierElements = getStageBarrierPreviewElements(stage);
     const isDailyAdvanced = !!(
@@ -24825,7 +24948,7 @@
           <div class="zfs-ornament" aria-hidden="true"><span>✦</span></div>
         </div>
         <div class="zfs-scroll">
-          <p class="zfs-verdant-lead">樹獣の女王と配下は、動いている間に成長する。女王が開花する前に、捕縛や停止で動きを封じて倒せ。</p>
+          <p class="zfs-verdant-lead">樹獣の女王と配下は、動くと成長し、熟した「成長の実」を吸うと一気に成長する。実を撃ち壊すか、捕縛で動きを封じて、開花する前に倒せ。</p>
           <div class="zfs-list" aria-label="樹獣の森・難易度選択">
             ${card(SHOOTING_STAGE_ID.VERDANT_ADVANCED, '01', '上級')}
             ${card(SHOOTING_STAGE_ID.VERDANT_SUPER, '02', '最上級')}

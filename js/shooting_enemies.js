@@ -71,7 +71,8 @@
     INORI_TORII: 'shooting_inori_torii',   // イノリが召喚する鳥居
     VERDANT_BEAST: 'shooting_verdant_beast',   // build1659 樹獣の森：突進する樹獣
     VERDANT_SPROUT: 'shooting_verdant_sprout', // build1659 樹獣の森：歩き回る芽吹き
-    VERDANT_QUEEN: 'shooting_verdant_queen',   // build1659 樹獣の森：ボス「樹獣の女王」（仮名）
+    VERDANT_QUEEN: 'shooting_verdant_queen',
+    VERDANT_SEED: 'shooting_verdant_seed', // build1663: 成長の実   // build1659 樹獣の森：ボス「樹獣の女王」（仮名）
   });
 
   // ============================================================
@@ -496,6 +497,16 @@
 
     // build1659: 樹獣の森のボス「樹獣の女王」（仮名）。蕾の姿で始まり、動いている間に成長ゲージが溜まって「開花」する。
     //  開花：成長後の姿になり、HP回復＋攻撃が激しくなり、配下の召喚も速くなる。捕縛・スタン中は成長しない。
+    // build1663: 成長の実（樹獣の森・ボス戦）。その場に実り、時間で熟す。
+    //  熟すと女王が吸い上げて成長が一気に進む／配下が触れると配下が成長。撃って壊せば阻止できる。
+    //  攻撃・移動・接触ダメージなし。画像 images/verdant_seed.webp（未配置の間は聖樹の息吹の画像で代用）。
+    [SHOOTING_ENEMY_ID.VERDANT_SEED]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.VERDANT_SEED, kind: 'normal', implemented: true,
+      name: '成長の実', displayName: 'GROWTH SEED　成長の実',
+      element: 'neutral', attackType: 'none',
+      image: 'images/verdant_seed.webp', fallbackImage: 'images/shinju_aura.webp',
+      hp: 900, moveSpeed: 0, scoreValue: 200, behavior: 'verdant_seed_v1', uiScale: 0.72,
+    }),
     [SHOOTING_ENEMY_ID.VERDANT_QUEEN]: Object.freeze({
       id: SHOOTING_ENEMY_ID.VERDANT_QUEEN,
       kind: 'boss', implemented: true,
