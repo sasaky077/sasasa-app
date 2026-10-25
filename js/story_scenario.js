@@ -6752,6 +6752,379 @@
         "narration": true
       }
     ]
+  },
+
+  // build1667: 9章「七塔の灯」（09-01・09-03はパズル［共鳴灯］、09-02・09-04は戦闘）
+  "shooting_ch09_01": {
+    "chapter": 9,
+    "stageNo": 1,
+    "chapterTitle": "七塔の灯",
+    "stageTitle": "灯の扉",
+    "stageType": "puzzle",
+    "puzzle": { "kind": "resonance_lamp", "levels": [1, 2, 3] },
+    "pre": [
+      {
+        "speaker": "",
+        "left": "",
+        "right": "",
+        "text": "円盤が示した光の線をたどり、\n九人は隣の塔へ向かった。",
+        "location": "scene_many_tower.webp",
+        "narration": true
+      },
+      {
+        "speaker": "レオナクロス",
+        "left": "レオナクロス",
+        "right": "",
+        "text": "線の先は…この塔だね。",
+        "location": "scene_tower_near.webp"
+      },
+      {
+        "speaker": "",
+        "left": "",
+        "right": "",
+        "text": "塔の扉には、消えた灯がいくつも埋め込まれていた。",
+        "location": "scene_tower_door.webp",
+        "narration": true
+      },
+      {
+        "speaker": "ベロニカ",
+        "left": "ベロニカ",
+        "right": "",
+        "text": "なんだろうこれェ？\nん？光ったよォ？",
+        "location": "scene_tower_door.webp"
+      },
+      {
+        "speaker": "トイフェル",
+        "left": "トイフェル",
+        "right": "",
+        "text": "ベロニカ、不用意に触っちゃダメだよ。\n……でも、今の動きは…",
+        "location": "scene_tower_door.webp"
+      },
+      {
+        "speaker": "レオナクロス",
+        "left": "レオナクロス",
+        "right": "",
+        "text": "触れた部分とその隣の灯りがともる。\nついていた灯りは、消えてしまうみたいだ。",
+        "location": "scene_tower_door.webp"
+      },
+      {
+        "speaker": "ミモザ",
+        "left": "ミモザ",
+        "right": "",
+        "text": "全部をともせば、扉が開く……\nかもしれないわね。",
+        "location": "scene_tower_door.webp"
+      },
+      {
+        "speaker": "エリ",
+        "left": "エリ",
+        "right": "",
+        "text": "やってみよう。",
+        "location": "scene_tower_door.webp"
+      }
+    ],
+    "post": [
+      {
+        "speaker": "",
+        "left": "",
+        "right": "",
+        "text": "最後の灯がともると、扉は音もなく開いた。",
+        "location": "scene_tower_door.webp",
+        "narration": true
+      },
+      {
+        "speaker": "アウラ",
+        "left": "アウラ",
+        "right": "",
+        "text": "開いたー！ エリ、すごい！",
+        "location": "scene_tower_door.webp"
+      },
+      {
+        "speaker": "",
+        "left": "",
+        "right": "",
+        "text": "そのとき。遠くに見える塔の光が、一つ消えた。",
+        "location": "scene_many_tower.webp",
+        "narration": true
+      },
+      {
+        "speaker": "トイフェル",
+        "left": "トイフェル",
+        "right": "",
+        "text": "……今の、見たかい？",
+        "location": "scene_many_tower.webp"
+      },
+      {
+        "speaker": "ジグ",
+        "left": "ジグ",
+        "right": "",
+        "text": "おいおい……\n塔同士も、つながってんのかよ。",
+        "location": "scene_many_tower.webp"
+      }
+    ]
+  },
+
+  "shooting_ch09_02": {
+    "chapter": 9,
+    "stageNo": 2,
+    "chapterTitle": "七塔の灯",
+    "stageTitle": "目覚める塔",
+    "stageType": "battle",
+    "pre": [
+      {
+        "speaker": "",
+        "left": "",
+        "right": "",
+        "text": "灯がともった塔の内部では、\n眠っていた何かが動き出していた。",
+        "location": "scene_in_tower.webp",
+        "narration": true
+      },
+      {
+        "speaker": "アイナ",
+        "left": "アイナ",
+        "right": "",
+        "text": "灯をともしたことで、\n塔の守りまで目を覚ましたみたいですね…",
+        "location": "scene_in_tower.webp"
+      },
+      {
+        "speaker": "アルノ",
+        "left": "アルノ",
+        "right": "",
+        "text": "……来るぞ。",
+        "location": "scene_in_tower.webp"
+      },
+      {
+        "speaker": "ジグ",
+        "left": "ジグ",
+        "right": "",
+        "text": "上等だ。片っ端から片づけてやる。",
+        "location": "scene_in_tower.webp"
+      }
+    ],
+    "post": [
+      {
+        "speaker": "",
+        "left": "",
+        "right": "",
+        "text": "守りが崩れると、塔の壁に刻まれた線が、\nゆっくりと光を取り戻していった。",
+        "location": "scene_in_tower.webp",
+        "narration": true
+      },
+      {
+        "speaker": "ミモザ",
+        "left": "ミモザ",
+        "right": "",
+        "text": "線は全部、同じ方向へ向かってる。\n七つの塔の、真ん中へ。",
+        "location": "scene_in_tower.webp"
+      },
+      {
+        "speaker": "レオナクロス",
+        "left": "レオナクロス",
+        "right": "",
+        "text": "中心に、すべてをつなぐ何かがあるんだろうね。",
+        "location": "scene_in_tower.webp"
+      },
+      {
+        "speaker": "エリ",
+        "left": "エリ",
+        "right": "",
+        "text": "……呼吸の音。\nさっきより、ずっと近い。",
+        "location": "scene_in_tower.webp"
+      }
+    ]
+  },
+
+  "shooting_ch09_03": {
+    "chapter": 9,
+    "stageNo": 3,
+    "chapterTitle": "七塔の灯",
+    "stageTitle": "七塔の中心",
+    "stageType": "puzzle",
+    "puzzle": { "kind": "resonance_lamp", "levels": [4, 5, 6, 7] },
+    "pre": [
+      {
+        "speaker": "",
+        "left": "",
+        "right": "",
+        "text": "七つの塔に囲まれた中心には、\n巨大な盤のような床が広がっていた。",
+        "location": "scene_tower_center.webp",
+        "narration": true
+      },
+      {
+        "speaker": "アウラ",
+        "left": "アウラ",
+        "right": "",
+        "text": "うわぁ……灯がいっぱい……。",
+        "location": "scene_tower_center.webp"
+      },
+      {
+        "speaker": "アイナ",
+        "left": "アイナ",
+        "right": "",
+        "text": "紋に向きがあります。\nつながりは、一方通行かもしれません。",
+        "location": "scene_tower_center.webp"
+      },
+      {
+        "speaker": "ベロニカ",
+        "left": "ベロニカ",
+        "right": "",
+        "text": "とりあえず全部押してみよォ！",
+        "location": "scene_tower_center.webp"
+      },
+      {
+        "speaker": "ミモザ",
+        "left": "ミモザ",
+        "right": "",
+        "text": "それで済むなら、苦労しないわね…",
+        "location": "scene_tower_center.webp"
+      },
+      {
+        "speaker": "トイフェル",
+        "left": "トイフェル",
+        "right": "",
+        "text": "一つずつ確かめていこう。",
+        "location": "scene_tower_center.webp"
+      },
+         ],
+    "post": [
+      {
+        "speaker": "",
+        "left": "",
+        "right": "",
+        "text": "すべての灯がともった瞬間、\n七つの塔から光の線が伸び、中心で一つに交わった。",
+        "location": "scene_tower_center.webp",
+        "narration": true
+      },
+      {
+        "speaker": "",
+        "left": "",
+        "right": "",
+        "text": "交点の空間が裂け、白い光の門が開いていく。",
+        "location": "scene_zeraphia_gate.webp",
+        "narration": true
+      },
+      {
+        "speaker": "レオナクロス",
+        "left": "レオナクロス",
+        "right": "",
+        "text": "これが……円盤の言っていた、入口……。",
+        "location": "scene_zeraphia_gate.webp"
+      },
+      {
+        "speaker": "ベロニカ",
+        "left": "ベロニカ",
+        "right": "",
+        "text": "なにか、くるよォ！",
+        "location": "scene_tower_center.webp"
+      },
+    ]
+  },
+
+  "shooting_ch09_04": {
+    "chapter": 9,
+    "stageNo": 4,
+    "chapterTitle": "七塔の灯",
+    "stageTitle": "門の守護者",
+    "stageType": "battle",
+    "pre": [
+      {
+        "speaker": "",
+        "left": "",
+        "right": "",
+        "text": "光の門から、巨大な影がゆっくりと姿を現した。",
+        "location": "scene_zeraphia_gate.webp",
+        "narration": true
+      },
+      {
+        "speaker": "トイフェル",
+        "left": "トイフェル",
+        "right": "",
+        "text": "門番、というわけか。",
+        "location": "scene_zeraphia_gate.webp"
+      },
+      {
+        "speaker": "アイナ",
+        "left": "アイナ",
+        "right": "",
+        "text": "ここまで来て、引き返す理由はありません。",
+        "location": "scene_zeraphia_gate.webp"
+      },
+      {
+        "speaker": "エリ",
+        "left": "エリ",
+        "right": "",
+        "text": "通して……！\nこの先に、行かなきゃいけないの！",
+        "location": "scene_zeraphia_gate.webp"
+      }
+    ],
+    "post": [
+      {
+        "speaker": "",
+        "left": "",
+        "right": "",
+        "text": "守護者は光の粒となって、門の奥へ還っていった。",
+        "location": "scene_zeraphia_gate.webp",
+        "narration": true
+      },
+      {
+        "speaker": "ジグ",
+        "left": "ジグ",
+        "right": "",
+        "text": "……はぁ。終わった、か。",
+        "location": "scene_zeraphia_gate.webp"
+      },
+      {
+        "speaker": "ミモザ",
+        "left": "ミモザ",
+        "right": "",
+        "text": "門は開いたまま……。\nこの先に、何があるのかしら。",
+        "location": "scene_zeraphia_gate.webp"
+      },
+      {
+        "speaker": "エリ",
+        "left": "エリ",
+        "right": "",
+        "text": "……行こう。\nずっと、ここに呼ばれてた気がするの。",
+        "location": "scene_zeraphia_gate.webp"
+      },
+      {
+        "speaker": "",
+        "left": "",
+        "right": "",
+        "text": "九人は光の中へ足を踏み入れた。\n眩しさが引いたとき、目の前には見たことのない世界が広がっていた。",
+        "location": "scene_zeraphia.webp",
+        "narration": true
+      },
+      {
+        "speaker": "アウラ",
+        "left": "アウラ",
+        "right": "",
+        "text": "ここ、どこ……？",
+        "location": "scene_zeraphia.webp"
+      },
+      {
+        "speaker": "レオナクロス",
+        "left": "レオナクロス",
+        "right": "",
+        "text": "古い記録で、一度だけ見た名前がある。\n……ゼラフィア。",
+        "location": "scene_zeraphia.webp"
+      },
+      {
+        "speaker": "???",
+        "left": "",
+        "right": "",
+        "text": "七つの灯が、ともったか。",
+        "location": "scene_many_tower.webp",
+        "narration": true
+      },
+      {
+        "speaker": "???",
+        "left": "",
+        "right": "",
+        "text": "ああ。門は開いた。\n……ようこそ、ゼラフィアへ。",
+        "location": "scene_many_tower.webp",
+        "narration": true
+      }
+    ]
   }
 }
   );

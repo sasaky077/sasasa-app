@@ -34,7 +34,8 @@
     get 5() { return window.ZERAPHIA_STORY_SCENARIO?.['shooting_ch05_01']?.chapterTitle || '円環'; },
     get 6() { return window.ZERAPHIA_STORY_SCENARIO?.['shooting_ch06_01']?.chapterTitle || '来訪者'; },
     get 7() { const s=window.ZERAPHIA_STORY_SCENARIO||{}; return s.shooting_ch07_01?.chapterTitle || s.shooting_ch07_03?.chapterTitle || '未定'; },
-    get 8() { return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch08_01?.chapterTitle || '七つの塔'; }
+    get 8() { return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch08_01?.chapterTitle || '七つの塔'; },
+    get 9() { return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch09_01?.chapterTitle || '七塔の灯'; }
   };
 
   const SHOOTING_STAGE_ID = Object.freeze({
@@ -78,6 +79,11 @@
     CH08_02: 'shooting_ch08_02',
     CH08_03: 'shooting_ch08_03',
     CH08_04: 'shooting_ch08_04',
+    // build1667: CHAPTER 09「七塔の灯」（01・03はパズル［共鳴灯］、02・04は戦闘）
+    CH09_01: 'shooting_ch09_01',
+    CH09_02: 'shooting_ch09_02',
+    CH09_03: 'shooting_ch09_03',
+    CH09_04: 'shooting_ch09_04',
 
     DAILY_MON_INTERMEDIATE: 'shooting_daily_mon_intermediate',
     DAILY_MON_ADVANCED: 'shooting_daily_mon_advanced',
@@ -1268,6 +1274,55 @@
         totalEnemies:0, maxActive:3, startDelayMs:2600, spawnIntervalMs:7000,
       }),
       mission:Object.freeze({type:SHOOTING_MISSION_TYPE.BOSS_CLEAR,text:'オーバーシアを撃破し、円盤への道を開く'}),playable:true
+    }),
+
+    // ============================================================
+    // build1667 CHAPTER 09「七塔の灯」
+    //  01・03：パズル（共鳴灯）。resonance_lamp_ch09.html を iframe で開く（storyPuzzle / puzzleLevels）。
+    //  02：フェイスレス（2WAVE・仮面オブジェクト）。04：イノリ（3PHASE・鳥居・全属性バリア）。
+    // ============================================================
+    [SHOOTING_STAGE_ID.CH09_01]: Object.freeze({
+      id:SHOOTING_STAGE_ID.CH09_01, chapter:9, stageNo:1,
+      get name(){return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch09_01?.stageTitle || '灯の扉';},
+      type:'normal', background:'images/battle_bg_01.webp', enemyIds:Object.freeze([]),
+      storyPuzzle:'resonance_lamp', puzzleLevels:Object.freeze([1,2,3]),
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'扉の灯をすべてともす'}),playable:true
+    }),
+    [SHOOTING_STAGE_ID.CH09_02]: Object.freeze({
+      id:SHOOTING_STAGE_ID.CH09_02, chapter:9, stageNo:2,
+      get name(){return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch09_02?.stageTitle || '目覚める塔';},
+      type:'boss', background:'images/battle_bg_01.webp',
+      introImage:'images/enemy_faceless_battle_start.webp',
+      enemyIds:Object.freeze([SHOOTING_ENEMY_ID.FACELESS]),
+      // 特別巡行「無貌の天使」と同じ仕組みをストーリーで使う（eventId は付けない＝ストーリー扱い）
+      storyFaceless:true,
+      faceless:Object.freeze({
+        difficulty:'advanced',
+        waveHp:Object.freeze([7000, 15000]),
+        waveBarrage:Object.freeze(['light', 'medium']),
+        objectHp:900,
+        objectWays:2,
+        waveObjectCount:Object.freeze([1, 2]),
+      }),
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.BOSS_CLEAR,text:'目覚めた塔の守り、フェイスレスを撃破'}),playable:true
+    }),
+    [SHOOTING_STAGE_ID.CH09_03]: Object.freeze({
+      id:SHOOTING_STAGE_ID.CH09_03, chapter:9, stageNo:3,
+      get name(){return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch09_03?.stageTitle || '七塔の中心';},
+      type:'normal', background:'images/battle_bg_01.webp', enemyIds:Object.freeze([]),
+      storyPuzzle:'resonance_lamp', puzzleLevels:Object.freeze([4,5,6,7]),
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.DEFEAT_ALL,text:'七塔の灯をすべてともす'}),playable:true
+    }),
+    [SHOOTING_STAGE_ID.CH09_04]: Object.freeze({
+      id:SHOOTING_STAGE_ID.CH09_04, chapter:9, stageNo:4,
+      get name(){return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch09_04?.stageTitle || '門の守護者';},
+      type:'boss', background:'images/battle_bg_01.webp',
+      enemyIds:Object.freeze([SHOOTING_ENEMY_ID.INORI]),
+      bossElement:'light', enemyElement:'light',
+      bossGauges:3,
+      bossGaugeHps:Object.freeze([8000, 9500, 11000]),
+      inoriToriiHp:1300,
+      mission:Object.freeze({type:SHOOTING_MISSION_TYPE.BOSS_CLEAR,text:'門の守護者、イノリを撃破'}),playable:true
     }),
 
     // ============================================================

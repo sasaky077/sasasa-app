@@ -10,7 +10,7 @@
   // CHAPTER 01 から順に解放。前章の全ステージクリアで次章を解放。
   // ============================================================
   const STORY_CHAPTER_MIN = 1;
-  const STORY_CHAPTER_MAX = 8;
+  const STORY_CHAPTER_MAX = 9; // build1667: CHAPTER 09「七塔の灯」
   const STORY_CLEAR_KEY = 'zeraphia_story_stage_clears_v1';
   // チャプター名は shooting_stages.js の SHOOTING_CHAPTER_TITLES で一元管理。
   function getStoryChapterTitle(chapter) {
@@ -535,7 +535,7 @@
         const displayCondition = isNovelOnly ? 'ストーリーを読む' : missionText;
         const gimmickHtml = buildStoryGimmickHtml(stageDef);
         // build1461: バトルではないステージ（物語・パズル・ミニゲーム）は報酬を付与しないため、報酬欄を出さない。
-        const nonBattleKind = getStoryNonBattleKind(storyScenario);
+        const nonBattleKind = getStoryNonBattleKind(storyScenario) || (stageDef.storyPuzzle ? 'PUZZLE' : ''); // build1667: 台詞データ読込前でもパズルは報酬なし表示
         const rewardRowHtml = nonBattleKind
           ? `<div class="zss-card-row zss-card-row-reward zss-card-row-noreward">
               <span class="zss-card-label">主な報酬</span>
@@ -663,6 +663,8 @@
   }
 
   function isRingPuzzleStage(stage) {
+    // build1667: 9章の共鳴灯はステージ定義（storyPuzzle）でも判定（台詞データの読込前にタップされても確実に）
+    if (stage && stage.storyPuzzle) return true;
     const data = getStoryScenarioData(stage);
     return !!(data && String(data.stageType || '').toLowerCase() === 'puzzle');
   }
@@ -680,7 +682,15 @@
     frame.title = '円環パズル';
     frame.setAttribute('scrolling','no');
     frame.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;display:block;overflow:hidden;';
-    frame.src = 'ring_puzzle_ch05.html?v=1345-rich-ui&rings=' + (Number(stage.stageNo) === 2 ? '3' : '4');
+    if (stage.storyPuzzle === 'resonance_lamp') {
+      // build1667: 9章「共鳴灯」。段階（puzzleLevels）と初級モードを渡す。クリア・戻るの通知は円環パズルと同じ形式
+      frame.title = '共鳴灯';
+      const levels = Array.isArray(stage.puzzleLevels) && stage.puzzleLevels.length ? stage.puzzleLevels.join(',') : '1,2,3';
+      frame.src = 'resonance_lamp_ch09.html?v=1667&levels=' + encodeURIComponent(levels) +
+        '&mode=' + storyMode + '&title=' + encodeURIComponent(String(stage.name || '共鳴灯'));
+    } else {
+      frame.src = 'ring_puzzle_ch05.html?v=1345-rich-ui&rings=' + (Number(stage.stageNo) === 2 ? '3' : '4');
+    }
     overlay.appendChild(frame);
     document.body.appendChild(overlay);
     const previousHtmlOverflow = document.documentElement.style.overflow;

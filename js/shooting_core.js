@@ -1106,7 +1106,8 @@
   }
 
   function isFacelessStage() {
-    return !!(selectedStage && selectedStage.eventId === 'faceless' && selectedStage.faceless);
+    // build1667: ストーリー（9章）でもフェイスレス戦を使う（storyFaceless）。特別巡行の扱いにはしない
+    return !!(selectedStage && selectedStage.faceless && (selectedStage.eventId === 'faceless' || selectedStage.storyFaceless));
   }
 
   function isChapter07Stage() {
@@ -5869,8 +5870,8 @@
   function getCanvasStoryChapter() {
     if (!selectedStage) return 0;
     const chapter = Number(selectedStage.chapter || 0);
-    if (chapter >= 1 && chapter <= 8) return chapter;
-    const m = String(selectedStage.id || '').match(/^shooting_(?:beginner_)?ch0?([1-8])_/i);
+    if (chapter >= 1 && chapter <= 9) return chapter;
+    const m = String(selectedStage.id || '').match(/^shooting_(?:beginner_)?ch0?([1-9])_/i);
     return m ? Number(m[1] || 0) : 0;
   }
 
