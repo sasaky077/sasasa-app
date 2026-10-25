@@ -44,19 +44,22 @@ BOSS「樹獣の女王」（仮名）＋次々に召喚される配下（樹獣�
 | 通常報酬 | 経験値（大）×2 | 経験値（大）×2 |
 | 初回クリア | 結晶×5 | 結晶×10 |
 
+### カミラのショットの蜘蛛の巣をBOSSより前面に
+- 蜘蛛で捕縛した敵・BOSSに重なる蜘蛛の巣（張り付いた瞬間の小さな巣も）が、BOSSの画像の下に隠れていた。敵・BOSSより前面に表示するよう修正（ULTの巣は背面のまま）
+
 ### カミラのBOSS捕縛の不具合修正
 - 蜘蛛の糸でBOSSを捕縛しても、移動AIが動いた後の位置で固定していたため、実際にはBOSSが動き続けていた。捕縛中はBOSSの移動AIと移動時計を止めるよう修正（全ボス共通。解除後は滑らかに元の動きへ戻る）
 
 ### 画像（images/ に配置）
 | 用途 | ファイル名 |
 |---|---|
-| 女王 バトルユニット（成長前・蕾） | verdant_queen_battle.webp |
-| 女王 バトルユニット（成長後・開花） | verdant_queen_bloom_battle.webp |
-| バトルスタート イントロ | verdant_queen_battle_start.webp |
-| 樹獣（配下・未配置時は既存画像で代用） | verdant_beast.webp |
-| 芽吹き（配下・同上） | verdant_sprout.webp |
-| 大樹（芽吹きの成長後・同上） | verdant_tree.webp |
-| 特別巡行カード（同上） | verdant_banner.webp |
+| バトルスタート イントロ | verdant_battle_start.webp |
+| 特別巡行カード（バナー） | verdant_battle_start.webp（イントロと共用） |
+| ボス（成長前・蕾） | verdant_queen_battle.webp |
+| ボス（成長後・開花） | verdant_queen_bloom_battle.webp |
+| 砲台雑魚「芽吹き」（成長前） | verdant_sprout.webp |
+| 砲台雑魚「大樹」（成長後） | verdant_tree.webp |
+| 突進雑魚「樹獣／大樹獣」（成長前後共通） | verdant_beast.webp |
 
 - ステージID：shooting_event_verdant_advanced / shooting_event_verdant_super（CH03-04クリアで解放。既存の特別巡行と同じ）
 - 背景：battle_bg_02
@@ -65,4 +68,4 @@ BOSS「樹獣の女王」（仮名）＋次々に召喚される配下（樹獣�
 ### 変更ファイル
 - js/shooting_core.js / js/shooting_characters.js / js/shooting_enemies.js / js/shooting_stages.js / css/shooting_event.css
 - js/shooting_event.js（MODULE_VERSION）、index.html（特別巡行カード・読み込みバージョン）、version.json
-- images/verdant_queen_battle.webp / images/verdant_queen_bloom_battle.webp / images/verdant_queen_battle_start.webp（新規）
+- 画像7点は上表のファイル名で images/ に配置（コードはこの名前で読み込む）

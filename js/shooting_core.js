@@ -10533,11 +10533,21 @@
     }
     return Math.max(20, Number(target._hw || 26));
   }
+  // build1659: カミラのショット（蜘蛛）の巣は敵・BOSSより前面に描く（ULTの巣は背面のまま）
+  function getCamillaShotWebZ(holderEl) {
+    let z = 12;
+    try {
+      const boss = document.getElementById(BOSS_ID);
+      [holderEl, boss].forEach(el => { if (el) { const v = parseInt(getComputedStyle(el).zIndex, 10); if (Number.isFinite(v)) z = Math.max(z, v + 1); } });
+    } catch (_) {}
+    return z;
+  }
   function spawnCamillaWebBurst(x, y) {
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
     const el = document.createElement('div');
     el.className = 'shooting-camilla-web-burst';
+    el.style.zIndex = String(getCamillaShotWebZ(null));
     el.innerHTML = getCamillaWebSvg(8, 4, false);
     arena.appendChild(el);
     positionUnit(el, x, y);
@@ -14761,6 +14771,7 @@
         fx = document.createElement('div');
         fx.className = 'shooting-camilla-bound-web-fx';
         fx.style.backgroundImage = `url("${getCamillaWebDataUri()}")`;
+        fx.style.zIndex = String(getCamillaShotWebZ(holder.el || (holder === state.boss ? document.getElementById(BOSS_ID) : null)));
         arena.appendChild(fx);
         holder.camWebFx = fx;
       }
