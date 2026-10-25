@@ -10186,7 +10186,7 @@
       /* build1659: ULT「血界・緋糸万華」— 画面全体に張り巡らされる緋色の蜘蛛の巣 */
       .shooting-camilla-bound-web-fx{position:absolute;left:0;top:0;z-index:12;pointer-events:none;
         background:center/contain no-repeat;opacity:.95;animation:camillaBoundIn .22s ease-out}
-      @keyframes camillaBoundIn{from{scale:.4;opacity:0}to{scale:1;opacity:.95}}
+      @keyframes camillaBoundIn{from{opacity:0}to{opacity:.95}} /* build1665: scaleは配置transformまで拡縮して位置がずれるため不透明度のみ */
       /* build1659: ULTの蜘蛛の巣は背面（背景のすぐ上）。自機・敵・弾・ゲージ等のUIはすべてこの上に重なる */
       .shooting-camilla-web-overlay{position:absolute;inset:0;z-index:0;pointer-events:none;
         background:radial-gradient(ellipse at 50% 50%,rgba(120,0,18,0) 34%,rgba(110,0,16,.26) 100%);
@@ -10204,8 +10204,8 @@
       @keyframes camillaWebShimmer{0%,100%{opacity:.52}50%{opacity:.7}}
       /* build1659: 蜘蛛が張り付いた瞬間に広がる小さな巣 */
       .shooting-camilla-web-burst{position:absolute;left:0;top:0;z-index:12;width:78px;height:78px;pointer-events:none;
-        will-change:transform,opacity;animation:camillaWebBurst .6s ease-out forwards}
-      .shooting-camilla-web-burst svg{width:100%;height:100%;display:block}
+        will-change:transform}
+      .shooting-camilla-web-burst svg{width:100%;height:100%;display:block;transform-origin:50% 50%;animation:camillaWebBurst .6s ease-out forwards} /* build1665: 拡縮は中のSVGで（位置ずれ防止） */
       .shooting-camilla-web-burst .cw-glow{stroke:rgba(255,50,75,.35);stroke-width:4px}
       .shooting-camilla-web-burst .cw-spoke{stroke:#ff3049;stroke-width:1.5px}
       .shooting-camilla-web-burst .cw-ring{stroke:#ff5168;stroke-width:1.3px}
@@ -14965,6 +14965,11 @@
     seed.x = seed.baseX = x; seed.y = seed.baseY = y;
     seed.seedBornAt = now;
     seed.el.classList.add('verdant-seed');
+    // 実専用の見やすいゲージ：HP（太め）＋「熟すまで」のバー
+    if (seed.hpEl) {
+      seed.hpEl.classList.add('verdant-seed-hp');
+      seed.hpEl.insertAdjacentHTML('beforeend', '<span class="verdant-seed-ripe"><b></b></span><em class="verdant-seed-label">成長の実</em>');
+    }
     positionUnit(seed.el, x, y);
     positionMiniEnemyHp(seed);
     state.normalEnemies.push(seed);
@@ -15007,7 +15012,14 @@
       seed._hh = Math.max(Number(seed._hh || 0), 20);
       const ratio = Math.max(0, Math.min(1, (now - Number(seed.seedBornAt || now)) / ripenMs));
       seed.el.style.setProperty('--seed-ripe', ratio.toFixed(3));
+      // 熟すほど大きく（位置ずれしないよう、配置用の --enemy-scale で拡大する）
+      seed.el.style.setProperty('--enemy-scale', (Math.max(.1, Number(seed.displayScale || 1)) * (.72 + ratio * .42)).toFixed(3));
       seed.el.classList.toggle('is-ripening', ratio >= .7);
+      if (seed.hpEl) {
+        const rb = seed.hpEl.querySelector('.verdant-seed-ripe b');
+        if (rb) rb.style.transform = `scaleX(${ratio.toFixed(3)})`;
+        seed.hpEl.classList.toggle('is-ripening', ratio >= .7);
+      }
       // 熟す前に配下が触れたら、その配下が吸収
       const add = (state.normalEnemies || []).find(e => e && e !== seed && e.el && e.hp > 0 && e.def &&
         e.def.verdantGrowth && !e.verdantGrown && Math.hypot(e.x - seed.x, e.y - seed.y) <= reach);
