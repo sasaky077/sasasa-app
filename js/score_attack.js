@@ -399,7 +399,7 @@ window.ScoreAttack={
 
       const res=await sb.rpc('finish_score_attack_attempt_v2',{
         p_attempt_id:attemptId,
-        p_score:Math.min(9999999,Math.max(0,Math.floor(Number(detail.score||0)))),
+        p_score:Math.min(99999999,Math.max(0,Math.floor(Number(detail.score||0)))),
         p_party_ids:resultPartyIds
       });
       if(res&&res.error)throw res.error;

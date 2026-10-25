@@ -1,29 +1,41 @@
 // ZERAPHIA build1531 — 残響の塔：クリア済み階層は自由編成・無報酬の再挑戦
+// build1661: 全20層（16〜19Fは単騎）
 // アカウント・週次進行・封印はSupabaseの3つのRPCのみを正とする。
 (function(){
   'use strict';
   const descriptions=[
-    '塔の入口。小規模な敵の群れを撃破する。',
-    '水と木の敵が現れる。属性を選んで挑もう。',
-    '第一の難関。火・水・木の混成部隊を突破せよ。',
-    '遮断壁を越えて進む第四層。温存した仲間を活かそう。',
-    '光と闇の敵が待ち受ける。相性を見極めよ。',
-    '第二の難関。移動する遮断壁の先の敵を倒せ。',
-    '上層への道。敵の数も攻撃密度も増す。',
-    '最深部を目前にした試練。ここで戦力を温存したい。',
-    '第三の難関。火・水の属性バリアを突破せよ。',
-    '第十層の守護者。PHASE2・3のHP半減時に5秒間左右反転。',
-    '五属性の天使が一体ずつ出現。濃密な弾幕を突破せよ。',
-    '光と闇の属性バリア。周期的な即死弾に警戒せよ。',
-    '蜘蛛の群れと白い三頭狼の強敵を撃破せよ。',
-    '強化リヴィア。20秒おきに10秒間だけ遮断壁が出現。',
-    '最深部の主・トワ。即死弾が常に漂い、時おり世界が暗転する。'
+    '塔の入口。\n小規模な敵の群れを撃破する。',
+    '水と木の敵が現れる。\n属性を選んで挑もう。',
+    '第一の難関。\n火・水・木の混成部隊を突破せよ。',
+    '遮断壁を越えて進む第四層。\n温存した仲間を活かそう。',
+    '光と闇の敵が待ち受ける。\n相性を見極めよ。',
+    '第二の難関。\n移動する遮断壁の先の敵を倒せ。',
+    '上層への道。\n敵の数も攻撃密度も増す。',
+    '最深部を目前にした試練。\nここで戦力を温存したい。',
+    '第三の難関。\n火・水の属性バリアを突破せよ。',
+    '第十層の守護者。\nPHASE2・3のHP半減時に5秒間左右反転。',
+    '五属性の天使が一体ずつ出現。\n濃密な弾幕を突破せよ。',
+    '光と闇の属性バリア。\n周期的な即死弾に警戒せよ。',
+    '蜘蛛の群れと\n白い三頭狼の強敵を撃破せよ。',
+    '強化リヴィア。\n20秒おきに10秒間だけ遮断壁が出現。',
+    '最深部の主・トワ。\n即死弾が常に漂い、時おり世界が暗転する。',
+    // build1661: 16〜19Fは単騎（1人のみ）の高難度
+    '【単騎】レイドボス「テスト」。',
+    '【単騎】レイドボス「カミラ」。',
+    '【単騎】レイドボス「シエン」。',
+    '【単騎】リズム 最上級。',
+    '真の最深部・強化版 トワ。'
   ];
-  const numerals=['第一層','第二層','第三層','第四層','第五層','第六層','第七層','第八層','第九層','第十層','第十一層','第十二層','第十三層','第十四層','第十五層'];
+  // build1661: 全20層。16〜19Fは単騎。
+  const TOWER_FLOORS=20;
+  const SOLO_FLOORS=[16,17,18,19];
+  const partyLimit=floor=>SOLO_FLOORS.includes(Number(floor))?1:3;
+  const partyRangeText=floor=>partyLimit(floor)===1?'1体（単騎）':'1〜3体';
+  const numerals=['第一層','第二層','第三層','第四層','第五層','第六層','第七層','第八層','第九層','第十層','第十一層','第十二層','第十三層','第十四層','第十五層','第十六層','第十七層','第十八層','第十九層','第二十層'];
 
   // v1420: tower rewards; the database RPC is authoritative for grants.
   // build1606: 聖樹の息吹は3層ごと。3F×1・6F×2・9F×3・12F×4・15F×5（サーバー claim_resonance_tower_rewards と揃える）
-  const towerBreath=floor=>floor%3===0?Object.freeze({id:'shinju_nutrition',name:'聖樹の息吹',qty:floor/3,img:'images/shinju_aura.webp'}):null;
+  const towerBreath=floor=>floor%3===0&&floor<=15?Object.freeze({id:'shinju_nutrition',name:'聖樹の息吹',qty:floor/3,img:'images/shinju_aura.webp'}):null;
   const TOWER_REWARDS_BASE=Object.freeze([
     [{id:'kyoumei_stone',name:'共鳴石',qty:3,img:'images/item_kyoumeistone.webp'}],
     [{id:'flower_r',name:'聖霊花(R)',qty:1,img:'images/item_flower_r.webp'}],
@@ -40,6 +52,12 @@
     [{id:'gem',name:'結晶',qty:30,img:'images/icon_gem.webp'}],
     ...Array.from({length:4},()=>[{id:'flower_r',name:'聖霊花(R)',qty:1,img:'images/item_flower_r.webp'}]),
     // build1486: 15F（トワ）の報酬。使い道は未定。
+    [{id:'towa_memory',name:'トワの記憶',qty:1,img:'images/item_towa_memory.webp'}],
+    // build1661: 16〜20F（サーバー finish_resonance_tower_run / claim_resonance_tower_rewards と揃える）
+    [{id:'gem',name:'結晶',qty:5,img:'images/icon_gem.webp'}],
+    [{id:'gem',name:'結晶',qty:5,img:'images/icon_gem.webp'}],
+    [{id:'gem',name:'結晶',qty:5,img:'images/icon_gem.webp'}],
+    [{id:'special_stage_ticket',name:'Special Ticket -ノア-',qty:1,img:'images/special_stage_ticket.webp'}],
     [{id:'towa_memory',name:'トワの記憶',qty:1,img:'images/item_towa_memory.webp'}]
   ]);
   const TOWER_REWARDS=Object.freeze(TOWER_REWARDS_BASE.map((list,i)=>{const breath=towerBreath(i+1);return Object.freeze(breath?[...list,breath]:[...list]);}));
@@ -114,22 +132,22 @@
   function render(){
     const list=$('resonance-tower-floor-list'); if(!list) return;
     list.textContent='';
-    for(let n=15;n>=1;n--){
-      const isTrial=[3,6,9].includes(n),isFinal=n===15;
+    for(let n=TOWER_FLOORS;n>=1;n--){
+      const isSolo=SOLO_FLOORS.includes(n),isTrial=[3,6,9].includes(n)||isSolo,isFinal=n===15||n===20;
       const done=cleared(n), isCurrent=available(n), locked=!done&&!isCurrent;
       const btn=document.createElement('button');btn.type='button';
       btn.className='resonance-tower-floor'+(isFinal?' is-final':isTrial?' is-trial':'')+(n===selected?' is-selected':'')+(done?' is-cleared':locked?' is-locked':' is-current');
       btn.dataset.floor=String(n);
       btn.setAttribute('aria-label',numerals[n-1]+'、'+(done?'突破済み':isCurrent?'挑戦可能':'未解放'));
       btn.setAttribute('aria-pressed',n===selected?'true':'false');
-      btn.style.setProperty('--floor-bg-position',(13+n*7)+'%');
+      btn.style.setProperty('--floor-bg-position',(13+((n-1)%15+1)*7)+'%');
       const num=document.createElement('span');num.className='resonance-tower-floor-no';num.textContent=String(n).padStart(2,'0')+'F';
       const copy=document.createElement('span');copy.className='resonance-tower-floor-copy';
       const name=document.createElement('span');name.className='resonance-tower-floor-name';name.textContent=numerals[n-1];
       const label=document.createElement('span');label.className='resonance-tower-floor-label';
-      label.textContent=done?'CLEAR':isCurrent?'挑戦可能':isFinal?'最深の間':isTrial?'難関':'未解放';
+      label.textContent=done?'CLEAR':isCurrent?'挑戦可能':isFinal?'最深の間':isSolo?'単騎':isTrial?'難関':'未解放';
       copy.append(name,label);btn.append(num,copy);
-      if(isTrial){const tag=document.createElement('span');tag.className='resonance-tower-trial-tag';tag.textContent='難関';btn.append(tag);}
+      if(isTrial){const tag=document.createElement('span');tag.className='resonance-tower-trial-tag';tag.textContent=isSolo?'単騎':'難関';btn.append(tag);}
       list.append(btn);
     }
     // Render rebuilds list nodes; ensure the active floor remains in view on phones.
@@ -185,7 +203,7 @@
       if(!data || !Array.isArray(data.clearedFloors)||!Array.isArray(data.sealedCharacterIds)) throw new Error('塔の進行データが不正です');
       progress=data;
       syncTowerWallet();
-      selected=progress.completed?15:currentFloor();
+      selected=progress.completed?TOWER_FLOORS:currentFloor();
     }catch(err){
       progress=null;
       console.warn('[tower] status unavailable:',err);
@@ -197,10 +215,10 @@
   function panelText(kind,number){
     if(kind==='floor'){
       if(!progress) return 'サーバーと同期できるまで出撃できません。';
-      if(cleared(number)) return descriptions[number-1]+'\nCLEAR再挑戦：所持キャラから1〜3体を自由編成。封印中のキャラも使用できます。\n※再挑戦では報酬・追加封印・階層進行はありません。';
+      if(cleared(number)) return descriptions[number-1]+'\nCLEAR再挑戦：所持キャラから'+partyRangeText(number)+'を自由編成。封印中のキャラも使用できます。\n※再挑戦では報酬・追加封印・階層進行はありません。';
       if(!available(number)) return '前の階層を突破すると解放されます。';
       const used=(progress.sealedCharacterIds||[]).length;
-      return descriptions[number-1]+'\n所持キャラから1〜3体を編成。封印中 '+used+'体。';
+      return descriptions[number-1]+'\n所持キャラから'+partyRangeText(number)+'を編成。封印中 '+used+'体。';
     }
     if(kind==='ranking') return 'ランキングは初版では未公開です。階層進行と週次封印はサーバーで保存されます。';
     return '各階層の初回突破報酬です。\n毎週日曜12:00にリセットされます。';
@@ -214,7 +232,7 @@
     let rewardList=layer.querySelector('.resonance-tower-reward-list');
     if(rewardList)rewardList.remove();
     if(kind==='rewards'||kind==='floor'){
-      rewardList=createTowerRewardList(kind==='floor'?[number]:Array.from({length:15},(_,i)=>i+1));
+      rewardList=createTowerRewardList(kind==='floor'?[number]:Array.from({length:TOWER_FLOORS},(_,i)=>i+1));
       desc.insertAdjacentElement('afterend',rewardList);
     }
     layer.querySelector('.resonance-tower-panel-foot').hidden=(kind==='rewards');
@@ -261,7 +279,7 @@
   }
   function confirmSealParty(floor, members){
     if(activeSealConfirmation || !available(Number(floor)) || !Array.isArray(members) ||
-       members.length<1 || members.length>3 ||
+       members.length<1 || members.length>partyLimit(floor) ||
        members.some(item=>!item || !Number.isInteger(Number(item.id)) || !isCharacterAvailable(Number(item.id)))){
       return Promise.resolve(false);
     }
@@ -326,8 +344,8 @@
     const replay=isReplayFloor(floor);
     if(!replay && !available(floor)){notify('現在挑戦できる階層ではありません');return false;}
     const party=Array.isArray(partyIds)?partyIds.map(Number):[];
-    if(party.length<1||party.length>3||new Set(party).size!==party.length||!party.every(isCharacterAvailable)){
-      notify(replay?'所持キャラを1〜3体選択してください':'封印されていないキャラを1〜3体選択してください');return false;
+    if(party.length<1||party.length>partyLimit(floor)||new Set(party).size!==party.length||!party.every(isCharacterAvailable)){
+      notify(replay?'所持キャラを'+partyRangeText(floor)+'選択してください':'封印されていないキャラを'+partyRangeText(floor)+'選択してください');return false;
     }
     // 練習はサーバー上の週次挑戦に一切触らない。
     if(replay){attempt={replay:true,floor,party};finishPromise=null;return true;}
@@ -375,11 +393,11 @@
           const name=item?.name||String(r.id||'不明なアイテム');
           return name+'×'+Math.max(0,Number(r.qty)||0);
         }).join('・');
-        const missingTowa=Number(data.floor)===15
+        const missingTowa=(Number(data.floor)===15||Number(data.floor)===20)
           && !grantedItems.some(r=>r.id==='towa_memory'&&Number(r.qty)>=1);
         if(missingTowa){
-          console.error('[tower] 15F reward not confirmed on server:',data.rewards);
-          notify('第15層突破。ただし「トワの記憶」の配布確認ができません。所持品を確認してください。');
+          console.error('[tower] '+data.floor+'F reward not confirmed on server:',data.rewards);
+          notify('第'+data.floor+'層突破。ただし「トワの記憶」の配布確認ができません。所持品を確認してください。');
         }else{
           notify('第'+data.floor+'層突破！ '+(rewardText?('報酬：'+rewardText+'。'):'')+' 使用した'+sealed+'体を今週封印しました');
         }}
@@ -403,7 +421,7 @@
   }
   function validSaved(saved,floor){
     return !!(saved && Number(saved.floor)===Number(floor) && Array.isArray(saved.party) &&
-      saved.party.length>=1 && saved.party.length<=3 && (saved.replay || String(saved.token||'')));
+      saved.party.length>=1 && saved.party.length<=partyLimit(floor) && (saved.replay || String(saved.token||'')));
   }
   async function restoreAttempt(saved,floor){
     floor=Number(floor);
@@ -432,7 +450,7 @@
       if(data?.state) progress=data.state;
     }catch(err){ console.warn('[tower] abandon attempt not confirmed',err); }
   }
-  window.ResonanceTower=Object.freeze({isTowerStageId:id=>/^shooting_tower_(?:0[1-9]|1[0-5])$/.test(String(id||'')),isReplayFloor,isCharacterAvailable,confirmSealParty,cancelSealConfirmation,prepareBattle,finishRun,refresh,getResumeAttempt,restoreAttempt,abandonAttempt});
+  window.ResonanceTower=Object.freeze({isTowerStageId:id=>/^shooting_tower_(?:0[1-9]|1[0-9]|20)$/.test(String(id||'')),isReplayFloor,isCharacterAvailable,confirmSealParty,cancelSealConfirmation,prepareBattle,finishRun,refresh,getResumeAttempt,restoreAttempt,abandonAttempt});
   window.openResonanceTower=function(){
     replayFloor=0;attempt=null;finishPromise=null;
     if(typeof window.requireChapter03ContentUnlock!=='function'||!window.requireChapter03ContentUnlock())return;
@@ -449,7 +467,7 @@
     screen.dataset.towerBound='true';
     list.addEventListener('click',e=>{
       const btn=e.target.closest('button[data-floor]');if(!btn||!list.contains(btn))return;
-      const floor=Number(btn.dataset.floor);if(!Number.isInteger(floor)||floor<1||floor>15)return;
+      const floor=Number(btn.dataset.floor);if(!Number.isInteger(floor)||floor<1||floor>TOWER_FLOORS)return;
       selected=floor;render();openPanel('floor',floor);
     });
     screen.querySelector('.resonance-tower-actions')?.addEventListener('click',e=>{

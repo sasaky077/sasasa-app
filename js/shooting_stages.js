@@ -239,6 +239,45 @@
       }),
       mission:Object.freeze({type:SHOOTING_MISSION_TYPE.BOSS_CLEAR,text:'トワを撃破'}),playable:true
     });
+    // build1661 — 16F〜20F。16〜19Fは単騎（maxPartySize:1）の高難度。
+    //  16〜18F：レイドボス（テスト／カミラ／シエン）を塔用に調整。共有HP・制限時間なし、HPは単騎向けに設定。
+    //  19F：律動（リズム）最上級。20F：トワEX（15Fより強化）。報酬・進行はサーバー（resonance_tower RPC）が確定。
+    if (floor >= 16 && floor <= 20) {
+      const common = { id:'shooting_tower_'+floor, chapter:0, stageNo:floor, eventId:'resonance_tower', eventTitle:'残響の塔',
+        name:'第'+['十六','十七','十八','十九','二十'][floor-16]+'層', type:'boss', background:'images/battle_bg_01.webp', playable:true };
+      if (floor === 16) return Object.freeze({ ...common, difficultyLabel:'16F / 単騎', maxPartySize:1,
+        enemyIds:Object.freeze([SHOOTING_ENEMY_ID.TOWER16_TEST]), bossElement:'wood', enemyElement:'wood',
+        bossGaugeHps:Object.freeze([7000, 7500, 8000]),
+        mission:Object.freeze({type:SHOOTING_MISSION_TYPE.BOSS_CLEAR,text:'単騎でテストを撃破'}) });
+      if (floor === 17) return Object.freeze({ ...common, difficultyLabel:'17F / 単騎', maxPartySize:1,
+        enemyIds:Object.freeze([SHOOTING_ENEMY_ID.TOWER17_CAMILLA]), bossElement:'fire', enemyElement:'fire',
+        bossGaugeHps:Object.freeze([7500, 8000, 9000]),
+        mission:Object.freeze({type:SHOOTING_MISSION_TYPE.BOSS_CLEAR,text:'単騎でカミラを撃破'}) });
+      if (floor === 18) return Object.freeze({ ...common, difficultyLabel:'18F / 単騎', maxPartySize:1,
+        enemyIds:Object.freeze([SHOOTING_ENEMY_ID.TOWER18_SHIEN]), bossElement:'dark', enemyElement:'dark',
+        bossGaugeHps:Object.freeze([8000, 9000, 9500]),
+        mission:Object.freeze({type:SHOOTING_MISSION_TYPE.BOSS_CLEAR,text:'単騎でシエンを撃破'}) });
+      if (floor === 19) return Object.freeze({ ...common, difficultyLabel:'19F / 単騎', maxPartySize:1,
+        // 律動 -仮面舞踏会- 最上級（shooting_event_rhythm_test）と同じ設定。報酬設定は持たない。
+        rhythm:Object.freeze({ difficulty:'super', travelMs:900, holeBonus:0 }),
+        introImage:'images/rhythm_masquerade_battle_start.webp',
+        enemyIds:Object.freeze([SHOOTING_ENEMY_ID.TOWER19_RHYTHM]), bossElement:'dark', enemyElement:'dark',
+        mission:Object.freeze({type:SHOOTING_MISSION_TYPE.BOSS_CLEAR,text:'単騎で弾幕の穴をたどって進め'}) });
+      return Object.freeze({ ...common, difficultyLabel:'20F / 最深部 EX',
+        enemyIds:Object.freeze([SHOOTING_ENEMY_ID.TOWER20_TOWA_EX]),
+        bossElement:'dark', enemyElement:'dark', bossVisualScale:0.62,
+        introImage:'images/tower15_boss_battle_start.webp',
+        // 15Fより：WARNING 3→4・速く・補充が早い／暗転が早く・長く・頻繁／通常弾幕の間隔×0.88
+        tower15Echo:Object.freeze({
+          warningCount:4, warningSpeed:132, warningRespawnMs:1800, fireIntervalScale:0.88,
+          blackout:Object.freeze({
+            firstAtMs:7000,
+            1:Object.freeze({everyMs:13000, durationMs:4600}),
+            2:Object.freeze({everyMs:9000, durationMs:5800})
+          })
+        }),
+        mission:Object.freeze({type:SHOOTING_MISSION_TYPE.BOSS_CLEAR,text:'トワEXを撃破'}) });
+    }
     if (floor === 10) return Object.freeze({
       id:'shooting_tower_10', chapter:0, stageNo:10,
       eventId:'resonance_tower', eventTitle:'残響の塔', difficultyLabel:'10F / 最深部',
@@ -473,7 +512,7 @@
   }
 
   const SHOOTING_STAGES = Object.freeze({
-    ...Object.fromEntries(Array.from({length:15},(_,i)=>{const n=i+1;return ['shooting_tower_'+String(n).padStart(2,'0'),makeResonanceTowerStage(n)];})),
+    ...Object.fromEntries(Array.from({length:20},(_,i)=>{const n=i+1;return ['shooting_tower_'+String(n).padStart(2,'0'),makeResonanceTowerStage(n)];})),
     // 本編の敵・ショット・ULT・操作系を共用するが、通常ステージには登録しない試遊専用ステージ。
     [SHOOTING_STAGE_ID.GACHA_TRIAL]: Object.freeze({
       id: SHOOTING_STAGE_ID.GACHA_TRIAL,

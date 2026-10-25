@@ -996,6 +996,11 @@
   function isResonanceTowerStage() {
     return !!(selectedStage && selectedStage.eventId === 'resonance_tower');
   }
+  // build1661: ステージごとの出撃人数上限（塔16〜19Fは単騎＝1）。未指定は通常どおり PARTY_SIZE。
+  function getStagePartySize() {
+    const n = Math.floor(Number(selectedStage && selectedStage.maxPartySize));
+    return Number.isFinite(n) && n >= 1 ? Math.min(PARTY_SIZE, n) : PARTY_SIZE;
+  }
   function isResonanceTowerReplay() {
     return isResonanceTowerStage() && !!(window.ResonanceTower &&
       window.ResonanceTower.isReplayFloor(Number(selectedStage.stageNo)));
@@ -1340,7 +1345,7 @@
   }
 
   const SCORE_ATTACK_BOSS_HP = 100000;
-  const SCORE_ATTACK_MAX_SCORE = 9999999;
+  const SCORE_ATTACK_MAX_SCORE = 99999999; // build1661: 上限 9,999,999 → 99,999,999
   const SCORE_ATTACK_BOSS_RESPAWN_MS = 350;
 
   function getScoreAttackComboMultiplier(comboValue) {
@@ -2417,11 +2422,11 @@
     // ステージ固有の指定編成以外に、エリ単独・エリ先頭の強制制限は設けない。
     selectedPartyIds = selectedPartyIds.filter((id, index, arr) =>
       arr.indexOf(id) === index && isShootingCharacterOwned(id)
-    ).slice(0, PARTY_SIZE);
+    ).slice(0, getStagePartySize());
   }
 
   function isShootingPartyReady() {
-    if (selectedPartyIds.length < 1 || selectedPartyIds.length > PARTY_SIZE) return false;
+    if (selectedPartyIds.length < 1 || selectedPartyIds.length > getStagePartySize()) return false;
     // build1643: 位相回遊は必ず3人で出撃。
     if (isPhaseOdysseyStage() && selectedPartyIds.length !== PARTY_SIZE) return false;
 
@@ -2635,6 +2640,9 @@
     if (selectable && (record.partyIds.length !== selectable.requiredSize ||
         record.partyIds.some(id => !selectable.allowedIds.includes(id)))) {
       return { ok: false, reason: '現在のステージ指定編成とは異なります' };
+    }
+    if (record.partyIds.length > getStagePartySize()) {
+      return { ok: false, reason: `このステージは${getStagePartySize()}人までです` };
     }
     if (record.partyIds.some(id => !isShootingCharacterAvailableForCurrentParty(id))) {
       return { ok: false, reason: isResonanceTowerStage() && !isResonanceTowerReplay()
@@ -4270,7 +4278,7 @@
       ? fixedStoryParty.length
       : (selectableStoryParty
         ? selectableStoryParty.requiredSize
-        : PARTY_SIZE);
+        : getStagePartySize());
 
     wrap.innerHTML = Array.from({ length: slotCount }, (_, i) => {
       const id = selectedPartyIds[i];
@@ -4419,7 +4427,9 @@
       } else if (isResonanceTowerStage()) {
         ruleText.textContent = isResonanceTowerReplay()
           ? '残響の塔 · CLEAR再挑戦 / 所持キャラ自由編成 / 報酬・封印なし'
-          : '残響の塔 · 最大3人 / 勝利すると使用キャラは週内封印';
+          : (getStagePartySize() === 1
+            ? '残響の塔 · 単騎（1人のみ） / 勝利すると使用キャラは週内封印'
+            : '残響の塔 · 最大3人 / 勝利すると使用キャラは週内封印');
       } else if (fixedStoryParty) {
         const names = fixedStoryParty
           .map(id => buildResonatedCharacterProfile(id)?.name || '')
@@ -4484,7 +4494,7 @@
         !!SHOOTING_CHARACTERS[id] &&
         isShootingCharacterAvailableForCurrentParty(id)
       )
-      .slice(0, PARTY_SIZE);
+      .slice(0, getStagePartySize());
 
     if (isStoryShootingStage()) ensureStoryEriLeader();
 
@@ -16776,7 +16786,8 @@
     // build1517: 塔15Fの2ゲージ目だけ、通常弾幕の毎秒発射量を15%減らす。
     // 1 / 0.85倍の間隔にすることで、螺旋・扇・リングの形と弾速は維持する。
     // PHASE1と常駐WARNING弾、暗転の時間には影響させない。
-    const phase2DensityInterval = phase === 2 ? (1 / 0.85) : 1;
+    // build1661: 20F（トワEX）はステージ設定 fireIntervalScale で通常弾幕の間隔を詰める
+    const phase2DensityInterval = (phase === 2 ? (1 / 0.85) : 1) * Math.max(0.5, Math.min(1.5, Number((getTower15Config() || {}).fireIntervalScale || 1)));
 
     // 螺旋
     const spiralEvery = getStageAdjustedEnemyFireInterval((phase === 1 ? 150 : 165) * phase2DensityInterval);
@@ -26050,7 +26061,7 @@
       ensureBossWeaknessBarrier();
       root.setAttribute('data-shooting-stage', selectedStage.id);
       // build1591: レイドはボスごとにバトル背景を変える（CSS: [data-raid-boss]）
-      if (isRaidStage() && BOSS?.id) root.setAttribute('data-raid-boss', BOSS.id); else root.removeAttribute('data-raid-boss');
+      if ((isRaidStage() || BOSS?.raidVisualId) && BOSS?.id) root.setAttribute('data-raid-boss', BOSS.raidVisualId || BOSS.id); /* build1661: 塔のレイドボスもレイドと同じ見た目 */ else root.removeAttribute('data-raid-boss');
       root.setAttribute('data-battle-type','boss');
       root.setAttribute('data-boss-phase','1');
       root.classList.remove('boss-defeat-flash','boss-phase-flash','boss-phase-pause','player-defeat-flash');
@@ -27233,7 +27244,8 @@
 
     const idx = selectedPartyIds.indexOf(id);
     if (idx >= 0) selectedPartyIds.splice(idx, 1);
-    else if (selectedPartyIds.length < PARTY_SIZE) selectedPartyIds.push(id);
+    else if (selectedPartyIds.length < getStagePartySize()) selectedPartyIds.push(id);
+    else if (getStagePartySize() === 1) selectedPartyIds = [id]; // build1661: 単騎は選び直しで入れ替え
 
     if (isStoryShootingStage()) ensureStoryEriLeader();
     selectedCharacterId = selectedPartyIds[0] || id;
@@ -27288,7 +27300,7 @@
     if (isRhythmStage()) return 'rhythm';
     // build1643: 敵定義で曲を指定（イノリ＝japan）
     if (BOSS && BOSS.bgmPool && SHOOTING_BGM_POOLS[BOSS.bgmPool] && selectedStage && selectedStage.type !== 'normal') return BOSS.bgmPool;
-    if (isResonanceTowerStage()) return Number(selectedStage && selectedStage.stageNo) === 15 ? 'tower15' : 'tower';
+    if (isResonanceTowerStage()) return [15, 20].includes(Number(selectedStage && selectedStage.stageNo)) ? 'tower15' : 'tower';
     if (selectedStage && selectedStage.type === 'normal') return 'normal';
     return 'boss';
   }
@@ -28493,7 +28505,7 @@
       if (poFloor && poFloor % 10 !== 0 && poApi && typeof poApi.pickBackground === 'function') root.setAttribute('data-po-bg', String(poApi.pickBackground(poFloor)));
       else root.removeAttribute('data-po-bg');
     }
-    if (isRaidStage() && BOSS?.id) root.setAttribute('data-raid-boss', BOSS.id); else root.removeAttribute('data-raid-boss');
+    if ((isRaidStage() || BOSS?.raidVisualId) && BOSS?.id) root.setAttribute('data-raid-boss', BOSS.raidVisualId || BOSS.id); /* build1661: 塔のレイドボスもレイドと同じ見た目 */ else root.removeAttribute('data-raid-boss');
     root.setAttribute('data-battle-type', selectedStage ? selectedStage.type : 'boss');
     applyShootingUiLayout(shootingUiLayoutType);
 

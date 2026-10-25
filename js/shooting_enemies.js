@@ -55,6 +55,12 @@
     OVERSEER_AMBUSH: 'shooting_overseer_ambush',
     // build1485: 残響の塔15F BOSS
     TOWER15_BOSS: 'shooting_tower15_boss',
+    // build1661: 残響の塔16〜20F（レイドボス・トワの塔仕様）
+    TOWER16_TEST: 'shooting_tower16_test',
+    TOWER17_CAMILLA: 'shooting_tower17_camilla',
+    TOWER18_SHIEN: 'shooting_tower18_shien',
+    TOWER19_RHYTHM: 'shooting_tower19_rhythm',
+    TOWER20_TOWA_EX: 'shooting_tower20_towa_ex',
     // build1630: リズム弾幕（試作）
     RHYTHM_GATE: 'shooting_rhythm_gate',
     RHYTHM_GATE_ADVANCED: 'shooting_rhythm_gate_advanced', // build1637 上級（2PHASE）
@@ -81,7 +87,7 @@
   //
   // remnant_04～08:
   //   後続CHAPTER用。
-  const SHOOTING_ENEMIES = Object.freeze({
+  const SHOOTING_ENEMIES_BASE = Object.freeze({
     // ------------------------------------------------------------
     // NORMAL ENEMIES
     // ------------------------------------------------------------
@@ -806,6 +812,40 @@
       implemented: false,
     }),
   });
+
+  // ------------------------------------------------------------
+  // build1661: 残響の塔16〜20F。元のボス（行動・ギミック）をそのまま使い、塔用に攻撃だけ強化した別定義。
+  //  ・16〜18F：レイドボス（単騎の高難度）。HPはステージ側（bossGaugeHps）で設定。
+  //    raidVisualId：レイドと同じ背景・表示サイズ（CSSの [data-raid-boss]）を使うための見た目用ID。
+  //  ・20F：トワEX（15Fより強い）。
+  // ------------------------------------------------------------
+  const towerVariant = (baseId, patch) => Object.freeze({ ...SHOOTING_ENEMIES_BASE[baseId], ...patch });
+  const SHOOTING_ENEMY_TOWER_VARIANTS = Object.freeze({
+    [SHOOTING_ENEMY_ID.TOWER16_TEST]: towerVariant(SHOOTING_ENEMY_ID.RAID_TEST, {
+      id: SHOOTING_ENEMY_ID.TOWER16_TEST, displayName: 'ECHO TOWER 16F　テスト',
+      raidVisualId: SHOOTING_ENEMY_ID.RAID_TEST,
+      bulletSpeed: 258, fireRate: 760, bulletDamage: 215,
+    }),
+    [SHOOTING_ENEMY_ID.TOWER17_CAMILLA]: towerVariant(SHOOTING_ENEMY_ID.RAID_CAMILLA, {
+      id: SHOOTING_ENEMY_ID.TOWER17_CAMILLA, displayName: 'ECHO TOWER 17F　カミラ',
+      raidVisualId: SHOOTING_ENEMY_ID.RAID_CAMILLA,
+      bulletSpeed: 210, fireRate: 790, bulletDamage: 225,
+    }),
+    [SHOOTING_ENEMY_ID.TOWER18_SHIEN]: towerVariant(SHOOTING_ENEMY_ID.RAID_SHIEN, {
+      id: SHOOTING_ENEMY_ID.TOWER18_SHIEN, displayName: 'ECHO TOWER 18F　シエン',
+      raidVisualId: SHOOTING_ENEMY_ID.RAID_SHIEN,
+      bulletSpeed: 282, fireRate: 890, bulletDamage: 230, contactDamage: 310, chargeSpeed: 640,
+    }),
+    [SHOOTING_ENEMY_ID.TOWER19_RHYTHM]: towerVariant(SHOOTING_ENEMY_ID.RHYTHM_GATE, {
+      id: SHOOTING_ENEMY_ID.TOWER19_RHYTHM, displayName: 'ECHO TOWER 19F　リズム',
+    }),
+    [SHOOTING_ENEMY_ID.TOWER20_TOWA_EX]: towerVariant(SHOOTING_ENEMY_ID.TOWER15_BOSS, {
+      id: SHOOTING_ENEMY_ID.TOWER20_TOWA_EX, name: 'トワ', displayName: 'ECHO TOWER 20F　トワ EX',
+      gaugeHps: Object.freeze([15000, 17000]), gauges: 2,
+      bulletSpeed: 196, bulletDamage: 265,
+    }),
+  });
+  const SHOOTING_ENEMIES = Object.freeze({ ...SHOOTING_ENEMIES_BASE, ...SHOOTING_ENEMY_TOWER_VARIANTS });
 
   const DEFAULT_SHOOTING_ENEMY_ID = SHOOTING_ENEMY_ID.REMNANT_01;
 
