@@ -246,6 +246,8 @@
     const foot=layer.querySelector('.resonance-tower-panel-foot');
     if(foot && kind==='floor') {
       foot.hidden=false;
+      // textContent内の改行(\n)を画面上にも反映する。
+      foot.style.whiteSpace='pre-line';
       foot.textContent=cleared(number)
         ? 'クリア済み階層の練習です。\n報酬・追加封印・進行更新はありません。'
         : '使用した仲間は勝利時に封印されます。\n敗北、中断時は封印されません。';
