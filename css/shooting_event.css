@@ -15217,3 +15217,6 @@ html body #shooting-event-root #shooting-boss#shooting-boss{
 }
 @keyframes verdantVine{0%{clip-path:inset(0 100% 0 0);opacity:1}45%{clip-path:inset(0 0 0 0);opacity:1}100%{clip-path:inset(0 0 0 0);opacity:0}}
 .zss-gimmick-chip.gimmick-verdantSeed b{color:#3f6a2c}
+
+/* build1664: ポーズメニューのボタンは hidden 属性で確実に消す（.shooting-pause-action の display:block が hidden を上書きしていた） */
+#shooting-event-root .shooting-pause-action[hidden]{display:none!important}

@@ -27747,14 +27747,25 @@
     return true;
   }
 
+  // build1664: ポーズの「最初からやり直す」。サーバーの挑戦権・進行が絡むステージ（残響の塔・位相回遊・デイリー巡行・レイド）では出さない。
+  function canRestartShootingStageFromPause() {
+    return !!selectedStage && !(isResonanceTowerStage() || isPhaseOdysseyStage() || isDailyQuestStage() || isRaidStage());
+  }
+  function syncShootingPauseMenuActions(menu) {
+    if (!menu) return;
+    const exitAction = menu.querySelector('.shooting-pause-exit');
+    if (exitAction) exitAction.hidden = isPhaseOdysseyStage();
+    const restartAction = menu.querySelector('.shooting-pause-restart');
+    if (restartAction) restartAction.hidden = !canRestartShootingStageFromPause();
+  }
+
   function ensureShootingPauseMenu() {
     const root = document.getElementById(ROOT_ID);
     if (!root) return null;
 
     let menu = root.querySelector('#shooting-pause-menu');
     if (menu) {
-      const exitAction = menu.querySelector('.shooting-pause-exit');
-      if (exitAction) exitAction.hidden = isPhaseOdysseyStage();
+      syncShootingPauseMenuActions(menu);
       updateShootingBattleBgmMenuUi();
       updateShootingUiFlipMenuUi();
       return menu;
@@ -27776,12 +27787,12 @@
           <span>UI反転　</span><strong id="shooting-pause-ui-flip-status">標準</strong>
         </button>
         <button type="button" class="shooting-pause-action shooting-pause-exit" onclick="exitShootingStageFromPause()">ステージを終了する</button>
+        <button type="button" class="shooting-pause-action shooting-pause-restart" onclick="restartShootingStageFromPause()">最初からやり直す</button>
         <button type="button" class="shooting-pause-action shooting-pause-close" onclick="closeShootingPauseMenu()">閉じる</button>
       </section>
     `;
     root.appendChild(menu);
-    const exitAction = menu.querySelector('.shooting-pause-exit');
-    if (exitAction) exitAction.hidden = isPhaseOdysseyStage();
+    syncShootingPauseMenuActions(menu);
     updateShootingBattleBgmMenuUi();
     updateShootingUiFlipMenuUi();
     return menu;
@@ -27876,6 +27887,7 @@
 
   window.restartShootingStageFromPause = function () {
     if (rejectShootingBattleAbandon()) return;
+    if (!canRestartShootingStageFromPause()) return; // build1664: 念のため処理側でも止める
     const menu = document.getElementById('shooting-pause-menu');
     if (menu) {
       menu.classList.remove('show');
