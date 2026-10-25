@@ -2147,6 +2147,49 @@
     if (Number.isFinite(remoteHp) && remoteHp > 0) return remoteHp;
     return Number(selectedStage && selectedStage.raid && selectedStage.raid.maxHp) || 100000;
   }
+  // ------------------------------------------------------------
+  // build1662: デイリーレイド 周回制
+  //  1周目＝最大HP、2周目以降＝その半分。HPが0になってもバトルは終わらず、次の周のボスへ（残り時間はそのまま）。
+  //  サーバーへ送るダメージは周をまたいだ合計（raidLapBase＋今の周で削った分）。
+  //  サーバーが周回制に未対応（status.lap_mode なし）の間は従来どおり、HP0で勝利。
+  // ------------------------------------------------------------
+  function isRaidLapMode() {
+    return !!(isRaidStage() && selectedRaidContext && selectedRaidContext.lapMode);
+  }
+  function getRaidLap1Hp() {
+    return Math.max(1, Number(selectedRaidContext && selectedRaidContext.maxHp) || Number(selectedStage && selectedStage.raid && selectedStage.raid.maxHp) || 100000);
+  }
+  function getRaidLapHp(lap) {
+    const max = getRaidLap1Hp();
+    return Number(lap) <= 1 ? max : Math.max(1, Math.round(max * 0.5));
+  }
+  function getRaidBattleHpMax() {
+    if (isRaidLapMode()) return Math.max(1, Number(selectedRaidContext.lapHp) || getRaidLapHp(Number(selectedRaidContext.lap) || 1));
+    return Number(selectedStage && selectedStage.raid && selectedStage.raid.maxHp) || 100000;
+  }
+  function getRaidDamageDealt() {
+    if (!state) return 0;
+    const lapStart = Number(state.raidLapStartHp || state.raidInitialHp || 0);
+    return Math.max(0, Math.floor(Number(state.raidLapBase || 0) + lapStart - Number(state.boss && state.boss.hp || 0)));
+  }
+  function advanceRaidLap() {
+    if (!state || !state.boss) return;
+    state.raidLapBase = Number(state.raidLapBase || 0) + Math.max(0, Number(state.raidLapStartHp || state.raidInitialHp || 0));
+    state.raidLap = Math.max(1, Number(state.raidLap || 1)) + 1;
+    const hp = getRaidLapHp(state.raidLap);
+    state.boss.hp = hp;
+    state.boss.hpMax = hp;
+    state.boss.gaugeHp = Math.ceil(hp / 3);
+    state.boss.gaugeHps = null;
+    state.boss.gauges = 3;
+    state.boss.phase = 1;
+    state.raidLapStartHp = hp;
+    clearEnemyBulletsOnly();
+    syncBossPhaseVisual();
+    flashBossHit(true);
+    showFacelessBattleCut(`${state.raidLap}周目`, `HP ${hp.toLocaleString('ja-JP')} · 残り時間はそのまま`);
+    renderHud();
+  }
 
   function isStoryShootingStage() {
     return !!(
@@ -2809,7 +2852,7 @@
         if (isRaidStage() && state?.boss) {
           const raidHp = Math.max(0, Math.floor(Number(state.boss.hp || 0)));
           const raidMaxHp = Math.max(1, Math.floor(Number(state.boss.hpMax || selectedRaidContext?.maxHp || 100000)));
-          setBattleScorePlate(score, `BOSS HP / ${raidMaxHp.toLocaleString('ja-JP')}`, raidHp.toLocaleString('ja-JP'));
+          setBattleScorePlate(score, isRaidLapMode() ? `${Number(state?.raidLap || 1)}周目 HP / ${raidMaxHp.toLocaleString('ja-JP')}` : `BOSS HP / ${raidMaxHp.toLocaleString('ja-JP')}`, raidHp.toLocaleString('ja-JP'));
         } else if (isPhaseOdysseyStage()) {
           setBattleScorePlate(score, 'PHASE ODYSSEY', `FLOOR ${Number(selectedStage?.stageNo || 1)}`);
         } else {
@@ -3337,7 +3380,10 @@
       bossY: Number(state.boss?.y || 0),
       normalLastSpawnAgoMs: Math.max(0, battleNow - Number(state.normalLastSpawnAt || battleNow)),
       raidInitialHp: Number(state.raidInitialHp || 0),
-      raidDamageDealt: Number(state.raidDamageDealt || 0),
+      raidDamageDealt: isRaidStage() ? getRaidDamageDealt() : Number(state.raidDamageDealt || 0),
+      raidLap: Number(state.raidLap || 1),
+      raidLapBase: Number(state.raidLapBase || 0),
+      raidLapStartHp: Number(state.raidLapStartHp || 0),
       // build1643: サーバーが発行した挑戦トークン類。メモリ上にしか無かったため、
       // 落ちて再開すると報酬・進行の確定ができなかった（塔・ノア・デイリー・初回クリア報酬）。
       secureRunToken: String(state.secureRunToken || ''),
@@ -3607,6 +3653,10 @@
     if (isRaidStage()) {
       state.raidInitialHp = Math.max(Number(snapshot.raidInitialHp || 0), Number(state.boss?.hp || 0));
       state.raidDamageDealt = Math.max(0, Number(snapshot.raidDamageDealt || 0));
+      // build1662: 周回の途中から再開
+      state.raidLap = Math.max(1, Number(snapshot.raidLap || state.raidLap || 1));
+      state.raidLapBase = Math.max(0, Number(snapshot.raidLapBase || 0));
+      state.raidLapStartHp = Number(snapshot.raidLapStartHp || 0) > 0 ? Number(snapshot.raidLapStartHp) : state.raidInitialHp;
       state.raidAttemptFinished = false;
     }
 
@@ -3682,7 +3732,9 @@
     if (!ctx || !ctx.attemptStarted || ctx.adminTest) return;
     const initial = Number(snapshot.raidInitialHp || ctx.currentHp || 0);
     const bossHp = Number(snapshot.boss && snapshot.boss.hp);
-    const damage = Math.max(0, Math.floor(Number.isFinite(bossHp) && initial > 0 ? initial - bossHp : Number(snapshot.raidDamageDealt || 0)));
+    // build1662: 周回をまたいだ分（raidLapBase）も含める
+    const lapStart = Number(snapshot.raidLapStartHp || initial);
+    const damage = Math.max(0, Math.floor(Number.isFinite(bossHp) && lapStart > 0 ? Number(snapshot.raidLapBase || 0) + lapStart - bossHp : Number(snapshot.raidDamageDealt || 0)));
     const pending = { raidId: String(ctx.raidId || ''), damage, at: Date.now() };
     const queue = () => { try { localStorage.setItem(RAID_PENDING_FINISH_KEY, JSON.stringify(pending)); } catch (_) {} };
     queue();
@@ -4639,8 +4691,8 @@
                 selectedStage?.element
               ),
         hp: isRaidStage() ? getRaidStartingHp() : (isAmbushStage() ? getAmbushWaveHp(1) : (isFacelessStage() ? getFacelessWaveHp(1) : stageBossTotalHp)),
-        hpMax: isRaidStage() ? Number(selectedStage.raid.maxHp || 100000) : (isAmbushStage() ? getAmbushWaveHp(1) : (isFacelessStage() ? getFacelessWaveHp(1) : stageBossTotalHp)),
-        gaugeHp: isRaidStage() ? Math.ceil(Number(selectedStage.raid.maxHp || 100000) / 3) : (isAmbushStage() ? getAmbushWaveHp(1) : (isFacelessStage() ? getFacelessWaveHp(1) : stageBossGaugeHp)),
+        hpMax: isRaidStage() ? getRaidBattleHpMax() : (isAmbushStage() ? getAmbushWaveHp(1) : (isFacelessStage() ? getFacelessWaveHp(1) : stageBossTotalHp)),
+        gaugeHp: isRaidStage() ? Math.ceil(getRaidBattleHpMax() / 3) : (isAmbushStage() ? getAmbushWaveHp(1) : (isFacelessStage() ? getFacelessWaveHp(1) : stageBossGaugeHp)),
         gaugeHps: (!isRaidStage() && !isFacelessStage() && !isAmbushStage() && stageBossGaugeHps && stageBossGaugeHps.length)
           ? stageBossGaugeHps.slice()
           : null,
@@ -4649,6 +4701,9 @@
       },
       raidInitialHp: isRaidStage() ? getRaidStartingHp() : 0,
       raidDamageDealt: 0,
+      raidLap: isRaidLapMode() ? Math.max(1, Number(selectedRaidContext.lap) || 1) : 1, // build1662
+      raidLapBase: 0,
+      raidLapStartHp: isRaidStage() ? getRaidStartingHp() : 0,
       raidAttemptFinished: false,
       raidLastBossHitVisualAt: 0,
       raidLastBossDamageNumberAt: 0,
@@ -5255,7 +5310,7 @@
         if (isRaidStage()) {
           const raidHp = Math.max(0, Math.floor(Number(state.boss?.hp || 0)));
           const raidMaxHp = Math.max(1, Math.floor(Number(state.boss?.hpMax || selectedRaidContext?.maxHp || 100000)));
-          setBattleScorePlate(score, `BOSS HP / ${raidMaxHp.toLocaleString('ja-JP')}`, raidHp.toLocaleString('ja-JP'));
+          setBattleScorePlate(score, isRaidLapMode() ? `${Number(state?.raidLap || 1)}周目 HP / ${raidMaxHp.toLocaleString('ja-JP')}` : `BOSS HP / ${raidMaxHp.toLocaleString('ja-JP')}`, raidHp.toLocaleString('ja-JP'));
         } else if (isPhaseOdysseyStage()) {
           setBattleScorePlate(score, 'PHASE ODYSSEY', `FLOOR ${Number(selectedStage?.stageNo || 1)}`);
         } else {
@@ -23454,7 +23509,7 @@
       member.hp = Math.max(0, member.hp - dmg);
       drained += dmg;
       const cap = Number(state.boss.hpMax || state.boss.hp);
-      const raidCap = isRaidStage() && Number(state.raidInitialHp) > 0 ? Number(state.raidInitialHp) : cap;
+      const raidCap = isRaidStage() && Number(state.raidInitialHp) > 0 && !(Number(state.raidLapBase || 0) > 0) ? Number(state.raidInitialHp) : cap; // build1662: 2周目以降はその周の最大HPまで
       const before = Number(state.boss.hp);
       const after = Math.min(cap, raidCap, before + CAMILLA_HEAL_PER_TICK);
       if (after > before) { state.boss.hp = after; healed += Math.round(after - before); }
@@ -25019,6 +25074,12 @@
   function beginBossDefeat() {
     if (!state || state.ended || state.finishing) return;
 
+    // build1662: デイリーレイド周回制。HP0で次の周へ（バトルは時間切れ・全滅まで続く）
+    if (isRaidLapMode()) {
+      advanceRaidLap();
+      return;
+    }
+
     if (isScoreAttackStage()) {
       // build1530: no premature results in this 60-second challenge.
       // Hold HP=0 for a short respawn interval; 0-HP enemies cannot be hit.
@@ -26284,9 +26345,9 @@
       if (raidRow) raidRow.style.display = 'none';
       if (retryBtn) retryBtn.style.display = 'none';
     } else if (isRaidStage()) {
-      state.raidDamageDealt = Math.max(0, Math.floor(Number(state.raidInitialHp || 0) - Number(state.boss && state.boss.hp || 0)));
+      state.raidDamageDealt = getRaidDamageDealt(); // build1662: 周をまたいだ合計
       if (raidRow) raidRow.style.display = '';
-      if (raidDamageEl) raidDamageEl.textContent = state.raidDamageDealt.toLocaleString('ja-JP');
+      if (raidDamageEl) raidDamageEl.textContent = state.raidDamageDealt.toLocaleString('ja-JP') + (isRaidLapMode() && Number(state.raidLap || 1) > Math.max(1, Number(selectedRaidContext.lap) || 1) ? `（${Number(state.raidLap)}周目まで到達）` : '');
       if (retryBtn) retryBtn.style.display = 'none';
       if (!state.raidAttemptFinished && window.RaidEvent && typeof window.RaidEvent.finishAttempt === 'function') {
         state.raidAttemptFinished = true;
@@ -27858,7 +27919,12 @@
         raidDate: begun.raid_date || selectedRaidContext.raidDate || '',
         adminTest: false,
         pendingAttempt: false,
-        attemptStarted: true
+        attemptStarted: true,
+        // build1662: 周回制（サーバー対応後のみ）。開始時点の周・その周のHP・ブレイク状態を最新に
+        lapMode: begun.lap_mode === true,
+        lap: Math.max(1, Number(begun.lap || selectedRaidContext.lap || 1)),
+        lapHp: Math.max(1, Number(begun.lap_hp || selectedRaidContext.lapHp || begun.max_hp || 100000)),
+        broken: begun.broken === true || !!selectedRaidContext.broken
       };
 
       if (window.RaidEvent && typeof window.RaidEvent.refreshFriendHomeNotice === 'function') {
@@ -28823,7 +28889,7 @@
       window.RaidEvent &&
       typeof window.RaidEvent.finishAttempt === 'function'
     ) {
-      state.raidDamageDealt = Math.max(0, Math.floor(Number(state.raidInitialHp || 0) - Number(state.boss && state.boss.hp || 0)));
+      state.raidDamageDealt = getRaidDamageDealt(); // build1662: 周をまたいだ合計
       state.raidAttemptFinished = true;
       void window.RaidEvent.finishAttempt(state.raidDamageDealt, { aborted: true });
     }

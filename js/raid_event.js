@@ -1714,7 +1714,8 @@
     if(ctx&&String(ctx.raidId||'')===String(raidId||'')){
       const initial=Number(snap.raidInitialHp||ctx.currentHp||0);
       const bossHp=Number(snap.boss&&snap.boss.hp);
-      const dmg=Number.isFinite(bossHp)&&initial>0?initial-bossHp:Number(snap.raidDamageDealt||0);
+      const lapStart=Number(snap.raidLapStartHp||initial); // build1662: 周回をまたいだ分も含める
+      const dmg=Number.isFinite(bossHp)&&lapStart>0?Number(snap.raidLapBase||0)+lapStart-bossHp:Number(snap.raidDamageDealt||0);
       return {damage:n(dmg),source:'resume'};
     }
     return {damage:0,source:'none'};
@@ -1917,14 +1918,24 @@
     box.hidden=false;
     const lethal=predicted<=0;
     box.classList.toggle('is-lethal',lethal);
+    const lapNow=status&&status.lap_mode?Math.max(1,n(status.lap)||1):0;
     box.innerHTML=lethal
-      ? `<span>反映待ち −${fmt(pending)}</span><b>討伐確定圏内</b>`
+      ? `<span>反映待ち −${fmt(pending)}</span><b>${lapNow>1?`${lapNow}周目突破圏内`:'討伐確定圏内'}</b>`
       : `<span>反映待ち −${fmt(pending)}</span><span>予測HP <b>${fmt(predicted)}</b></span>`;
     box.title=lethal?'全員の3回目終了（または残り挑戦のスキップ）で討伐されます':'各メンバーの3回目終了時にBESTが共有HPへ反映されます';
   }
 
   // build1563: 共有ブレイクゲージ / 討伐ランク
   const RANK_NOTE={S:'ブレイク＋オーバーキル150%以上',A:'ブレイク＋オーバーキル120%以上',B:'ブレイク達成で討伐',C:'討伐'};
+  // build1662: 周回制（サーバーが lap_mode を返す場合）の表記。2周目＝1周目の半分のHP。
+  const RANK_NOTE_LAP={S:'ブレイク＋2周目討伐',A:'ブレイク＋2周目40%',B:'ブレイク＋1周目討伐',C:'1周目討伐'};
+  function rankNote(status,rank){ return ((status&&status.lap_mode)?RANK_NOTE_LAP:RANK_NOTE)[rank]||''; }
+  function provisionalRank(status){
+    if(!status||!status.first_kill) return '';
+    const ratio=n(status.total_best)/Math.max(1,n(status.max_hp));
+    const broken=status.broken===true;
+    return broken&&ratio>=1.5?'S':broken&&ratio>=1.2?'A':broken?'B':'C';
+  }
   function ensureBreakStyle(){
     if(document.getElementById('daily-raid-break-style-v1563')) return;
     const style=document.createElement('style');
@@ -1942,6 +1953,7 @@
       #daily-raid-root .daily-raid-break b{font:700 11px/1 "Cinzel",serif;color:#5d4128;font-variant-numeric:tabular-nums;min-width:30px;text-align:right}
       #daily-raid-root .daily-raid-break span{font:400 10.5px/1 "Noto Serif JP",serif;color:#7a5f3e;white-space:nowrap;font-variant-numeric:tabular-nums}
       #daily-raid-root .daily-raid-break.is-broken b,#daily-raid-root .daily-raid-break.is-broken span{color:#9a3f26}
+      #daily-raid-root .drt-hp-lap{display:inline-block;margin-right:6px;padding:1px 6px;font:700 11px/1.3 "Noto Serif JP",serif;letter-spacing:.06em;color:#fff8e6;background:linear-gradient(180deg,#9a4a2c,#6e2c18);vertical-align:middle}
       #daily-raid-start .daily-raid-rank-chip{display:inline-block;margin-left:8px;padding:1px 7px;font:700 12px/1.3 "Cinzel",serif;letter-spacing:.06em;color:#fff8e6;background:linear-gradient(180deg,#c9922f,#9a6418)}
       @media (prefers-reduced-motion:reduce){#daily-raid-root .daily-raid-break.is-broken .daily-raid-break-bar > i{animation:none}}
     `;
@@ -2290,7 +2302,7 @@
     const miles=(result&&result._miles)||[];
     const milesHtml=miles.length?miles.map(m=>`<small style="margin-top:4px">TOTAL CLEAR ${esc(String(m.milestone))}</small><p class="rw-note">累計${esc(String(m.milestone))}回討伐ボーナス</p><ul>${rewardItemsHtml(m.items)}</ul>`).join(''):'';
     const nextHtml=result&&result.next_milestone?`<p class="rw-note">累計 ${fmt(result.total_clears)}回 · 次は${fmt(result.next_milestone)}回で ${esc(itemsText(result.next_items))}</p>`:'';
-    wrap.innerHTML=`<div class="rw-card"><small>RAID CLEAR REWARD</small><div class="rw-rank">${esc(rank)}</div><p class="rw-note">${esc(RANK_NOTE[rank]||'')}</p>${countNote}<ul>${rewardItemsHtml(result&&result.items)}</ul>${milesHtml}${nextHtml}<button type="button">受け取りました</button></div>`;
+    wrap.innerHTML=`<div class="rw-card"><small>RAID CLEAR REWARD</small><div class="rw-rank">${esc(rank)}</div><p class="rw-note">${esc(rankNote(currentStatus||{lap_mode:true},rank))}</p>${countNote}<ul>${rewardItemsHtml(result&&result.items)}</ul>${milesHtml}${nextHtml}<button type="button">受け取りました</button></div>`;
     const close=()=>wrap.remove();
     wrap.querySelector('button').addEventListener('click',close);
     wrap.addEventListener('click',e=>{ if(e.target===wrap) close(); });
@@ -2354,7 +2366,7 @@
     const order=['C','B','A','S'];
     const byRank={}; ranks.forEach(r=>{ byRank[String(r.rank).toUpperCase()]=r.items||[]; });
     const rows=order.slice().reverse().filter(r=>byRank[r]).map(r=>{
-      return `<div class="rt-row"><div class="rt-rank ${r==='S'?'s':''}">${r}<small>${esc(RANK_NOTE[r]||'')}</small></div><div class="rt-items">${rewardChipsHtml(byRank[r])}</div></div>`;
+      return `<div class="rt-row"><div class="rt-rank ${r==='S'?'s':''}">${r}<small>${esc(rankNote(currentStatus||{lap_mode:true},r))}</small></div><div class="rt-items">${rewardChipsHtml(byRank[r])}</div></div>`;
     }).join('');
     const total=n(data.total_clears);
     const miles=Array.isArray(data.milestones)?data.milestones:[];
@@ -2447,7 +2459,11 @@
     const lobbyWasHidden=!!(root.querySelector('#daily-raid-lobby')&&root.querySelector('#daily-raid-lobby').hidden);
     updateAttemptOverview(status); showOnly('lobby');
     if(lobbyWasHidden) setRaidSwipePage(0,true);
-    const hp=n(status&&status.current_hp), maxHp=Math.max(1,n(status&&status.max_hp)||100000);
+    const hp=n(status&&status.current_hp);
+    const lapMode=!!(status&&status.lap_mode);
+    const lap=lapMode?Math.max(1,n(status.lap)||1):1;
+    // build1662: 周回制ではHPバーは「今の周」の残りHP / その周のHP
+    const maxHp=Math.max(1,(lapMode?n(status.lap_hp):0)||n(status&&status.max_hp)||100000);
     const cleared=!!(status&&status.status==='cleared')||hp<=0;
     const me=status&&status.me||{};
     const admin=isAdmin();
@@ -2458,8 +2474,8 @@
     const members=Array.isArray(status&&status.members)?status.members:[];
 
     // build1596: 現在HPを大きく・最大HPを小さく（テーマスキン用に分けて出力）
-    root.querySelector('#daily-raid-hptext').innerHTML=`<em class="drt-hp-now">${fmt(hp)}</em><span class="drt-hp-max"> / ${fmt(maxHp)}</span>`;
-    root.querySelector('#daily-raid-hpfill').style.transform=`scaleX(${Math.max(0,Math.min(1,hp/maxHp))})`;
+    root.querySelector('#daily-raid-hptext').innerHTML=`${lapMode&&!cleared?`<span class="drt-hp-lap">${lap}周目</span>`:''}<em class="drt-hp-now">${fmt(cleared&&lapMode?0:hp)}</em><span class="drt-hp-max"> / ${fmt(maxHp)}</span>`;
+    root.querySelector('#daily-raid-hpfill').style.transform=`scaleX(${cleared&&lapMode?0:Math.max(0,Math.min(1,hp/maxHp))})`;
     renderForecast(root,status,hp,maxHp,cleared);
     renderBreakAndRank(root,status,cleared);
     renderBossHero(root,status);
@@ -2482,6 +2498,7 @@
     const stat=root.querySelector('#daily-raid-status');
     if(admin) stat.textContent='ADMIN TEST · 挑戦回数/共有HPともに非反映';
     else if(cleared) stat.textContent='RAID CLEAR';
+    else if(lapMode&&status.first_kill) stat.textContent=`1周目討伐！ 暫定RANK ${provisionalRank(status)} · 残り${Math.max(0,n(status.pending_members))}人の挑戦終了で確定`;
     else if(allFinished) stat.textContent=`本日のBEST確定 · ${fmt(bestDamage)} DAMAGE`;
     else if(inBattle) stat.textContent=`${attemptCount} / 3 挑戦中`;
     else if(attemptCount>0) stat.textContent=`${attemptCount} / 3 完了 · 暫定BEST ${fmt(bestDamage)} DAMAGE`;
@@ -2526,9 +2543,9 @@
     start.disabled=admin?false:rewardReady?false:(cleared||inBattle||attemptCount>=3);
     if(admin) start.innerHTML='<span>ADMIN TEST</span><b>テスト挑戦</b>';
     else if(rewardReady){ ensureRewardStyle(); start.innerHTML=`<span>RAID CLEAR · RANK ${esc(status.rank_reward.rank||status.clear_rank||'')}</span><b>報酬を受け取る<i class="daily-raid-reward-ready" aria-hidden="true"></i></b>`; }
-    else if(cleared) start.innerHTML=`<span>DAILY RAID</span><b>RAID CLEAR${status&&status.clear_rank?`<i class="daily-raid-rank-chip" title="${esc(RANK_NOTE[status.clear_rank]||'')}">RANK ${esc(status.clear_rank)}</i>`:''}</b>`;
+    else if(cleared) start.innerHTML=`<span>DAILY RAID</span><b>RAID CLEAR${status&&status.clear_rank?`<i class="daily-raid-rank-chip" title="${esc(rankNote(status,status.clear_rank))}">RANK ${esc(status.clear_rank)}</i>`:''}</b>`;
     else if(inBattle) start.innerHTML='<span>TODAY\'S ATTEMPT</span><b>挑戦中</b>';
-    else if(attemptCount>=3) start.innerHTML='<span>BEST DAMAGE LOCKED</span><b>本日の3回終了</b>';
+    else if(attemptCount>=3) start.innerHTML=lapMode&&status.first_kill?'<span>BEST DAMAGE LOCKED</span><b>ランク確定待ち</b>':'<span>BEST DAMAGE LOCKED</span><b>本日の3回終了</b>';
     else start.innerHTML=`<span>${attemptCount+1} / 3 ATTEMPT</span><b>バトル開始</b>`;
   }
 
@@ -2701,7 +2718,11 @@
           pendingAttempt:true,
           attemptStarted:false,
           attemptCount,
-          broken:status.broken===true
+          broken:status.broken===true,
+          // build1662: 周回制
+          lapMode:status.lap_mode===true,
+          lap:Math.max(1,n(status.lap)||1),
+          lapHp:Math.max(1,n(status.lap_hp)||maxHp)
         }
       });
     }catch(err){
