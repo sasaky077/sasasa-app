@@ -106,6 +106,8 @@
     RHYTHM_TEST: 'shooting_event_rhythm_test',         // 律動 -仮面舞踏会- 最上級（3PHASE）
     RHYTHM_ADVANCED: 'shooting_event_rhythm_advanced', // build1637 律動 -仮面舞踏会- 上級（2PHASE・少し遅い）
     RHYTHM_ULTRA: 'shooting_event_rhythm_ultra',       // build1643 律動 -仮面舞踏会- 超級（最上級から音符♪なし）
+    VERDANT_ADVANCED: 'shooting_event_verdant_advanced', // build1659 樹獣の森 上級
+    VERDANT_SUPER: 'shooting_event_verdant_super',       // build1659 樹獣の森 最上級
   });
 
   // ============================================================
@@ -1528,6 +1530,66 @@
       // 通常クリア報酬は「強化素材・金」×2。初回クリアの結晶×15はサーバー（finish_secure_shooting_run）側で付与。
       fixedItemDrops: Object.freeze([Object.freeze({ id: 'level_exp_large', count: 2 })]),
       firstClearGems: 15,
+      playable: true,
+    }),
+
+
+    // ============================================================
+    // build1659: SPECIAL STAGE「樹獣の森」（木属性・ボス戦）
+    //  ボス「樹獣の女王」（仮名）は蕾の姿で始まり、動いている間に成長して「開花」する。
+    //  配下の「樹獣」（突進）・「芽吹き」（歩き回る）も動いている間に成長し、
+    //  「大樹獣」（より速く・頻繁な突進）／「大樹」（その場に根を張り9方向弾幕）になる。
+    //  捕縛・スタンなどで止めている間は、ボスも配下も成長しない。
+    // ============================================================
+    [SHOOTING_STAGE_ID.VERDANT_ADVANCED]: Object.freeze({
+      id: SHOOTING_STAGE_ID.VERDANT_ADVANCED,
+      chapter: 0,
+      stageNo: 40,
+      eventId: 'verdant',
+      eventTitle: '樹獣の森',
+      difficultyLabel: '上級',
+      name: '樹獣の森',
+      type: 'boss',
+      background: 'images/battle_bg_02.webp',
+      introImage: 'images/verdant_queen_battle_start.webp',
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.VERDANT_QUEEN]),
+      bossElement: 'wood',
+      enemyElement: 'wood',
+      bossGaugeHps: Object.freeze([12000, 14000]),
+      // growthMs：配下（樹獣・芽吹き）の成長時間／bossGrowthMs：女王が開花するまでの移動時間
+      verdant: Object.freeze({ growthMs: 8000, bossGrowthMs: 18000 }),
+      bossAdds: Object.freeze({
+        enemyIds: Object.freeze([SHOOTING_ENEMY_ID.VERDANT_SPROUT, SHOOTING_ENEMY_ID.VERDANT_BEAST]),
+        totalEnemies: 0, maxActive: 2, startDelayMs: 3000, spawnIntervalMs: 6500, grownSpawnIntervalMs: 4500,
+      }),
+      mission: Object.freeze({ type: SHOOTING_MISSION_TYPE.BOSS_CLEAR, text: '樹獣の女王を開花させずに倒せ' }),
+      fixedItemDrops: Object.freeze([Object.freeze({ id: 'level_exp_large', count: 2 })]),
+      firstClearGems: 5,
+      playable: true,
+    }),
+    [SHOOTING_STAGE_ID.VERDANT_SUPER]: Object.freeze({
+      id: SHOOTING_STAGE_ID.VERDANT_SUPER,
+      chapter: 0,
+      stageNo: 41,
+      eventId: 'verdant',
+      eventTitle: '樹獣の森',
+      difficultyLabel: '最上級',
+      name: '樹獣の森',
+      type: 'boss',
+      background: 'images/battle_bg_02.webp',
+      introImage: 'images/verdant_queen_battle_start.webp',
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.VERDANT_QUEEN]),
+      bossElement: 'wood',
+      enemyElement: 'wood',
+      bossGaugeHps: Object.freeze([14000, 16000, 18000]),
+      verdant: Object.freeze({ growthMs: 5500, bossGrowthMs: 13000 }),
+      bossAdds: Object.freeze({
+        enemyIds: Object.freeze([SHOOTING_ENEMY_ID.VERDANT_SPROUT, SHOOTING_ENEMY_ID.VERDANT_BEAST]),
+        totalEnemies: 0, maxActive: 3, startDelayMs: 2500, spawnIntervalMs: 5200, grownSpawnIntervalMs: 3500,
+      }),
+      mission: Object.freeze({ type: SHOOTING_MISSION_TYPE.BOSS_CLEAR, text: '樹獣の女王を開花させずに倒せ' }),
+      fixedItemDrops: Object.freeze([Object.freeze({ id: 'level_exp_large', count: 2 })]),
+      firstClearGems: 10,
       playable: true,
     }),
 

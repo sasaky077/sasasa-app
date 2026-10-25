@@ -63,6 +63,9 @@
     PO_WATCHER: 'shooting_po_watcher',
     INORI: 'shooting_remnant_inori',       // build1643 レムナント：イノリ（位相回遊で先行実装。STORYは今後）
     INORI_TORII: 'shooting_inori_torii',   // イノリが召喚する鳥居
+    VERDANT_BEAST: 'shooting_verdant_beast',   // build1659 樹獣の森：突進する樹獣
+    VERDANT_SPROUT: 'shooting_verdant_sprout', // build1659 樹獣の森：歩き回る芽吹き
+    VERDANT_QUEEN: 'shooting_verdant_queen',   // build1659 樹獣の森：ボス「樹獣の女王」（仮名）
   });
 
   // ============================================================
@@ -451,6 +454,54 @@
       name: '鳥居', displayName: 'TORII　鳥居',
       element: 'neutral', attackType: 'none', image: 'images/remnant_inori_torii.webp',
       hp: 1500, moveSpeed: 0, scoreValue: 300, behavior: 'inori_torii_v1', uiScale: 1.55,
+    }),
+
+    // ------------------------------------------------------------
+    // build1659 SPECIAL STAGE「樹獣の森」（木属性）
+    //  動いている間に成長ゲージが溜まり、満タンで成長（HP全快＆最大HP増・強化）。
+    //  捕縛・スタン等で止めている間は成長しない ＝ 「敵を止める」キャラが活きるステージ。
+    //  画像は images/verdant_*.webp。未配置の間は既存の木属性画像で代用（fallbackImage）。
+    // ------------------------------------------------------------
+    [SHOOTING_ENEMY_ID.VERDANT_BEAST]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.VERDANT_BEAST, kind: 'normal', implemented: true,
+      name: '樹獣', displayName: 'VERDANT BEAST　樹獣',
+      element: 'wood', attackType: 'charge',
+      image: 'images/verdant_beast.webp', fallbackImage: 'images/zako_wood_laser.webp',
+      hp: 2600, contactDamage: 200, chargeSpeed: 540, chargeDurationMs: 640, telegraphMs: 720,
+      fireRate: 1500, moveSpeed: 28, scoreValue: 1100, behavior: 'generic_element_charge_v1', uiScale: 1.15,
+      verdantGrowth: Object.freeze({
+        name: '大樹獣', hpMul: 1.6, scaleMul: 1.28,
+        grownDef: Object.freeze({ chargeSpeed: 700, chargeDurationMs: 700, telegraphMs: 540, fireRate: 950, contactDamage: 300 }),
+      }),
+    }),
+    [SHOOTING_ENEMY_ID.VERDANT_SPROUT]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.VERDANT_SPROUT, kind: 'normal', implemented: true,
+      name: '芽吹き', displayName: 'VERDANT SPROUT　芽吹き',
+      element: 'wood', attackType: 'shot',
+      image: 'images/verdant_sprout.webp', fallbackImage: 'images/zako_wood_shot.webp',
+      hp: 1800, bulletDamage: 95, bulletSpeed: 210, fireRate: 1500,
+      moveSpeed: 90, scoreValue: 900, behavior: 'verdant_sprout_v1', uiScale: 1.0,
+      verdantGrowth: Object.freeze({
+        name: '大樹', hpMul: 2.0, scaleMul: 1.45,
+        grownImage: 'images/verdant_tree.webp',
+        grownDef: Object.freeze({ bulletDamage: 120, bulletSpeed: 200, fireRate: 1250, spreadWays: 9 }),
+      }),
+    }),
+
+    // build1659: 樹獣の森のボス「樹獣の女王」（仮名）。蕾の姿で始まり、動いている間に成長ゲージが溜まって「開花」する。
+    //  開花：成長後の姿になり、HP回復＋攻撃が激しくなり、配下の召喚も速くなる。捕縛・スタン中は成長しない。
+    [SHOOTING_ENEMY_ID.VERDANT_QUEEN]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.VERDANT_QUEEN,
+      kind: 'boss', implemented: true,
+      name: '樹獣の女王', displayName: 'VERDANT QUEEN　樹獣の女王',
+      image: 'images/verdant_queen_battle.webp', element: 'wood',
+      gaugeHps: Object.freeze([12000, 14000]), gauges: 2,
+      bulletSpeed: 215, fireRate: 1300, bulletDamage: 190,
+      behavior: 'verdant_queen_v1', uiScale: 1.0,
+      verdantBossGrowth: Object.freeze({
+        name: '開花', grownImage: 'images/verdant_queen_bloom_battle.webp',
+        healRate: 0.25,                // 開花時、最大HPの25%を回復（現在のゲージ内まで）
+      }),
     }),
 
     [SHOOTING_ENEMY_ID.CH08_GUARDIAN]: Object.freeze({

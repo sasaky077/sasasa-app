@@ -15130,3 +15130,60 @@ html body #shooting-event-root #shooting-boss#shooting-boss{
 )){
   pointer-events:none!important;
 }
+
+/* ============================================================
+   build1659 SPECIAL STAGE「樹獣の森」
+   ============================================================ */
+#shooting-event-root[data-shooting-stage^="shooting_event_verdant_"] .shooting-bg{
+  background-image:url('../images/battle_bg_02.webp'),url('../images/battle_bg_01.webp');
+  background-size:cover;background-position:center;
+}
+/* 成長ゲージ（HPバーのすぐ下）。止まっている間は灰色で「成長停止」を示す */
+.shooting-mini-enemy-hp.has-verdant-growth{overflow:visible}
+.shooting-mini-enemy-hp .verdant-growth-bar{
+  position:absolute;left:0;right:0;top:calc(100% + 2px);height:3px;border-radius:2px;
+  background:rgba(40,60,30,.35);overflow:hidden;pointer-events:none;
+}
+.shooting-mini-enemy-hp .verdant-growth-bar b{
+  display:block;width:100%;height:100%;transform-origin:0 50%;transform:scaleX(0);
+  background:linear-gradient(90deg,#7bd36a,#c9f27a);
+}
+.shooting-mini-enemy-hp.is-verdant-halted .verdant-growth-bar b{background:linear-gradient(90deg,#9aa39a,#c8cdc8)}
+.shooting-mini-enemy-hp.is-verdant-grown .verdant-growth-bar{display:none}
+/* 成長した敵：緑の光をまとう */
+#shooting-event-root .shooting-mini-enemy.verdant-grown{
+  filter:drop-shadow(0 0 6px rgba(120,220,90,.95)) drop-shadow(0 4px 6px rgba(40,70,30,.3));
+}
+.verdant-grow-pop{
+  position:absolute;left:0;top:0;z-index:30;pointer-events:none;white-space:nowrap;
+  font:700 13px/1 'Noto Serif JP',serif;letter-spacing:.08em;color:#f2ffe0;
+  text-shadow:0 0 4px rgba(40,90,20,.95),0 1px 3px rgba(0,0,0,.6);
+  animation:verdantGrowPop 1.1s ease-out forwards;
+}
+@keyframes verdantGrowPop{0%{opacity:0;translate:0 8px;scale:.8}15%{opacity:1;translate:0 0;scale:1.1}80%{opacity:1}100%{opacity:0;translate:0 -14px}}
+.zfs-verdant .zfs-verdant-lead{margin:2px 14px 10px;font:500 12px/1.6 'Noto Serif JP',serif;color:#5a6a46;text-align:center;letter-spacing:.03em}
+.zss-gimmick-chip.gimmick-verdantCharge b,.zss-gimmick-chip.gimmick-verdantGrowth b{color:#3f6a2c}
+
+/* build1659: 樹獣の女王 — 開花までゲージ（ボスの足元に追従。止まっている間は灰色＝成長停止） */
+#shooting-event-root .verdant-boss-growth{
+  position:absolute;left:0;top:0;z-index:22;pointer-events:none;
+  display:flex;flex-direction:column;align-items:center;gap:2px;width:118px;
+}
+#shooting-event-root .verdant-boss-growth span{
+  font:700 10px/1 'Noto Serif JP',serif;letter-spacing:.14em;color:#f0ffd8;
+  text-shadow:0 0 3px rgba(30,70,10,.95),0 1px 2px rgba(0,0,0,.6);
+}
+#shooting-event-root .verdant-boss-growth i{
+  display:block;width:100%;height:5px;border-radius:3px;overflow:hidden;
+  background:rgba(30,50,20,.45);box-shadow:0 0 0 1px rgba(200,255,160,.35);
+}
+#shooting-event-root .verdant-boss-growth b{
+  display:block;width:100%;height:100%;transform-origin:0 50%;transform:scaleX(0);
+  background:linear-gradient(90deg,#6fcf5e,#d8f77a,#ffd2ea);
+}
+#shooting-event-root .verdant-boss-growth.is-halted b{background:linear-gradient(90deg,#9aa39a,#cfd4cf)}
+#shooting-event-root .verdant-boss-growth.is-halted span::after{content:' 停止中';color:#e9e9e9}
+/* 開花後：緑と桃色の光 */
+#shooting-event-root #shooting-boss.verdant-bloomed{
+  filter:drop-shadow(0 0 10px rgba(140,230,100,.85)) drop-shadow(0 0 18px rgba(255,170,210,.45));
+}

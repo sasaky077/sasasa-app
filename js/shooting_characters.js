@@ -8,7 +8,7 @@
   'use strict';
 
   const CHARACTER_ID = Object.freeze({
-    CONJURER: 40,
+    CONJURER: 40, CAMILLA: 102,
     NINA: 36,
     ERI: 1,
     NEM: 26,
@@ -108,6 +108,7 @@
     38: 'r',   // クロエ
     39: 'r',   // レオナクロス
     40: 'sr', // オリビア（限定ピックアップSR）
+    102: 'sr', // カミラ
     41: 'sr',  // シャオラン
     42: 'r', 43: 'r', 44: 'r', 45: 'r', 46: 'r',
     47: 'r', 48: 'r', 49: 'r', 51: 'r', 53: 'r', 54: 'sr', 56: 'sr', 101: 'sr',
@@ -1004,6 +1005,16 @@
     "homeOffsetX": 0,
     "homeOffsetY": -24,
     "hidden": false
+  },
+  "102": {
+    "id": 102, "name": "カミラ", "element": "fire", "hp": 600, "atk": 290,
+    "image": "images/chara_102_battle_back.webp",
+    "panelImage": "images/chara_102_panel.webp",
+    "cutinImage": "images/chara_102_cutin.webp",
+    "uiScale": {"panel": 1, "battleBack": 1.2, "battleUp": 1},
+    "portraitImage": "images/chara_102.webp", "homeImage": "images/chara_102_cut.webp",
+    "upImage": "images/chara_102_up.webp", "homeScale": 0.88,
+    "homeOffsetX": 0, "homeOffsetY": -16, "hidden": false
   },
   "40": {
     "id": 40,
@@ -3009,6 +3020,27 @@
   });
 
 
+  // build1657: カミラ（102）/ オリビアの設置系CONJUREを継承。
+  SHOOTING_CHARACTERS[CHARACTER_ID.CAMILLA] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON,
+    id: CHARACTER_ID.CAMILLA,
+    effectKey: 'camilla_web',
+    label: 'CONJURE / SPIDER',
+    description: '1発につき蜘蛛1体を召喚（最大4体）。蜘蛛はカサカサと走って最も近い敵に張り付き、ダメージを与えて移動を3秒間封じると消える。射撃は継続する。',
+    ultName: '血界・緋糸万華',
+    shotType: 'conjure', mainShot: {type:'conjure'}, shotCount:1,
+    fireRate:1000, shotPowerRate:0.4, bulletSpeed:520,
+    conjureObjectImage:'images/chara_102_spider.webp', conjureMaxTurrets:4,
+    conjureLifetimeMs:3000, conjureVolleyIntervalMs:1000, conjureVolleyCount:3,
+    conjurePlaceOffsetY:112, conjureTurretBulletSpeed:520,
+    // build1659: 蜘蛛は弾を撃たず、走って張り付く。1体あたりのダメージは従来の蜘蛛糸3発分（ATK×0.4×3）
+    camillaSpiderAi:true, camillaSpiderSpeed:260, camillaSpiderLifeMs:6000, camillaSpiderLatchMs:260, camillaSpiderDamageRate:1.2,
+    burstNeed:30, ultGainPerHit:0.5,
+    ultBaseType:'bind', ultAddons:['lifesteal'], ultType:'camilla_crimson_web',
+    camillaUltSecondsByLb:[3,4,5,6,7],
+    camillaUltAbsorbByLb:[0.02,0.03,0.04,0.05,0.06]
+  });
+
   // build1326: ULT説明の共通テンプレート。個別の固有名・他キャラへの参照を入れず、
   // 同じultTypeなら基本文言を同じにして性能パラメータだけを差し替える。
   // 戦闘処理・数値そのものは変更しない。
@@ -3097,6 +3129,8 @@
         return '大鎌を正面に投げ、最初に当たった敵の位置で' + sec(c.gojoPurpleDurationMs, 7000) + '間停止。周囲の敵を吸い寄せて拘束（移動・攻撃も停止）。' + note('敵弾は消去しない。正面に敵がいなければMISS');
 
       // --- 行動妨害・防御 ---
+      case 'camilla_crimson_web':
+        return '盤面全体に紅い蜘蛛の巣を展開し、敵の移動を3〜7秒間止める（凸段階で変動、射撃は継続）。拘束中の敵への与ダメージの2〜6%をHP吸収。';
       case 'nem_stun':
         return '敵全体を' + sec(c.ultStunMs, 5000) + '間スタン。' + note('ULT自体のダメージなし');
       case 'towa_eternal_darkness':

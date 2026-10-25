@@ -4473,6 +4473,7 @@
     removeTower10ReverseBanner();
     removeOverseerWatchDom();
     removeInoriDom();
+    removeVerdantDom();
     // 旧バトルのITEM表示が何らかの経路で残っていても、新state作成前にDOM側を掃除する。
     purgeChapter4ItemDom();
 
@@ -4722,7 +4723,7 @@
       conjureDeployments: [],
       conjurePlacementPreview: null,
       remnaTrapPlacementPreview: null,
-      conjureUlt: null,
+      conjureUlt: null, camillaWebUlt:null,
       eltenaBlackHole: null,
       toyfelBlackHoleField: null,
       ninaUltToken: 0,
@@ -5012,7 +5013,7 @@
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
     clearSmileBoxes();
-    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-rose-fortress,.shooting-remna-trap-preview,.shooting-conjure-preview,.shooting-conjure-deploy-projectile,.shooting-conjure-turret,.shooting-conjure-ult-turret,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-sui-time-domain,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning,.shooting-ch07-complete-shield,.shooting-ch07-torii').forEach(el => el.remove());
+    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-rose-fortress,.shooting-remna-trap-preview,.shooting-conjure-preview,.shooting-conjure-deploy-projectile,.shooting-conjure-turret,.shooting-conjure-ult-turret,.shooting-camilla-web-overlay,.shooting-camilla-web-burst,.shooting-camilla-bound-web-fx,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-sui-time-domain,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning,.shooting-ch07-complete-shield,.shooting-ch07-torii').forEach(el => el.remove());
     clearEnemyBulletCanvas();
     if (state) {
       state.bullets = [];
@@ -5028,6 +5029,7 @@
       state.conjurePlacementPreview = null;
       state.remnaTrapPlacementPreview = null;
       state.conjureUlt = null;
+      state.camillaWebUlt?.overlay?.remove();state.camillaWebUlt=null;
       state.wolfAtkField = null;
       state.suiTimeDomainEl = null;
       state.bossDangerWarningEl = null;
@@ -10108,6 +10110,50 @@
         letter-spacing:.02em;
         color:rgba(232,42,42,.98);text-shadow:0 1px 4px rgba(70,18,18,.88),0 0 7px rgba(255,120,120,.72),0 0 13px rgba(255,52,52,.30);
       }
+      .shooting-camilla-web-projectile{width:13px!important;height:13px!important;background:radial-gradient(circle,#ffe8e8 15%,#f13d4e 40%,#980819 75%)!important;border:1px solid #ff92a2!important;box-shadow:0 0 10px #f02!important;border-radius:50%!important}
+      .shooting-camilla-bound-web{position:relative}
+      /* build1659: 捕縛中の敵に、放射状の本物の蜘蛛の巣を重ねる */
+      .shooting-camilla-bound-web::after{
+        content:"";position:absolute;inset:-14px;z-index:6;pointer-events:none;
+        background:url("${getCamillaWebDataUri()}") center/contain no-repeat;
+        opacity:.95;
+      }
+      /* build1659: ULT「血界・緋糸万華」— 画面全体に張り巡らされる緋色の蜘蛛の巣 */
+      .shooting-camilla-bound-web-fx{position:absolute;left:0;top:0;z-index:12;pointer-events:none;
+        background:center/contain no-repeat;opacity:.95;animation:camillaBoundIn .22s ease-out}
+      @keyframes camillaBoundIn{from{scale:.4;opacity:0}to{scale:1;opacity:.95}}
+      /* build1659: ULTの蜘蛛の巣は背面（背景のすぐ上）。自機・敵・弾・ゲージ等のUIはすべてこの上に重なる */
+      .shooting-camilla-web-overlay{position:absolute;inset:0;z-index:0;pointer-events:none;
+        background:radial-gradient(ellipse at 50% 50%,rgba(120,0,18,0) 34%,rgba(110,0,16,.26) 100%);
+        clip-path:circle(0% at 50% 50%);animation:camillaWebSpread .55s cubic-bezier(.2,.8,.3,1) forwards;
+        transition:opacity .4s ease}
+      .shooting-camilla-web-overlay.is-ending{opacity:0}
+      .shooting-camilla-web-overlay svg{position:absolute;inset:0;width:100%;height:100%;will-change:opacity;opacity:.62;animation:camillaWebShimmer 1.6s ease-in-out .55s infinite}
+      .shooting-camilla-web-overlay .cw-glow{stroke:rgba(255,40,70,.26);stroke-width:5px}
+      .shooting-camilla-web-overlay .cw-spoke{stroke:#e01a34;stroke-width:1.6px}
+      .shooting-camilla-web-overlay .cw-ring{stroke:#ff3e56;stroke-width:1.25px}
+      .shooting-camilla-web-overlay .cw-shine{stroke:rgba(255,226,232,.9);stroke-width:.7px}
+      .shooting-camilla-web-overlay .cw-core{position:absolute;left:50%;top:50%;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;
+        background:radial-gradient(circle,#ffd7dd 0 18%,#e8182f 45%,rgba(140,0,20,0) 72%)}
+      @keyframes camillaWebSpread{to{clip-path:circle(150% at 50% 50%)}}
+      @keyframes camillaWebShimmer{0%,100%{opacity:.52}50%{opacity:.7}}
+      /* build1659: 蜘蛛が張り付いた瞬間に広がる小さな巣 */
+      .shooting-camilla-web-burst{position:absolute;left:0;top:0;z-index:12;width:78px;height:78px;pointer-events:none;
+        will-change:transform,opacity;animation:camillaWebBurst .6s ease-out forwards}
+      .shooting-camilla-web-burst svg{width:100%;height:100%;display:block}
+      .shooting-camilla-web-burst .cw-glow{stroke:rgba(255,50,75,.35);stroke-width:4px}
+      .shooting-camilla-web-burst .cw-spoke{stroke:#ff3049;stroke-width:1.5px}
+      .shooting-camilla-web-burst .cw-ring{stroke:#ff5168;stroke-width:1.3px}
+      .shooting-camilla-web-burst .cw-shine{stroke:rgba(255,230,235,.85);stroke-width:.55px}
+      @keyframes camillaWebBurst{0%{scale:.25;opacity:1}55%{scale:1.05;opacity:1}100%{scale:1.15;opacity:0}}
+      /* build1659: カミラの蜘蛛（カサカサ動く） */
+      .shooting-conjure-turret.camilla-spider{width:40px;height:40px;opacity:1}
+      .camilla-spider .shooting-conjure-object-img{filter:none;rotate:var(--spider-face,0rad);
+        animation:camillaSpiderSkitter .09s steps(2) infinite}
+      .camilla-spider.is-paused .shooting-conjure-object-img{animation:none}
+      .camilla-spider.is-latched .shooting-conjure-object-img{animation:none;scale:1.18}
+      .camilla-spider.is-vanishing{opacity:0;transition:opacity .14s ease}
+      @keyframes camillaSpiderSkitter{0%{translate:-1px 0}100%{translate:1px 1px}}
       .shooting-conjure-turret{opacity:.96;transition:opacity .22s ease}
       .shooting-conjure-turret.is-expiring{opacity:.28}
       .shooting-conjure-turret.volley .shooting-conjure-object-img{animation:shootingConjureVolley .18s ease-out}
@@ -10191,6 +10237,19 @@
     const durationMs = Math.max(120, distance / speed * 1000);
     const el = document.createElement('div');
     el.className = 'shooting-conjure-deploy-projectile';
+    // CONJUREの召喚弾は使用キャラの属性色に合わせる。
+    const conjureColor = {
+      fire:['#f3384c','#a60920','rgba(255,62,79,.9)'],
+      aqua:['#41aeff','#1558bb','rgba(60,176,255,.9)'],
+      wood:['#70dd66','#277a3c','rgba(108,225,104,.9)'],
+      light:['#ffe37a','#b89216','rgba(255,231,120,.9)'],
+      dark:['#bb83f3','#6731a3','rgba(184,116,244,.9)'],
+      neutral:['#d7dfea','#65788a','rgba(210,226,240,.9)']
+    };
+    const palette = conjureColor[normalizeCombatElement(c.element)] || conjureColor.neutral;
+    el.style.background = palette[0];
+    el.style.borderColor = palette[1];
+    el.style.boxShadow = `0 0 7px ${palette[2]},0 0 12px ${palette[2]}`;
     arena.appendChild(el);
     positionUnit(el, startX, startY);
 
@@ -10217,7 +10276,10 @@
       if (t >= 1) {
         try { item.el.remove(); } catch (_) {}
         const c = getBattleCharacter(item.ownerId) || SHOOTING_CHARACTERS?.[item.ownerId];
-        if (c) spawnConjureTurret(c, item.targetX, item.targetY, now);
+        if (c) {
+          // 1発のCONJURE弾につき蜘蛛を1体召喚（同時配置数は最大4体）。
+          spawnConjureTurret(c, item.targetX, item.targetY, now);
+        }
       } else {
         survivors.push(item);
       }
@@ -10300,6 +10362,21 @@
   function fireConjureTurretVolley(turret, c, now) {
     if (!state || !turret || !c) return;
     ensureConjureVisualStyles();
+    if (Number(c.id) === 102) {
+      const candidates = (state.normalEnemies || []).filter(e => e && e.hp > 0 && e.el);
+      if (!isNormalBattle() && state.boss && state.boss.hp > 0) candidates.push(state.boss);
+      candidates.sort((a,b) => Math.hypot(a.x-turret.x,a.y-turret.y)-Math.hypot(b.x-turret.x,b.y-turret.y));
+      const target=candidates[0];
+      if (!target) return;
+      const dx=Number(target.x)-Number(turret.x), dy=Number(target.y)-Number(turret.y);
+      const length=Math.max(1,Math.hypot(dx,dy));
+      const speed=Math.max(180,Number(c.conjureTurretBulletSpeed||520));
+      const p=makeProjectile('shooting-bullet shooting-camilla-web-projectile'+getCharacterBulletClass(c),
+        Number(turret.x),Number(turret.y),dx/length*speed,dy/length*speed,
+        Math.max(1,Number(c.atk||0)*Number(c.shotPowerRate||.4)),c.id);
+      if(p){p.kind='camilla_web';p.attackElement='fire';p.element='fire';p.pierce=false;p._hw=7;p._hh=7;state.bullets.push(p);}
+      return;
+    }
     const count = Math.max(1, Math.floor(Number(c.conjureBulletsPerVolley || 8)));
     const speed = Math.max(180, Number(c.conjureTurretBulletSpeed || c.bulletSpeed || 520));
     const damage = Math.max(0, Number(c.atk || 0) * Number(c.shotPowerRate || 0.40));
@@ -10342,6 +10419,20 @@
     el.className = 'shooting-conjure-turret';
     appendConjureObjectImage(el, c.conjureObjectImage || 'images/chara_40_battle_object.webp', '');
     arena.appendChild(el);
+    // build1659: カミラの蜘蛛は弾を撃たず、カサカサ動いて一番近い敵に張り付き、捕縛＆ダメージを与えて消える。
+    if (c.camillaSpiderAi) {
+      el.classList.add('camilla-spider');
+      const spider = {
+        el, ownerId: c.id, x: Number(x || 0), y: Number(y || 0),
+        createdAt: now, expireAt: now + Math.max(1500, Number(c.camillaSpiderLifeMs || 6000)),
+        camillaSpider: true, lastAt: now, heading: -Math.PI / 2,
+        skitterSeed: Math.random() * Math.PI * 2, pauseUntil: 0, nextPauseAt: now + 260 + Math.random() * 220,
+        latchTarget: null, latchUntil: 0, done: false,
+      };
+      positionUnit(el, spider.x, spider.y);
+      state.conjureTurrets.push(spider);
+      return true;
+    }
     const life = Math.max(500, Number(c.conjureLifetimeMs || 3000));
     const turret = {
       el, ownerId: c.id, x: Number(x || 0), y: Number(y || 0),
@@ -10379,6 +10470,159 @@
     return beginConjurePlacementPreview(now || performance.now());
   }
 
+  // ------------------------------------------------------------
+  // build1659: カミラの蜘蛛（CONJURE）
+  //  ・召喚後、小刻みに止まったり向きを変えたりしながら（カサカサ）一番近い敵へ走る
+  //  ・敵に触れたら張り付き（短い間）、蜘蛛の巣を広げて捕縛＋ダメージ → 消える
+  //  ・捕縛（3秒の移動封じ）とダメージは従来の蜘蛛糸と同じ処理（kind:'camilla_web'）で与える
+  //  ・敵がいない間はその場でうろつく。寿命が来たら消える
+  // ------------------------------------------------------------
+  // build1659: 本物の蜘蛛の巣（放射状の縦糸＋たるんだ横糸）をSVGで生成する。
+  //  spokes=縦糸の本数、rings=横糸の周回数。large=true は画面全体用（縦糸を画面の角まで伸ばす）。
+  function getCamillaWebSvg(spokes, rings, large) {
+    const n = Math.max(5, Math.floor(spokes)), m = Math.max(2, Math.floor(rings));
+    const jitter = i => Math.sin(i * 12.9898) * 0.09;
+    const angles = Array.from({ length: n }, (_, i) => -Math.PI / 2 + i * Math.PI * 2 / n + jitter(i));
+    const R = 48;
+    const spokeLen = large ? R * 1.75 : R;
+    const f = v => v.toFixed(2);
+    let spokesD = '';
+    angles.forEach(a => { spokesD += `M0 0L${f(Math.cos(a) * spokeLen)} ${f(Math.sin(a) * spokeLen)}`; });
+    let ringsD = '';
+    for (let k = 1; k <= m; k++) {
+      const base = R * Math.pow(k / (m + 0.35), 1.08) * (large ? 1.55 : 1);
+      const pts = angles.map((a, i) => { const r = base * (1 + Math.sin(i * 3.1 + k) * 0.05); return [Math.cos(a) * r, Math.sin(a) * r, r]; });
+      ringsD += `M${f(pts[0][0])} ${f(pts[0][1])}`;
+      for (let i = 0; i < n; i++) {
+        const p0 = pts[i], p1 = pts[(i + 1) % n];
+        const a0 = angles[i], a1 = angles[(i + 1) % n] + (i + 1 === n ? Math.PI * 2 : 0);
+        const mid = (a0 + a1) / 2, sag = (p0[2] + p1[2]) / 2 * 0.84; // 中心側へたるませる
+        ringsD += `Q${f(Math.cos(mid) * sag)} ${f(Math.sin(mid) * sag)} ${f(p1[0])} ${f(p1[1])}`;
+      }
+    }
+    const ve = 'vector-effect="non-scaling-stroke"';
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-50 -50 100 100" preserveAspectRatio="${large ? 'xMidYMid slice' : 'xMidYMid meet'}" aria-hidden="true">`
+      + `<g fill="none" stroke-linecap="round" stroke-linejoin="round">`
+      + `<path class="cw-glow" ${ve} d="${spokesD}${ringsD}"/>`
+      + `<path class="cw-spoke" ${ve} d="${spokesD}"/>`
+      + `<path class="cw-ring" ${ve} d="${ringsD}"/>`
+      + `<path class="cw-shine" ${ve} d="${ringsD}"/>`
+      + `</g></svg>`;
+  }
+  function getCamillaWebDataUri() {
+    if (getCamillaWebDataUri.cache) return getCamillaWebDataUri.cache;
+    const svg = getCamillaWebSvg(9, 4, false)
+      .replace('<g fill="none"', '<g fill="none" stroke="#e8182f"')
+      .replace('class="cw-glow"', 'stroke="rgba(255,60,80,.35)" stroke-width="4"')
+      .replace('class="cw-spoke"', 'stroke="#ff3a52" stroke-width="1.5"')
+      .replace('class="cw-ring"', 'stroke="#ff4f64" stroke-width="1.3"')
+      .replace('class="cw-shine"', 'stroke="rgba(255,225,230,.85)" stroke-width=".55"');
+    getCamillaWebDataUri.cache = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    return getCamillaWebDataUri.cache;
+  }
+  function getCamillaSpiderTargets() {
+    const list = (state?.normalEnemies || []).filter(e => e && e.hp > 0 && e.el);
+    if (!isNormalBattle() && state?.boss && Number(state.boss.hp) > 0) list.push(state.boss);
+    return list;
+  }
+  function getCamillaSpiderReach(target) {
+    if (target === state?.boss) {
+      const boss = document.getElementById(BOSS_ID);
+      const half = Math.max(30, Number(boss && boss.offsetWidth || 128) * Math.max(.1, Number(getResponsiveBossDisplayScale() || 1)) * 0.32);
+      return half;
+    }
+    return Math.max(20, Number(target._hw || 26));
+  }
+  function spawnCamillaWebBurst(x, y) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const el = document.createElement('div');
+    el.className = 'shooting-camilla-web-burst';
+    el.innerHTML = getCamillaWebSvg(8, 4, false);
+    arena.appendChild(el);
+    positionUnit(el, x, y);
+    setTimeout(() => { try { el.remove(); } catch (_) {} }, 620);
+  }
+  // 張り付いた蜘蛛の一撃：従来の蜘蛛糸弾を標的の中心で即着弾させ、捕縛・属性・コンボ・ULT回収を共通処理に任せる
+  function strikeCamillaSpider(spider, c, target) {
+    const damage = Math.max(1, Number(c.atk || 0) * Number(c.camillaSpiderDamageRate || 1.2));
+    const p = makeProjectile('shooting-bullet shooting-camilla-web-projectile' + getCharacterBulletClass(c),
+      Number(target.x || 0), Number(target.y || 0), 0, -1, damage, c.id);
+    if (!p) return;
+    p.kind = 'camilla_web';
+    p.attackElement = normalizeCombatElement(c.element) || 'fire';
+    p.element = p.attackElement;
+    p.pierce = false;
+    p._hw = 10; p._hh = 10;
+    if (p.el && p.el.style) p.el.style.opacity = '0';
+    state.bullets.push(p);
+    spawnCamillaWebBurst(Number(target.x || 0), Number(target.y || 0));
+  }
+  function updateCamillaPlayerSpider(spider, c, now) {
+    const dt = Math.min(0.05, Math.max(0, (now - Number(spider.lastAt || now)) / 1000));
+    spider.lastAt = now;
+    const arena = document.getElementById('shooting-arena');
+    const w = Number(arena && arena.clientWidth || 360);
+    const h = Number(arena && arena.clientHeight || 640);
+
+    // 張り付き中：標的に追従し、時間が来たら捕縛＋ダメージを与えて消える
+    if (spider.latchTarget) {
+      const t = spider.latchTarget;
+      if (!(Number(t.hp) > 0)) { spider.expireAt = now; return; }
+      spider.x = Number(t.x || spider.x); spider.y = Number(t.y || spider.y) - 6;
+      positionUnit(spider.el, spider.x, spider.y);
+      if (now >= spider.latchUntil && !spider.done) {
+        spider.done = true;
+        strikeCamillaSpider(spider, c, t);
+        spider.expireAt = now + 140; // 一瞬残して消える
+        spider.el?.classList.add('is-vanishing');
+      }
+      return;
+    }
+
+    const targets = getCamillaSpiderTargets();
+    let target = null, best = Infinity;
+    targets.forEach(e => {
+      const d = Math.hypot(Number(e.x || 0) - spider.x, Number(e.y || 0) - spider.y);
+      if (d < best) { best = d; target = e; }
+    });
+
+    // カサカサ：短い停止を挟みつつ、進行方向へ細かく左右に揺れながら走る
+    if (now >= spider.nextPauseAt) {
+      spider.pauseUntil = now + 70 + Math.random() * 90;
+      spider.nextPauseAt = spider.pauseUntil + 230 + Math.random() * 260;
+    }
+    const paused = now < spider.pauseUntil;
+    let desired;
+    if (target) {
+      desired = Math.atan2(Number(target.y || 0) - spider.y, Number(target.x || 0) - spider.x);
+    } else {
+      // 敵がいない間はその場でうろうろする
+      desired = spider.heading + Math.sin(now / 380 + spider.skitterSeed) * 1.4;
+    }
+    let diff = desired - spider.heading;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    spider.heading += clamp(diff, -9 * dt, 9 * dt); // 素早く向きを変える
+    const speed = paused ? 0 : Math.max(60, Number(c.camillaSpiderSpeed || 260)) * (target ? 1 : 0.35);
+    const wobble = Math.sin(now / 42 + spider.skitterSeed) * 0.55; // 細かな左右の揺れ
+    const moveAngle = spider.heading + wobble;
+    spider.x = clamp(spider.x + Math.cos(moveAngle) * speed * dt, 16, Math.max(16, w - 16));
+    spider.y = clamp(spider.y + Math.sin(moveAngle) * speed * dt, 16, Math.max(16, h - 16));
+    positionUnit(spider.el, spider.x, spider.y);
+    if (spider.el) {
+      spider.el.style.setProperty('--spider-face', `${(spider.heading + Math.PI / 2).toFixed(3)}rad`);
+      spider.el.classList.toggle('is-paused', paused);
+    }
+
+    // 標的に触れたら張り付く
+    if (target && best <= getCamillaSpiderReach(target)) {
+      spider.latchTarget = target;
+      spider.latchUntil = now + Math.max(80, Number(c.camillaSpiderLatchMs || 260));
+      spider.el?.classList.add('is-latched');
+    }
+  }
+
   function updateConjureTurrets(now) {
     if (!state) return;
     pruneConjureTurrets(now);
@@ -10386,6 +10630,7 @@
     list.forEach(turret => {
       const c = getBattleCharacter(turret.ownerId) || SHOOTING_CHARACTERS?.[turret.ownerId];
       if (!c) return;
+      if (turret.camillaSpider) { updateCamillaPlayerSpider(turret, c, now); return; }
       const lifeLeft = Number(turret.expireAt || 0) - now;
       if (turret.el) turret.el.classList.toggle('is-expiring', lifeLeft <= 500);
       const maxShots = Math.max(1, Math.floor(Number(c.conjureVolleyCount || 3)));
@@ -12822,6 +13067,10 @@
     el.src = stageEnemyImage;
     el.alt = enemyDef.name || '敵';
     el.draggable = false;
+    // build1659: 専用画像が未配置でも代わりの画像で表示する
+    if (enemyDef.fallbackImage) {
+      el.onerror = () => { el.onerror = null; el.src = String(enemyDef.fallbackImage); };
+    }
 
     const baseDisplayScale = getNormalEnemyBaseDisplayScale(enemyDef);
     const isChapter02MidBoss =
@@ -12842,6 +13091,11 @@
       hpWrap.className = 'shooting-mini-enemy-hp';
       hpWrap.setAttribute('aria-hidden', 'true');
       hpWrap.innerHTML = '<i></i>';
+      // build1659: 樹獣の森の敵は、HPバーのすぐ下に成長ゲージ
+      if (enemyDef.verdantGrowth && selectedStage?.verdant) {
+        hpWrap.classList.add('has-verdant-growth');
+        hpWrap.insertAdjacentHTML('beforeend', '<span class="verdant-growth-bar"><b></b></span>');
+      }
       layer.appendChild(hpWrap);
     }
 
@@ -13479,7 +13733,7 @@
     if (!cfg) return;
     const total = Math.max(0, Number(cfg.totalEnemies || 0));
     const maxActive = Math.max(1, Number(cfg.maxActive || 1));
-    const interval = Math.max(500, Number(cfg.spawnIntervalMs || 7000));
+    const interval = Math.max(500, Number((state.verdantQueenGrown && cfg.grownSpawnIntervalMs) || cfg.spawnIntervalMs || 7000)); // build1659: 開花後は召喚が速い
     const startDelay = Math.max(0, Number(cfg.startDelayMs || 0));
 
     if (total > 0 && state.normalSpawned >= total) return;
@@ -14003,6 +14257,21 @@
     }
     const def = enemy.def || {};
     if (def.behavior === 'po_watcher_v1') return; // 監視の眼は攻撃しない
+    // build1659: 芽吹き＝狙い撃ち1発／大樹＝自機方向を中心に9方向の弾幕
+    if (def.behavior === 'verdant_sprout_v1') {
+      const fireRate = Number(def.fireRate || 1500);
+      if (now - enemy.lastShotAt < getStageAdjustedEnemyFireInterval(fireRate)) return;
+      enemy.lastShotAt = now;
+      const aim = getEnemyAimPosition();
+      const base = Math.atan2(aim.y - enemy.y, aim.x - enemy.x);
+      const ways = Math.max(1, Math.floor(Number(def.spreadWays || 1)));
+      const cls = 'shooting-enemy-bullet shooting-mini-enemy-bullet';
+      for (let i = 0; i < ways; i++) {
+        const off = ways > 1 ? (i - (ways - 1) / 2) * 0.24 : 0;
+        shootNormalEnemyProjectile(enemy, base + off, Number(def.bulletSpeed || 210), Number(def.bulletDamage || 95), cls);
+      }
+      return;
+    }
     if (def.behavior === 'inori_torii_v1') return; // 鳥居の攻撃（レーザー）は updateInoriMechanics
 
     // v212 generic elemental angels
@@ -14478,6 +14747,177 @@
     );
   }
 
+  // 捕縛中の敵本体に蜘蛛糸を表示。終了・撃破後は必ず解除する。
+  // build1659: 敵画像（<img>）には疑似要素が描けないため、捕縛中の敵ごとに蜘蛛の巣の表示要素を重ねて追従させる。
+  function syncCamillaBoundWebVisual(now) {
+    if (!state) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const sync = (holder, x, y, size, bound) => {
+      let fx = holder.camWebFx;
+      if (!bound) { if (fx) { fx.remove(); holder.camWebFx = null; } return; }
+      if (!fx || !fx.isConnected) {
+        ensureConjureVisualStyles();
+        fx = document.createElement('div');
+        fx.className = 'shooting-camilla-bound-web-fx';
+        fx.style.backgroundImage = `url("${getCamillaWebDataUri()}")`;
+        arena.appendChild(fx);
+        holder.camWebFx = fx;
+      }
+      fx.style.width = fx.style.height = `${Math.round(size)}px`;
+      positionUnit(fx, x, y);
+    };
+    for (const e of (state.normalEnemies || [])) {
+      if (!e) continue;
+      const bound = !!e.el && Number(e.hp) > 0 && now < Number(e.camillaWebRootUntil || 0);
+      const size = Math.max(52, Math.max(Number(e._hw || 0), Number(e._hh || 0)) * 2 * 1.25 || 72);
+      sync(e, Number(e.x || 0), Number(e.y || 0), size, bound);
+    }
+    if (state.boss) {
+      const bound = !isNormalBattle() && Number(state.boss.hp) > 0 && now < Number(state.boss.camillaWebRootUntil || 0);
+      const bossEl = document.getElementById(BOSS_ID);
+      const size = Math.max(90, Number(bossEl && bossEl.offsetWidth || 128) * Math.max(.1, Number(getResponsiveBossDisplayScale() || 1)) * 0.95);
+      sync(state.boss, Number(state.boss.x || 0), Number(state.boss.y || 0), size, bound);
+    }
+    // 撃破されて一覧から外れた敵の表示も残さない
+    arena.querySelectorAll('.shooting-camilla-bound-web-fx').forEach(fx => {
+      const owned = (state.normalEnemies || []).some(e => e && e.camWebFx === fx) || (state.boss && state.boss.camWebFx === fx);
+      if (!owned) fx.remove();
+    });
+  }
+
+  // カミラの蜘蛛糸: 移動位置だけ固定し、敵の射撃AIは実行させる。
+  // ------------------------------------------------------------
+  // build1659: 樹獣の森 ─ 成長システム
+  //  ・敵が「実際に動いた」フレームだけ成長ゲージが溜まる（捕縛・スタン・凍結など、止まっている間は溜まらない）
+  //  ・満タンで成長：HP全快＆最大HP増、ひと回り大きくなり、行動が強化される（敵ごとの verdantGrowth）
+  // ------------------------------------------------------------
+  function updateVerdantGrowth(dt, now) {
+    const cfg = selectedStage && selectedStage.verdant;
+    if (!cfg || !state || state.ended || state.finishing) return;
+    const growthMs = Math.max(1000, Number(cfg.growthMs || 8000));
+    (state.normalEnemies || []).forEach(enemy => {
+      if (!enemy || !enemy.el || enemy.hp <= 0) return;
+      const g = enemy.def && enemy.def.verdantGrowth;
+      if (!g && !(enemy.verdantBase && enemy.verdantBase.verdantGrowth)) return;
+      const lx = Number(enemy.verdantLastX), ly = Number(enemy.verdantLastY);
+      enemy.verdantLastX = enemy.x; enemy.verdantLastY = enemy.y;
+      if (enemy.verdantGrown || !Number.isFinite(lx)) return;
+      const moved = Math.hypot(Number(enemy.x) - lx, Number(enemy.y) - ly) > 0.01; // 捕縛・スタン中は座標が完全に止まる
+      if (moved) enemy.verdantGrowthMs = Number(enemy.verdantGrowthMs || 0) + Math.max(0, dt) * 1000;
+      const ratio = Math.max(0, Math.min(1, Number(enemy.verdantGrowthMs || 0) / growthMs));
+      const bar = enemy.hpEl && enemy.hpEl.querySelector('.verdant-growth-bar b');
+      if (bar) bar.style.transform = `scaleX(${ratio.toFixed(3)})`;
+      if (enemy.hpEl) enemy.hpEl.classList.toggle('is-verdant-halted', !moved);
+      if (ratio >= 1) growVerdantEnemy(enemy, now);
+    });
+  }
+  function growVerdantEnemy(enemy, now) {
+    const g = enemy.def && enemy.def.verdantGrowth;
+    if (!g || enemy.verdantGrown) return;
+    enemy.verdantGrown = true;
+    enemy.verdantBase = enemy.def;
+    enemy.def = Object.assign({}, enemy.def, g.grownDef || {}, { name: g.name || enemy.def.name });
+    // HP全快＆最大HP増
+    enemy.hpMax = Math.max(1, Math.round(Number(enemy.hpMax || 1) * Math.max(1, Number(g.hpMul || 1.5))));
+    enemy.hp = enemy.hpMax;
+    renderMiniEnemyHp(enemy, true);
+    // ひと回り大きく
+    const mul = Math.max(1, Number(g.scaleMul || 1.25));
+    enemy.baseDisplayScale = Number(enemy.baseDisplayScale || getNormalEnemyBaseDisplayScale(enemy.verdantBase)) * mul;
+    enemy.displayScale = Number(enemy.displayScale || 1) * mul;
+    enemy.el.style.setProperty('--enemy-scale', String(enemy.displayScale));
+    if (g.grownImage) {
+      const fallback = enemy.el.getAttribute('src');
+      enemy.el.onerror = () => { enemy.el.onerror = null; enemy.el.src = fallback; };
+      enemy.el.src = String(g.grownImage);
+    }
+    enemy.el.classList.add('verdant-grown');
+    enemy.hpEl?.classList.add('is-verdant-grown');
+    // 大樹はその場に根を張る（今いる場所を基準位置にする）
+    enemy.baseX = enemy.x; enemy.baseY = enemy.y;
+    requestAnimationFrame(() => { try { measureUnitSize(enemy); positionMiniEnemyHp(enemy); } catch (_) {} });
+    const arena = document.getElementById('shooting-arena');
+    if (arena) {
+      const pop = document.createElement('div');
+      pop.className = 'verdant-grow-pop';
+      pop.textContent = `成長！ ${g.name || ''}`;
+      arena.appendChild(pop);
+      positionUnit(pop, enemy.x, enemy.y - 40);
+      setTimeout(() => { try { pop.remove(); } catch (_) {} }, 1100);
+    }
+  }
+
+  // build1659: 樹獣の女王の成長（動いている間だけ溜まる。満タンで「開花」）
+  function removeVerdantDom() {
+    document.querySelectorAll('#verdant-boss-growth, .verdant-grow-pop').forEach(el => el.remove());
+  }
+  function updateVerdantBossGrowth(dt, now) {
+    const cfg = selectedStage && selectedStage.verdant;
+    const g = BOSS && BOSS.verdantBossGrowth;
+    if (!cfg || !g || !state || !state.boss || isNormalBattle() || state.ended || state.finishing) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const growthMs = Math.max(2000, Number(cfg.bossGrowthMs || 18000));
+    const lx = Number(state.verdantQueenLastX), ly = Number(state.verdantQueenLastY);
+    state.verdantQueenLastX = state.boss.x; state.verdantQueenLastY = state.boss.y;
+    let el = document.getElementById('verdant-boss-growth');
+    if (state.verdantQueenGrown || state.boss.hp <= 0) { if (el) el.remove(); return; }
+    const moved = Number.isFinite(lx) && Math.hypot(Number(state.boss.x) - lx, Number(state.boss.y) - ly) > 0.01;
+    if (moved && !state.phaseTransition) state.verdantQueenGrowthMs = Number(state.verdantQueenGrowthMs || 0) + Math.max(0, dt) * 1000;
+    const ratio = Math.max(0, Math.min(1, Number(state.verdantQueenGrowthMs || 0) / growthMs));
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'verdant-boss-growth';
+      el.className = 'verdant-boss-growth';
+      el.innerHTML = '<span>開花まで</span><i><b></b></i>';
+      arena.appendChild(el);
+    }
+    el.classList.toggle('is-halted', !moved);
+    const bar = el.querySelector('b');
+    if (bar) bar.style.transform = `scaleX(${ratio.toFixed(3)})`;
+    const bossEl = document.getElementById(BOSS_ID);
+    const halfH = Math.max(50, Number(bossEl && bossEl.offsetHeight || 128) * Math.max(.1, Number(getResponsiveBossDisplayScale() || 1)) * 0.5);
+    positionUnit(el, Number(state.boss.x || 0), Number(state.boss.y || 0) + halfH + 4);
+    if (ratio >= 1) bloomVerdantQueen(now);
+  }
+  function bloomVerdantQueen(now) {
+    const g = BOSS && BOSS.verdantBossGrowth;
+    if (!g || state.verdantQueenGrown) return;
+    state.verdantQueenGrown = true;
+    document.getElementById('verdant-boss-growth')?.remove();
+    // 速度切替で座標が飛ばないよう、現在地から新しい軌道へ滑らかに移行
+    state.bossMotionBlendFromX = state.boss.x; state.bossMotionBlendFromY = state.boss.y;
+    state.bossMotionBlendStartedAt = getBossMotionTime(now); state.bossMotionBlendDurationMs = 900;
+    // HP回復（現在のゲージの範囲内まで）
+    const phase = Math.max(1, Number(state.boss.phase || 1));
+    const gaugeTop = getBossGaugeFloorForPhase(phase) + getBossGaugeHpForPhase(phase);
+    const heal = Math.max(0, Number(state.boss.hpMax || 0) * Math.max(0, Number(g.healRate || 0.25)));
+    state.boss.hp = Math.min(gaugeTop, Number(state.boss.hp || 0) + heal);
+    const bossEl = document.getElementById(BOSS_ID);
+    if (bossEl) {
+      const src = getSelectedBossImage();
+      bossEl.src = src;
+      bossEl.classList.add('verdant-bloomed');
+    }
+    showFacelessBattleCut('開花', '樹獣の女王が目覚めた');
+    renderHud();
+  }
+
+  function updateCamillaRootedEnemies(dt, now) {
+    const tracked = (state?.normalEnemies || []).filter(e=>e&&e.el&&e.hp>0&&now<Number(e.camillaWebRootUntil||0))
+      .map(e=>({e,x:e.x,y:e.y,baseX:e.baseX,baseY:e.baseY}));
+    updateNormalEnemies(dt,now);
+    tracked.forEach(({e,x,y,baseX,baseY})=>{
+      if(!e.el || e.hp<=0)return;
+      e.x=x;e.y=y;
+      if(baseX!==undefined)e.baseX=baseX;
+      if(baseY!==undefined)e.baseY=baseY;
+      positionUnit(e.el,x,y);
+      positionMiniEnemyHp(e);
+    });
+  }
+
   function updateNormalEnemies(dt, now) {
     if (!isNormalBattle() && !hasBossAdds()) return;
     const arena = document.getElementById('shooting-arena');
@@ -14707,6 +15147,15 @@
         // 弾幕担当の雑魚。上空で横移動しながら、交差する角度を作る。
         enemy.x = clamp(enemy.baseX + Math.sin(age * 1.08 + enemy.phaseSeed) * Math.min(72, w * .18), 36, w - 36);
         enemy.y = Math.max(76, Math.min(h * .34, enemy.baseY)) + Math.sin(age * .76 + enemy.phaseSeed * 1.7) * 14;
+      } else if (def.behavior === 'verdant_sprout_v1') {
+        // build1659: 芽吹きは画面の上半分を大きく歩き回る。成長して「大樹」になると、その場に根を張って動かない。
+        if (enemy.verdantGrown) {
+          enemy.x = enemy.baseX;
+          enemy.y = enemy.baseY;
+        } else {
+          enemy.x = clamp(enemy.baseX + Math.sin(age * .9 + enemy.phaseSeed) * Math.min(130, w * .33), 36, w - 36);
+          enemy.y = clamp(Math.max(90, Math.min(h * .30, enemy.baseY)) + Math.sin(age * .62 + enemy.phaseSeed * 1.7) * h * .11, 76, h * .46);
+        }
       } else if (def.behavior === 'po_watcher_v1') {
         // build1643: 監視の眼。上空〜中段をゆっくり漂い、視界（扇形）を首振りさせる。
         enemy.x = clamp(enemy.baseX + Math.sin(age * .35 + enemy.phaseSeed) * Math.min(92, w * .22), 40, w - 40);
@@ -14827,6 +15276,7 @@
   function damageNormalEnemy(enemy, amount, now, big, elementReaction = '', suppressVisual = false) {
     if (!enemy || enemy.hp <= 0) return 0;
     const appliedDamage = Math.min(enemy.hp, Math.max(0, Number(amount || 0)));
+    if (appliedDamage > 0 && Number(now||performance.now()) < Number(enemy.camillaWebRootUntil||0)) absorbCamillaWebDamage(appliedDamage, now);
     enemy.hp = Math.max(0, enemy.hp - appliedDamage);
 
     if (isChapter403FireWallStage() && state && !state.ch403BarrierBroken && !state.ch403EncounterTriggered && elementReaction === 'immune') {
@@ -18406,6 +18856,46 @@
     }
   }
 
+  // build1659: 樹獣の女王の通常攻撃。
+  //  蕾：自機へ5方向の種弾。3回に1回、全方位10発の輪。
+  //  開花：自機へ7方向の速い種弾と、回転しながら広がる花弁の渦（12発）を交互に。
+  function fireVerdantQueen(now) {
+    if (!state || !state.boss) return;
+    const grown = !!state.verdantQueenGrown;
+    const phase = Math.max(1, Number(state.boss.phase || 1));
+    const ordinary = state.enemyBullets.reduce((n, p) => (p && p.el && !p.el.classList.contains('shooting-danger-bullet')) ? n + 1 : n, 0);
+    if (ordinary >= (grown ? 120 : 96)) return;
+    const rate = (grown ? 900 : 1300) - (phase - 1) * 90;
+    if (now - state.lastBossShotAt < getStageAdjustedEnemyFireInterval(rate)) return;
+    state.lastBossShotAt = now;
+    const idx = (state.verdantQueenVolley = Number(state.verdantQueenVolley || 0) + 1);
+    const ox = Number(state.boss.x || 0), oy = Number(state.boss.y || 0) + 34;
+    const aim = getEnemyAimPosition();
+    const base = Math.atan2(aim.y - oy, aim.x - ox);
+    const dmg = Number(BOSS.bulletDamage || 190);
+    const shot = (a, speed) => appendEnemyProjectile(makeProjectile('shooting-enemy-bullet', ox, oy, Math.cos(a) * speed, Math.sin(a) * speed, dmg));
+    if (!grown) {
+      [-0.36, -0.18, 0, 0.18, 0.36].forEach(o => shot(base + o, Number(BOSS.bulletSpeed || 215)));
+      if (idx % 3 === 0) for (let i = 0; i < 10; i++) shot(idx * 0.3 + Math.PI * 2 * i / 10, 150);
+      return;
+    }
+    if (idx % 2 === 0) {
+      for (let i = 0; i < 7; i++) shot(base + (i - 3) * 0.16, 250);
+    } else {
+      const arms = 12, reverse = idx % 4 === 1;
+      for (let i = 0; i < arms; i++) {
+        const a = idx * 0.41 + Math.PI * 2 * i / arms;
+        const p = makeProjectile('shooting-enemy-bullet shooting-beautiful-bullet shooting-beautiful-spiral', ox, oy, Math.cos(a) * 150, Math.sin(a) * 150, dmg);
+        if (!p) continue;
+        p.canvasTone = (i % 4) + 1;
+        p.beautifulSpiral = true; p.beautifulAge = 0;
+        p.beautifulOriginX = ox; p.beautifulOriginY = oy;
+        p.beautifulStartAngle = a; p.beautifulAngularSpeed = (reverse ? -1 : 1) * 0.5; p.beautifulRadialSpeed = 150;
+        state.enemyBullets.push(p);
+      }
+    }
+  }
+
   function fireBoss(now) {
     // BOSSの射撃経路をひとつの入口で抑止。個別ロック中は他のADDを止めない。
     if (!state || !state.boss) return;
@@ -18467,6 +18957,10 @@
     }
     if (BOSS && BOSS.behavior === 'inori_v1') {
       fireInoriBoss(now);
+      return;
+    }
+    if (BOSS && BOSS.behavior === 'verdant_queen_v1') {
+      fireVerdantQueen(now);
       return;
     }
     if (BOSS && BOSS.behavior === 'beautiful_boss_v1') {
@@ -18950,7 +19444,9 @@
     const bossGrabbed = now < (state.bossGrabUntil || 0);
     const bossStunned = now < (state.bossStunUntil || 0);
     const bossGojoFrozen = now < Number(state.gojoPurpleBossFreezeUntil || 0);
-    const bossBlackHolePulled = isEnemyPullFieldActive(now) || bossGojoFrozen;
+    // build1659: カミラの捕縛（蜘蛛の糸）中はBOSSの移動AIを止める（従来は移動後に位置を戻すだけで実質動けていた）
+    const bossCamillaRooted = !!(state.boss && now < Number(state.boss.camillaWebRootUntil || 0));
+    const bossBlackHolePulled = isEnemyPullFieldActive(now) || bossGojoFrozen || bossCamillaRooted;
 
     // イリシュが拘束/スタン/吸引された場合、突進予告の明滅を残さない。
     if (
@@ -19058,6 +19554,15 @@
         }
         state.boss.x = clamp(state.boss.x, 54, w - 54);
         state.boss.y = clamp(state.boss.y, 46, pressY);
+      } else if (BOSS && BOSS.behavior === 'verdant_queen_v1') {
+        // build1659: 樹獣の女王は上半分を大きく∞字に漂う（動き続ける＝放っておくと成長が進む）。開花後は速く大きく。
+        const grown = !!state.verdantQueenGrown;
+        const sp = grown ? 0.72 : 0.5;
+        const targetX = w * 0.5 + Math.sin(t * sp) * w * (grown ? 0.30 : 0.24);
+        const targetY = Math.max(64, h * 0.19 + Math.sin(t * sp * 2) * (grown ? 30 : 20));
+        const blended = applyBossStartBlend(targetX, targetY);
+        state.boss.x = blended.x;
+        state.boss.y = blended.y;
       } else if (BOSS && BOSS.behavior === 'remnant07_v1') {
         updateChapter07BossMovement(now, w, h);
       } else if (BOSS && BOSS.behavior === 'barrage_v1') {
@@ -19382,6 +19887,7 @@
             if (isMiaChargeProjectile(p)) state.nextHitEffect = p.kind === 'charge_wave' ? 'charge_wave' : 'mia_water';
             const targetElement = getCombatTargetElement(enemy);
             const finalDamage = applyElementDamage(p.damage, attackElement, targetElement);
+            if (p.kind === 'camilla_web' && finalDamage > 0) enemy.camillaWebRootUntil=Math.max(Number(enemy.camillaWebRootUntil||0),now+3000);
             const appliedEnemyDamage = damageNormalEnemy(enemy, finalDamage, now, false, getElementDamageReaction(attackElement, targetElement));
             if (appliedEnemyDamage > 0) hitCount++;
           });
@@ -19437,6 +19943,8 @@
                 state.boss.hp,
                 Math.max(0, Number(elementAdjustedDamage || 0))
               );
+          if (p.kind === 'camilla_web' && appliedDamage > 0) state.boss.camillaWebRootUntil=Math.max(Number(state.boss.camillaWebRootUntil||0),now+3000);
+          if (appliedDamage>0 && now<Number(state.boss.camillaWebRootUntil||0)) absorbCamillaWebDamage(appliedDamage, now);
           state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
           updateBossPhase();
           if (!addScoreAttackDamageScore(appliedDamage)) {
@@ -21697,7 +22205,7 @@
       isEnemyPullFieldActive(now)
     );
 
-    const bossFrozen = sharedFreeze || now < getBossLockUntil(now);
+    const bossFrozen = sharedFreeze || now < getBossLockUntil(now) || !!(state.boss && !isNormalBattle() && now < Number(state.boss.camillaWebRootUntil || 0)); // build1659: カミラの捕縛中はBOSSの移動時計も止める
     const bossLast = Number(state.bossMotionSampleAt || 0);
     const bossWasFrozen = !!state.bossMotionWasFrozen;
     if (bossLast > 0 && bossWasFrozen) {
@@ -23116,6 +23624,8 @@
     updateRemnaTrapPlacementPreview(ts);
     updateConjureDeployments(dt, ts);
     updateConjureTurrets(ts);
+    updateCamillaCrimsonWeb(ts);
+    syncCamillaBoundWebVisual(ts);
     rearmConjurePlacementWhileHeld(ts);
     rearmRemnaTrapPlacementWhileHeld(ts);
     updateConjureUlt(ts);
@@ -23136,6 +23646,8 @@
       hideIgnisLaser();
     }
     const ultLocked = ts < (state.ultLockUntil || 0);
+    const camillaRootedBoss = (state.boss && ts<Number(state.boss.camillaWebRootUntil||0))
+      ? {x:state.boss.x,y:state.boss.y} : null;
     const bossGojoFrozen = ts < Number(state.gojoPurpleBossFreezeUntil || 0);
     const bossPullFrozen = isEnemyPullFieldActive(ts);
     const bossGrabbed = ts < (state.bossGrabUntil || 0) || bossGojoFrozen || bossPullFrozen;
@@ -23161,12 +23673,14 @@
       if (!tutorialUltOnly && ts >= Number(state.playerShotLockUntil || 0)) firePlayer(ts);
       if (isNormalBattle()) {
         spawnNormalEnemies(ts);
-        updateNormalEnemies(dt, ts);
+        updateCamillaRootedEnemies(dt, ts);
+        updateVerdantGrowth(dt, ts); // build1659: 樹獣の森（動いている敵だけ成長）
         fireTower12LethalVolley(ts);
       } else {
         if (hasBossAdds()) {
           spawnBossAdds(ts);
-          updateNormalEnemies(dt, ts);
+          updateCamillaRootedEnemies(dt, ts);
+          updateVerdantGrowth(dt, ts); // build1659: 樹獣の森の配下（動いている敵だけ成長）
         }
         // build1643: オーバーシアの監視（視界に入っている間だけ敵弾が追従）
         updateOverseerWatch(dt, ts, bossGrabbed || bossStunned);
@@ -23184,6 +23698,12 @@
     // build1630: リズム弾幕（譜面・仮ドラム・判定）
     updateRhythmStage(ts);
 
+    if(camillaRootedBoss && state.boss){
+      state.boss.x=camillaRootedBoss.x;state.boss.y=camillaRootedBoss.y;
+      if(state.boss.el)positionUnit(state.boss.el,state.boss.x,state.boss.y);
+    }
+    // build1659: 樹獣の女王（動いている間だけ成長→開花）。捕縛の位置戻し後に判定する。
+    updateVerdantBossGrowth(dt, ts);
     // エルテナULTは通常の敵移動が終わった後に吸引を適用。
     // これによりAIの横移動よりブラックホールの集敵を優先する。
     updateEltenaBlackHole(dt, ts);
@@ -23254,6 +23774,10 @@
   }
 
   function getSelectedBossImage() {
+    // build1659: 樹獣の女王は開花後の姿
+    if (state && state.verdantQueenGrown && BOSS && BOSS.verdantBossGrowth && BOSS.verdantBossGrowth.grownImage) {
+      return String(BOSS.verdantBossGrowth.grownImage);
+    }
     const phaseVisual = getActiveBossPhaseVisual();
     if (phaseVisual && phaseVisual.image) return String(phaseVisual.image);
     // SCORE ATTACKだけ専用ボス画像に差し替える。
@@ -23676,6 +24200,10 @@
     const gimmicks = [];
     if (stage.spiderHorde) gimmicks.push({ id:'ch704Horde', label:'小蜘蛛の大群・接触連撃' });
     if (stage.rhythm) gimmicks.push({ id:'rhythm', label:'リズム弾幕' });
+    if (stage.verdant) {
+      gimmicks.push({ id:'verdantCharge', label:'突進' });
+      gimmicks.push({ id:'verdantGrowth', label:'動くと成長' });
+    }
     const barrierElements = getStageBarrierPreviewElements(stage);
     const isDailyAdvanced = !!(
       (stage.dailyQuest && stage.dailyQuest.level === 'advanced') ||
@@ -24195,6 +24723,47 @@
 
   window.openRhythmStage = openRhythmStage;
   window.showRhythmStageSelect = showRhythmStageSelect;
+
+  // build1659: SPECIAL STAGE「樹獣の森」難易度選択（律動と同じ画面の作り）
+  function openVerdantStage(stageId) {
+    if (typeof window.requireChapter03ContentUnlock === 'function' && !window.requireChapter03ContentUnlock()) return false;
+    window.__shootingReturnContext = { type: 'verdantStageSelect' };
+    closeFacelessStageSelect();
+    window.openShootingEvent({ stageId: String(stageId || '') });
+  }
+  function showVerdantStageSelect(options = {}) {
+    if (typeof window.requireChapter03ContentUnlock === 'function' && !window.requireChapter03ContentUnlock()) return false;
+    closeFacelessStageSelect();
+    const immediate = !!(options && options.immediate);
+    const overlay = document.createElement('div');
+    overlay.id = 'shooting-faceless-stage-select';
+    overlay.className = 'zfs-screen zfs-rhythm zfs-verdant';
+    if (immediate) { overlay.classList.add('show'); overlay.style.transition = 'none'; }
+    const card = (id, no, title) => buildRhythmStageCard(id, no, title).replace(/openRhythmStage\(/g, 'openVerdantStage(');
+    overlay.innerHTML = `
+      <div class="zfs-surface">
+        <div class="zfs-pagehead">
+          <button type="button" class="zfs-back" onclick="closeFacelessStageSelect()" aria-label="戻る">〈 戻る</button>
+          <h2 class="zfs-heading zfs-heading-split"><span class="zfs-heading-main">樹獣の森</span><span class="zfs-heading-sub">VERDANT</span></h2>
+          <div class="zfs-ornament" aria-hidden="true"><span>✦</span></div>
+        </div>
+        <div class="zfs-scroll">
+          <p class="zfs-verdant-lead">樹獣の女王と配下は、動いている間に成長する。女王が開花する前に、捕縛や停止で動きを封じて倒せ。</p>
+          <div class="zfs-list" aria-label="樹獣の森・難易度選択">
+            ${card(SHOOTING_STAGE_ID.VERDANT_ADVANCED, '01', '上級')}
+            ${card(SHOOTING_STAGE_ID.VERDANT_SUPER, '02', '最上級')}
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    fitStageSelectHeading(overlay);
+    void syncShootingClearedStagesFromServer();
+    if (!immediate) requestAnimationFrame(() => overlay.classList.add('show'));
+    else requestAnimationFrame(() => { if (overlay.isConnected) overlay.style.transition = ''; });
+    return true;
+  }
+  window.openVerdantStage = openVerdantStage;
+  window.showVerdantStageSelect = showVerdantStageSelect;
 
   window.closeFacelessStageSelect = closeFacelessStageSelect;
   window.openFacelessStage = openFacelessStage;
@@ -25604,6 +26173,7 @@
     // CH04専用ギミックはRESULTへ持ち越さない。
     removeOverseerWatchDom();
     removeInoriDom();
+    removeVerdantDom();
     clearChapter4FinalItem();
     purgeChapter4ItemDom();
     clearChapter43RestoreItem();
@@ -27792,6 +28362,11 @@
       showRhythmStageSelect();
       return;
     }
+    // build1659: 樹獣の森は難易度選択から
+    if (!hasExplicitStage && options && options.verdantSelect) {
+      showVerdantStageSelect();
+      return;
+    }
     if (!hasExplicitStage && !hasExplicitEnemy) {
       showFacelessStageSelect();
       return;
@@ -28157,6 +28732,9 @@
     const returningToRhythmStageSelect = !!(
       returnContext && returnContext.type === 'rhythmStageSelect'
     );
+    const returningToVerdantStageSelect = !!(
+      returnContext && returnContext.type === 'verdantStageSelect'
+    );
     const returningToRaidLobby = !!(returnContext && returnContext.type === 'raidLobby');
     // build1437: 楽園 -ノア- も、編成/RESULTから戻ったら直前のステージ選択へ戻す。
     const returningToNoahStageSelect = !!(
@@ -28186,6 +28764,9 @@
       closeDailyStageSelect();
     } else if (returningToRhythmStageSelect) {
       showRhythmStageSelect({ immediate: true });
+      closeDailyStageSelect();
+    } else if (returningToVerdantStageSelect) {
+      showVerdantStageSelect({ immediate: true });
       closeDailyStageSelect();
     } else if (returningToDailyStageSelect) {
       showDailyStageSelect({ immediate: true });
@@ -32894,6 +33475,53 @@
     renderHud();
   }
 
+  // build1657 カミラULT: 移動拘束のみ、敵弾や射撃処理は停止させない。
+  function absorbCamillaWebDamage(damage, now) {
+    if(!state || !state.camillaWebUlt || Number(now||performance.now())>=Number(state.camillaWebUlt.until||0)) return;
+    const rate=Number(state.camillaWebUlt.absorbRate||0);
+    if(rate<=0)return;
+    const member=getActiveMember();
+    if(!member || Number(member.hp||0)<=0)return;
+    const heal=Math.max(0,Number(damage||0)*rate);
+    const maxHp=Math.max(1,Number(member.hpMax||0));
+    const before=Number(member.hp||0);
+    member.hp=Math.min(maxHp,before+heal);
+    if(member.hp>before)showHealNumber(member.hp-before,member);
+  }
+
+  function useCamillaCrimsonWebUlt(c) {
+    if(!state||state.ended||state.finishing)return;
+    const lb=Math.max(0,Math.min(4,Math.floor(Number(getShootingResonanceLevel(102)||0))));
+    const duration=[3,4,5,6,7][lb]*1000;
+    const rate=[.02,.03,.04,.05,.06][lb];
+    const now=performance.now();
+    const until=now+duration;
+    showUltCut(c.ultName||'血界・緋糸万華',c.effectKey,c);
+    ensureConjureVisualStyles();
+    const arena=document.getElementById('shooting-arena');
+    state.camillaWebUlt?.overlay?.remove();
+    const overlay=document.createElement('div');overlay.className='shooting-camilla-web-overlay';
+    // build1659: 画面全体に張り巡らされる本物の蜘蛛の巣（中心から一気に広がる）
+    overlay.innerHTML=getCamillaWebSvg(18,10,true)+'<i class="cw-core"></i>';
+    arena?.prepend(overlay); // 背面：アリーナの最初の子として置き、他の要素がすべて上に描かれるようにする
+    state.camillaWebUlt={until,absorbRate:rate,overlay};
+    (state.normalEnemies||[]).forEach(e=>{if(e&&e.hp>0)e.camillaWebRootUntil=Math.max(Number(e.camillaWebRootUntil||0),until);});
+    if(state.boss&&state.boss.hp>0)state.boss.camillaWebRootUntil=Math.max(Number(state.boss.camillaWebRootUntil||0),until);
+    state.ultLockUntil=Math.max(Number(state.ultLockUntil||0),now+250);
+    renderHud();
+  }
+
+  function updateCamillaCrimsonWeb(now) {
+    const ult=state?.camillaWebUlt;
+    if(!ult)return;
+    if(now>=ult.until){ult.overlay?.remove();state.camillaWebUlt=null;}
+    else if(ult.until-now<=400) ult.overlay?.classList.add('is-ending');
+    else {
+      (state.normalEnemies||[]).forEach(e=>{if(e&&e.hp>0)e.camillaWebRootUntil=Math.max(Number(e.camillaWebRootUntil||0),ult.until);});
+      if(state.boss&&state.boss.hp>0)state.boss.camillaWebRootUntil=Math.max(Number(state.boss.camillaWebRootUntil||0),ult.until);
+    }
+  }
+
   // build1324: スズULT「静寂の森」：既存の敵弾を消去し、3.5秒間だけ弾生成を封印。
   // 敵の移動・HP・照準AIには手を触れない。全弾生成の共通ゲートで抑止する。
   function useSuzuBulletSilenceUlt(c) {
@@ -33017,6 +33645,7 @@
     else if (c.ultType === 'noah_time_homing') useNoahUlt(c);
     else if (c.ultType === 'jig_scramble_ray') useJigScrambleUlt(c);
     else if (c.ultType === 'testchan_black_ship') useTestChanUlt(c);
+    else if (c.ultType === 'camilla_crimson_web') useCamillaCrimsonWebUlt(c);
     else if (c.ultType === 'conjure_homing_battery') useConjureUlt(c);
     else if (c.ultType === 'veronica_brass_punch') useVeronicaBrassPunchUlt(c);
     else if (c.ultType === 'shiina_light_ring') useShiinaLightRingUlt(c);
