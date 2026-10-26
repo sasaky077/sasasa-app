@@ -16171,7 +16171,8 @@
   }
 
   function spawnRhythmRow(ev, w) {
-    const damage = Number(BOSS.bulletDamage || 240);
+    // build1670: 全難易度・全コンテンツのリズム弾幕を一律20%減少。
+    const damage = Math.max(1, Math.round(Number(BOSS.bulletDamage || 240) * 0.8));
     const bars = [];
     const barCount = ev.note != null ? 3 : 2;
     for (let i = 0; i < barCount; i++) {
@@ -16248,6 +16249,35 @@
       if (row.note != null && !row.noteTaken) tryCollectRhythmNote(row, ts);
       return y < h + 40;
     });
+
+    // build1670: リズム専用の「帯」弾は通常弾とは異なり譜面から毎フレーム位置を
+    // 強制指定される。トイフェルの吸引が効くよう、ブラックホールが展開された瞬間に
+    // 見えている個々の光弾を標準の敵弾へ変換し、以後は通常の弾移動・吸収処理に委ねる。
+    if (isToyfelBlackHoleFieldActive(ts)) {
+      for (const row of r.rows) {
+        for (const bar of row.bars) {
+          if (!bar || !bar.el || typeof bar.rhythmFrom !== 'number') continue;
+          const pitch = Math.max(1, Number(bar.rhythmPitch || w / RHYTHM_COLS));
+          const end = typeof bar.rhythmTo === 'number' ? bar.rhythmTo : null;
+          const stop = end == null ? (bar.rhythmSide === 'left' ? -pitch : w + pitch)
+            : end + (bar.rhythmSide === 'left' ? -0.01 : 0.01);
+          const direction = bar.rhythmSide === 'left' ? -1 : 1;
+          const count = Math.min(32, Math.ceil((w + pitch * 2) / pitch));
+          for (let i = 0, x = bar.rhythmFrom; i < count &&
+              (direction < 0 ? x > stop : x < stop); i++, x += direction * pitch) {
+            if (x < -RHYTHM_ORB_R || x > w + RHYTHM_ORB_R) continue;
+            const bullet = makeProjectile('shooting-enemy-bullet shooting-rhythm-orb', x,
+              Number(bar.y || row.y || 0), 0, pxPerMs * 1000, bar.damage);
+            if (bullet) appendEnemyProjectile(bullet);
+          }
+          try { bar.el.remove(); } catch (_) {}
+          bar.__canvasAlive = false;
+          const index = state.enemyBullets.indexOf(bar);
+          if (index !== -1) state.enemyBullets.splice(index, 1);
+        }
+      }
+      r.rows = [];
+    }
   }
 
   // ---------- build1643: 音符（♪）の取得 ----------
