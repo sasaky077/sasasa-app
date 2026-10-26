@@ -439,56 +439,81 @@
         box-shadow:0 0 11px rgba(208,210,219,.82)!important;
       }
 
-      /* ノアULT：落雷。縦の閃光 + 着弾リング */
+      /* build1673: ノアULT：落雷を刷新。
+         上から一気に走る稲妻（毎回ちがうギザギザ＋枝分かれ）→ 2度瞬く → 着弾の閃光・衝撃輪・火花＋画面の白閃。
+         アニメーションは子要素の stroke-dashoffset / opacity / transform だけ（配置は親の left/top）。 */
       .shooting-noah-lightning{
-        position:absolute;
-        left:0;top:0;
-        z-index:48;
-        width:10px;
-        pointer-events:none;
-        transform-origin:50% 100%;
-        opacity:0;
+        position:absolute;left:0;top:0;z-index:48;width:160px;
+        pointer-events:none;opacity:1;
       }
-      .shooting-noah-lightning::before{
-        content:"";
-        position:absolute;
-        left:50%;top:0;bottom:0;
-        width:5px;
-        transform:translateX(-50%) skewX(-7deg);
-        background:linear-gradient(180deg,
-          rgba(255,255,255,0),
-          rgba(255,255,255,.98) 8%,
-          rgba(220,221,226,.98) 28%,
-          rgba(255,255,255,1) 55%,
-          rgba(174,177,187,.96) 78%,
-          rgba(255,255,255,.25));
-        box-shadow:
-          0 0 7px rgba(255,255,255,1),
-          0 0 16px rgba(203,205,215,.95),
-          0 0 30px rgba(138,142,154,.72);
-        clip-path:polygon(48% 0,100% 0,60% 19%,92% 21%,49% 43%,88% 45%,24% 100%,39% 61%,0 60%,42% 37%,12% 35%,55% 17%);
+      .shooting-noah-lightning svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
+      .shooting-noah-lightning .nl-bolt{animation:noahBoltFlicker .42s linear both}
+      .shooting-noah-lightning path{
+        fill:none;stroke-linecap:round;stroke-linejoin:round;
+        stroke-dasharray:1;stroke-dashoffset:1;
+        animation:noahBoltDraw .075s cubic-bezier(.3,0,.9,.6) forwards;
       }
-      .shooting-noah-lightning::after{
-        content:"";
-        position:absolute;
-        left:50%;bottom:-10px;
-        width:58px;height:22px;
-        transform:translateX(-50%);
-        border-radius:50%;
-        border:2px solid rgba(230,231,236,.9);
-        box-shadow:
-          0 0 10px rgba(255,255,255,.95),
-          0 0 24px rgba(150,153,165,.72);
-        background:radial-gradient(ellipse,rgba(255,255,255,.72),rgba(180,183,194,.18) 48%,transparent 72%);
+      .shooting-noah-lightning .nl-glow{stroke:rgba(196,206,232,.55);stroke-width:16}
+      .shooting-noah-lightning .nl-mid{stroke:rgba(232,238,255,.95);stroke-width:6}
+      .shooting-noah-lightning .nl-core{stroke:#fff;stroke-width:2.6}
+      .shooting-noah-lightning .nl-branch{stroke:rgba(238,242,255,.92);stroke-width:2;animation-delay:.03s}
+      .shooting-noah-lightning .nl-branch-glow{stroke:rgba(190,200,228,.45);stroke-width:7;animation-delay:.03s}
+      @keyframes noahBoltDraw{to{stroke-dashoffset:0}}
+      @keyframes noahBoltFlicker{
+        0%,26%{opacity:1}
+        33%{opacity:.18}
+        41%{opacity:1}
+        48%{opacity:.4}
+        56%{opacity:.95}
+        100%{opacity:0}
       }
-      .shooting-noah-lightning.strike{
-        animation:noahLightningStrike .22s ease-out both;
+      .shooting-noah-lightning .nl-impact{
+        position:absolute;left:50%;bottom:0;width:0;height:0;
       }
-      @keyframes noahLightningStrike{
-        0%{opacity:0;filter:brightness(2.2)}
-        12%{opacity:1;filter:brightness(2.5)}
-        42%{opacity:.95;filter:brightness(1.65)}
-        100%{opacity:0;filter:brightness(1)}
+      .shooting-noah-lightning .nl-impact i,
+      .shooting-noah-lightning .nl-impact b,
+      .shooting-noah-lightning .nl-impact u{
+        position:absolute;left:0;top:0;border-radius:50%;pointer-events:none;opacity:0;
+      }
+      .shooting-noah-lightning .nl-impact i{
+        width:120px;height:120px;margin:-60px 0 0 -60px;
+        background:radial-gradient(circle,#fff 0 18%,rgba(232,238,255,.85) 30%,rgba(170,182,214,.35) 52%,transparent 70%);
+        animation:noahImpactFlash .34s ease-out .06s both;
+      }
+      .shooting-noah-lightning .nl-impact b{
+        width:84px;height:84px;margin:-42px 0 0 -42px;
+        border:3px solid rgba(240,244,255,.95);
+        box-shadow:0 0 12px rgba(255,255,255,.9),0 0 26px rgba(170,182,214,.7);
+        animation:noahImpactRing .42s cubic-bezier(.15,.7,.3,1) .06s both;
+      }
+      .shooting-noah-lightning .nl-impact u{
+        width:5px;height:5px;margin:-2.5px 0 0 -2.5px;background:#fff;
+        box-shadow:0 0 6px #fff,0 0 12px rgba(190,200,228,.9);
+        animation:noahSpark .36s ease-out .07s both;
+      }
+      @keyframes noahImpactFlash{
+        0%{opacity:0;transform:scale(.25)}
+        18%{opacity:1;transform:scale(.9)}
+        100%{opacity:0;transform:scale(1.35)}
+      }
+      @keyframes noahImpactRing{
+        0%{opacity:0;transform:scale(.2)}
+        15%{opacity:1}
+        100%{opacity:0;transform:scale(1.9)}
+      }
+      @keyframes noahSpark{
+        0%{opacity:1;transform:translate(0,0) scale(1)}
+        100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.4)}
+      }
+      .shooting-noah-lightning-flash{
+        position:absolute;inset:0;z-index:47;pointer-events:none;
+        background:radial-gradient(ellipse at var(--fx,50%) 30%,rgba(255,255,255,.55),rgba(226,232,250,.28) 45%,rgba(200,210,236,.12));
+        animation:noahScreenFlash .16s ease-out both;
+      }
+      @keyframes noahScreenFlash{
+        0%{opacity:0}
+        20%{opacity:1}
+        100%{opacity:0}
       }
       #shooting-event-root.noah-paralyze-active .shooting-arena{
         filter:saturate(.25) brightness(1.04);
@@ -31182,6 +31207,9 @@
         white-space:nowrap;
         animation:shootingArnoRapidTapPrompt .46s ease-in-out infinite alternate;
       }
+      .shooting-arno-slash-prompt small{
+        display:block;margin-top:8px;font-size:15px;letter-spacing:.18em;font-weight:600;
+      }
       @keyframes shootingArnoRapidTapPrompt{
         from{opacity:.76;transform:scale(.94)}
         to{opacity:1;transform:scale(1.06)}
@@ -31395,7 +31423,10 @@
     root.querySelectorAll('.shooting-arno-slash-overlay').forEach(el => el.remove());
     const overlay = document.createElement('div');
     overlay.className = 'shooting-arno-slash-overlay';
-    overlay.innerHTML = `<div class="shooting-arno-slash-prompt"><b>連打！</b></div>`;
+    // build1672: 1回のULTで出せる斬撃は最大 arnoSlashMaxHits 回（アルノ13回＝ATK×4.55／アリス14回＝ATK×3.5）。残り回数を表示。
+    const maxHits = Math.max(1, Math.floor(Number(c.arnoSlashMaxHits || 13)));
+    overlay.innerHTML = `<div class="shooting-arno-slash-prompt"><b>連打！</b><small>残り <span class="arno-slash-left">${maxHits}</span></small></div>`;
+    const leftEl = overlay.querySelector('.arno-slash-left');
     arena.appendChild(overlay);
 
     overlay.addEventListener('pointerdown', event => {
@@ -31418,9 +31449,19 @@
         moveArnoInFrontOfTarget(target);
       }
 
+      if (Number(state.arnoSlashCount || 0) >= maxHits) return;
       state.arnoSlashCount = Math.max(0, Number(state.arnoSlashCount || 0)) + 1;
       createArnoSlashFx(target, state.arnoSlashCount);
       damageArnoSlashTarget(c, target, tapNow);
+      if (leftEl) leftEl.textContent = String(Math.max(0, maxHits - state.arnoSlashCount));
+      // 上限に達したら、最後の斬撃の演出を見せてから少し早めに終了する（待ち時間を作らない）
+      if (state.arnoSlashCount >= maxHits && state.arnoSlashActive) {
+        const endAt = Math.min(Number(state.arnoSlashUntil || tapNow), tapNow + 260);
+        clearTimeout(state.arnoSlashTimerId);
+        state.arnoSlashTimerId = setTimeout(() => {
+          if (state && state.arnoSlashActive) finishArnoUlt();
+        }, Math.max(0, endAt - tapNow));
+      }
     }, { passive:false });
 
     // 停止中に敵側の次回攻撃時刻をULT終了時刻へ送り、内部蓄積を作らない。
@@ -32340,14 +32381,15 @@
     if (!root) return;
 
     if (typeof root.animate === 'function') {
+      // build1673: 落雷の「ドン」を縦方向の突き上げ中心に
       root.animate([
         { transform:'translate3d(0,0,0)' },
-        { transform:'translate3d(-5px,2px,0)' },
-        { transform:'translate3d(6px,-3px,0)' },
-        { transform:'translate3d(-4px,3px,0)' },
-        { transform:'translate3d(3px,-1px,0)' },
+        { transform:'translate3d(-3px,7px,0)' },
+        { transform:'translate3d(4px,-5px,0)' },
+        { transform:'translate3d(-3px,4px,0)' },
+        { transform:'translate3d(2px,-2px,0)' },
         { transform:'translate3d(0,0,0)' }
-      ], { duration:150, easing:'ease-out' });
+      ], { duration:180, easing:'ease-out' });
       return;
     }
 
@@ -32355,6 +32397,69 @@
     void root.offsetWidth;
     root.classList.add('ayane-rampage-shake');
     setTimeout(() => root.classList.remove('ayane-rampage-shake'), 150);
+  }
+
+  // build1673: 落雷1本分の要素。上端→着弾点へギザギザの稲妻（主幹＋枝2本）をSVGで毎回生成する。
+  //  親は left/top で配置（幅160px・高さ＝着弾点まで）。描画は stroke-dashoffset で上から一気に走らせる。
+  function buildNoahBoltPoints(x0, y0, x1, y1, segments, amp) {
+    const pts = [[x0, y0]];
+    for (let i = 1; i < segments; i++) {
+      const f = i / segments;
+      const fall = 1 - Math.pow(f, 1.6) * .55; // 着弾点に近いほど揺れを小さく
+      const x = x0 + (x1 - x0) * f + (Math.random() * 2 - 1) * amp * fall;
+      const y = y0 + (y1 - y0) * (f + (Math.random() - .5) * (.5 / segments));
+      pts.push([x, y]);
+    }
+    pts.push([x1, y1]);
+    return pts;
+  }
+  function noahBoltPathD(pts) {
+    return 'M' + pts.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L');
+  }
+  function createNoahLightningBolt(x, targetY) {
+    const W = 160, cx = W / 2;
+    const H = Math.max(54, Math.round(targetY));
+    const el = document.createElement('div');
+    el.className = 'shooting-noah-lightning strike';
+    el.style.left = `${Math.round(x - cx)}px`;
+    el.style.top = '0px';
+    el.style.height = `${H}px`;
+
+    const segs = Math.max(6, Math.min(14, Math.round(H / 36)));
+    const main = buildNoahBoltPoints(cx + (Math.random() * 2 - 1) * 26, -6, cx, H, segs, 22);
+    const mainD = noahBoltPathD(main);
+    let branches = '';
+    const branchCount = H > 140 ? 2 : 1;
+    for (let b = 0; b < branchCount; b++) {
+      const at = Math.floor(segs * (.25 + Math.random() * .4));
+      const start = main[Math.min(main.length - 2, Math.max(1, at))];
+      const side = (b % 2 ? 1 : -1) * (Math.random() < .5 ? 1 : -1);
+      const len = H * (.18 + Math.random() * .16);
+      const end = [start[0] + side * (22 + Math.random() * 34), start[1] + len];
+      const d = noahBoltPathD(buildNoahBoltPoints(start[0], start[1], end[0], end[1], 4, 9));
+      branches += `<path class="nl-branch-glow" pathLength="1" d="${d}"/><path class="nl-branch" pathLength="1" d="${d}"/>`;
+    }
+    let sparks = '';
+    for (let i = 0; i < 7; i++) {
+      const a = -Math.PI * (.08 + Math.random() * .84); // 主に上向き・左右へ飛ぶ
+      const d = 26 + Math.random() * 34;
+      sparks += `<u style="--dx:${Math.round(Math.cos(a) * d)}px;--dy:${Math.round(Math.sin(a) * d)}px"></u>`;
+    }
+    el.innerHTML =
+      `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true" focusable="false"><g class="nl-bolt">` +
+      `<path class="nl-glow" pathLength="1" d="${mainD}"/>${branches}` +
+      `<path class="nl-mid" pathLength="1" d="${mainD}"/><path class="nl-core" pathLength="1" d="${mainD}"/>` +
+      `</g></svg><span class="nl-impact"><i></i><b></b>${sparks}</span>`;
+    return el;
+  }
+  // 落雷の瞬間に盤面全体を一瞬だけ白く光らせる（落ちた位置側を少し明るく）。
+  function spawnNoahLightningFlash(arena, x) {
+    const w = Math.max(1, Number(arena.clientWidth || 1));
+    const flash = document.createElement('div');
+    flash.className = 'shooting-noah-lightning-flash';
+    flash.style.setProperty('--fx', `${Math.round(clamp(x / w, 0, 1) * 100)}%`);
+    arena.appendChild(flash);
+    setTimeout(() => flash.remove(), 200);
   }
 
   function spawnNoahLightning(c) {
@@ -32379,12 +32484,9 @@
     const ty = clamp(Number(target.y || arena.clientHeight * .35), 20, Math.max(20, arena.clientHeight - 20));
     const jitterX = (Math.random() - .5) * 34;
 
-    const bolt = document.createElement('div');
-    bolt.className = 'shooting-noah-lightning strike';
-    bolt.style.left = `${tx + jitterX}px`;
-    bolt.style.top = '0px';
-    bolt.style.height = `${Math.max(54, ty)}px`;
+    const bolt = createNoahLightningBolt(tx + jitterX, ty);
     arena.appendChild(bolt);
+    spawnNoahLightningFlash(arena, tx + jitterX);
 
     // 落雷を受けた敵を記録。ULT終了後、この敵だけ1.5秒スタン。
     state.noahUltHitTargets = Array.isArray(state.noahUltHitTargets) ? state.noahUltHitTargets : [];
@@ -32396,7 +32498,7 @@
     applyNoahUltHit(c, target, performance.now());
     shakeNoahLightning();
 
-    setTimeout(() => bolt.remove(), 260);
+    setTimeout(() => bolt.remove(), 480);
     return true;
   }
 

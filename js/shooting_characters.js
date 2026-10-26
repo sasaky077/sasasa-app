@@ -1656,7 +1656,7 @@
     effectKey: 'arno',
     label: 'ORBIT / SLASH',
     description: '円環軌道を描きながら前進する特殊射撃。ULTは盤面の敵弾を消去して時間を止め、最も近い敵の目前へ接近。制限時間中、タップするたびに高速斬撃を叩き込む。',
-    ultDescription: '盤面の敵弾を全消去して時間停止。最も近い敵の目前へ接近し、4秒間タップするたびATK×0.35の斬撃。終了時は発動前の位置へ戻って戦闘を再開する。',
+    ultDescription: '盤面の敵弾を全消去して時間停止。最も近い敵の目前へ接近し、4秒間タップするたびATK×0.35の斬撃（最大13回）。終了時は発動前の位置へ戻って戦闘を再開する。',
     ultName: '瞬迅・千ノ刻',
     ultType: 'arno_thousand_slash',
     moveSpeed: 400,
@@ -1682,6 +1682,8 @@
     arnoSlashDurationMs: 4000,
     arnoSlashDamageAtkRate: 0.35,
     arnoSlashMinTapIntervalMs: 80,
+    // build1672: 斬撃回数の上限（ATK×0.35×13＝最大ATK×4.55。他のULTより少し上の水準）
+    arnoSlashMaxHits: 13,
   });
 
 
@@ -1699,7 +1701,7 @@
     slashRange: 182,
     slashWidth: 120,
     slashVisualMs: 180,
-    ultDescription: '発動時に盤面の敵弾を全消去して時間停止。最も近い敵の目前へ接近し、4秒間、タップするたびにATK×0.25の斬撃を放つ。終了時は発動前の位置へ戻って戦闘を再開する。',
+    ultDescription: '発動時に盤面の敵弾を全消去して時間停止。最も近い敵の目前へ接近し、4秒間、タップするたびにATK×0.25の斬撃を放つ（最大14回）。終了時は発動前の位置へ戻って戦闘を再開する。',
     ultName: '環流',
     ultType: 'arno_thousand_slash',
     burstDamage: 36,
@@ -1708,6 +1710,8 @@
     arnoSlashDurationMs: 4000,
     arnoSlashDamageAtkRate: 0.25,
     arnoSlashMinTapIntervalMs: 80,
+    // build1672: 斬撃回数の上限（R版：ATK×0.25×14＝最大ATK×3.5。他のULTと同じ水準）
+    arnoSlashMaxHits: 14,
     auraTickDamage: 1.8,
   });
 
@@ -3087,7 +3091,7 @@
       case 'veronica_brass_punch':
         return '真正面のごく狭い範囲に一撃を放ち、命中した敵に' + atk(c.ultDamageAtkMultiplier, 7) + 'のダメージ。' + note('追尾しない。範囲外ならMISS');
       case 'arno_thousand_slash':
-        return CLEAR + '時間を止めて最も近い敵の目前へ移動。' + sec(c.arnoSlashDurationMs, 4000) + '間、タップするたびに' + atk(c.arnoSlashDamageAtkRate, 0.35) + 'の斬撃。終了後は元の位置に戻る。';
+        return CLEAR + '時間を止めて最も近い敵の目前へ移動。' + sec(c.arnoSlashDurationMs, 4000) + '間、タップするたびに' + atk(c.arnoSlashDamageAtkRate, 0.35) + 'の斬撃（最大' + String(num(c.arnoSlashMaxHits, 13)) + '回）。終了後は元の位置に戻る。';
       case 'precision_beam':
         return CLEAR + '前方に黒い手を伸ばして射線上の敵を7秒間拘束。拘束中に合計' + atk(c.ultDamageAtkMultiplier, 3.5) + 'のダメージ。';
       case 'jig_scramble_ray':

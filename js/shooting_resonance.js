@@ -141,8 +141,9 @@
       3: bonus('千刻加速', 'ULTゲージ獲得量 +15%', '命中時のULTゲージ獲得量を15%増加する。', [
         { type:'profileMultiply', field:'ultGainPerHit', multiplier:1.15 }
       ]),
-      4: bonus('千ノ刻・極', 'ULT持続 4秒 → 6.5秒', 'ULT「瞬迅・千ノ刻」の連続斬撃受付時間を6.5秒へ延長する。', [
-        { type:'profileSet', field:'arnoSlashDurationMs', value:6500 }
+      // build1672: 持続延長（斬撃回数が1.6倍になり強すぎた）→ 斬撃回数の上限を増やす（最大ATK×4.55→×5.6）
+      4: bonus('千ノ刻・極', 'ULT斬撃 最大13回 → 16回', 'ULT「瞬迅・千ノ刻」で出せる斬撃の最大回数を13回から16回へ増やす。', [
+        { type:'profileSet', field:'arnoSlashMaxHits', value:16 }
       ])
     }),
 
