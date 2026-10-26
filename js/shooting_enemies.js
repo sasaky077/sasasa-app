@@ -849,6 +849,8 @@
     }),
     [SHOOTING_ENEMY_ID.TOWER19_RHYTHM]: towerVariant(SHOOTING_ENEMY_ID.RHYTHM_GATE, {
       id: SHOOTING_ENEMY_ID.TOWER19_RHYTHM, displayName: 'ECHO TOWER 19F　リズム',
+      // build1671: 単騎向けに被弾ダメージを軽減（240→140。リズム共通の20%軽減後は 192→112）
+      bulletDamage: 140,
     }),
     [SHOOTING_ENEMY_ID.TOWER20_TOWA_EX]: towerVariant(SHOOTING_ENEMY_ID.TOWER15_BOSS, {
       id: SHOOTING_ENEMY_ID.TOWER20_TOWA_EX, name: 'トワ', displayName: 'ECHO TOWER 20F　トワ EX',

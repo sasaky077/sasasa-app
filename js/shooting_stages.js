@@ -264,8 +264,12 @@
         bossGaugeHps:Object.freeze([8000, 9000, 9500]),
         mission:Object.freeze({type:SHOOTING_MISSION_TYPE.BOSS_CLEAR,text:'単騎でシエンを撃破'}) });
       if (floor === 19) return Object.freeze({ ...common, difficultyLabel:'19F / 単騎', maxPartySize:1,
-        // 律動 -仮面舞踏会- 最上級（shooting_event_rhythm_test）と同じ設定。報酬設定は持たない。
-        rhythm:Object.freeze({ difficulty:'super', travelMs:900, holeBonus:0 }),
+        // 律動 -仮面舞踏会- 最上級がベース。報酬設定は持たない。
+        // build1671: 単騎（交代・予備HPなし）では無理ゲーだったため塔だけ緩和。
+        //  弾が降りる速さ 900→1000ms（約1割ゆっくり）・穴を1マス広く（holeBonus 0→1）・HP 3万→2.4万。
+        //  被弾ダメージは敵定義（TOWER19_RHYTHM）側で軽減。特別巡行の律動は変更なし。
+        rhythm:Object.freeze({ difficulty:'super', travelMs:1000, holeBonus:1 }),
+        bossGaugeHps:Object.freeze([7000, 8000, 9000]),
         introImage:'images/rhythm_masquerade_battle_start.webp',
         enemyIds:Object.freeze([SHOOTING_ENEMY_ID.TOWER19_RHYTHM]), bossElement:'dark', enemyElement:'dark',
         mission:Object.freeze({type:SHOOTING_MISSION_TYPE.BOSS_CLEAR,text:'単騎で弾幕の穴をたどって進め'}) });
