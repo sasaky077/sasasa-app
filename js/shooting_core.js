@@ -23146,9 +23146,9 @@
     if (now - Number(sh.lastWispAt || 0) < cfg.interval) return;
     sh.lastWispAt = now;
     if ((state.enemyBullets || []).length > 90) return;
-    const aim = getEnemyAimPosition();
     const ox = Number(state.boss.x), oy = Number(state.boss.y) + 26;
-    const base = Math.atan2(aim.y - oy, aim.x - ox) + (Math.random() - .5) * .3;
+    // build1669: 自機狙いをやめ、真下（±約8.6°のゆらぎ）へ撃つ。レイド・塔18F・位相回遊のシエン共通。
+    const base = Math.PI / 2 + (Math.random() - .5) * .3;
     for (let i = 0; i < cfg.ways; i++) {
       const t = cfg.ways === 1 ? 0 : (i / (cfg.ways - 1)) * 2 - 1;
       const a = base + t * cfg.spread;
