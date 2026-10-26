@@ -21306,9 +21306,13 @@
     const cutinSrc = getShootingUltCutinSrc(c);
     if (cutinSrc) void preloadShootingImage(cutinSrc, 7000, false);
 
+    // build1675: カットインを刷新。属性色（--ult-element-rgb）を先に反映してから組み立てる。
+    applyUltElementVisualContext(c);
     const wrap = document.createElement('div');
-    wrap.className = 'shooting-ult-cutin';
+    wrap.className = 'shooting-ult-cutin uc-v2';
     wrap.setAttribute('aria-hidden', 'true');
+    // 背景（属性色の暗幕）・集中線・斜めの帯（2本）。すべてCSSのみ。
+    wrap.innerHTML = '<span class="uc-bg"></span><span class="uc-lines"></span><span class="uc-band2"></span><span class="uc-band"></span>';
 
     const img = document.createElement('img');
     img.className = 'shooting-ult-cutin-image';
@@ -21321,7 +21325,9 @@
 
     const label = document.createElement('div');
     label.className = 'shooting-ult-cutin-label';
-    label.innerHTML = `<span>ULT</span><strong>${c.ultName || 'Ultimate'}</strong>`;
+    const escUc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    label.innerHTML = `<span class="uc-kicker">ULTIMATE</span><strong>${escUc(c.ultName || 'Ultimate')}</strong>` +
+      (c.name ? `<em class="uc-who">${escUc(c.name)}</em>` : '') + '<i class="uc-rule"></i>';
 
     wrap.appendChild(img);
     wrap.appendChild(flash);
@@ -21332,8 +21338,8 @@
     const ultNameEl = label.querySelector('strong');
     const fitUltNameOneLine = () => {
       if (!ultNameEl || !label.isConnected) return;
-      const basePx = window.matchMedia && window.matchMedia('(min-width:700px)').matches ? 26 : 22;
-      const minPx = 10.5;
+      const basePx = window.matchMedia && window.matchMedia('(min-width:700px)').matches ? 38 : 31;
+      const minPx = 14;
       ultNameEl.style.whiteSpace = 'nowrap';
       ultNameEl.style.fontSize = basePx + 'px';
       ultNameEl.style.maxWidth = 'none';
@@ -31998,6 +32004,9 @@
   }
 
   function showNinaUltZoneWarning(rect, telegraphMs) {
+    // build1674: 区画の予告枠（四角い枠＋十字線）は、落雷の区画分け（4列×2段）が透けて見えるため表示しない。
+    //  予告の待ち時間（telegraphMs）と命中判定は従来どおり。
+    if (rect) return null;
     const arena = document.getElementById('shooting-arena');
     if (!arena || !rect) return null;
 
@@ -32184,8 +32193,12 @@
       tx = clamp(tx, 8, Math.max(8, arena.clientWidth - 8));
       ty = clamp(ty, 18, Math.max(18, arena.clientHeight * .5 - 8));
 
-      createNinaUltLightningBolt(c, tx, ty);
-      createNinaUltDust(tx, ty);
+      // build1674: チャチャ（forbidden_shock）の落雷もノアULTと同じ稲妻演出に
+      //  （上から走る稲妻・枝分かれ・瞬き・着弾の閃光と衝撃輪・画面の白閃）。
+      const bolt = createNoahLightningBolt(tx, ty);
+      arena.appendChild(bolt);
+      spawnNoahLightningFlash(arena, tx);
+      setTimeout(() => bolt.remove(), 480);
     }
 
     // その瞬間、エリア内にいる敵全員へ同時命中。
