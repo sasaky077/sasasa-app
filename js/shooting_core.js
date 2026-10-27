@@ -10347,6 +10347,12 @@
     if (!state || !c || !state.player) return false;
     const max = Math.max(1, Math.floor(Number(c.conjureMaxTurrets || 3)));
     if (getConjureOccupiedCount(now) >= max) return false;
+    // build1677: カミラの蜘蛛は連打しても0.7秒に1体まで（従来は同時4体の上限だけで、連打で出し放題だった）
+    if (c.camillaSpiderAi) {
+      const interval = Math.max(0, Number(c.camillaSpiderIntervalMs ?? 700));
+      if (now - Number(state.camillaLastSpiderAt || -Infinity) < interval) return false;
+      state.camillaLastSpiderAt = now;
+    }
     ensureConjureVisualStyles();
     const arena = document.getElementById('shooting-arena');
     if (!arena) return false;
@@ -20265,7 +20271,16 @@
                 state.boss.hp,
                 Math.max(0, Number(elementAdjustedDamage || 0))
               );
-          if (p.kind === 'camilla_web' && appliedDamage > 0) state.boss.camillaWebRootUntil=Math.max(Number(state.boss.camillaWebRootUntil||0),now+3000);
+          // build1677/1678: 通常攻撃（蜘蛛）によるBOSSの捕縛は1回1秒・解除後1秒は再捕縛されない（ULTの拘束は別枠で従来どおり）
+          if (p.kind === 'camilla_web' && appliedDamage > 0 && now >= Number(state.boss.camillaSpiderRootImmuneUntil || 0)) {
+            const cam = getBattleCharacter(CHARACTER_ID.CAMILLA) || {};
+            const rootMs = Math.max(0, Number(cam.camillaBossRootMs ?? 1000));
+            const immuneMs = Math.max(0, Number(cam.camillaBossRootImmuneMs ?? 1000));
+            if (rootMs > 0) {
+              state.boss.camillaWebRootUntil = Math.max(Number(state.boss.camillaWebRootUntil || 0), now + rootMs);
+              state.boss.camillaSpiderRootImmuneUntil = now + rootMs + immuneMs;
+            }
+          }
           if (appliedDamage>0 && now<Number(state.boss.camillaWebRootUntil||0)) absorbCamillaWebDamage(appliedDamage, now);
           state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
           updateBossPhase();
