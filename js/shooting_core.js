@@ -1068,6 +1068,7 @@
       state.poBannerShown = true;
       showPhaseOdysseyVarietyBanner(v);
     }
+    updatePhaseOdysseySubMissionChip(v, now, running);
     if (v.anomaly !== 'blackout') return;
     const po = state.poBlackout || (state.poBlackout = { nextAt: 0, until: 0 });
     if (!running) { if (state.ended || state.finishing) { po.until = 0; setTower15Blackout(false); } return; }
@@ -1077,6 +1078,54 @@
     } else if (!po.until && now >= po.nextAt) {
       po.until = now + 3200; setTower15Blackout(true);
     }
+  }
+  // build1684: SUB MISSION の進み具合（生存・速攻は残り秒数、見切りは被弾数）を画面上部に常時表示
+  function updatePhaseOdysseySubMissionChip(v, now, running) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena || !state) return;
+    const kind = v.objective;
+    let chip = arena.querySelector('.po-submission-chip');
+    if (!['survive', 'speed', 'nohit'].includes(kind) || state.ended) { if (chip) chip.remove(); return; }
+    if (!chip) {
+      chip = document.createElement('div');
+      chip.className = 'po-submission-chip';
+      chip.setAttribute('aria-hidden', 'true');
+      chip.innerHTML = '<span>SUB MISSION</span><b></b><em></em>';
+      arena.appendChild(chip);
+    }
+    const label = PO_OBJECTIVE_LABEL[kind] || '';
+    let main = '', note = '', stateName = 'run';
+    if (kind === 'survive') {
+      const left = running || state.countdown ? getBattleTimeLeft(now) : 0;
+      const sec = state.countdown ? Number(v.seconds || 20) : Math.max(0, left);
+      main = sec.toFixed(1);
+      note = '秒 生き残れ';
+      if (sec <= 5 && !state.countdown) stateName = 'hurry';
+      if (state.missionComplete || state.finishing) { main = 'CLEAR'; note = ''; stateName = 'done'; }
+    } else if (kind === 'speed') {
+      const limit = Number(v.seconds || 30);
+      const elapsed = state.countdown ? 0 : Math.max(0, ((state.poClearAt || now) - Number(state.startedAt || now)) / 1000);
+      const left = limit - elapsed;
+      if (state.poClearAt) {
+        main = left >= 0 ? '達成' : '失敗'; note = left >= 0 ? `${elapsed.toFixed(1)}秒でクリア` : ''; stateName = left >= 0 ? 'done' : 'fail';
+      } else if (left > 0) {
+        main = left.toFixed(1); note = '秒以内に全滅'; if (left <= 5) stateName = 'hurry';
+      } else {
+        main = '失敗'; note = '時間切れ（突破はできる）'; stateName = 'fail';
+      }
+    } else {
+      const hits = Number(state.totalHitsTaken || 0), max = Number(v.maxHits ?? 3);
+      main = `${Math.min(hits, 99)} / ${max}`; note = '被弾数';
+      if (hits > max) { main = '失敗'; note = `被弾${hits}回`; stateName = 'fail'; }
+      else if (hits === max) stateName = 'hurry';
+    }
+    const text = label + '|' + main + '|' + note + '|' + stateName;
+    if (chip.dataset.text === text) return;
+    chip.dataset.text = text;
+    chip.dataset.state = stateName;
+    chip.querySelector('span').textContent = 'SUB MISSION　' + label;
+    chip.querySelector('b').textContent = main;
+    chip.querySelector('em').textContent = note;
   }
   function isPhaseOdysseyBlackoutActive() {
     return !!(state && state.poBlackout && state.poBlackout.until && getPhaseOdysseyAnomaly() === 'blackout');
@@ -1088,12 +1137,26 @@
     const el = document.createElement('div');
     el.className = 'po-variety-banner' + (v.anomaly ? ' has-anomaly' : '');
     el.setAttribute('role', 'status');
-    const mission = (state && state.mission && state.mission.text) || '';
-    el.innerHTML = `<b>お題　${PO_OBJECTIVE_LABEL[v.objective] || '殲滅'}</b><small>${mission}</small>` +
-      (v.anomaly ? `<em>異常　${PO_ANOMALY_LABEL[v.anomaly] || ''}<span>${PO_ANOMALY_DESC[v.anomaly] || ''}</span></em>` : '');
+    // build1686: バナー用の短い説明（ミッション帯の文言は長くて切れるため）
+    const mission = ({
+      clear: '敵をすべて撃破',
+      survive: `${Number(v.seconds || 20)}秒間 生き残れ`,
+      elite: 'HP5倍の精鋭を含めて全滅',
+      speed: `${Number(v.seconds || 30)}秒以内に全滅で★UP`,
+      nohit: `被弾${Number(v.maxHits ?? 3)}回以内で★UP`,
+    })[v.objective] || ((state && state.mission && state.mission.text) || '');
+    el.innerHTML = `<div class="po-vb-row"><span class="po-vb-kicker">SUB MISSION</span><b>${PO_OBJECTIVE_LABEL[v.objective] || '殲滅'}</b><small>${mission}</small></div>` +
+      (v.anomaly ? `<div class="po-vb-row is-anomaly"><span class="po-vb-kicker">異常</span><b>${PO_ANOMALY_LABEL[v.anomaly] || ''}</b><small>${PO_ANOMALY_DESC[v.anomaly] || ''}</small></div>` : '');
     arena.appendChild(el);
-    setTimeout(() => { if (el.isConnected) el.classList.add('out'); }, 2600);
-    setTimeout(() => { if (el.isConnected) el.remove(); }, 3000);
+    // カウントダウン中は開始まで表示（hidePhaseOdysseyVarietyBanner）。保険として最長9秒で消す
+    setTimeout(() => { if (el.isConnected) el.classList.add('out'); }, 9000);
+    setTimeout(() => { if (el.isConnected) el.remove(); }, 9400);
+  }
+  function hidePhaseOdysseyVarietyBanner() {
+    document.querySelectorAll('#shooting-arena .po-variety-banner').forEach(el => {
+      el.classList.add('out');
+      setTimeout(() => { if (el.isConnected) el.remove(); }, 380);
+    });
   }
   // 連鎖：撃破した敵が6方向に弾をばらまく
   function spawnPhaseOdysseyBurst(enemy) {
@@ -2898,6 +2961,10 @@
     }
     if (labelEl.textContent !== label) labelEl.textContent = label;
     if (valueEl.textContent !== value) valueEl.textContent = value;
+    // build1683: 位相回遊の「FLOOR ○」は札からはみ出さない専用サイズ（桁数で文字を詰める）
+    const isPo = label === 'PHASE ODYSSEY';
+    el.classList.toggle('is-po-floor', isPo);
+    if (isPo) el.dataset.poLen = String(String(value).length); else delete el.dataset.poLen;
   }
 
   function setShootingStageHeader(inBattle) {
@@ -5198,7 +5265,7 @@
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
     clearSmileBoxes();
-    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-rose-fortress,.shooting-remna-trap-preview,.shooting-conjure-preview,.shooting-conjure-deploy-projectile,.shooting-conjure-turret,.shooting-conjure-ult-turret,.shooting-camilla-web-overlay,.shooting-camilla-web-burst,.shooting-camilla-bound-web-fx,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-sui-time-domain,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning,.shooting-ch07-complete-shield,.shooting-ch07-torii').forEach(el => el.remove());
+    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-rose-fortress,.shooting-remna-trap-preview,.shooting-conjure-preview,.shooting-conjure-deploy-projectile,.shooting-conjure-turret,.shooting-conjure-ult-turret,.shooting-camilla-web-overlay,.shooting-camilla-web-burst,.shooting-camilla-bound-web-fx,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-sui-time-domain,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning,.shooting-ch07-complete-shield,.shooting-ch07-torii,.eclipse-hand-band,.eclipse-float-num,.eclipse-dash-line,.eclipse-dark-veil,.eclipse-beacon,.eclipse-state-pill,.po-submission-chip,.po-variety-banner').forEach(el => el.remove());
     clearEnemyBulletCanvas();
     if (state) {
       state.bullets = [];
@@ -8901,7 +8968,7 @@
       return 0;
     }
     // build1643: イノリの全属性バリア。張っている間は本体へのダメージを一切通さない（鳥居は対象外）。
-    if (!incoming && isInoriBarrierUp() && combatElementTarget && combatElementTarget === state.boss) return 0;
+    if (!incoming && (isInoriBarrierUp() || isEclipseImmune()) && combatElementTarget && combatElementTarget === state.boss) return 0; // build1682: エクリプス本体は光状態以外は無敵
 
     // build1023:
     // 無属性は全属性へ常に等倍で通る共通ルール。
@@ -8957,7 +9024,7 @@
     const ignoreStageImmunity = !!(options && options.ignoreStageImmunity);
 
     if (isChapter403FireWallStage() && state && !state.ch403BarrierBroken && normalizeCombatElement(targetElement) === 'fire' && normalizedAttackElement !== 'aqua' && !ignoreStageImmunity) return 'immune';
-    if (isInoriBarrierUp() && combatElementTarget && combatElementTarget === state.boss && !(options && options.incoming)) return 'immune';
+    if ((isInoriBarrierUp() || isEclipseImmune()) && combatElementTarget && combatElementTarget === state.boss && !(options && options.incoming)) return 'immune';
 
     if (
       normalizedAttackElement !== 'neutral' &&
@@ -13160,6 +13227,7 @@
     if (isCamillaBattle()) return true;
     // build1643: イノリの鳥居も通常敵として扱う（自機弾・ULTが当たる）。召喚は updateInoriMechanics が管理。
     if (isInoriBattle()) return true;
+    if (isEclipseBattle()) return true; // build1681: エクリプスの天秤
     return !!(cfg && Array.isArray(cfg.enemyIds) && cfg.enemyIds.length);
   }
 
@@ -13861,6 +13929,330 @@
     syncInoriBreakBadge(now);
   }
 
+  // ============================================================
+  // build1681/1682: 位相回遊 100F・150F・200F…の確定ボス「エクリプス」
+  //  ・ふだん本体は無敵（applyElementDamage で 0／IMMUNE）。HPは lockHp で固定（保険）
+  //  ・光の天秤を壊す → 光状態8秒：本体に攻撃が通る
+  //  ・闇の天秤を壊す → 闇状態8秒：自機の周りしか見えない暗転＋弾幕加速（本体は無敵のまま）
+  //  ・状態は最後に壊した天秤で上書き。壊れた天秤はそれぞれ8秒後に復活
+  //  ・天秤はうろつき、交互に自機へ突進（予告 → 突進中だけ接触ダメージ）。PHASE3は蝕の手
+  // ============================================================
+  function getEclipseConfig() {
+    return (BOSS && BOSS.eclipseMechanics && selectedStage && selectedStage.type !== 'normal') ? BOSS.eclipseMechanics : null;
+  }
+  function isEclipseBattle() { return !!getEclipseConfig(); }
+  function getEclipseMode(now = performance.now()) {
+    const ec = state && state.eclipse;
+    if (!ec || !isEclipseBattle() || !ec.mode || now >= Number(ec.modeUntil || 0)) return '';
+    return ec.mode;
+  }
+  // 本体が無敵か（エクリプス戦で、光状態でない間）
+  function isEclipseImmune() { return isEclipseBattle() && !!state && getEclipseMode() !== 'light'; }
+  function isEclipseBlackoutActive() { return false; } // 旧仕様（日食）の名残。暗転は闇状態の専用ベールで行う
+  function eclipsePhaseValue(list, fallback) {
+    const phase = Math.max(1, Math.min(3, Number(state && state.boss && state.boss.phase || 1)));
+    return Array.isArray(list) ? Number(list[phase - 1] ?? list[list.length - 1] ?? fallback) : Number(list ?? fallback);
+  }
+  function getEclipseScales() {
+    return (state && Array.isArray(state.normalEnemies) ? state.normalEnemies : []).filter(e => e && e.eclipseScale && e.el && e.hp > 0);
+  }
+  function spawnEclipseScale(side, now, xr) {
+    const cfg = getEclipseConfig() || {};
+    const arena = document.getElementById('shooting-arena');
+    const ids = window.ShootingEnemies?.SHOOTING_ENEMY_ID || {};
+    if (!arena || !state || !state.boss) return null;
+    const def = getShootingEnemy(side === 'light' ? (ids.PO_ECLIPSE_SCALE_LIGHT || 'shooting_po_eclipse_scale_light')
+      : (ids.PO_ECLIPSE_SCALE_DARK || 'shooting_po_eclipse_scale_dark'));
+    if (!def) return null;
+    const enemy = createNormalEnemy(def, now);
+    if (!enemy) return null;
+    const w = arena.clientWidth, h = arena.clientHeight;
+    const phase = Math.max(1, Number(state.boss.phase || 1));
+    enemy.eclipseScale = side;
+    enemy.hp = enemy.hpMax = Math.max(1, Math.round(getBossGaugeHpForPhase(phase) * Number(cfg.scaleHpRate || 0.6)));
+    enemy.x = enemy.baseX = w * (xr != null ? xr : (.2 + Math.random() * .6));
+    enemy.y = enemy.baseY = Math.max(150, h * (.22 + Math.random() * .16));
+    enemy.eclipseTarget = { x: enemy.x, y: enemy.y };
+    enemy.eclipseNextWanderAt = now + 600;
+    enemy.eclipseState = 'wander';
+    if (enemy.elementEl) enemy.elementEl.style.display = 'none';
+    if (enemy.el) enemy.el.classList.add('eclipse-scale', 'is-' + side);
+    positionUnit(enemy.el, enemy.x, enemy.y);
+    positionMiniEnemyHp(enemy);
+    renderMiniEnemyHp(enemy);
+    state.normalEnemies.push(enemy);
+    return enemy;
+  }
+  function updateEclipseScale(enemy, dt, now, w, h) {
+    const cfg = getEclipseConfig() || {};
+    const frozen = now < getNormalEnemyLockUntil(enemy, now) || state.phaseTransition || state.koTransition;
+    const minY = 110, maxY = Math.max(minY + 40, h * .62);
+    if (enemy.eclipseState === 'warn') {
+      if (now >= enemy.eclipseDashAt) {
+        enemy.eclipseState = 'dash';
+        enemy.eclipseDashUntil = now + Number(cfg.dashMs || 760);
+        enemy.el?.classList.remove('is-warning');
+        enemy.el?.classList.add('is-dashing');
+        enemy.eclipseLine?.remove(); enemy.eclipseLine = null;
+      }
+    } else if (enemy.eclipseState === 'dash') {
+      if (!frozen) {
+        const sp = Number(cfg.dashSpeed || 560) * dt;
+        enemy.x = clamp(enemy.x + Math.cos(enemy.eclipseDashAngle) * sp, 26, w - 26);
+        enemy.y = clamp(enemy.y + Math.sin(enemy.eclipseDashAngle) * sp, 60, h - 40);
+        const px = Number(state.player.x || 0), py = Number(state.player.y || 0);
+        if (Math.hypot(px - enemy.x, py - enemy.y) < 40 && now >= Number(state.player.invulnUntil || 0) && !state.ended && !state.finishing) {
+          damagePlayer(now, Math.max(1, Math.round(Number(cfg.dashDamage || 240))), 'normal',
+            enemy.eclipseScale === 'dark' ? 'dark' : 'light', 'eclipse-dash');
+        }
+      }
+      if (now >= enemy.eclipseDashUntil) {
+        enemy.eclipseState = 'wander';
+        enemy.el?.classList.remove('is-dashing');
+        enemy.eclipseNextWanderAt = now;
+      }
+    } else if (!frozen) {
+      if (now >= Number(enemy.eclipseNextWanderAt || 0)) {
+        enemy.eclipseNextWanderAt = now + 2000 + Math.random() * 1200;
+        enemy.eclipseTarget = { x: 40 + Math.random() * Math.max(10, w - 80), y: minY + Math.random() * (maxY - minY) };
+      }
+      const tx = enemy.eclipseTarget.x, ty = enemy.eclipseTarget.y;
+      const dx = tx - enemy.x, dy = ty - enemy.y, d = Math.hypot(dx, dy);
+      const sp = eclipsePhaseValue(cfg.wanderSpeed, 80) * dt;
+      if (d > 1) { enemy.x += dx / d * Math.min(d, sp); enemy.y += dy / d * Math.min(d, sp); }
+    }
+    enemy.baseX = enemy.x; enemy.baseY = enemy.y;
+    const shake = enemy.eclipseState === 'warn' ? Math.sin(now / 28) * 3 : 0;
+    const bob = enemy.eclipseState === 'warn' ? 0 : Math.sin(now / 420 + (enemy.eclipseScale === 'dark' ? 1.7 : 0)) * 4;
+    positionUnit(enemy.el, enemy.x + shake, enemy.y + bob);
+    positionMiniEnemyHp(enemy);
+    if (enemy.eclipseLine) {
+      enemy.eclipseLine.style.transform = `translate3d(${enemy.x}px,${enemy.y}px,0) rotate(${enemy.eclipseDashAngle}rad)`;
+      enemy.eclipseLine.style.width = '520px';
+    }
+  }
+  function startEclipseDash(scale, now) {
+    const cfg = getEclipseConfig() || {};
+    const arena = document.getElementById('shooting-arena');
+    const aim = getEnemyAimPosition();
+    scale.eclipseState = 'warn';
+    scale.eclipseDashAt = now + Number(cfg.dashWarnMs || 850);
+    scale.eclipseDashAngle = Math.atan2(Number(aim.y || 0) - scale.y, Number(aim.x || 0) - scale.x);
+    scale.el?.classList.add('is-warning');
+    if (arena) {
+      const line = document.createElement('div');
+      line.className = 'eclipse-dash-line is-' + scale.eclipseScale;
+      arena.appendChild(line);
+      scale.eclipseLine = line;
+      setTimeout(() => { if (line.isConnected) line.remove(); }, Number(cfg.dashWarnMs || 850) + 80);
+    }
+  }
+  // 光状態／闇状態の切り替え（最後に壊した天秤で上書き）
+  function setEclipseMode(mode, now) {
+    const cfg = getEclipseConfig() || {};
+    const ec = state.eclipse;
+    ec.mode = mode;
+    ec.modeUntil = now + Number(cfg.stateMs || 8000);
+    if (mode === 'light') ec.lockHp = 0;
+    showFacelessBattleCut(mode === 'light' ? '光　状　態' : '闇　状　態',
+      mode === 'light' ? 'エクリプスに攻撃が通る（8秒）' : '暗転・弾幕加速（8秒）');
+  }
+  function syncEclipseModeDom(now) {
+    const cfg = getEclipseConfig() || {};
+    const root = document.getElementById(ROOT_ID);
+    const arena = document.getElementById('shooting-arena');
+    if (!root || !arena) return;
+    const mode = getEclipseMode(now);
+    root.classList.toggle('eclipse-light', mode === 'light');
+    root.classList.toggle('eclipse-dark', mode === 'dark');
+    // 状態表示（残り秒数）
+    let pill = arena.querySelector('.eclipse-state-pill');
+    if (!pill) {
+      pill = document.createElement('div');
+      pill.className = 'eclipse-state-pill';
+      pill.setAttribute('aria-hidden', 'true');
+      arena.appendChild(pill);
+    }
+    const left = Math.max(0, (Number(state.eclipse.modeUntil || 0) - now) / 1000);
+    const text = mode === 'light' ? `光状態　攻撃が通る　${left.toFixed(1)}秒`
+      : (mode === 'dark' ? `闇状態　暗転・弾幕加速　${left.toFixed(1)}秒` : '無敵　光の天秤を壊せ');
+    if (pill.dataset.text !== text) { pill.dataset.text = text; pill.textContent = text; }
+    pill.dataset.mode = mode || 'none';
+    // 闇状態：自機の周りだけ見える暗幕＋光の天秤の位置を示す光
+    let veil = arena.querySelector('.eclipse-dark-veil');
+    if (mode === 'dark') {
+      if (!veil) {
+        veil = document.createElement('div');
+        veil.className = 'eclipse-dark-veil';
+        veil.setAttribute('aria-hidden', 'true');
+        arena.appendChild(veil);
+      }
+      veil.style.setProperty('--px', `${Math.round(Number(state.player.x || 0))}px`);
+      veil.style.setProperty('--py', `${Math.round(Number(state.player.y || 0))}px`);
+      veil.style.setProperty('--vr', `${Number(cfg.darkVisionPx || 130)}px`);
+    } else if (veil) {
+      veil.remove();
+    }
+    let beacon = arena.querySelector('.eclipse-beacon');
+    const light = getEclipseScales().find(s => s.eclipseScale === 'light');
+    if (mode === 'dark' && light) {
+      if (!beacon) {
+        beacon = document.createElement('div');
+        beacon.className = 'eclipse-beacon';
+        beacon.setAttribute('aria-hidden', 'true');
+        beacon.innerHTML = '<i></i>';
+        arena.appendChild(beacon);
+      }
+      beacon.style.transform = `translate3d(${Math.round(light.x)}px,${Math.round(light.y)}px,0)`;
+    } else if (beacon) {
+      beacon.remove();
+    }
+  }
+  function clearEclipseDom() {
+    const root = document.getElementById(ROOT_ID);
+    if (root) root.classList.remove('eclipse-light', 'eclipse-dark');
+    document.querySelectorAll('.eclipse-dark-veil, .eclipse-beacon, .eclipse-state-pill').forEach(el => el.remove());
+  }
+  function updateEclipseMechanics(dt, now, bossHalted) {
+    const cfg = getEclipseConfig();
+    if (!cfg || !state || state.ended || state.finishing || !state.boss) {
+      if (state && state.eclipse && (state.ended || state.finishing)) clearEclipseDom();
+      return;
+    }
+    if (!state.eclipse) {
+      state.eclipse = {
+        mode: '', modeUntil: 0, lockHp: Number(state.boss.hp || 0),
+        respawnAt: { light: 0, dark: 0 }, seen: { light: null, dark: null },
+        nextDashAt: now + 4200, dashTurn: 0, nextHandAt: now + 5000, hands: [],
+      };
+      state.eclipse.seen.light = spawnEclipseScale('light', now, .26);
+      state.eclipse.seen.dark = spawnEclipseScale('dark', now, .74);
+    }
+    const ec = state.eclipse;
+    // 天秤が壊れたら状態を切り替え、8秒後に復活を予約
+    ['light', 'dark'].forEach(side => {
+      const ref = ec.seen[side];
+      if (ref && (ref.hp <= 0 || !ref.el)) {
+        const destroyed = ref.hp <= 0; // 演出等で要素だけ消えた場合は状態を変えずに復活させる
+        ec.seen[side] = null;
+        ec.respawnAt[side] = destroyed ? now + Number(cfg.respawnMs || 8000) : now + 600;
+        if (destroyed && state.boss.hp > 0) setEclipseMode(side, now);
+      }
+      if (!ec.seen[side] && now >= Number(ec.respawnAt[side] || 0) && state.boss.hp > 0 && !state.phaseTransition) {
+        ec.seen[side] = spawnEclipseScale(side, now);
+      }
+    });
+    // 状態の終了
+    if (ec.mode && now >= ec.modeUntil) { ec.mode = ''; ec.modeUntil = 0; }
+    // 本体の無敵：光状態以外はHPを固定（属性計算を通らない経路の保険）
+    if (getEclipseMode(now) === 'light') {
+      ec.lockHp = Number(state.boss.hp || 0);
+    } else {
+      if (!(ec.lockHp > 0)) ec.lockHp = Number(state.boss.hp || 0);
+      if (state.boss.hp < ec.lockHp) state.boss.hp = ec.lockHp;
+    }
+    const phase = Math.max(1, Number(state.boss.phase || 1));
+    const stopUntil = Math.max(Number(state.normalEnemyStunUntil || 0), Number(state.fullEnemyStopUntil || 0), Number(state.angeEnemyFreezeUntil || 0));
+    const paused = bossHalted || now < stopUntil || state.phaseTransition || state.koTransition;
+    if (paused) {
+      if (ec.nextDashAt < now + 400) ec.nextDashAt = now + 400;
+      if (ec.nextHandAt < now + 400) ec.nextHandAt = now + 400;
+    } else {
+      if (now >= ec.nextDashAt) {
+        ec.nextDashAt = now + eclipsePhaseValue(cfg.dashEveryMs, 7000);
+        const pick = getEclipseScales().filter(s => s.eclipseState === 'wander');
+        if (pick.length) {
+          const order = ec.dashTurn++ % 2 === 0 ? 'dark' : 'light';
+          startEclipseDash(pick.find(s => s.eclipseScale === order) || pick[0], now);
+        }
+      }
+      if (phase >= 3 && now >= ec.nextHandAt) {
+        ec.nextHandAt = now + Number(cfg.handEveryMs || 9000);
+        startEclipseHand(now);
+      }
+    }
+    updateEclipseHands(now);
+    syncEclipseModeDom(now);
+  }
+  function startEclipseHand(now) {
+    const cfg = getEclipseConfig() || {};
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const w = arena.clientWidth;
+    const width = Number(cfg.handWidth || 78);
+    const x = clamp(Number(state.player.x || w / 2), width / 2, w - width / 2);
+    const el = document.createElement('div');
+    el.className = 'eclipse-hand-band';
+    el.style.left = `${Math.round(x - width / 2)}px`;
+    el.style.width = `${width}px`;
+    el.innerHTML = '<i></i>';
+    arena.appendChild(el);
+    state.eclipse.hands.push({ el, x, width, fireAt: now + Number(cfg.handWarnMs || 950), endAt: now + Number(cfg.handWarnMs || 950) + Number(cfg.handFireMs || 420), hit: false });
+  }
+  function updateEclipseHands(now) {
+    const cfg = getEclipseConfig() || {};
+    const ec = state.eclipse;
+    if (!ec || !ec.hands.length) return;
+    ec.hands = ec.hands.filter(hd => {
+      if (now >= hd.fireAt && !hd.fired) { hd.fired = true; hd.el.classList.add('is-strike'); }
+      if (hd.fired && !hd.hit && now < hd.endAt) {
+        const px = Number(state.player.x || 0);
+        if (Math.abs(px - hd.x) < hd.width / 2 + 6 && now >= Number(state.player.invulnUntil || 0) && !state.ended && !state.finishing) {
+          hd.hit = true;
+          damagePlayer(now, Math.max(1, Number(cfg.handDamage || 320)), 'heavy', 'dark', 'eclipse-hand');
+        }
+      }
+      if (now >= hd.endAt) { hd.el.classList.add('is-out'); setTimeout(() => hd.el.remove(), 220); return false; }
+      return true;
+    });
+  }
+  // 本体の通常攻撃：光の矢（金・上から速い直線）と闇の環（紫・遅い全方位）を交互に
+  function fireEclipseBoss(now) {
+    if (!state || !state.boss) return;
+    const cfg = getEclipseConfig() || {};
+    const phase = Math.max(1, Number(state.boss.phase || 1));
+    const dark = getEclipseMode(now) === 'dark';
+    const ordinary = state.enemyBullets.reduce((n, p) => (p && p.el && !p.el.classList.contains('shooting-danger-bullet')) ? n + 1 : n, 0);
+    if (ordinary >= (phase >= 3 ? 120 : 100)) return;
+    // 闇状態：発射間隔が短く、弾が速い
+    const rate = ([1150, 1000, 860][phase - 1] || 860) * (dark ? Number(cfg.darkFireMul || 0.8) : 1);
+    if (now - state.lastBossShotAt < getStageAdjustedEnemyFireInterval(rate)) return;
+    state.lastBossShotAt = now;
+    const speedMul = dark ? Number(cfg.darkSpeedMul || 1.35) : 1;
+    const idx = (state.eclipseVolley = Number(state.eclipseVolley || 0) + 1);
+    const arena = document.getElementById('shooting-arena');
+    const w = Number(arena && arena.clientWidth || 390);
+    const dmg = Number(BOSS.bulletDamage || 200);
+    const push = (x, y, vx, vy, element) => {
+      const p = makeProjectile(`shooting-enemy-bullet shooting-mini-enemy-bullet shooting-generic-zako-shot shooting-enemy-element-${element}`, x, y, vx * speedMul, vy * speedMul, dmg);
+      if (!p) return;
+      p.attackElement = element;
+      applyEnemyProjectileElementVisual(p, element);
+      state.enemyBullets.push(p);
+    };
+    if (idx % 2 === 1) {
+      // 光の矢：上端のランダムな位置から真下へ速く（少しだけ斜め）
+      const n = [6, 8, 10][phase - 1] || 10;
+      for (let i = 0; i < n; i++) {
+        const x = 20 + Math.random() * (w - 40);
+        const a = Math.PI / 2 + (Math.random() - .5) * 0.18;
+        const sp = 300 + phase * 25 + Math.random() * 40;
+        push(x, -6, Math.cos(a) * sp, Math.sin(a) * sp, 'light');
+      }
+    } else {
+      // 闇の環：本体から全方位へ遅く
+      const n = [14, 18, 22][phase - 1] || 22;
+      const ox = Number(state.boss.x || w / 2), oy = Number(state.boss.y || 80) + 30;
+      const start = idx * 0.21;
+      for (let i = 0; i < n; i++) {
+        const a = start + Math.PI * 2 * i / n;
+        const sp = 115 + phase * 12;
+        push(ox, oy, Math.cos(a) * sp, Math.sin(a) * sp, 'dark');
+      }
+    }
+  }
+
+
   function getOverseerWatchConfig() {
     return (state && BOSS && BOSS.overseerWatch && !isNormalBattle()) ? BOSS.overseerWatch : null;
   }
@@ -14515,6 +14907,7 @@
       return;
     }
     if (def.behavior === 'inori_torii_v1') return; // 鳥居の攻撃（レーザー）は updateInoriMechanics
+    if (def.behavior === 'eclipse_scale_v1') return; // build1681: 天秤は弾を撃たない（突進は updateEclipseScale）
     if (def.behavior === 'verdant_seed_v1') return; // build1663: 成長の実は攻撃しない
 
     // v212 generic elemental angels
@@ -15323,6 +15716,10 @@
         placeInoriTorii(enemy, w);
         positionUnit(enemy.el, enemy.x, enemy.y);
         positionMiniEnemyHp(enemy);
+        return;
+      }
+      if (def.behavior === 'eclipse_scale_v1') { // build1681: 天秤はうろつき・突進（updateEclipseScale）
+        updateEclipseScale(enemy, dt, now, w, h);
         return;
       }
 
@@ -19379,6 +19776,10 @@
     }
     if (BOSS && BOSS.behavior === 'inori_v1') {
       fireInoriBoss(now);
+      return;
+    }
+    if (BOSS && BOSS.behavior === 'eclipse_v1') { // build1681
+      fireEclipseBoss(now);
       return;
     }
     if (BOSS && BOSS.behavior === 'verdant_queen_v1') {
@@ -24123,6 +24524,8 @@
         updateOverseerWatch(dt, ts, bossGrabbed || bossStunned);
         // build1643: イノリ（鳥居・全属性バリア・レーザー・鈍化）
         updateInoriMechanics(dt, ts, bossGrabbed || bossStunned);
+        // build1681: エクリプス（天秤・日食・蝕の手・本体無敵）
+        updateEclipseMechanics(dt, ts, bossGrabbed || bossStunned);
         if (!bossGrabbed && !bossStunned && (!isScoreAttackStage() || state.boss.hp > 0)) {
           fireBoss(ts);
         }
@@ -24280,6 +24683,12 @@
       meta.title = '理想郷：ノア';
       meta.sub = '楽園 -ノア-';
       meta.image = selectedStage.introImage || 'images/noah_battle_start.webp';
+    } else if (BOSS && BOSS.eclipseMechanics) {
+      // build1681: 位相回遊 100F・150F…の確定ボス
+      meta.kicker = 'PHASE ODYSSEY / FLOOR ' + String(selectedStage?.stageNo || 100);
+      meta.title = BOSS.name || 'エクリプス';
+      meta.sub = 'THE ECLIPSE';
+      meta.image = selectedStage.introImage || 'images/eclipse_battle_start.webp';
     } else if (BOSS && BOSS.overseerWatch) {
       meta.kicker = isPhaseOdysseyStage() ? 'PHASE ODYSSEY' : 'TOWER GUARDIAN';
       meta.title = BOSS.name || 'オーバーシア';
@@ -25278,6 +25687,9 @@
     state.countdown = true;
     state.running = false;
     if (copy) copy.classList.add('hide');
+    // build1685: SUB MISSION・異常のバナーは戦闘開始前（カウントダウン中）に出し、開始と同時に消す
+    const poVariant = getPhaseOdysseyVariant();
+    if (poVariant) { state.poBannerShown = true; showPhaseOdysseyVarietyBanner(poVariant); }
 
     countdown.classList.remove('chapter4-rule-phase', 'chapter4-rule-first', 'ready-phase', 'number-phase', 'start-phase');
 
@@ -25306,7 +25718,8 @@
         // ready-popを付けると1.18秒でopacity:0になるため専用フラグで固定表示する。
         { text:'このステージでは、\n左右の操作が反転します', phase:'chapter4-rule-phase', hold:4400, holdVisible:true }
       ] : []),
-      { text:'ARE YOU READY', phase:'ready-phase',  hold:1250 },
+      // build1686: 位相回遊でSUB MISSIONのバナーを出す階は、読めるようにARE YOU READYを少し長く
+      { text:'ARE YOU READY', phase:'ready-phase',  hold:getPhaseOdysseyVariant() ? 2300 : 1250 },
       { text:'3',             phase:'number-phase', hold:850 },
       { text:'2',             phase:'number-phase', hold:850 },
       { text:'1',             phase:'number-phase', hold:850 },
@@ -25326,6 +25739,7 @@
       const step = sequence[i];
       countdown.classList.remove('chapter4-rule-phase', 'chapter4-rule-first', 'ready-phase', 'number-phase', 'start-phase');
       countdown.classList.add(step.phase);
+      if (step.phase === 'number-phase') hidePhaseOdysseyVarietyBanner(); // build1686: 3・2・1の前に消す
       if (isChapter04Stage() && i === 0) countdown.classList.add('chapter4-rule-first');
 
       if (step.html) {
@@ -25381,6 +25795,7 @@
 
         state.countdown = false;
         state.running = true;
+        hidePhaseOdysseyVarietyBanner(); // build1685
         const resumeElapsedMs = Math.max(0, Number(state.resumeElapsedMsPending || 0));
         const isResumingBattle = resumeElapsedMs > 0;
         state.startedAt = performance.now() - resumeElapsedMs;
@@ -25436,6 +25851,12 @@
 
   function beginBossDefeat() {
     if (!state || state.ended || state.finishing) return;
+    // build1682: エクリプスは光状態の間だけ撃破できる。無敵中に他経路でHPが0になっても戻す。
+    if (isEclipseImmune() && state.eclipse && Number(state.eclipse.lockHp) > 0) {
+      state.boss.hp = Number(state.eclipse.lockHp);
+      updateBossPhase();
+      return;
+    }
 
     // build1662: デイリーレイド周回制。HP0で次の周へ（バトルは時間切れ・全滅まで続く）
     if (isRaidLapMode()) {
@@ -34104,7 +34525,7 @@
     });
     state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
 
-    if (!isNormalBattle() && state.boss && state.boss.hp > 0 && Math.random() < chance) {
+    if (!isNormalBattle() && !isEclipseBattle() && state.boss && state.boss.hp > 0 && Math.random() < chance) { // build1681: エクリプス本体には割合ダメージも通らない
       const boss = state.boss;
       const damage = Math.min(Number(boss.hp || 0), Math.max(0, Number(boss.hpMax || boss.hp || 1)) * hpRatio);
       boss.hp = Math.max(0, Number(boss.hp || 0) - damage);

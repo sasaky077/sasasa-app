@@ -792,8 +792,9 @@ html body:has(#screen-phase-odyssey.active) #global-user-frame .hud-lv-num{
 }
 /* 戦闘開始時のお題・異常バナー */
 #shooting-event-root .po-variety-banner{
-  position:absolute;left:50%;top:30%;z-index:70;transform:translate(-50%,-50%);
-  min-width:min(300px,86%);max-width:92%;padding:12px 18px 13px;box-sizing:border-box;
+  /* build1685: 戦闘開始前（カウントダウン中）に、数字と被らない上寄りに小さめに出す */
+  position:absolute;left:50%;top:118px;z-index:70;transform:translate(-50%,0);
+  min-width:min(280px,84%);max-width:92%;padding:9px 16px 10px;box-sizing:border-box;
   display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;pointer-events:none;
   color:#fff;background:linear-gradient(180deg,rgba(28,26,52,.88),rgba(16,15,32,.9));
   border-top:2px solid rgba(214,190,130,.95);border-bottom:2px solid rgba(214,190,130,.95);
@@ -801,7 +802,7 @@ html body:has(#screen-phase-odyssey.active) #global-user-frame .hud-lv-num{
   animation:poVarietyIn .32s cubic-bezier(.2,.9,.3,1) both;
 }
 #shooting-event-root .po-variety-banner.out{opacity:0;transition:opacity .35s ease-in;}
-#shooting-event-root .po-variety-banner b{font:700 17px/1.2 'Noto Serif JP',serif;letter-spacing:.2em;color:#f4e2b0;}
+#shooting-event-root .po-variety-banner b{font:700 15px/1.2 'Noto Serif JP',serif;letter-spacing:.2em;color:#f4e2b0;}
 #shooting-event-root .po-variety-banner small{font:500 12px/1.4 'Noto Serif JP',serif;color:rgba(255,255,255,.9);}
 #shooting-event-root .po-variety-banner em{
   margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.18);width:100%;
@@ -809,8 +810,117 @@ html body:has(#screen-phase-odyssey.active) #global-user-frame .hud-lv-num{
   display:flex;flex-direction:column;align-items:center;gap:2px;
 }
 #shooting-event-root .po-variety-banner em span{font:500 11px/1.3 'Noto Serif JP',serif;letter-spacing:.05em;color:rgba(255,220,214,.92);}
-@keyframes poVarietyIn{from{opacity:0;transform:translate(-50%,-50%) scale(.92)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+@keyframes poVarietyIn{from{opacity:0;transform:translate(-50%,0) scale(.94)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
 /* お題「精鋭」：大型の敵に金の光 */
 #shooting-event-root .shooting-mini-enemy.po-elite{
   filter:drop-shadow(0 0 6px rgba(255,206,90,.95)) drop-shadow(0 0 14px rgba(255,170,40,.6));
 }
+
+/* build1681: エクリプス（位相回遊 100F・150F…） ---------------------- */
+#shooting-event-root .shooting-mini-enemy.eclipse-scale.is-light{filter:drop-shadow(0 0 8px rgba(255,222,120,.95)) drop-shadow(0 0 18px rgba(255,200,80,.55));}
+#shooting-event-root .shooting-mini-enemy.eclipse-scale.is-dark{filter:drop-shadow(0 0 8px rgba(170,110,255,.95)) drop-shadow(0 0 18px rgba(120,60,220,.6));}
+#shooting-event-root .shooting-mini-enemy.eclipse-scale.is-warning{filter:drop-shadow(0 0 4px #fff) drop-shadow(0 0 16px rgba(255,80,80,.9)) brightness(1.25);}
+#shooting-event-root .shooting-mini-enemy.eclipse-scale.is-dashing{filter:drop-shadow(0 0 10px rgba(255,90,90,.95)) drop-shadow(0 0 22px rgba(255,60,60,.6)) brightness(1.15);}
+/* 突進の予告線 */
+#shooting-event-root .eclipse-dash-line{
+  position:absolute;left:0;top:0;height:6px;margin-top:-3px;z-index:9;pointer-events:none;transform-origin:0 50%;
+  background:repeating-linear-gradient(90deg,rgba(255,90,90,.85) 0 14px,transparent 14px 24px);
+  box-shadow:0 0 8px rgba(255,80,80,.6);animation:eclipseDashWarn .25s ease-in-out infinite alternate;
+}
+#shooting-event-root .eclipse-dash-line.is-light{background:repeating-linear-gradient(90deg,rgba(255,206,90,.95) 0 14px,transparent 14px 24px);}
+#shooting-event-root .eclipse-dash-line.is-dark{background:repeating-linear-gradient(90deg,rgba(180,120,255,.95) 0 14px,transparent 14px 24px);}
+@keyframes eclipseDashWarn{from{opacity:.45}to{opacity:1}}
+/* 天秤のダメージ／回復の数字 */
+#shooting-event-root .eclipse-float-num{
+  position:absolute;left:0;top:0;z-index:60;pointer-events:none;white-space:nowrap;
+  font:800 15px/1 'Noto Serif JP',serif;letter-spacing:.02em;translate:-50% 0;
+  animation:eclipseNumUp .74s ease-out forwards;
+}
+#shooting-event-root .eclipse-float-num.is-dmg{color:#f2e3ff;text-shadow:0 0 4px #6b2fc0,0 0 10px #6b2fc0,0 2px 2px #000;}
+#shooting-event-root .eclipse-float-num.is-heal{color:#bdf7b0;text-shadow:0 0 4px #1d7a2a,0 0 10px #1d7a2a,0 2px 2px #000;}
+@keyframes eclipseNumUp{0%{opacity:0;margin-top:6px}15%{opacity:1}100%{opacity:0;margin-top:-26px}}
+/* 蝕の手：縦の予告帯 → 黒い手が薙ぐ */
+#shooting-event-root .eclipse-hand-band{
+  position:absolute;top:0;bottom:0;z-index:8;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(120,60,200,.22) 20%,rgba(120,60,200,.32) 50%,rgba(120,60,200,.22) 80%,transparent);
+  border-left:1px dashed rgba(200,160,255,.75);border-right:1px dashed rgba(200,160,255,.75);
+  animation:eclipseHandWarn .3s ease-in-out infinite alternate;
+}
+#shooting-event-root .eclipse-hand-band i{position:absolute;inset:0;opacity:0;
+  background:linear-gradient(180deg,rgba(20,8,36,.0),rgba(30,10,52,.92) 18%,rgba(12,4,24,.96) 60%,rgba(60,20,110,.85));
+  box-shadow:0 0 24px rgba(140,80,240,.8);transform:scaleY(.1);transform-origin:50% 0;}
+#shooting-event-root .eclipse-hand-band.is-strike{animation:none;border-color:transparent;}
+#shooting-event-root .eclipse-hand-band.is-strike i{opacity:1;transform:scaleY(1);transition:transform .12s ease-out,opacity .08s;}
+#shooting-event-root .eclipse-hand-band.is-out{opacity:0;transition:opacity .2s;}
+@keyframes eclipseHandWarn{from{opacity:.55}to{opacity:1}}
+/* build1682: 状態表示（無敵／光状態／闇状態） */
+#shooting-event-root .eclipse-state-pill{
+  position:absolute;left:50%;bottom:10px;z-index:30;transform:translateX(-50%);pointer-events:none;white-space:nowrap;
+  padding:4px 12px;border-radius:999px;font:700 11px/1.3 'Noto Serif JP',serif;letter-spacing:.06em;
+  color:#e9e2f5;background:rgba(30,24,46,.78);border:1px solid rgba(190,170,230,.6);
+}
+#shooting-event-root .eclipse-state-pill[data-mode="light"]{color:#5a3d00;background:linear-gradient(90deg,rgba(255,236,170,.95),rgba(255,248,220,.95));border-color:#e2b53c;box-shadow:0 0 14px rgba(255,214,90,.75);}
+#shooting-event-root .eclipse-state-pill[data-mode="dark"]{color:#f0e2ff;background:linear-gradient(90deg,rgba(60,20,110,.92),rgba(30,8,60,.92));border-color:#a77cf0;box-shadow:0 0 14px rgba(140,80,240,.7);}
+/* 光状態：エクリプスが金色に光る（攻撃が通る合図） */
+#shooting-event-root.eclipse-light .shooting-boss{filter:drop-shadow(0 0 10px rgba(255,214,90,.95)) drop-shadow(0 0 26px rgba(255,190,60,.6)) brightness(1.08) !important;}
+/* 闇状態：自機の周りだけ見える暗幕（敵弾・天秤より上） */
+#shooting-event-root .eclipse-dark-veil{
+  position:absolute;inset:0;z-index:18;pointer-events:none;
+  background:radial-gradient(circle at var(--px,50%) var(--py,70%),rgba(6,3,12,0) 0,rgba(6,3,12,0) calc(var(--vr,130px) - 30px),rgba(6,3,12,.93) calc(var(--vr,130px) + 40px));
+  animation:eclipseVeilIn .35s ease-out both;
+}
+@keyframes eclipseVeilIn{from{opacity:0}to{opacity:1}}
+#shooting-event-root.eclipse-dark .shooting-boss{z-index:9 !important;}
+/* 闇状態でも光の天秤の位置が分かる金の光 */
+#shooting-event-root .eclipse-beacon{position:absolute;left:0;top:0;z-index:19;pointer-events:none;width:0;height:0;}
+#shooting-event-root .eclipse-beacon i{position:absolute;left:-30px;top:-30px;width:60px;height:60px;border-radius:50%;
+  border:2px solid rgba(255,220,120,.95);box-shadow:0 0 14px rgba(255,210,90,.95),inset 0 0 12px rgba(255,210,90,.6);
+  background:radial-gradient(circle,rgba(255,236,170,.55),rgba(255,210,90,.12) 60%,transparent 72%);
+  animation:eclipseBeacon .8s ease-in-out infinite alternate;}
+@keyframes eclipseBeacon{from{transform:scale(.88);opacity:.75}to{transform:scale(1.08);opacity:1}}
+
+/* build1683: 戦闘ヘッダー右上「PHASE ODYSSEY / FLOOR ○」を札の中に収める（序盤から星アイコンに被っていた） */
+html body #shooting-event-root .shooting-score.is-po-floor{padding-left:30px !important;padding-right:9px !important;}
+html body #shooting-event-root .shooting-score.is-po-floor .shooting-score-label{font-size:8px;letter-spacing:.1em;}
+html body #shooting-event-root .shooting-score.is-po-floor .shooting-score-value{font-size:15px;letter-spacing:.02em;margin-top:2px;}
+html body #shooting-event-root .shooting-score.is-po-floor[data-po-len="9"] .shooting-score-value{font-size:14px;}
+html body #shooting-event-root .shooting-score.is-po-floor[data-po-len="10"] .shooting-score-value,
+html body #shooting-event-root .shooting-score.is-po-floor[data-po-len="11"] .shooting-score-value{font-size:12.5px;}
+
+/* build1684: SUB MISSION（旧「お題」）の表示 */
+#shooting-event-root .po-variety-banner .po-vb-kicker{font:700 10px/1 'Cinzel',serif;letter-spacing:.32em;color:rgba(244,226,176,.85);}
+/* 進み具合のチップ（生存・速攻＝残り秒数／見切り＝被弾数） */
+#shooting-event-root .po-submission-chip{
+  position:absolute;left:50%;top:94px;z-index:31;transform:translateX(-50%);pointer-events:none;
+  display:flex;align-items:baseline;gap:7px;white-space:nowrap;
+  padding:4px 12px 5px;border-radius:6px;
+  color:#fff;background:linear-gradient(180deg,rgba(28,26,52,.82),rgba(16,15,32,.86));
+  border:1px solid rgba(214,190,130,.75);box-shadow:0 3px 10px rgba(0,0,0,.25);
+}
+#shooting-event-root .po-submission-chip span{font:700 9px/1 'Cinzel','Noto Serif JP',serif;letter-spacing:.12em;color:#e9d7a6;}
+#shooting-event-root .po-submission-chip b{font:700 20px/1 'Cinzel','Noto Serif JP',serif;letter-spacing:.02em;font-variant-numeric:tabular-nums;color:#fff;min-width:3.2em;text-align:right;}
+#shooting-event-root .po-submission-chip em{font:600 10px/1 'Noto Serif JP',serif;font-style:normal;color:rgba(255,255,255,.85);}
+#shooting-event-root .po-submission-chip[data-state="hurry"]{border-color:#ff7a6a;}
+#shooting-event-root .po-submission-chip[data-state="hurry"] b{color:#ff9d8f;animation:poChipPulse .5s ease-in-out infinite alternate;}
+#shooting-event-root .po-submission-chip[data-state="done"]{border-color:#e2b53c;background:linear-gradient(180deg,rgba(90,64,10,.9),rgba(60,40,6,.9));}
+#shooting-event-root .po-submission-chip[data-state="done"] b{color:#ffe08a;}
+#shooting-event-root .po-submission-chip[data-state="fail"]{opacity:.7;border-color:rgba(160,160,170,.6);}
+#shooting-event-root .po-submission-chip[data-state="fail"] b{color:#b9b9c4;}
+@keyframes poChipPulse{from{opacity:.65}to{opacity:1}}
+
+/* build1686: SUB MISSIONバナーは盤面の最上部（ミッション帯の位置）に、横長・1〜2行で。敵や弾が来る位置を隠さない */
+#shooting-event-root .po-variety-banner{
+  top:0 !important;left:6px !important;right:6px !important;transform:none !important;
+  min-width:0 !important;max-width:none !important;padding:5px 10px 6px !important;gap:3px !important;
+  align-items:stretch !important;border-radius:4px;
+  animation:poVarietyDrop .28s cubic-bezier(.2,.9,.3,1) both !important;
+}
+@keyframes poVarietyDrop{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+#shooting-event-root .po-variety-banner .po-vb-row{display:flex;align-items:baseline;gap:8px;min-width:0;white-space:nowrap;}
+#shooting-event-root .po-variety-banner .po-vb-kicker{flex:0 0 auto;font-size:9px;letter-spacing:.2em;}
+#shooting-event-root .po-variety-banner .po-vb-row b{flex:0 0 auto;font-size:14px;letter-spacing:.12em;}
+#shooting-event-root .po-variety-banner .po-vb-row small{min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:11px;}
+#shooting-event-root .po-variety-banner .po-vb-row.is-anomaly{padding-top:3px;border-top:1px solid rgba(255,255,255,.16);}
+#shooting-event-root .po-variety-banner .po-vb-row.is-anomaly .po-vb-kicker,
+#shooting-event-root .po-variety-banner .po-vb-row.is-anomaly b{color:#ff9a8a;}
+#shooting-event-root .po-variety-banner .po-vb-row.is-anomaly small{color:rgba(255,220,214,.92);}
