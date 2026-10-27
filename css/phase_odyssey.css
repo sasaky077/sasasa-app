@@ -777,3 +777,40 @@ html body:has(#screen-phase-odyssey.active) #global-user-frame .hud-lv-num{
 #shooting-event-root[data-shooting-stage^="shooting_phase_odyssey_"][data-po-bg="1"] .shooting-bg{background-image:url('../images/battle_bg_01.webp');}
 #shooting-event-root[data-shooting-stage^="shooting_phase_odyssey_"][data-po-bg="2"] .shooting-bg{background-image:url('../images/battle_bg_02.webp'),url('../images/battle_bg_01.webp');}
 #shooting-event-root[data-shooting-stage^="shooting_phase_odyssey_"][data-po-bg="3"] .shooting-bg{background-image:url('../images/battle_bg_03.webp'),url('../images/battle_bg_01.webp');}
+
+/* build1679: 位相回遊「お題・異常」 ---------------------------------- */
+/* 強化選択・状態画面：次の階層の予告／★UPの理由 */
+#phase-odyssey-layer .po-variety-note{
+  margin:0 0 10px;padding:6px 10px;border-radius:6px;
+  font:600 11px/1.55 'Noto Serif JP',serif;letter-spacing:.02em;text-align:left;
+  color:#3f3a66;background:rgba(232,230,250,.9);border:1px solid rgba(120,112,190,.55);
+}
+#phase-odyssey-layer .po-status-note.po-variety-note{margin-top:6px;}
+#phase-odyssey-layer .po-variety-note.is-bonus{
+  color:#6a4a10;background:linear-gradient(90deg,rgba(255,240,196,.95),rgba(255,248,226,.92));
+  border-color:rgba(201,160,70,.8);font-weight:700;
+}
+/* 戦闘開始時のお題・異常バナー */
+#shooting-event-root .po-variety-banner{
+  position:absolute;left:50%;top:30%;z-index:70;transform:translate(-50%,-50%);
+  min-width:min(300px,86%);max-width:92%;padding:12px 18px 13px;box-sizing:border-box;
+  display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;pointer-events:none;
+  color:#fff;background:linear-gradient(180deg,rgba(28,26,52,.88),rgba(16,15,32,.9));
+  border-top:2px solid rgba(214,190,130,.95);border-bottom:2px solid rgba(214,190,130,.95);
+  box-shadow:0 6px 22px rgba(0,0,0,.35);
+  animation:poVarietyIn .32s cubic-bezier(.2,.9,.3,1) both;
+}
+#shooting-event-root .po-variety-banner.out{opacity:0;transition:opacity .35s ease-in;}
+#shooting-event-root .po-variety-banner b{font:700 17px/1.2 'Noto Serif JP',serif;letter-spacing:.2em;color:#f4e2b0;}
+#shooting-event-root .po-variety-banner small{font:500 12px/1.4 'Noto Serif JP',serif;color:rgba(255,255,255,.9);}
+#shooting-event-root .po-variety-banner em{
+  margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.18);width:100%;
+  font:700 14px/1.3 'Noto Serif JP',serif;font-style:normal;letter-spacing:.18em;color:#ff9a8a;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+}
+#shooting-event-root .po-variety-banner em span{font:500 11px/1.3 'Noto Serif JP',serif;letter-spacing:.05em;color:rgba(255,220,214,.92);}
+@keyframes poVarietyIn{from{opacity:0;transform:translate(-50%,-50%) scale(.92)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+/* お題「精鋭」：大型の敵に金の光 */
+#shooting-event-root .shooting-mini-enemy.po-elite{
+  filter:drop-shadow(0 0 6px rgba(255,206,90,.95)) drop-shadow(0 0 14px rgba(255,170,40,.6));
+}

@@ -128,6 +128,9 @@
       next_ult_max: false,
       last_result: null,
       runs_started: 0,
+      // build1679: 階層の「お題・異常」ルールの版。0＝旧ルール（このbuild以前に始めたrun）。新しく始めたrunだけ1になる。
+      variety: 0,
+      last_bonus: null,
       updated_at: new Date().toISOString()
     };
   }
@@ -169,6 +172,8 @@
       run_seed: Math.max(0, toInt(raw.run_seed, 0)),
       last_result: raw.last_result && typeof raw.last_result === 'object' ? raw.last_result : null,
       runs_started: Math.max(0, toInt(raw.runs_started, 0)),
+      variety: Math.max(0, toInt(raw.variety, 0)),
+      last_bonus: raw.last_bonus && typeof raw.last_bonus === 'object' ? raw.last_bonus : null,
       updated_at: String(raw.updated_at || base.updated_at)
     });
     // 壊れたrunは安全側（未開始）へ戻す。最高記録は維持する。
@@ -257,9 +262,10 @@
     return list[list.length - 1];
   }
   function rollTier(){ const r = Math.random(); return r < 0.55 ? 1 : (r < 0.88 ? 2 : 3); }
-  function rollBuff(t, rec){
+  function rollBuff(t, rec, bump){
     const tpl = TEMPLATES[t];
-    const q = tpl.fixedTier || rollTier();
+    // build1679: 異常階のクリア・お題ボーナス達成で★が上がる（bump段階、最大★3）
+    const q = tpl.fixedTier || Math.min(3, rollTier() + Math.max(0, toInt(bump, 0)));
     const out = { t, q, v:100 };
     if (tpl.range) {
       const [lo, hi] = TIER[q].q;
@@ -355,7 +361,106 @@
     const need = threat.uncovered.map(e => `${ELEMENT_LABEL[e]}→${ELEMENT_LABEL[BARRIER_BREAKER[e]]}`).join('・');
     return `属性バリア警戒：FLOOR ${threat.floor}（${names}）　編成では突破できません（弱点：${need}）。強化で対策を`;
   }
-  function rollChoices(rec){
+  // ------------------------------------------------------------
+  // build1679: 階層の「お題」と「異常」
+  //  ・10の倍数以外の階層に、run_seed＋階層番号で決まるお題（と11F以降は一定確率で異常）を付ける。
+  //  ・このbuild以降に新しく始めたrun（variety>=1）だけが対象。進行中の旧runは従来の階層のまま変わらない。
+  //  ・同じrunの同じ階層は、中断・再開しても必ず同じお題・異常になる。
+  //  ・実際の戦闘内容は shooting_stages.js が組み立て、確定した内容を stage.phaseOdyssey.variant に載せる。
+  // ------------------------------------------------------------
+  const VARIETY_VERSION = 1;
+  const OBJECTIVE_INFO = Object.freeze({
+    clear:   { name:'殲滅',     desc:'敵をすべて撃破する' },
+    survive: { name:'生存',     desc:'敵が湧き続ける。制限時間まで生き残れば突破' },
+    elite:   { name:'精鋭',     desc:'HP5倍の大型の精鋭が混ざる。すべて撃破で突破' },
+    speed:   { name:'速攻',     desc:'目標時間内に全滅させると、強化の★が上がる', bonus:true },
+    nohit:   { name:'見切り',   desc:'被弾3回以内で全滅させると、強化の★が上がる', bonus:true }
+  });
+  const ANOMALY_INFO = Object.freeze({
+    blackout: { name:'暗転', desc:'周期的に画面が暗くなる' },
+    haste:    { name:'加速', desc:'敵の弾が速い（1.25倍）' },
+    reverse:  { name:'反転', desc:'左右の操作が逆になる' },
+    slow:     { name:'鈍化', desc:'自機の移動が遅い（75%）' },
+    crowd:    { name:'過密', desc:'敵の数が多い' },
+    burst:    { name:'連鎖', desc:'敵が倒れると弾をばらまく' }
+  });
+  function varietyRoll(seed, floor, salt){ return seededRandom((seed ^ (salt * 2654435761)) >>> 0, floor * 7 + salt); }
+  function pickWeighted(list, r){
+    const total = list.reduce((n, x) => n + x[1], 0);
+    let acc = r * total;
+    for (const x of list) { acc -= x[1]; if (acc <= 0) return x[0]; }
+    return list[list.length - 1][0];
+  }
+  function objectivePool(f){
+    const pool = [['clear', 2.6]];
+    if (f >= 2) pool.push(['survive', 2.2]);
+    if (f >= 3) pool.push(['speed', 1.8]);
+    if (f >= 4) pool.push(['elite', 2]);
+    if (f >= 6) pool.push(['nohit', 1.5]);
+    return pool;
+  }
+  function rawObjective(f, seed){ return pickWeighted(objectivePool(f), varietyRoll(seed, f, 11)); }
+  // 前の階層の「確定した」お題と同じなら引き直す（ボス階の直後は比較しない）。再帰はボス階で止まるので最大9段。
+  function finalObjective(f, seed){
+    let objective = rawObjective(f, seed);
+    if (f > 2 && !isBossFloor(f - 1)) {
+      const prev = finalObjective(f - 1, seed);
+      if (prev === objective) {
+        const others = objectivePool(f).filter(x => x[0] !== objective);
+        if (others.length) objective = pickWeighted(others, varietyRoll(seed, f, 13));
+      }
+    }
+    return objective;
+  }
+  function getFloorVariant(floor, recArg){
+    const rec = recArg || load();
+    if (toInt(rec.variety, 0) < VARIETY_VERSION || !isRunActive(rec)) return null;
+    const f = toInt(floor, 0);
+    if (f < 2 || isBossFloor(f)) return null;
+    const seed = toInt(rec.run_seed, 1) || 1;
+    // 同じお題が2階連続しない（殲滅の連続も避ける）
+    const objective = finalObjective(f, seed);
+    let anomaly = '';
+    if (f >= 11) {
+      const chance = f >= 31 ? 0.45 : 0.30;
+      if (varietyRoll(seed, f, 23) < chance) {
+        const pool = [['blackout', 2], ['haste', 2], ['slow', 1.5], ['crowd', 2], ['burst', 1.6]];
+        if (f >= 21) pool.push(['reverse', 1]);
+        anomaly = pickWeighted(pool, varietyRoll(seed, f, 37));
+      }
+    }
+    return { v: VARIETY_VERSION, objective, anomaly };
+  }
+  // 戦闘で実際に使われる内容（ステージ側で調整された後のもの）
+  function effectiveVariant(floor, rec){
+    try {
+      const S = window.ShootingStages;
+      if (!S || typeof S.getShootingStage !== 'function') return null;
+      const stage = S.getShootingStage(STAGE_PREFIX + String(toInt(floor, 1)) + (isBossFloor(floor) ? '_' + bossForFloor(floor, rec).key : ''));
+      return (stage && stage.phaseOdyssey && stage.phaseOdyssey.variant) || null;
+    } catch (_) { return null; }
+  }
+  function variantText(v){
+    if (!v) return '';
+    const o = OBJECTIVE_INFO[v.objective] || OBJECTIVE_INFO.clear;
+    let s = `お題【${o.name}】`;
+    if (v.objective === 'survive' && v.seconds) s += `${v.seconds}秒`;
+    if (v.objective === 'speed' && v.seconds) s += `${v.seconds}秒以内`;
+    if (v.objective === 'nohit' && v.maxHits != null) s += `被弾${v.maxHits}回まで`;
+    if (v.anomaly && ANOMALY_INFO[v.anomaly]) s += `　異常【${ANOMALY_INFO[v.anomaly].name}】${ANOMALY_INFO[v.anomaly].desc}（クリアで強化の★UP）`;
+    return s;
+  }
+  function nextFloorPreviewText(rec){
+    const r = rec || load();
+    if (toInt(r.variety, 0) < VARIETY_VERSION || !isRunActive(r)) return '';
+    const f = Math.max(1, r.current_floor + (r.run_status === 'select' ? 1 : 0));
+    if (isBossFloor(f)) return `次の階層：FLOOR ${f}　BOSS`;
+    const v = effectiveVariant(f, r);
+    if (!v) return '';
+    return `次の階層：FLOOR ${f}　${variantText(v)}`;
+  }
+
+  function rollChoices(rec, bump){
     const keys = Object.keys(TEMPLATES).filter(t => {
       if (countOf(t, rec) >= TEMPLATES[t].max) return false;
       if (t === 'ult_max_next' && rec.next_ult_max) return false;
@@ -367,7 +472,7 @@
     const take = cands => {
       for (let tries = 0; tries < 8 && cands.length; tries++) {
         const tpl = weightedPick(cands.map(t => ({ t, w:TEMPLATES[t].w })));
-        const b = rollBuff(tpl.t, rec);
+        const b = rollBuff(tpl.t, rec, bump);
         if (!picked.some(x => sameOffer(x, b))) { picked.push(b); return true; }
       }
       return false;
@@ -384,7 +489,7 @@
     const threat = nextBarrierThreat(rec, rec.current_floor + 1, 5);
     if (threat && threat.uncovered.length && !picked.some(b => b.t === 'barrier_pierce' || b.t === 'barrier_break')) {
       const target = threat.uncovered.find(e => !hasBarrierBreak(e, rec)) || threat.uncovered[0];
-      const fix = Math.random() < 0.6 ? Object.assign(rollBuff('barrier_break', rec), { c: target }) : rollBuff('barrier_pierce', rec);
+      const fix = Math.random() < 0.6 ? Object.assign(rollBuff('barrier_break', rec, bump), { c: target }) : rollBuff('barrier_pierce', rec, bump);
       const slot = Math.max(0, picked.findIndex(b => TEMPLATES[b.t] && TEMPLATES[b.t].cat === 'attack'));
       if (picked.length) picked[slot] = fix; else picked.push(fix);
     }
@@ -562,8 +667,17 @@
         const used = rec.build_list.find(b => b.t === 'ult_max_next' && !b.used);
         if (used) used.used = true;
       }
+      // build1679: 異常階のクリア／お題ボーナス達成で、次の強化の★を上げる（新ルールのrunだけ）
+      let bump = 0;
+      rec.last_bonus = null;
+      if (toInt(rec.variety, 0) >= VARIETY_VERSION && info && info.variety) {
+        const anomaly = !!info.variety.anomaly;
+        const challenge = !!info.variety.challengeAchieved;
+        bump = (anomaly ? 1 : 0) + (challenge ? 1 : 0);
+        if (bump) rec.last_bonus = { floor, anomaly, challenge, bump };
+      }
       rec.run_status = 'select';
-      rec.pending_choices = rollChoices(rec);
+      rec.pending_choices = rollChoices(rec, bump);
       rec.last_result = { floor, win:true, at:new Date().toISOString() };
     } else {
       rec.last_result = { floor, win:false, cleared: Math.max(0, floor - 1), builds: rec.build_list.length, at:new Date().toISOString() };
@@ -628,7 +742,8 @@
       const last = rec.last_result;
       lastNote.textContent = (rec.run_status === 'ended' && last && !last.win)
         ? `前回：FLOOR ${last.floor}で敗北（${last.cleared}階層踏破）`
-        : (rec.run_status === 'select' ? `FLOOR ${rec.current_floor} 踏破！ 強化を選択してください` : '');
+        : (rec.run_status === 'select' ? `FLOOR ${rec.current_floor} 踏破！ 強化を選択してください`
+          : (active ? nextFloorPreviewText(rec) : '')); // build1679: 挑戦中は次の階層のお題・異常
       lastNote.hidden = !lastNote.textContent;
     }
     renderSlots(root, rec);
@@ -981,6 +1096,8 @@
     if (!(options && options.selecting)) {
       const warn = barrierStatusText(rec);
       if (warn) wrap.append(el('p', 'po-status-note po-barrier-warn' + (warn.includes('突破できません') ? ' is-danger' : ''), warn));
+      const nextTxt = nextFloorPreviewText(rec);
+      if (nextTxt) wrap.append(el('p', 'po-status-note po-variety-note', nextTxt));
     }
     const heal = Math.min(100, Math.round(clearHealRate(rec) * 100));
     wrap.append(el('p', 'po-status-note', options && options.selecting
@@ -1012,6 +1129,14 @@
       // build1643: 次の属性バリア階層と突破可否を、強化を選ぶ前に見えるよう一番上に出す
       const warn = barrierStatusText(rec);
       if (warn) sheet.append(el('p', 'po-barrier-warn is-top' + (warn.includes('突破できません') ? ' is-danger' : ''), warn));
+      // build1679: ★UPの理由と、次の階層のお題・異常
+      const lb = rec.last_bonus;
+      if (lb && toInt(lb.floor, 0) === rec.current_floor && lb.bump) {
+        const why = [lb.anomaly ? '異常を突破' : '', lb.challenge ? 'お題ボーナス達成' : ''].filter(Boolean).join('・');
+        sheet.append(el('p', 'po-variety-note is-bonus', `${why}！ 強化の★が${lb.bump}段階アップ`));
+      }
+      const nextTxt = nextFloorPreviewText(rec);
+      if (nextTxt) sheet.append(el('p', 'po-variety-note', nextTxt));
       const cards = el('div', 'po-buff-cards');
       rec.pending_choices.forEach((b, index) => {
         const tpl = TEMPLATES[b.t];
@@ -1094,6 +1219,8 @@
     rec.last_result = null;
     rec.run_seed = 1 + Math.floor(Math.random() * 2147483646);
     rec.runs_started += 1;
+    rec.variety = VARIETY_VERSION; // build1679: 新しく始めたrunだけ、お題・異常あり
+    rec.last_bonus = null;
     save();
     return true;
   }
@@ -1252,7 +1379,10 @@
       const e = String(element || '').toLowerCase();
       return ELEMENTS.includes(e) ? barrierPierceRate(e, rec) : 0;
     },
-    getBarrierThreat: () => nextBarrierThreat(load(), Math.max(1, load().current_floor), 10)
+    getBarrierThreat: () => nextBarrierThreat(load(), Math.max(1, load().current_floor), 10),
+    // build1679: 階層のお題・異常（旧ルールのrun・ボス階・1Fは null）
+    getFloorVariant: floor => getFloorVariant(floor),
+    OBJECTIVE_INFO, ANOMALY_INFO
   });
   window.openPhaseOdyssey = open;
   window.closePhaseOdyssey = close;

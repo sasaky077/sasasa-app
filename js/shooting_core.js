@@ -1047,6 +1047,72 @@
   function getPhaseOdysseyApi() {
     return (isPhaseOdysseyStage() && window.PhaseOdyssey) ? window.PhaseOdyssey : null;
   }
+  // build1679: 位相回遊の階層のお題・異常（新ルールのrunだけ。旧runは null）
+  function getPhaseOdysseyVariant() {
+    return (isPhaseOdysseyStage() && selectedStage.phaseOdyssey.variant) || null;
+  }
+  function getPhaseOdysseyAnomaly() {
+    const v = getPhaseOdysseyVariant();
+    return (v && v.anomaly) || '';
+  }
+  const PO_OBJECTIVE_LABEL = Object.freeze({ clear:'殲滅', survive:'生存', elite:'精鋭', speed:'速攻', nohit:'見切り' });
+  const PO_ANOMALY_LABEL = Object.freeze({ blackout:'暗転', haste:'加速', reverse:'反転', slow:'鈍化', crowd:'過密', burst:'連鎖' });
+  const PO_ANOMALY_DESC = Object.freeze({ blackout:'周期的に暗転', haste:'敵弾1.25倍速', reverse:'左右操作が反転', slow:'移動75%',
+    crowd:'敵が多い', burst:'撃破時に弾をばらまく' });
+  // 開幕のお題・異常バナー／暗転の周期。戦闘ループから毎フレーム呼ばれる。
+  function updatePhaseOdysseyVariety(now) {
+    const v = getPhaseOdysseyVariant();
+    if (!v || !state) return;
+    const running = state.running && !state.countdown && !state.ended && !state.finishing;
+    if (running && !state.poBannerShown) {
+      state.poBannerShown = true;
+      showPhaseOdysseyVarietyBanner(v);
+    }
+    if (v.anomaly !== 'blackout') return;
+    const po = state.poBlackout || (state.poBlackout = { nextAt: 0, until: 0 });
+    if (!running) { if (state.ended || state.finishing) { po.until = 0; setTower15Blackout(false); } return; }
+    if (!po.nextAt) po.nextAt = now + 6000;
+    if (po.until && now >= po.until) {
+      po.until = 0; setTower15Blackout(false); po.nextAt = now + 11000;
+    } else if (!po.until && now >= po.nextAt) {
+      po.until = now + 3200; setTower15Blackout(true);
+    }
+  }
+  function isPhaseOdysseyBlackoutActive() {
+    return !!(state && state.poBlackout && state.poBlackout.until && getPhaseOdysseyAnomaly() === 'blackout');
+  }
+  function showPhaseOdysseyVarietyBanner(v) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena || !v) return;
+    arena.querySelectorAll('.po-variety-banner').forEach(el => el.remove());
+    const el = document.createElement('div');
+    el.className = 'po-variety-banner' + (v.anomaly ? ' has-anomaly' : '');
+    el.setAttribute('role', 'status');
+    const mission = (state && state.mission && state.mission.text) || '';
+    el.innerHTML = `<b>お題　${PO_OBJECTIVE_LABEL[v.objective] || '殲滅'}</b><small>${mission}</small>` +
+      (v.anomaly ? `<em>異常　${PO_ANOMALY_LABEL[v.anomaly] || ''}<span>${PO_ANOMALY_DESC[v.anomaly] || ''}</span></em>` : '');
+    arena.appendChild(el);
+    setTimeout(() => { if (el.isConnected) el.classList.add('out'); }, 2600);
+    setTimeout(() => { if (el.isConnected) el.remove(); }, 3000);
+  }
+  // 連鎖：撃破した敵が6方向に弾をばらまく
+  function spawnPhaseOdysseyBurst(enemy) {
+    if (!state || !enemy || getPhaseOdysseyAnomaly() !== 'burst' || state.ended || state.finishing) return;
+    const cfg = (selectedStage && selectedStage.normalBattle) || {};
+    const dmg = Math.max(1, Math.round(Number(cfg.enemyBulletDamage || 120) * 0.8));
+    const speed = Math.max(110, Number(cfg.enemyBulletSpeed || 170) * 0.85);
+    const element = normalizeCombatElement(enemy.def && enemy.def.element) || 'neutral';
+    const base = Math.random() * Math.PI * 2;
+    for (let i = 0; i < 6; i++) {
+      const a = base + i * Math.PI / 3;
+      const p = makeProjectile(`shooting-enemy-bullet shooting-mini-enemy-bullet shooting-generic-zako-shot shooting-enemy-element-${element}`,
+        Number(enemy.x || 0), Number(enemy.y || 0), Math.cos(a) * speed, Math.sin(a) * speed, dmg);
+      if (!p) continue;
+      p.attackElement = element;
+      applyEnemyProjectileElementVisual(p, element);
+      state.enemyBullets.push(p);
+    }
+  }
   // 戦闘開始時：前階層から持ち越したHP・ULTゲージ（比率）を反映し、戦闘内の一時状態を初期化。
   function applyPhaseOdysseyCarryover() {
     const api = getPhaseOdysseyApi();
@@ -1120,9 +1186,18 @@
       };
     });
     try {
+      // build1679: 異常階か／お題ボーナス（速攻・見切り）を達成したか
+      const v = getPhaseOdysseyVariant();
+      let variety = null;
+      if (v && win && state) {
+        const clearSec = (Number(state.poClearAt || performance.now()) - Number(state.startedAt || 0)) / 1000;
+        const challengeAchieved = (v.objective === 'speed' && clearSec <= Number(v.seconds || 0)) ||
+          (v.objective === 'nohit' && Number(state.totalHitsTaken || 0) <= Number(v.maxHits ?? 3));
+        variety = { anomaly: v.anomaly || '', challengeAchieved: !!challengeAchieved, clearSeconds: Math.round(clearSec * 10) / 10 };
+      }
       return Promise.resolve(api.finishFloor({
         floor: Number(selectedStage && selectedStage.stageNo || 0),
-        win: !!win, party, score: Number(state && state.score || 0),
+        win: !!win, party, score: Number(state && state.score || 0), variety,
       }) || unconfirmed);
     } catch (err) {
       console.error('[phase odyssey] finish failed', err);
@@ -12830,10 +12905,13 @@
     const swarmCfg = getSwarmBattleConfig() || {};
     const speedScale = Math.max(0.1, Number(swarmCfg.spiderMoveSpeedScale || 1));
     const damageScale = Math.max(0.1, Number(swarmCfg.spiderContactDamageScale || 1));
+    // build1680: 位相回遊は階層倍率で蜘蛛のHPも上げる（spiderHpScale。塔13F・CH07には無いので従来どおり）
+    const hpScale = Math.max(0.1, Number(swarmCfg.spiderHpScale || 1));
+    const scaledHp = Math.max(1, Math.round(Number(base.hp || 1) * hpScale));
     const tuned = Object.assign({}, base, {
       moveSpeed: Number(base.moveSpeed || 0) * speedScale,
       contactDamage: Math.round(Number(base.contactDamage || 0) * damageScale),
-      ch404Hp: base.hp, ch404Image: base.image
+      hp: scaledHp, ch404Hp: scaledHp, ch404Image: base.image
     });
     const enemy = createNormalEnemy(tuned, now);
     if (!enemy) return null;
@@ -13466,8 +13544,21 @@
         }
       }
 
+      // build1679: 位相回遊のお題「精鋭」：最初の1体がHP5倍・大型・連射やや速い
+      const odysseyElite = (cfg.odysseyElite && state.normalSpawned === 0) ? cfg.odysseyElite : null;
+      if (odysseyElite && Number(def.fireRate) > 0) def = Object.assign({}, def, { fireRate: Math.round(Number(def.fireRate) * Number(odysseyElite.fireRateMul || 0.8)) });
       const enemy = createNormalEnemy(def, now);
       if (!enemy) return false;
+      if (odysseyElite) {
+        const mul = Math.max(1, Number(odysseyElite.hpMul || 5));
+        enemy.hp = Math.round(Number(enemy.hp || 1) * mul);
+        enemy.hpMax = Math.round(Number(enemy.hpMax || enemy.hp) * mul);
+        enemy.poElite = true;
+        const sc = Math.max(1, Number(odysseyElite.scale || 1.45));
+        enemy.baseDisplayScale = Number(enemy.baseDisplayScale || getNormalEnemyBaseDisplayScale(enemy.def || def) || 1) * sc;
+        enemy.displayScale = Number(enemy.displayScale || 1) * sc;
+        if (enemy.el) { enemy.el.style.setProperty('--enemy-scale', String(enemy.displayScale)); enemy.el.classList.add('po-elite'); }
+      }
       state.normalEnemies.push(enemy);
       state.normalSpawned++;
 
@@ -13688,8 +13779,10 @@
       Number(state.inori.slowMemberId) === Number(state.activeCharacterId));
   }
   function getPlayerMoveMultiplier() {
-    if (!isInoriSlowActive()) return 1;
-    return Math.max(0.1, Math.min(1, Number(getInoriConfig()?.slowMultiplier || 0.5)));
+    // build1679: 位相回遊の異常「鈍化」は移動75%
+    const poSlow = getPhaseOdysseyAnomaly() === 'slow' ? 0.75 : 1;
+    if (!isInoriSlowActive()) return poSlow;
+    return poSlow * Math.max(0.1, Math.min(1, Number(getInoriConfig()?.slowMultiplier || 0.5)));
   }
   function syncInoriSlowDom() {
     const on = isInoriSlowActive();
@@ -15641,6 +15734,7 @@
     }
     state.normalDefeated++;
     state.score += Number(enemy.def?.scoreValue || 650);
+    spawnPhaseOdysseyBurst(enemy); // build1679: 位相回遊の異常「連鎖」
     handleChapter101TutorialEnemyDefeat();
     if (shouldDropMissionItem(state.normalDefeated)) spawnMissionItem(enemy.x, enemy.y);
     if (enemy.el) {
@@ -15727,6 +15821,7 @@
       state.missionComplete = allDefeated;
     }
     if (state.missionComplete) {
+      if (!state.poClearAt) state.poClearAt = now; // build1679: 位相回遊「速攻」の判定用
       if (isChapter102TutorialStage()) {
         state.ch102TutorialPhase = 'complete';
         clearChapter102TutorialHint();
@@ -17017,7 +17112,7 @@
     const cfg = getTower15Config();
     const root = document.getElementById(ROOT_ID);
     if (!cfg || !state || !BOSS || BOSS.behavior !== 'tower15_echo_v1') {
-      if (root && root.classList.contains('tower15-blackout')) root.classList.remove('tower15-blackout');
+      if (root && root.classList.contains('tower15-blackout') && !isPhaseOdysseyBlackoutActive()) root.classList.remove('tower15-blackout');
       return;
     }
     const t15 = state.tower15 || (state.tower15 = {
@@ -24071,6 +24166,7 @@
       updateFacelessStageMechanics(ts);
       updateChapter4ShrinkWalls(ts);
       updateTower15Mechanics(ts);
+      updatePhaseOdysseyVariety(ts);
       updateCollectibles(dt);
     }
     updateArnoAura(ts);

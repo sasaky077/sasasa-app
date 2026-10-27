@@ -470,7 +470,10 @@
       if (!phaseOdysseyStageCache.has(cacheKey)) phaseOdysseyStageCache.set(cacheKey, makePhaseOdysseyBossStage(f, bossKey));
       return phaseOdysseyStageCache.get(cacheKey);
     }
-    if (phaseOdysseyStageCache.has(f)) return phaseOdysseyStageCache.get(f);
+    // build1679: 新ルールのrunだけ、お題・異常（variant）を付ける。旧runは variant=null で従来と完全に同じステージ。
+    const rawVariant = getPhaseOdysseyFloorVariant(f);
+    const cacheKey = rawVariant ? (f + '|' + rawVariant.objective + '|' + (rawVariant.anomaly || '')) : f;
+    if (phaseOdysseyStageCache.has(cacheKey)) return phaseOdysseyStageCache.get(cacheKey);
     const templateFloor = getPhaseOdysseyTemplateFloor(f);
     const base = makeResonanceTowerStage(templateFloor);
     const scale = getPhaseOdysseyScaling(f);
@@ -497,7 +500,9 @@
       stage.normalBattle = Object.freeze(nb);
     }
     if (base.swarmBattle && Number.isFinite(Number(base.swarmBattle.guardHp))) {
-      stage.swarmBattle = Object.freeze({ ...base.swarmBattle, guardHp: Math.round(Number(base.swarmBattle.guardHp) * scale.hpScale) });
+      // build1680: 大蜘蛛・子蜘蛛のHPも階層倍率で強化（従来は三頭狼だけで、蜘蛛は全階層で塔13Fと同じHPだった）
+      stage.swarmBattle = Object.freeze({ ...base.swarmBattle, guardHp: Math.round(Number(base.swarmBattle.guardHp) * scale.hpScale),
+        spiderHpScale: scale.hpScale });
     }
     if (base.type === 'boss') {
       let gauges = Array.isArray(base.bossGaugeHps) ? base.bossGaugeHps.slice() : null;
@@ -516,9 +521,61 @@
         stage.bossGaugeHps = Object.freeze(gauges.map(v => Math.max(1, Math.round(Number(v || 1) * scale.hpScale))));
       }
     }
+    if (rawVariant) applyPhaseOdysseyVariant(stage, base, rawVariant, f);
     const frozen = Object.freeze(stage);
-    phaseOdysseyStageCache.set(f, frozen);
+    phaseOdysseyStageCache.set(cacheKey, frozen);
     return frozen;
+  }
+
+  // build1679: 位相回遊の「お題・異常」。抽選は phase_odyssey.js（run_seed＋階層）、戦闘内容への反映はここ。
+  function getPhaseOdysseyFloorVariant(floor) {
+    try {
+      const api = window.PhaseOdyssey;
+      return api && typeof api.getFloorVariant === 'function' ? api.getFloorVariant(floor) : null;
+    } catch (_) { return null; }
+  }
+  const PHASE_ODYSSEY_OBJECTIVE_LABEL = Object.freeze({ clear:'殲滅', survive:'生存', elite:'精鋭', speed:'速攻', nohit:'見切り' });
+  const PHASE_ODYSSEY_ANOMALY_LABEL = Object.freeze({ blackout:'暗転', haste:'加速', reverse:'反転', slow:'鈍化', crowd:'過密', burst:'連鎖' });
+  function applyPhaseOdysseyVariant(stage, base, v, f) {
+    if (!stage.normalBattle || base.type === 'boss') return;
+    const nb = { ...stage.normalBattle };
+    const swarm = !!base.swarmBattle;
+    // 群生（蜘蛛）テンプレートは「生存」「精鋭」と「過密」を使わない（蜘蛛の産卵と噛み合わないため）
+    let objective = (swarm && (v.objective === 'survive' || v.objective === 'elite')) ? 'clear' : v.objective;
+    let anomaly = v.anomaly || '';
+    if (swarm && anomaly === 'crowd') anomaly = 'haste';
+    const out = { v: v.v, objective, anomaly };
+    const M = SHOOTING_MISSION_TYPE;
+    if (objective === 'survive') {
+      const secs = f >= 31 ? 25 : 20;
+      out.seconds = secs;
+      nb.infiniteEnemies = true;
+      nb.maxActive = Math.max(1, Number(nb.maxActive || 2)) + 1;
+      nb.spawnIntervalMs = Math.round(Math.max(500, Number(nb.spawnIntervalMs || 1350) * 0.75));
+      stage.mission = Object.freeze({ type: M.SURVIVE_TIME, targetSeconds: secs, text: secs + '秒間 生き残れ' });
+    } else if (objective === 'elite') {
+      nb.odysseyElite = Object.freeze({ hpMul: 5, scale: 1.45, fireRateMul: 0.8 });
+      stage.mission = Object.freeze({ type: M.DEFEAT_ALL, text: '精鋭を含む敵をすべて撃破' });
+    } else if (objective === 'speed') {
+      const total = Number(nb.totalEnemies || 6) + (anomaly === 'crowd' ? 3 : 0);
+      const secs = Math.max(20, Math.min(50, Math.round(8 + total * 4)));
+      out.seconds = secs;
+      stage.mission = Object.freeze({ type: M.DEFEAT_ALL, text: '敵をすべて撃破（' + secs + '秒以内でボーナス）' });
+    } else if (objective === 'nohit') {
+      out.maxHits = 3;
+      stage.mission = Object.freeze({ type: M.DEFEAT_ALL, text: '敵をすべて撃破（被弾3回以内でボーナス）' });
+    }
+    if (anomaly === 'haste') nb.enemyBulletSpeed = Math.round(Number(nb.enemyBulletSpeed || 170) * 1.25);
+    if (anomaly === 'crowd') {
+      if (!nb.infiniteEnemies) nb.totalEnemies = Number(nb.totalEnemies || 6) + 3;
+      nb.maxActive = Math.max(1, Number(nb.maxActive || 2)) + 1;
+      if (nb.infiniteEnemies) nb.spawnIntervalMs = Math.round(Math.max(450, Number(nb.spawnIntervalMs || 1000) * 0.85));
+    }
+    if (anomaly === 'reverse') stage.reverseHorizontalControls = true;
+    stage.normalBattle = Object.freeze(nb);
+    stage.phaseOdyssey = Object.freeze({ ...stage.phaseOdyssey, variant: Object.freeze(out) });
+    stage.difficultyLabel = 'FLOOR ' + f + ' / ' + (PHASE_ODYSSEY_OBJECTIVE_LABEL[objective] || '殲滅') +
+      (anomaly ? '・' + (PHASE_ODYSSEY_ANOMALY_LABEL[anomaly] || '') : '');
   }
 
   const SHOOTING_STAGES = Object.freeze({
