@@ -67,6 +67,9 @@
     // build1643: ボス「オーバーシア」と、その配下「監視の眼」（STORY CH08-04・位相回遊）
     PO_OVERSEER: 'shooting_po_overseer',
     PO_WATCHER: 'shooting_po_watcher',
+    PO_ECLIPSE: 'shooting_po_eclipse',                 // build1681: 位相回遊 100F・150F・200F…の確定ボス
+    PO_ECLIPSE_SCALE_LIGHT: 'shooting_po_eclipse_scale_light',
+    PO_ECLIPSE_SCALE_DARK: 'shooting_po_eclipse_scale_dark',
     INORI: 'shooting_remnant_inori',       // build1643 レムナント：イノリ（位相回遊で先行実装。STORYは今後）
     INORI_TORII: 'shooting_inori_torii',   // イノリが召喚する鳥居
     VERDANT_BEAST: 'shooting_verdant_beast',   // build1659 樹獣の森：突進する樹獣
@@ -425,6 +428,49 @@
       element: 'neutral', attackType: 'none', image: 'images/phase_odyssey_watcher.webp',
       hp: 1200, moveSpeed: 26, scoreValue: 400, behavior: 'po_watcher_v1', uiScale: 0.86,
       visionRangeRate: 0.62, visionHalfAngleDeg: 19, sweepRad: 0.85, sweepSpeed: 0.55,
+    }),
+
+    // ------------------------------------------------------------
+    // build1681/1682: 位相回遊 100F・150F・200F…（100F以降の50階ごと）に確定出現するボス「エクリプス」
+    //  ・ふだん本体は無敵（IMMUNE）。盤面をうろつく「光の天秤」「闇の天秤」を壊すと8秒間状態が変わる
+    //    光の天秤を壊す → 光状態：エクリプスに攻撃が通る（無敵解除）
+    //    闇の天秤を壊す → 闇状態：暗転（自機の周りしか見えない）＋弾幕加速。本体は無敵のまま
+    //  ・状態は「最後に壊した天秤」で決まる（光状態中に闇を壊すと闇へ／闇状態中に光を壊すと光へ）
+    //  ・壊れた天秤は8秒後に復活。天秤は盤面をうろつき、ときどき自機へ突進（突進中だけ接触ダメージ）
+    //  ・本体：光の矢（金・速い直線）／闇の環（紫・遅い全方位）、PHASE3 蝕の手
+    // ------------------------------------------------------------
+    [SHOOTING_ENEMY_ID.PO_ECLIPSE]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.PO_ECLIPSE,
+      kind: 'boss', implemented: true,
+      name: 'エクリプス', displayName: 'PHASE ODYSSEY　エクリプス',
+      image: 'images/eclipse_battle.webp', element: 'dark',
+      gaugeHps: Object.freeze([9000, 10000, 11000]), gauges: 3,
+      bulletSpeed: 240, fireRate: 900, bulletDamage: 200,
+      behavior: 'eclipse_v1', uiScale: 1.0,
+      eclipseMechanics: Object.freeze({
+        stateMs: 8000,            // 光状態・闇状態の長さ
+        respawnMs: 8000,          // 壊れた天秤が復活するまで
+        scaleHpRate: 0.6,         // 天秤のHP＝今のPHASEのHP×60%（集中して撃ち続けて約5秒）
+        darkSpeedMul: 1.35,       // 闇状態の弾速
+        darkFireMul: 0.8,         // 闇状態の発射間隔（短くなる）
+        darkVisionPx: 130,        // 闇状態で見える自機の周りの半径
+        dashEveryMs: Object.freeze([8500, 7000, 5600]),   // PHASEごとの突進間隔（2つの天秤が交互に）
+        dashWarnMs: 850, dashSpeed: 560, dashMs: 760, dashDamage: 240,
+        wanderSpeed: Object.freeze([70, 88, 106]),
+        handEveryMs: 9000, handWarnMs: 950, handFireMs: 420, handWidth: 78, handDamage: 320, // 蝕の手（PHASE3）
+      }),
+    }),
+    [SHOOTING_ENEMY_ID.PO_ECLIPSE_SCALE_LIGHT]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.PO_ECLIPSE_SCALE_LIGHT, kind: 'normal', implemented: true,
+      name: '光の天秤', displayName: 'LIGHT SCALE　光の天秤',
+      element: 'neutral', attackType: 'none', image: "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%20100%20100%27%3E%3Cdefs%3E%3CradialGradient%20id%3D%27g%27%20cx%3D%2750%25%27%20cy%3D%2745%25%27%20r%3D%2755%25%27%3E%3Cstop%20offset%3D%270%27%20stop-color%3D%27%23fffbe8%27/%3E%3Cstop%20offset%3D%27.55%27%20stop-color%3D%27%23f3d27a%27/%3E%3Cstop%20offset%3D%271%27%20stop-color%3D%27%23b8892c%27/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle%20cx%3D%2750%27%20cy%3D%2750%27%20r%3D%2744%27%20fill%3D%27url%28%23g%29%27%20stroke%3D%27%23fff6d0%27%20stroke-width%3D%273%27/%3E%3Ccircle%20cx%3D%2750%27%20cy%3D%2750%27%20r%3D%2737%27%20fill%3D%27none%27%20stroke%3D%27%238a6418%27%20stroke-width%3D%271.5%27%20stroke-dasharray%3D%273%204%27/%3E%3Cg%20stroke%3D%27%235e430c%27%20stroke-width%3D%273%27%20fill%3D%27none%27%20stroke-linecap%3D%27round%27%3E%3Cpath%20d%3D%27M50%2022v50M32%2072h36M26%2036h48%27/%3E%3Cpath%20d%3D%27M26%2036l-9%2020h18zM74%2036l-9%2020h18z%27/%3E%3C/g%3E%3Cg%20fill%3D%27%235e430c%27%3E%3Cpath%20d%3D%27M17%2056q9%208%2018%200z%27/%3E%3Cpath%20d%3D%27M65%2056q9%208%2018%200z%27/%3E%3Ccircle%20cx%3D%2750%27%20cy%3D%2722%27%20r%3D%274%27/%3E%3C/g%3E%3C/svg%3E",
+      hp: 999999999, moveSpeed: 0, scoreValue: 0, behavior: 'eclipse_scale_v1', eclipseSide: 'light', uiScale: 0.95,
+    }),
+    [SHOOTING_ENEMY_ID.PO_ECLIPSE_SCALE_DARK]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.PO_ECLIPSE_SCALE_DARK, kind: 'normal', implemented: true,
+      name: '闇の天秤', displayName: 'DARK SCALE　闇の天秤',
+      element: 'neutral', attackType: 'none', image: "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%20100%20100%27%3E%3Cdefs%3E%3CradialGradient%20id%3D%27g%27%20cx%3D%2750%25%27%20cy%3D%2745%25%27%20r%3D%2755%25%27%3E%3Cstop%20offset%3D%270%27%20stop-color%3D%27%23d9c2ff%27/%3E%3Cstop%20offset%3D%27.5%27%20stop-color%3D%27%237b45c4%27/%3E%3Cstop%20offset%3D%271%27%20stop-color%3D%27%232c124f%27/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle%20cx%3D%2750%27%20cy%3D%2750%27%20r%3D%2744%27%20fill%3D%27url%28%23g%29%27%20stroke%3D%27%23cdb4ff%27%20stroke-width%3D%273%27/%3E%3Ccircle%20cx%3D%2750%27%20cy%3D%2750%27%20r%3D%2737%27%20fill%3D%27none%27%20stroke%3D%27%231a0833%27%20stroke-width%3D%271.5%27%20stroke-dasharray%3D%273%204%27/%3E%3Cg%20stroke%3D%27%23f1e6ff%27%20stroke-width%3D%273%27%20fill%3D%27none%27%20stroke-linecap%3D%27round%27%3E%3Cpath%20d%3D%27M50%2022v50M32%2072h36M26%2036h48%27/%3E%3Cpath%20d%3D%27M26%2036l-9%2020h18zM74%2036l-9%2020h18z%27/%3E%3C/g%3E%3Cg%20fill%3D%27%23f1e6ff%27%3E%3Cpath%20d%3D%27M17%2056q9%208%2018%200z%27/%3E%3Cpath%20d%3D%27M65%2056q9%208%2018%200z%27/%3E%3Ccircle%20cx%3D%2750%27%20cy%3D%2722%27%20r%3D%274%27/%3E%3C/g%3E%3C/svg%3E",
+      hp: 999999999, moveSpeed: 0, scoreValue: 0, behavior: 'eclipse_scale_v1', eclipseSide: 'dark', uiScale: 0.95,
     }),
 
     // ------------------------------------------------------------

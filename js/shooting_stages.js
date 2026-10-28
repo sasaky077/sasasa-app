@@ -388,6 +388,8 @@
     towa:     Object.freeze({ name:'トワ',           tpl:'shooting_tower_15' }),
     // build1643: レムナント：イノリ（STORYより先に位相回遊で実装）
     inori:    Object.freeze({ name:'イノリ',         enemy:SHOOTING_ENEMY_ID.INORI, inori:true }),
+    // build1681: 100F・150F・200F…の確定ボス。本体無敵・天秤でダメージ／回復。
+    eclipse:  Object.freeze({ name:'エクリプス',     enemy:SHOOTING_ENEMY_ID.PO_ECLIPSE, eclipse:true }),
   });
   const PHASE_ODYSSEY_DEFAULT_BOSS = 'mirage';
   // 報酬・チケット・スコア系の設定はボス戦に持ち込まない
@@ -422,6 +424,10 @@
         totalEnemies: 0, maxActive: 3, startDelayMs: 2200, spawnIntervalMs: Math.max(3200, 6500 - Math.floor(f / 10) * 300),
       });
     }
+    if (def.eclipse) {
+      base.introImage = 'images/eclipse_battle_start.webp';
+      base.bossVisualScale = 0.78;
+    }
     PHASE_ODYSSEY_BOSS_STRIP_KEYS.forEach(k => { delete base[k]; });
     const enemyId = Array.isArray(base.enemyIds) && base.enemyIds.length ? base.enemyIds[0] : def.enemy;
     const enemyDef = typeof window.ShootingEnemies.getShootingEnemy === 'function'
@@ -439,7 +445,11 @@
     if (!original || !original.length) original = [1, 1];
     const used = original.slice(0, Math.max(1, Math.min(original.length, tune.maxGauges))).map(v => Math.max(1, Number(v) || 1));
     const sum = used.reduce((a, b) => a + b, 0);
-    const gaugeHps = used.map(v => Math.max(1, Math.round(tune.totalHp * v / sum)));
+    // build1682: エクリプスは攻撃が通るのが光状態（8秒）の間だけなので、合計HPを60%に（PHASEは常に3）
+    const hpTotal = def.eclipse ? Math.round(tune.totalHp * 0.6) : tune.totalHp;
+    const gaugeSrc = def.eclipse ? original.slice(0, 3) : used;
+    const gaugeSum = gaugeSrc.reduce((a, b) => a + Math.max(1, Number(b) || 1), 0);
+    const gaugeHps = gaugeSrc.map(v => Math.max(1, Math.round(hpTotal * Math.max(1, Number(v) || 1) / gaugeSum)));
     return Object.freeze({
       ...base,
       id: PHASE_ODYSSEY_STAGE_PREFIX + f + '_' + key,

@@ -443,7 +443,7 @@
   function variantText(v){
     if (!v) return '';
     const o = OBJECTIVE_INFO[v.objective] || OBJECTIVE_INFO.clear;
-    let s = `お題【${o.name}】`;
+    let s = `SUB MISSION【${o.name}】`;
     if (v.objective === 'survive' && v.seconds) s += `${v.seconds}秒`;
     if (v.objective === 'speed' && v.seconds) s += `${v.seconds}秒以内`;
     if (v.objective === 'nohit' && v.maxHits != null) s += `被弾${v.maxHits}回まで`;
@@ -547,9 +547,13 @@
       chosen = cands[Math.floor(seededRandom(seed, b) * cands.length)] || cands[0];
       prev = chosen.key;
     }
-    return chosen;
+    // 抽選の並び（他の階層のボス）は変えずに、エクリプス階だけ差し替える
+    return isEclipseFloor(f) && toInt(floor, 0) === f ? ECLIPSE_BOSS : chosen;
   }
   function isBossFloor(floor){ return toInt(floor, 0) > 0 && toInt(floor, 0) % 10 === 0; }
+  // build1681: 100F・150F・200F…（100F以降の50階ごと）はエクリプスが確定で出現する
+  const ECLIPSE_BOSS = Object.freeze({ key:'eclipse', name:'エクリプス', from:100 });
+  function isEclipseFloor(floor){ const f = toInt(floor, 0); return f >= 100 && f % 50 === 0; }
   function isStageId(id){ return new RegExp('^' + STAGE_PREFIX + '\\d{1,4}(?:_[a-z]+)?$').test(String(id || '')); }
   function stageIdForFloor(floor){
     const f = Math.max(1, toInt(floor, 1));
@@ -1132,7 +1136,7 @@
       // build1679: ★UPの理由と、次の階層のお題・異常
       const lb = rec.last_bonus;
       if (lb && toInt(lb.floor, 0) === rec.current_floor && lb.bump) {
-        const why = [lb.anomaly ? '異常を突破' : '', lb.challenge ? 'お題ボーナス達成' : ''].filter(Boolean).join('・');
+        const why = [lb.anomaly ? '異常を突破' : '', lb.challenge ? 'SUB MISSION達成' : ''].filter(Boolean).join('・');
         sheet.append(el('p', 'po-variety-note is-bonus', `${why}！ 強化の★が${lb.bump}段階アップ`));
       }
       const nextTxt = nextFloorPreviewText(rec);
