@@ -4322,9 +4322,10 @@
     // build1666: 自機弾は同じ見た目なら同じ大きさ。生成のたびに getBoundingClientRect（強制レイアウト）を呼ばず、
     //  クラス名＋画面幅ごとに一度だけ測って使い回す。グレシャ等の多連射でフレームが重くなる主因だった。
     const cls = entry.el.classList;
-    const cacheable = !!(cls && cls.contains('shooting-bullet') && !cls.contains('shooting-enemy-bullet'));
+    // build1687: カミラの子蜘蛛も全員同じ見た目なので、1匹目の実測値を使い回す（一斉出現時の強制レイアウト連発を防ぐ）
+    const cacheable = !!(cls && ((cls.contains('shooting-bullet') && !cls.contains('shooting-enemy-bullet')) || entry.camSpider));
     if (cacheable) {
-      const key = entry.el.className + '|' + window.innerWidth + 'x' + window.innerHeight;
+      const key = (entry.camSpider ? 'camilla-spider|' + String(entry.displayScale || 1) : entry.el.className) + '|' + window.innerWidth + 'x' + window.innerHeight;
       const hit = unitSizeCache.get(key);
       if (hit) { entry._hw = hit[0]; entry._hh = hit[1]; return; }
       const r = entry.el.getBoundingClientRect();
@@ -5457,7 +5458,7 @@
       ? ch702Boss.hp / ch702Boss.max
       : (currentGaugeHp / Math.max(1, currentGaugeMaxHp));
     if (bossGauge) bossGauge.style.setProperty('--gauge-fill', String(amount));
-    if (bossBar) {
+    if (bossBar && !bossBar.classList.contains(`phase-${phase}`)) { // build1687: 毎回の付け外しをやめる（スタイル再計算の削減）
       bossBar.classList.remove('phase-1', 'phase-2', 'phase-3');
       bossBar.classList.add(`phase-${phase}`);
     }
@@ -8934,8 +8935,9 @@
     const bossEl = document.getElementById(BOSS_ID);
     const bossImg = bossEl && (bossEl.tagName === 'IMG' ? bossEl : bossEl.querySelector('img'));
     const bossImageReady = !bossImg || (bossImg.complete && bossImg.naturalWidth > 0);
-    barrier.className = `shooting-boss-weakness-barrier element-${enemyElement}` + (bossImageReady ? '' : ' awaiting-enemy-image');
-    barrier.dataset.element = enemyElement;
+    const barrierClass = `shooting-boss-weakness-barrier element-${enemyElement}` + (bossImageReady ? '' : ' awaiting-enemy-image');
+    if (barrier.className !== barrierClass) barrier.className = barrierClass; // build1687: 同じ値の再設定を省く
+    if (barrier.dataset.element !== enemyElement) barrier.dataset.element = enemyElement;
     return barrier;
   }
 
@@ -8943,17 +8945,25 @@
     const barrier = ensureBossWeaknessBarrier();
     if (!barrier) return;
 
-    const boss = document.getElementById(BOSS_ID);
-    const baseW = Math.max(1, Number(boss && boss.offsetWidth || 128));
-    const baseH = Math.max(1, Number(boss && boss.offsetHeight || 128));
-    const scale = Math.max(.1, Number(getResponsiveBossDisplayScale() || 1));
-
-    // Slightly larger than the BOSS box so the shield hugs the silhouette without covering it.
-    // build1626: 縦長のBOSS（カミラ等）でも楕円にならないよう、長い辺に合わせた正円にする。
-    const shieldD = Math.max(baseW, baseH) + 12;
-    barrier.style.width = `${shieldD}px`;
-    barrier.style.height = `${shieldD}px`;
-    barrier.style.setProperty('--boss-shield-scale', String(scale));
+    // build1687: BOSSの大きさ（offsetWidth/Height＝強制レイアウト）を毎フレーム測らず、0.5秒ごとに測り直す。
+    //  サイズ・倍率が変わった時だけ width/height を書き換える。
+    const nowMs = performance.now();
+    let sz = barrier._bossSize;
+    if (!sz || nowMs - sz.at > 500) {
+      const boss = document.getElementById(BOSS_ID);
+      const baseW = Math.max(1, Number(boss && boss.offsetWidth || 128));
+      const baseH = Math.max(1, Number(boss && boss.offsetHeight || 128));
+      const scale = Math.max(.1, Number(getResponsiveBossDisplayScale() || 1));
+      // Slightly larger than the BOSS box so the shield hugs the silhouette without covering it.
+      // build1626: 縦長のBOSS（カミラ等）でも楕円にならないよう、長い辺に合わせた正円にする。
+      const shieldD = Math.max(baseW, baseH) + 12;
+      if (!sz || sz.d !== shieldD || sz.scale !== scale) {
+        barrier.style.width = `${shieldD}px`;
+        barrier.style.height = `${shieldD}px`;
+        barrier.style.setProperty('--boss-shield-scale', String(scale));
+      }
+      sz = barrier._bossSize = { at: nowMs, d: shieldD, scale };
+    }
     barrier.style.transform = `translate3d(${Number(x || 0)}px,${Number(y || 0)}px,0) translate(-50%,-50%) scale(var(--boss-shield-scale,1))`;
   }
 
@@ -13336,7 +13346,7 @@
     });
   }
 
-  function createNormalEnemy(enemyDef, now) {
+  function createNormalEnemy(enemyDef, now, opts) {
     combatElementTarget = null;
     const arena = document.getElementById('shooting-arena');
     const layer = document.getElementById('shooting-normal-enemy-layer');
@@ -13391,7 +13401,8 @@
       selectedStage?.element
     );
     let elementEl = null;
-    const elementIconSrc = getCombatElementIcon(enemyElement);
+    // build1687: カミラの子蜘蛛のように数が多い無属性の敵は、属性アイコンDOMを作らない（毎フレームの位置更新を減らす）
+    const elementIconSrc = opts && opts.noElementIcon ? '' : getCombatElementIcon(enemyElement);
     if (elementIconSrc) {
       elementEl = document.createElement('img');
       elementEl.className = 'shooting-mini-enemy-element-icon';
@@ -23998,7 +24009,8 @@
         font:700 13px/1 'Cinzel',serif;color:#ff5a74;text-shadow:0 0 4px #fff,0 0 8px rgba(255,255,255,.9);
         animation:camillaHealNum .8s ease-out forwards}
       @keyframes camillaHealNum{from{opacity:1;translate:0 0}to{opacity:0;translate:0 -24px}}
-      .shooting-mini-enemy.camilla-spider-latched{filter:drop-shadow(0 0 5px rgba(230,20,50,.9))}
+      #shooting-event-root .shooting-mini-enemy.camilla-spiderling:not(.defeated){filter:none;transition:opacity .18s ease}
+      #shooting-event-root .shooting-mini-enemy.camilla-spiderling.camilla-spider-latched{background:radial-gradient(circle,rgba(230,20,50,.55) 0 34%,rgba(230,20,50,.18) 52%,transparent 68%)}
     `;
     document.head.appendChild(st);
   }
@@ -24155,25 +24167,39 @@
   }
 
   // ---- 子蜘蛛（吸血） ----
+  // build1687: 子蜘蛛は一度に全部作らず、1フレーム1匹ずつ出す（6〜8匹分のDOM生成・画像デコード・計測が
+  //  同じフレームに集中してカクついていた）。見た目は約0.1秒で全員そろう。
   function spawnCamillaSpiders(cm, cfg, now) {
+    cm.spiderQueue = { total: cfg.spiderN, next: 0, bx: Number(state.boss.x), by: Number(state.boss.y) };
+    flushCamillaSpiderQueue(cm, now);
+  }
+
+  function flushCamillaSpiderQueue(cm, now) {
+    const q = cm.spiderQueue;
+    if (!q) return;
+    if (q.next >= q.total) { cm.spiderQueue = null; return; }
     const def = getShootingEnemy('camilla_spiderling');
-    if (!def) return;
-    for (let i = 0; i < cfg.spiderN; i++) {
-      const enemy = createNormalEnemy(def, now);
-      if (!enemy) continue;
+    if (!def) { cm.spiderQueue = null; return; }
+    {
+      const i = q.next++;
+      const enemy = createNormalEnemy(def, now, { noElementIcon: true });
+      if (!enemy) return;
       enemy.camSpider = true;
+      enemy.el.classList.add('camilla-spiderling');
       enemy.camState = 'crawl';
-      enemy.x = Number(state.boss.x) + (i - (cfg.spiderN - 1) / 2) * 24;
-      enemy.y = Number(state.boss.y) + 26;
+      enemy.x = q.bx + (i - (q.total - 1) / 2) * 24;
+      enemy.y = q.by + 26;
       enemy.camSpeed = CAMILLA_SPIDER_SPEED * (0.85 + Math.random() * 0.3);
       enemy.camSeed = Math.random() * Math.PI * 2;
       // 正面（自機の射線）を避け、左右の壁際を回り込んでから群がる。
       const side = (i % 2 === 0 ? -1 : 1) * (Math.random() < .5 ? 1 : -1);
       enemy.camWaypoint = { x: side < 0 ? 26 + Math.random() * 30 : (getArenaInputRect()?.width || 390) - 26 - Math.random() * 30 };
       positionUnit(enemy.el, enemy.x, enemy.y);
+      positionMiniEnemyHp(enemy);
       state.normalEnemies.push(enemy);
       state.normalSpawned = Number(state.normalSpawned || 0) + 1;
     }
+    if (q.next >= q.total) cm.spiderQueue = null;
   }
 
   // updateNormalEnemies から呼ばれる。子蜘蛛の移動・張り付きだけを担当（吸血は本体側で一括処理）。
@@ -24247,6 +24273,7 @@
   function updateCamillaDrain(now, cm, arena) {
     const member = getActiveMember();
     const spiders = state.normalEnemies.filter(e => e && e.camSpider && e.hp > 0 && e.el);
+    if (!spiders.length) { cm.activeId = state.activeCharacterId; return; } // build1687
     // 交代すると張り付いた子蜘蛛を振り払える（少しの間ひるむ）。
     if (cm.activeId !== state.activeCharacterId) {
       cm.activeId = state.activeCharacterId;
@@ -24260,10 +24287,10 @@
       return;
     }
     if (!member || member.hp <= 0 || state.koTransition) return;
-    let drained = 0, healed = 0;
+    let drained = 0, healed = 0, removed = false;
     for (const e of spiders) {
       if (e.camState !== 'latched') continue;
-      if (now - Number(e.latchedAt || now) >= CAMILLA_LATCH_MAX_MS) { removeCamillaSpider(e); continue; }
+      if (now - Number(e.latchedAt || now) >= CAMILLA_LATCH_MAX_MS) { removeCamillaSpider(e); removed = true; continue; }
       if (now < Number(e.nextDrainAt || 0)) continue;
       e.nextDrainAt = now + 1000;
       const dmg = Math.min(member.hp, Math.max(1, Math.floor(Number(member.hpMax || 0) * CAMILLA_DRAIN_RATE)));
@@ -24276,7 +24303,7 @@
       if (after > before) { state.boss.hp = after; healed += Math.round(after - before); }
       spawnCamillaDrainFx(e.x, e.y, arena, 0);
     }
-    state.normalEnemies = state.normalEnemies.filter(e => e && (e.el || !e.camSpider));
+    if (removed) state.normalEnemies = state.normalEnemies.filter(e => e && (e.el || !e.camSpider)); // build1687: 消えた時だけ作り直す
     if (drained > 0) {
       showDamageNumber(state.player.x, state.player.y, drained, 'player', false, '');
       if (healed > 0) spawnCamillaDrainFx(Number(state.player.x), Number(state.player.y), arena, healed);
@@ -24333,6 +24360,8 @@
       cm.nextSpiderAt = elapsed + cfg.spiderMs;
       const alive = state.normalEnemies.filter(e => e && e.camSpider && e.hp > 0).length;
       if (alive < 16) spawnCamillaSpiders(cm, cfg, now);
+    } else if (cm.spiderQueue) {
+      flushCamillaSpiderQueue(cm, now);
     }
     maintainCamillaLastPhaseWarnings(cm);
     updateCamillaWeb(now, cm, elapsed);
@@ -27147,6 +27176,8 @@
       if (raidRow) raidRow.style.display = 'none';
       if (retryBtn) retryBtn.style.display = '';
     }
+    // build1687: RETRYなしの時の1列レイアウトはクラスで切り替える（CSSの :has([style*=…]) は全DOMのstyle変更で再計算を誘発していた）
+    if (retryBtn && retryBtn.parentElement) retryBtn.parentElement.classList.toggle('no-retry', retryBtn.style.display === 'none');
 
     // ステージ別最高スコアをローカルへ即時反映し、Supabaseへ非同期保存。
     // v172: score/result is accepted only against this battle's server run token.

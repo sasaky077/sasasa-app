@@ -10063,8 +10063,8 @@ html body #shooting-result .shooting-result-actions button:active{
 
 /* Daily / Raid hide RETRY. In that case the Back button should become one
    centered full-width action instead of remaining stranded at half width. */
-html body #shooting-result .shooting-result-actions:has(#shooting-result-retry[style*="display: none"]),
-html body #shooting-result .shooting-result-actions:has(#shooting-result-retry[style*="display:none"]){
+/* build1687: :has(#…[style*="display: none"]) は全DOMのstyle変更のたびに再計算を誘発するため、JSで付けるクラスに置き換え */
+html body #shooting-result .shooting-result-actions.no-retry{
   grid-template-columns:minmax(0,1fr) !important;
 }
 
