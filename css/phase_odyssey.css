@@ -924,3 +924,102 @@ html body #shooting-event-root .shooting-score.is-po-floor[data-po-len="11"] .sh
 #shooting-event-root .po-variety-banner .po-vb-row.is-anomaly .po-vb-kicker,
 #shooting-event-root .po-variety-banner .po-vb-row.is-anomaly b{color:#ff9a8a;}
 #shooting-event-root .po-variety-banner .po-vb-row.is-anomaly small{color:rgba(255,220,214,.92);}
+
+/* ============================================================
+   build1689 — 最高到達階ランキング（全国／フレンド）
+   ============================================================ */
+#screen-phase-odyssey .po-rank-btn{
+  position:absolute;z-index:4;
+  right:clamp(10px,3.2vw,16px);bottom:clamp(12px,3.6vw,18px);
+  display:flex;align-items:center;gap:6px;
+  padding:6px 12px 6px 8px;min-height:40px;cursor:pointer;
+  color:#f3dfae;
+  background:linear-gradient(180deg,rgba(69,74,130,.94),rgba(38,42,85,.94));
+  border:1px solid #c9a96a;border-radius:2px;
+  box-shadow:inset 0 0 0 1px rgba(226,201,146,.38),0 3px 10px rgba(14,12,40,.38);
+  -webkit-tap-highlight-color:transparent;
+}
+#screen-phase-odyssey .po-rank-btn:active{transform:translateY(1px);}
+#screen-phase-odyssey .po-rank-btn-icon{width:24px;height:24px;flex:0 0 auto;filter:drop-shadow(0 1px 1px rgba(0,0,0,.35));}
+#screen-phase-odyssey .po-rank-btn-copy{display:flex;flex-direction:column;align-items:flex-start;line-height:1;}
+#screen-phase-odyssey .po-rank-btn-jp{font:700 12.5px/1.15 'Noto Serif JP',serif;letter-spacing:.08em;color:#fff8e8;}
+#screen-phase-odyssey .po-rank-btn-en{margin-top:3px;font:600 7.5px/1 'Cinzel',serif;letter-spacing:.22em;color:#d6bd8a;}
+#screen-phase-odyssey .po-best-plate{cursor:pointer;}
+
+#phase-odyssey-layer.is-ranking .po-sheet{height:min(640px,100%);padding-top:18px;}
+#phase-odyssey-layer .po-rank-tabs{
+  display:grid;grid-template-columns:1fr 1fr;gap:0;margin:12px 2px 0;flex:0 0 auto;
+  border:1px solid rgba(176,138,73,.8);
+}
+#phase-odyssey-layer .po-rank-tab{
+  padding:9px 0;cursor:pointer;border:0;
+  font:600 13px/1.2 'Noto Serif JP',serif;letter-spacing:.14em;color:var(--po-ink-soft);
+  background:linear-gradient(180deg,#fffdf8,#efe8d9);
+}
+#phase-odyssey-layer .po-rank-tab + .po-rank-tab{border-left:1px solid rgba(176,138,73,.6);}
+#phase-odyssey-layer .po-rank-tab.is-active{
+  color:#fff8e8;background:linear-gradient(180deg,#454a82,#262a55);
+  box-shadow:inset 0 0 0 1px rgba(226,201,146,.55);
+}
+#phase-odyssey-layer .po-rank-note{margin:7px 0 6px;font:500 10.5px/1.3 'Noto Serif JP',serif;color:#7b6a52;text-align:center;letter-spacing:.06em;flex:0 0 auto;}
+#phase-odyssey-layer .po-rank-list{
+  list-style:none;margin:0;padding:2px 2px 4px;
+  flex:1 1 auto;min-height:120px;overflow-y:auto;overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;scrollbar-width:thin;
+  border-top:1px solid rgba(176,138,73,.35);border-bottom:1px solid rgba(176,138,73,.35);
+}
+#phase-odyssey-layer .po-rank-msg{
+  padding:34px 8px;text-align:center;white-space:pre-line;
+  font:500 12px/1.8 'Noto Serif JP',serif;color:var(--po-ink-soft);
+}
+#phase-odyssey-layer .po-rank-row{
+  display:grid;grid-template-columns:38px minmax(0,1fr) auto;align-items:center;gap:8px;
+  margin-top:5px;padding:6px 10px 6px 6px;
+  background:rgba(255,253,248,.88);
+  border:1px solid rgba(176,138,73,.38);
+}
+#phase-odyssey-layer .po-rank-row.is-gap{margin-top:16px;position:relative;}
+#phase-odyssey-layer .po-rank-row.is-gap::before{
+  content:"⋮";position:absolute;left:0;right:0;top:-15px;text-align:center;
+  font:700 12px/1 'Noto Serif JP',serif;color:rgba(138,104,48,.7);
+}
+#phase-odyssey-layer .po-rank-row.is-me{
+  background:linear-gradient(90deg,rgba(255,244,214,.98),rgba(250,238,206,.92));
+  border-color:#c9a96a;box-shadow:inset 0 0 0 1px rgba(201,169,106,.55);
+}
+#phase-odyssey-layer .po-rank-no{
+  display:flex;align-items:center;justify-content:center;height:34px;
+  font:700 15px/1 'Cinzel','Noto Serif JP',serif;color:var(--po-ink);
+}
+#phase-odyssey-layer .po-rank-row.is-top .po-rank-no b{
+  display:flex;align-items:center;justify-content:center;width:30px;height:30px;
+  color:#fff;font-size:14px;transform:rotate(45deg);
+  background:linear-gradient(135deg,#e8cf8e,#a5823f);
+  border:1px solid #fff4d6;box-shadow:0 1px 3px rgba(60,40,10,.35);
+}
+#phase-odyssey-layer .po-rank-row.is-top-2 .po-rank-no b{background:linear-gradient(135deg,#e6e8ef,#9097aa);}
+#phase-odyssey-layer .po-rank-row.is-top-3 .po-rank-no b{background:linear-gradient(135deg,#e6bb93,#9a6640);}
+#phase-odyssey-layer .po-rank-row.is-top .po-rank-no b > span{display:block;transform:rotate(-45deg);text-shadow:0 1px 1px rgba(0,0,0,.3);}
+#phase-odyssey-layer .po-rank-main{min-width:0;display:flex;flex-direction:column;gap:4px;}
+#phase-odyssey-layer .po-rank-name{display:flex;align-items:center;gap:6px;min-width:0;}
+#phase-odyssey-layer .po-rank-name-text{
+  min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font:700 13px/1.25 'Noto Serif JP',serif;color:var(--po-ink);letter-spacing:.02em;
+}
+#phase-odyssey-layer .po-rank-me{
+  flex:0 0 auto;font:700 9.5px/1 'Noto Serif JP',serif;font-style:normal;letter-spacing:.06em;
+  color:#fff8e8;background:#272b52;padding:3px 6px 3px;
+}
+#phase-odyssey-layer .po-rank-party{display:flex;gap:3px;}
+#phase-odyssey-layer .po-rank-face{
+  width:24px;height:24px;overflow:hidden;flex:0 0 auto;
+  background:#ece4d3;border:1px solid rgba(176,138,73,.55);
+}
+#phase-odyssey-layer .po-rank-face img{width:100%;height:100%;object-fit:cover;object-position:50% 18%;display:block;}
+#phase-odyssey-layer .po-rank-face.is-empty{opacity:.45;}
+#phase-odyssey-layer .po-rank-floor{display:flex;align-items:baseline;gap:2px;color:var(--po-navy);white-space:nowrap;}
+#phase-odyssey-layer .po-rank-floor strong{font:700 22px/1 'Cinzel','Noto Serif JP',serif;letter-spacing:.02em;}
+#phase-odyssey-layer .po-rank-floor small{font:700 11px/1 'Cinzel',serif;color:var(--po-gold-deep);}
+#phase-odyssey-layer .po-rank-rule{margin-top:8px;flex:0 0 auto;}
+#phase-odyssey-layer .po-rank-tab:focus{outline:none;}
+#phase-odyssey-layer .po-rank-list{position:relative;}

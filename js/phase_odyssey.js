@@ -665,7 +665,12 @@
         rec.hp_state[id] = clamp01(hpRatio + heal);
         rec.ult_state[id] = clamp01(ultRatio + ultBonus);
       });
+      const prevBest = rec.best_floor;
       rec.best_floor = Math.max(rec.best_floor, floor);
+      if (rec.best_floor > prevBest) {
+        const party = rec.selected_members.slice();
+        setTimeout(() => { submitBestFloor(party); }, 0); // build1689: ランキングへ送信（保存の後）
+      }
       if (rec.next_ult_max) { // 臨界解放はこの階層で使用済み
         rec.next_ult_max = false;
         const used = rec.build_list.find(b => b.t === 'ult_max_next' && !b.used);
@@ -1309,6 +1314,178 @@
   }
 
   // ------------------------------------------------------------
+  // build1689: 最高到達階ランキング（全国／フレンド）
+  //  記録はサーバーの phase_odyssey_records（submit_phase_odyssey_best）へ送る。
+  //  送るのは「最高到達階が上がった時」と「画面を開いた時（既存プレイヤーの記録の取り込み）」。
+  // ------------------------------------------------------------
+  const RANK_SENT_KEY = 'zeraphia_po_rank_sent_v1';
+  const RANK_CACHE_MS = 60000;
+  const rankCache = Object.create(null);
+  let rankScope = 'friends';
+  let rankSeq = 0;
+  let rankSubmitting = null;
+  function rankClient(){ const sb = window.zsSupabase; return sb && typeof sb.rpc === 'function' ? sb : null; }
+  function rankSentFloor(){
+    try { return toInt(localStorage.getItem(RANK_SENT_KEY + ':' + userId()), 0); } catch (_) { return 0; }
+  }
+  function submitBestFloor(partyIds){
+    const uid = userId();
+    const sb = rankClient();
+    const rec = load();
+    const best = toInt(rec.best_floor, 0);
+    if (!uid || !sb || best <= 0 || best <= rankSentFloor()) return Promise.resolve(false);
+    if (rankSubmitting) return rankSubmitting;
+    const party = uniqIds(Array.isArray(partyIds) && partyIds.length ? partyIds
+      : (rec.selected_members.length ? rec.selected_members : rec.draft_members)).slice(0, PARTY_SIZE);
+    rankSubmitting = Promise.resolve()
+      .then(() => sb.rpc('submit_phase_odyssey_best', { p_user_id: uid, p_best_floor: best, p_party_ids: party }))
+      .then(res => {
+        if (res && res.error) throw res.error;
+        try { localStorage.setItem(RANK_SENT_KEY + ':' + uid, String(best)); } catch (_) {}
+        Object.keys(rankCache).forEach(k => delete rankCache[k]);
+        return true;
+      })
+      .catch(err => { console.warn('[phase odyssey] ranking submit failed', err); return false; })
+      .finally(() => { rankSubmitting = null; });
+    return rankSubmitting;
+  }
+  async function fetchRanking(scope){
+    const uid = userId();
+    const sb = rankClient();
+    if (!uid || !sb) throw new Error('offline');
+    const res = scope === 'national'
+      ? await sb.rpc('get_phase_odyssey_national_ranking', { p_user_id: uid, p_limit: 100 })
+      : await sb.rpc('get_phase_odyssey_friend_ranking', { p_user_id: uid });
+    if (res && res.error) throw res.error;
+    return Array.isArray(res && res.data) ? res.data : [];
+  }
+  function rankPanelSrc(id){
+    const c = getChar(id);
+    if (c && (c.panelImage || c.image)) return c.panelImage || c.image;
+    const n = toInt(id, 0);
+    return n > 0 ? 'images/chara_' + String(n).padStart(2, '0') + '_panel.webp' : '';
+  }
+  function rankRow(row, prevRank){
+    const rank = toInt(row.rank_no, 0);
+    const item = el('li', 'po-rank-row' + (row.is_me ? ' is-me' : '') + (rank >= 1 && rank <= 3 ? ' is-top is-top-' + rank : ''));
+    if (prevRank && rank > prevRank + 1) item.classList.add('is-gap');
+    const no = el('span', 'po-rank-no');
+    const badge = el('b');
+    badge.append(el('span', '', rank > 0 ? String(rank) : '-'));
+    no.append(badge);
+    item.append(no);
+    const main = el('div', 'po-rank-main');
+    const nameLine = el('div', 'po-rank-name');
+    nameLine.append(el('span', 'po-rank-name-text', String(row.display_name || 'Player')));
+    if (row.is_me) nameLine.append(el('em', 'po-rank-me', '自分'));
+    main.append(nameLine);
+    const party = el('div', 'po-rank-party');
+    const ids = Array.isArray(row.party_ids) ? row.party_ids.slice(0, PARTY_SIZE) : [];
+    for (let i = 0; i < PARTY_SIZE; i++) {
+      const cell = el('span', 'po-rank-face');
+      const src = ids[i] ? rankPanelSrc(ids[i]) : '';
+      if (src) {
+        const img = el('img');
+        img.src = src; img.alt = ''; img.decoding = 'async'; img.loading = 'lazy';
+        img.onerror = () => { img.remove(); cell.classList.add('is-empty'); };
+        cell.append(img);
+      } else cell.classList.add('is-empty');
+      party.append(cell);
+    }
+    main.append(party);
+    item.append(main);
+    const floor = el('div', 'po-rank-floor');
+    floor.append(el('strong', '', String(toInt(row.best_floor, 0))), el('small', '', 'F'));
+    item.append(floor);
+    return item;
+  }
+  function renderRankingList(sheet, scope, state, rows){
+    const list = sheet.querySelector('[data-po-rank-list]');
+    if (!list) return;
+    list.textContent = '';
+    list.dataset.state = state;
+    if (state === 'loading') { list.append(el('li', 'po-rank-msg', '読み込み中…')); return; }
+    if (state === 'error') { list.append(el('li', 'po-rank-msg', 'ランキングを読み込めませんでした。\n通信状態を確認して、もう一度開いてください。')); return; }
+    if (!rows.length) {
+      list.append(el('li', 'po-rank-msg', scope === 'national'
+        ? 'まだ記録がありません。'
+        : 'まだ記録がありません。\nフレンドが位相回遊を進めると、ここに表示されます。'));
+      return;
+    }
+    let prev = 0;
+    rows.forEach(row => { list.append(rankRow(row, prev)); prev = toInt(row.rank_no, prev); });
+    const me = list.querySelector('.po-rank-row.is-me');
+    list.scrollTop = 0;
+    // 自分の行が見えない位置（全国の圏外など）にある時だけ、自分の行までスクロール
+    if (me) requestAnimationFrame(() => {
+      if (me.offsetTop + me.offsetHeight > list.clientHeight) list.scrollTop = Math.max(0, me.offsetTop - list.clientHeight / 2 + me.offsetHeight / 2);
+    });
+  }
+  async function loadRanking(sheet, scope){
+    const seq = ++rankSeq;
+    sheet.querySelectorAll('[data-po-rank-tab]').forEach(btn => {
+      const on = btn.dataset.poRankTab === scope;
+      btn.classList.toggle('is-active', on);
+      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    const note = sheet.querySelector('[data-po-rank-note]');
+    if (note) note.textContent = scope === 'national' ? '上位100位まで表示' : '自分とフレンドの記録';
+    const cached = rankCache[scope];
+    if (cached && Date.now() - cached.at < RANK_CACHE_MS) { renderRankingList(sheet, scope, 'ok', cached.rows); return; }
+    renderRankingList(sheet, scope, 'loading', []);
+    try {
+      await submitBestFloor(); // 自分の最新記録を先に反映
+      const rows = await fetchRanking(scope);
+      rankCache[scope] = { at: Date.now(), rows };
+      if (seq !== rankSeq || !sheet.isConnected) return;
+      renderRankingList(sheet, scope, 'ok', rows);
+    } catch (err) {
+      console.warn('[phase odyssey] ranking failed', err);
+      if (seq !== rankSeq || !sheet.isConnected) return;
+      renderRankingList(sheet, scope, 'error', []);
+    }
+  }
+  function openRanking(){
+    openModal('ranking', sheet => {
+      sheetHead(sheet, 'PHASE ODYSSEY / RANKING', '最高到達階ランキング');
+      const tabs = el('div', 'po-rank-tabs');
+      tabs.setAttribute('role', 'tablist');
+      [['friends', 'フレンド'], ['national', '全国']].forEach(([key, label]) => {
+        const b = el('button', 'po-rank-tab', label);
+        b.type = 'button';
+        b.dataset.poRankTab = key;
+        b.setAttribute('role', 'tab');
+        b.addEventListener('click', () => { if (rankScope !== key) { rankScope = key; loadRanking(sheet, key); } });
+        tabs.append(b);
+      });
+      sheet.append(tabs);
+      sheet.append(el('p', 'po-rank-note', ''));
+      sheet.lastChild.dataset.poRankNote = '';
+      const list = el('ol', 'po-rank-list');
+      list.dataset.poRankList = '';
+      sheet.append(list);
+      sheet.append(el('p', 'po-sheet-foot po-rank-rule', '同じ階層なら、先に到達した人が上位です。'));
+      const actions = el('div', 'po-sheet-actions');
+      const ok = el('button', 'po-btn is-primary', '閉じる'); ok.type = 'button';
+      ok.addEventListener('click', closeModal);
+      actions.append(ok);
+      sheet.append(actions);
+      // 左右スワイプでも切り替え
+      let sx = 0, sy = 0;
+      list.addEventListener('touchstart', e => { const t = e.touches && e.touches[0]; if (t) { sx = t.clientX; sy = t.clientY; } }, { passive:true });
+      list.addEventListener('touchend', e => {
+        const t = e.changedTouches && e.changedTouches[0];
+        if (!t) return;
+        const dx = t.clientX - sx, dy = t.clientY - sy;
+        if (Math.abs(dx) < 46 || Math.abs(dx) <= Math.abs(dy) * 1.15) return;
+        const next = dx < 0 ? 'national' : 'friends';
+        if (next !== rankScope) { rankScope = next; loadRanking(sheet, next); }
+      }, { passive:true });
+      loadRanking(sheet, rankScope);
+    });
+  }
+
+  // ------------------------------------------------------------
   // 画面遷移
   // ------------------------------------------------------------
   function open(){
@@ -1324,6 +1501,7 @@
     render();
     requestAnimationFrame(layoutPager); // 画面の表示（active）反映後に、収まるかを判定し直す
     if (rec.run_status === 'select') setTimeout(openBuffSelect, 260);
+    setTimeout(() => { submitBestFloor(); }, 600); // build1689: 既存の最高到達階もランキングへ取り込む
   }
   function close(){
     closeModal();
@@ -1342,6 +1520,8 @@
     root.querySelector('[data-po-start]')?.addEventListener('click', onStartPressed);
     root.querySelector('[data-po-retire]')?.addEventListener('click', retireRun);
     root.querySelector('[data-po-back]')?.addEventListener('click', close);
+    root.querySelector('[data-po-ranking]')?.addEventListener('click', openRanking); // build1689
+    root.querySelector('.po-best-plate')?.addEventListener('click', openRanking);
     bindPager(root);
     render();
   }
@@ -1386,6 +1566,7 @@
     getBarrierThreat: () => nextBarrierThreat(load(), Math.max(1, load().current_floor), 10),
     // build1679: 階層のお題・異常（旧ルールのrun・ボス階・1Fは null）
     getFloorVariant: floor => getFloorVariant(floor),
+    openRanking,
     OBJECTIVE_INFO, ANOMALY_INFO
   });
   window.openPhaseOdyssey = open;
