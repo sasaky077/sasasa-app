@@ -20020,7 +20020,7 @@ function fadeOutOpeningBgm(){
 
 
 <script src="js/shooting_characters.js?v=1693-camilla-tune"></script>
-<script src="js/story_scenario.js?v=1667-ch09"></script>
+<script src="js/story_scenario.js?v=1698-ch09-title"></script>
 <script src="js/story_novel.js?v=1510-aina-seeker-trial"></script>
 <script src="js/stage_select.js?v=1667-ch09"></script>
 
@@ -20067,7 +20067,7 @@ function fadeOutOpeningBgm(){
     const list = document.getElementById('story-chapter-list');
     if (!list) return;
     const min = 1;
-    const max = 8;
+    const max = 9; // build1697: CHAPTER 09「はじまり」を表示（stage_select.js の STORY_CHAPTER_MAX と揃える）
     list.innerHTML = '';
     list.classList.add('junkou-story-list');
 
@@ -20256,7 +20256,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1694-odyssey-swarm"></script>
+<script src="js/shooting_event.js?v=1698-ch09-title"></script>
 <script src="js/shooting_party_filter.js?v=1472-filter-screen-exit-reset"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1662-raid-laps"></script>

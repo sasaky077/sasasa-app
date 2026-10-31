@@ -6754,11 +6754,11 @@
     ]
   },
 
-  // build1667: 9章「七塔の灯」（09-01・09-03はパズル［共鳴灯］、09-02・09-04は戦闘）
+  // build1667: 9章「はじまり」（build1698で「七塔の灯」から改題）（09-01・09-03はパズル［共鳴灯］、09-02・09-04は戦闘）
   "shooting_ch09_01": {
     "chapter": 9,
     "stageNo": 1,
-    "chapterTitle": "七塔の灯",
+    "chapterTitle": "はじまり",
     "stageTitle": "灯の扉",
     "stageType": "puzzle",
     "puzzle": { "kind": "resonance_lamp", "levels": [1, 2, 3] },
@@ -6842,7 +6842,7 @@
         "speaker": "",
         "left": "",
         "right": "",
-        "text": "そのとき。遠くに見える塔の光が、一つ消えた。",
+        "text": "そのとき。遠くに見える塔に、光が一つともった。",
         "location": "scene_many_tower.webp",
         "narration": true
       },
@@ -6866,7 +6866,7 @@
   "shooting_ch09_02": {
     "chapter": 9,
     "stageNo": 2,
-    "chapterTitle": "七塔の灯",
+    "chapterTitle": "はじまり",
     "stageTitle": "目覚める塔",
     "stageType": "battle",
     "pre": [
@@ -6936,7 +6936,7 @@
   "shooting_ch09_03": {
     "chapter": 9,
     "stageNo": 3,
-    "chapterTitle": "七塔の灯",
+    "chapterTitle": "はじまり",
     "stageTitle": "七塔の中心",
     "stageType": "puzzle",
     "puzzle": { "kind": "resonance_lamp", "levels": [4, 5, 6, 7] },
@@ -6983,8 +6983,8 @@
         "right": "",
         "text": "一つずつ確かめていこう。",
         "location": "scene_tower_center.webp"
-      },
-         ],
+      }
+    ],
     "post": [
       {
         "speaker": "",
@@ -7006,23 +7006,47 @@
         "speaker": "レオナクロス",
         "left": "レオナクロス",
         "right": "",
-        "text": "これが……円盤の言っていた、入口……。",
+        "text": "これが……あの時の、入口……。",
         "location": "scene_zeraphia_gate.webp"
+      },
+      {
+        "speaker": "",
+        "left": "",
+        "right": "",
+        "text": "同じころ。塔から遠く離れた場所で、\n誰かが光の門を見下ろしていた。",
+        "location": "scene_many_tower.webp",
+        "narration": true
+      },
+      {
+        "speaker": "???",
+        "left": "",
+        "right": "",
+        "text": "門が開いたか。\n……少し、早いな。",
+        "location": "scene_many_tower.webp",
+        "narration": true
+      },
+      {
+        "speaker": "???",
+        "left": "",
+        "right": "",
+        "text": "イノリを当てよう。",
+        "location": "scene_many_tower.webp",
+        "narration": true
       },
       {
         "speaker": "ベロニカ",
         "left": "ベロニカ",
         "right": "",
         "text": "なにか、くるよォ！",
-        "location": "scene_tower_center.webp"
-      },
+        "location": "scene_zeraphia_gate.webp"
+      }
     ]
   },
 
   "shooting_ch09_04": {
     "chapter": 9,
     "stageNo": 4,
-    "chapterTitle": "七塔の灯",
+    "chapterTitle": "はじまり",
     "stageTitle": "門の守護者",
     "stageType": "battle",
     "pre": [
@@ -7030,7 +7054,7 @@
         "speaker": "",
         "left": "",
         "right": "",
-        "text": "光の門から、巨大な影がゆっくりと姿を現した。",
+        "text": "光の門の前に、異形の影が静かに降り立った。\n周りには、鳥居のような光の柱がいくつも浮かんでいる。",
         "location": "scene_zeraphia_gate.webp",
         "narration": true
       },
@@ -7061,7 +7085,7 @@
         "speaker": "",
         "left": "",
         "right": "",
-        "text": "守護者は光の粒となって、門の奥へ還っていった。",
+        "text": "イノリの姿は、糸がほどけるように\n光の中へ消えていった。",
         "location": "scene_zeraphia_gate.webp",
         "narration": true
       },

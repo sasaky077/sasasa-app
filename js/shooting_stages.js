@@ -35,7 +35,7 @@
     get 6() { return window.ZERAPHIA_STORY_SCENARIO?.['shooting_ch06_01']?.chapterTitle || '来訪者'; },
     get 7() { const s=window.ZERAPHIA_STORY_SCENARIO||{}; return s.shooting_ch07_01?.chapterTitle || s.shooting_ch07_03?.chapterTitle || '未定'; },
     get 8() { return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch08_01?.chapterTitle || '七つの塔'; },
-    get 9() { return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch09_01?.chapterTitle || '七塔の灯'; }
+    get 9() { return window.ZERAPHIA_STORY_SCENARIO?.shooting_ch09_01?.chapterTitle || 'はじまり'; }
   };
 
   const SHOOTING_STAGE_ID = Object.freeze({
@@ -79,7 +79,7 @@
     CH08_02: 'shooting_ch08_02',
     CH08_03: 'shooting_ch08_03',
     CH08_04: 'shooting_ch08_04',
-    // build1667: CHAPTER 09「七塔の灯」（01・03はパズル［共鳴灯］、02・04は戦闘）
+    // build1667: CHAPTER 09「はじまり」（build1698改題。01・03はパズル［共鳴灯］、02・04は戦闘）
     CH09_01: 'shooting_ch09_01',
     CH09_02: 'shooting_ch09_02',
     CH09_03: 'shooting_ch09_03',
@@ -1453,7 +1453,7 @@
     }),
 
     // ============================================================
-    // build1667 CHAPTER 09「七塔の灯」
+    // build1667 CHAPTER 09「はじまり」
     //  01・03：パズル（共鳴灯）。resonance_lamp_ch09.html を iframe で開く（storyPuzzle / puzzleLevels）。
     //  02：フェイスレス（2WAVE・仮面オブジェクト）。04：イノリ（3PHASE・鳥居・全属性バリア）。
     // ============================================================
