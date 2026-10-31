@@ -28163,6 +28163,8 @@
     normal:  Object.freeze(['bgm-battle-normal-01', 'bgm-battle-normal-02', 'bgm-battle-normal-03']),
     tower:   Object.freeze(['bgm-battle-tower-01', 'bgm-battle-tower-02']),
     tower15: Object.freeze(['bgm-battle-tower-03']),
+    eclipse: Object.freeze(['bgm-battle-boss-04']), // 位相回遊・エクリプス戦専用
+    eclipse: Object.freeze(['bgm-battle-boss-04']), // 位相回遊・エクリプス戦専用
     // build1630: リズム弾幕「仮面舞踏会」
     rhythm:  Object.freeze(['bgm-rhythm-01']),
     // build1643: 和風ボス（レムナント：イノリ）
@@ -28173,6 +28175,8 @@
   let shootingBattleBgmPick = { key: '', id: '' };
 
   function getShootingBattleBgmPoolKey() {
+    // 位相回遊のエクリプス戦では専用曲を優先。
+    if (isPhaseOdysseyStage() && BOSS && BOSS.eclipseMechanics) return 'eclipse';
     if (isRhythmStage()) return 'rhythm';
     // build1643: 敵定義で曲を指定（イノリ＝japan）
     if (BOSS && BOSS.bgmPool && SHOOTING_BGM_POOLS[BOSS.bgmPool] && selectedStage && selectedStage.type !== 'normal') return BOSS.bgmPool;
