@@ -1403,6 +1403,16 @@
   }
 
   // 15F reuses Noah's combat patterns but MUST NOT consume Noah special tickets.
+  // SPECIAL STAGEのみ対象。塔のノアには倍率を適用しない。
+  function getNoahLapConfig() {
+    const lap = isNoahStage() ? Math.max(1, Math.floor(Number(window.__noahLap) || 1)) : 1;
+    if (lap === 1) return { lap, speed:1, interval:1, hp:15000, danger:0 };
+    if (lap === 2) return { lap, speed:1.3, interval:0.9, hp:25000, danger:0 };
+    if (lap === 3) return { lap, speed:1.5, interval:0.8, hp:35000, danger:0 };
+    if (lap === 4) return { lap, speed:1.7, interval:0.7, hp:45000, danger:2 };
+    return { lap, speed:2, interval:0.6, hp:60000, danger:3 };
+  }
+
   function isNoahPatternStage() {
     return isNoahStage() || !!(isResonanceTowerStage() && selectedStage?.towerNoahPattern);
   }
@@ -4805,8 +4815,11 @@
       ? selectedStage.bossGaugeHps
       : (Array.isArray(BOSS.gaugeHps) ? BOSS.gaugeHps : null);
 
-    const stageBossGaugeHps = rawBossGaugeHps
-      ? rawBossGaugeHps
+    const noahLapHp = isNoahStage() ? getNoahLapConfig().hp : 0;
+    const noahGaugeValues = noahLapHp ? [Math.floor(noahLapHp / 3), Math.floor(noahLapHp / 3), noahLapHp - 2 * Math.floor(noahLapHp / 3)] : null;
+
+    const stageBossGaugeHps = (noahGaugeValues || rawBossGaugeHps)
+      ? (noahGaugeValues || rawBossGaugeHps)
           .map(v => Math.max(1, Number(v || 1)))
           .filter(v => Number.isFinite(v) && v > 0)
       : null;
@@ -4822,7 +4835,7 @@
     const stageBossTotalHp = Math.max(
       1,
       Number(
-        selectedStage?.bossTotalHp ||
+        (noahLapHp || selectedStage?.bossTotalHp) ||
         (stageBossGaugeHps && stageBossGaugeHps.length
           ? stageBossGaugeHps.reduce((sum, hp) => sum + hp, 0)
           : (stageBossGaugeHp * stageBossGauges))
@@ -17164,6 +17177,28 @@
     }
   }
 
+  function ensureNoahLapDangerBullets() {
+    if (!isNoahStage() || !state || !state.boss) return;
+    const target = getNoahLapConfig().danger;
+    if (!target) return;
+    const alive = (state.enemyBullets || []).filter(p => p && p.noahLapDanger && p.el && p.el.isConnected).length;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    for (let i=alive; i<target; i++) {
+      const side = i % 2 ? -1 : 1;
+      const angle = Math.PI / 2 + side * (Math.PI / 3 + Math.random() * Math.PI / 5);
+      const p = makeProjectile('shooting-enemy-bullet shooting-danger-bullet',
+        clamp(Number(state.boss.x || arena.clientWidth / 2),30,arena.clientWidth - 30),
+        Number(state.boss.y || 80) + 20,
+        Math.cos(angle) * 118, Math.sin(angle) * 118,999999);
+      if (!p) continue;
+      p.ambushBounce = true;
+      p.ambushPersistent = true;
+      p.noahLapDanger = true;
+      state.enemyBullets.push(p);
+    }
+  }
+
   function fireBulletHellTest(now) {
     const phase = state.boss.phase || 1;
     const speed = Number(BOSS.bulletSpeed || 230);
@@ -17174,7 +17209,9 @@
     // 理想郷：ノア専用。
     // build946: 軽量優先。通常弾は固定テーブルで左右対称、追従弾だけ例外。
     if (isNoahPatternStage()) {
-      const interval = phase === 1 ? 420 : (phase === 2 ? 300 : 225);
+      const lapCfg = getNoahLapConfig();
+      if (isNoahStage()) ensureNoahLapDangerBullets();
+      const interval = (phase === 1 ? 420 : (phase === 2 ? 300 : 225)) * lapCfg.interval;
 
       // ステージ開始直後はCanvas生成・BOSS表示・各画像decodeと重なるため、
       // 1ボレー分だけ待ってから弾幕を開始する。
@@ -17189,8 +17226,8 @@
 
       const step = Number(state.noahSpiralStep || 0);
       const pattern = step & 3;
-      const speedMul = phase === 1 ? 0.88 : (phase === 2 ? 0.94 : 1.04);
-      const secondarySpeedMul = phase === 1 ? 0.84 : (phase === 2 ? 0.88 : 0.94);
+      const speedMul = (phase === 1 ? 0.88 : (phase === 2 ? 0.94 : 1.04)) * lapCfg.speed;
+      const secondarySpeedMul = (phase === 1 ? 0.84 : (phase === 2 ? 0.88 : 0.94)) * lapCfg.speed;
       const spawnCompanionLane = phase === 1 ? ((step % 6) === 0) : ((step % 4) === 0);
       const centerAxis = Math.PI / 2;
 
@@ -17325,7 +17362,7 @@
           : (phase === 2
             ? [-0.86, -0.40, 0.40, 0.86]
             : [-0.96, -0.58, -0.22, 0.22, 0.58, 0.96]);
-        const haloSpeed = phase === 1 ? 0.72 : (phase === 2 ? 0.78 : 0.84);
+        const haloSpeed = (phase === 1 ? 0.72 : (phase === 2 ? 0.78 : 0.84)) * lapCfg.speed;
         for (let i = 0; i < haloOffsets.length; i++) {
           const a = centerAxis + haloOffsets[i];
           const p = makeProjectile(
@@ -17352,7 +17389,7 @@
 
       if (sideGuardActive) {
         const lastSideGuardAt = Number(state.noahSideGuardAt || 0);
-        const sideGuardInterval = phase === 1 ? 900 : (phase === 2 ? 680 : 600);
+        const sideGuardInterval = (phase === 1 ? 900 : (phase === 2 ? 680 : 600)) * lapCfg.interval;
 
         if (now - lastSideGuardAt >= sideGuardInterval) {
           state.noahSideGuardAt = now;
@@ -17364,7 +17401,7 @@
           const aimDy = Number(getEnemyAimPosition().y || 0) - sideOriginY;
           const sideAim = Math.atan2(aimDy, aimDx);
           const sideSpread = phase === 3 ? 0.18 : 0.14;
-          const sideSpeed = speed * (phase === 1 ? 0.92 : (phase === 2 ? 0.98 : 1.05));
+          const sideSpeed = speed * (phase === 1 ? 0.92 : (phase === 2 ? 0.98 : 1.05)) * lapCfg.speed;
 
           [-sideSpread, 0, sideSpread].forEach(offset => {
             const a = sideAim + offset;
@@ -17402,8 +17439,8 @@
           const p = makeProjectile(
             'shooting-enemy-bullet',
             originX, originY,
-            Math.cos(a) * speed * 0.88,
-            Math.sin(a) * speed * 0.88,
+            Math.cos(a) * speed * 0.88 * lapCfg.speed,
+            Math.sin(a) * speed * 0.88 * lapCfg.speed,
             damage
           );
           if (p) {
@@ -20059,7 +20096,7 @@
     if (!state) return;
     const keep = [];
     state.enemyBullets.forEach(p => {
-      if (isAmbushStage() && p && p.ambushPersistent && p.el && p.el.isConnected) {
+      if ((isAmbushStage() || isNoahStage()) && p && p.ambushPersistent && p.el && p.el.isConnected) {
         keep.push(p);
         return;
       }
@@ -28952,6 +28989,14 @@
 
     noahAttemptStartPending = true;
     try {
+      const progressRes = await sb.rpc('get_noah_progress_secure');
+      if (progressRes && progressRes.error) throw progressRes.error;
+      let progress = progressRes ? progressRes.data : null;
+      if (typeof progress === 'string') progress = JSON.parse(progress);
+      if (!progress || progress.ok !== true || !Number.isInteger(Number(progress.lap)) || Number(progress.lap) < 1) {
+        throw new Error('ノア周回情報を取得できません');
+      }
+      window.__noahLap = Number(progress.lap);
       const res = await sb.rpc('begin_noah_attempt');
       if (res && res.error) throw res.error;
 

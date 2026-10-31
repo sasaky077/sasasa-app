@@ -7,6 +7,8 @@
   const STAGE_ID = 'shooting_event_bullet_hell_test';
 
   let serverPieceCount = null;
+  let serverLap = 1;
+  let lastRewardMessage = "";
   let finishPending = false;
 
   function clampPieceCount(value){
@@ -42,7 +44,15 @@
       if (typeof data === 'string') {
         try { data = JSON.parse(data); } catch (_) {}
       }
-      setDisplayPieceCount(data && data.piece_count != null ? data.piece_count : 0);
+      if (!data || data.ok !== true || !Number.isInteger(Number(data.lap)) || Number(data.lap) < 1) throw new Error('invalid Noah progress');
+      serverLap = Number(data.lap);
+      window.__noahLap = serverLap;
+      const stageLapLabel = document.getElementById('noah-stage-lap-label');
+      if (stageLapLabel) {
+        const grades = ['通常', '困難', '激戦', '極限・反射弾2', '最高難易度・反射弾3'];
+        stageLapLabel.textContent = serverLap + '周目 ・ ' + grades[Math.min(serverLap, 5) - 1];
+      }
+      setDisplayPieceCount(data.piece_count);
     } catch (err) {
       console.warn('[NoahPiece] progress load failed:', err);
     }
@@ -92,7 +102,7 @@
             '<p>ノアを打ち破り、欠片を集める。<br>9つの欠片が揃ったとき、ひとつの姿が完成する。</p>' +
           '</div>' +
           '<div class="noah-piece-progress">' +
-            '<span class="noah-piece-progress-label">完成状況</span>' +
+            '<span class="noah-piece-progress-label"><b id="noah-piece-lap">1周目</b>　完成状況</span>' +
             '<strong id="noah-piece-progress-now">0</strong><span>/ 9</span>' +
           '</div>' +
           '<div class="noah-puzzle-frame">' +
@@ -117,6 +127,8 @@
     const count = getNoahPieceCount();
     const ticket = getSpecialTicketCount();
 
+    const lapEl = document.getElementById('noah-piece-lap');
+    if (lapEl) lapEl.textContent = serverLap + '周目';
     const progress = document.getElementById('noah-piece-progress-now');
     if (progress) progress.textContent = String(count);
 
@@ -132,17 +144,15 @@
 
     const button = document.getElementById('noah-piece-challenge');
     if (button) {
-      button.disabled = ticket < 1 || count >= MAX_PIECES;
+      button.disabled = ticket < 1;
       const small = button.querySelector('small');
       if (small) {
-        small.textContent = count >= MAX_PIECES
-          ? 'ノア解放済み'
-          : (ticket < 1 ? 'SPECIAL STAGE TICKET がありません' : 'SPECIAL STAGE TICKET ×1');
+        small.textContent = ticket < 1 ? 'SPECIAL STAGE TICKET がありません' : 'SPECIAL STAGE TICKET ×1';
       }
     }
 
     const complete = document.getElementById('noah-piece-complete');
-    if (complete) complete.classList.toggle('show', count >= MAX_PIECES);
+    if (complete) { complete.classList.toggle('show', !!lastRewardMessage); complete.textContent = lastRewardMessage; }
   }
 
   async function openNoahPiecePanel(){
@@ -253,15 +263,22 @@
 
       window.__noahAttemptId = null;
       const before = getNoahPieceCount();
+      if (Number.isInteger(Number(data.lap)) && Number(data.lap) >= 1) {
+        serverLap = Number(data.lap);
+        window.__noahLap = serverLap;
+      }
+      lastRewardMessage = data.completed_lap != null ? String(data.message || '') : '';
       const after = setDisplayPieceCount(data.piece_count);
 
-      if (data.unlocked_noah) {
+      if (data.granted_noah) {
         await syncUnlockedNoahToLocal(data.character_row_id);
-        if (typeof window.showNoahCompletePopup === 'function') {
+        if (data.unlocked_noah && typeof window.showNoahCompletePopup === 'function') {
           try { window.showNoahCompletePopup(); } catch (_) {}
         } else if (typeof window.showToast === 'function') {
-          window.showToast('ノアが解放されました');
+          window.showToast(data.message || 'ノアを1体獲得（限界突破に使えます）');
         }
+      } else if (data.completed_lap != null && typeof window.showToast === 'function') {
+        window.showToast(data.message || '周回完了');
       } else if (after > before && typeof window.showToast === 'function') {
         window.showToast('ノアの欠片を1つ獲得しました');
       }
