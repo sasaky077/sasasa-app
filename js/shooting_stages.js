@@ -390,6 +390,26 @@
       startDelayMs: 1800,
     });
   }
+  // build1693: 群生（蜘蛛＋三頭狼／塔13Fテンプレート）は、HPとダメージ以外が塔13Fのまま固定で
+  //  高層でも簡単だった。階層に応じて数・産卵・速さ・三頭狼の射撃を強化する（塔13F本体は変えない）。
+  //   大蜘蛛     2体 → 31F〜3体 → 60F〜4体
+  //   産卵       5.2秒ごと・1体につき2匹まで → 31F〜4.2秒・3匹 → 50F〜3.4秒 → 60F〜4匹 → 80F〜2.8秒
+  //   蜘蛛の速さ ×1.15 → 階層ごとに少しずつ速く（最大×1.5）
+  //   三頭狼     2秒ごとに5WAY → 間隔が階層ごとに縮む（最短1.1秒）・50F〜7WAY・弾速は階層の弾速倍率
+  function getPhaseOdysseySwarmTuning(floor, sw, scale) {
+    const f = Math.max(1, Math.floor(Number(floor) || 1));
+    const over = Math.max(0, f - 19);
+    return {
+      largeCount: Number(sw.largeCount || 2) + (f >= 31 ? 1 : 0) + (f >= 60 ? 1 : 0),
+      broodIntervalMs: f >= 80 ? 2800 : (f >= 50 ? 3400 : (f >= 31 ? 4200 : Number(sw.broodIntervalMs || 5200))),
+      broodMaxPerLarge: Number(sw.broodMaxPerLarge || 2) + (f >= 31 ? 1 : 0) + (f >= 60 ? 1 : 0),
+      spiderMoveSpeedScale: Math.round(Math.min(1.5, Number(sw.spiderMoveSpeedScale || 1) + 0.006 * over) * 1000) / 1000,
+      guardShotIntervalMs: Math.max(1100, Number(sw.guardShotIntervalMs || 2000) - 15 * over),
+      guardBulletSpeed: Math.round(Number(sw.guardBulletSpeed || 235) * Number(scale.bulletSpeedScale || 1)),
+      guardWays: f >= 50 ? 7 : 5,
+      guardMoveAngularSpeed: Math.round(Number(sw.guardMoveAngularSpeed || .92) * (f >= 50 ? 1.3 : 1) * 1000) / 1000,
+    };
+  }
   const phaseOdysseyStageCache = new Map();
   // ------------------------------------------------------------
   // build1643: 10階ごとのボス戦。既存ボス（STORY・残響の塔・レイド・律動）の行動・ギミックを流用し、
@@ -551,7 +571,7 @@
     if (base.swarmBattle && Number.isFinite(Number(base.swarmBattle.guardHp))) {
       // build1680: 大蜘蛛・子蜘蛛のHPも階層倍率で強化（従来は三頭狼だけで、蜘蛛は全階層で塔13Fと同じHPだった）
       stage.swarmBattle = Object.freeze({ ...base.swarmBattle, guardHp: Math.round(Number(base.swarmBattle.guardHp) * scale.hpScale),
-        spiderHpScale: scale.hpScale });
+        spiderHpScale: scale.hpScale, ...getPhaseOdysseySwarmTuning(f, base.swarmBattle, scale) });
     }
     if (base.type === 'boss') {
       let gauges = Array.isArray(base.bossGaugeHps) ? base.bossGaugeHps.slice() : null;
@@ -656,6 +676,11 @@
       stage.mission = Object.freeze({ type: M.DEFEAT_ALL, text: '敵をすべて撃破（被弾3回以内でボーナス）' });
     }
     if (anomaly === 'haste') nb.enemyBulletSpeed = Math.round(Number(nb.enemyBulletSpeed || 170) * 1.25);
+    // build1693: 群生の三頭狼は guardBulletSpeed を使うため、「加速」をこちらにも掛ける（従来は効いていなかった）
+    if (anomaly === 'haste' && swarm && stage.swarmBattle) {
+      stage.swarmBattle = Object.freeze({ ...stage.swarmBattle,
+        guardBulletSpeed: Math.round(Number(stage.swarmBattle.guardBulletSpeed || 235) * 1.25) });
+    }
     if (anomaly === 'crowd') {
       if (!nb.infiniteEnemies) nb.totalEnemies = Number(nb.totalEnemies || 6) + 3;
       nb.maxActive = Math.max(1, Number(nb.maxActive || 2)) + 1;

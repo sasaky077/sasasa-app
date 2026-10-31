@@ -13253,7 +13253,9 @@
     const stepAngle = Number(cfg.guardSpreadAngleRad || .23);
     const speed = Number(cfg.guardBulletSpeed || enemy.def?.bulletSpeed || 235);
     const damage = Number(cfg.guardBulletDamage || enemy.def?.bulletDamage || 120);
-    [-2, -1, 0, 1, 2].forEach(i => {
+    // build1693: 位相回遊の高層は7WAY（guardWays）。塔13Fは従来どおり5WAY。
+    const ways = Math.max(1, Math.min(9, Math.floor(Number(cfg.guardWays || 5))));
+    Array.from({ length: ways }, (_, k) => k - (ways - 1) / 2).forEach(i => {
       shootNormalEnemyProjectile(enemy, aimAngle + stepAngle * i, speed, damage,
         'shooting-enemy-bullet shooting-mini-enemy-bullet shooting-tower13-wolf-bullet');
     });
