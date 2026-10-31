@@ -52,6 +52,8 @@
     CAMILLA_SPIDERLING: 'camilla_spiderling',
     BULLET_HELL_TEST: 'shooting_bullet_hell_test',
     NOAH: 'shooting_noah',
+    // build1691: 死線（即死弾のみの弾幕）。build1692から位相回遊の「死線」階専用
+    LETHAL_BARRAGE: 'shooting_lethal_barrage',
     OVERSEER_AMBUSH: 'shooting_overseer_ambush',
     // build1485: 残響の塔15F BOSS
     TOWER15_BOSS: 'shooting_tower15_boss',
@@ -715,6 +717,29 @@
       uiScale: 1.0,
     }),
 
+
+    // ------------------------------------------------------------
+    // build1691: 死線（build1692: 位相回遊の「死線」階専用。HPはステージ側 bossGaugeHps で決める）
+    // 超弾幕（理想郷 -ノア-）の左右対称レーン弾幕を、すべて即死弾（WARNING）に置き換えたBOSS。
+    // 自機狙い・追従弾はなし。弾の並びを読んで隙間をくぐり抜ける。
+    // bulletDamage は即死弾（999999固定）なので実質使わない。
+    // ------------------------------------------------------------
+    [SHOOTING_ENEMY_ID.LETHAL_BARRAGE]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.LETHAL_BARRAGE,
+      kind: 'boss',
+      implemented: true,
+      name: '死線',
+      displayName: 'PHASE ODYSSEY　死線',
+      image: 'images/testenemy_battle_up.webp',
+      element: 'neutral',
+      gaugeHp: 4500,
+      gauges: 3,
+      bulletSpeed: 190,
+      fireRate: 400,
+      bulletDamage: 999999,
+      behavior: 'lethal_barrage_v1',
+      uiScale: 1.0,
+    }),
 
     // ------------------------------------------------------------
     // SPECIAL STAGE - 楽園 -ノア-

@@ -374,7 +374,9 @@
     survive: { name:'生存',     desc:'敵が湧き続ける。制限時間まで生き残れば突破' },
     elite:   { name:'精鋭',     desc:'HP5倍の大型の精鋭が混ざる。すべて撃破で突破' },
     speed:   { name:'速攻',     desc:'目標時間内に全滅させると、強化の★が上がる', bonus:true },
-    nohit:   { name:'見切り',   desc:'被弾3回以内で全滅させると、強化の★が上がる', bonus:true }
+    nohit:   { name:'見切り',   desc:'被弾3回以内で全滅させると、強化の★が上がる', bonus:true },
+    // build1692: まれに出る「死線」。弾がすべて即死弾。BOSSのHPは低め。突破で強化の★が上がる
+    lethal:  { name:'死線',     desc:'弾がすべて即死弾。くぐり抜けてBOSSを倒せば強化の★が上がる', bonus:true }
   });
   const ANOMALY_INFO = Object.freeze({
     blackout: { name:'暗転', desc:'周期的に画面が暗くなる' },
@@ -400,8 +402,19 @@
     return pool;
   }
   function rawObjective(f, seed){ return pickWeighted(objectivePool(f), varietyRoll(seed, f, 11)); }
+  // build1692: 「死線」の階。21F以降のボス階以外で約8%。2階連続にはしない。
+  //  通常のお題の抽選（乱数・重み）には触れないので、死線にならなかった階は従来と同じお題になる。
+  const LETHAL_FLOOR_FROM = 21;
+  const LETHAL_FLOOR_CHANCE = 0.08;
+  function isLethalRoll(f, seed){
+    return f >= LETHAL_FLOOR_FROM && !isBossFloor(f) && varietyRoll(seed, f, 41) < LETHAL_FLOOR_CHANCE;
+  }
+  function isLethalFloor(f, seed){
+    return isLethalRoll(f, seed) && !isLethalRoll(f - 1, seed);
+  }
   // 前の階層の「確定した」お題と同じなら引き直す（ボス階の直後は比較しない）。再帰はボス階で止まるので最大9段。
   function finalObjective(f, seed){
+    if (isLethalFloor(f, seed)) return 'lethal';
     let objective = rawObjective(f, seed);
     if (f > 2 && !isBossFloor(f - 1)) {
       const prev = finalObjective(f - 1, seed);
@@ -421,8 +434,9 @@
     // 同じお題が2階連続しない（殲滅の連続も避ける）
     const objective = finalObjective(f, seed);
     let anomaly = '';
-    if (f >= 11) {
-      const chance = f >= 31 ? 0.45 : 0.30;
+    if (objective !== 'lethal' && f >= 11) {
+      // build1691: 50F以降（深層）は異常の発生率 45%→60%
+      const chance = f >= 50 ? 0.60 : (f >= 31 ? 0.45 : 0.30);
       if (varietyRoll(seed, f, 23) < chance) {
         const pool = [['blackout', 2], ['haste', 2], ['slow', 1.5], ['crowd', 2], ['burst', 1.6]];
         if (f >= 21) pool.push(['reverse', 1]);
@@ -454,10 +468,12 @@
     const r = rec || load();
     if (toInt(r.variety, 0) < VARIETY_VERSION || !isRunActive(r)) return '';
     const f = Math.max(1, r.current_floor + (r.run_status === 'select' ? 1 : 0));
-    if (isBossFloor(f)) return `次の階層：FLOOR ${f}　BOSS`;
+    // build1691: 50F以降は毎階層、即死弾が漂う
+    const deep = f >= 50 ? '　【深層】即死弾が漂う' : '';
+    if (isBossFloor(f)) return `次の階層：FLOOR ${f}　BOSS${deep}`;
     const v = effectiveVariant(f, r);
-    if (!v) return '';
-    return `次の階層：FLOOR ${f}　${variantText(v)}`;
+    if (!v) return deep ? `次の階層：FLOOR ${f}${deep}` : '';
+    return `次の階層：FLOOR ${f}　${variantText(v)}${deep}`;
   }
 
   function rollChoices(rec, bump){

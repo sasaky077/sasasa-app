@@ -278,8 +278,9 @@
         bossElement:'dark', enemyElement:'dark', bossVisualScale:0.62,
         introImage:'images/tower15_boss_battle_start.webp',
         // 15Fより：WARNING 3→4・速く・補充が早い／暗転が早く・長く・頻繁／通常弾幕の間隔×0.88
+        // build1691: 即死弾（WARNING）を1.5倍（4→6）に増量。
         tower15Echo:Object.freeze({
-          warningCount:4, warningSpeed:132, warningRespawnMs:1800, fireIntervalScale:0.88,
+          warningCount:6, warningSpeed:132, warningRespawnMs:1800, fireIntervalScale:0.88,
           blackout:Object.freeze({
             firstAtMs:7000,
             1:Object.freeze({everyMs:13000, durationMs:4600}),
@@ -360,13 +361,33 @@
     const tier = Math.floor((f - 1) / 5);
     const cycle = Math.floor((f - 1) / 10);
     const late = Math.max(0, cycle - 2);
+    // build1691: 50F以降は「深層」。HP・ATKに追加倍率（50Fで×1.15、1階ごとに+0.6%、最大×1.6）、
+    // 弾速の上限 +15%→+25%、敵の連射間隔×0.88、即死弾の常駐（getPhaseOdysseyLethalDrift）。
+    const deep = f >= 50;
+    const deepMul = deep ? Math.min(1.6, 1.15 + 0.006 * (f - 50)) : 1;
     return Object.freeze({
       floor: f,
       tier: tier + 1,
-      hpScale: Math.round(Math.min(50, (1 + 0.03 * (f - 1) + 0.07 * tier) * Math.pow(1.12, late)) * 1000) / 1000,
-      atkScale: Math.round(Math.min(4, (1 + 0.02 * (f - 1) + 0.05 * tier) * Math.pow(1.08, late)) * 1000) / 1000,
-      bulletSpeedScale: Math.round((1 + Math.min(0.15, 0.015 * tier)) * 1000) / 1000,
+      hpScale: Math.round(Math.min(50, (1 + 0.03 * (f - 1) + 0.07 * tier) * Math.pow(1.12, late) * deepMul) * 1000) / 1000,
+      atkScale: Math.round(Math.min(4, (1 + 0.02 * (f - 1) + 0.05 * tier) * Math.pow(1.08, late) * deepMul) * 1000) / 1000,
+      bulletSpeedScale: Math.round((1 + Math.min(deep ? 0.25 : 0.15, 0.015 * tier)) * 1000) / 1000,
+      fireRateScale: deep ? 0.88 : 1,
       extraEnemies: Math.min(3, cycle),
+      deep,
+    });
+  }
+  // build1691: 位相回遊 50F以降は毎階層、壁で反射し続ける即死弾（WARNING）が漂う。
+  //  50〜69F：2個 / 70〜99F：3個 / 100F〜：4個。速さと補充間隔も深くなるほど厳しく。
+  //  律動（弾幕の穴をたどるボス）と、元から即死弾が常駐するトワには付けない。
+  function getPhaseOdysseyLethalDrift(floor) {
+    const f = Math.max(1, Math.floor(Number(floor) || 1));
+    if (f < 50) return null;
+    const count = f >= 100 ? 4 : (f >= 70 ? 3 : 2);
+    return Object.freeze({
+      count,
+      speed: Math.min(150, 104 + Math.floor((f - 50) / 10) * 6),
+      respawnMs: Math.max(1600, 2800 - Math.floor((f - 50) / 10) * 150),
+      startDelayMs: 1800,
     });
   }
   const phaseOdysseyStageCache = new Map();
@@ -450,8 +471,14 @@
     const gaugeSrc = def.eclipse ? original.slice(0, 3) : used;
     const gaugeSum = gaugeSrc.reduce((a, b) => a + Math.max(1, Number(b) || 1), 0);
     const gaugeHps = gaugeSrc.map(v => Math.max(1, Math.round(hpTotal * Math.max(1, Number(v) || 1) / gaugeSum)));
+    const lethalDrift = (key === 'rhythm' || key === 'towa') ? null : getPhaseOdysseyLethalDrift(f);
+    if (key === 'towa' && f >= 50 && base.tower15Echo) {
+      // トワは常駐WARNINGを増やして同じ「深層」の圧にする（3→5）
+      base.tower15Echo = Object.freeze({ ...base.tower15Echo, warningCount: Number(base.tower15Echo.warningCount || 3) + 2 });
+    }
     return Object.freeze({
       ...base,
+      odysseyLethalDrift: lethalDrift,
       id: PHASE_ODYSSEY_STAGE_PREFIX + f + '_' + key,
       chapter: 0,
       stageNo: f,
@@ -484,6 +511,11 @@
     const rawVariant = getPhaseOdysseyFloorVariant(f);
     const cacheKey = rawVariant ? (f + '|' + rawVariant.objective + '|' + (rawVariant.anomaly || '')) : f;
     if (phaseOdysseyStageCache.has(cacheKey)) return phaseOdysseyStageCache.get(cacheKey);
+    if (rawVariant && rawVariant.objective === 'lethal') {
+      const lethalStage = makePhaseOdysseyLethalStage(f, rawVariant);
+      phaseOdysseyStageCache.set(cacheKey, lethalStage);
+      return lethalStage;
+    }
     const templateFloor = getPhaseOdysseyTemplateFloor(f);
     const base = makeResonanceTowerStage(templateFloor);
     const scale = getPhaseOdysseyScaling(f);
@@ -507,7 +539,14 @@
       if (Number.isFinite(Number(nb.enemyHp))) nb.enemyHp = Math.round(Number(nb.enemyHp) * scale.hpScale);
       if (Number.isFinite(Number(nb.enemyBulletSpeed))) nb.enemyBulletSpeed = Math.round(Number(nb.enemyBulletSpeed) * scale.bulletSpeedScale);
       if (Number.isFinite(Number(nb.totalEnemies)) && !base.swarmBattle) nb.totalEnemies = Number(nb.totalEnemies) + scale.extraEnemies;
+      if (scale.fireRateScale !== 1 && Number.isFinite(Number(nb.enemyFireRate))) nb.enemyFireRate = Math.round(Number(nb.enemyFireRate) * scale.fireRateScale);
       stage.normalBattle = Object.freeze(nb);
+    }
+    // build1691: 50F以降は必ず即死弾が漂う（トワのテンプレート階は常駐WARNINGを増やす）
+    if (base.tower15Echo) {
+      if (f >= 50) stage.tower15Echo = Object.freeze({ ...base.tower15Echo, warningCount: Number(base.tower15Echo.warningCount || 3) + 2 });
+    } else if (!base.rhythm) {
+      stage.odysseyLethalDrift = getPhaseOdysseyLethalDrift(f);
     }
     if (base.swarmBattle && Number.isFinite(Number(base.swarmBattle.guardHp))) {
       // build1680: 大蜘蛛・子蜘蛛のHPも階層倍率で強化（従来は三頭狼だけで、蜘蛛は全階層で塔13Fと同じHPだった）
@@ -537,6 +576,47 @@
     return frozen;
   }
 
+  // ============================================================
+  // build1692: 位相回遊の「死線」階（21F以降のボス階以外にまれに出る。抽選は phase_odyssey.js）。
+  //  超弾幕（理想郷 -ノア-）の左右対称レーン弾幕を、すべて即死弾に置き換えたBOSS戦。
+  //  自機狙い・追従はなし。1発でも当たればその味方は戦闘不能。
+  //  そのぶんBOSSのHPは低め：基準 1,200 / 1,400 / 1,600（合計4,200）× 階層のHP倍率
+  //  （同じ階層のボス階の合計HPの約4割）。即死弾の常駐（深層）は重ねない。
+  // ============================================================
+  const PHASE_ODYSSEY_LETHAL_GAUGES = Object.freeze([1200, 1400, 1600]);
+  function makePhaseOdysseyLethalStage(f, v) {
+    const scale = getPhaseOdysseyScaling(f);
+    const gaugeHps = PHASE_ODYSSEY_LETHAL_GAUGES.map(hp => Math.max(1, Math.round(hp * scale.hpScale)));
+    return Object.freeze({
+      id: PHASE_ODYSSEY_STAGE_PREFIX + f,
+      chapter: 0,
+      stageNo: f,
+      type: 'boss',
+      background: 'images/battle_bg_01.webp',
+      eventId: 'phase_odyssey',
+      eventTitle: '位相回遊',
+      name: '第' + f + '階層',
+      difficultyLabel: 'FLOOR ' + f + ' / 死線',
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.LETHAL_BARRAGE]),
+      bossElement: 'neutral',
+      enemyElement: 'neutral',
+      bossGaugeHps: Object.freeze(gaugeHps),
+      // 弾幕の調整値（shooting_core.js fireLethalBarrage が参照）。深い階ほど少しだけ速く・詰める。
+      lethalBarrage: Object.freeze({
+        intervalMs: Object.freeze([560, 470, 400].map(ms => Math.round(ms * (f >= 50 ? 0.92 : 1)))),
+        speedMul: Object.freeze([0.80, 0.86, 0.92].map(m => Math.round(m * scale.bulletSpeedScale * 1000) / 1000)),
+        radius: 9,
+      }),
+      mission: Object.freeze({ type: SHOOTING_MISSION_TYPE.BOSS_CLEAR, text: '即死弾幕をくぐり抜けて撃破' }),
+      phaseOdyssey: Object.freeze({
+        floor: f, templateFloor: 0, tier: scale.tier,
+        hpScale: scale.hpScale, atkScale: scale.atkScale,
+        variant: Object.freeze({ v: v.v, objective: 'lethal', anomaly: '' }),
+      }),
+      playable: true,
+    });
+  }
+
   // build1679: 位相回遊の「お題・異常」。抽選は phase_odyssey.js（run_seed＋階層）、戦闘内容への反映はここ。
   function getPhaseOdysseyFloorVariant(floor) {
     try {
@@ -544,7 +624,7 @@
       return api && typeof api.getFloorVariant === 'function' ? api.getFloorVariant(floor) : null;
     } catch (_) { return null; }
   }
-  const PHASE_ODYSSEY_OBJECTIVE_LABEL = Object.freeze({ clear:'殲滅', survive:'生存', elite:'精鋭', speed:'速攻', nohit:'見切り' });
+  const PHASE_ODYSSEY_OBJECTIVE_LABEL = Object.freeze({ clear:'殲滅', survive:'生存', elite:'精鋭', speed:'速攻', nohit:'見切り', lethal:'死線' });
   const PHASE_ODYSSEY_ANOMALY_LABEL = Object.freeze({ blackout:'暗転', haste:'加速', reverse:'反転', slow:'鈍化', crowd:'過密', burst:'連鎖' });
   function applyPhaseOdysseyVariant(stage, base, v, f) {
     if (!stage.normalBattle || base.type === 'boss') return;

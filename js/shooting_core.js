@@ -1055,7 +1055,7 @@
     const v = getPhaseOdysseyVariant();
     return (v && v.anomaly) || '';
   }
-  const PO_OBJECTIVE_LABEL = Object.freeze({ clear:'殲滅', survive:'生存', elite:'精鋭', speed:'速攻', nohit:'見切り' });
+  const PO_OBJECTIVE_LABEL = Object.freeze({ clear:'殲滅', survive:'生存', elite:'精鋭', speed:'速攻', nohit:'見切り', lethal:'死線' });
   const PO_ANOMALY_LABEL = Object.freeze({ blackout:'暗転', haste:'加速', reverse:'反転', slow:'鈍化', crowd:'過密', burst:'連鎖' });
   const PO_ANOMALY_DESC = Object.freeze({ blackout:'周期的に暗転', haste:'敵弾1.25倍速', reverse:'左右操作が反転', slow:'移動75%',
     crowd:'敵が多い', burst:'撃破時に弾をばらまく' });
@@ -1144,6 +1144,7 @@
       elite: 'HP5倍の精鋭を含めて全滅',
       speed: `${Number(v.seconds || 30)}秒以内に全滅で★UP`,
       nohit: `被弾${Number(v.maxHits ?? 3)}回以内で★UP`,
+      lethal: '弾はすべて即死弾。撃破で★UP',
     })[v.objective] || ((state && state.mission && state.mission.text) || '');
     el.innerHTML = `<div class="po-vb-row"><span class="po-vb-kicker">SUB MISSION</span><b>${PO_OBJECTIVE_LABEL[v.objective] || '殲滅'}</b><small>${mission}</small></div>` +
       (v.anomaly ? `<div class="po-vb-row is-anomaly"><span class="po-vb-kicker">異常</span><b>${PO_ANOMALY_LABEL[v.anomaly] || ''}</b><small>${PO_ANOMALY_DESC[v.anomaly] || ''}</small></div>` : '');
@@ -1157,6 +1158,57 @@
       el.classList.add('out');
       setTimeout(() => { if (el.isConnected) el.remove(); }, 380);
     });
+  }
+  // ============================================================
+  // build1691: 位相回遊 50F以降 — 壁で反射し続ける即死弾（WARNING）を常駐させる。
+  //  ステージ定義 odysseyLethalDrift { count, speed, respawnMs, startDelayMs }。
+  //  画面上端から斜め下へ射出（自機の真上からは撃ち下ろさない）。消えた分は少し間を置いて補充。
+  // ============================================================
+  function spawnPhaseOdysseyLethalDrift(cfg) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena || !state) return null;
+    const w = Math.max(120, arena.clientWidth || 390);
+    const px = Number(state.player && state.player.x);
+    let x = 30 + Math.random() * (w - 60);
+    // 自機の真上（±70px）は避ける
+    if (Number.isFinite(px) && Math.abs(x - px) < 70) x = px < w / 2 ? Math.min(w - 30, px + 70 + Math.random() * 60) : Math.max(30, px - 70 - Math.random() * 60);
+    const side = x < w / 2 ? 1 : -1; // 画面中央側へ向かって斜めに
+    const angle = Math.PI / 2 - side * (Math.PI / 5 + Math.random() * Math.PI / 6);
+    const speed = Math.max(60, Number(cfg.speed || 110));
+    const p = makeProjectile(
+      'shooting-enemy-bullet shooting-danger-bullet shooting-tower15-warning',
+      x, 26, Math.cos(angle) * speed, Math.sin(angle) * speed, 999999
+    );
+    if (!p) return null;
+    p.ambushBounce = true;       // 既存の壁反射処理を利用
+    p.ambushPersistent = true;   // 反射回数で消えない
+    p.poLethalDrift = true;
+    state.enemyBullets.push(p);
+    return p;
+  }
+  function updatePhaseOdysseyLethalDrift(now) {
+    const cfg = isPhaseOdysseyStage() ? selectedStage.odysseyLethalDrift : null;
+    if (!cfg || !state) return;
+    const running = state.running && !state.countdown && !state.ended && !state.finishing;
+    if (!running || state.koTransition || state.phaseTransition) return;
+    const ld = state.poLethal || (state.poLethal = { readyAt: now + Math.max(0, Number(cfg.startDelayMs || 1800)), deficitSince: 0 });
+    if (now < ld.readyAt) return;
+    let alive = 0;
+    for (const p of state.enemyBullets) if (p && p.poLethalDrift && p.el && p.el.isConnected) alive++;
+    const want = Math.max(0, Math.floor(Number(cfg.count || 0)));
+    if (alive >= want) { ld.deficitSince = 0; return; }
+    if (!ld.placed) {
+      // 開幕は1発ずつ0.35秒間隔で並べる（同時に出して塊にならないように）
+      if (now - Number(ld.lastPlacedAt || 0) >= 350 && spawnPhaseOdysseyLethalDrift(cfg)) {
+        ld.lastPlacedAt = now;
+        if (alive + 1 >= want) ld.placed = true;
+      }
+      return;
+    }
+    if (!ld.deficitSince) ld.deficitSince = now;
+    if (now - ld.deficitSince >= Math.max(500, Number(cfg.respawnMs || 2400))) {
+      if (spawnPhaseOdysseyLethalDrift(cfg)) ld.deficitSince = alive + 1 < want ? now : 0;
+    }
   }
   // 連鎖：撃破した敵が6方向に弾をばらまく
   function spawnPhaseOdysseyBurst(enemy) {
@@ -1255,7 +1307,8 @@
       if (v && win && state) {
         const clearSec = (Number(state.poClearAt || performance.now()) - Number(state.startedAt || 0)) / 1000;
         const challengeAchieved = (v.objective === 'speed' && clearSec <= Number(v.seconds || 0)) ||
-          (v.objective === 'nohit' && Number(state.totalHitsTaken || 0) <= Number(v.maxHits ?? 3));
+          (v.objective === 'nohit' && Number(state.totalHitsTaken || 0) <= Number(v.maxHits ?? 3)) ||
+          v.objective === 'lethal'; // build1692: 死線は突破そのものがボーナス
         variety = { anomaly: v.anomaly || '', challengeAchieved: !!challengeAchieved, clearSeconds: Math.round(clearSec * 10) / 10 };
       }
       return Promise.resolve(api.finishFloor({
@@ -17011,6 +17064,104 @@
     ctx.restore();
   }
 
+  // ============================================================
+  // build1691: SPECIAL STAGE「死線」— 即死弾だけの弾幕。
+  //  超弾幕（理想郷 -ノア-）の左右対称レーン構成をそのまま使い、弾をすべて即死弾（WARNING）にする。
+  //  ・自機狙いの扇／側面の迎撃／追従弾は撃たない（並びを読めば必ず抜けられる）。
+  //  ・中央レーンは常に塞ぐ。外側レーンは4種類の開き角を循環して「呼吸」する。
+  //  ・間隔・弾速・半径はステージ定義 lethalBarrage で調整する。
+  // ============================================================
+  function fireLethalBarrage(now) {
+    if (!state || !state.boss) return;
+    const cfg = (selectedStage && selectedStage.lethalBarrage) || {};
+    const phase = Math.max(1, Math.min(3, Number(state.boss.phase || 1)));
+    const idx = phase - 1;
+    const pick = (list, fallback) => Array.isArray(list) && Number.isFinite(Number(list[idx])) ? Number(list[idx]) : fallback;
+
+    // 開幕の1ボレー分は待つ（BOSS表示・Canvas準備と重ねない）
+    if (!state.lethalBarragePrimed) {
+      state.lethalBarragePrimed = true;
+      state.lastBossShotAt = now;
+      return;
+    }
+    const interval = pick(cfg.intervalMs, [560, 470, 400][idx]);
+    if (now - state.lastBossShotAt < getStageAdjustedEnemyFireInterval(interval)) return;
+    state.lastBossShotAt = now;
+
+    const speed = Number(BOSS.bulletSpeed || 190) * pick(cfg.speedMul, [0.80, 0.86, 0.92][idx]);
+    const r = Math.max(5, Number(cfg.radius || 9));
+    const originX = Number(state.boss.x || 0);
+    const originY = Number(state.boss.y || 0) + 40;
+    const centerAxis = Math.PI / 2;
+    const shoot = (offset, mul, radius) => {
+      const a = centerAxis + offset;
+      const p = makeProjectile(
+        'shooting-enemy-bullet shooting-danger-bullet',
+        originX, originY,
+        Math.cos(a) * speed * mul, Math.sin(a) * speed * mul,
+        999999
+      );
+      if (!p) return;
+      const rr = radius || r;
+      p.canvasRadius = rr;
+      p.canvasHalfWidth = rr;
+      p.canvasHalfHeight = rr;
+      p._hw = rr;
+      p._hh = rr;
+      p.lethalBarrage = true;
+      state.enemyBullets.push(p);
+    };
+
+    const step = Number(state.lethalBarrageStep || 0);
+    const pattern = step & 3;
+    const innerTable = phase === 1
+      ? [0.30, 0.37, 0.45, 0.37]
+      : (phase === 2 ? [0.26, 0.33, 0.41, 0.33] : [0.22, 0.28, 0.35, 0.28]);
+    const outerTable = [0.58, 0.66, 0.74, 0.66];
+    const inner = innerTable[pattern];
+    const outer = outerTable[pattern];
+    const lanes = phase === 3 ? [-outer, -inner, 0, inner, outer] : [-inner, 0, inner];
+
+    // 中央レーンは「大 → 小」を交互に流し続ける
+    const centerBig = (step % 2) === 0;
+    lanes.forEach(offset => shoot(offset, 1, offset === 0 ? (centerBig ? r + 3 : r) : r));
+
+    // 伴走レーン（左右対称・少し遅い）
+    const companionEvery = phase === 1 ? 6 : 4;
+    if ((step % companionEvery) === 0) {
+      const shift = phase === 1 ? 0.10 : (phase === 2 ? 0.09 : 0.08);
+      lanes.forEach(offset => {
+        if (offset === 0) return;
+        shoot(offset + (offset < 0 ? -shift : shift), 0.88);
+      });
+    }
+
+    // 直進の差し込み弾（PHASEが進むほど増える。左右対称の固定テーブルを循環）
+    const extraRate = phase === 1 ? 0.25 : (phase === 2 ? 0.45 : 0.6);
+    state.lethalBarrageExtraBudget = Number(state.lethalBarrageExtraBudget || 0) + extraRate;
+    const extraOffsets = phase === 1
+      ? [-0.52, 0.52, -0.20, 0.20]
+      : (phase === 2 ? [-0.64, 0.64, -0.28, 0.28] : [-0.84, 0.84, -0.50, 0.50, -0.17, 0.17]);
+    while (state.lethalBarrageExtraBudget >= 1) {
+      state.lethalBarrageExtraBudget -= 1;
+      const k = Number(state.lethalBarrageExtraStep || 0);
+      state.lethalBarrageExtraStep = k + 1;
+      shoot(extraOffsets[k % extraOffsets.length], 0.94);
+    }
+
+    state.lethalBarrageStep = step + 1;
+
+    // 低速の左右対称リング（頻度は低め）
+    const haloEvery = phase === 1 ? 14 : (phase === 2 ? 10 : 8);
+    if ((state.lethalBarrageStep % haloEvery) === 0) {
+      const halo = phase === 1
+        ? [-0.78, -0.32, 0.32, 0.78]
+        : (phase === 2 ? [-0.88, -0.42, 0.42, 0.88] : [-0.98, -0.60, -0.24, 0.24, 0.60, 0.98]);
+      const haloSpeed = phase === 1 ? 0.70 : (phase === 2 ? 0.76 : 0.82);
+      halo.forEach(offset => shoot(offset, haloSpeed));
+    }
+  }
+
   function fireBulletHellTest(now) {
     const phase = state.boss.phase || 1;
     const speed = Number(BOSS.bulletSpeed || 230);
@@ -19739,6 +19890,11 @@
     // build1485: 塔15F BOSSは専用パターンのみ（汎用WARNING攻撃は使わない）。
     if (BOSS && BOSS.behavior === 'tower15_echo_v1') {
       fireTower15Boss(now);
+      return;
+    }
+    // build1691: 死線は即死弾の対称弾幕のみ（自機狙いの汎用WARNINGは使わない）
+    if (BOSS && BOSS.behavior === 'lethal_barrage_v1') {
+      fireLethalBarrage(now);
       return;
     }
     if (isAmbushStage()) {
@@ -24599,6 +24755,7 @@
       updateChapter4ShrinkWalls(ts);
       updateTower15Mechanics(ts);
       updatePhaseOdysseyVariety(ts);
+      updatePhaseOdysseyLethalDrift(ts);
       updateCollectibles(dt);
     }
     updateArnoAura(ts);
