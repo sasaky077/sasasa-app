@@ -10554,7 +10554,7 @@
     if (getConjureOccupiedCount(now) >= max) return false;
     // build1677: カミラの蜘蛛は連打しても0.7秒に1体まで（従来は同時4体の上限だけで、連打で出し放題だった）
     if (c.camillaSpiderAi) {
-      const interval = Math.max(0, Number(c.camillaSpiderIntervalMs ?? 700));
+      const interval = Math.max(0, Number(c.camillaSpiderIntervalMs ?? 1200));
       if (now - Number(state.camillaLastSpiderAt || -Infinity) < interval) return false;
       state.camillaLastSpiderAt = now;
     }
@@ -20878,7 +20878,10 @@
             if (isMiaChargeProjectile(p)) state.nextHitEffect = p.kind === 'charge_wave' ? 'charge_wave' : 'mia_water';
             const targetElement = getCombatTargetElement(enemy);
             const finalDamage = applyElementDamage(p.damage, attackElement, targetElement);
-            if (p.kind === 'camilla_web' && finalDamage > 0) enemy.camillaWebRootUntil=Math.max(Number(enemy.camillaWebRootUntil||0),now+3000);
+            if (p.kind === 'camilla_web' && finalDamage > 0) { // build1692: ザコ拘束はキャラ定義 camillaZakoRootMs（1.5秒）
+              const camZ = getBattleCharacter(CHARACTER_ID.CAMILLA) || {};
+              enemy.camillaWebRootUntil=Math.max(Number(enemy.camillaWebRootUntil||0),now+Math.max(0,Number(camZ.camillaZakoRootMs ?? 1500)));
+            }
             const appliedEnemyDamage = damageNormalEnemy(enemy, finalDamage, now, false, getElementDamageReaction(attackElement, targetElement));
             if (appliedEnemyDamage > 0) hitCount++;
           });

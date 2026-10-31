@@ -3027,7 +3027,7 @@
     id: CHARACTER_ID.CAMILLA,
     effectKey: 'camilla_web',
     label: 'CONJURE / SPIDER',
-    description: '0.7秒に1体、蜘蛛を召喚（最大4体）。蜘蛛はカサカサと走って最も近い敵に張り付き、ダメージを与えて移動を封じると消える（ザコ3秒／ボス1秒・解除後1秒は再捕縛なし）。射撃は継続する。',
+    description: '1.2秒に1体、蜘蛛を召喚（最大4体）。蜘蛛はカサカサと走って最も近い敵に張り付き、ダメージを与えて移動を封じると消える（ザコ1.5秒／ボス1秒・解除後1秒は再捕縛なし）。',
     ultName: '血界・緋糸万華',
     shotType: 'conjure', mainShot: {type:'conjure'}, shotCount:1,
     fireRate:1000, shotPowerRate:0.4, bulletSpeed:520,
@@ -3037,7 +3037,8 @@
     // build1659: 蜘蛛は弾を撃たず、走って張り付く。1体あたりのダメージは従来の蜘蛛糸3発分（ATK×0.4×3）
     camillaSpiderAi:true, camillaSpiderSpeed:260, camillaSpiderLifeMs:6000, camillaSpiderLatchMs:260, camillaSpiderDamageRate:1.2,
     // build1677: 連打での出し放題とボスの常時拘束を是正（召喚0.7秒間隔・ボス拘束1秒＋再捕縛なし1秒 ※build1678で1.5→1秒）
-    camillaSpiderIntervalMs:700, camillaBossRootMs:1000, camillaBossRootImmuneMs:1000,
+    // build1692: 連タップで敵が勝手に溶けるほど強かったため、召喚間隔 0.7→1.2秒（火力 約6割）・ザコ拘束 3→1.5秒
+    camillaSpiderIntervalMs:1200, camillaBossRootMs:1000, camillaBossRootImmuneMs:1000, camillaZakoRootMs:1500,
     burstNeed:30, ultGainPerHit:0.5,
     ultBaseType:'bind', ultAddons:['lifesteal'], ultType:'camilla_crimson_web',
     camillaUltSecondsByLb:[3,4,5,6,7],
