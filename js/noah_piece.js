@@ -101,9 +101,13 @@
             '<h2>失われた楽園を完成させる</h2>' +
             '<p>ノアを打ち破り、欠片を集める。<br>9つの欠片が揃ったとき、ひとつの姿が完成する。</p>' +
           '</div>' +
+          // build1703: 「◯周目」は完成状況の行に入れると折り返して崩れるため、独立した1行にする
+          '<div class="noah-piece-lap-row" style="text-align:center;margin:6px 0 -6px;font:600 13px/1.2 \'Noto Serif JP\',serif;letter-spacing:.18em;color:#8c6c48;text-shadow:0 0 6px #fff,0 0 2px #fff;white-space:nowrap">' +
+            '<span style="font:600 10px/1 Cinzel,serif;letter-spacing:.24em;opacity:.8;margin-right:6px">LAP</span><b id="noah-piece-lap" style="font-weight:700">1周目</b>' +
+          '</div>' +
           '<div class="noah-piece-progress">' +
-            '<span class="noah-piece-progress-label"><b id="noah-piece-lap">1周目</b>　完成状況</span>' +
-            '<strong id="noah-piece-progress-now">0</strong><span>/ 9</span>' +
+            '<span class="noah-piece-progress-label" style="white-space:nowrap">完成状況</span>' +
+            '<strong id="noah-piece-progress-now">0</strong><span style="white-space:nowrap">/ 9</span>' +
           '</div>' +
           '<div class="noah-puzzle-frame">' +
             '<div class="noah-puzzle-grid" id="noah-puzzle-grid">' + pieceHtml + '</div>' +
@@ -113,7 +117,7 @@
         '<footer class="noah-piece-actions">' +
           '<button type="button" class="noah-piece-challenge" id="noah-piece-challenge" onclick="challengeNoahSpecialStage()">' +
             '<small>SPECIAL STAGE TICKET ×1</small>' +
-            'チケットを1枚消費して ノアに挑戦する' +
+            'ノアに挑戦する' +
           '</button>' +
           '<div class="noah-piece-complete" id="noah-piece-complete">楽園の欠片がすべて揃いました。</div>' +
         '</footer>' +
@@ -144,10 +148,11 @@
 
     const button = document.getElementById('noah-piece-challenge');
     if (button) {
-      button.disabled = ticket < 1;
+      // build1704: 元の仕様どおり、チケットが無くてもステージ選択（GIMMICK確認）までは開ける
+      button.disabled = false;
       const small = button.querySelector('small');
       if (small) {
-        small.textContent = ticket < 1 ? 'SPECIAL STAGE TICKET がありません' : 'SPECIAL STAGE TICKET ×1';
+        small.textContent = 'SPECIAL TICKET -ノア-　所持 ' + ticket + '枚';
       }
     }
 
