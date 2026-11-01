@@ -173,7 +173,7 @@
       if(db){
         const locked=!despairUnlocked() && mode!=='despair';
         db.classList.toggle('is-locked',locked);
-        db.innerHTML=locked?'<span aria-hidden="true">🔒</span>絶望':'絶望';
+        db.textContent='絶望';
         db.setAttribute('aria-disabled',locked?'true':'false');
         db.title=locked?'今週の残響の塔を20Fまで制覇すると挑戦できます':'';
       }
@@ -192,8 +192,7 @@
         .resonance-tower-mode-tabs[hidden]{display:none !important}
         .resonance-tower-mode-tabs button{min-width:64px;padding:5px 12px;border-radius:999px;border:1px solid rgba(176,138,60,.7);
           background:rgba(255,251,240,.82);color:#5b4527;font:600 12px/1.2 "Noto Serif JP",serif;letter-spacing:.12em;cursor:pointer}
-        .resonance-tower-mode-tabs button.is-locked{opacity:.62;filter:grayscale(.5);letter-spacing:.06em}
-        .resonance-tower-mode-tabs button.is-locked span{margin-right:3px;font-size:11px}
+        .resonance-tower-mode-tabs button.is-locked{opacity:.62;filter:grayscale(.5)}
         .resonance-tower-mode-tabs button.is-active{background:linear-gradient(180deg,#c9a45a,#9c7330);color:#fff;border-color:#9c7330;box-shadow:0 2px 8px rgba(120,90,40,.3)}
         .resonance-tower-mode-tabs button[data-tower-mode="despair"].is-active{background:linear-gradient(180deg,#7a1f3d,#3d0b1f);border-color:#a8305a;box-shadow:0 0 10px rgba(168,48,90,.55)}
         #screen-resonance-tower.is-despair .resonance-tower-haze{background:radial-gradient(ellipse at 50% 20%,rgba(60,8,28,.35),rgba(14,4,10,.72)) !important}
