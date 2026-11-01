@@ -1170,3 +1170,30 @@ html body #screen-resonance-tower .resonance-tower-floor-list .resonance-tower-f
 /* build1599: rule lines never break mid-line */
 #screen-resonance-tower .resonance-tower-oath p.tower-oath-lines{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:clamp(8px,calc((51vw - 16px) / 20.5),11px);letter-spacing:0;line-height:1.7;}
 #screen-resonance-tower .resonance-tower-oath p.tower-oath-lines span{display:block;white-space:nowrap;}
+
+
+/* build1715 — despair title overlap fix on narrow screens
+   「残響の塔（絶望）」だけ題字が長く、右上メニューラベルに被るため、
+   括弧部分を一段小さく表示できる前提で横幅と字間を調整する。 */
+#screen-resonance-tower .resonance-tower-intro h1 small{
+  display:inline-block;
+  font-size:.82em;
+  letter-spacing:.06em;
+}
+#screen-resonance-tower.is-despair .resonance-tower-intro{
+  width:58%;
+}
+#screen-resonance-tower.is-despair .resonance-tower-intro h1{
+  font-size:clamp(23px,6.6vw,34px);
+  letter-spacing:.08em;
+  white-space:normal;
+  line-height:1.18;
+}
+@media(max-width:365px){
+  #screen-resonance-tower.is-despair .resonance-tower-intro{width:60%;}
+  #screen-resonance-tower.is-despair .resonance-tower-intro h1{
+    font-size:clamp(21px,6.1vw,28px);
+    letter-spacing:.05em;
+  }
+  #screen-resonance-tower .resonance-tower-intro h1 small{font-size:.8em;}
+}

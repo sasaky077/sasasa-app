@@ -114,14 +114,7 @@
   // build1713: 絶望は「今週の通常の塔を20Fまで制覇した人」にだけ出現する腕試し。
   //  通常の塔の state を読むたびに記録し、未制覇の週は絶望タブを出さない（サーバー側でも begin を拒否する）。
   let normalCompletedThisWeek=false;
-  // build1714: 本番DBの despair_tower_test_access に許可されたテストアカウントのみ、
-  // クライアントの入口を表示する。本人確認と出撃可否の最終判定はDBの begin RPCが行う。
-  // localStorageは画面表示用のヒントであり、認可には利用しない。
-  const despairTester=()=>{
-    try { return String(localStorage.getItem('zukan_user_id')||'').trim().toLowerCase()==='user_o842edan'; }
-    catch(_){ return false; }
-  };
-  const despairUnlocked=()=>normalCompletedThisWeek || despairTester();
+  const despairUnlocked=()=>normalCompletedThisWeek;
   const M=()=>TOWER_MODES[mode]||TOWER_MODES.normal;
   const stageIdFor=(floor,m)=>(TOWER_MODES[m]||M()).stagePrefix+String(floor).padStart(2,'0');
   const $=id=>document.getElementById(id);
@@ -160,7 +153,11 @@
     const screen=$('screen-resonance-tower'); if(!screen) return;
     const m=M();
     screen.classList.toggle('is-despair',mode==='despair');
-    const h1=screen.querySelector('.resonance-tower-intro h1'); if(h1) h1.textContent=m.label;
+    const h1=screen.querySelector('.resonance-tower-intro h1');
+    if(h1){
+      if(mode==='despair') h1.innerHTML='残響の塔 <small>（絶望）</small>';
+      else h1.textContent=m.label;
+    }
     const en=screen.querySelector('.resonance-tower-english'); if(en) en.innerHTML=m.english;
     const lead=screen.querySelector('.resonance-tower-intro p'); if(lead) lead.innerHTML=m.lead;
     screen.querySelectorAll('[data-tower-mode]').forEach(b=>{
@@ -302,7 +299,7 @@
           const n=await rpcClient().rpc(TOWER_MODES.normal.rpcState);
           if(!n.error && n.data) normalCompletedThisWeek=!!n.data.completed;
         }catch(_){}
-        if(!despairUnlocked() && !(attempt&&attempt.mode==='despair')){
+        if(!normalCompletedThisWeek && !(attempt&&attempt.mode==='despair')){
           mode='normal'; progress=null; replayFloor=0;
           notify('今週の残響の塔を制覇すると「絶望」に挑戦できます');
           return refresh();
