@@ -274,6 +274,14 @@
     Object.keys(LEGACY_LABELS).forEach(id=>{
       if(!master[id]) master[id]={name:LEGACY_LABELS[id],img:'',desc:'進化素材。'};
     });
+    // build1711: レイドボスの欠片（〇〇の欠片／images/raid_piece_<キャラ名>.webp）。定義は raid_event.js に一本化。
+    if(typeof window.getRaidPieceItemMeta==='function'){
+      Object.keys(state.items||{}).forEach(id=>{
+        if(master[id]) return;
+        const pm=window.getRaidPieceItemMeta(id);
+        if(pm) master[id]=pm;
+      });
+    }
     return master;
   }
 

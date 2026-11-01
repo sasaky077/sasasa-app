@@ -2042,11 +2042,35 @@
   // ============================================================
   const RAID_BOSS_DEFS={
     // lobbyBg: ロビー全面の背景（背景＋ボスの絵を1枚で描いたもの）。bg_raid_01.webp と同サイズ・同構図で用意する。
-    sigma:{name:'テスト',line:'―これより、調査を開始する。',lobbyBg:'images/bg_raid_01.webp',lobbyImage:'images/raid_enemy_01.webp',banner:'images/raid_banner_sigma.webp',enemyId:'shooting_raid_test',pieceImage:'images/chara_50_panel.webp'},
+    sigma:{name:'テスト',line:'―これより、調査を開始する。',lobbyBg:'images/bg_raid_01.webp',lobbyImage:'images/raid_enemy_01.webp',banner:'images/raid_banner_sigma.webp',enemyId:'shooting_raid_test',pieceImage:'images/raid_piece_test.webp'},
     shien:{name:'シエン',line:'霞の果てで、待つ。',lobbyBg:'images/bg_raid_02.webp?v=1572',lobbyImage:'images/raid_enemy_02_battle.webp',banner:'images/raid_banner_shien.webp',enemyId:'shooting_raid_shien',pieceImage:'images/raid_piece_shien.webp'},
     camilla:{name:'カミラ',line:'骨になるまで、愛してあげる。',lobbyBg:'images/bg_raid_03.webp',lobbyImage:'images/raid_enemy_03_battle.webp',banner:'images/raid_banner_camilla.webp',enemyId:'shooting_raid_camilla',pieceImage:'images/raid_piece_camilla.webp'},
     // boss3:{name:'',line:'',lobbyBg:'images/bg_raid_03.webp',lobbyImage:'images/raid_enemy_03_battle.webp',enemyId:'shooting_raid_boss3',pieceImage:'images/raid_piece_boss3.webp'},
   };
+  // build1711: レイドボスの欠片。アイテム名は「〇〇の欠片」、画像は images/raid_piece_<キャラ名>.webp に統一。
+  //  サーバーのアイテムIDに piece（または fragment）とボス名（sigma/test・shien・camilla）が含まれていれば欠片として扱う。
+  //  アイテム画面（item_management.js）からも window.getRaidPieceItemMeta で同じ定義を使う。
+  const RAID_PIECE_KEYS=[
+    { re:/sigma|test/i,  key:'test',    name:'テスト' },
+    { re:/shien/i,       key:'shien',   name:'シエン' },
+    { re:/camilla/i,     key:'camilla', name:'カミラ' },
+  ];
+  function getRaidPieceItemMeta(itemId){
+    const id=String(itemId||'');
+    if(!/piece|fragment/i.test(id) || /noah/i.test(id)) return null;
+    const hit=RAID_PIECE_KEYS.find(k=>k.re.test(id));
+    if(!hit) return null;
+    return {
+      id, name:hit.name+'の欠片', shortName:hit.name+'の欠片',
+      img:'images/raid_piece_'+hit.key+'.webp',
+      desc:'デイリーレイドのSランク討伐で手に入る、'+hit.name+'の欠片。レイド画面で集めた数に応じて'+hit.name+'と交換できる。'
+    };
+  }
+  window.getRaidPieceItemMeta=getRaidPieceItemMeta;
+  function rewardItemMeta(itemId){
+    return RAID_REWARD_ITEM[itemId] || getRaidPieceItemMeta(itemId) || {name:itemId,img:''};
+  }
+
   function getBossDef(status){
     const key=status&&status.boss&&status.boss.key||'sigma';
     const def=RAID_BOSS_DEFS[key]||RAID_BOSS_DEFS.sigma;
@@ -2056,7 +2080,8 @@
     const b=status&&status.boss;
     if(!b||!b.piece_item_id) return;
     const def=getBossDef(status);
-    RAID_REWARD_ITEM[b.piece_item_id]={name:`${b.name||def.name}の欠片`,img:def.pieceImage||''};
+    const pm=getRaidPieceItemMeta(b.piece_item_id);
+    RAID_REWARD_ITEM[b.piece_item_id]={name:`${def.name}の欠片`,img:(pm&&pm.img)||def.pieceImage||''};
   }
   // build1576: ロビー表示時に前のボス（既定のSIGMA）が一瞬映らないよう、
   // その日のボスを端末に覚えておき、通信前に即反映する。分からない時は通信が終わるまで伏せる。
@@ -2194,7 +2219,7 @@
     document.head.appendChild(st);
   }
   function itemsText(items){
-    return (Array.isArray(items)?items:[]).map(it=>{const m=RAID_REWARD_ITEM[it.id]||{name:it.id};return `${m.name}×${fmt(it.qty)}`;}).join('・');
+    return (Array.isArray(items)?items:[]).map(it=>{const m=rewardItemMeta(it.id);return `${m.name}×${fmt(it.qty)}`;}).join('・');
   }
   function renderProgress(root,status){
     ensureProgressStyle();
@@ -2246,7 +2271,7 @@
   }
   function rewardItemsHtml(items){
     return (Array.isArray(items)?items:[]).map(it=>{
-      const m=RAID_REWARD_ITEM[it.id]||{name:it.id,img:''};
+      const m=rewardItemMeta(it.id);
       return `<li><span class="rw-icon">${m.img?`<img src="${esc(m.img)}" alt="" onerror="this.style.visibility='hidden'">`:''}</span><span class="rw-name">${esc(m.name)}</span><b>×${fmt(it.qty)}</b></li>`;
     }).join('');
   }
@@ -2355,7 +2380,7 @@
   function rewardChipsHtml(items,prevIds){
     const prev=prevIds||new Set();
     return (Array.isArray(items)?items:[]).map(it=>{
-      const m=RAID_REWARD_ITEM[it.id]||{name:it.id,img:''};
+      const m=rewardItemMeta(it.id);
       const add=prevIds&&!prev.has(it.id);
       return `<span class="rt-chip${add?' add':''}">${m.img?`<img src="${esc(m.img)}" alt="" onerror="this.style.visibility='hidden'">`:''}${esc(m.name)}<b>×${fmt(it.qty)}</b>${m.note?`<small>${esc(m.note)}</small>`:''}</span>`;
     }).join('');
