@@ -34621,7 +34621,7 @@
     style.id = 'shooting-hao-trigger-style-1497';
     style.textContent = `
       .shooting-hao-trigger{
-        position:absolute;left:0;top:0;width:88px;height:88px;z-index:44;pointer-events:none;
+        position:absolute;left:0;top:0;width:88px;height:88px;z-index:8;pointer-events:none;
         border:0;background:transparent;box-shadow:none;overflow:visible;
         font-family:'Noto Serif JP',serif;
         --hc:rgba(186,236,196,.92);      /* 線 */
@@ -34710,7 +34710,7 @@
 
       /* 起爆：紋章が光って弾ける */
       .shooting-hao-trigger-burst{position:absolute;left:0;top:0;width:var(--hb-size,120px);height:var(--hb-size,120px);
-        z-index:48;pointer-events:none;border-radius:50%}
+        z-index:8;pointer-events:none;border-radius:50%}
       .shooting-hao-trigger-burst::before,
       .shooting-hao-trigger-burst::after{content:'';position:absolute;inset:0;border-radius:50%;opacity:0}
       .shooting-hao-trigger-burst::before{background:radial-gradient(circle,rgba(255,255,240,1) 0 12%,var(--hb-c2) 32%,var(--hb-c) 52%,rgba(0,0,0,0) 72%);
