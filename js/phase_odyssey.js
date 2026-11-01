@@ -372,7 +372,7 @@
   const OBJECTIVE_INFO = Object.freeze({
     clear:   { name:'殲滅',     desc:'敵をすべて撃破する' },
     survive: { name:'生存',     desc:'敵が湧き続ける。制限時間まで生き残れば突破' },
-    elite:   { name:'精鋭',     desc:'HP5倍の大型の精鋭が混ざる。すべて撃破で突破' },
+    elite:   { name:'精鋭',     desc:'HP5倍の精鋭が混ざる。すべて撃破で突破' },
     speed:   { name:'速攻',     desc:'目標時間内に全滅させると、強化の★が上がる', bonus:true },
     nohit:   { name:'見切り',   desc:'被弾3回以内で全滅させると、強化の★が上がる', bonus:true },
     // build1692: まれに出る「死線」。弾がすべて即死弾。BOSSのHPは低め。突破で強化の★が上がる

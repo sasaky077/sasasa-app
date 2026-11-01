@@ -664,7 +664,7 @@
       nb.spawnIntervalMs = Math.round(Math.max(500, Number(nb.spawnIntervalMs || 1350) * 0.75));
       stage.mission = Object.freeze({ type: M.SURVIVE_TIME, targetSeconds: secs, text: secs + '秒間 生き残れ' });
     } else if (objective === 'elite') {
-      nb.odysseyElite = Object.freeze({ hpMul: 5, scale: 1.45, fireRateMul: 0.8 });
+      nb.odysseyElite = Object.freeze({ hpMul: 5, scale: 1, fireRateMul: 0.8 });
       stage.mission = Object.freeze({ type: M.DEFEAT_ALL, text: '精鋭を含む敵をすべて撃破' });
     } else if (objective === 'speed') {
       const total = Number(nb.totalEnemies || 6) + (anomaly === 'crowd' ? 3 : 0);

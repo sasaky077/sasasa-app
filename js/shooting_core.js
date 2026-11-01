@@ -1080,78 +1080,77 @@
     }
   }
   // build1684: SUB MISSION の進み具合（生存・速攻は残り秒数、見切りは被弾数）を画面上部に常時表示
+  // build1722: COMBOの反対側に、必要な進行数値だけを置く。
   function updatePhaseOdysseySubMissionChip(v, now, running) {
     const arena = document.getElementById('shooting-arena');
     if (!arena || !state) return;
-    const kind = v.objective;
     let chip = arena.querySelector('.po-submission-chip');
-    if (!['survive', 'speed', 'nohit'].includes(kind) || state.ended) { if (chip) chip.remove(); return; }
+    if (state.ended) { if(chip) chip.remove(); return; }
     if (!chip) {
-      chip = document.createElement('div');
-      chip.className = 'po-submission-chip';
-      chip.setAttribute('aria-hidden', 'true');
-      chip.innerHTML = '<span>SUB MISSION</span><b></b><em></em>';
-      arena.appendChild(chip);
+      chip = document.createElement('div'); chip.className='po-submission-chip';
+      chip.setAttribute('aria-hidden','true');
+      chip.innerHTML='<span></span><b></b><em></em>';arena.appendChild(chip);
     }
-    const label = PO_OBJECTIVE_LABEL[kind] || '';
-    let main = '', note = '', stateName = 'run';
-    if (kind === 'survive') {
-      const left = running || state.countdown ? getBattleTimeLeft(now) : 0;
-      const sec = state.countdown ? Number(v.seconds || 20) : Math.max(0, left);
-      main = sec.toFixed(1);
-      note = '秒 生き残れ';
-      if (sec <= 5 && !state.countdown) stateName = 'hurry';
-      if (state.missionComplete || state.finishing) { main = 'CLEAR'; note = ''; stateName = 'done'; }
-    } else if (kind === 'speed') {
-      const limit = Number(v.seconds || 30);
-      const elapsed = state.countdown ? 0 : Math.max(0, ((state.poClearAt || now) - Number(state.startedAt || now)) / 1000);
-      const left = limit - elapsed;
-      if (state.poClearAt) {
-        main = left >= 0 ? '達成' : '失敗'; note = left >= 0 ? `${elapsed.toFixed(1)}秒でクリア` : ''; stateName = left >= 0 ? 'done' : 'fail';
-      } else if (left > 0) {
-        main = left.toFixed(1); note = '秒以内に全滅'; if (left <= 5) stateName = 'hurry';
-      } else {
-        main = '失敗'; note = '時間切れ（突破はできる）'; stateName = 'fail';
-      }
-    } else {
-      const hits = Number(state.totalHitsTaken || 0), max = Number(v.maxHits ?? 3);
-      main = `${Math.min(hits, 99)} / ${max}`; note = '被弾数';
-      if (hits > max) { main = '失敗'; note = `被弾${hits}回`; stateName = 'fail'; }
-      else if (hits === max) stateName = 'hurry';
+    const kind=v.objective, total=Math.max(0, Number(getNormalBattleConfig()?.totalEnemies || 0));
+    const defeated=Math.max(0,Number(state.normalDefeated||0));
+    let label=PO_OBJECTIVE_LABEL[kind]||'MISSION',main='',note='',stateName='run';
+    const count= total>0 ? defeated+' / '+total : '全滅';
+    if(kind==='survive') {
+      const sec=state.countdown?Number(v.seconds||20):Math.max(0,getBattleTimeLeft(now));
+      main=state.missionComplete?'CLEAR':sec.toFixed(1)+'秒';
+      note=state.missionComplete?'':'生存';
+      if(sec<=5 && !state.countdown)stateName='hurry';
+    } else if(kind==='speed') {
+      const limit=Number(v.seconds||30);
+      const elapsed=state.countdown?0:Math.max(0,((state.poClearAt||now)-Number(state.startedAt||now))/1000);
+      const remain=limit-elapsed;
+      main=state.poClearAt ? (remain>=0?'★達成':count) : (remain>0?remain.toFixed(1)+'秒':count);
+      note=state.poClearAt ? (remain>=0?'速攻成功':'★失敗') : (remain>0?'★条件':'★失敗');
+      if(remain<=5 && remain>0 && !state.poClearAt) stateName='hurry';
+      if(remain<=0)stateName='fail';
+    } else if(kind==='nohit') {
+      const hits=Number(state.totalHitsTaken||0),max=Number(v.maxHits??3);
+      main=hits>max?count:hits+' / '+max;
+      note=hits>max?'★失敗':'被弾';
+      if(hits>max)stateName='fail';else if(hits===max)stateName='hurry';
+    } else if(kind==='lethal') {main='撃破';note='即死弾注意';}
+    else {main=count;note=kind==='elite'?'精鋭含む':'敵撃破';}
+    const signature=[label,main,note,stateName].join('|');
+    if(chip.dataset.text===signature)return;
+    chip.dataset.text=signature;chip.dataset.state=stateName;
+    chip.querySelector('span').textContent=label;
+    chip.querySelector('b').textContent=main;
+    chip.querySelector('em').textContent=note;
+  }
+  function syncPhaseOdysseyMissionDetails(menu) {
+    if(!menu)return;
+    let detail=menu.querySelector('.po-pause-mission-details');
+    if(!isPhaseOdysseyStage()) {if(detail)detail.remove();return;}
+    const v=getPhaseOdysseyVariant();
+    if(!v){if(detail)detail.remove();return;}
+    if(!detail){detail=document.createElement('section');detail.className='po-pause-mission-details';
+      const anchor=menu.querySelector('.shooting-pause-divider');
+      if(anchor)anchor.insertAdjacentElement('afterend',detail);
+      else menu.querySelector('.shooting-pause-card')?.prepend(detail);
     }
-    const text = label + '|' + main + '|' + note + '|' + stateName;
-    if (chip.dataset.text === text) return;
-    chip.dataset.text = text;
-    chip.dataset.state = stateName;
-    chip.querySelector('span').textContent = 'SUB MISSION　' + label;
-    chip.querySelector('b').textContent = main;
-    chip.querySelector('em').textContent = note;
+    const descriptions={clear:'出現する敵をすべて撃破',elite:'HP5倍の精鋭を含むすべての敵を撃破',
+      survive:'制限時間まで生き残ればクリア',speed:'敵をすべて撃破。制限時間内なら強化の★が上がる',
+      nohit:'敵をすべて撃破。被弾3回以内なら強化の★が上がる',lethal:'すべての弾が即死弾。ボス撃破で★が上がる'};
+    const anomalyDesc={blackout:'周期的に暗転',haste:'敵弾1.25倍速',reverse:'左右操作が反転',slow:'移動速度75%',crowd:'敵が増加',burst:'撃破時に弾を放出'};
+    const title=PO_OBJECTIVE_LABEL[v.objective]||'MISSION';
+    // 文字列は固定定義のみ。任意HTMLを挿入しない。
+    detail.replaceChildren();
+    const heading=document.createElement('strong');heading.textContent='MISSION詳細 / '+title;
+    const desc=document.createElement('p');desc.textContent=descriptions[v.objective]||'敵を撃破';
+    detail.append(heading,desc);
+    if(v.anomaly){const anomaly=document.createElement('p');anomaly.textContent='異常：'+(PO_ANOMALY_LABEL[v.anomaly]||v.anomaly)+' — '+(anomalyDesc[v.anomaly]||'');detail.append(anomaly);}
   }
   function isPhaseOdysseyBlackoutActive() {
     return !!(state && state.poBlackout && state.poBlackout.until && getPhaseOdysseyAnomaly() === 'blackout');
   }
   function showPhaseOdysseyVarietyBanner(v) {
-    const arena = document.getElementById('shooting-arena');
-    if (!arena || !v) return;
-    arena.querySelectorAll('.po-variety-banner').forEach(el => el.remove());
-    const el = document.createElement('div');
-    el.className = 'po-variety-banner' + (v.anomaly ? ' has-anomaly' : '');
-    el.setAttribute('role', 'status');
-    // build1686: バナー用の短い説明（ミッション帯の文言は長くて切れるため）
-    const mission = ({
-      clear: '敵をすべて撃破',
-      survive: `${Number(v.seconds || 20)}秒間 生き残れ`,
-      elite: 'HP5倍の精鋭を含めて全滅',
-      speed: `${Number(v.seconds || 30)}秒以内に全滅で★UP`,
-      nohit: `被弾${Number(v.maxHits ?? 3)}回以内で★UP`,
-      lethal: '弾はすべて即死弾。撃破で★UP',
-    })[v.objective] || ((state && state.mission && state.mission.text) || '');
-    el.innerHTML = `<div class="po-vb-row"><span class="po-vb-kicker">SUB MISSION</span><b>${PO_OBJECTIVE_LABEL[v.objective] || '殲滅'}</b><small>${mission}</small></div>` +
-      (v.anomaly ? `<div class="po-vb-row is-anomaly"><span class="po-vb-kicker">異常</span><b>${PO_ANOMALY_LABEL[v.anomaly] || ''}</b><small>${PO_ANOMALY_DESC[v.anomaly] || ''}</small></div>` : '');
-    arena.appendChild(el);
-    // カウントダウン中は開始まで表示（hidePhaseOdysseyVarietyBanner）。保険として最長9秒で消す
-    setTimeout(() => { if (el.isConnected) el.classList.add('out'); }, 9000);
-    setTimeout(() => { if (el.isConnected) el.remove(); }, 9400);
+    // build1722: 大型バナーは廃止。説明はPAUSEメニューに集約。
+    document.querySelectorAll('#shooting-arena .po-variety-banner').forEach(el=>el.remove());
   }
   function hidePhaseOdysseyVarietyBanner() {
     document.querySelectorAll('#shooting-arena .po-variety-banner').forEach(el => {
@@ -5838,7 +5837,7 @@
       badge = document.createElement('em');
       badge.id = 'shooting-combo-bonus';
       badge.setAttribute('aria-label', 'コンボによるダメージ上昇');
-      badge.style.cssText = 'display:block;font:700 11px/1.1 "Cinzel","Noto Serif JP",serif;font-style:normal;letter-spacing:.06em;color:#b0782a;text-shadow:0 0 4px #fff,0 0 2px #fff;text-align:right;margin-top:1px;pointer-events:none';
+      badge.style.cssText = 'display:block;font:700 11px/1.1 "Cinzel","Noto Serif JP",serif;font-style:normal;letter-spacing:.06em;color:#fff1ce;text-shadow:0 1px 2px rgba(0,0,0,.65);text-align:right;margin-top:2px;padding:3px 7px;border:1px solid rgba(217,181,99,.68);border-radius:3px;background:rgba(37,28,25,.82);pointer-events:none';
       combo.appendChild(badge);
     }
     const pct = Math.round((getHitComboDamageMultiplier() - 1) * 100);
@@ -13933,10 +13932,15 @@
         enemy.hp = Math.round(Number(enemy.hp || 1) * mul);
         enemy.hpMax = Math.round(Number(enemy.hpMax || enemy.hp) * mul);
         enemy.poElite = true;
-        const sc = Math.max(1, Number(odysseyElite.scale || 1.45));
+        const sc = Math.max(1, Number(odysseyElite.scale || 1));
         enemy.baseDisplayScale = Number(enemy.baseDisplayScale || getNormalEnemyBaseDisplayScale(enemy.def || def) || 1) * sc;
         enemy.displayScale = Number(enemy.displayScale || 1) * sc;
-        if (enemy.el) { enemy.el.style.setProperty('--enemy-scale', String(enemy.displayScale)); enemy.el.classList.add('po-elite'); }
+        if (enemy.el) {
+          enemy.el.style.setProperty('--enemy-scale', String(enemy.displayScale));
+          enemy.el.classList.add('po-elite');
+        }
+        if (enemy.hpEl) enemy.hpEl.classList.add('po-elite-hp');
+        if (enemy.elementEl) enemy.elementEl.classList.add('po-elite-icon');
       }
       state.normalEnemies.push(enemy);
       state.normalSpawned++;
@@ -28897,6 +28901,7 @@
     if (exitAction) exitAction.hidden = isPhaseOdysseyStage();
     const restartAction = menu.querySelector('.shooting-pause-restart');
     if (restartAction) restartAction.hidden = !canRestartShootingStageFromPause();
+    syncPhaseOdysseyMissionDetails(menu);
   }
 
   function ensureShootingPauseMenu() {

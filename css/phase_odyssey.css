@@ -1023,3 +1023,21 @@ html body #shooting-event-root .shooting-score.is-po-floor[data-po-len="11"] .sh
 #phase-odyssey-layer .po-rank-rule{margin-top:8px;flex:0 0 auto;}
 #phase-odyssey-layer .po-rank-tab:focus{outline:none;}
 #phase-odyssey-layer .po-rank-list{position:relative;}
+
+/* build1722: SUB MISSION compact HUD / COMBO opposite */
+#shooting-event-root .po-submission-chip{
+ left:10px!important;right:auto!important;top:46px!important;transform:none!important;
+ width:max-content;max-width:min(42vw,170px);box-sizing:border-box;
+ flex-direction:column;align-items:flex-start;gap:3px;white-space:normal;
+ padding:6px 8px 7px;border-radius:4px;background:rgba(24,24,34,.84);
+}
+#shooting-event-root .po-submission-chip span{font-size:9px;line-height:1.2;}
+#shooting-event-root .po-submission-chip b{min-width:0;text-align:left;font-size:18px;line-height:1.12;white-space:nowrap;}
+#shooting-event-root .po-submission-chip em{font-size:10px;line-height:1.2;}
+#shooting-event-root .po-variety-banner{display:none!important;}
+#shooting-event-root .po-pause-mission-details{
+ padding:10px 12px;margin:4px 0 10px;border:1px solid rgba(202,176,117,.6);
+ background:rgba(57,46,42,.12);color:inherit;text-align:left;
+}
+#shooting-event-root .po-pause-mission-details strong{font-size:13px;line-height:1.5;}
+#shooting-event-root .po-pause-mission-details p{margin:5px 0 0;font-size:11px;line-height:1.5;}
