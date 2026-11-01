@@ -97,6 +97,26 @@
   }
 
   let selected=1, progress=null, busy=false, focusBeforePanel=null, attempt=null, finishPromise=null, replayFloor=0;
+  // build1712: 残響の塔（絶望）。画面・封印・練習・中断復帰の仕組みは通常の塔と共通で、
+  //  呼ぶRPCとステージIDだけを切り替える。進行・封印はサーバー側で塔ごとに別管理。報酬は20F踏破の称号のみ。
+  const TOWER_MODES=Object.freeze({
+    normal:Object.freeze({key:'normal',label:'残響の塔',english:'— E C H O &nbsp; T O W E R —',kicker:'ECHO TOWER',
+      stagePrefix:'shooting_tower_',rpcState:'get_resonance_tower_state',rpcBegin:'begin_resonance_tower_run',
+      rpcFinish:'finish_resonance_tower_run',rpcClaim:'claim_resonance_tower_rewards',
+      lead:'一度登った者の力は、<br>次の層には届かない。'}),
+    despair:Object.freeze({key:'despair',label:'残響の塔（絶望）',english:'— D E S P A I R &nbsp; T O W E R —',kicker:'DESPAIR TOWER',
+      stagePrefix:'shooting_despair_tower_',rpcState:'get_despair_tower_state',rpcBegin:'begin_despair_tower_run',
+      rpcFinish:'finish_despair_tower_run',rpcClaim:'',
+      lead:'すべての弾が、死を告げる。<br>一度触れれば、そこで終わる。'})
+  });
+  const DESPAIR_TITLE_ID='despair_conqueror';
+  let mode='normal';
+  // build1713: 絶望は「今週の通常の塔を20Fまで制覇した人」にだけ出現する腕試し。
+  //  通常の塔の state を読むたびに記録し、未制覇の週は絶望タブを出さない（サーバー側でも begin を拒否する）。
+  let normalCompletedThisWeek=false;
+  const despairUnlocked=()=>normalCompletedThisWeek;
+  const M=()=>TOWER_MODES[mode]||TOWER_MODES.normal;
+  const stageIdFor=(floor,m)=>(TOWER_MODES[m]||M()).stagePrefix+String(floor).padStart(2,'0');
   const $=id=>document.getElementById(id);
   function notify(message){
     if(typeof window.showToast==='function') window.showToast(message);
@@ -126,10 +146,73 @@
   }
   function statusText(){
     if(!progress) return '進行情報を取得できません';
-    if(progress.completed) return '今週の塔を完全制覇しました';
+    if(progress.completed) return mode==='despair'?'今週の絶望を踏破しました':'今週の塔を完全制覇しました。「絶望」が出現しています';
     return '今週の到達：'+String(Math.max(0,Number(progress.highestCleared||0))).padStart(2,'0')+'F / 次の挑戦 '+String(currentFloor()).padStart(2,'0')+'F';
   }
+  function renderModeChrome(){
+    const screen=$('screen-resonance-tower'); if(!screen) return;
+    const m=M();
+    screen.classList.toggle('is-despair',mode==='despair');
+    const h1=screen.querySelector('.resonance-tower-intro h1'); if(h1) h1.textContent=m.label;
+    const en=screen.querySelector('.resonance-tower-english'); if(en) en.innerHTML=m.english;
+    const lead=screen.querySelector('.resonance-tower-intro p'); if(lead) lead.innerHTML=m.lead;
+    screen.querySelectorAll('[data-tower-mode]').forEach(b=>{
+      const on=b.dataset.towerMode===mode;
+      b.classList.toggle('is-active',on); b.setAttribute('aria-selected',on?'true':'false');
+    });
+    // 通常の塔を今週制覇するまで、絶望の切り替え自体を出さない
+    const tabs=screen.querySelector('.resonance-tower-mode-tabs');
+    if(tabs) tabs.hidden=!despairUnlocked() && mode!=='despair';
+    const oath=screen.querySelector('.tower-oath-lines');
+    if(oath) oath.innerHTML=mode==='despair'
+      ? '<span>敵の弾は、すべて即死弾。</span><span>封印は通常の塔とは別に数える。</span><span>踏破するたび称号のランクUP。</span>'
+      : '<span>初回クリアで使用したキャラは、</span><span>その週の未クリア階層では封印。</span><span>クリア済みの階層は自由編成でプレイ可能。</span>';
+  }
+  function ensureModeTabs(){
+    const screen=$('screen-resonance-tower'); if(!screen || screen.querySelector('.resonance-tower-mode-tabs')) return;
+    if(!document.getElementById('despair-tower-style-v1712')){
+      const st=document.createElement('style'); st.id='despair-tower-style-v1712';
+      st.textContent=`
+        .resonance-tower-mode-tabs{display:flex;justify-content:flex-start;gap:6px;margin:8px 0 0;position:relative;z-index:2}
+        .resonance-tower-mode-tabs[hidden]{display:none !important}
+        .resonance-tower-mode-tabs button{min-width:64px;padding:5px 12px;border-radius:999px;border:1px solid rgba(176,138,60,.7);
+          background:rgba(255,251,240,.82);color:#5b4527;font:600 12px/1.2 "Noto Serif JP",serif;letter-spacing:.12em;cursor:pointer}
+        .resonance-tower-mode-tabs button.is-active{background:linear-gradient(180deg,#c9a45a,#9c7330);color:#fff;border-color:#9c7330;box-shadow:0 2px 8px rgba(120,90,40,.3)}
+        .resonance-tower-mode-tabs button[data-tower-mode="despair"].is-active{background:linear-gradient(180deg,#7a1f3d,#3d0b1f);border-color:#a8305a;box-shadow:0 0 10px rgba(168,48,90,.55)}
+        #screen-resonance-tower.is-despair .resonance-tower-haze{background:radial-gradient(ellipse at 50% 20%,rgba(60,8,28,.35),rgba(14,4,10,.72)) !important}
+        #screen-resonance-tower.is-despair .resonance-tower-intro h1,
+        #screen-resonance-tower.is-despair .resonance-tower-english{color:#f3d6e0 !important;text-shadow:0 0 10px rgba(168,48,90,.8),0 0 2px #000 !important}
+        #screen-resonance-tower.is-despair .resonance-tower-intro p{color:#f6e4ea !important;text-shadow:0 0 6px #000 !important}
+        #screen-resonance-tower.is-despair .resonance-tower-floor.is-current{box-shadow:0 0 0 2px rgba(168,48,90,.85),0 0 14px rgba(168,48,90,.6) !important}
+        .resonance-tower-title-reward{display:flex;align-items:center;gap:10px;margin:10px 0 4px;padding:10px 12px;border:1px solid rgba(168,48,90,.55);
+          border-radius:8px;background:linear-gradient(180deg,rgba(60,8,28,.08),rgba(60,8,28,.16))}
+        .resonance-tower-title-reward b{font:700 15px/1.3 "Noto Serif JP",serif;color:#5a1530;letter-spacing:.06em}
+        .resonance-tower-title-reward small{display:block;font-size:11px;color:#6b5132}
+        .resonance-tower-title-reward .rt-floor{font:700 12px/1 Cinzel,serif;color:#a8305a;white-space:nowrap}
+      `;
+      document.head.appendChild(st);
+    }
+    const tabs=document.createElement('div');
+    tabs.className='resonance-tower-mode-tabs'; tabs.setAttribute('role','tablist'); tabs.setAttribute('aria-label','塔の種類');
+    tabs.innerHTML='<button type="button" role="tab" data-tower-mode="normal">通常</button><button type="button" role="tab" data-tower-mode="despair">絶望</button>';
+    // 右上のメニューと重ならないよう、左側のタイトル欄（説明文の下）に置く
+    const intro=screen.querySelector('.resonance-tower-intro');
+    if(intro) intro.appendChild(tabs);
+    else (screen.querySelector('.resonance-tower-composition')||screen).prepend(tabs);
+    tabs.addEventListener('click',e=>{
+      const b=e.target.closest('button[data-tower-mode]'); if(!b||busy) return;
+      setMode(b.dataset.towerMode);
+    });
+  }
+  function setMode(next){
+    next=TOWER_MODES[next]?next:'normal';
+    if(next==='despair' && !despairUnlocked()){ notify('今週の残響の塔を20Fまで制覇すると「絶望」が出現します'); return; }
+    if(next===mode) return;
+    mode=next; progress=null; replayFloor=0; attempt=null; finishPromise=null; selected=1;
+    closePanel(); render(); void refresh();
+  }
   function render(){
+    renderModeChrome();
     const list=$('resonance-tower-floor-list'); if(!list) return;
     list.textContent='';
     for(let n=TOWER_FLOORS;n>=1;n--){
@@ -195,12 +278,29 @@
   }
   async function refresh(){
     try{
-      // Already-cleared floors from earlier builds are credited once, server-side.
-      const claim=await rpcClient().rpc('claim_resonance_tower_rewards');
-      if(claim.error) console.warn('[tower] reward catch-up pending:',claim.error);
-      const {data,error}=await rpcClient().rpc('get_resonance_tower_state');
+      const m=M(), requestedMode=mode;
+      // Already-cleared floors from earlier builds are credited once, server-side.（通常の塔のみ）
+      if(m.rpcClaim){
+        const claim=await rpcClient().rpc(m.rpcClaim);
+        if(claim.error) console.warn('[tower] reward catch-up pending:',claim.error);
+      }
+      const {data,error}=await rpcClient().rpc(m.rpcState);
+      if(requestedMode!==mode) return !!progress; // 通信中に塔を切り替えた
       if(error) throw error;
       if(!data || !Array.isArray(data.clearedFloors)||!Array.isArray(data.sealedCharacterIds)) throw new Error('塔の進行データが不正です');
+      if(mode==='normal') normalCompletedThisWeek=!!data.completed;
+      else{
+        // 絶望を表示中でも、週が替わって通常の塔が未制覇に戻っていたら通常へ戻す
+        try{
+          const n=await rpcClient().rpc(TOWER_MODES.normal.rpcState);
+          if(!n.error && n.data) normalCompletedThisWeek=!!n.data.completed;
+        }catch(_){}
+        if(!normalCompletedThisWeek && !(attempt&&attempt.mode==='despair')){
+          mode='normal'; progress=null; replayFloor=0;
+          notify('今週の残響の塔を制覇すると「絶望」に挑戦できます');
+          return refresh();
+        }
+      }
       progress=data;
       syncTowerWallet();
       selected=progress.completed?TOWER_FLOORS:currentFloor();
@@ -221,6 +321,7 @@
       return descriptions[number-1]+'\n所持キャラから'+partyRangeText(number)+'を編成。封印中 '+used+'体。';
     }
     if(kind==='ranking') return 'ランキングは初版では未公開です。階層進行と週次封印はサーバーで保存されます。';
+    if(mode==='despair') return '残響の塔（絶望）は、今週の残響の塔を制覇した人だけが挑める腕試しです。\n報酬は20Fを踏破したときの称号「絶望を超えし者」だけ。毎週日曜12:00に進行と封印がリセットされ、また踏破すると称号のランクが上がります（I→II→III…）。';
     return '各階層の初回突破報酬です。\n毎週日曜12:00にリセットされます。';
   }
   function openPanel(kind,number){
@@ -231,7 +332,15 @@
     desc.textContent=panelText(kind,number);
     let rewardList=layer.querySelector('.resonance-tower-reward-list');
     if(rewardList)rewardList.remove();
-    if(kind==='rewards'||kind==='floor'){
+    layer.querySelector('.resonance-tower-title-reward')?.remove();
+    if(mode==='despair'){
+      // 絶望：報酬は20F踏破の称号のみ
+      if(kind==='rewards'||(kind==='floor'&&number===TOWER_FLOORS)){
+        const box=document.createElement('div'); box.className='resonance-tower-title-reward resonance-tower-reward-list';
+        box.innerHTML='<span class="rt-floor">20F</span><span><b>称号「絶望を超えし者」</b><small>踏破した回数がランクになる（I・II・III…）。3回・5回・10回で称号の見た目が変わる。プロフィール・フレンド・ランキングに表示できる。</small></span>';
+        desc.insertAdjacentElement('afterend',box);
+      }
+    }else if(kind==='rewards'||kind==='floor'){
       rewardList=createTowerRewardList(kind==='floor'?[number]:Array.from({length:TOWER_FLOORS},(_,i)=>i+1));
       desc.insertAdjacentElement('afterend',rewardList);
     }
@@ -242,7 +351,7 @@
     layer.classList.toggle('is-reward-overview',kind==='rewards');
     layer.classList.toggle('is-floor-challenge',kind==='floor');
     layer.classList.toggle('is-floor-replay',kind==='floor'&&cleared(number));
-    kicker.textContent=kind==='floor'?(cleared(number)?'ECHO TOWER / REPLAY':'ECHO TOWER / FLOOR'):'ECHO TOWER';
+    kicker.textContent=kind==='floor'?(cleared(number)?M().kicker+' / REPLAY':M().kicker+' / FLOOR'):M().kicker;
     const foot=layer.querySelector('.resonance-tower-panel-foot');
     if(foot && kind==='floor') {
       foot.hidden=false;
@@ -271,7 +380,7 @@
     replayFloor=cleared(floor)?Number(floor):0;
     window.__shootingReturnContext={type:'resonanceTower'};
     closePanel();
-    try{window.openShootingEvent({stageId:'shooting_tower_'+String(floor).padStart(2,'0')});}
+    try{window.openShootingEvent({stageId:stageIdFor(floor)});}
     catch(err){replayFloor=0;window.__shootingReturnContext=null;console.error('[tower] battle open failed',err);notify('戦闘画面を開けませんでした');}
   }
   // 出撃前に封印対象を示す。表示/キャンセルの段階ではRPCも進行データも更新しない。
@@ -293,10 +402,10 @@
       overlay.setAttribute('role','presentation');
       overlay.innerHTML=`
         <section class="resonance-tower-seal-card" role="dialog" aria-modal="true" aria-labelledby="tower-seal-title" aria-describedby="tower-seal-message">
-          <div class="resonance-tower-seal-kicker">ECHO TOWER / SORTIE</div>
+          <div class="resonance-tower-seal-kicker">${M().kicker} / SORTIE</div>
           <h2 id="tower-seal-title">封印対象の確認</h2>
           <div class="resonance-tower-seal-floor"></div>
-          <p id="tower-seal-message">この編成で勝利すると、以下の仲間は<strong>今週の残響の塔で封印</strong>されます。</p>
+          <p id="tower-seal-message">この編成で勝利すると、以下の仲間は<strong>今週の${M().label}で封印</strong>されます。</p>
           <div class="resonance-tower-seal-party" aria-label="勝利時の封印対象キャラクター"></div>
           <p class="resonance-tower-seal-note">敗北・中断した場合は封印されません。<br>封印が確定するのはクリア時のみです。</p>
           <div class="resonance-tower-seal-actions">
@@ -350,13 +459,13 @@
       notify(replay?'所持キャラを'+partyRangeText(floor)+'選択してください':'封印されていないキャラを'+partyRangeText(floor)+'選択してください');return false;
     }
     // 練習はサーバー上の週次挑戦に一切触らない。
-    if(replay){attempt={replay:true,floor,party};finishPromise=null;return true;}
+    if(replay){attempt={replay:true,floor,party,mode};finishPromise=null;return true;}
     busy=true;
     try{
-      const {data,error}=await rpcClient().rpc('begin_resonance_tower_run',{p_floor:floor,p_party_ids:party});
+      const {data,error}=await rpcClient().rpc(M().rpcBegin,{p_floor:floor,p_party_ids:party});
       if(error) throw error;
       if(!data?.token) throw new Error('出撃トークンが発行されませんでした');
-      attempt={token:data.token,floor,party};finishPromise=null;
+      attempt={token:data.token,floor,party,mode};finishPromise=null;
       return true;
     }catch(err){
       console.warn('[tower] begin rejected',err);
@@ -374,11 +483,38 @@
     }
     finishPromise=(async()=>{
       if(!attempt?.token) throw new Error('出撃記録が見つかりません');
-      const {data,error}=await rpcClient().rpc('finish_resonance_tower_run',{p_token:attempt.token,p_win:!!win});
+      const runMode=attempt.mode||mode;
+      const {data,error}=await rpcClient().rpc((TOWER_MODES[runMode]||M()).rpcFinish,{p_token:attempt.token,p_win:!!win});
       if(error) throw error;
-      if(data?.state) progress=data.state;
+      if(data?.state && runMode===mode) progress=data.state;
+      if(runMode==='normal' && data?.state){
+        const was=normalCompletedThisWeek;
+        normalCompletedThisWeek=!!data.state.completed;
+        if(!was && normalCompletedThisWeek) setTimeout(()=>notify('残響の塔を制覇！ 塔の画面に「絶望」が出現しました'),2600);
+      }
       syncTowerWallet();
       attempt=null;render();
+      // 絶望：報酬は20F踏破の称号のみ（サーバーが付与した時だけ表示）
+      if(runMode==='despair'){
+        if(win){
+          const sealed=(data?.sealedCharacterIds||[]).length;
+          const granted=data?.titleGranted===true||data?.title_granted===true||String(data?.titleId||data?.title_id||'')===DESPAIR_TITLE_ID;
+          if(granted){
+            const lv=Math.max(1,Math.floor(Number(data?.titleLevel??data?.title_level??data?.titleCount??1))||1);
+            let label='絶望を超えし者';
+            try{
+              if(window.ZeraphiaTitles){
+                if(typeof window.ZeraphiaTitles.notifyAcquired==='function') window.ZeraphiaTitles.notifyAcquired(DESPAIR_TITLE_ID,lv);
+                if(typeof window.ZeraphiaTitles.labelOf==='function') label=window.ZeraphiaTitles.labelOf(DESPAIR_TITLE_ID,lv);
+              }
+            }catch(_){}
+            notify(lv>1 ? ('絶望を踏破！ 称号のランクが上がりました：「'+label+'」') : ('絶望を踏破！ 称号「'+label+'」を獲得しました。'));
+          }else{
+            notify('絶望・第'+data.floor+'層突破！ 使用した'+sealed+'体を今週封印しました');
+          }
+        }
+        return {towerConfirmed:true,firstClearClaimed:false,firstClearAmount:0,highScore:0};
+      }
       // build1605: 聖樹の息吹が奉納待ちに入るので神聖樹の表示も更新
       if(win){try{window.ShinjuProgress&&typeof window.ShinjuProgress.refreshFromServer==='function'&&window.ShinjuProgress.refreshFromServer();}catch(_){}}
       if(win){const sealed=(data?.sealedCharacterIds||[]).length;
@@ -417,9 +553,10 @@
   //  ②勝利してもトークンが無く塔の進行・報酬・封印が確定しない、の2点が起きていた。
   function getResumeAttempt(){
     if(!attempt) return null;
+    const m=attempt.mode||mode;
     return attempt.replay
-      ? {replay:true,floor:Number(attempt.floor),party:(attempt.party||[]).map(Number)}
-      : {token:String(attempt.token||''),floor:Number(attempt.floor),party:(attempt.party||[]).map(Number)};
+      ? {replay:true,floor:Number(attempt.floor),party:(attempt.party||[]).map(Number),mode:m}
+      : {token:String(attempt.token||''),floor:Number(attempt.floor),party:(attempt.party||[]).map(Number),mode:m};
   }
   function validSaved(saved,floor){
     return !!(saved && Number(saved.floor)===Number(floor) && Array.isArray(saved.party) &&
@@ -428,17 +565,20 @@
   async function restoreAttempt(saved,floor){
     floor=Number(floor);
     if(!validSaved(saved,floor)) return false;
+    // build1712: 中断した塔（通常／絶望）へ切り替えてから復元する
+    const savedMode=TOWER_MODES[saved.mode]?saved.mode:'normal';
+    if(savedMode!==mode){ mode=savedMode; progress=null; }
     // 封印・解放の判定にサーバーの進行データが必要（起動直後は未取得）
     if(!progress && !(await refresh())) return false;
     if(saved.replay){
       if(!cleared(floor)) return false;
       replayFloor=floor;
-      attempt={replay:true,floor,party:saved.party.map(Number)};
+      attempt={replay:true,floor,party:saved.party.map(Number),mode};
     }else{
       // 出撃済みの挑戦は、まだ未突破の現在階層であるはず。突破済み＝既に確定した挑戦なので復帰しない。
       if(!available(floor)) return false;
       replayFloor=0;
-      attempt={token:String(saved.token),floor,party:saved.party.map(Number)};
+      attempt={token:String(saved.token),floor,party:saved.party.map(Number),mode};
     }
     finishPromise=null;
     return true;
@@ -447,14 +587,17 @@
   async function abandonAttempt(saved){
     if(!saved || saved.replay || !String(saved.token||'')) return;
     try{
-      const {data,error}=await rpcClient().rpc('finish_resonance_tower_run',{p_token:String(saved.token),p_win:false});
+      const savedMode=TOWER_MODES[saved.mode]?saved.mode:'normal';
+      const {data,error}=await rpcClient().rpc(TOWER_MODES[savedMode].rpcFinish,{p_token:String(saved.token),p_win:false});
       if(error) throw error;
-      if(data?.state) progress=data.state;
+      if(data?.state && savedMode===mode) progress=data.state;
     }catch(err){ console.warn('[tower] abandon attempt not confirmed',err); }
   }
-  window.ResonanceTower=Object.freeze({isTowerStageId:id=>/^shooting_tower_(?:0[1-9]|1[0-9]|20)$/.test(String(id||'')),isReplayFloor,isCharacterAvailable,confirmSealParty,cancelSealConfirmation,prepareBattle,finishRun,refresh,getResumeAttempt,restoreAttempt,abandonAttempt});
-  window.openResonanceTower=function(){
+  window.ResonanceTower=Object.freeze({isTowerStageId:id=>/^shooting_(?:despair_)?tower_(?:0[1-9]|1[0-9]|20)$/.test(String(id||'')),
+    getMode:()=>mode,setMode,isReplayFloor,isCharacterAvailable,confirmSealParty,cancelSealConfirmation,prepareBattle,finishRun,refresh,getResumeAttempt,restoreAttempt,abandonAttempt});
+  window.openResonanceTower=function(openMode){
     replayFloor=0;attempt=null;finishPromise=null;
+    if(openMode && TOWER_MODES[openMode] && openMode!==mode){ mode=openMode; progress=null; }
     if(typeof window.requireChapter03ContentUnlock!=='function'||!window.requireChapter03ContentUnlock())return;
     closePanel();
     if(typeof window.showMainTab==='function')window.showMainTab('resonance-tower');
@@ -467,6 +610,7 @@
     const screen=$('screen-resonance-tower'),list=$('resonance-tower-floor-list');
     if(!screen||!list||screen.dataset.towerBound==='true')return;
     screen.dataset.towerBound='true';
+    ensureModeTabs();
     list.addEventListener('click',e=>{
       const btn=e.target.closest('button[data-floor]');if(!btn||!list.contains(btn))return;
       const floor=Number(btn.dataset.floor);if(!Number.isInteger(floor)||floor<1||floor>TOWER_FLOORS)return;

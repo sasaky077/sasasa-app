@@ -5960,6 +5960,35 @@
     }
   }
 
+  // ============================================================
+  // build1714: 敵の停止（ULTの時間停止・麻痺・スタン・吸引・弾封じ等）が解けた時に、
+  //  停止中に「撃つはずだった弾」をまとめて撃つ処理を全面廃止する。
+  //  ・停止中かどうかは、弾を作る最終入口と同じ判定（isEnemyProjectileSpawnSuppressed）＋BOSSの行動ロックで見る。
+  //  ・停止が解けたフレームで、全敵の射撃時計をその時刻から数え直す（停止の原因に関係なく必ず）。
+  //  ・時間割で撃つ弾幕（すこあた！など）は、停止していた時間を経過時間から差し引く（getEnemyTimelineMs）。
+  // ============================================================
+  function isEnemyAttackPaused(now) {
+    if (!state) return false;
+    if (isEnemyProjectileSpawnSuppressed(now)) return true;
+    try { if (now < getBossLockUntil(now)) return true; } catch (_) {}
+    return false;
+  }
+  function trackEnemyAttackPause(now) {
+    if (!state) return;
+    const ts = Number(now || performance.now());
+    const last = Number(state.enemyPauseLastTs || ts);
+    const paused = isEnemyAttackPaused(ts);
+    if (paused) state.enemyPausedMs = Number(state.enemyPausedMs || 0) + Math.max(0, Math.min(250, ts - last));
+    if (state.enemyPauseWas && !paused) deferAllEnemyAttackResume(ts);
+    state.enemyPauseWas = paused;
+    state.enemyPauseLastTs = ts;
+  }
+  // 戦闘開始からの経過時間のうち、敵が動けていた時間だけ（停止中は進まない）
+  function getEnemyTimelineMs(now) {
+    if (!state) return 0;
+    return Math.max(0, Number(now || 0) - Number(state.startedAt || now) - Number(state.enemyPausedMs || 0));
+  }
+
   function deferAllEnemyAttackResume(resumeAt) {
     if (!state) return;
     const until = Math.max(performance.now(), Number(resumeAt || 0));
@@ -6677,7 +6706,14 @@
       String(cls || '').includes('shooting-enemy-bullet')
     ) {
       const className = String(cls || '');
-      const virtualEl = createCanvasProjectileElement(className);
+      // build1712: 残響の塔（絶望）は敵の通常弾をすべて即死弾にする。
+      //  当たり判定・見た目のサイズは元の通常弾のまま、色とデザインだけ既存の即死弾（赤紫＋回転する紋章）を使う。
+      //  レーザー・律動の弾列など、弾ではない攻撃は対象外。
+      const despairConvert = !!(selectedStage && selectedStage.despairLethal) &&
+        !className.includes('shooting-danger-bullet') &&
+        !className.includes('shooting-raid-green-laser') &&
+        !className.includes('shooting-rhythm-bar');
+      const virtualEl = createCanvasProjectileElement(despairConvert ? className + ' shooting-danger-bullet' : className);
       // アンブッシュのWARNING弾はDOM時と同じ直径18px（半径9）のまま、危険弾の見た目で描く。
       const isAmbushWarningBullet = className.includes('shooting-ambush-warning-bullet');
       const isAmbushBullet = !isAmbushWarningBullet && className.includes('shooting-ambush-bullet');
@@ -6703,7 +6739,7 @@
           : (isScoreAttackBullet
             ? 7
             : (isRaidBullet ? 6.2 : (storyChapter === 2 && isHeavyBullet ? 8.4 : (storyChapter === 4 ? 6.2 : 5.8)))));
-      const canvasKind = isRhythmBar ? 'rhythm-bar' : isDanger
+      const canvasKind = isRhythmBar ? 'rhythm-bar' : (isDanger || despairConvert)
         ? 'danger'
         : (isFacelessObjectBullet
           ? 'faceless-object'
@@ -6731,6 +6767,8 @@
         canvasCurtain: isCurtainBullet,
         canvasHalfWidth: isRaidLaser ? 135 : radius,
         canvasHalfHeight: isRaidLaser ? 2.5 : radius,
+        // build1712: 絶望で即死化した通常弾。弾数の上限（通常弾として数える処理）では通常弾扱いにする
+        despairConverted: despairConvert,
       };
 
       // build962: Noah's ordinary bullets always snake along their forward path.
@@ -14482,7 +14520,7 @@
     const cfg = getEclipseConfig() || {};
     const phase = Math.max(1, Number(state.boss.phase || 1));
     const dark = getEclipseMode(now) === 'dark';
-    const ordinary = state.enemyBullets.reduce((n, p) => (p && p.el && !p.el.classList.contains('shooting-danger-bullet')) ? n + 1 : n, 0);
+    const ordinary = state.enemyBullets.reduce((n, p) => (p && p.el && (!p.el.classList.contains('shooting-danger-bullet') || p.despairConverted)) ? n + 1 : n, 0);
     if (ordinary >= (phase >= 3 ? 120 : 100)) return;
     // 闇状態：発射間隔が短く、弾が速い
     const rate = ([1150, 1000, 860][phase - 1] || 860) * (dark ? Number(cfg.darkFireMul || 0.8) : 1);
@@ -17694,7 +17732,8 @@
   function fireScoreAttack(now) {
     if (!state || !isScoreAttackStage()) return;
     const cfg = selectedStage.scoreAttack || {};
-    const elapsed = Math.max(0, now - Number(state.startedAt || now));
+    // build1714: 停止していた時間は弾幕の時間割に数えない（解除時に溜まったボレーを一斉発射しない）
+    const elapsed = getEnemyTimelineMs(now);
     const interval = Math.max(760, Number(cfg.volleyIntervalMs || 880));
     const targetVolley = Math.floor(elapsed / interval);
     if (!Number.isFinite(state.scoreAttackVolleyIndex)) state.scoreAttackVolleyIndex = -1;
@@ -17705,6 +17744,8 @@
     const originX = state.boss.x;
     const originY = state.boss.y + 38;
 
+    // 念のため、1フレームで撃つのは最大1ボレーまで（取りこぼしは捨てる）
+    if (targetVolley - state.scoreAttackVolleyIndex > 1) state.scoreAttackVolleyIndex = targetVolley - 1;
     while (state.scoreAttackVolleyIndex < targetVolley) {
       state.scoreAttackVolleyIndex += 1;
       const n = state.scoreAttackVolleyIndex;
@@ -19566,6 +19607,8 @@
     const el = projectile && projectile.el;
     if (!el) return 'raw';
     if (el.classList.contains('shooting-danger-bullet')) return 'lethal';
+    // build1712: 残響の塔（絶望）19F（律動）の弾列も即死。弾列は専用の描き方なので見た目はそのまま。
+    if (selectedStage && selectedStage.despairLethal && el.classList.contains('shooting-rhythm-bar')) return 'lethal';
     if (el.classList.contains('shooting-raid-green-laser')) return 'raid-laser';
     if (el.classList.contains('shooting-mini-enemy-bullet')) return 'normal';
     if (el.classList.contains('shooting-violence-boss-heavy')) return 'boss-heavy';
@@ -19928,7 +19971,7 @@
 
     const phase = Math.max(1, Number(state.boss?.phase || 1));
     const ordinaryCount = state.enemyBullets.reduce((n, p) => {
-      if (!p || !p.el || p.el.classList.contains('shooting-danger-bullet')) return n;
+      if (!p || !p.el || (p.el.classList.contains('shooting-danger-bullet') && !p.despairConverted)) return n;
       return n + 1;
     }, 0);
 
@@ -20028,7 +20071,7 @@
   function fireInoriBoss(now) {
     if (!state || !state.boss) return;
     const phase = Math.max(1, Number(state.boss.phase || 1));
-    const ordinary = state.enemyBullets.reduce((n, p) => (p && p.el && !p.el.classList.contains('shooting-danger-bullet')) ? n + 1 : n, 0);
+    const ordinary = state.enemyBullets.reduce((n, p) => (p && p.el && (!p.el.classList.contains('shooting-danger-bullet') || p.despairConverted)) ? n + 1 : n, 0);
     if (ordinary >= (phase >= 3 ? 118 : 100)) return;
     const fireRate = phase >= 3 ? 760 : (phase === 2 ? 860 : 960);
     if (now - state.lastBossShotAt < getStageAdjustedEnemyFireInterval(fireRate)) return;
@@ -20073,7 +20116,7 @@
     if (!state || !state.boss) return;
     const grown = !!state.verdantQueenGrown;
     const phase = Math.max(1, Number(state.boss.phase || 1));
-    const ordinary = state.enemyBullets.reduce((n, p) => (p && p.el && !p.el.classList.contains('shooting-danger-bullet')) ? n + 1 : n, 0);
+    const ordinary = state.enemyBullets.reduce((n, p) => (p && p.el && (!p.el.classList.contains('shooting-danger-bullet') || p.despairConverted)) ? n + 1 : n, 0);
     if (ordinary >= (grown ? 120 : 96)) return;
     if (isVerdantBulletCapReached()) return; // build1666
     const rate = (grown ? 900 : 1300) - (phase - 1) * 90;
@@ -24777,6 +24820,7 @@
     }
 
     updateTowaDarkness(ts);
+    trackEnemyAttackPause(ts);
 
     if (state.ch101TutorialPaused || state.ch102TutorialPaused || state.ch202ElementTutorialPaused) {
       prevTs = ts;

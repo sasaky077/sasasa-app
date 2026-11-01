@@ -4359,6 +4359,13 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
         <span class="setting-premium-value"><span class="setting-row-sub" id="setting-display-name">-</span></span>
         <span class="setting-row-arrow" aria-hidden="true">›</span>
       </div>
+      <!-- build1712: 称号 -->
+      <div class="setting-row setting-premium-row" onclick="openTitleSelector()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openTitleSelector()}" role="button" tabindex="0" aria-label="称号を変更">
+        <span class="setting-premium-icon"><img src="images/icon_setting_name.webp" alt=""></span>
+        <span class="setting-row-label">称号</span>
+        <span class="setting-premium-value"><span class="setting-row-sub" id="setting-title-value">-</span></span>
+        <span class="setting-row-arrow" aria-hidden="true">›</span>
+      </div>
     </section>
     <section class="setting-section setting-premium-section">
       <div class="setting-section-title setting-premium-section-title"><span class="setting-title-emblem" aria-hidden="true">✧</span><strong>サウンド</strong><small>SOUND</small></div>
@@ -10295,6 +10302,8 @@ startTitleBgm();
         '<span class="friend-card-topline">' +
           '<strong class="friend-card-name" title="' + detailEscapeHTML(name) + '">' + detailEscapeHTML(limitPlayerDisplayName(name)) + '</strong>' +
         '</span>' +
+        // build1712: フレンドの装備中の称号
+        '<span class="zt-block-title" data-title-user="' + detailEscapeHTML(fid) + '"></span>' +
         '<span class="friend-card-bottomline">' +
           '<span class="friend-card-login">' + detailEscapeHTML(loginText) + '</span>' +
         '</span>' +
@@ -10302,6 +10311,7 @@ startTitleBgm();
       '<span class="friend-card-rankbox"><small>RANK</small><b>' + Number(rank || 1) + '</b></span>' +
       '<button type="button" class="friend-remove-btn" onclick="event.stopPropagation();confirmRemoveFriend(\'' + detailEscapeHTML(fid) + '\')">解除</button>';
 
+    try{ if(window.ZeraphiaTitles) void window.ZeraphiaTitles.decorate(div); }catch(_){}
     return div;
   }
 
@@ -14715,6 +14725,8 @@ function showTenResult(results){
 
     var nameEl = document.getElementById('hud-name');
     if(nameEl) nameEl.textContent = userProfile.display_name || 'Player';
+    // build1712: 装備中の称号を名前の下に表示
+    try{ if(window.ZeraphiaTitles) window.ZeraphiaTitles.renderHud(); }catch(_){}
 
     var exp = calcExpProgress(userProfile.total_score || 0);
     var rankCircleEl = document.getElementById('hud-lv-circle');
@@ -20355,11 +20367,12 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1710-shot-roles"></script>
+<script src="js/shooting_event.js?v=1712-despair"></script>
 <script src="js/shooting_party_filter.js?v=1472-filter-screen-exit-reset"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1711-raid-piece"></script>
 <script src="js/skin_system.js?v=1709-towa-skin"></script>
+<script src="js/title_system.js?v=1713-title-rank"></script>
 <script src="js/item_management.js?v=1711-raid-piece"></script>
 
 <script id="zeraphia-service-worker-register-v1">
@@ -20381,9 +20394,9 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=1661-score-cap"></script>
-<script src="js/resonance_tower.js?v=1661-tower20"></script>
-<script src="js/phase_odyssey.js?v=1692-odyssey-lethal"></script>
+<script src="js/score_attack.js?v=1713-title-rank"></script>
+<script src="js/resonance_tower.js?v=1713-despair-gate"></script>
+<script src="js/phase_odyssey.js?v=1713-title-rank"></script>
 <script src="js/towa_encounter.js?v=1554-notice"></script>
 <script src="js/towa_notice.js?v=1554"></script>
 <script src="js/towa_dark_gacha.js?v=1560-soul-flame"></script>

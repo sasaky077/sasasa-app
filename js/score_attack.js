@@ -226,6 +226,8 @@ function renderRows(rows,scope){
      '<span class="score-attack-rank-no'+rankCls+'"><i class="score-attack-crown" aria-hidden="true"></i><span>'+rank+'</span></span>'+
      '<div class="score-attack-row-main">'+
        '<b title="'+esc(row.display_name||row.user_id||'Player')+'"><span class="score-attack-player-name">'+esc(playerName7(row.display_name||row.user_id||'Player'))+'</span>'+(me?'<em>自分</em>':'')+'</b>'+
+       // build1712: 装備中の称号
+       (row.title_id?'<span class="zt-block-title" data-title-id="'+esc(row.title_id)+'" data-title-level="'+esc(row.title_level||1)+'"></span>':(row.user_id?'<span class="zt-block-title" data-title-user="'+esc(row.user_id)+'"></span>':''))+
        partyHtml(row.party_ids,false)+
      '</div>'+
      '<div class="score-attack-score"><small class="score-attack-best-label">'+(me?'自己ベスト':'ベスト')+'</small><strong>'+Number(row.best_score||0).toLocaleString('ja-JP')+'</strong></div>'+
@@ -240,6 +242,7 @@ function renderRows(rows,scope){
    : '';
 
  list.innerHTML=html+toggleHtml;
+ try{ if(window.ZeraphiaTitles) void window.ZeraphiaTitles.decorate(list); }catch(_){}
 }
 async function prefetchRanking(scope){
  const key=rankingKey(scope);

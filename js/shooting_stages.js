@@ -693,8 +693,25 @@
       (anomaly ? '・' + (PHASE_ODYSSEY_ANOMALY_LABEL[anomaly] || '') : '');
   }
 
+  // build1712: 残響の塔（絶望）。通常の塔と同じ1〜20Fの構成で、敵の通常弾がすべて即死弾（despairLethal）。
+  //  進行・封印は通常の塔とは別（resonance_tower.js が mode='despair' で専用RPCを呼ぶ）。報酬は20F踏破の称号のみ。
+  const DESPAIR_FLOOR_NAMES = ['第一層','第二層','第三層','第四層','第五層','第六層','第七層','第八層','第九層','第十層','第十一層','第十二層','第十三層','第十四層','第十五層','第十六層','第十七層','第十八層','第十九層','第二十層'];
+  function makeDespairTowerStage(n) {
+    const base = makeResonanceTowerStage(n);
+    return Object.freeze({
+      ...base,
+      id: 'shooting_despair_tower_' + String(n).padStart(2, '0'),
+      eventTitle: '残響の塔（絶望）',
+      name: '絶望・' + DESPAIR_FLOOR_NAMES[n - 1],
+      difficultyLabel: String(n).padStart(2, '0') + 'F / 絶望',
+      despairTower: true,
+      despairLethal: true,
+    });
+  }
+
   const SHOOTING_STAGES = Object.freeze({
     ...Object.fromEntries(Array.from({length:20},(_,i)=>{const n=i+1;return ['shooting_tower_'+String(n).padStart(2,'0'),makeResonanceTowerStage(n)];})),
+    ...Object.fromEntries(Array.from({length:20},(_,i)=>{const n=i+1;return ['shooting_despair_tower_'+String(n).padStart(2,'0'),makeDespairTowerStage(n)];})),
     // 本編の敵・ショット・ULT・操作系を共用するが、通常ステージには登録しない試遊専用ステージ。
     [SHOOTING_STAGE_ID.GACHA_TRIAL]: Object.freeze({
       id: SHOOTING_STAGE_ID.GACHA_TRIAL,

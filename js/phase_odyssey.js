@@ -1395,6 +1395,12 @@
     nameLine.append(el('span', 'po-rank-name-text', String(row.display_name || 'Player')));
     if (row.is_me) nameLine.append(el('em', 'po-rank-me', '自分'));
     main.append(nameLine);
+    // build1712: 装備中の称号（サーバーが title_id を返せばそれを、無ければ user_id から取得）
+    const titleSlot = el('span', 'zt-block-title');
+    if (row.title_id) { titleSlot.setAttribute('data-title-id', String(row.title_id)); titleSlot.setAttribute('data-title-level', String(row.title_level || 1)); }
+    else if (row.user_id) titleSlot.setAttribute('data-title-user', String(row.user_id));
+    else if (row.is_me && window.ZeraphiaTitles) titleSlot.setAttribute('data-title-id', window.ZeraphiaTitles.getEquipped() || '');
+    main.append(titleSlot);
     const party = el('div', 'po-rank-party');
     const ids = Array.isArray(row.party_ids) ? row.party_ids.slice(0, PARTY_SIZE) : [];
     for (let i = 0; i < PARTY_SIZE; i++) {
@@ -1430,6 +1436,7 @@
     }
     let prev = 0;
     rows.forEach(row => { list.append(rankRow(row, prev)); prev = toInt(row.rank_no, prev); });
+    try { if (window.ZeraphiaTitles) void window.ZeraphiaTitles.decorate(list); } catch (_) {}
     const me = list.querySelector('.po-rank-row.is-me');
     list.scrollTop = 0;
     // 自分の行が見えない位置（全国の圏外など）にある時だけ、自分の行までスクロール
