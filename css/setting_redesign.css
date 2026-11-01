@@ -557,3 +557,28 @@ html body:not(.ui-immersive) #screen-setting.settings-premium .setting-premium-e
     min-height:19px!important;
   }
 }
+
+/* build1718: プロフィール欄に「称号」行が増えたため、2行分の高さを確保する。
+   （1行分の枠に2行を詰めてプレイヤー名が潰れていた） */
+html body:not(.ui-immersive) #screen-setting.settings-premium .setting-screen-scroll.app-scroll-region {
+  grid-template-rows:minmax(0,2.5fr) minmax(0,1.3fr) minmax(0,4fr) 22px!important;
+}
+html body:not(.ui-immersive) #screen-setting.settings-premium .setting-premium-profile {
+  grid-template-rows:clamp(22px,3.35dvh,34px) minmax(0,1fr) minmax(0,1fr)!important;
+  gap:0!important;
+}
+html body:not(.ui-immersive) #screen-setting.settings-premium .setting-premium-profile > .setting-premium-section-title {
+  margin-bottom:clamp(2px,.35dvh,4px)!important;
+}
+html body:not(.ui-immersive) #screen-setting.settings-premium .setting-premium-profile .setting-premium-row + .setting-premium-row {
+  margin-top:-1px!important;
+  height:calc(100% + 1px)!important;
+}
+@media (max-width:359px), (max-height:620px) {
+  html body:not(.ui-immersive) #screen-setting.settings-premium .setting-screen-scroll.app-scroll-region {
+    grid-template-rows:minmax(0,2.6fr) minmax(0,1.35fr) minmax(0,3.9fr) 19px!important;
+  }
+  html body:not(.ui-immersive) #screen-setting.settings-premium .setting-premium-profile {
+    grid-template-rows:21px minmax(0,1fr) minmax(0,1fr)!important;
+  }
+}
