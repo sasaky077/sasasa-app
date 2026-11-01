@@ -3027,7 +3027,7 @@
     id: CHARACTER_ID.CAMILLA,
     effectKey: 'camilla_web',
     label: 'CONJURE / SPIDER',
-    description: '1.2秒に1体、蜘蛛を召喚（最大4体）。蜘蛛はカサカサと走って最も近い敵に張り付き、ダメージを与えて移動を封じると消える（ザコ1.5秒／ボス1秒・解除後1秒は再捕縛なし）。',
+    description: '1.2秒に1体、蜘蛛を召喚（最大4体。足元のリングが溜まると次を出せる／溜まる前のタップは予約され自動で召喚）。蜘蛛はカサカサと走って最も近い敵に張り付き、ダメージを与えて移動を封じると消える（ザコ1.5秒／ボス1秒・解除後1秒は再捕縛なし）。',
     ultName: '血界・緋糸万華',
     shotType: 'conjure', mainShot: {type:'conjure'}, shotCount:1,
     fireRate:1000, shotPowerRate:0.4, bulletSpeed:520,

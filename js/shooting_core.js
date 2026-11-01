@@ -8680,7 +8680,16 @@
 
     const img = document.createElement('img');
     img.className = 'shooting-remna-trap-object';
-    img.src = 'images/chara_39_battle_object.webp';
+    // build1705: 衣装を装備中なら衣装版の設置物（読込失敗時は通常版へ戻す）
+    const trapBase = 'images/chara_39_battle_object.webp';
+    let trapSrc = trapBase;
+    try {
+      const skins = window.CharacterSkins;
+      const ownerId = Number(p.ownerId || 39);
+      if (!isGachaTrialStage() && skins && typeof skins.getBattleObjectImage === 'function') trapSrc = String(skins.getBattleObjectImage(ownerId, trapBase) || trapBase);
+    } catch (_) {}
+    if (trapSrc !== trapBase) img.onerror = function () { img.onerror = null; img.src = trapBase; };
+    img.src = trapSrc;
     img.alt = '';
     img.draggable = false;
     p.el.appendChild(img);
@@ -22075,7 +22084,13 @@
   function getShootingUltCutinSrc(character) {
     const c = character || getCurrentCharacter();
     if (!c) return '';
-    return c.cutinImage || `images/chara_${String(c.id).padStart(2, '0')}_cutin.webp`;
+    const base = c.cutinImage || `images/chara_${String(c.id).padStart(2, '0')}_cutin.webp`;
+    // build1705: 衣装を装備中なら衣装版のカットイン（試遊は除く）
+    try {
+      const skins = window.CharacterSkins;
+      if (!isGachaTrialStage() && skins && typeof skins.getCutinImage === 'function') return String(skins.getCutinImage(c.id, base) || base);
+    } catch (_) {}
+    return base;
   }
 
   function preloadSelectedPartyUltCutins(ids = selectedPartyIds, timeoutMs = 7000) {

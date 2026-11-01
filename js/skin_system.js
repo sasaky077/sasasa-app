@@ -45,6 +45,21 @@
         battle:'images/chara_36_b_battle_back.webp', // build1477: 限定衣装のバトルユニット（背面）
         exchangeCost:10
       }
+    },
+    // build1705: レオナクロス ハロウィン衣装。ULTカットイン（cutin）とTRAPの設置物（battleObject）も衣装版になる。
+    39: {
+      limited_01: {
+        id:'limited_01',
+        name:'ハロウィン衣装',
+        img:'images/chara_39_b.webp',                       // キャラ詳細の立ち絵（背景つき）
+        home:'images/chara_39_b_cut.webp',                  // ホーム（全身・透過）
+        panel:'images/chara_39_b_panel.webp',               // パネル（バストアップ・透過）
+        battle:'images/chara_39_b_battle_back.webp',        // バトルユニット（背面・透過）
+        cutin:'images/chara_39_b_cutin.webp',               // ULTカットイン（横長）
+        battleObject:'images/chara_39_b_battle_object.webp',// TRAPの設置物（かぼちゃ・透過）
+        // build1706: お知らせのプレゼントで全員に配布（聖霊花交換なし）
+        gift:true
+      }
     }
   };
 
@@ -218,7 +233,7 @@
       }
 
       if(typeof window.showToast==='function'){
-        window.showToast(next==='default' ? '通常衣装に変更しました' : '限定衣装に変更しました');
+        window.showToast(next==='default' ? '通常衣装に変更しました' : skinLabel(getSkin(charId,next))+'に変更しました');
       }
       return true;
     }catch(err){
@@ -266,7 +281,7 @@
           '</button>'+
           '<button type="button" class="primor-skin-choice'+(equipped===limited.id?' is-selected':'')+(owned?'':' is-locked')+'" '+
             'data-skin-choice="'+esc(limited.id)+'" '+(owned?'':'disabled')+'>'+
-            '<span>限定衣装</span>'+
+            '<span>'+esc(skinLabel(limited))+'</span>'+
             '<small class="primor-skin-choice-state">'+(owned ? (equipped===limited.id?'装備中':'変更') : '未所持')+'</small>'+
           '</button>'+
         '</div>'+
@@ -294,7 +309,7 @@
           '<button type="button" class="detail-skin-card detail-skin-limited'+(equipped===limited.id?' is-selected':'')+(owned?'':' is-locked')+'" '+
             (owned ? 'onclick="CharacterSkins.equip('+charId+',\''+esc(limited.id)+'\')"' : 'disabled')+'>'+
             '<span class="detail-skin-thumb"><img src="'+esc(limited.panel)+'" alt="" onerror="this.style.display=\'none\'"></span>'+
-            '<span class="detail-skin-copy"><strong>限定衣装</strong><small>'+(owned ? (equipped===limited.id?'装備中':'変更') : '未所持・聖霊花交換')+'</small></span>'+
+            '<span class="detail-skin-copy"><strong>'+esc(skinLabel(limited))+'</strong><small>'+(owned ? (equipped===limited.id?'装備中':'変更') : '未所持・聖霊花交換')+'</small></span>'+
           '</button>'+
         '</div>'+
       '</div>';
@@ -313,6 +328,19 @@
     const skin=getSkin(characterId,skinId);
     return skin && skin.battle && isOwned(characterId,skinId) ? skin.battle : String(fallback||'');
   }
+
+  // build1705: ULTカットイン／設置物（TRAP等）の衣装版。装備中かつ所持中で、その衣装に画像が設定されていれば返す。
+  function getCutinImage(characterId, fallback){
+    const skinId=getEquippedSkinId(characterId);
+    const skin=getSkin(characterId,skinId);
+    return skin && skin.cutin && isOwned(characterId,skinId) ? skin.cutin : String(fallback||'');
+  }
+  function getBattleObjectImage(characterId, fallback){
+    const skinId=getEquippedSkinId(characterId);
+    const skin=getSkin(characterId,skinId);
+    return skin && skin.battleObject && isOwned(characterId,skinId) ? skin.battleObject : String(fallback||'');
+  }
+  function skinLabel(skin){ return (skin && skin.name) || '限定衣装'; }
 
   async function getPublicEquippedSkinId(userId, characterId){
     const uid=String(userId||'').trim().toLowerCase();
@@ -392,6 +420,8 @@
     getPanelImage,
     getPortraitImage,
     getBattleImage,
+    getCutinImage,
+    getBattleObjectImage,
     getPublicPanelImage,
     getPublicHomeImage,
     getPublicPortraitImage,

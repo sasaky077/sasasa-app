@@ -4801,6 +4801,24 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 
 window.NOTICE_ITEMS = [
   {
+    id: 'notice_halloween_leona_skin_20261101',
+    date: '2026.11.01',
+    title: 'ハロウィンプレゼント：レオナクロス ハロウィン衣装',
+    body: 'ハロウィンを記念して、レオナクロスの衣装「ハロウィン衣装」を全員にプレゼントします。\n\n■ キャラ詳細の「衣装」から着替えられます\n■ ホーム・キャラ詳細の立ち絵、戦闘中の姿、ULTのカットイン、TRAPの設置物がハロウィン仕様になります\n\nレオナクロスをまだお持ちでない方も受け取れます。レオナクロスを入手すると、すぐに着替えられます。',
+    reward: {
+      type: 'skin',
+      claimId: 'notice_halloween_leona_skin_20261101',
+      rpcName: 'claim_halloween_leona_skin_20261101',
+      statusRpcName: 'is_halloween_leona_skin_20261101_claimed',
+      label: 'ハロウィンプレゼント',
+      characterId: 39,
+      skinId: 'limited_01',
+      name: 'レオナクロス ハロウィン衣装',
+      image: 'images/chara_39_b_panel.webp'
+    },
+    hidden: false
+  },
+  {
     id: 'notice_phase_odyssey_release_20261020',
     date: '2026.10.20',
     title: '新コンテンツ「位相回遊」をリリースしました',
@@ -5570,7 +5588,8 @@ window.NOTICE_ITEMS = [
          item.reward.type === 'level_material_bundle' ||
          item.reward.type === 'start_bonus_bundle' ||
          item.reward.type === 'test_growth_bundle' ||
-         item.reward.type === 'special_stage_ticket');
+         item.reward.type === 'special_stage_ticket' ||
+         item.reward.type === 'skin');
     });
     if (!rewardItems.length) { noticeClaimSynced = true; return; }
 
@@ -5595,6 +5614,9 @@ window.NOTICE_ITEMS = [
           res = await client.rpc('is_test_growth_bundle_claimed');
         } else if (item.reward.type === 'special_stage_ticket') {
           res = await client.rpc(String(item.reward.statusRpcName || 'is_noah_guerrilla_bonus_claimed'));
+        } else if (item.reward.type === 'skin') {
+          // build1706: 衣装プレゼント（受取状況はアカウント別にDBで判定）
+          res = await client.rpc(String(item.reward.statusRpcName));
         } else {
           res = await client.rpc('is_notice_reward_claimed', {
             p_claim_id: item.reward.claimId
@@ -5602,7 +5624,7 @@ window.NOTICE_ITEMS = [
         }
         if (res && res.error) throw res.error;
         // 新しい専用配布はアカウント別のDB判定を優先する。
-        if (item.reward.type === 'special_stage_ticket' && item.reward.statusRpcName && typeof (res && res.data) === 'boolean') {
+        if ((item.reward.type === 'special_stage_ticket' || item.reward.type === 'skin') && item.reward.statusRpcName && typeof (res && res.data) === 'boolean') {
           item.reward.claimed = res.data;
           writeNoticeDbStatus(item.reward.claimId, res.data);
         }
@@ -5625,7 +5647,7 @@ window.NOTICE_ITEMS = [
     if (!item.reward.claimId) return false;
     // ノアお詫び配布は端末共有のlocalStorageを信用せず、ユーザー個別のDB判定を利用。
     // DB確認前は、同じアカウントで前回確認した結果を使う。まだ一度も確認していなければ「不明(null)」。
-    if (item.reward.type === 'special_stage_ticket' && item.reward.statusRpcName) {
+    if ((item.reward.type === 'special_stage_ticket' || item.reward.type === 'skin') && item.reward.statusRpcName) {
       if (typeof item.reward.claimed === 'boolean') return item.reward.claimed;
       const cached = readNoticeDbStatus()[item.reward.claimId];
       return typeof cached === 'boolean' ? cached : null;
@@ -5789,6 +5811,26 @@ window.NOTICE_ITEMS = [
       `;
     }
 
+    if (reward.type === 'skin') {
+      return `
+        <div class="notice-reward">
+          <div class="notice-reward-main">
+            <img class="notice-reward-character-icon" src="${escapeHtml(reward.image || '')}" alt="">
+            <div class="notice-reward-copy">
+              <span class="notice-reward-label">${escapeHtml(reward.label || 'プレゼント')}</span>
+              <strong>${escapeHtml(reward.name || '衣装')}</strong>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="notice-reward-btn${claimed ? ' claimed' : ''}"
+            data-notice-claim="${escapeHtml(item.id || '')}"
+            ${claimed ? 'disabled' : ''}
+          >${claimed ? '受け取り済み' : '受け取る'}</button>
+        </div>
+      `;
+    }
+
     if (reward.type === 'special_stage_ticket') {
       const ticketAmount = Math.max(1, Math.floor(Number(reward.amount || 1)));
       return `
@@ -5879,6 +5921,45 @@ window.NOTICE_ITEMS = [
     }
 
     const reward = item.reward;
+
+    // build1706: 衣装プレゼント。付与はサーバー（rpcName）が行い、成功したら衣装の所持状態を更新する。
+    if (reward.type === 'skin') {
+      if (!reward.claimId || !reward.rpcName) return;
+      if (button) { button.disabled = true; button.textContent = '受取中...'; }
+      try {
+        const client = window.zsSupabase || null;
+        if (!client || typeof client.rpc !== 'function') throw new Error('Supabaseへ接続できません');
+        const res = await client.rpc(String(reward.rpcName));
+        if (res && res.error) throw res.error;
+        let result = res ? res.data : null;
+        if (typeof result === 'string') { try { result = JSON.parse(result); } catch (_) {} }
+        if (!result || result.ok === false) throw new Error((result && result.message) || '報酬を受け取れませんでした');
+
+        reward.claimed = true;
+        markNoticeRewardClaimedLocally(reward.claimId);
+        writeNoticeDbStatus(reward.claimId, true);
+        const skins = window.CharacterSkins;
+        if (skins) {
+          try { if (typeof skins.notifySkinAcquired === 'function') skins.notifySkinAcquired(reward.characterId, reward.skinId); } catch (_) {}
+          try { if (typeof skins.reloadMySkins === 'function') void skins.reloadMySkins(); } catch (_) {}
+        }
+        if (!noticeBulkClaimActive && typeof window.showToast === 'function') {
+          window.showToast(result.already_claimed
+            ? 'この衣装は受取済みです'
+            : (reward.name || '衣装') + ' を受け取りました！ キャラ詳細の「衣装」から着替えられます');
+        }
+        renderNoticeList();
+        updateNoticeBadge();
+        return;
+      } catch (error) {
+        console.error('[NoticeReward] skin gift claim failed:', error);
+        if (!noticeBulkClaimActive && typeof window.showToast === 'function') {
+          window.showToast(error && error.message ? error.message : '受け取りに失敗しました');
+        }
+        if (button) { button.disabled = false; button.textContent = '受け取る'; }
+        return;
+      }
+    }
 
     if (reward.type === 'special_stage_ticket') {
       if (!reward.claimId) return;
@@ -20257,12 +20338,12 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1701-summon-queue"></script>
+<script src="js/shooting_event.js?v=1705-leona-halloween"></script>
 <script src="js/shooting_party_filter.js?v=1472-filter-screen-exit-reset"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1662-raid-laps"></script>
-<script src="js/skin_system.js?v=1477-skin-battle"></script>
-<script src="js/item_management.js?v=1648-premium-sr-ticket"></script>
+<script src="js/skin_system.js?v=1706-leona-gift"></script>
+<script src="js/item_management.js?v=1706-leona-gift"></script>
 
 <script id="zeraphia-service-worker-register-v1">
 (function(){

@@ -225,6 +225,7 @@
       img:'images/chara_36_b_panel.webp',
       desc:'キャラクター衣装を解放'
     }
+    // build1706: レオナクロス ハロウィン衣装はお知らせのプレゼントで全員に配布（交換所には出さない）
   ];
 
   let state = {
@@ -665,7 +666,8 @@
       let displayDesc=item.desc||'';
       if(item.characterId){
         const c=(Array.isArray(window.CHARACTERS)?window.CHARACTERS:[]).find(x=>x&&Number(x.id)===Number(item.characterId));
-        displayName=(c&&c.name?c.name+' ':'')+'限定衣装';
+        const sk=window.CharacterSkins&&typeof window.CharacterSkins.getSkin==='function'?window.CharacterSkins.getSkin(item.characterId,skinId):null;
+        displayName=(c&&c.name?c.name+' ':'')+((sk&&sk.name)||'限定衣装');
         displayDesc=skinOwned?'取得済み':'キャラクター衣装を解放';
       }
 
@@ -761,7 +763,8 @@
 
       if(result.skin && result.skin.character_id){
         const c=(Array.isArray(window.CHARACTERS)?window.CHARACTERS:[]).find(x=>x&&Number(x.id)===Number(result.skin.character_id));
-        toast('交換しました：'+((c&&c.name)||'キャラクター')+' 限定衣装');
+        const skDone=window.CharacterSkins&&typeof window.CharacterSkins.getSkin==='function'?window.CharacterSkins.getSkin(def.characterId,'limited_01'):null;
+        toast('交換しました：'+((c&&c.name)||'キャラクター')+' '+((skDone&&skDone.name)||'限定衣装'));
       }else{
         toast('交換しました：'+buildExchangeGrantText(result.grants||{}));
       }
@@ -861,11 +864,12 @@
     ov.id='item-skin-preview';
     ov.setAttribute('role','dialog');
     ov.setAttribute('aria-modal','true');
-    ov.setAttribute('aria-label',(name?name+' ':'')+'限定衣装');
+    const skinName=(skin&&skin.name)||'限定衣装';
+    ov.setAttribute('aria-label',(name?name+' ':'')+skinName);
     ov.innerHTML=
       '<div class="item-skin-preview-frame">'+
         '<img class="item-skin-preview-img" alt="">'+
-        '<div class="item-skin-preview-caption"><small>LIMITED OUTFIT</small><strong>'+escapeHtml(name)+'</strong><span>限定衣装</span></div>'+
+        '<div class="item-skin-preview-caption"><small>LIMITED OUTFIT</small><strong>'+escapeHtml(name)+'</strong><span>'+escapeHtml(skinName)+'</span></div>'+
       '</div>'+
       '<button type="button" class="item-skin-preview-close" aria-label="閉じる">×</button>'+
       '<p class="item-skin-preview-hint">タップで閉じる</p>';
