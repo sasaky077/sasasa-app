@@ -2488,6 +2488,9 @@
     shooting_ch08_02: Object.freeze({ allowedIds:Object.freeze([1,3,5,20,28,39,37,17,22]), requiredSize:3 }),
     shooting_ch08_03: Object.freeze({ allowedIds:Object.freeze([1,3,5,20,28,39,37,17,22]), requiredSize:3 }),
     shooting_ch08_04: Object.freeze({ allowedIds:Object.freeze([1,3,5,20,28,39,37,17,22]), requiredSize:3 }),
+    // build1717: CH09の戦闘（フェイスレス / イノリ）は九人の遠征隊＋リュネの10人から3人。
+    shooting_ch09_02: Object.freeze({ allowedIds:Object.freeze([1,3,5,20,28,39,37,17,22,25]), requiredSize:3 }),
+    shooting_ch09_04: Object.freeze({ allowedIds:Object.freeze([1,3,5,20,28,39,37,17,22,25]), requiredSize:3 }),
   });
 
   // CH04-04以降は所持キャラから自由編成。CH04-03以前の物語編成は維持。
