@@ -8549,8 +8549,9 @@
 
   function spawnRemnaTrap(c, x, y, now) {
     if (!state || !c || !state.player) return false;
-    const max = Math.max(1, Math.floor(Number(c.trapMaxPlaced || 3)));
-    if (countActiveRemnaTraps() >= max) return false;
+    // build1701: 上限まで設置済みのタップは予約し、空いた瞬間に自動で設置する（updateSummonQueue）
+    if (!isSummonReady(c, Number(now || performance.now()))) { queueSummon(c, Number(now || performance.now())); return false; }
+    state.summonQueued = false;
     ensureBombVisualStyles();
     ensureRemnaTrapVisualStyles();
 
@@ -8598,7 +8599,12 @@
   }
 
   function commitRemnaTrapPlacement(now) {
-    if (!state?.remnaTrapPlacementPreview) return false;
+    if (!state?.remnaTrapPlacementPreview) {
+      // build1701: 上限中は予告が出ないため、離指時にここへ来る。タップを予約として受け付ける。
+      const cur = state && getCurrentCharacter();
+      if (cur && cur.shotType === 'trap') queueSummon(cur, now || performance.now());
+      return false;
+    }
     const preview = state.remnaTrapPlacementPreview;
     const c = getCurrentCharacter();
     clearRemnaTrapPlacementPreview();
@@ -10564,13 +10570,12 @@
   function launchConjureDeployment(c, targetX, targetY, now) {
     if (!state || !c || !state.player) return false;
     const max = Math.max(1, Math.floor(Number(c.conjureMaxTurrets || 3)));
-    if (getConjureOccupiedCount(now) >= max) return false;
-    // build1677: カミラの蜘蛛は連打しても0.7秒に1体まで（従来は同時4体の上限だけで、連打で出し放題だった）
-    if (c.camillaSpiderAi) {
-      const interval = Math.max(0, Number(c.camillaSpiderIntervalMs ?? 1200));
-      if (now - Number(state.camillaLastSpiderAt || -Infinity) < interval) return false;
-      state.camillaLastSpiderAt = now;
-    }
+    // build1677: カミラの蜘蛛は連打しても間隔（camillaSpiderIntervalMs）に1体まで
+    // build1700: 間隔中・4体いる間のタップは捨てずに1回分「予約」し、出せるようになった瞬間に自動で出す
+    //   （従来は無反応で、「蜘蛛が出ない＝バグ」に見えた）。
+    if (!isSummonReady(c, now)) { queueSummon(c, now); return false; }
+    if (c.camillaSpiderAi) state.camillaLastSpiderAt = now;
+    state.summonQueued = false;
     ensureConjureVisualStyles();
     const arena = document.getElementById('shooting-arena');
     if (!arena) return false;
@@ -10795,8 +10800,151 @@
     return true;
   }
 
+  // ============================================================
+  // build1700→1701: 設置系（CONJURE：オリビア・カミラ／TRAP：レオナクロス）の「予約」と再設置ゲージ
+  //  ・出せない時（上限まで設置済み／カミラは召喚間隔中）のタップを捨てずに1回分予約し、
+  //    出せるようになった瞬間に自動で設置する（従来は無反応で「出ない＝バグ」に見えた）。
+  //  ・自機の足元に小さなリングと残り枠（例 2/3・MAX）を出す。
+  //    カミラ：召喚間隔の溜まり具合。オリビア・レオナクロス：上限時に、一番早く消える設置物までの進み具合。
+  // ============================================================
+  function isSummonShotCharacter(c) {
+    return !!c && (c.shotType === 'conjure' || c.shotType === 'trap');
+  }
+  function getSummonMax(c) {
+    return c && c.shotType === 'trap'
+      ? Math.max(1, Math.floor(Number(c.trapMaxPlaced || 3)))
+      : Math.max(1, Math.floor(Number(c && c.conjureMaxTurrets || 3)));
+  }
+  function getSummonUsed(c, now) {
+    return c && c.shotType === 'trap' ? countActiveRemnaTraps() : getConjureOccupiedCount(now);
+  }
+  function getCamillaSpiderCooldownRate(c, now) {
+    const interval = Math.max(1, Number(c && c.camillaSpiderIntervalMs || 1200));
+    return clamp((now - Number(state && state.camillaLastSpiderAt || -Infinity)) / interval, 0, 1);
+  }
+  // 上限に達している時、一番早く空く枠の進み具合（0→1）
+  function getSummonNextFreeRate(c, now) {
+    let best = null;
+    if (c.shotType === 'trap') {
+      (state.bullets || []).forEach(p => {
+        if (!p || p.kind !== 'remna_trap' || p.trapExploded) return;
+        const total = Math.max(500, Number(p.trapCountdownMs || 3000));
+        const end = Number.isFinite(Number(p.trapExplodeAt)) ? Number(p.trapExplodeAt) : now + total; // 飛翔中はまだ減らない
+        const rate = clamp(1 - (end - now) / total, 0, 1);
+        if (best == null || rate > best) best = rate;
+      });
+    } else {
+      (state.conjureTurrets || []).forEach(t => {
+        if (!t) return;
+        const total = Math.max(1, Number(t.expireAt || now) - Number(t.createdAt || now));
+        const rate = clamp((now - Number(t.createdAt || now)) / total, 0, 1);
+        if (best == null || rate > best) best = rate;
+      });
+    }
+    return best == null ? 0 : best;
+  }
+  function isSummonReady(c, now) {
+    if (!isSummonShotCharacter(c)) return false;
+    if (getSummonUsed(c, now) >= getSummonMax(c)) return false;
+    if (c.camillaSpiderAi && getCamillaSpiderCooldownRate(c, now) < 1) return false;
+    return true;
+  }
+  function queueSummon(c, now) {
+    if (!state || !isSummonShotCharacter(c)) return;
+    state.summonQueued = true;
+    state.summonQueuedOwner = Number(c.id);
+    const ring = document.getElementById('shooting-summon-gauge');
+    if (ring) { ring.classList.remove('is-queued-pop'); void ring.offsetWidth; ring.classList.add('is-queued-pop'); }
+  }
+  function ensureSummonGaugeStyle() {
+    if (document.getElementById('summon-gauge-style-v1701')) return;
+    const st = document.createElement('style');
+    st.id = 'summon-gauge-style-v1701';
+    st.textContent = `
+      #shooting-summon-gauge{position:absolute;left:0;top:0;width:34px;height:34px;margin:-17px 0 0 -17px;
+        pointer-events:none;z-index:6;border-radius:50%;--g:255,86,104;
+        background:conic-gradient(rgba(var(--g),.95) calc(var(--p,0)*1turn),rgba(40,30,30,.22) 0);
+        -webkit-mask:radial-gradient(circle,transparent 12px,#000 12.5px,#000 16px,transparent 16.5px);
+                mask:radial-gradient(circle,transparent 12px,#000 12.5px,#000 16px,transparent 16.5px);
+        opacity:.85;transition:opacity .15s}
+      #shooting-summon-gauge.el-fire{--g:255,86,104}
+      #shooting-summon-gauge.el-aqua{--g:70,170,255}
+      #shooting-summon-gauge.el-wood{--g:96,205,96}
+      #shooting-summon-gauge.el-light{--g:236,200,70}
+      #shooting-summon-gauge.el-dark{--g:170,110,240}
+      #shooting-summon-gauge.el-neutral{--g:180,190,205}
+      #shooting-summon-gauge.is-ready{background:rgba(var(--g),1);filter:drop-shadow(0 0 4px rgba(var(--g),.9));opacity:1}
+      #shooting-summon-gauge.is-full{background:conic-gradient(rgba(var(--g),.45) calc(var(--p,0)*1turn),rgba(40,30,30,.18) 0);opacity:.7}
+      #shooting-summon-gauge.is-queued{filter:drop-shadow(0 0 3px rgba(255,214,140,.95))}
+      #shooting-summon-gauge.is-queued-pop{animation:summonGaugePop .22s ease-out}
+      @keyframes summonGaugePop{0%{transform:scale(1.25)}100%{transform:scale(1)}}
+      #shooting-summon-gauge-count{position:absolute;left:0;top:0;margin:20px 0 0 -12px;width:24px;text-align:center;
+        pointer-events:none;z-index:6;font:700 9px/1 'Noto Serif JP',serif;color:#fff;text-shadow:0 0 3px #222,0 0 2px #000;letter-spacing:.02em}
+    `;
+    document.head.appendChild(st);
+  }
+  function removeSummonGauge() {
+    document.getElementById('shooting-summon-gauge')?.remove();
+    document.getElementById('shooting-summon-gauge-count')?.remove();
+  }
+  function performQueuedSummon(c, now) {
+    if (c.shotType === 'trap') {
+      const point = getRemnaTrapPlacementPoint(c);
+      return !!point && spawnRemnaTrap(c, point.x, point.y, now);
+    }
+    const point = getConjurePlacementPoint(c);
+    return !!point && launchConjureDeployment(c, point.x, point.y, now);
+  }
+  function updateSummonQueue(now) {
+    const c = state && !state.ended && !state.finishing ? getCurrentCharacter() : null;
+    if (!isSummonShotCharacter(c) || !state.player) {
+      if (state) state.summonQueued = false;
+      removeSummonGauge();
+      return;
+    }
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    ensureSummonGaugeStyle();
+    let ring = document.getElementById('shooting-summon-gauge');
+    let label = document.getElementById('shooting-summon-gauge-count');
+    if (!ring) { ring = document.createElement('div'); ring.id = 'shooting-summon-gauge'; ring.setAttribute('aria-hidden', 'true'); arena.appendChild(ring); }
+    if (!label) { label = document.createElement('div'); label.id = 'shooting-summon-gauge-count'; label.setAttribute('aria-hidden', 'true'); arena.appendChild(label); }
+    const max = getSummonMax(c);
+    const used = getSummonUsed(c, now);
+    const full = used >= max;
+    const rate = full ? getSummonNextFreeRate(c, now) : (c.camillaSpiderAi ? getCamillaSpiderCooldownRate(c, now) : 1);
+    const el = normalizeCombatElement(c.element) || 'neutral';
+    const elClass = 'el-' + el;
+    if (!ring.classList.contains(elClass)) {
+      ring.className = ring.className.replace(/\bel-\w+\b/g, '').trim();
+      ring.classList.add(elClass);
+    }
+    ring.style.setProperty('--p', rate.toFixed(3));
+    ring.classList.toggle('is-ready', !full && rate >= 1);
+    ring.classList.toggle('is-full', full);
+    ring.classList.toggle('is-queued', !!state.summonQueued);
+    // transform はポップ演出に使うので、位置は left/top で置く（positionUnit は transform を上書きするため使わない）
+    const px = Number(state.player.x || 0), py = Number(state.player.y || 0);
+    ring.style.left = px + 'px'; ring.style.top = py + 'px';
+    label.style.left = px + 'px'; label.style.top = py + 'px';
+    const text = full ? 'MAX' : (max - used) + '/' + max;
+    if (label.textContent !== text) label.textContent = text;
+
+    // 予約があり、出せるようになったら自動で設置（持ち主が交代していたら破棄）
+    if (state.summonQueued) {
+      if (Number(state.summonQueuedOwner) !== Number(c.id)) { state.summonQueued = false; return; }
+      if (!state.running || state.countdown || state.paused || state.koTransition) return;
+      if (isSummonReady(c, now)) performQueuedSummon(c, now);
+    }
+  }
+
   function commitConjurePlacement(now) {
-    if (!state?.conjurePlacementPreview) return false;
+    if (!state?.conjurePlacementPreview) {
+      // build1700: カミラは4体いる間は予告が出ないため、離指時にここへ来る。タップを予約として受け付ける。
+      const cur = state && getCurrentCharacter();
+      if (cur && cur.shotType === 'conjure') queueSummon(cur, now || performance.now());
+      return false;
+    }
     const preview = state.conjurePlacementPreview;
     const c = getCurrentCharacter();
     clearConjurePlacementPreview();
@@ -24689,6 +24837,7 @@
     updateRemnaTrapPlacementPreview(ts);
     updateConjureDeployments(dt, ts);
     updateConjureTurrets(ts);
+    updateSummonQueue(ts);
     updateCamillaCrimsonWeb(ts);
     syncCamillaBoundWebVisual(ts);
     rearmConjurePlacementWhileHeld(ts);
