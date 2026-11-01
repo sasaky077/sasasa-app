@@ -4705,16 +4705,34 @@
       return base;
     }
   }
+  // build1724: 差し替え先がまだ読み込まれていない間、<img> は直前の画像（初期のエリ等）を出し続ける。
+  //  新しい画像が読み込まれるまで自機画像を隠し、別キャラの画像が一瞬でも見えないようにする。
+  let playerBattleImageToken = 0;
   function setPlayerBattleImage(img, c, src) {
     if (!img) return;
     const base = String((c && c.image) || '');
     const target = String(src || base);
+    const token = String(++playerBattleImageToken);
+    img.dataset.srcToken = token;
+    let revealTimer = 0;
+    const reveal = () => {
+      if (img.dataset.srcToken !== token) return;
+      clearTimeout(revealTimer);
+      img.classList.remove('is-image-pending');
+    };
+    img.onload = reveal;
     img.onerror = target !== base ? function () {
       failedSkinBattleImages.add(target);
-      img.onerror = null;
+      img.onerror = function () { img.onerror = null; reveal(); };
       img.src = base;
-    } : null;
+    } : function () { img.onerror = null; reveal(); };
     img.src = target;
+    if (img.complete && img.naturalWidth > 0) reveal();
+    else {
+      img.classList.add('is-image-pending');
+      // 通信が止まっても自機が消えたままにならないよう、最長4秒で表示に戻す
+      revealTimer = setTimeout(reveal, 4000);
+    }
   }
 
   function applySelectedCharacterToUi() {
@@ -29776,12 +29794,21 @@
       trialMenuButton.addEventListener('click', () => { void window.closeShootingEvent(); }, { once: true });
     }
     warmSelectedPartyUltCutins();
+    // build1724: 試遊キャラの戦闘画像を読み込んでからカウントダウンを始める（最長2.5秒待つ）。
+    const trialId = gachaTrialCharacterId;
+    const trialChar = getCurrentCharacter();
+    const trialImage = trialChar ? String(getCharacterBattleImage(trialChar) || trialChar.image || '') : '';
+    const ready = trialImage ? preloadShootingImage(trialImage, 2500).catch(() => false) : Promise.resolve(true);
     requestAnimationFrame(() => {
       if (!isGachaTrialStage() || !state || state.ended || !root.isConnected) return;
       placeInitialUnits();
       renderHud();
       activateShootingBattleBgm(true);
-      runStartCountdown();
+      void ready.then(() => {
+        if (!isGachaTrialStage() || gachaTrialCharacterId !== trialId || !state || state.ended || !root.isConnected) return;
+        applySelectedCharacterToUi();
+        runStartCountdown();
+      });
     });
     return true;
   }

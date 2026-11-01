@@ -15486,3 +15486,6 @@ html body #shooting-event-root .shooting-combo .shooting-combo-bonus.is-up{anima
   60%{color:#a07a1f}
   100%{transform:scale(1);color:#8a6a3a}
 }
+
+/* build1724 — 自機画像の差し替え中は前の画像（初期のエリ等）を見せない */
+#shooting-event-root #shooting-player-image.is-image-pending{visibility:hidden !important;}

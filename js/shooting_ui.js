@@ -81,8 +81,8 @@
           <div class="shooting-normal-enemy-layer" id="shooting-normal-enemy-layer" aria-hidden="true"></div>
           <div class="shooting-collectible-layer" id="shooting-collectible-layer" aria-hidden="true"></div>
           <img id="${BOSS_ID}" class="shooting-boss" src="${BOSS.image}" alt="${BOSS.name}" draggable="false">
-          <div id="${PLAYER_ID}" class="shooting-player" data-character-id="1">
-            <img id="shooting-player-image" src="${SHOOTING_CHARACTERS[CHARACTER_ID.ERI].image}" alt="エリ" draggable="false">
+          <div id="${PLAYER_ID}" class="shooting-player" data-character-id="">
+            <img id="shooting-player-image" class="is-image-pending" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="" draggable="false">
             <span class="shooting-player-aura"></span>
             <span class="shooting-player-buff-ring" aria-hidden="true"></span>
             <div class="shooting-player-buff-badges" id="shooting-player-buff-badges" aria-hidden="true"></div>
