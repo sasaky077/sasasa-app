@@ -1,4 +1,4 @@
 {
-  "build": 1722,
-  "note": "位相回遊SUB MISSIONを左上に簡易表示・PAUSEメニューに詳細、COMBO倍率の背景帯"
+  "build": 1723,
+  "note": "位相回遊SUB MISSIONを箱なしの控えめ表示に（残り時間バー・被弾◆・異常を常時表示）、COMBO下のDMG表示を小文字化し上昇時だけ光らせる、PAUSE詳細の数値を階設定に連動"
 }

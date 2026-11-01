@@ -15465,3 +15465,24 @@ html body #shooting-event-root .shooting-gresha-burn-field .gresha-ember{
 #shooting-event-root #shooting-arena .shooting-hao-trigger-burst{
   z-index:8 !important;
 }
+
+/* ============================================================
+   build1723 — COMBO下のダメージ上昇表示を控えめに
+   箱をやめて小さな文字だけ。段階が上がった瞬間だけ金色にふくらむ。
+   0%のときは場所だけ確保して見せない。
+   ============================================================ */
+html body #shooting-event-root .shooting-combo .shooting-combo-bonus{
+  display:block;min-height:11px;margin-top:3px;padding:0 2px 0 0;
+  font:600 10px/1.1 'Cinzel','Noto Serif JP',serif;font-style:normal;letter-spacing:.1em;
+  color:#8a6a3a;text-align:right;
+  background:none;border:0;
+  text-shadow:var(--hud-halo,0 0 2px #fff,0 0 4px rgba(255,255,255,.95));
+  transform-origin:right center;pointer-events:none;
+}
+html body #shooting-event-root .shooting-combo .shooting-combo-bonus.is-zero{visibility:hidden;}
+html body #shooting-event-root .shooting-combo .shooting-combo-bonus.is-up{animation:comboBonusUp .9s ease-out;}
+@keyframes comboBonusUp{
+  0%{transform:scale(1.35);color:#b8860b;text-shadow:0 0 2px #fff,0 0 6px rgba(255,255,255,.95),0 0 12px rgba(255,200,80,.95)}
+  60%{color:#a07a1f}
+  100%{transform:scale(1);color:#8a6a3a}
+}

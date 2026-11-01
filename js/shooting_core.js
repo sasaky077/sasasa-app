@@ -1081,46 +1081,79 @@
   }
   // build1684: SUB MISSION の進み具合（生存・速攻は残り秒数、見切りは被弾数）を画面上部に常時表示
   // build1722: COMBOの反対側に、必要な進行数値だけを置く。
+  // build1723: 箱をやめ、COMBOと同じ「白ふち文字＋細い金線」の控えめな表示に。
+  //  ・生存／速攻は残り時間の細いバー、見切りは残り被弾数の◆、精鋭は健在／撃破のみ。
+  //  ・殲滅はミッション帯のENEMY数と重複するので数値を出さない（異常があれば異常だけ出す）。
+  //  ・異常は常時1行で表示し、開幕だけ軽く光らせて気づかせる。
   function updatePhaseOdysseySubMissionChip(v, now, running) {
     const arena = document.getElementById('shooting-arena');
     if (!arena || !state) return;
     let chip = arena.querySelector('.po-submission-chip');
-    if (state.ended) { if(chip) chip.remove(); return; }
+    if (state.ended) { if (chip) chip.remove(); return; }
     if (!chip) {
-      chip = document.createElement('div'); chip.className='po-submission-chip';
-      chip.setAttribute('aria-hidden','true');
-      chip.innerHTML='<span></span><b></b><em></em>';arena.appendChild(chip);
+      chip = document.createElement('div'); chip.className = 'po-submission-chip';
+      chip.setAttribute('aria-hidden', 'true');
+      chip.innerHTML = '<div class="po-sm-row"><span class="po-sm-label"></span><b class="po-sm-val"></b><small class="po-sm-unit"></small></div>'
+        + '<i class="po-sm-bar"><i></i></i><span class="po-sm-pips"></span><em class="po-sm-note"></em><span class="po-sm-anom"></span>';
+      arena.appendChild(chip);
     }
-    const kind=v.objective, total=Math.max(0, Number(getNormalBattleConfig()?.totalEnemies || 0));
-    const defeated=Math.max(0,Number(state.normalDefeated||0));
-    let label=PO_OBJECTIVE_LABEL[kind]||'MISSION',main='',note='',stateName='run';
-    const count= total>0 ? defeated+' / '+total : '全滅';
-    if(kind==='survive') {
-      const sec=state.countdown?Number(v.seconds||20):Math.max(0,getBattleTimeLeft(now));
-      main=state.missionComplete?'CLEAR':sec.toFixed(1)+'秒';
-      note=state.missionComplete?'':'生存';
-      if(sec<=5 && !state.countdown)stateName='hurry';
-    } else if(kind==='speed') {
-      const limit=Number(v.seconds||30);
-      const elapsed=state.countdown?0:Math.max(0,((state.poClearAt||now)-Number(state.startedAt||now))/1000);
-      const remain=limit-elapsed;
-      main=state.poClearAt ? (remain>=0?'★達成':count) : (remain>0?remain.toFixed(1)+'秒':count);
-      note=state.poClearAt ? (remain>=0?'速攻成功':'★失敗') : (remain>0?'★条件':'★失敗');
-      if(remain<=5 && remain>0 && !state.poClearAt) stateName='hurry';
-      if(remain<=0)stateName='fail';
-    } else if(kind==='nohit') {
-      const hits=Number(state.totalHitsTaken||0),max=Number(v.maxHits??3);
-      main=hits>max?count:hits+' / '+max;
-      note=hits>max?'★失敗':'被弾';
-      if(hits>max)stateName='fail';else if(hits===max)stateName='hurry';
-    } else if(kind==='lethal') {main='撃破';note='即死弾注意';}
-    else {main=count;note=kind==='elite'?'精鋭含む':'敵撃破';}
-    const signature=[label,main,note,stateName].join('|');
-    if(chip.dataset.text===signature)return;
-    chip.dataset.text=signature;chip.dataset.state=stateName;
-    chip.querySelector('span').textContent=label;
-    chip.querySelector('b').textContent=main;
-    chip.querySelector('em').textContent=note;
+    // 開幕2.4秒だけ軽く光らせる（バナー廃止の代わりの「気づき」）
+    if (running && !state.poChipIntroAt) {
+      state.poChipIntroAt = now;
+      chip.classList.add('is-intro');
+      setTimeout(() => { if (chip.isConnected) chip.classList.remove('is-intro'); }, 2400);
+    }
+    const kind = v.objective;
+    const label = PO_OBJECTIVE_LABEL[kind] || 'MISSION';
+    let val = '', unit = '', note = '', stateName = 'run', bar = -1, pips = '', showMain = true;
+    if (kind === 'survive') {
+      const total = Math.max(1, Number(v.seconds || 20));
+      const sec = state.countdown ? total : Math.max(0, getBattleTimeLeft(now));
+      if (state.missionComplete) { val = 'CLEAR'; stateName = 'done'; bar = 0; }
+      else { val = sec.toFixed(1); unit = '秒'; bar = sec / total; if (sec <= 5 && !state.countdown) stateName = 'hurry'; }
+    } else if (kind === 'speed') {
+      const limit = Math.max(1, Number(v.seconds || 30));
+      const elapsed = state.countdown ? 0 : Math.max(0, ((state.poClearAt || now) - Number(state.startedAt || now)) / 1000);
+      const remain = limit - elapsed;
+      if (state.poClearAt && remain >= 0) { val = '★達成'; stateName = 'done'; bar = remain / limit; }
+      else if (remain > 0) { val = remain.toFixed(1); unit = '秒'; bar = remain / limit; if (remain <= 5) stateName = 'hurry'; }
+      else { val = '時間切れ'; note = '★なし'; stateName = 'fail'; bar = 0; }
+    } else if (kind === 'nohit') {
+      const hits = Math.max(0, Number(state.totalHitsTaken || 0)), max = Math.max(0, Number(v.maxHits ?? 3));
+      const left = max - hits;
+      if (left < 0) { val = '被弾超過'; note = '★なし'; stateName = 'fail'; }
+      else {
+        // 残り被弾数を◆で見せる（◆＝あと受けられる回数、◇＝使った分）
+        pips = '◆'.repeat(left) + '◇'.repeat(Math.max(0, max - left));
+        if (left === 0) stateName = 'hurry';
+      }
+    } else if (kind === 'elite') {
+      const alive = (state.normalEnemies || []).some(e => e && e.poElite && Number(e.hp) > 0);
+      if (alive) val = '健在';
+      else if (Number(state.normalSpawned || 0) > 0) { val = '撃破'; stateName = 'done'; }
+      else val = '出現前';
+    } else if (kind === 'lethal') {
+      val = '即死弾'; note = '被弾＝戦闘不能';
+      stateName = 'warn';
+    } else {
+      showMain = false; // 殲滅：ミッション帯のENEMY数で足りる
+    }
+    const anom = v.anomaly ? (PO_ANOMALY_LABEL[v.anomaly] || v.anomaly) : '';
+    // バーは0.1刻みでしか更新しない（毎フレームのstyle書き換えを避ける）
+    const barStep = bar >= 0 ? Math.round(Math.max(0, Math.min(1, bar)) * 100) : -1;
+    const signature = [label, val, unit, note, stateName, barStep, pips, anom, showMain].join('|');
+    if (chip.dataset.text === signature) return;
+    chip.dataset.text = signature; chip.dataset.state = stateName; chip.dataset.kind = kind;
+    chip.classList.toggle('no-main', !showMain);
+    chip.classList.toggle('is-hidden', !showMain && !anom);
+    chip.querySelector('.po-sm-label').textContent = label;
+    chip.querySelector('.po-sm-val').textContent = val;
+    chip.querySelector('.po-sm-unit').textContent = unit;
+    const noteEl = chip.querySelector('.po-sm-note'); noteEl.textContent = note; noteEl.hidden = !note;
+    const barEl = chip.querySelector('.po-sm-bar'); barEl.hidden = barStep < 0;
+    if (barStep >= 0) barEl.firstChild.style.transform = 'scaleX(' + (barStep / 100) + ')';
+    const pipEl = chip.querySelector('.po-sm-pips'); pipEl.textContent = pips; pipEl.hidden = !pips;
+    const anomEl = chip.querySelector('.po-sm-anom'); anomEl.textContent = anom; anomEl.hidden = !anom;
   }
   function syncPhaseOdysseyMissionDetails(menu) {
     if(!menu)return;
@@ -1133,17 +1166,26 @@
       if(anchor)anchor.insertAdjacentElement('afterend',detail);
       else menu.querySelector('.shooting-pause-card')?.prepend(detail);
     }
-    const descriptions={clear:'出現する敵をすべて撃破',elite:'HP5倍の精鋭を含むすべての敵を撃破',
-      survive:'制限時間まで生き残ればクリア',speed:'敵をすべて撃破。制限時間内なら強化の★が上がる',
-      nohit:'敵をすべて撃破。被弾3回以内なら強化の★が上がる',lethal:'すべての弾が即死弾。ボス撃破で★が上がる'};
+    // build1723: 秒数・被弾数は固定文ではなく、その階の設定値から作る（チップ表示と食い違わないように）
+    const sec=Number(v.seconds||(v.objective==='survive'?20:30));
+    const maxHits=Number(v.maxHits??3);
+    const descriptions={clear:'出現する敵をすべて撃破',elite:'強化された精鋭を含む、すべての敵を撃破',
+      survive:sec+'秒間生き残ればクリア',speed:'敵をすべて撃破。'+sec+'秒以内なら強化の★UP',
+      nohit:'敵をすべて撃破。被弾'+maxHits+'回以内なら強化の★UP',lethal:'すべての敵弾が即死弾。突破で強化の★UP'};
     const anomalyDesc={blackout:'周期的に暗転',haste:'敵弾1.25倍速',reverse:'左右操作が反転',slow:'移動速度75%',crowd:'敵が増加',burst:'撃破時に弾を放出'};
     const title=PO_OBJECTIVE_LABEL[v.objective]||'MISSION';
     // 文字列は固定定義のみ。任意HTMLを挿入しない。
     detail.replaceChildren();
-    const heading=document.createElement('strong');heading.textContent='MISSION詳細 / '+title;
+    const kicker=document.createElement('small');kicker.textContent='SUB MISSION';
+    const heading=document.createElement('strong');heading.textContent=title;
     const desc=document.createElement('p');desc.textContent=descriptions[v.objective]||'敵を撃破';
-    detail.append(heading,desc);
-    if(v.anomaly){const anomaly=document.createElement('p');anomaly.textContent='異常：'+(PO_ANOMALY_LABEL[v.anomaly]||v.anomaly)+' — '+(anomalyDesc[v.anomaly]||'');detail.append(anomaly);}
+    detail.append(kicker,heading,desc);
+    if(v.anomaly){
+      const anomaly=document.createElement('p');anomaly.className='is-anomaly';
+      const tag=document.createElement('b');tag.textContent='異常 '+(PO_ANOMALY_LABEL[v.anomaly]||v.anomaly);
+      anomaly.append(tag,document.createTextNode(anomalyDesc[v.anomaly]||''));
+      detail.append(anomaly);
+    }
   }
   function isPhaseOdysseyBlackoutActive() {
     return !!(state && state.poBlackout && state.poBlackout.until && getPhaseOdysseyAnomaly() === 'blackout');
@@ -5836,14 +5878,25 @@
     if (!badge) {
       badge = document.createElement('em');
       badge.id = 'shooting-combo-bonus';
+      badge.className = 'shooting-combo-bonus';
       badge.setAttribute('aria-label', 'コンボによるダメージ上昇');
-      badge.style.cssText = 'display:block;font:700 11px/1.1 "Cinzel","Noto Serif JP",serif;font-style:normal;letter-spacing:.06em;color:#fff1ce;text-shadow:0 1px 2px rgba(0,0,0,.65);text-align:right;margin-top:2px;padding:3px 7px;border:1px solid rgba(217,181,99,.68);border-radius:3px;background:rgba(37,28,25,.82);pointer-events:none';
       combo.appendChild(badge);
     }
-    const pct = Math.round((getHitComboDamageMultiplier() - 1) * 100);
-    const text = isScoreAttackStage() ? '' : ('DMG +' + pct + '%');
-    if (badge.textContent !== text) badge.textContent = text;
-    badge.style.opacity = pct > 0 ? '1' : '.55';
+    // build1723: 箱をやめ、COMBOの下に小さな文字だけ。普段は控えめ、段階が上がった瞬間だけ金色に光る。
+    //  0%のときは場所だけ確保して非表示（COMBOの高さが変わらないように）。
+    const pct = isScoreAttackStage() ? 0 : Math.round((getHitComboDamageMultiplier() - 1) * 100);
+    const prev = Number(badge.dataset.pct || 0);
+    if (prev === pct && badge.dataset.ready) return;
+    badge.dataset.ready = '1';
+    badge.dataset.pct = String(pct);
+    badge.textContent = pct > 0 ? ('DMG +' + pct + '%') : '';
+    badge.classList.toggle('is-zero', pct <= 0);
+    if (pct > prev) {
+      badge.classList.remove('is-up');
+      requestAnimationFrame(() => { badge.classList.add('is-up'); });
+      clearTimeout(badge._upTimer);
+      badge._upTimer = setTimeout(() => badge.classList.remove('is-up'), 900);
+    }
   }
 
   function resetCombo(silent = false) {
