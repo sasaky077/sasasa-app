@@ -17283,6 +17283,8 @@ function buildShootingShotTypeValue(c, shot, isMain){
   var elementIcon = getElementIconImage(element || '');
   var elementLabel = getElementLabel(element || '') || '属性';
   var shotName = shotType.toUpperCase();
+  // build1710: CLUSTERは分裂の形（X字／十字）を名前に出す
+  if(shotType === 'cluster') shotName = 'CLUSTER' + (String((isMain ? c.clusterPattern : shot && shot.pattern) || c.clusterPattern || 'x') === 'cross' ? '(＋)' : '(X)');
   var fallbackCount = isMain ? c.shotCount : 1;
   var count = Math.max(1, Math.floor(Number((shot && shot.count) || fallbackCount || 1)));
   var countText = String(count);
@@ -17484,6 +17486,11 @@ function buildCharacterDetailHTML(data, options){
   var ultTheoryText = Number.isFinite(ultTheorySeconds) && ultTheorySeconds > 0
     ? (ultTheorySeconds.toFixed(1) + '秒' + (Number.isFinite(shotStats.theoryHits) ? '（' + shotStats.theoryHits + 'Hit）' : ''))
     : (Number.isFinite(shotStats.theoryHits) ? (shotStats.theoryHits + 'Hit') : '-');
+  // build1710: ショット種ごとのコンボ性能（戦闘中のHUDにも「DMG +◯%」で表示）
+  var comboRate = Number.isFinite(Number(c.comboBonusRate)) ? Number(c.comboBonusRate) : 0.05;
+  var comboTimeout = Number.isFinite(Number(c.comboTimeoutMs)) && Number(c.comboTimeoutMs) > 0 ? Number(c.comboTimeoutMs) : 3000;
+  var comboBonusText = '50Hitごと +' + Math.round(comboRate * 100) + '%（最大 +' + Math.round(comboRate * 600) + '%）';
+  var comboTimeoutText = (comboTimeout / 1000).toFixed(comboTimeout % 1000 ? 1 : 0) + '秒';
   var dpsText = Number.isFinite(shotStats.dps) && shotStats.dps > 0
     ? Math.round(shotStats.dps).toLocaleString('ja-JP')
     : '-';
@@ -17501,7 +17508,7 @@ function buildCharacterDetailHTML(data, options){
         buildShootingStatusRow('ATK', String(getDetailStatValue(data, c, 'ATK'))) +
         buildShootingStatusRowHTML('ショットタイプ(MAIN)', buildShootingShotTypeValue(c, c.mainShot, true)) +
         (c.subShot ? buildShootingStatusRowHTML('ショットタイプ(SUB)', buildShootingShotTypeValue(c, c.subShot, false)) : '') +
-        buildShootingStatusRow('貫通(MAIN)', getDetailShotPiercingText(c.shotType)) +
+        buildShootingStatusRow('貫通(MAIN)', c.shotType === 'cluster' ? '分裂弾が貫通・画面端まで' : getDetailShotPiercingText(c.shotType)) +
         (c.subShot ? buildShootingStatusRow('貫通(SUB)', getDetailShotPiercingText(c.subShot.type)) : '') +
         buildShootingStatusRow('共鳴', 'Lv.' + lb + ' / ' + MAX_LIMIT_BREAK) +
       '</div>' +
@@ -17516,11 +17523,13 @@ function buildCharacterDetailHTML(data, options){
           buildShootingStatusRow(c.shotType === 'charge' ? 'ULT獲得/MAX' : 'ULT獲得/1Hit', ultGainPercentText) +
           buildShootingStatusRow('ULT回収理論値', ultTheoryText) +
           buildShootingStatusRow('理論DPS', dpsText) +
+          buildShootingStatusRow('コンボボーナス', comboBonusText) +
+          buildShootingStatusRow('コンボ持続', comboTimeoutText) +
         '</div>' +
       '</div>' +
     '</div>' +
 
-    '<div class="detail-shooting-note">※理論値は単体の敵へ通常ショットが全弾命中し続けた場合（ULT・爆風・分裂弾・バフは含まない）。</div>' +
+    '<div class="detail-shooting-note">※理論値は単体の敵へ通常ショットが全弾命中し続けた場合（ULT・爆風・分裂弾・バフ・コンボは含まない）。コンボは被弾するか、コンボ持続の時間Hitしないと途切れる。</div>' +
     '<div class="detail-shooting-section">' +
       '<div class="detail-section-title">ULT</div>' +
       '<div class="detail-shooting-card detail-shooting-ult">' +
@@ -20109,7 +20118,7 @@ function fadeOutOpeningBgm(){
 
 
 
-<script src="js/shooting_characters.js?v=1700-camilla-queue"></script>
+<script src="js/shooting_characters.js?v=1710-shot-roles"></script>
 <script src="js/story_scenario.js?v=1698-ch09-title"></script>
 <script src="js/story_novel.js?v=1510-aina-seeker-trial"></script>
 <script src="js/stage_select.js?v=1667-ch09"></script>
@@ -20346,7 +20355,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1705-leona-halloween"></script>
+<script src="js/shooting_event.js?v=1710-shot-roles"></script>
 <script src="js/shooting_party_filter.js?v=1472-filter-screen-exit-reset"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1662-raid-laps"></script>

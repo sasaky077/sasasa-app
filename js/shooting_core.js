@@ -5665,6 +5665,7 @@
       }
     }
     if (comboCount) comboCount.textContent = String(state.combo || 0);
+    renderComboBonusBadge();
     const member = getActiveMember();
     const chara = getCurrentCharacter();
     // build1255: CH04でも通常どおりULTゲージを保持する。
@@ -5741,10 +5742,19 @@
   const HIT_COMBO_STEP_BONUS = 0.05;
   const HIT_COMBO_MAX = 300;
 
+  // build1710: 上昇率・途切れるまでの時間は、操作中キャラのショット種の値（キャラ詳細に表示している数値）
+  function getComboBonusRate(c) {
+    const rate = Number((c || getCurrentCharacter() || {}).comboBonusRate);
+    return Number.isFinite(rate) && rate >= 0 ? rate : HIT_COMBO_STEP_BONUS;
+  }
+  function getComboTimeoutMs(c) {
+    const ms = Number((c || getCurrentCharacter() || {}).comboTimeoutMs);
+    return Number.isFinite(ms) && ms > 0 ? ms : HIT_COMBO_TIMEOUT_MS;
+  }
   function getHitComboDamageMultiplier() {
     if (!state || isScoreAttackStage()) return 1;
     const combo = Math.max(0, Math.min(HIT_COMBO_MAX, Number(state.combo || 0)));
-    return 1 + Math.floor(combo / HIT_COMBO_STEP) * HIT_COMBO_STEP_BONUS;
+    return 1 + Math.floor(combo / HIT_COMBO_STEP) * getComboBonusRate();
   }
 
   function applyHitComboDamage(amount) {
@@ -5814,6 +5824,24 @@
       clearTimeout(comboPulseTimer);
       comboPulseTimer = setTimeout(() => combo.classList.remove('pulse', 'milestone'), milestone ? 520 : 220);
     });
+  }
+
+  // build1710: コンボのダメージ上昇を数値で常に表示（例：+20%）。スコアアタックは補正なしなので出さない。
+  function renderComboBonusBadge() {
+    const combo = document.getElementById('shooting-combo');
+    if (!combo || !state) return;
+    let badge = document.getElementById('shooting-combo-bonus');
+    if (!badge) {
+      badge = document.createElement('em');
+      badge.id = 'shooting-combo-bonus';
+      badge.setAttribute('aria-label', 'コンボによるダメージ上昇');
+      badge.style.cssText = 'display:block;font:700 11px/1.1 "Cinzel","Noto Serif JP",serif;font-style:normal;letter-spacing:.06em;color:#b0782a;text-shadow:0 0 4px #fff,0 0 2px #fff;text-align:right;margin-top:1px;pointer-events:none';
+      combo.appendChild(badge);
+    }
+    const pct = Math.round((getHitComboDamageMultiplier() - 1) * 100);
+    const text = isScoreAttackStage() ? '' : ('DMG +' + pct + '%');
+    if (badge.textContent !== text) badge.textContent = text;
+    badge.style.opacity = pct > 0 ? '1' : '.55';
   }
 
   function resetCombo(silent = false) {
@@ -8235,19 +8263,20 @@
     return String(source?.clusterSize || source?.bombSize || source?.mainShot?.size || 'M').toUpperCase() === 'L' ? 8 : 4;
   }
 
-  function getBombSplitAngles(count) {
+  function getBombSplitAngles(count, pattern) {
     const n = count === 6 || count === 8 ? count : 4;
+    if (n === 4 && pattern === 'cross') return [0, 90, 180, 270]; // build1710: CLUSTER(＋) 十字
     if (n === 4) return [45, 135, 225, 315]; // X字
     if (n === 6) return [-90, -30, 30, 90, 150, 210];
     return Array.from({ length: 8 }, (_, i) => i * 45);
   }
 
-  function createBombSplitBurstEffect(x, y, element, splitCount) {
+  function createBombSplitBurstEffect(x, y, element, splitCount, pattern) {
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
     ensureBombVisualStyles();
     const visual = getBombElementVisual(element);
-    const angles = getBombSplitAngles(splitCount);
+    const angles = getBombSplitAngles(splitCount, pattern);
     const el = document.createElement('div');
     el.className = 'shooting-bomb-split-burst';
     el.style.setProperty('--bomb-x', `${Number(x || 0)}px`);
@@ -8269,7 +8298,8 @@
     ensureBombVisualStyles();
 
     const splitCount = normalizeBombSplitCount(source);
-    const angles = getBombSplitAngles(splitCount);
+    const pattern = source.clusterPattern === 'cross' ? 'cross' : 'x';
+    const angles = getBombSplitAngles(splitCount, pattern);
     const rate = Math.max(0, Number(source.clusterFragmentDamageRate ?? source.bombFragmentDamageRate ?? 0.50));
     const damage = Math.max(0, Number(source.damage || 0)) * rate;
     const speed = Math.max(120, Number(source.clusterFragmentSpeed || source.bombFragmentSpeed || 430));
@@ -8299,7 +8329,10 @@
       fragment.bombFragment = true;
       fragment.bombIgnoreTarget = ignoredTarget || null;
       fragment.bombBornAt = Number(now || performance.now());
-      fragment.bombExpireAt = fragment.bombBornAt + 2200;
+      // build1710: 分裂弾は敵を貫通し（同じ敵には1回だけ）、画面端で消えるまで飛び続ける
+      fragment.bombExpireAt = fragment.bombBornAt + 4000;
+      fragment.pierce = true;
+      fragment.piercedTargets = new Set(ignoredTarget ? [ignoredTarget] : []);
       fragment.noBombSplit = true;
       fragment._hw = 4.5;
       fragment._hh = 4.5;
@@ -8307,7 +8340,7 @@
       queue.push(fragment);
     });
 
-    createBombSplitBurstEffect(x, y, element, splitCount);
+    createBombSplitBurstEffect(x, y, element, splitCount, pattern);
     return angles.length;
   }
 
@@ -11478,6 +11511,7 @@
         p.clusterSize = bombSize;
         p.clusterSplitCount = splitCount;
         p.clusterFragmentDamageRate = Math.max(0, Number(c.clusterFragmentDamageRate ?? c.bombFragmentDamageRate ?? 0.50));
+        p.clusterPattern = c.clusterPattern === 'cross' ? 'cross' : 'x';
         p.clusterFragmentSpeed = Math.max(120, Number(c.clusterFragmentSpeed || c.bombFragmentSpeed || 430));
         p.clusterFragmentClass = bulletClass;
         p.attackElement = attackElement;
@@ -24841,7 +24875,7 @@
 
     const dt = Math.min(0.032, Math.max(0, (ts - (prevTs || ts)) / 1000));
     prevTs = ts;
-    if (!isScoreAttackStage() && state.combo > 0 && Number(state.lastComboHitAt || 0) > 0 && ts - Number(state.lastComboHitAt || 0) >= HIT_COMBO_TIMEOUT_MS) {
+    if (!isScoreAttackStage() && state.combo > 0 && Number(state.lastComboHitAt || 0) > 0 && ts - Number(state.lastComboHitAt || 0) >= getComboTimeoutMs()) {
       resetCombo(true);
     }
     if (!state.koTransition) updateMovement(dt, ts);

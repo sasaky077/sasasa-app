@@ -1464,6 +1464,18 @@
     };
   }
 
+  // build1710: ショット種ごとのコンボ性能（キャラ詳細と戦闘中のHUDに数値で表示する。隠し補正はしない）
+  //   rate     … 50Hitごとのダメージ上昇（最大300Hit＝6段）
+  //   timeoutMs… 最後のHitからコンボが途切れるまでの時間（被弾では常に途切れる）
+  //   PARALLELはコンボ特化：上昇2倍・途切れにくい。
+  const SHOT_COMBO_PROFILE = Object.freeze({
+    default:  Object.freeze({ rate: 0.05, timeoutMs: 3000 }),
+    parallel: Object.freeze({ rate: 0.10, timeoutMs: 5000 }),
+  });
+  function getShotComboProfile(type) {
+    return SHOT_COMBO_PROFILE[normalizeShotType(type)] || SHOT_COMBO_PROFILE.default;
+  }
+
   function buildShootingCharacter(profile) {
     profile = applyChargeSizePreset(profile);
     const master = getShootingCharacterMaster(profile.id);
@@ -1490,9 +1502,12 @@
     const baseHp = Number(profile.hp ?? master.hp);
     const baseAtk = Number(profile.atk ?? master.atk);
 
+    const comboProfile = getShotComboProfile(mainShot?.type || profile.shotType);
     return {
       ...profile,
       shotType: mainShot?.type || normalizeShotType(profile.shotType),
+      comboBonusRate: Number(profile.comboBonusRate ?? comboProfile.rate),
+      comboTimeoutMs: Number(profile.comboTimeoutMs ?? comboProfile.timeoutMs),
       mainShot,
       subShot,
       id: master.id,
@@ -2280,9 +2295,10 @@
 
   SHOOTING_CHARACTERS[CHARACTER_ID.AURA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.AURA, effectKey: 'aura',
-    label: 'CLUSTER 4 / DOT', description: '着弾時に4方向へ分裂するCLUSTER型。ULTは継続ダメージ＋微回復。',
-    shotType: 'cluster', clusterSize: 'M', clusterSplitCount: 4, clusterFragmentDamageRate: 0.50,
-    shotCount: 1, fireRate: 550, bulletSpeed: 650, shotPowerRate: 0.27,
+    label: 'CLUSTER(X) / DOT', description: '着弾するとX字の4方向へ分裂弾を放つCLUSTER(X)型。分裂弾は敵を貫通して画面端まで届く。ULTは継続ダメージ＋微回復。',
+    // build1710: 分裂弾は貫通・画面端まで。威力 親0.27→0.32／分裂50%→80%
+    shotType: 'cluster', clusterSize: 'M', clusterSplitCount: 4, clusterFragmentDamageRate: 0.80, clusterPattern: 'x',
+    shotCount: 1, fireRate: 550, bulletSpeed: 650, shotPowerRate: 0.32,
     ultBaseType: 'dot', ultAddons: ['heal'], ultType: 'prototype_generic',
   });
 
@@ -2859,9 +2875,10 @@
   SHOOTING_CHARACTERS[CHARACTER_ID.RUIRUI] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON,
     id: CHARACTER_ID.RUIRUI, effectKey:'ruirui',
-    label:'CLUSTER / AQUA', description:'水属性のCLUSTER 4分裂。ULTは周囲に円環を展開し、敵弾を減速させる。',
-    shotType:'cluster', clusterSize:'M', clusterSplitCount:4, clusterFragmentDamageRate:0.5,
-    shotCount:1, fireRate:550, bulletSpeed:650, shotPowerRate:0.27,
+    label:'CLUSTER(＋) / AQUA', description:'水属性のCLUSTER(＋)。着弾すると十字の4方向へ分裂弾を放ち、分裂弾は敵を貫通して画面端まで届く。ULTは周囲に円環を展開し、敵弾を減速させる。',
+    // build1710: 分裂弾は貫通・画面端まで。威力 親0.27→0.32／分裂50%→80%
+    shotType:'cluster', clusterSize:'M', clusterSplitCount:4, clusterFragmentDamageRate:0.8, clusterPattern:'cross',
+    shotCount:1, fireRate:550, bulletSpeed:650, shotPowerRate:0.32,
     ultName:'アビス・マレディクション',
     ultDescription:'自身を中心に円環を7秒間展開する。円環内に入った敵弾は移動速度が20%に低下し、外へ出ると元の速度へ戻る。',
     ultType:'shiina_light_ring', ultBaseType:'field', ultAddons:['enemy_bullet_slow'],
