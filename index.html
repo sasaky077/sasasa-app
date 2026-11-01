@@ -15786,7 +15786,7 @@ function showTenResult(results){
       '<div class="primor-fullscreen-content">' +
         '<img class="primor-fullscreen-img" src="' + detailEscapeHTML(src) + '" alt="' + detailEscapeHTML(name) + '">' +
         '<div class="primor-fullscreen-name">' + detailEscapeHTML(limitPlayerDisplayName(name)) + '</div>' +
-        (typeof buildCharaSublineHTML === 'function' ? buildCharaSublineHTML(fullscreenElementKey, (getRepresentativeOwnedInstance(id) || {}).rarity || chara.rarity, (getRepresentativeOwnedInstance(id) || {}).limitBreak || 0, true) : '') +
+        // build1707: 全画面（キャラクター設定画面）では属性・レア・共鳴の行は出さない
         '<button class="primor-fullscreen-home-btn" type="button"><svg class="primor-home-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11.2 12 4l8.5 7.2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10v9.5h4.6v-5.2h2.8v5.2H18V10" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></svg><span>ホーム画面に設定</span></button>' +
         ((window.CharacterSkins && typeof window.CharacterSkins.buildFullscreenControlsHTML === 'function')
           ? window.CharacterSkins.buildFullscreenControlsHTML(chara)
@@ -16315,7 +16315,7 @@ function showTenResult(results){
         (owned ? ('onclick="openPrimorImageFullscreen(' + chara.id + ')" role="button" aria-label="キャラ画像を全画面表示"') : '') + '>' +
         '<img class="box-carousel-img ' + (owned ? '' : 'primoa-detail-unowned-img') + '" src="' + panelSrc + '" alt="' + detailEscapeHTML(chara.name || '') + '">' +
         getPrimorRarityBadgeHTML(chara, displayData) +
-        (owned ? '<div class="box-carousel-zoom-hint">画像をタップで拡大</div>' : '<div class="primoa-detail-unowned-label">未所持</div>') +
+        (owned ? '<div class="box-carousel-zoom-hint">キャラクター設定画面</div>' : '<div class="primoa-detail-unowned-label">未所持</div>') +
       '</div>';
 
     var detailHtml = buildCharacterDetailHTML(Object.assign({}, displayData, {
@@ -16433,6 +16433,14 @@ function showTenResult(results){
         rarityBadge.style.setProperty('width', (badgeBaseWidth * badgeScale).toFixed(1) + 'px', 'important');
         rarityBadge.style.setProperty('right', '2px', 'important');
         rarityBadge.style.setProperty('bottom', '2px', 'important');
+      }
+
+      // build1707: 画像が縮むとヒントのピルだけ大きいまま残って崩れるため、縮小に合わせて消す
+      var zoomHint = visual.querySelector('.box-carousel-zoom-hint');
+      if(zoomHint){
+        var hintAlpha = Math.max(0, 1 - progress / 0.45);
+        zoomHint.style.setProperty('opacity', hintAlpha.toFixed(3), 'important');
+        zoomHint.style.setProperty('visibility', hintAlpha <= 0.01 ? 'hidden' : 'visible', 'important');
       }
 
       if(progress > 0.92){
