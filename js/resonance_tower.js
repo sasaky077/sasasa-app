@@ -114,7 +114,13 @@
   // build1713: 絶望は「今週の通常の塔を20Fまで制覇した人」にだけ出現する腕試し。
   //  通常の塔の state を読むたびに記録し、未制覇の週は絶望タブを出さない（サーバー側でも begin を拒否する）。
   let normalCompletedThisWeek=false;
-  const despairUnlocked=()=>normalCompletedThisWeek;
+  // build1720: UI-only test exception; Supabase begin_despair_tower_run remains the authority.
+  // The ID is the existing game's local profile key. It cannot grant server-side access.
+  const isDespairTestAccount=()=>{
+    try{return String(localStorage.getItem('zukan_user_id')||'').trim().toLowerCase()==='user_o842edan';}
+    catch(_){return false;}
+  };
+  const despairUnlocked=()=>normalCompletedThisWeek||isDespairTestAccount();
   const M=()=>TOWER_MODES[mode]||TOWER_MODES.normal;
   const stageIdFor=(floor,m)=>(TOWER_MODES[m]||M()).stagePrefix+String(floor).padStart(2,'0');
   const $=id=>document.getElementById(id);
@@ -311,7 +317,7 @@
           const n=await rpcClient().rpc(TOWER_MODES.normal.rpcState);
           if(!n.error && n.data) normalCompletedThisWeek=!!n.data.completed;
         }catch(_){}
-        if(!normalCompletedThisWeek && !(attempt&&attempt.mode==='despair')){
+        if(!despairUnlocked() && !(attempt&&attempt.mode==='despair')){
           mode='normal'; progress=null; replayFloor=0;
           notify('今週の残響の塔を制覇すると「絶望」に挑戦できます');
           return refresh();
