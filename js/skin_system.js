@@ -60,6 +60,21 @@
         // build1706: お知らせのプレゼントで全員に配布（聖霊花交換なし）
         gift:true
       }
+    },
+    // build1709: トワ 衣装違い。入手経路は未実装のため hidden（所持者にだけ衣装欄に出る）。
+    //   配布するときは player_character_skins に (user_id, 101, 'limited_01') を付与すればそのまま着替えられる。
+    //   名前を決めたら name を変えるだけでよい。
+    101: {
+      limited_01: {
+        id:'limited_01',
+        name:'限定衣装',
+        img:'images/chara_101_b.webp',               // キャラ詳細の立ち絵（背景つき）
+        home:'images/chara_101_b_cut.webp',          // ホーム（全身・透過）
+        panel:'images/chara_101_b_panel.webp',       // パネル（バストアップ・透過）
+        battle:'images/chara_101_b_battle_back.webp',// バトルユニット（背面・透過）
+        cutin:'images/chara_101_b_cutin.webp',       // ULTカットイン（横長）
+        hidden:true
+      }
     }
   };
 
@@ -104,9 +119,10 @@
     return group ? (group[String(skinId||'')] || null) : null;
   }
 
+  // build1709: hidden の衣装（入手経路が未実装）は、所持していない人には一覧に出さない
   function getSkins(characterId){
     const group=SKIN_MASTER[Number(characterId||0)] || {};
-    return Object.values(group);
+    return Object.values(group).filter(skin=>!skin.hidden || isOwned(characterId,skin.id));
   }
 
   function hasSkins(characterId){
@@ -228,7 +244,11 @@
         }
       }catch(_){}
 
-      if(window.currentDetailData && Number(window.currentDetailData.id)===charId && typeof window.showDetail==='function'){
+      // build1708: 旧キャラ詳細モーダル（#detail-modal）は、開いている時だけ描き直す。
+      // 新しいキャラ詳細画面も currentDetailData を持つため、無条件に呼ぶと閉じていた旧画面が開いてしまっていた。
+      var oldDetail=document.getElementById('detail-modal');
+      if(oldDetail && oldDetail.classList.contains('active') &&
+         window.currentDetailData && Number(window.currentDetailData.id)===charId && typeof window.showDetail==='function'){
         try{window.showDetail(window.currentDetailData,false);}catch(_){}
       }
 
@@ -309,7 +329,7 @@
           '<button type="button" class="detail-skin-card detail-skin-limited'+(equipped===limited.id?' is-selected':'')+(owned?'':' is-locked')+'" '+
             (owned ? 'onclick="CharacterSkins.equip('+charId+',\''+esc(limited.id)+'\')"' : 'disabled')+'>'+
             '<span class="detail-skin-thumb"><img src="'+esc(limited.panel)+'" alt="" onerror="this.style.display=\'none\'"></span>'+
-            '<span class="detail-skin-copy"><strong>'+esc(skinLabel(limited))+'</strong><small>'+(owned ? (equipped===limited.id?'装備中':'変更') : '未所持・聖霊花交換')+'</small></span>'+
+            '<span class="detail-skin-copy"><strong>'+esc(skinLabel(limited))+'</strong><small>'+(owned ? (equipped===limited.id?'装備中':'変更') : (limited.gift?'未所持・お知らせのプレゼント':'未所持・聖霊花交換'))+'</small></span>'+
           '</button>'+
         '</div>'+
       '</div>';
