@@ -1515,6 +1515,8 @@
       bossGauges:3,
       bossGaugeHps:Object.freeze([8000, 9500, 11000]),
       inoriToriiHp:1300,
+      // build1725: STORY 9-4 専用のバトルイントロ画像（位相回遊のイノリは従来の remnant_inori_battle_start のまま）
+      introImage:'images/ch09_04_inori_battle_start.webp',
       mission:Object.freeze({type:SHOOTING_MISSION_TYPE.BOSS_CLEAR,text:'門の守護者、イノリを撃破'}),playable:true
     }),
 
