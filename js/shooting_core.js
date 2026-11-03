@@ -14061,7 +14061,7 @@
   //  ・開幕にイノリの左右・少し後方へ鳥居を2基召喚。鳥居はイノリに追従し、攻撃が通る
   //  ・鳥居は3秒おきに真下へ極太レーザー（予兆→照射）
   //  ・鳥居を2基とも破壊すると7秒間バリアが消え、その後鳥居が2基とも復活してバリアが戻る
-  //  ・本体：WARNING弾（共通）／渦巻弾幕／鈍化の呪い弾（当たると出場中キャラの移動速度50%、交代で解除）
+  //  ・本体：WARNING弾（共通）／渦巻弾幕（鈍化の呪い弾は build1727 で廃止。curse:true で復活）
   // ============================================================
   function getInoriConfig() {
     return (BOSS && BOSS.inoriMechanics && selectedStage && selectedStage.type !== 'normal') ? BOSS.inoriMechanics : null;
@@ -14321,7 +14321,8 @@
         inori.nextLaserAt = now + Math.max(1000, Number(cfg.laserEveryMs || 3000));
         fireInoriToriiLasers(now);
       }
-      if (now >= inori.nextCurseAt && state.boss.hp > 0) {
+      // build1727: 鈍化の呪いは廃止（inoriMechanics.curse === true のときだけ撃つ）
+      if (cfg.curse === true && now >= inori.nextCurseAt && state.boss.hp > 0) {
         inori.nextCurseAt = now + Math.max(3000, Number(cfg.slowEveryMs || 11000));
         fireInoriCurse(now);
       }

@@ -15105,28 +15105,9 @@ html body #shooting-faceless-stage-select.zfs-screen .zfs-heading-split .zfs-hea
 #shooting-event-root .inori-break-badge.is-soon em{box-shadow:0 0 0 1px rgba(214,40,52,.75),0 0 8px rgba(214,40,52,.35);}
 @keyframes inori-revive-soon{from{opacity:.55}to{opacity:1}}
 
-/* build1726: 鳥居のHPバー — ボスHP表示と重ならないよう鳥居の足元に、少し太く朱色で */
-#shooting-event-root .shooting-mini-enemy-hp.inori-torii-hp{
-  width:62px;height:7px;padding:1px;
-  /* 鳥居レーザーの紅白の予兆線と見分けがつくよう、濃い墨色の枠に朱〜金のゲージ */
-  border:1px solid rgba(255,244,222,.95);background:rgba(44,28,24,.82);
-  box-shadow:0 0 0 1px rgba(60,30,20,.55),0 1px 4px rgba(40,20,10,.35);opacity:1;z-index:21;
-}
-#shooting-event-root .shooting-mini-enemy-hp.inori-torii-hp i{
-  background:linear-gradient(90deg,#e0483a,#f2a64a);
-}
-#shooting-event-root .shooting-mini-enemy-hp.inori-torii-hp.low i{
-  background:linear-gradient(90deg,#e0483a,#f07a4a);animation:inori-torii-low .4s ease-in-out infinite alternate;
-}
-/* 25%ごとの目盛り */
-#shooting-event-root .shooting-mini-enemy-hp.inori-torii-hp::after{
-  content:"";position:absolute;inset:1px;pointer-events:none;
-  background:linear-gradient(90deg,transparent calc(25% - .5px),rgba(44,28,24,.9) calc(25% - .5px) calc(25% + .5px),transparent calc(25% + .5px),
-    transparent calc(50% - .5px),rgba(44,28,24,.9) calc(50% - .5px) calc(50% + .5px),transparent calc(50% + .5px),
-    transparent calc(75% - .5px),rgba(44,28,24,.9) calc(75% - .5px) calc(75% + .5px),transparent calc(75% + .5px));
-}
+/* build1727: 鳥居のHPバーは通常の敵と同じ見た目（目盛りなし）。位置だけ鳥居の足元、重なり順だけイノリ本体より前 */
+#shooting-event-root .shooting-mini-enemy-hp.inori-torii-hp{z-index:21;opacity:1;}
 #shooting-event-root .shooting-mini-enemy-element-icon.inori-torii-icon{z-index:21;}
-@keyframes inori-torii-low{from{filter:brightness(1)}to{filter:brightness(1.35)}}
 
 /* 鈍化：出場中キャラに紫の鎖のような揺らぎ＋画面下に解除方法を表示 */
 #shooting-event-root #shooting-player.inori-slowed img{
