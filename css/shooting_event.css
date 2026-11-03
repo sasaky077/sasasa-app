@@ -15076,16 +15076,57 @@ html body #shooting-faceless-stage-select.zfs-screen .zfs-heading-split .zfs-hea
 @keyframes inori-laser-warn{50%{opacity:.35;}}
 @keyframes inori-laser-fire{0%{transform:scaleX(.25);opacity:.4;}18%{transform:scaleX(1.08);opacity:1;}80%{transform:scaleX(1);opacity:1;}100%{transform:scaleX(.6);opacity:0;}}
 
-/* バリア消失バッジ（鳥居復活までの残り時間） */
+/* build1726: 鳥居復活までの残り時間 — イノリ本体を囲む細いリング（減っていく）＋足元の小さな秒数。
+   盤面中央の大きな帯はやめ、弾や敵の見える範囲を隠さない。 */
 #shooting-event-root .inori-break-badge{
-  position:absolute;left:50%;top:22%;transform:translateX(-50%);z-index:40;pointer-events:none;
-  display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 16px 7px;
-  background:linear-gradient(90deg,rgba(120,20,30,0),rgba(140,24,36,.86) 18%,rgba(160,32,44,.9) 50%,rgba(140,24,36,.86) 82%,rgba(120,20,30,0));
-  color:#fff4ea;text-align:center;white-space:nowrap;
+  position:absolute;left:0;top:0;z-index:10;pointer-events:none;will-change:transform;
 }
-#shooting-event-root .inori-break-badge span{font:700 9px/1 'Cinzel',serif;letter-spacing:.28em;color:#ffd9a8;}
-#shooting-event-root .inori-break-badge strong{font:700 13px/1.2 'Noto Serif JP',serif;letter-spacing:.12em;}
-#shooting-event-root .inori-break-badge em{font:600 10px/1.2 'Noto Serif JP',serif;font-style:normal;color:#ffe9cf;}
+#shooting-event-root .inori-break-badge svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;transform:rotate(-90deg);}
+#shooting-event-root .inori-break-badge circle{fill:none;stroke-width:2.2;vector-effect:non-scaling-stroke;}
+#shooting-event-root .inori-break-badge .track{stroke:rgba(150,40,52,.16);stroke-dasharray:2 3;}
+#shooting-event-root .inori-break-badge .remain{
+  stroke:rgba(196,48,60,.78);stroke-linecap:round;stroke-dasharray:100 100;
+  filter:drop-shadow(0 0 3px rgba(255,255,255,.95));
+  transition:stroke-dashoffset .1s linear;
+}
+#shooting-event-root .inori-break-badge em{
+  position:absolute;left:50%;top:100%;transform:translate(-50%,-2px);
+  display:flex;align-items:baseline;gap:4px;white-space:nowrap;font-style:normal;
+  padding:2px 7px 2px;border-radius:9px;
+  background:rgba(255,252,246,.78);box-shadow:0 0 0 1px rgba(196,48,60,.35);
+}
+#shooting-event-root .inori-break-badge em small{font:700 8.5px/1 'Noto Serif JP',serif;letter-spacing:.06em;color:#8a3a34;}
+#shooting-event-root .inori-break-badge em b{
+  font:700 11.5px/1 'Cinzel','Noto Serif JP',serif;letter-spacing:.02em;color:#a3283a;
+  font-variant-numeric:tabular-nums;min-width:2.6em;text-align:right;
+}
+/* 残り2秒：復活が近いことをリングとラベルの点滅で知らせる */
+#shooting-event-root .inori-break-badge.is-soon .remain{stroke:rgba(214,40,52,.95);animation:inori-revive-soon .32s ease-in-out infinite alternate;}
+#shooting-event-root .inori-break-badge.is-soon em{box-shadow:0 0 0 1px rgba(214,40,52,.75),0 0 8px rgba(214,40,52,.35);}
+@keyframes inori-revive-soon{from{opacity:.55}to{opacity:1}}
+
+/* build1726: 鳥居のHPバー — ボスHP表示と重ならないよう鳥居の足元に、少し太く朱色で */
+#shooting-event-root .shooting-mini-enemy-hp.inori-torii-hp{
+  width:62px;height:7px;padding:1px;
+  /* 鳥居レーザーの紅白の予兆線と見分けがつくよう、濃い墨色の枠に朱〜金のゲージ */
+  border:1px solid rgba(255,244,222,.95);background:rgba(44,28,24,.82);
+  box-shadow:0 0 0 1px rgba(60,30,20,.55),0 1px 4px rgba(40,20,10,.35);opacity:1;z-index:21;
+}
+#shooting-event-root .shooting-mini-enemy-hp.inori-torii-hp i{
+  background:linear-gradient(90deg,#e0483a,#f2a64a);
+}
+#shooting-event-root .shooting-mini-enemy-hp.inori-torii-hp.low i{
+  background:linear-gradient(90deg,#e0483a,#f07a4a);animation:inori-torii-low .4s ease-in-out infinite alternate;
+}
+/* 25%ごとの目盛り */
+#shooting-event-root .shooting-mini-enemy-hp.inori-torii-hp::after{
+  content:"";position:absolute;inset:1px;pointer-events:none;
+  background:linear-gradient(90deg,transparent calc(25% - .5px),rgba(44,28,24,.9) calc(25% - .5px) calc(25% + .5px),transparent calc(25% + .5px),
+    transparent calc(50% - .5px),rgba(44,28,24,.9) calc(50% - .5px) calc(50% + .5px),transparent calc(50% + .5px),
+    transparent calc(75% - .5px),rgba(44,28,24,.9) calc(75% - .5px) calc(75% + .5px),transparent calc(75% + .5px));
+}
+#shooting-event-root .shooting-mini-enemy-element-icon.inori-torii-icon{z-index:21;}
+@keyframes inori-torii-low{from{filter:brightness(1)}to{filter:brightness(1.35)}}
 
 /* 鈍化：出場中キャラに紫の鎖のような揺らぎ＋画面下に解除方法を表示 */
 #shooting-event-root #shooting-player.inori-slowed img{

@@ -13622,7 +13622,8 @@
     // Base mobile enemy box is about 60px tall.
     // Keep the HP bar just above the visible unit as uiScale changes.
     const hpOffsetY = 30 * scale + 9;
-    const hpY = enemy.y - hpOffsetY;
+    // build1726: イノリの鳥居は上側だとボスHP表示に重なって読めないため、鳥居の足元へ出す
+    const hpY = enemy.inoriSide ? enemy.y + 30 * scale + 4 : enemy.y - hpOffsetY;
 
     enemy.hpEl.style.transform =
       `translate3d(${enemy.x}px,${hpY}px,0) translate(-50%,-50%)`;
@@ -14106,6 +14107,12 @@
       if (!enemy) return;
       enemy.inoriSide = side;
       enemy.el.classList.add('inori-torii');
+      if (enemy.hpEl) {
+        enemy.hpEl.classList.add('inori-torii-hp');
+        // 敵レイヤー（z9）はイノリ本体（z20）の下になるため、HPバーと属性アイコンだけ盤面直下へ移して前面に出す
+        arena.appendChild(enemy.hpEl);
+        if (enemy.elementEl) { enemy.elementEl.classList.add('inori-torii-icon'); arena.appendChild(enemy.elementEl); }
+      }
       placeInoriTorii(enemy, w, true);
       positionUnit(enemy.el, enemy.x, enemy.y);
       positionMiniEnemyHp(enemy);
@@ -14134,21 +14141,38 @@
     el.style.height = size + 'px';
     el.style.transform = `translate3d(${Number(state.boss.x || 0)}px,${Number(state.boss.y || 0)}px,0) translate(-50%,-50%)`;
   }
+  // build1726: 復活までの残り時間は、盤面中央の大きな帯をやめ、イノリ本体を囲む細いリング（減っていく）と
+  //  足元の小さな秒数で表示する。バリアが戻る場所＝攻撃している場所なので視線を動かさずに読める。
   function syncInoriBreakBadge(now) {
     const arena = document.getElementById('shooting-arena');
     if (!arena || !state || !state.inori) return;
     let el = document.getElementById('inori-break-badge');
-    if (state.inori.barrierUp) { if (el) el.remove(); return; }
+    if (state.inori.barrierUp || !(state.boss && state.boss.hp > 0)) { if (el) el.remove(); return; }
     if (!el) {
       el = document.createElement('div');
       el.id = 'inori-break-badge';
       el.className = 'inori-break-badge';
-      el.innerHTML = '<span>BARRIER BREAK</span><strong>全属性バリア消失</strong><em></em>';
+      el.setAttribute('aria-hidden', 'true');
+      el.innerHTML = '<svg viewBox="0 0 100 100" aria-hidden="true"><circle class="track" cx="50" cy="50" r="46"/>'
+        + '<circle class="remain" cx="50" cy="50" r="46" pathLength="100"/></svg>'
+        + '<em><small>鳥居復活</small><b></b></em>';
       arena.appendChild(el);
     }
-    const left = Math.max(0, Number(state.inori.reviveAt || 0) - now) / 1000;
-    const em = el.querySelector('em');
-    if (em) em.textContent = '鳥居復活まで ' + left.toFixed(1) + 's';
+    const cfg = getInoriConfig() || {};
+    const totalMs = Math.max(1000, Number(cfg.barrierDownMs || 7000));
+    const leftMs = Math.max(0, Number(state.inori.reviveAt || 0) - now);
+    const boss = document.getElementById(BOSS_ID);
+    const base = Math.max(Number(boss && boss.offsetWidth || 126), Number(boss && boss.offsetHeight || 126));
+    const size = Math.round(base * Math.max(.1, Number(getResponsiveBossDisplayScale() || 1)) * 1.12);
+    el.style.width = size + 'px';
+    el.style.height = size + 'px';
+    el.style.transform = `translate3d(${Number(state.boss.x || 0)}px,${Number(state.boss.y || 0)}px,0) translate(-50%,-50%)`;
+    const remain = el.querySelector('.remain');
+    if (remain) remain.style.strokeDashoffset = String(100 - (leftMs / totalMs) * 100);
+    const label = (leftMs / 1000).toFixed(1) + 's';
+    const b = el.querySelector('b');
+    if (b && b.textContent !== label) b.textContent = label;
+    el.classList.toggle('is-soon', leftMs <= 2000);
   }
   function fireInoriToriiLasers(now) {
     const cfg = getInoriConfig() || {};
@@ -14253,7 +14277,7 @@
     }
   }
   function removeInoriDom() {
-    document.querySelectorAll('#inori-barrier, #inori-break-badge, #inori-slow-tag, .inori-torii-laser').forEach(el => el.remove());
+    document.querySelectorAll('#inori-barrier, #inori-break-badge, #inori-slow-tag, .inori-torii-laser, .inori-torii-hp, .inori-torii-icon').forEach(el => el.remove());
     document.getElementById(PLAYER_ID)?.classList.remove('inori-slowed');
     if (state && state.inori) { state.inori.beams = []; state.inori.slowMemberId = 0; }
   }
@@ -16711,7 +16735,8 @@
   function clearNormalBattleObjects() {
     clearChapter101TutorialOverlay();
     if (!state) return;
-    (state.normalEnemies || []).forEach(enemy => enemy?.el?.remove());
+    // build1726: イノリの鳥居HPバー／属性アイコンは盤面直下にあるため、レイヤーの消去では消えない。個別に外す
+    (state.normalEnemies || []).forEach(enemy => { enemy?.el?.remove(); if (enemy && enemy.inoriSide) { enemy.hpEl?.remove(); enemy.elementEl?.remove(); } });
     (state.collectibles || []).forEach(item => item?.el?.remove());
     (state.mimosaItems || []).forEach(item => item?.el?.remove());
     state.normalEnemies = [];
