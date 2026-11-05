@@ -45,7 +45,7 @@ header{width:100%;max-width:440px;display:flex;align-items:center;justify-conten
 .steps i.now{background:var(--on);border-color:var(--gold);box-shadow:0 0 10px var(--glow);animation:pipGlow 1.6s ease-in-out infinite alternate}
 @keyframes pipGlow{to{box-shadow:0 0 16px var(--glow),0 0 2px #fff}}
 
-.rule{max-width:440px;width:100%;margin:0;font-size:13px;line-height:1.7;color:var(--muted);text-align:center;min-height:2.6em}
+.rule{max-width:440px;width:100%;margin:0;font-size:13px;line-height:1.7;color:var(--muted);text-align:center;min-height:3.4em;white-space:pre-line}
 .status{width:100%;max-width:400px;display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
 .status b{color:var(--ink);font-size:15px}
 .meter{display:flex;gap:3px;align-items:center}
@@ -151,7 +151,7 @@ header{width:100%;max-width:440px;display:flex;align-items:center;justify-conten
   </header>
   <div class="steps" id="steps" aria-label="進み具合"></div>
   <p class="rule" id="rule"></p>
-  <div class="status"><span>手数 <b id="moves">0</b></span><span class="meter" id="meter" aria-hidden="true"></span><span id="state">すべての灯をともす</span></div>
+  <div class="status"><span>手数 <b id="moves">0</b></span><span class="meter" id="meter" aria-hidden="true"></span><span id="state"></span></div>
   <div class="stage"><div class="frame"><div class="board" id="lamp-board" role="grid" aria-label="灯の盤"></div></div></div>
   <label class="toggle" id="show-wrap" hidden><input type="checkbox" id="show"> つながりを表示</label><!-- 表示の有無は段階ごとに固定（初級は常に表示） -->
   <div class="actions">
@@ -249,7 +249,7 @@ header{width:100%;max-width:440px;display:flex;align-items:center;justify-conten
     $('show').checked=beginner||cfg.show;
     const b=$('lamp-board'); b.innerHTML=''; b.classList.remove('all-lit');
     $('rule').textContent=RULE_TEXT[cfg.rule]+(($('show').checked)?'':'（つながりは見えない）');
-    $('state').textContent='すべての灯をともす';
+    $('state').textContent='';
     render();
   }
   function render(focus){
