@@ -192,8 +192,8 @@ header{width:100%;max-width:440px;display:flex;align-items:center;justify-conten
     8:{n:5,rule:'row',min:6,max:6,show:false},
   };
   const RULE_TEXT={
-    cross:'灯に触れると、その灯と上下左右の灯が反転する。すべての灯をともそう。',
-    arrow:'灯に触れると、その灯と矢印の先の灯が反転する。つながりは一方通行。',
+    cross:'灯に触れると、その灯と上下左右の灯が反転する。\nすべての灯をともそう。',
+    arrow:'灯に触れると、その灯と矢印の先の灯が反転する。\nつながりは一方通行。',
     row:'灯に触れると、同じ行と列の灯がすべて反転する。',
   };
   const levels=(q.get('levels')||'1,2,3').split(',').map(Number).filter(n=>STAGES[n]);
