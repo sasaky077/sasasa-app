@@ -7118,7 +7118,7 @@
         "text": "今のは、やばかった…",
         "location": "scene_chapter09_04_02.webp"
       },
-    　{
+    {
         "speaker": "レオナクロス",
         "left": "レオナクロス",
         "right": "",
@@ -7177,7 +7177,7 @@
         "left": "",
         "right": "",
         "text": "ああ。門は開かれた。\n……ようこそ、ゼラフィアへ。",
-        "location": "scene_chapter09_04_04.webpp",
+        "location": "scene_chapter09_04_04.webp",
         "narration": true
       },
             {
