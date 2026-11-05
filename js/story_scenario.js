@@ -6927,7 +6927,7 @@
         "speaker": "エリ",
         "left": "エリ",
         "right": "",
-        "text": "……呼吸の音。\nさっきより、ずっと近い。",
+        "text": "……呼吸の音。\nさっきより、ずっと近くで聞こえる。",
         "location": "scene_in_tower.webp"
       }
     ]
@@ -6981,7 +6981,7 @@
         "speaker": "トイフェル",
         "left": "トイフェル",
         "right": "",
-        "text": "一つずつ確かめていこう。",
+        "text": "うん…ひとつずつ確かめていこう。",
         "location": "scene_tower_center.webp"
       }
     ],
@@ -7021,7 +7021,7 @@
         "speaker": "???",
         "left": "",
         "right": "",
-        "text": "門が開いたか。\n……少し、早いな。",
+        "text": "門が開いた。\n……少し、早いね。",
         "location": "scene_many_tower.webp",
         "narration": true
       },
@@ -7029,9 +7029,24 @@
         "speaker": "???",
         "left": "",
         "right": "",
-        "text": "ちょうどいい。イノリをぶつけてみよう。",
+        "text": "ちょうどいい…イノリをぶつけてみよう。",
         "location": "scene_many_tower.webp",
         "narration": true
+      },
+            {
+        "speaker": "???",
+        "left": "",
+        "right": "",
+        "text": "あの子の力も確かめておきたい。",
+        "location": "scene_many_tower.webp",
+        "narration": true
+      },
+            {
+        "speaker": "ミモザ",
+        "left": "ミモザ",
+        "right": "",
+        "text": "なに…？空気が…変わった…！",
+        "location": "scene_zeraphia_gate.webp"
       },
       {
         "speaker": "ベロニカ",
@@ -7055,7 +7070,7 @@
         "left": "",
         "right": "",
         "text": "光の門の前に、異形の影が静かに降り立った。\n周りには、鳥居のような光の柱がいくつも浮かんでいる。",
-        "location": "scene_zeraphia_gate.webp",
+        "location": "scene_chapter09_04_01.webp",
         "narration": true
       },
       {
@@ -7063,21 +7078,21 @@
         "left": "トイフェル",
         "right": "",
         "text": "門番、というわけか。",
-        "location": "scene_zeraphia_gate.webp"
+        "location": "scene_chapter09_04_01.webp"
       },
       {
         "speaker": "アイナ",
         "left": "アイナ",
         "right": "",
         "text": "ここまで来て、引き返す理由はありません。",
-        "location": "scene_zeraphia_gate.webp"
+        "location": "scene_chapter09_04_01.webp"
       },
       {
         "speaker": "エリ",
         "left": "エリ",
         "right": "",
         "text": "通して……！\nこの先に、行かなきゃいけないの！",
-        "location": "scene_zeraphia_gate.webp"
+        "location": "scene_chapter09_04_01.webp"
       }
     ],
     "post": [
@@ -7086,68 +7101,94 @@
         "left": "",
         "right": "",
         "text": "イノリの姿は、糸がほどけるように\n光の中へ消えていった。",
-        "location": "scene_zeraphia_gate.webp",
+        "location": "scene_chapter09_04_02.webp",
         "narration": true
       },
       {
         "speaker": "ジグ",
         "left": "ジグ",
         "right": "",
-        "text": "……はぁ。終わった、か。",
-        "location": "scene_zeraphia_gate.webp"
+        "text": "……はぁ…終わった、か。",
+        "location": "scene_chapter09_04_02.webp"
+      },
+         {
+        "speaker": "トイフェル",
+        "left": "トイフェル",
+        "right": "",
+        "text": "今のは、やばかった…",
+        "location": "scene_chapter09_04_02.webp"
+      },
+    　{
+        "speaker": "レオナクロス",
+        "left": "レオナクロス",
+        "right": "",
+        "text": "これまでの敵とは全く性質が違った。",
+        "location": "scene_chapter09_04_02.webp"
       },
       {
         "speaker": "ミモザ",
         "left": "ミモザ",
         "right": "",
         "text": "門は開いたまま……。\nこの先に、何があるのかしら。",
-        "location": "scene_zeraphia_gate.webp"
+        "location": "scene_chapter09_04_03.webp"
       },
       {
         "speaker": "エリ",
         "left": "エリ",
         "right": "",
         "text": "……行こう。\nずっと、ここに呼ばれてた気がするの。",
-        "location": "scene_zeraphia_gate.webp"
+        "location": "scene_chapter09_04_03.webp"
       },
       {
         "speaker": "",
         "left": "",
         "right": "",
         "text": "九人は光の中へ足を踏み入れた。\n眩しさが引いたとき、目の前には見たことのない世界が広がっていた。",
-        "location": "scene_zeraphia.webp",
+        "location": "scene_chapter09_04_04.webp",
         "narration": true
       },
       {
         "speaker": "アウラ",
         "left": "アウラ",
         "right": "",
-        "text": "ここ、どこ……？",
-        "location": "scene_zeraphia.webp"
+        "text": "ここは…なに……？",
+        "location": "scene_chapter09_04_04.webp"
       },
-      {
-        "speaker": "レオナクロス",
-        "left": "レオナクロス",
+
+            {
+        "speaker": "???",
+        "left": "",
         "right": "",
-        "text": "古い記録で、一度だけ見た名前がある。\n……ゼラフィア。",
-        "location": "scene_zeraphia.webp"
+        "text": "……",
+        "location": "scene_chapter09_04_04.webp",
+        "narration": true
       },
+
       {
         "speaker": "???",
         "left": "",
         "right": "",
         "text": "七つの灯が、ともったか。",
-        "location": "scene_many_tower.webp",
+        "location": "scene_chapter09_04_04.webp",
         "narration": true
       },
       {
         "speaker": "???",
         "left": "",
         "right": "",
-        "text": "ああ。門は開いた。\n……ようこそ、ゼラフィアへ。",
-        "location": "scene_many_tower.webp",
+        "text": "ああ。門は開かれた。\n……ようこそ、ゼラフィアへ。",
+        "location": "scene_chapter09_04_04.webpp",
         "narration": true
-      }
+      },
+            {
+        "speaker": "???",
+        "left": "",
+        "right": "",
+        "text": "ここまでは、計画通り、か。",
+        "location": "scene_chapter09_04_04.webp",
+        "narration": true
+      },
+
     ]
   }
 }
