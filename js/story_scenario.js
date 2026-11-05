@@ -6375,7 +6375,7 @@
         "speaker": "アルノ",
         "left": "アルノ",
         "right": "",
-        "text": "くるぞ…構えろ。",
+        "text": "まあ…やるしかない。いくぞ。",
         "location": "scene_tower_near.webp"
       },
 
@@ -7029,7 +7029,7 @@
         "speaker": "???",
         "left": "",
         "right": "",
-        "text": "イノリを当てよう。",
+        "text": "ちょうどいい。イノリをぶつけてみよう。",
         "location": "scene_many_tower.webp",
         "narration": true
       },
@@ -7037,7 +7037,7 @@
         "speaker": "ベロニカ",
         "left": "ベロニカ",
         "right": "",
-        "text": "なにか、くるよォ！",
+        "text": "なにか…くるよォ！",
         "location": "scene_zeraphia_gate.webp"
       }
     ]
