@@ -36788,7 +36788,10 @@
     overlay.id = 'shooting-stage-icatch';
     overlay.className = 'shooting-stage-icatch';
     overlay.setAttribute('aria-hidden', 'true');
+    // build1730: 画像は全体表示（contain）。画面との比率差で空く上下（横長端末では左右）は、
+    // 同じ画像をぼかした背景で埋める。文字入りアイキャッチの端が見切れないようにするため。
     overlay.innerHTML = `
+      <img class="shooting-stage-icatch-bg" alt="" draggable="false">
       <img class="shooting-stage-icatch-art" alt="" draggable="false">
       <div class="shooting-stage-icatch-logo-wrap" aria-hidden="true">
         <span class="shooting-stage-icatch-logo-haze"></span>
@@ -36817,6 +36820,8 @@
       if (!art) return;
 
       art.src = src;
+      const bg = overlay.querySelector('.shooting-stage-icatch-bg');
+      if (bg) bg.src = src;
       overlay.classList.remove('is-entered', 'is-fading');
       overlay.classList.add('is-visible');
       overlay.setAttribute('aria-hidden', 'false');
@@ -36873,14 +36878,27 @@
         opacity:0;
         transition:opacity ${SHOOTING_ICATCH_FADE_OUT_MS}ms ease;
       }
+      #shooting-stage-icatch .shooting-stage-icatch-bg{
+        position:absolute;
+        inset:-8%;
+        width:116%;
+        height:116%;
+        object-fit:cover;
+        object-position:center center;
+        display:block;
+        filter:blur(22px) brightness(1.04) saturate(.9);
+        opacity:.85;
+        transform:translateZ(0);
+      }
       #shooting-stage-icatch .shooting-stage-icatch-art{
         position:absolute;
         inset:0;
         width:100%;
         height:100%;
-        object-fit:cover;
+        object-fit:contain;
         object-position:center center;
         display:block;
+        filter:drop-shadow(0 0 18px rgba(248,245,239,.9));
       }
       #shooting-stage-icatch .shooting-stage-icatch-logo-wrap{
         position:absolute;
