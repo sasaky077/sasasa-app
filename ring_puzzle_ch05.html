@@ -59,6 +59,13 @@ h1:after{content:'✧';display:block;font-size:14px;line-height:1;margin:clamp(5
 .fixed.lit{stroke:#c48b30;filter:drop-shadow(0 0 5px #ffe5a3)}
 .mark{fill:#ac7025;stroke:#fff1ce;stroke-width:1.5;filter:drop-shadow(0 0 4px #ffd889)}
 .mark.lit{fill:#e9af44}
+/* 入口：背景の金装飾に埋もれないよう、濃い縁取り＋輪の線と同じ太さで描く */
+.entrance-under{fill:none;stroke:#4a2c10;stroke-width:10;stroke-linecap:round;filter:drop-shadow(0 1px 2px rgba(80,39,9,.45))}
+.entrance-line{fill:none;stroke:#66401f;stroke-width:6;stroke-linecap:round;transition:stroke .45s ease}
+.entrance-line.lit{stroke:#e2b047}
+.entrance-arrow{fill:#66401f;stroke:#fff3d4;stroke-width:1.6;stroke-linejoin:round;filter:drop-shadow(0 1px 2px rgba(80,39,9,.45))}
+.entrance-arrow.lit{fill:#d39a35}
+.board-rim{fill:none;stroke:#8a5a26;stroke-width:1.6;opacity:.75;pointer-events:none}
 .disk{fill:url(#centerDisk);stroke:#b7873d;stroke-width:2.3;filter:drop-shadow(0 1px 3px rgba(108,57,13,.43));transition:fill .8s ease,stroke .8s ease}
 .sigil{fill:none;stroke:#ac7b34;stroke-width:1.5;filter:drop-shadow(0 .5px rgba(255,247,228,.85))}
 .compass-star{fill:url(#compassGold);stroke:#9a692d;stroke-width:.7;filter:drop-shadow(0 0 5px rgba(255,229,144,.92))}
@@ -130,12 +137,11 @@ h1:after{content:'✧';display:block;font-size:14px;line-height:1;margin:clamp(5
     <svg class="ring-engraving" viewBox="-205 -205 410 410" focusable="false" aria-hidden="true">
       <defs><linearGradient id="gilded" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff6d3"/><stop offset=".25" stop-color="#b27a2d"/><stop offset=".47" stop-color="#fff3ca"/><stop offset=".71" stop-color="#a87630"/><stop offset="1" stop-color="#f8daa0"/></linearGradient></defs>
       <g fill="none" stroke="url(#gilded)" opacity=".83">
-        <circle r="199" stroke-width="1"/><circle r="195" stroke-width=".8"/><circle r="188" stroke-width="2.2"/>
-        <circle r="184" stroke-width=".7"/><circle r="160" stroke-width=".65" stroke-dasharray="1 12"/>
+        <circle r="199" stroke-width="1"/><circle r="195" stroke-width=".8" opacity=".55"/><circle r="160" stroke-width=".65" stroke-dasharray="1 12"/>
         <circle r="120" stroke-width=".7"/><circle r="75" stroke-width=".65"/>
       </g>
       <g fill="#a87937" opacity=".7">
-        <path d="M0-203l7 15-7 15-7-15z M203 0l-15 7-15-7 15-7z M0 203l-7-15 7-15 7 15z M-203 0l15-7 15 7-15 7z"/>
+        <path d="M203 0l-15 7-15-7 15-7z M0 203l-7-15 7-15 7 15z M-203 0l15-7 15 7-15 7z"/>
       </g>
       <g fill="none" stroke="#c59855" stroke-width="1" opacity=".7">
         <path d="M-137-137l-7-7m281 7l7-7m-281 281l-7 7m281-7l7 7"/>
@@ -361,11 +367,15 @@ h1:after{content:'✧';display:block;font-size:14px;line-height:1;margin:clamp(5
       g.style.transform = `rotate(${r.deg}deg)`;
     });
 
-    const [ex1, ey1] = pt(OUTER + 20, ENTRANCE);
-    const [ex2, ey2] = pt(OUTER, ENTRANCE);
-    fixedEls.entrance = el('line', { class: 'fixed', x1: ex1, y1: ey1, x2: ex2, y2: ey2 }, svg);
-    const [mx, my] = pt(OUTER + 24, ENTRANCE);
-    fixedEls.mark = el('rect', { class: 'mark', x: mx - 4, y: my - 4, width: 8, height: 8, transform: `rotate(45 ${mx} ${my})` }, svg);
+    // 一番外側の輪の外周を濃い線で示し、外の装飾と区別する
+    el('circle', { class: 'board-rim', r: OUTER + 1.6 }, svg);
+    // 入口：外から一番外側の輪の縁までの線と、下向きの矢印
+    const [ex1, ey1] = pt(OUTER + 14, ENTRANCE);
+    const [ex2, ey2] = pt(OUTER + 1, ENTRANCE);
+    el('line', { class: 'entrance-under', x1: ex1, y1: ey1, x2: ex2, y2: ey2 }, svg);
+    fixedEls.entrance = el('line', { class: 'entrance-line', x1: ex1, y1: ey1, x2: ex2, y2: ey2 }, svg);
+    const [mx, my] = pt(OUTER + 21, ENTRANCE);
+    fixedEls.mark = el('path', { class: 'entrance-arrow', d: `M ${mx - 8} ${my - 6} L ${mx + 8} ${my - 6} L ${mx} ${my + 5} Z` }, svg);
 
     const wrap = el('g', { class: 'disk-wrap' }, svg);
     const [nx1, ny1] = pt(INNER, notch);
