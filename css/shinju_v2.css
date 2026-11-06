@@ -546,3 +546,26 @@ html body #shinju-blessing-picker .shinju-blessing-picker-close.shinju-modal-x::
   transform:rotate(45deg)!important;border-radius:0!important;
 }
 html body #shinju-blessing-picker .shinju-blessing-picker-close.shinju-modal-x::after{content:none!important;display:none!important}
+
+/* build1736 — 加護キャラ選択：検索・絞り込み（ツールバーと絞り込み画面はパーティ編成と共通のCSS） */
+#shinju-blessing-picker .shinju-picker-toolbar{
+  margin:0 0 10px;border:1px solid rgba(178,148,94,.22);border-radius:8px;
+  background:rgba(255,253,247,.9);min-height:44px;
+}
+#shinju-blessing-picker .shinju-blessing-picker-character.zpf-filtered-out{display:none!important}
+#shinju-blessing-picker .shinju-blessing-picker-grid .zpf-filter-empty{
+  grid-column:1/-1;margin:18px 0;padding:16px 4px;text-align:center;
+  color:#8f775b;font:500 12px/1.6 "Noto Serif JP",serif;
+}
+#shinju-blessing-picker .shinju-blessing-picker-grid .zpf-filter-empty[hidden]{display:none!important}
+/* カード：パーティ編成と同じく左上に属性アイコン、右下にLv */
+#shinju-blessing-picker .shinju-blessing-picker-portrait{position:relative}
+#shinju-blessing-picker .shinju-blessing-picker-portrait img.shinju-picker-element{
+  position:absolute;left:5px;top:5px;width:20px;height:20px;object-fit:contain;
+  filter:drop-shadow(0 1px 1px rgba(60,40,20,.35));
+}
+#shinju-blessing-picker .shinju-picker-level{
+  position:absolute;right:4px;bottom:4px;padding:1px 6px;border-radius:999px;
+  font:600 10px/1.4 "Cinzel","Noto Serif JP",serif;font-style:normal;letter-spacing:.02em;
+  color:#fff;background:rgba(58,44,30,.62);
+}

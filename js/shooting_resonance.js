@@ -221,7 +221,7 @@
     24: genericSet('ノエル'),
     25: genericSet('リュネ'),
     30: genericSet('リズ'),
-    32: genericSet('ラテルナ'),
+    32: genericSet('ルナティア'),
     33: genericSet('レイ'),
     34: genericSet('グレシャ'),
     35: genericSet('ジゼル'),

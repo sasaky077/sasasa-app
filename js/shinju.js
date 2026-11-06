@@ -719,6 +719,15 @@
           <button type="button" class="shinju-blessing-picker-close shinju-modal-x" aria-label="閉じる" onclick="ShinjuProgress.closeBlessingPicker()">×</button>
         </div>
         <div class="shinju-blessing-picker-cost" id="shinju-blessing-picker-cost"></div>
+        <div class="zpf-filter-toolbar shinju-picker-toolbar" id="shinju-picker-toolbar">
+          <label class="zpf-search" aria-label="キャラ名検索">
+            <span class="zpf-search-icon" aria-hidden="true">⌕</span>
+            <input type="search" placeholder="キャラ名で検索" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="キャラ名で検索">
+            <button type="button" class="zpf-search-clear" aria-label="検索文字を消す" hidden>×</button>
+          </label>
+          <button type="button" class="zpf-filter-button" aria-label="絞り込みメニュー" aria-pressed="false">☷ 絞り込み</button>
+          <span class="zpf-filter-count" aria-live="polite"></span>
+        </div>
         <div class="shinju-blessing-picker-grid" id="shinju-blessing-picker-grid"></div>
         <div class="shinju-blessing-picker-confirm" id="shinju-blessing-picker-confirm" hidden>
           <p id="shinju-blessing-picker-confirm-text"></p>
@@ -731,6 +740,15 @@
           <button type="button" class="shinju-blessing-picker-clear" id="shinju-blessing-picker-clear">このスロットを解除</button>
         </div>
       </div>`;
+    const toolbar = picker.querySelector('#shinju-picker-toolbar');
+    if (toolbar) {
+      const input = toolbar.querySelector('input');
+      input.addEventListener('input', e => { pickerFilter.query = e.target.value; syncPickerToolbar(); });
+      toolbar.querySelector('.zpf-search-clear').addEventListener('click', () => {
+        pickerFilter.query = ''; syncPickerToolbar(); input.focus();
+      });
+      toolbar.querySelector('.zpf-filter-button').addEventListener('click', openPickerFilterDialog);
+    }
     picker.addEventListener('click', e => {
       if (e.target === picker) closeBlessingPicker();
     });
@@ -785,10 +803,14 @@
         const otherSlot = assignedElsewhere.get(id);
         const disabled = !!otherSlot;
         const img = c.panelImage || c.image || '';
+        const el = pfElem(c.element);
+        const lv = pfLevel(id);
         return `
           <button type="button" class="shinju-blessing-picker-character ${selected ? 'is-selected' : ''} ${disabled ? 'is-used' : ''}"
                   data-character-id="${id}" ${disabled ? 'disabled' : ''}>
-            <span class="shinju-blessing-picker-portrait">${img ? `<img src="${escapeHtml(img)}" alt="" loading="lazy">` : ''}</span>
+            <span class="shinju-blessing-picker-portrait">${img ? `<img src="${escapeHtml(img)}" alt="" loading="lazy">` : ''}
+              <img class="shinju-picker-element" src="images/type_${el}.webp" alt="" aria-hidden="true" draggable="false" onerror="this.style.visibility='hidden'">
+              ${lv > 0 ? `<i class="shinju-picker-level">Lv.${lv}</i>` : ''}</span>
             <span class="shinju-blessing-picker-meta">
               <b>${escapeHtml(c.name || `CHARACTER ${id}`)}</b>
             </span>
@@ -820,8 +842,150 @@
         });
       };
     }
+    resetPickerFilter();
     picker.classList.add('active');
   }
+
+  // ============================================================
+  // build1736: 加護キャラ選択の検索・絞り込み・並び順
+  //  パーティ編成（shooting_party_filter.js）と同じ見た目・同じ選択肢。表示だけの処理で、
+  //  加護の設定・コスト・使用中判定には触らない。ボタンは並べ替え（移動）するだけで作り直さない。
+  // ============================================================
+  const pickerFilter = { query:'', elements:[], rarities:[], shotTypes:[], sort:'id' };
+  const PF_ELEMENTS = ['fire','aqua','wood','light','dark'];
+  const PF_ELEMENT_LABELS = { fire:'FIRE', aqua:'AQUA', wood:'WOOD', light:'LIGHT', dark:'DARK' };
+  const PF_SHOTS = ['parallel','homing','cluster','bomb','spread','laser','piercing','orbit','charge','lightning','strike','conjure','trap'];
+  const PF_SHOT_LABELS = { parallel:'PARALLEL', homing:'HOMING', cluster:'CLUSTER', bomb:'BOMB', spread:'SPREAD', laser:'LASER', piercing:'PIERCING', orbit:'ORBIT', charge:'CHARGE', lightning:'PLASMA', strike:'STRIKE', conjure:'CONJURE', trap:'TRAP' };
+  const PF_SHOT_ALIASES = { plasma:'lightning', orbit_forward:'orbit', charge_release:'charge', precision:'piercing', shotgun:'piercing', splash:'bomb', melee_slash:'strike', wolf_j_homing:'homing', rose_seed_splash:'spread', noah_hybrid:'laser' };
+  function pfNormalize(v) {
+    let t = String(v == null ? '' : v);
+    try { t = t.normalize('NFKC'); } catch (_) {}
+    return t.toLowerCase().replace(/[\s　]+/g, '').replace(/[\u30a1-\u30f6]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
+  }
+  function pfElem(v) { const k = String((Array.isArray(v) ? v[0] : v) || 'neutral').toLowerCase(); return PF_ELEMENTS.includes(k) ? k : 'neutral'; }
+  function pfRarity(v) { return String(v || 'r').toLowerCase() === 'sr' ? 'sr' : 'r'; }
+  function pfShot(v) { const k = String(v || '').toLowerCase(); return PF_SHOT_ALIASES[k] || k; }
+  function pfChar(id) { const m = getCharacterModule(); return (m && m.SHOOTING_CHARACTERS && m.SHOOTING_CHARACTERS[id]) || {}; }
+  function pfLevel(id) {
+    const m = getCharacterModule();
+    const d = m && typeof m.getOwnedShootingInstance === 'function' ? m.getOwnedShootingInstance(id) : null;
+    return Math.max(0, Number(d && (d.characterLevel ?? d.character_level)) || 0);
+  }
+  function pfRank(id) { const m = getCharacterModule(); return (m && typeof m.getShootingBaseOrderRank === 'function') ? m.getShootingBaseOrderRank(id) : id; }
+  function pfActive() { return !!(pickerFilter.query.trim() || pickerFilter.elements.length || pickerFilter.rarities.length || pickerFilter.shotTypes.length || pickerFilter.sort !== 'id'); }
+
+  function applyPickerFilter() {
+    const grid = document.getElementById('shinju-blessing-picker-grid');
+    const toolbar = document.getElementById('shinju-picker-toolbar');
+    if (!grid || !toolbar) return;
+    const q = pfNormalize(pickerFilter.query);
+    const entries = [];
+    let visible = 0;
+    grid.querySelectorAll('.shinju-blessing-picker-character').forEach(btn => {
+      const id = Number(btn.dataset.characterId), c = pfChar(id);
+      const ok = (!q || pfNormalize(c.name || '').includes(q)) &&
+        (!pickerFilter.elements.length || pickerFilter.elements.includes(pfElem(c.element))) &&
+        (!pickerFilter.rarities.length || pickerFilter.rarities.includes(pfRarity(c.rarity))) &&
+        (!pickerFilter.shotTypes.length || pickerFilter.shotTypes.includes(pfShot(c.shotType || (c.mainShot && c.mainShot.type))));
+      btn.classList.toggle('zpf-filtered-out', !ok);
+      btn.setAttribute('aria-hidden', ok ? 'false' : 'true');
+      if (ok) visible++;
+      entries.push({ btn, id, c });
+    });
+    entries.sort((a, b) => {
+      if (pickerFilter.sort === 'level') {
+        const d = pfLevel(b.id) - pfLevel(a.id); if (d) return d;
+      } else if (pickerFilter.sort === 'element') {
+        const d = PF_ELEMENTS.indexOf(pfElem(a.c.element)) - PF_ELEMENTS.indexOf(pfElem(b.c.element)); if (d) return d;
+        const r = (pfRarity(a.c.rarity) === 'sr' ? 0 : 1) - (pfRarity(b.c.rarity) === 'sr' ? 0 : 1); if (r) return r;
+      } else if (pickerFilter.sort === 'rarity') {
+        const d = (pfRarity(a.c.rarity) === 'sr' ? 0 : 1) - (pfRarity(b.c.rarity) === 'sr' ? 0 : 1); if (d) return d;
+        const e = PF_ELEMENTS.indexOf(pfElem(a.c.element)) - PF_ELEMENTS.indexOf(pfElem(b.c.element)); if (e) return e;
+      }
+      return (pfRank(a.id) - pfRank(b.id)) || (a.id - b.id);
+    });
+    entries.forEach(({ btn }) => grid.appendChild(btn));
+    let empty = grid.querySelector('.zpf-filter-empty');
+    if (entries.length) {
+      if (!empty) { empty = document.createElement('p'); empty.className = 'zpf-filter-empty'; empty.textContent = '条件に一致するキャラクターはいません'; }
+      grid.appendChild(empty);
+      empty.hidden = visible > 0;
+    }
+    const count = toolbar.querySelector('.zpf-filter-count'); if (count) count.textContent = visible + '人';
+    const fb = toolbar.querySelector('.zpf-filter-button');
+    if (fb) { fb.classList.toggle('is-filtered', pfActive()); fb.setAttribute('aria-pressed', pfActive() ? 'true' : 'false'); }
+  }
+  function syncPickerToolbar() {
+    const toolbar = document.getElementById('shinju-picker-toolbar'); if (!toolbar) return;
+    const input = toolbar.querySelector('input'); if (input && input.value !== pickerFilter.query) input.value = pickerFilter.query;
+    const clear = toolbar.querySelector('.zpf-search-clear'); if (clear) clear.hidden = !pickerFilter.query;
+    applyPickerFilter();
+  }
+  function resetPickerFilter() {
+    closePickerFilterDialog();
+    pickerFilter.query = ''; pickerFilter.elements = []; pickerFilter.rarities = []; pickerFilter.shotTypes = []; pickerFilter.sort = 'id';
+    syncPickerToolbar();
+  }
+  function pfChip(group, key, label, img) {
+    const selected = key === 'all' ? !pickerFilter[group].length : pickerFilter[group].includes(key);
+    const iconClass = group === 'elements' ? 'zcf-attribute-icon' : 'zcf-shot-icon';
+    const size = group === 'elements' ? 22 : 24;
+    const icon = img ? `<img class="${iconClass}" src="${escapeHtml(img)}" width="${size}" height="${size}" alt="" decoding="async" draggable="false" onerror="this.style.visibility='hidden'">` : '';
+    return `<button type="button" class="zcf-choice${selected ? ' is-selected' : ''}" aria-pressed="${selected}" data-group="${group}" data-key="${key}">${icon}<span class="zcf-choice-label">${escapeHtml(label)}</span></button>`;
+  }
+  function openPickerFilterDialog() {
+    closePickerFilterDialog();
+    const layer = document.createElement('div');
+    layer.id = 'shinju-filter-layer';
+    layer.className = 'zcf-overlay';
+    const attrTop = ['all','fire','aqua','wood'].map(k => pfChip('elements', k, k === 'all' ? 'すべて' : PF_ELEMENT_LABELS[k], k === 'all' ? '' : 'images/type_' + k + '.webp')).join('');
+    const attrBottom = ['light','dark'].map(k => pfChip('elements', k, PF_ELEMENT_LABELS[k], 'images/type_' + k + '.webp')).join('');
+    const rarities = ['all','sr','r'].map(k => pfChip('rarities', k, k === 'all' ? 'すべて' : k.toUpperCase())).join('');
+    const shots = ['all', ...PF_SHOTS].map(k => pfChip('shotTypes', k, k === 'all' ? 'すべて' : PF_SHOT_LABELS[k], k === 'all' ? '' : 'images/shot_' + (k === 'lightning' ? 'plasma' : k) + '.webp')).join('');
+    const sorts = ['id','element','rarity','level'].map(k => {
+      const label = { id:'ID', element:'属性', rarity:'レアリティ', level:'レベル' }[k];
+      return `<button type="button" class="zcf-choice${pickerFilter.sort === k ? ' is-selected' : ''}" data-sort="${k}" aria-pressed="${pickerFilter.sort === k}"><span class="zcf-choice-label">${label}</span></button>`;
+    }).join('');
+    layer.innerHTML = `<section class="zcf-dialog" role="dialog" aria-modal="true" aria-label="加護キャラクターの絞り込み">
+      <header class="zcf-header"><h2 class="zcf-title">絞り込み</h2><span class="zcf-heading-rule" aria-hidden="true">✦</span>
+      <button type="button" class="zcf-close" data-close aria-label="閉じる"><img src="images/button_close.webp" alt=""></button></header>
+      <div class="zcf-scroll">
+        <section class="zcf-section"><h3 class="zcf-section-title">属性</h3><div class="zcf-grid zcf-grid-attr-top">${attrTop}</div><div class="zcf-grid zcf-grid-attr-bottom">${attrBottom}</div></section>
+        <section class="zcf-section"><h3 class="zcf-section-title">レアリティ</h3><div class="zcf-grid zcf-grid-rarity">${rarities}</div></section>
+        <section class="zcf-section"><h3 class="zcf-section-title">ショットタイプ</h3><div class="zcf-grid zcf-grid-shots">${shots}</div></section>
+        <section class="zcf-section"><h3 class="zcf-section-title">並び順</h3><div class="zcf-grid zcf-grid-sort">${sorts}</div></section>
+      </div><footer class="zcf-footer"><button type="button" class="zcf-footer-button zcf-reset" data-reset>リセット</button><button type="button" class="zcf-footer-button zcf-apply" data-close>決定</button></footer>
+    </section>`;
+    layer.addEventListener('click', event => {
+      const target = event.target.closest('button');
+      if (event.target === layer || (target && target.hasAttribute('data-close'))) { closePickerFilterDialog(); return; }
+      if (!target) return;
+      if (target.hasAttribute('data-reset')) {
+        pickerFilter.elements = []; pickerFilter.rarities = []; pickerFilter.shotTypes = []; pickerFilter.sort = 'id'; pickerFilter.query = '';
+        syncPickerToolbar(); openPickerFilterDialog(); return;
+      }
+      const group = target.dataset.group, key = target.dataset.key;
+      if (group && Object.prototype.hasOwnProperty.call(pickerFilter, group)) {
+        const values = pickerFilter[group];
+        if (key === 'all') pickerFilter[group] = [];
+        else if (values.includes(key)) pickerFilter[group] = values.filter(v => v !== key);
+        else pickerFilter[group] = values.concat(key);
+      } else if (target.dataset.sort) pickerFilter.sort = target.dataset.sort;
+      else return;
+      layer.querySelectorAll('[data-group]').forEach(b => {
+        const on = b.dataset.key === 'all' ? !pickerFilter[b.dataset.group].length : pickerFilter[b.dataset.group].includes(b.dataset.key);
+        b.classList.toggle('is-selected', on); b.setAttribute('aria-pressed', String(on));
+      });
+      layer.querySelectorAll('[data-sort]').forEach(b => { const on = b.dataset.sort === pickerFilter.sort; b.classList.toggle('is-selected', on); b.setAttribute('aria-pressed', String(on)); });
+      syncPickerToolbar();
+    });
+    document.body.appendChild(layer);
+    const close = layer.querySelector('.zcf-close'); if (close) close.focus({ preventScroll: true });
+  }
+  function closePickerFilterDialog() { const l = document.getElementById('shinju-filter-layer'); if (l) l.remove(); }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && document.getElementById('shinju-filter-layer')) { e.stopPropagation(); closePickerFilterDialog(); }
+  }, true);
 
   // build1608: 加護の段階一覧（？ボタン）。次の段階を目指したくなるよう、全段階の恩恵と必要ptを並べる。
   function openBlessingHelp() {
@@ -881,6 +1045,7 @@
   }
 
   function closeBlessingPicker() {
+    closePickerFilterDialog();
     const picker = document.getElementById('shinju-blessing-picker');
     if (picker) picker.classList.remove('active');
   }

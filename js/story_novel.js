@@ -12,7 +12,8 @@
     'ノエル':24,
     'リュネ':25,
     'ミモザ':28,
-    'ラテルナ':32,
+    'ルナティア':32,
+    'ラテルナ':32, // build1737: 旧名（ルナティアへ改名）。古い台本の互換用
     'レオナクロス':39,
     'トイフェル':37,
     'アイナ':17,
@@ -74,7 +75,8 @@
     'ベロニカ': 'images/chara_22_novel.webp',
     'リュネ': 'images/chara_25_novel.webp',
     'ミモザ': 'images/chara_28_novel.webp',
-    'ラテルナ': 'images/chara_32_novel.webp',
+    'ルナティア': 'images/chara_32_novel.webp',
+    'ラテルナ': 'images/chara_32_novel.webp', // 旧名の互換
     'トイフェル': 'images/chara_37_novel.webp',
     'レオナクロス': 'images/chara_39_novel.webp'
   });

@@ -440,7 +440,7 @@
   <link rel="stylesheet" href="css/character_detail_shot.css?v=1372-fixed-icons">
   <link rel="stylesheet" href="css/gacha_ratio.css?v=1374-rebuild">
   <link rel="stylesheet" href="css/party_formation.css?v=1502-lastclear-party">
-  <link rel="stylesheet" href="css/shooting_party_filter.css?v=1432-icon-bounds">
+  <link rel="stylesheet" href="css/shooting_party_filter.css?v=1736-picker-filter">
 
   <style id="item-page-build682-fixes">
     /* build682: item page visual alignment */
@@ -3389,7 +3389,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
   <link rel="stylesheet" href="css/bonus_redesign.css?v=1400-bonus-visual-correct">
   <!-- build1413: preserve original bottom-nav icon colors and enlarge all five icons. -->
   <link rel="stylesheet" href="css/bottom_nav_original_colors.css?v=1450-nav-darker">
-<link rel="stylesheet" href="css/shinju_v2.css?v=1643-auto-offer">
+<link rel="stylesheet" href="css/shinju_v2.css?v=1736-picker-filter">
 <link rel="stylesheet" href="css/notice_dot.css?v=1618-notice-dot">
 <link rel="stylesheet" href="css/home_icon_size.css?v=1619-home-icon">
 <link rel="stylesheet" href="css/bonus_auto.css?v=1620-bonus-auto">
@@ -4808,6 +4808,17 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 
 window.NOTICE_ITEMS = [
   {
+    id: 'notice_nightshade_release_20261106',
+    date: '2026.11.06',
+    title: '新キャラ実装！',
+    body: '新キャラ「ナイトシェード」が実装！\n新ショット：CLUSTER(O) で敵を一気に倒してみよう！',
+    link: {
+      label: '今すぐガチャる！',
+      target: 'gacha_nightshade'
+    },
+    hidden: false
+  },
+  {
     id: 'notice_halloween_leona_skin_20261101',
     date: '2026.11.01',
     title: 'ハロウィンプレゼント：レオナクロス ハロウィン衣装',
@@ -5884,6 +5895,12 @@ window.NOTICE_ITEMS = [
   const NOTICE_LINK_TARGETS = {
     phase_odyssey: function () {
       if (typeof window.openPhaseOdyssey === 'function') window.openPhaseOdyssey();
+    },
+    // build1735: ナイトシェード ピックアップ邂逅（gacha_09）を選んだ状態で邂逅画面を開く
+    gacha_nightshade: function () {
+      try { if (typeof currentGachaId !== 'undefined') currentGachaId = 'gacha_09'; } catch (_) {}
+      if (typeof window.showMainTab === 'function') window.showMainTab('summon');
+      else if (typeof showMainTab === 'function') showMainTab('summon');
     }
   };
   function renderNoticeLink(item) {
@@ -5903,6 +5920,12 @@ window.NOTICE_ITEMS = [
     // 解放前のコンテンツは、お知らせを閉じずに案内だけ出す
     if (target === 'phase_odyssey' && typeof window.isChapter03ContentUnlocked === 'function' && !window.isChapter03ContentUnlocked()) {
       if (typeof window.showChapter03ContentLockMessage === 'function') window.showChapter03ContentLockMessage();
+      return;
+    }
+    // 邂逅が未解放（CH03-04未クリア）なら、お知らせを閉じずに案内だけ出す
+    if (target === 'gacha_nightshade' && typeof isGachaUnlocked === 'function' && !isGachaUnlocked()) {
+      if (typeof window.showChapter03ContentLockMessage === 'function') window.showChapter03ContentLockMessage();
+      else if (typeof window.showToast === 'function') window.showToast('CHAPTER03-04をクリアすると邂逅が解放されます');
       return;
     }
     if (typeof window.closeNoticeModal === 'function') window.closeNoticeModal();
@@ -6547,7 +6570,7 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=1672-arno"></script>
+<script src="js/shooting_resonance.js?v=1737-lunatia"></script>
 <script src="js/resonance_system.js?v=1559-lb-flow"></script>
 <link rel="stylesheet" href="css/limitbreak_fx.css?v=1559-lbx">
 <script src="js/resonance_ui.js?v=1559-lb-flow"></script>
@@ -7065,7 +7088,7 @@ document.addEventListener('touchend', function (e) {
   // 価格は従来どおり 1回5結晶 / 10回50結晶、天井50回。
   //
   // 限定SR build1124
-  // ラテルナ(32)はストーリー終盤加入キャラのため邂逅排出対象外。
+  // ルナティア(32)はストーリー終盤加入キャラのため邂逅排出対象外。
   // AQUA レイ(33) / WOOD ロゼ(9) / DARK シュリ(8) / LIGHT ハヤテ(4) / FIRE シュオリン(41)
   const GACHA_LIMITED_SR_IDS = [33, 9, 8, 4, 41];
 
@@ -8947,7 +8970,7 @@ function selectChara(now, gacha) {
      29: { scale:0.82, y:-50 }, // エルテナ
      30: { scale:0.79, y:-20 }, // リズ
      31: { scale:0.81, y:-10 }, // スゥ
-     32: { scale:0.79, y:-30 }, // ラテルナ
+     32: { scale:0.79, y:-30 }, // ルナティア
      33: { scale:0.79, y:-25 }, // レイ
      34: { scale:0.83, y:-40 }, // グレシャ
      50: { scale:0.82, y:-20 }, // SIGMA-IX
@@ -15391,7 +15414,7 @@ function showTenResult(results){
 
   // build1146: キャラ一覧の基本表示順はパーティセレクトと共通化。
   // エリ → ジグ → アウラ → ミモザ → レオナクロス → アルノ → ノエル → リズ → リュネ
-  // → その他(ID順) → ラテルナ → SIGMA-IX → ノア。
+  // → その他(ID順) → ルナティア → SIGMA-IX → ノア。
   var ZUKAN_STORY_FIRST_ORDER = [1, 5, 3, 28, 39, 20, 24, 30, 25];
   var ZUKAN_LAST_ORDER = [32, 50, 52];
 
@@ -20185,9 +20208,9 @@ function fadeOutOpeningBgm(){
 
 
 
-<script src="js/shooting_characters.js?v=1734-nightshade-ring"></script>
+<script src="js/shooting_characters.js?v=1737-lunatia"></script>
 <script src="js/story_scenario.js?v=1730-ch09-04-images"></script>
-<script src="js/story_novel.js?v=1510-aina-seeker-trial"></script>
+<script src="js/story_novel.js?v=1737-lunatia"></script>
 <script src="js/stage_select.js?v=1667-ch09"></script>
 
 <script>
@@ -20352,7 +20375,7 @@ function fadeOutOpeningBgm(){
   <link rel="stylesheet" href="css/gacha_confirm_redesign.css?v=1505-ornate-confirm">
 <script src="js/remnant_blessings.js?v=1416-names"></script>
 <!-- ローグライト（新規追加） -->
-<script src="js/shinju.js?v=1643-auto-offer"></script>
+<script src="js/shinju.js?v=1736-picker-filter"></script>
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
 (function () {
