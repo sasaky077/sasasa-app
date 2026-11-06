@@ -106,3 +106,30 @@ html body #story-novel-root .story-novel-dialogue{
 @media (min-width:500px){
   html body #story-novel-root .story-novel-character.is-cut{--sn-w:430px;}
 }
+
+/* ============================================================
+   build1738 — 長いセリフが見切れる不具合の修正
+   セリフ枠の高さが固定（約140〜180px）で、本文は枠内スクロールだったため、
+   3〜4行を超える文は下が切れていた（タップで次へ進むので読めない）。
+   → 通常の高さは今まで通り（min-height）。長い文のときだけ枠を上へ伸ばして全文を表示する。
+     画面の約半分を超える極端な長文だけは枠内スクロール＋文字送りに合わせて自動で下へ送る（JS側）。
+   ============================================================ */
+html body #story-novel-root .story-novel-textbox{
+  height:auto !important;
+  min-height:clamp(140px,19.5dvh,180px) !important;
+  max-height:calc(52dvh - env(safe-area-inset-bottom)) !important;
+  display:flex !important;
+  flex-direction:column !important;
+}
+html body #story-novel-root .story-novel-dialogue{
+  flex:0 1 auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+  overflow-y:auto !important;
+}
+@media (max-height:700px){
+  html body #story-novel-root .story-novel-textbox{
+    min-height:clamp(128px,21dvh,150px) !important;
+    max-height:calc(56dvh - env(safe-area-inset-bottom)) !important;
+  }
+}

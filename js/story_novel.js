@@ -125,7 +125,7 @@
     const link=document.createElement('link');
     link.id='story-novel-cut-style';
     link.rel='stylesheet';
-    link.href='css/story_novel_cut.css?v=1490-cut-fullbleed';
+    link.href='css/story_novel_cut.css?v=1738-textbox-fit';
     document.head.appendChild(link);
   }
 
@@ -872,6 +872,8 @@
       if(!session) return stopTyping();
       i=Math.min(chars.length,i+1);
       setDialogueTextWithBreaks(dialogue, chars.slice(0,i).join(''));
+      // build1738: 枠の最大高さを超える長文だけ、文字送りに合わせて最下行まで自動スクロール
+      if(dialogue && dialogue.scrollHeight > dialogue.clientHeight + 1) dialogue.scrollTop = dialogue.scrollHeight;
       if(i>=chars.length){
         stopTyping();
         if(session) session.typing=false;

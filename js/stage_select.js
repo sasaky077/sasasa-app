@@ -536,6 +536,8 @@
         const gimmickHtml = buildStoryGimmickHtml(stageDef);
         // build1461: バトルではないステージ（物語・パズル・ミニゲーム）は報酬を付与しないため、報酬欄を出さない。
         const nonBattleKind = getStoryNonBattleKind(storyScenario) || (stageDef.storyPuzzle ? 'PUZZLE' : ''); // build1667: 台詞データ読込前でもパズルは報酬なし表示
+        // build1739: クリア済みでストーリーがあるステージは「読む」で戦闘なしに読み返せる
+        const canReread = unlocked && cleared && hasStoryToReread(stageDef);
         const rewardRowHtml = nonBattleKind
           ? `<div class="zss-card-row zss-card-row-reward zss-card-row-noreward">
               <span class="zss-card-label">主な報酬</span>
@@ -552,6 +554,7 @@
             <div class="zss-card-name-row">
               <span class="zss-card-name">${displayStageName}</span>
               ${cleared ? '<span class="zss-clear-badge" aria-label="クリア済み">✓ CLEAR</span>' : ''}
+              ${canReread ? '<button type="button" class="zss-read-btn" aria-label="このステージのストーリーを読む">📖 読む</button>' : ''}
             </div>
             <div class="zss-mission">クリア条件：${escapeStageSelectHtml(displayCondition)}</div>
             <div class="zss-card-row zss-card-row-gimmick">
@@ -565,6 +568,11 @@
         `;
 
         if (unlocked) card.onclick = () => onShootingStoryStageTap(stageDef, mode);
+        const readBtn = card.querySelector('.zss-read-btn');
+        if (readBtn) readBtn.addEventListener('click', event => {
+          event.stopPropagation(); // カード本体（戦闘開始）には伝えない
+          rereadStoryStage(stageDef, mode);
+        });
         list.appendChild(card);
       });
       return;
@@ -862,6 +870,57 @@
   // ============================================================
   // STORY（SHOOTING）ステージ選択
   // ============================================================
+  // ============================================================
+  // build1739: ストーリーの読み返し
+  //  クリア済みステージの「📖 読む」から、戦闘前（pre）→戦闘後（post）のノベルを続けて再生する。
+  //  戦闘・報酬・クリア記録には一切触れない。読み終える／戻るで同じ章のステージ一覧へ戻る。
+  // ============================================================
+  function hasStoryToReread(stage) {
+    const novel = window.StoryNovel;
+    if (!novel || !stage) return false;
+    const id = stage.baseStageId || stage.id;
+    try {
+      return !!((typeof novel.hasPre === 'function' && novel.hasPre(id)) ||
+                (typeof novel.hasPost === 'function' && novel.hasPost(id)));
+    } catch (_) { return false; }
+  }
+
+  function rereadStoryStage(stage, mode = 'normal') {
+    const novel = window.StoryNovel;
+    if (!stage || !novel) return;
+    const chapter = Number(stage.chapter || 1);
+    const storyMode = mode === 'beginner' ? 'beginner' : 'normal';
+    const storyId = stage.baseStageId || stage.id;
+    const hasPre = typeof novel.hasPre === 'function' && novel.hasPre(storyId);
+    const hasPost = typeof novel.hasPost === 'function' && novel.hasPost(storyId);
+    if (!hasPre && !hasPost) return;
+
+    cancelStageSelectClose();
+    const modal = document.getElementById('stage-select-modal');
+    if (modal) {
+      modal.style.transition = 'none';
+      modal.style.opacity = '0';
+      modal.style.display = 'none';
+    }
+    setQuestForegroundHidden(false);
+
+    let returned = false;
+    const backToChapter = () => {
+      if (returned) return;
+      returned = true;
+      if (typeof window.openStageSelect === 'function') window.openStageSelect(chapter, storyMode);
+    };
+    const playPostPart = () => {
+      if (!hasPost || !novel.playPost(storyId, { onComplete: backToChapter, onExit: backToChapter })) backToChapter();
+    };
+    if (hasPre) {
+      // 戦闘前の「戻る」は読み返し自体の中断＝一覧へ戻る。最後まで読んだら（スキップ含む）戦闘後へ続ける。
+      if (!novel.playPre(storyId, { onComplete: playPostPart, onExit: backToChapter })) playPostPart();
+    } else {
+      playPostPart();
+    }
+  }
+
   function onShootingStoryStageTap(stage, mode = 'normal') {
     if (!stage || !stage.id) return;
 

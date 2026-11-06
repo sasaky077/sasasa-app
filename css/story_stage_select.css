@@ -804,3 +804,19 @@ html body #stage-select-modal.zss-root {
   letter-spacing:.06em;
   white-space:nowrap;
 }
+
+/* build1739 — クリア済みステージの「📖 読む」（ストーリーの読み返し）。CLEARバッジの隣、押しやすい大きさ */
+#stage-select-modal.zss-root .zss-read-btn{
+  flex:0 0 auto;margin-left:auto;
+  display:inline-flex;align-items:center;gap:3px;
+  min-height:26px;padding:3px 9px 4px;
+  color:#1e3465;background:linear-gradient(180deg,#ffffff,#eef1f8);
+  border:1px solid rgba(70,92,140,.45);border-radius:999px;
+  font:600 11px/1 "Noto Serif JP",serif;letter-spacing:.04em;white-space:nowrap;
+  box-shadow:0 1px 2px rgba(30,52,101,.12);cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+#stage-select-modal.zss-root .zss-read-btn:active{transform:translateY(1px);box-shadow:none}
+@media (max-width:360px){
+  #stage-select-modal.zss-root .zss-read-btn{padding:3px 7px 4px;font-size:10px}
+}
