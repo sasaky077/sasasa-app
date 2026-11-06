@@ -5394,6 +5394,7 @@
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
     clearSmileBoxes();
+    clearNightshadeSpinRings();
     arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-rose-fortress,.shooting-remna-trap-preview,.shooting-conjure-preview,.shooting-conjure-deploy-projectile,.shooting-conjure-turret,.shooting-conjure-ult-turret,.shooting-camilla-web-overlay,.shooting-camilla-web-burst,.shooting-camilla-bound-web-fx,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-sui-time-domain,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning,.shooting-ch07-complete-shield,.shooting-ch07-torii,.eclipse-hand-band,.eclipse-float-num,.eclipse-dash-line,.eclipse-dark-veil,.eclipse-beacon,.eclipse-state-pill,.po-submission-chip,.po-variety-banner').forEach(el => el.remove());
     clearEnemyBulletCanvas();
     if (state) {
@@ -8409,6 +8410,9 @@
     ensureBombVisualStyles();
 
     const splitCount = normalizeBombSplitCount(source);
+    // build1731: CLUSTER(O)＝ナイトシェード。着弾した敵を囲む円から、その敵へ向けて収束する追撃弾。
+    // build1734: 弾を飛ばすのではなく、命中した敵の周りを「グルン」と1周するエナジーサークルに変更。
+    if (source.clusterPattern === 'ring') return spawnNightshadeSpinRing(source, x, y, now, ignoredTarget);
     const pattern = source.clusterPattern === 'cross' ? 'cross' : 'x';
     const angles = getBombSplitAngles(splitCount, pattern);
     const rate = Math.max(0, Number(source.clusterFragmentDamageRate ?? source.bombFragmentDamageRate ?? 0.50));
@@ -8455,6 +8459,137 @@
     return angles.length;
   }
 
+  // ============================================================
+  // build1734: CLUSTER(O)＝エナジーサークル
+  //  命中した敵を中心に、半径Rの光の輪が1周（clusterRingSpinMs）回る。輪は敵に付いて動く。
+  //  回っている間に clusterRingTicks 回、輪の内側にいる敵すべて（命中した敵を含む）へ
+  //  親弾ダメージ×clusterRingTickRate を与える。処理はゲームループ側（一時停止・時間停止中は進まない）。
+  // ============================================================
+  function spawnNightshadeSpinRing(source, x, y, now, target) {
+    if (!state) return 0;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return 0;
+    const radius = Math.max(30, Number(source.clusterRingRadius || 120));
+    const spinMs = Math.max(200, Number(source.clusterRingSpinMs || 560));
+    const ticks = Math.max(1, Math.floor(Number(source.clusterRingTicks || 4)));
+    const element = normalizeCombatElement(source.attackElement || source.element) || 'neutral';
+    const visual = getBombElementVisual(element);
+    const el = document.createElement('div');
+    el.className = 'shooting-ns-spin-ring';
+    el.style.setProperty('--ring-size', `${Math.round(radius * 2)}px`);
+    el.style.setProperty('--bomb-rgb', visual.rgb);
+    el.style.setProperty('--spin-ms', `${Math.round(spinMs)}ms`);
+    el.style.setProperty('--spin-dir', Math.random() < .5 ? '1' : '-1');
+    el.innerHTML = '<i class="ns-ring-base"></i><i class="ns-ring-spin"><b></b><b></b><b></b></i>';
+    arena.appendChild(el);
+    positionUnit(el, Number(x || 0), Number(y || 0));
+    if (!Array.isArray(state.nsSpinRings)) state.nsSpinRings = [];
+    state.nsSpinRings.push({
+      el, x: Number(x || 0), y: Number(y || 0), target: target || null,
+      radius, spinMs, ticks, done: 0, startAt: Number(now || performance.now()),
+      hit: { damage: Number(source.damage || 0), splashRadius: radius,
+        splashDamageRate: Math.max(0, Number(source.clusterRingTickRate ?? 0.2)),
+        attackElement: element, element, ownerId: source.ownerId,
+        noVictimFx: true }, // 輪そのものが見えているので、敵ごとの渦エフェクトは出さない（4回×敵数で重くなる）
+    });
+    return ticks;
+  }
+
+  function getNightshadeRingCenter(ring) {
+    const t = ring.target;
+    if (t && state) {
+      if (t === state.boss) { if (state.boss && state.boss.hp > 0) return { x: Number(state.boss.x || ring.x), y: Number(state.boss.y || ring.y) }; }
+      else if (t.hp > 0 && Number.isFinite(Number(t.x))) return { x: Number(t.x), y: Number(t.y) };
+    }
+    return { x: ring.x, y: ring.y }; // 敵が倒れたらその場で回り切る
+  }
+
+  function updateNightshadeSpinRings(now) {
+    if (!state || !Array.isArray(state.nsSpinRings) || !state.nsSpinRings.length) return;
+    if (state.ended || state.finishing) { clearNightshadeSpinRings(); return; }
+    state.nsSpinRings = state.nsSpinRings.filter(ring => {
+      if (!ring.el || !ring.el.isConnected) return false;
+      const c = getNightshadeRingCenter(ring);
+      ring.x = c.x; ring.y = c.y;
+      positionUnit(ring.el, c.x, c.y);
+      const elapsed = now - ring.startAt;
+      // 1フレームに1回まで（一時停止明けにまとめて入らないように）
+      const due = Math.min(ring.ticks, Math.floor(elapsed / (ring.spinMs / ring.ticks)));
+      if (ring.done < due) {
+        ring.done++;
+        applyGenericBombSplashDamage(ring.hit, c.x, c.y, now, null, null);
+      }
+      if (ring.done >= ring.ticks && elapsed >= ring.spinMs) {
+        ring.el.classList.add('is-ending');
+        const el = ring.el; setTimeout(() => el.remove(), 180);
+        return false;
+      }
+      return true;
+    });
+  }
+
+  function clearNightshadeSpinRings() {
+    if (!state) return;
+    (state.nsSpinRings || []).forEach(r => r?.el?.remove());
+    state.nsSpinRings = [];
+  }
+
+  // build1731: CLUSTER(O)。着弾点を中心とした半径Rの円周上に追撃弾を並べ、中心へ向けて飛ばす。（build1734で未使用）
+  //  ・元の命中対象を除外しない（＝追撃としてその敵にも当たる）。各追撃弾は同じ敵に1回だけ。
+  //  ・中心を少し過ぎたところで消える（円の外へ飛び散らない）。
+  function spawnClusterRingProjectiles(source, x, y, now, queue, splitCount) {
+    const count = Math.max(4, Math.min(12, Number(splitCount || 8)));
+    const radius = Math.max(24, Number(source.clusterRingRadius || 64));
+    const rate = Math.max(0, Number(source.clusterFragmentDamageRate ?? 0.10));
+    const damage = Math.max(0, Number(source.damage || 0)) * rate;
+    const speed = Math.max(120, Number(source.clusterFragmentSpeed || 300));
+    const element = normalizeCombatElement(source.attackElement || source.element) || 'neutral';
+    const visual = getBombElementVisual(element);
+    const fragmentClass = String(source.clusterFragmentClass || 'shooting-bullet') + ' shooting-bomb-fragment shooting-cluster-ring-fragment';
+    const born = Number(now || performance.now());
+    // 円周→中心までの時間＋わずかな余裕（中心を通り抜けた直後に消す）
+    const lifeMs = (radius / speed) * 1000 + 70;
+    const offset = Math.random() * Math.PI * 2 / count; // 毎回少し回して単調にしない
+    for (let i = 0; i < count; i++) {
+      const rad = offset + (i / count) * Math.PI * 2;
+      const px = Number(x || 0) + Math.cos(rad) * radius;
+      const py = Number(y || 0) + Math.sin(rad) * radius;
+      const fragment = makeProjectile(fragmentClass, px, py, -Math.cos(rad) * speed, -Math.sin(rad) * speed, damage, source.ownerId);
+      if (!fragment) continue;
+      fragment.kind = 'bomb_fragment';
+      fragment.attackElement = element;
+      fragment.element = element;
+      fragment.bombFragment = true;
+      fragment.bombIgnoreTarget = null;
+      fragment.bombBornAt = born;
+      fragment.bombExpireAt = born + lifeMs;
+      fragment.pierce = true;
+      fragment.piercedTargets = new Set();
+      fragment.noBombSplit = true;
+      fragment._hw = 4.5;
+      fragment._hh = 4.5;
+      fragment.el.style.setProperty('--bomb-rgb', visual.rgb);
+      queue.push(fragment);
+    }
+    createClusterRingEffect(x, y, radius, element, lifeMs);
+    return count;
+  }
+
+  function createClusterRingEffect(x, y, radius, element, lifeMs) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const visual = getBombElementVisual(element);
+    const el = document.createElement('div');
+    el.className = 'shooting-cluster-ring-fx';
+    el.style.setProperty('--ring-size', `${Math.round(radius * 2)}px`);
+    el.style.setProperty('--bomb-rgb', visual.rgb);
+    el.style.setProperty('--ring-ms', `${Math.round(lifeMs)}ms`);
+    el.innerHTML = '<i></i>';
+    arena.appendChild(el);
+    positionUnit(el, Number(x || 0), Number(y || 0));
+    setTimeout(() => el.remove(), Math.round(lifeMs) + 160);
+  }
+
   function splitBombAtImpact(p, x, y, now, queue, ignoredTarget = null) {
     if (!p || p.kind !== 'generic_splash') return 0;
     return spawnBombSplitProjectiles(p, x, y, now, queue, ignoredTarget);
@@ -8474,7 +8609,7 @@
       if (Math.hypot(Number(enemy.x || 0) - impactX, Number(enemy.y || 0) - impactY) > radius) return;
       const targetElement = getCombatTargetElement(enemy);
       const splashDamage = applyElementDamage(Number(p.damage || 0) * rate, attackElement, targetElement);
-      createBombSplashVictimHitEffect(Number(enemy.x || 0), Number(enemy.y || 0), attackElement);
+      if (!p.noVictimFx) createBombSplashVictimHitEffect(Number(enemy.x || 0), Number(enemy.y || 0), attackElement);
       const applied = damageNormalEnemy(enemy, splashDamage, now, true, getElementDamageReaction(attackElement, targetElement));
       if (applied > 0) extraHits++;
     });
@@ -8484,7 +8619,7 @@
       if (Math.hypot(Number(obj.x || 0) - impactX, Number(obj.y || 0) - impactY) > radius) return;
       const targetElement = getCombatTargetElement(obj, state?.boss?.element);
       const splashDamage = applyElementDamage(Number(p.damage || 0) * rate, attackElement, targetElement);
-      createBombSplashVictimHitEffect(Number(obj.x || 0), Number(obj.y || 0), attackElement);
+      if (!p.noVictimFx) createBombSplashVictimHitEffect(Number(obj.x || 0), Number(obj.y || 0), attackElement);
       const applied = damageFacelessObject(obj, splashDamage, now, getElementDamageReaction(attackElement, targetElement));
       if (applied > 0) extraHits++;
     });
@@ -8500,7 +8635,7 @@
         updateBossPhase();
         if (applied > 0) {
           extraHits++;
-          createBombSplashVictimHitEffect(bx, by, attackElement);
+          if (!p.noVictimFx) createBombSplashVictimHitEffect(bx, by, attackElement);
           if (!addScoreAttackDamageScore(applied)) addLegacyCombatScore(80);
           if (shouldRenderRaidBossHitVisual(now, 'number')) {
             showBossDamageNumber(applied, false, getElementDamageReaction(attackElement, targetElement));
@@ -11622,7 +11757,13 @@
         p.clusterSize = bombSize;
         p.clusterSplitCount = splitCount;
         p.clusterFragmentDamageRate = Math.max(0, Number(c.clusterFragmentDamageRate ?? c.bombFragmentDamageRate ?? 0.50));
-        p.clusterPattern = c.clusterPattern === 'cross' ? 'cross' : 'x';
+        p.clusterPattern = c.clusterPattern === 'cross' ? 'cross' : (c.clusterPattern === 'ring' ? 'ring' : 'x');
+        if (p.clusterPattern === 'ring') {
+          p.clusterRingRadius = Math.max(30, Number(c.clusterRingRadius || 120));
+          p.clusterRingSpinMs = Math.max(200, Number(c.clusterRingSpinMs || 560));
+          p.clusterRingTicks = Math.max(1, Math.floor(Number(c.clusterRingTicks || 4)));
+          p.clusterRingTickRate = Math.max(0, Number(c.clusterRingTickRate ?? 0.2));
+        }
         p.clusterFragmentSpeed = Math.max(120, Number(c.clusterFragmentSpeed || c.bombFragmentSpeed || 430));
         p.clusterFragmentClass = bulletClass;
         p.attackElement = attackElement;
@@ -13978,6 +14119,10 @@
       }
       if (isGachaTrialStage() && gachaTrialCharacterId === 56) {
         def = Object.assign({}, def, { element: 'dark' });
+      }
+      // build1732: ナイトシェード（闇）試遊は光属性の敵にして、属性有利（Weak）が見えるようにする。
+      if (isGachaTrialStage() && gachaTrialCharacterId === 57) {
+        def = Object.assign({}, def, { element: 'light' });
       }
 
       // build1241: 通常戦でスポーン順ごとの属性指定を許可する。
@@ -25030,6 +25175,7 @@
     updateAinaStealth(ts);
     updateHaoTrigger(ts);
     updateSmileBoxes(ts);
+    updateNightshadeSpinRings(ts);
     updateConjurePlacementPreview(ts);
     updateRemnaTrapPlacementPreview(ts);
     updateConjureDeployments(dt, ts);
@@ -29849,7 +29995,7 @@
       console.warn('[shooting trial] start rejected:', reason, { characterId:id });
       return false;
     };
-    if (id !== 36 && id !== 40 && id !== 56 && id !== 101) return rejectTrial('unsupported-character');
+    if (id !== 36 && id !== 40 && id !== 56 && id !== 57 && id !== 101) return rejectTrial('unsupported-character');
     if (!SHOOTING_CHARACTERS[id]) return rejectTrial('character-definition-missing');
     const existing = document.getElementById(ROOT_ID);
     if (existing && existing.classList.contains('open')) return rejectTrial('another-battle-open');
@@ -35106,6 +35252,258 @@
 
   // build1324: メロリアULT「冥府の宣告」。全敵5秒停止＋敵1体ずつ20%で最大HP50%。
   // 既存弾は消さず、割合ダメージはULT由来なのでULTゲージやコンボ加算なし。
+  // ============================================================
+  // build1731: ナイトシェード ULT「ナイトシェード・スナイプ」
+  //  BOSSがいればBOSS、いなければ一番近い敵へ向けて直線の狙撃弾。射線上の敵すべてに：
+  //   ① 属性バリアを剥がす（リュネULTと同じ lyuneBarrierRemoved を使う＝以後も弱点以外が通る）
+  //   ② 5秒スタン（ニーナ／チャチャと同じ「命中した敵だけ」の麻痺。BOSSはBOSS単体スタン）
+  //   ③ ATK×2.5 のダメージ（バリアを先に剥がすので IMMUNE にならない）
+  // ============================================================
+  function stripNightshadeBarrier(target) {
+    if (!target || !target.ref) return;
+    if (target.kind === 'boss') {
+      const shield = document.getElementById('shooting-boss-weakness-barrier');
+      if (state.boss) state.boss.lyuneBarrierRemoved = true;
+      if (shield) shield.remove();
+      return;
+    }
+    const enemy = target.ref;
+    if (!enemy.weaknessBarrierEl && !enemy.weaknessBarrier) return;
+    enemy.lyuneBarrierRemoved = true;
+    if (enemy.weaknessBarrierEl) { enemy.weaknessBarrierEl.remove(); enemy.weaknessBarrierEl = null; }
+    if (enemy.el) enemy.el.classList.remove('has-weakness-barrier');
+  }
+
+  function getNightshadeSnipeCandidates() {
+    const list = [];
+    (state.normalEnemies || []).forEach(e => {
+      if (e && e.el && e.hp > 0) list.push({ kind: 'normal', ref: e, x: Number(e.x || 0), y: Number(e.y || 0), r: 26 });
+    });
+    (state.facelessObjects || []).forEach(o => {
+      if (o && o.el && o.hp > 0) list.push({ kind: 'faceless', ref: o, x: Number(o.x || 0), y: Number(o.y || 0), r: 26 });
+    });
+    if (!isNormalBattle() && state.boss && state.boss.hp > 0) {
+      const bossEl = document.getElementById(BOSS_ID);
+      const half = bossEl ? Math.max(30, Math.min(bossEl.offsetWidth, bossEl.offsetHeight) * .32) : 48;
+      list.push({ kind: 'boss', ref: state.boss, x: Number(state.boss.x || 0), y: Number(state.boss.y || 0), r: half });
+    }
+    return list;
+  }
+
+  function useNightshadeSnipeUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+    showUltCut(c.ultName, c.effectKey, c);
+    ultScreenFlash('ult-flash-nem', c);
+    const arena = document.getElementById('shooting-arena');
+    const now = performance.now();
+    state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), now + 420);
+    if (!arena) return;
+    const sx = Number(state.player.x || arena.clientWidth / 2);
+    const sy = Math.max(20, Number(state.player.y || arena.clientHeight * .8) - 30);
+    const candidates = getNightshadeSnipeCandidates();
+    // 狙い：BOSSがいればBOSS（増援より優先）、いなければ一番近い敵。どちらもいなければ真上へ撃つ（空振り）。
+    const primary = candidates.find(t => t.kind === 'boss')
+      || candidates.slice().sort((a, b) => Math.hypot(a.x - sx, a.y - sy) - Math.hypot(b.x - sx, b.y - sy))[0];
+    let ux = 0, uy = -1;
+    if (primary) {
+      const dx = primary.x - sx, dy = primary.y - sy, len = Math.max(1, Math.hypot(dx, dy));
+      ux = dx / len; uy = dy / len;
+    }
+    const rayLength = Math.hypot(arena.clientWidth, arena.clientHeight) * 1.2;
+    const halfWidth = Math.max(8, Number(c.nightshadeHitHalfWidth || 30));
+    const hits = candidates
+      .map(t => {
+        const ex = t.x - sx, ey = t.y - sy;
+        const along = ex * ux + ey * uy;
+        const side = Math.abs(ex * uy - ey * ux);
+        return { t, along, side };
+      })
+      .filter(v => v.along >= 0 && v.along <= rayLength && v.side <= halfWidth + v.t.r)
+      .sort((a, b) => a.along - b.along)
+      .map(v => v.t);
+    if (primary && !hits.includes(primary)) hits.unshift(primary);
+
+    spawnNightshadeTracer(sx, sy, ux, uy, rayLength);
+
+    const stunMs = Math.max(300, Number(c.nightshadeStunMs || 5000));
+    const hitProfile = { ...c, ninaUltHitAtkMultiplier: Math.max(0, Number(c.nightshadeDamageAtkMultiplier ?? 2.5)), ninaUltParalyzeMs: stunMs };
+    const attackElement = getUltAttackElement(c);
+    // 弾が届く時間だけ遅らせて命中させる（射線の手前から順に）
+    hits.forEach((target, index) => {
+      const delay = 90 + index * 40;
+      setTimeout(() => {
+        if (!state || state.ended || state.finishing) return;
+        if (target.kind === 'boss' ? !(state.boss && state.boss.hp > 0) : !(target.ref && target.ref.hp > 0)) return;
+        stripNightshadeBarrier(target);
+        const t = performance.now();
+        const applied = applyNinaUltHit(hitProfile, target, t);
+        // ダメージが通らない相手（無敵中など）にもスタンだけは入れる
+        if (!(applied > 0)) applyNinaParalyze(target, stunMs, attackElement);
+        createNightshadeImpact(target.kind === 'boss' ? Number(state.boss?.x || target.x) : Number(target.ref.x || target.x),
+          target.kind === 'boss' ? Number(state.boss?.y || target.y) : Number(target.ref.y || target.y));
+      }, delay);
+    });
+    renderHud();
+  }
+
+  // ============================================================
+  // build1733: ナイトシェード ULT「乱射」— アルノ「千ノ刻」の銃乱射版。
+  //  敵弾を全消去して時間停止（アルノと同じ arnoSlash* の仕組みを流用＝時計の補正・終了処理も共通）。
+  //  制限時間中、タップするたびに散弾 nightshadePelletsPerTap 発を、生きている敵（通常敵＋BOSS）へ
+  //  ランダムにばら撒く。1発 ATK×nightshadePelletAtkRate。タップ回数は nightshadeMaxTaps 回まで。
+  //  ナイトシェードは移動しない（その場で撃つ）。
+  // ============================================================
+  function getNightshadeBarrageTargets() {
+    const list = [];
+    (state.normalEnemies || []).forEach(enemy => {
+      if (enemy && enemy.el && enemy.hp > 0) list.push({ kind:'normal', key:`normal:${enemy.uid || ''}`, ref:enemy, x:Number(enemy.x || 0), y:Number(enemy.y || 0) });
+    });
+    if (!isNormalBattle() && state.boss && state.boss.hp > 0) {
+      list.push({ kind:'boss', key:'boss', ref:state.boss, x:Number(state.boss.x || 0), y:Number(state.boss.y || 0) });
+    }
+    return list;
+  }
+
+  function useNightshadeBarrageUlt(c) {
+    if (!state || state.arnoSlashActive) return;
+    const now = performance.now();
+    const duration = Math.max(500, Number(c.nightshadeBarrageDurationMs || 4000));
+    const root = document.getElementById(ROOT_ID);
+    const arena = document.getElementById('shooting-arena');
+    if (!root || !arena) return;
+
+    ensureArnoSlashStyle();
+    clearEnemyBulletsOnly();
+
+    state.arnoSlashActive = true;
+    state.arnoSlashStartedAt = now;
+    state.arnoSlashUntil = now + duration;
+    state.arnoSlashOriginX = Number(state.player?.x || 0);
+    state.arnoSlashOriginY = Number(state.player?.y || 0);
+    state.arnoSlashLastTapAt = -9999;
+    state.arnoSlashCount = 0;
+    state.arnoSlashTargetKey = '';
+    state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), now + duration);
+    state.playerShotLockUntil = Math.max(Number(state.playerShotLockUntil || 0), now + duration);
+
+    root.classList.add('arno-slash-time-stop');
+    root.querySelectorAll('.shooting-arno-slash-overlay').forEach(el => el.remove());
+    const overlay = document.createElement('div');
+    overlay.className = 'shooting-arno-slash-overlay shooting-nightshade-barrage-overlay';
+    const maxTaps = Math.max(1, Math.floor(Number(c.nightshadeMaxTaps || 12)));
+    overlay.innerHTML = `<div class="shooting-arno-slash-prompt"><b>連打！</b><small>残り <span class="arno-slash-left">${maxTaps}</span></small></div>`;
+    const leftEl = overlay.querySelector('.arno-slash-left');
+    arena.appendChild(overlay);
+
+    const pelletsPerTap = Math.max(1, Math.floor(Number(c.nightshadePelletsPerTap || 4)));
+    const pelletProfile = { ...c, arnoSlashDamageAtkRate: Math.max(0, Number(c.nightshadePelletAtkRate ?? 0.095)) };
+
+    overlay.addEventListener('pointerdown', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!state || !state.arnoSlashActive || state.ended || state.finishing) return;
+      const tapNow = performance.now();
+      if (tapNow >= Number(state.arnoSlashUntil || 0)) { finishArnoUlt(); return; }
+      const minInterval = Math.max(0, Number(c.nightshadeMinTapIntervalMs || 80));
+      if (tapNow - Number(state.arnoSlashLastTapAt || -9999) < minInterval) return;
+      if (Number(state.arnoSlashCount || 0) >= maxTaps) return;
+      const targets = getNightshadeBarrageTargets();
+      if (!targets.length) return;
+      state.arnoSlashLastTapAt = tapNow;
+      state.arnoSlashCount = Math.max(0, Number(state.arnoSlashCount || 0)) + 1;
+
+      const sx = Number(state.player?.x || 0);
+      const sy = Number(state.player?.y || 0) - 34;
+      createNightshadeMuzzle(sx, sy);
+      for (let i = 0; i < pelletsPerTap; i++) {
+        // 1発ごとに対象をランダムに選び、着弾点も少し散らす（バラバラ感）
+        const target = targets[Math.floor(Math.random() * targets.length)];
+        const jx = (Math.random() - .5) * 34, jy = (Math.random() - .5) * 26;
+        const delay = i * 28 + Math.random() * 18;
+        setTimeout(() => {
+          if (!state || !state.arnoSlashActive || state.ended || state.finishing) return;
+          const alive = target.kind === 'boss' ? (state.boss && state.boss.hp > 0) : (target.ref && target.ref.hp > 0);
+          const tx = (target.kind === 'boss' ? Number(state.boss?.x || target.x) : Number(target.ref.x || target.x)) + jx;
+          const ty = (target.kind === 'boss' ? Number(state.boss?.y || target.y) : Number(target.ref.y || target.y)) + jy;
+          spawnNightshadePellet(sx, sy, tx, ty);
+          if (alive) damageArnoSlashTarget(pelletProfile, target, performance.now());
+        }, delay);
+      }
+      if (leftEl) leftEl.textContent = String(Math.max(0, maxTaps - state.arnoSlashCount));
+      // 上限に達したら最後の弾が届くのを待って少し早めに終了
+      if (state.arnoSlashCount >= maxTaps && state.arnoSlashActive) {
+        const endAt = Math.min(Number(state.arnoSlashUntil || tapNow), tapNow + 360);
+        clearTimeout(state.arnoSlashTimerId);
+        state.arnoSlashTimerId = setTimeout(() => { if (state && state.arnoSlashActive) finishArnoUlt(); }, Math.max(0, endAt - tapNow));
+      }
+    }, { passive:false });
+
+    deferAllEnemyAttackResume(now + duration);
+    prevTs = now;
+    renderHud();
+    state.arnoSlashTimerId = setTimeout(() => {
+      if (!state || !state.arnoSlashActive) return;
+      finishArnoUlt();
+    }, duration);
+  }
+
+  function createNightshadeMuzzle(x, y) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const el = document.createElement('div');
+    el.className = 'shooting-nightshade-muzzle';
+    el.innerHTML = '<i></i>';
+    arena.appendChild(el);
+    positionUnit(el, x, y);
+    setTimeout(() => el.remove(), 260);
+  }
+
+  function spawnNightshadePellet(sx, sy, tx, ty) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const dx = tx - sx, dy = ty - sy;
+    const el = document.createElement('div');
+    el.className = 'shooting-nightshade-tracer is-pellet';
+    el.style.setProperty('--ns-len', `${Math.round(Math.hypot(dx, dy))}px`);
+    el.style.setProperty('--ns-angle', `${Math.atan2(dy, dx) * 180 / Math.PI}deg`);
+    el.style.left = `${sx}px`;
+    el.style.top = `${sy}px`;
+    el.innerHTML = '<i class="ns-trail"></i><i class="ns-core"></i>';
+    arena.appendChild(el);
+    setTimeout(() => el.remove(), 360);
+    const hit = document.createElement('div');
+    hit.className = 'shooting-nightshade-impact is-pellet';
+    hit.innerHTML = '<i class="ns-burst"></i>';
+    arena.appendChild(hit);
+    positionUnit(hit, tx, ty);
+    setTimeout(() => hit.remove(), 420);
+  }
+
+  function spawnNightshadeTracer(sx, sy, ux, uy, length) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const el = document.createElement('div');
+    el.className = 'shooting-nightshade-tracer';
+    el.style.setProperty('--ns-len', `${Math.round(length)}px`);
+    el.style.setProperty('--ns-angle', `${Math.atan2(uy, ux) * 180 / Math.PI}deg`);
+    el.style.left = `${sx}px`;
+    el.style.top = `${sy}px`;
+    el.innerHTML = '<i class="ns-trail"></i><i class="ns-core"></i><i class="ns-muzzle"></i>';
+    arena.appendChild(el);
+    setTimeout(() => el.remove(), 720);
+  }
+
+  function createNightshadeImpact(x, y) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const el = document.createElement('div');
+    el.className = 'shooting-nightshade-impact';
+    el.innerHTML = '<i class="ns-reticle"></i><i class="ns-burst"></i>';
+    arena.appendChild(el);
+    positionUnit(el, x, y);
+    setTimeout(() => el.remove(), 760);
+  }
+
   function useMeloriaStunUlt(c) {
     if (!state || state.ended || state.finishing) return;
     showUltCut(c.ultName, c.effectKey, c);
@@ -35182,6 +35580,8 @@
     else if (c.ultType === 'rose_fortress') useRoseUlt(c);
     else if (c.ultType === 'suzu_bullet_silence') useSuzuBulletSilenceUlt(c);
     else if (c.ultType === 'meloria_stun') useMeloriaStunUlt(c);
+    else if (c.ultType === 'nightshade_snipe') useNightshadeSnipeUlt(c); // build1731（旧仕様・現在は未使用）
+    else if (c.ultType === 'nightshade_barrage') useNightshadeBarrageUlt(c);
     else if (c.ultType === 'airena_atk_item') useAirenaAtkItemUlt(c);
     else if (c.ultType === 'ignis_fire_wheel') useIgnisUlt(c);
     else if (c.ultType === 'clarine_decoy') useClarineUlt(c);

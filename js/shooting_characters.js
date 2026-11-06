@@ -52,7 +52,7 @@
     LEONA_CROSS: 39,
     KUREHA: 41,
     KYOU: 42, SUZU: 43, MELORIA: 44, KIRIMARU: 45, AIRENA: 46,
-    LINLIN: 47, MUUMUU: 48, MEGMEG: 49, CHACHA: 51, RUIRUI: 53, HAO: 54, SMILE: 56, TOWA: 101, // ID52 is reserved for Noah (existing saves/RPC)
+    LINLIN: 47, MUUMUU: 48, MEGMEG: 49, CHACHA: 51, RUIRUI: 53, HAO: 54, SMILE: 56, NIGHTSHADE: 57, TOWA: 101, // ID52 is reserved for Noah (existing saves/RPC)
   });
 
   // ============================================================
@@ -111,7 +111,7 @@
     102: 'sr', // カミラ
     41: 'sr',  // シャオラン
     42: 'r', 43: 'r', 44: 'r', 45: 'r', 46: 'r',
-    47: 'r', 48: 'r', 49: 'r', 51: 'r', 53: 'r', 54: 'sr', 56: 'sr', 101: 'sr',
+    47: 'r', 48: 'r', 49: 'r', 51: 'r', 53: 'r', 54: 'sr', 56: 'sr', 57: 'sr', 101: 'sr',
   });
 
   // 現行互換：R はSRに対して基本性能(HP/ATK)を20%落とす。育成/凸の新倍率は別フェーズで統合予定。
@@ -1314,6 +1314,25 @@
     "portraitImage": "images/chara_56.webp",
     "homeImage": "images/chara_56_cut.webp",
     "upImage": "images/chara_56_up.webp",
+    "homeScale": 0.82,
+    "homeOffsetX": 0,
+    "homeOffsetY": -24,
+    "hidden": false
+  },
+  // build1731: SR 闇属性・狙撃手ナイトシェード（ID57）。既存キャラと同じ画像パス規則。
+  "57": {
+    "id": 57,
+    "name": "ナイトシェード",
+    "element": "dark",
+    "hp": 600,
+    "atk": 290,
+    "image": "images/chara_57_battle_back.webp",
+    "panelImage": "images/chara_57_panel.webp",
+    "cutinImage": "images/chara_57_cutin.webp",
+    "uiScale": { "panel": 1, "battleBack": 1.2, "battleUp": 1 },
+    "portraitImage": "images/chara_57.webp",
+    "homeImage": "images/chara_57_cut.webp",
+    "upImage": "images/chara_57_up.webp",
     "homeScale": 0.82,
     "homeOffsetX": 0,
     "homeOffsetY": -24,
@@ -2924,6 +2943,28 @@
     coreTop: '38%', shotOffsetY: 42,
   });
 
+  // build1731: ナイトシェード (ID57) — 闇 SR / CLUSTER(O)。
+  //  SHOT：着弾した敵の周りをエナジーサークルが1周し、輪の内側の敵へ追撃（CLUSTER(O)）。
+  //  build1734: 収束弾→回転するエナジーサークルに変更、半径140px。ULTをアルノ「千ノ刻」の銃乱射版に変更。
+  //  ULT：敵弾全消去＋時間停止。タップごとに散弾4発を敵全体へランダムにばら撒く（最大12タップ＝48発）。
+  SHOOTING_CHARACTERS[CHARACTER_ID.NIGHTSHADE] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE,
+    id: CHARACTER_ID.NIGHTSHADE, effectKey: 'nightshade',
+    label: 'CLUSTER(O) / BARRAGE',
+    description: '闇属性のCLUSTER(O)。着弾した敵の周りをエナジーサークルが1周し、輪の内側の敵すべてに4回追撃する。ULTは時間を止め、タップするたびに敵全体へ散弾をばら撒く。',
+    shotType: 'cluster', clusterSize: 'L', clusterSplitCount: 8, clusterPattern: 'ring',
+    // build1734: 命中した敵の周りを1周するエナジーサークル（半径140px・0.56秒で1周・4回判定×親弾の20%）
+    clusterRingRadius: 140, clusterRingSpinMs: 560, clusterRingTicks: 4, clusterRingTickRate: 0.20,
+    shotElement: 'dark', shotCount: 1, fireRate: 560, bulletSpeed: 720, shotPowerRate: 0.26,
+    ultName: 'ナイトシェード・バラージ',
+    ultDescription: '敵弾を全消去して時間停止。4秒間、タップするたびに散弾4発を敵全体へランダムにばら撒く。1発ATK×0.095（最大12回＝48発）。',
+    ultType: 'nightshade_barrage', ultBaseType: 'damage', ultAddons: ['bullet_clear', 'time_stop', 'damage'],
+    nightshadeBarrageDurationMs: 4000, nightshadePelletsPerTap: 4, nightshadePelletAtkRate: 0.095,
+    nightshadeMaxTaps: 12, nightshadeMinTapIntervalMs: 80,
+    burstNeed: 32, ultGainPerHit: 0.60,
+    coreTop: '38%', shotOffsetY: 42,
+  });
+
   // build1532: トワ (ID101) — 闇 SR / CHARGE M / 常闇。
   SHOOTING_CHARACTERS[CHARACTER_ID.TOWA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE,
@@ -3104,6 +3145,10 @@
         return '敵全体に呪印を刻み、' + sec(c.ultDelayMs, 1200) + '後に' + atk(c.ultDamageAtkMultiplier, 2.8) + 'のダメージ。その後' + sec(c.ultDebuffDurationMs, 6000) + '間、受けるダメージを' + pct(1 - num(c.ultEnemyDamageMultiplier, 0.7), 0.3) + '軽減。' + note('即死攻撃は軽減しない');
       case 'sui_time_domain':
         return '自機に追従する半径' + String(num(c.suiDomainRadius, 275)) + 'pxの時空領域を' + sec(c.suiDomainDurationMs, 6000) + '間展開。領域内の敵弾を' + pct(1 - num(c.suiDomainBulletSpeedMultiplier, 0.2), 0.8) + '減速し、領域内の操作キャラのATKを' + mul(c.suiDomainAtkMultiplier, 1.3) + 'にする。' + note('敵弾全消去・回復・全体攻撃なし');
+      case 'nightshade_barrage':
+        return CLEAR + '時間を停止。' + sec(c.nightshadeBarrageDurationMs, 4000) + '間、タップするたびに散弾' + String(num(c.nightshadePelletsPerTap, 4)) + '発を敵全体へランダムにばら撒く。1発' + atk(c.nightshadePelletAtkRate, 0.095) + '（最大' + String(num(c.nightshadeMaxTaps, 12)) + '回）。';
+      case 'nightshade_snipe':
+        return 'BOSS（いなければ一番近い敵）へ直線の狙撃弾。射線上の敵すべての属性バリアを剥がし、' + sec(c.nightshadeStunMs, 5000) + '間スタン。命中した敵に' + atk(c.nightshadeDamageAtkMultiplier, 2.5) + 'のダメージ。';
       case 'meloria_stun':
         return '敵全体を' + sec(c.ultStunMs, 5000) + '間スタン。さらに各敵に' + pct(c.meloriaPercentChance, 0.2) + 'の確率で最大HPの' + pct(c.meloriaMaxHpDamageRate, 0.5) + 'のダメージ。';
 

@@ -417,12 +417,12 @@
 #detail-modal.is-gacha-pickup-preview #detail-name{display:none!important}
 </style>
   <link rel="stylesheet" href="css/resonance_tower.css?v=1715-despair-title-fix">
-  <link rel="stylesheet" href="css/phase_odyssey.css?v=1727-inori-no-curse">
+  <link rel="stylesheet" href="css/phase_odyssey.css?v=1734-nightshade-ring">
   <link rel="stylesheet" href="css/towa_encounter.css?v=1553-rates-visible">
   <link rel="stylesheet" href="css/towa_dark_gacha.css?v=1552">
   <link rel="stylesheet" href="css/towa_notice.css?v=1556">
   <link rel="stylesheet" href="css/towa_preflight.css?v=1548-towa-black-burgundy">
-  <link rel="stylesheet" href="css/shooting_event.css?v=1727-inori-no-curse">
+  <link rel="stylesheet" href="css/shooting_event.css?v=1734-nightshade-ring">
   <link rel="stylesheet" href="css/shot_fx.css?v=1557-shot-fx">
   <link rel="stylesheet" href="css/tower15_boss.css?v=1485-tower15">
   <link rel="stylesheet" href="css/daily_stage_select.css?v=1388-shared-card">
@@ -7152,6 +7152,21 @@ document.addEventListener('touchend', function (e) {
     return total + Number(GACHA_PICKUP_SMILE_SR_RATE_MAP[key] || 0);
   }, 0);
 
+  // 限定ピックアップ邂逅（ナイトシェード） build1732
+  // ナイトシェード(57) 1.2%、恒常SR5体 各0.96%。ニーナ・スマイルと同じ提供割合（SR計6%）。
+  const GACHA_PICKUP_NIGHTSHADE_ID = 57;
+  const GACHA_PICKUP_NIGHTSHADE_SR_RATE_MAP = {
+    57: GACHA_PICKUP_INDIVIDUAL_RATE, // ナイトシェード 1.2%
+    2:  (GACHA_SR_RATE - GACHA_PICKUP_INDIVIDUAL_RATE) / 5,
+    31: (GACHA_SR_RATE - GACHA_PICKUP_INDIVIDUAL_RATE) / 5,
+    11: (GACHA_SR_RATE - GACHA_PICKUP_INDIVIDUAL_RATE) / 5,
+    7:  (GACHA_SR_RATE - GACHA_PICKUP_INDIVIDUAL_RATE) / 5,
+    54: (GACHA_SR_RATE - GACHA_PICKUP_INDIVIDUAL_RATE) / 5
+  };
+  const GACHA_PICKUP_NIGHTSHADE_SR_TOTAL_RATE = Object.keys(GACHA_PICKUP_NIGHTSHADE_SR_RATE_MAP).reduce(function(total, key){
+    return total + Number(GACHA_PICKUP_NIGHTSHADE_SR_RATE_MAP[key] || 0);
+  }, 0);
+
   // 進化素材枠。6種を均等抽選。
   const GACHA_EVOLUTION_MATERIAL_IDS = [
     'kyoumei_stone',
@@ -7224,6 +7239,31 @@ document.addEventListener('touchend', function (e) {
       itemMixed: true
     },
     {
+      id: 'gacha_09',
+      category: 'normal',
+      poolType: 'pickup',
+      title: '限定邂逅',
+      detailTitle: 'NIGHTSHADE PICKUP ENCOUNTER',
+      desc: 'SR6% / R64% / 進化素材30%。ナイトシェード1.2%・恒常SR各0.96%。',
+      thumbTitle: 'ナイトシェードPU',
+      img: 'images/gacha_banner_06.webp',
+      cost: 5,
+      srRate: GACHA_PICKUP_NIGHTSHADE_SR_TOTAL_RATE,
+      rRate: GACHA_R_RATE,
+      materialRate: GACHA_MATERIAL_RATE,
+      characterRateMap: GACHA_PICKUP_NIGHTSHADE_SR_RATE_MAP,
+      pickupCharaId: GACHA_PICKUP_NIGHTSHADE_ID,
+      limitedCharacterIds: [GACHA_PICKUP_NIGHTSHADE_ID],
+      limitedRCharacterIds: [],
+      srCharacterIds: [GACHA_PICKUP_NIGHTSHADE_ID].concat(GACHA_PERMANENT_SR_IDS),
+      rCharacterIds: GACHA_R_IDS,
+      pityCharacterIds: [GACHA_PICKUP_NIGHTSHADE_ID].concat(GACHA_PERMANENT_SR_IDS),
+      disablePity: false,
+      disableTenGuarantee: true,
+      commonMaterialIds: GACHA_EVOLUTION_MATERIAL_IDS,
+      itemMixed: true
+    },
+    {
       id: 'gacha_03',
       category: 'normal',
       poolType: 'pickup',
@@ -7242,31 +7282,6 @@ document.addEventListener('touchend', function (e) {
       srCharacterIds: [GACHA_PICKUP_NINA_ID].concat(GACHA_PERMANENT_SR_IDS),
       rCharacterIds: GACHA_R_IDS,
       pityCharacterIds: [GACHA_PICKUP_NINA_ID].concat(GACHA_PERMANENT_SR_IDS),
-      disablePity: false,
-      disableTenGuarantee: true,
-      commonMaterialIds: GACHA_EVOLUTION_MATERIAL_IDS,
-      itemMixed: true
-    },
-    {
-      id: 'gacha_05',
-      category: 'normal',
-      poolType: 'pickup',
-      title: '限定邂逅',
-      detailTitle: 'OLIVIA PICKUP ENCOUNTER',
-      desc: 'SR6% / R64% / 進化素材30%。オリビア1.2%・恒常SR各0.96%。',
-      thumbTitle: 'オリビアPU',
-      img: 'images/gacha_banner_04.webp',
-      cost: 5,
-      srRate: GACHA_PICKUP_OLIVIA_SR_TOTAL_RATE,
-      rRate: GACHA_PICKUP_OLIVIA_R_RATE,
-      materialRate: GACHA_PICKUP_OLIVIA_MATERIAL_RATE,
-      characterRateMap: GACHA_PICKUP_OLIVIA_SR_RATE_MAP,
-      pickupCharaId: GACHA_PICKUP_OLIVIA_ID,
-      limitedCharacterIds: [GACHA_PICKUP_OLIVIA_ID],
-      limitedRCharacterIds: [],
-      srCharacterIds: [GACHA_PICKUP_OLIVIA_ID].concat(GACHA_PERMANENT_SR_IDS),
-      rCharacterIds: GACHA_R_IDS,
-      pityCharacterIds: [GACHA_PICKUP_OLIVIA_ID].concat(GACHA_PERMANENT_SR_IDS),
       disablePity: false,
       disableTenGuarantee: true,
       commonMaterialIds: GACHA_EVOLUTION_MATERIAL_IDS,
@@ -7322,6 +7337,35 @@ document.addEventListener('touchend', function (e) {
       itemMixed: true
     }
   ];
+
+  // build1732: オリビアのピックアップ（gacha_05）は一旦終了。再開するときは GACHA_BANNERS へ戻す。
+  //  （確率表 GACHA_PICKUP_OLIVIA_* は残してある）
+  const GACHA_BANNER_OLIVIA_PICKUP_PAUSED =
+    {
+      id: 'gacha_05',
+      category: 'normal',
+      poolType: 'pickup',
+      title: '限定邂逅',
+      detailTitle: 'OLIVIA PICKUP ENCOUNTER',
+      desc: 'SR6% / R64% / 進化素材30%。オリビア1.2%・恒常SR各0.96%。',
+      thumbTitle: 'オリビアPU',
+      img: 'images/gacha_banner_04.webp',
+      cost: 5,
+      srRate: GACHA_PICKUP_OLIVIA_SR_TOTAL_RATE,
+      rRate: GACHA_PICKUP_OLIVIA_R_RATE,
+      materialRate: GACHA_PICKUP_OLIVIA_MATERIAL_RATE,
+      characterRateMap: GACHA_PICKUP_OLIVIA_SR_RATE_MAP,
+      pickupCharaId: GACHA_PICKUP_OLIVIA_ID,
+      limitedCharacterIds: [GACHA_PICKUP_OLIVIA_ID],
+      limitedRCharacterIds: [],
+      srCharacterIds: [GACHA_PICKUP_OLIVIA_ID].concat(GACHA_PERMANENT_SR_IDS),
+      rCharacterIds: GACHA_R_IDS,
+      pityCharacterIds: [GACHA_PICKUP_OLIVIA_ID].concat(GACHA_PERMANENT_SR_IDS),
+      disablePity: false,
+      disableTenGuarantee: true,
+      commonMaterialIds: GACHA_EVOLUTION_MATERIAL_IDS,
+      itemMixed: true
+    };
 
   var currentGachaId = null; // 選択中のガチャID
   var pityCount = parseInt(localStorage.getItem('pity_count') || '0', 10); // 天井カウント
@@ -7453,6 +7497,16 @@ document.addEventListener('touchend', function (e) {
         shotType:'charge', chargeSize:'M', shotElement:'dark',
         ultType:'towa_eternal_darkness', ultName:'常闇',
         ultDescription:'発動時、盤面の敵弾を全消去。5秒間、戦闘背景が暗転し、新規敵弾の生成を封じる。限界突破Lv4で7秒間に延長。',
+        burstNeed:32
+      },
+      57: {
+        name:'ナイトシェード', element:'dark', rarity:'sr',
+        panelImg:'images/chara_57_panel.webp',
+        img:'images/chara_57.webp', upImg:'images/chara_57_up.webp',
+        ultImg:'images/chara_57_cutin.webp', stats:{ HP:600, ATK:290 },
+        shotType:'cluster', clusterPattern:'ring',
+        ultType:'nightshade_barrage', ultName:'ナイトシェード・バラージ',
+        ultDescription:'敵弾を全消去して時間停止。4秒間、タップするたびに散弾4発を敵全体へランダムにばら撒く。1発ATK×0.095（最大12回＝48発）。',
         burstNeed:32
       },
       36: { name:'ニーナ', panelImg:'images/chara_36_panel.webp', rarity:'SR' },
@@ -7852,7 +7906,7 @@ document.addEventListener('touchend', function (e) {
   async function refreshTowerLimitedTicketButton(){
     const btns=document.getElementById('summon-detail-btns');
     const currentId=currentGachaId;
-    if(!btns || !['gacha_03','gacha_05','gacha_08'].includes(currentId))return;
+    if(!btns || !['gacha_03','gacha_05','gacha_08','gacha_09'].includes(currentId))return;
     try{
       const response=await sb.rpc('get_tower_limited_ticket_balance');
       if(response.error)throw response.error;
@@ -7986,8 +8040,8 @@ document.addEventListener('touchend', function (e) {
     }
 
     // Single-character pickup trial only (not the multi-character limited banner).
-    if(btns && gacha.poolType === 'pickup' && (gacha.id === 'gacha_03' || gacha.id === 'gacha_05' || gacha.id === 'gacha_08')){
-      var trialId = gacha.id === 'gacha_03' ? 36 : (gacha.id === 'gacha_08' ? 56 : 40);
+    if(btns && gacha.poolType === 'pickup' && (gacha.id === 'gacha_03' || gacha.id === 'gacha_05' || gacha.id === 'gacha_08' || gacha.id === 'gacha_09')){
+      var trialId = gacha.id === 'gacha_03' ? 36 : (gacha.id === 'gacha_08' ? 56 : (gacha.id === 'gacha_09' ? 57 : 40));
       btns.insertAdjacentHTML('beforeend', '<button type="button" class="gacha-trial-entry" onclick="ZeraphiaGachaTrial.start('+trialId+')" aria-label="使ってみる"><img src="images/gacha_trial_button.webp" alt="使ってみる TRIAL BATTLE - お試し戦"></button>');
     }
 
@@ -11996,7 +12050,7 @@ function goHome(){
 
    function summonAction(count,useTowerTicket){
   currentSummonCount = count || 1;
-  towerLimitedTicketDraw=useTowerTicket===true && currentSummonCount===10 && ['gacha_03','gacha_05','gacha_08'].includes(currentGachaId);
+  towerLimitedTicketDraw=useTowerTicket===true && currentSummonCount===10 && ['gacha_03','gacha_05','gacha_08','gacha_09'].includes(currentGachaId);
 
   userProfile.used_gachas = userProfile.used_gachas || [];
 
@@ -17296,7 +17350,8 @@ function buildShootingShotTypeValue(c, shot, isMain){
   var elementLabel = getElementLabel(element || '') || '属性';
   var shotName = shotType.toUpperCase();
   // build1710: CLUSTERは分裂の形（X字／十字）を名前に出す
-  if(shotType === 'cluster') shotName = 'CLUSTER' + (String((isMain ? c.clusterPattern : shot && shot.pattern) || c.clusterPattern || 'x') === 'cross' ? '(＋)' : '(X)');
+  // build1731: ring＝CLUSTER(O)（ナイトシェード）
+  if(shotType === 'cluster'){ var cp = String((isMain ? c.clusterPattern : shot && shot.pattern) || c.clusterPattern || 'x'); shotName = 'CLUSTER' + (cp === 'cross' ? '(＋)' : cp === 'ring' ? '(O)' : '(X)'); }
   var fallbackCount = isMain ? c.shotCount : 1;
   var count = Math.max(1, Math.floor(Number((shot && shot.count) || fallbackCount || 1)));
   var countText = String(count);
@@ -20130,7 +20185,7 @@ function fadeOutOpeningBgm(){
 
 
 
-<script src="js/shooting_characters.js?v=1710-shot-roles"></script>
+<script src="js/shooting_characters.js?v=1734-nightshade-ring"></script>
 <script src="js/story_scenario.js?v=1730-ch09-04-images"></script>
 <script src="js/story_novel.js?v=1510-aina-seeker-trial"></script>
 <script src="js/stage_select.js?v=1667-ch09"></script>
@@ -20367,7 +20422,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1727-inori-no-curse"></script>
+<script src="js/shooting_event.js?v=1734-nightshade-ring"></script>
 <script src="js/shooting_party_filter.js?v=1472-filter-screen-exit-reset"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1711-raid-piece"></script>
@@ -22080,7 +22135,7 @@ html body #global-user-frame .hud-sweep-line-player::after{
 })();
 </script>
 
-<script src="js/gacha_trial.js?v=1614-smile-gacha"></script>
+<script src="js/gacha_trial.js?v=1734-nightshade-ring"></script>
 <script src="js/bgm_guard.js?v=1643-bgm-guard"></script>
 <script src="js/wake_lock.js?v=1643-wake-lock"></script>
 </body>
