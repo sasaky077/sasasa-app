@@ -7413,6 +7413,9 @@ document.addEventListener('touchend', function (e) {
   var tenRevealResults = [];
   var tenRevealIndex = 0;
   var tenRevealWaiting = false;
+  // build1747: 10連カード開封の長押し高速化
+  var tenRevealNextTimer = null;
+  var tenRevealFastHold = false;
 
   var visibleGachaBanners = [];
   var summonPagerTouchStartX = null;
@@ -12340,17 +12343,22 @@ function shouldPlayGachaPickupFlash(results, currentGacha){
 
 async function playGachaPickupFlash(results, currentGacha){
   if(!shouldPlayGachaPickupFlash(results, currentGacha)) return false;
+  return playGachaConfirmFlashImage(GACHA_PICKUP_FLASH_IMAGE);
+}
 
+// build1748: 確定フラッシュ本体を画像指定で使えるように分離（トワの邂逅でも同じ演出を使う）
+async function playGachaConfirmFlashImage(flashImage){
+  if(!flashImage) return false;
   var loaded = false;
   try{
-    loaded = await preloadGachaImage(GACHA_PICKUP_FLASH_IMAGE, 5000);
+    loaded = await preloadGachaImage(flashImage, 5000);
   }catch(_){
     loaded = false;
   }
   if(!loaded) return false;
 
   // RPC/画像ロード待ちのLOADINGをここで外し、確定フラッシュを最前面へ。
-  hideGachaRuntimeLoadingOverlay(true);
+  if(typeof hideGachaRuntimeLoadingOverlay === 'function') hideGachaRuntimeLoadingOverlay(true);
 
   return new Promise(function(resolve){
     var old = document.getElementById('gacha-pickup-confirm-flash');
@@ -12370,7 +12378,7 @@ async function playGachaPickupFlash(results, currentGacha){
     overlay.style.opacity = '1';
 
     var img = document.createElement('img');
-    img.src = GACHA_PICKUP_FLASH_IMAGE;
+    img.src = flashImage;
     img.alt = '';
     img.draggable = false;
     img.style.position = 'absolute';
@@ -12432,6 +12440,8 @@ async function playGachaPickupFlash(results, currentGacha){
     }
   });
 }
+
+window.playGachaConfirmFlashImage = playGachaConfirmFlashImage;
 
 function startSummonFromStandby(){
   if(isSummoning) return;
@@ -14387,6 +14397,7 @@ async function startTenRevealSequence(results, options){
   tenRevealIndex = 0;
   tenRevealWaiting = false;
   tenConversionPopupShown = false;
+  setTenRevealFastHold(false);
 
   // 10連カードと全画面リビール画像をすべて準備してから開封を開始する。
   await preloadGachaResults(results);
@@ -14405,13 +14416,9 @@ async function startTenRevealSequence(results, options){
     // 一度しっかり見せてから1枚目の開封を始める。
     // これにより「OPEN」の時点で1枚目が既に開いている状態を防ぐ。
     fadeOutTenResultWhiteoutOverlay(40);
-    setTimeout(function(){
-      openNextTenCard();
-    }, 720);
+    scheduleNextTenCard(720);
   }else{
-    setTimeout(function(){
-      openNextTenCard();
-    }, 500);
+    scheduleNextTenCard(500);
   }
 }
 
@@ -14438,8 +14445,96 @@ function buildTenResultCards(results){
   });
 }
 
+// build1747: 次のカードを開くタイマーは常に1本だけ（タップ送り・長押しで二重に進まないように）
+var TEN_REVEAL_GAP_MS = 1200;
+var TEN_REVEAL_FAST_GAP_MS = 180;
+function scheduleNextTenCard(ms){
+  if(tenRevealNextTimer) clearTimeout(tenRevealNextTimer);
+  tenRevealNextTimer = setTimeout(function(){
+    tenRevealNextTimer = null;
+    openNextTenCard();
+  }, ms);
+}
+
+function setTenRevealFastHold(on){
+  on = !!on;
+  if(tenRevealFastHold === on) return;
+  tenRevealFastHold = on;
+  var modal = document.getElementById('ten-result-modal');
+  if(modal) modal.classList.toggle('is-ten-fast', on);
+  // 長押しを始めた瞬間に、待機中の間隔も短くする
+  if(on && tenRevealNextTimer && !tenRevealWaiting){
+    scheduleNextTenCard(TEN_REVEAL_FAST_GAP_MS);
+  }
+}
+
+(function setupTenRevealFastHold(){
+  var HOLD_MS = 300;
+  var holdTimer = null;
+  var suppressClickUntil = 0;
+  function isRevealing(){
+    var modal = document.getElementById('ten-result-modal');
+    return !!(modal && modal.classList.contains('active') &&
+      Array.isArray(tenRevealResults) && tenRevealIndex < tenRevealResults.length);
+  }
+  function ensureStyle(){
+    if(document.getElementById('ten-fast-style')) return;
+    var st = document.createElement('style');
+    st.id = 'ten-fast-style';
+    st.textContent =
+      '#ten-result-modal .ten-fast-indicator{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);' +
+      'z-index:60;pointer-events:none;padding:5px 16px;border-radius:999px;font:700 12px/1.4 sans-serif;letter-spacing:.12em;color:#fff;' +
+      'background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.35);opacity:0;transition:opacity .15s}' +
+      '#ten-result-modal.is-ten-fast .ten-fast-indicator{opacity:1}' +
+      '#ten-result-modal .ten-result-grid{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}' +
+      '#ten-result-modal .ten-result-grid img{-webkit-user-drag:none;pointer-events:none}';
+    document.head.appendChild(st);
+  }
+  function ensureIndicator(modal){
+    if(modal.querySelector('.ten-fast-indicator')) return;
+    var el = document.createElement('div');
+    el.className = 'ten-fast-indicator';
+    el.textContent = '▶▶ 高速開封中';
+    (modal.querySelector('.ten-result-modal-inner') || modal).appendChild(el);
+  }
+  function cancelHold(){
+    if(holdTimer){ clearTimeout(holdTimer); holdTimer = null; }
+    if(tenRevealFastHold){
+      setTenRevealFastHold(false);
+      suppressClickUntil = Date.now() + 350; // 指を離した時のタップで余分に進まないように
+    }
+  }
+  function init(){
+    var modal = document.getElementById('ten-result-modal');
+    if(!modal) return;
+    ensureStyle();
+    ensureIndicator(modal);
+    modal.addEventListener('pointerdown', function(e){
+      if(!isRevealing()) return;
+      if(e.target && e.target.closest && e.target.closest('button')) return;
+      if(holdTimer) clearTimeout(holdTimer);
+      holdTimer = setTimeout(function(){
+        holdTimer = null;
+        if(isRevealing()) setTenRevealFastHold(true);
+      }, HOLD_MS);
+    });
+    ['pointerup','pointercancel','pointerleave'].forEach(function(type){
+      modal.addEventListener(type, cancelHold);
+    });
+    window.addEventListener('blur', cancelHold);
+    modal.addEventListener('click', function(e){
+      if(Date.now() < suppressClickUntil){ e.stopPropagation(); e.preventDefault(); }
+    }, true);
+    modal.addEventListener('contextmenu', function(e){ if(isRevealing()) e.preventDefault(); });
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+
 function openNextTenCard(){
+  if(tenRevealNextTimer){ clearTimeout(tenRevealNextTimer); tenRevealNextTimer = null; }
   if(tenRevealIndex >= tenRevealResults.length){
+    setTenRevealFastHold(false);
     finishTenRevealSequence();
     return;
   }
@@ -14462,11 +14557,11 @@ function openNextTenCard(){
   }
 
   revealTenCard(tenRevealIndex);
-  playSE('ten_gacha_open', 0.8);
+  playSE('ten_gacha_open', tenRevealFastHold ? 0.45 : 0.8);
   tenRevealIndex++;
 
-// ★10連の間
-  setTimeout(openNextTenCard, 1200);
+// ★10連の間（長押し中は高速）
+  scheduleNextTenCard(tenRevealFastHold ? TEN_REVEAL_FAST_GAP_MS : TEN_REVEAL_GAP_MS);
 }
 
 function revealTenCard(index){
@@ -14517,7 +14612,7 @@ function revealTenCard(index){
 
 function continueTenRevealAfterFullScreen(){
   tenRevealWaiting = false;
-  setTimeout(openNextTenCard, 300);
+  scheduleNextTenCard(tenRevealFastHold ? TEN_REVEAL_FAST_GAP_MS : 300);
 }
 
 function finishTenRevealSequence(){
@@ -20507,7 +20602,7 @@ window.returnToTitleScreen = function(){
 <script src="js/score_attack.js?v=1713-title-rank"></script>
 <script src="js/resonance_tower.js?v=1719-despair-tab"></script>
 <script src="js/phase_odyssey.js?v=1721-po-elite-marker"></script>
-<script src="js/towa_encounter.js?v=1554-notice"></script>
+<script src="js/towa_encounter.js?v=1748-towa-flash"></script>
 <script src="js/towa_notice.js?v=1554"></script>
 <script src="js/towa_dark_gacha.js?v=1560-soul-flame"></script>
 

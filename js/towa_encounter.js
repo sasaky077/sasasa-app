@@ -26,6 +26,8 @@
     ['エンジ｜魂の器・闇 ×1','5.0%'],
     ['灰銀｜経験値・銀 ×5','25.0%'],['灰銀｜コイン ×2,500','25.0%']
   ];
+  const TOWA_ID=101;
+  const TOWA_CONFIRM_FLASH_IMAGE='images/gacha_pickup_towa.webp';
   let busy=false, loaded=false, visible=false, memory=0, pity=0, pendingId=null;
   let returnFocus=null;
   let preflight='idle'; // idle | confirm | standby | drawing
@@ -300,6 +302,14 @@
       // The server has already committed the reward. Clear the retry ID BEFORE presentation;
       // animation failure or skip must never submit a new draw or spend a second ticket.
       try{sessionStorage.removeItem(storageKey());}catch(_){}pendingId=null;
+      // build1748: トワ当選時は通常邂逅のピックアップ確定と同じロジック（当選1件ごとに50%、表示は最大1回）で確定フラッシュ。
+      try{
+        const towaHits=data.results.filter(r=>r&&(
+          (r.type==='character'&&Number(r.id)===TOWA_ID)||Number(r.converted_from_character_id)===TOWA_ID));
+        if(towaHits.length&&towaHits.some(()=>Math.random()<0.5)&&typeof window.playGachaConfirmFlashImage==='function'){
+          await window.playGachaConfirmFlashImage(TOWA_CONFIRM_FLASH_IMAGE);
+        }
+      }catch(flashError){console.warn('[towa] confirm flash',flashError);}
       try{
         if(window.TowaDarkGacha && typeof window.TowaDarkGacha.play==='function'){
           await window.TowaDarkGacha.play(data.results);
