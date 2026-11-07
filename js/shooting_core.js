@@ -505,6 +505,16 @@
         0%{opacity:1;transform:translate(0,0) scale(1)}
         100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.4)}
       }
+      /* build1752: 緑の稲妻（テストのULT） */
+      .shooting-noah-lightning.nl-wood .nl-glow{stroke:rgba(70,230,120,.6)}
+      .shooting-noah-lightning.nl-wood .nl-mid{stroke:rgba(160,255,190,.95)}
+      .shooting-noah-lightning.nl-wood .nl-core{stroke:#f2fff5}
+      .shooting-noah-lightning.nl-wood .nl-branch{stroke:rgba(170,255,200,.92)}
+      .shooting-noah-lightning.nl-wood .nl-branch-glow{stroke:rgba(70,220,120,.5)}
+      .shooting-noah-lightning.nl-wood .nl-impact i{background:radial-gradient(circle,#fff 0 18%,rgba(170,255,200,.9) 30%,rgba(60,210,110,.4) 52%,transparent 70%)}
+      .shooting-noah-lightning.nl-wood .nl-impact b{border-color:rgba(200,255,215,.95);box-shadow:0 0 12px rgba(150,255,180,.9),0 0 26px rgba(60,210,110,.7)}
+      .shooting-noah-lightning.nl-wood .nl-impact u{box-shadow:0 0 6px #fff,0 0 12px rgba(80,230,130,.9)}
+      .shooting-noah-lightning-flash.nl-wood{background:radial-gradient(ellipse at var(--fx,50%) 30%,rgba(235,255,240,.55),rgba(150,240,180,.28) 45%,rgba(90,210,130,.12))}
       .shooting-noah-lightning-flash{
         position:absolute;inset:0;z-index:47;pointer-events:none;
         background:radial-gradient(ellipse at var(--fx,50%) 30%,rgba(255,255,255,.55),rgba(226,232,250,.28) 45%,rgba(200,210,236,.12));
@@ -5410,7 +5420,7 @@
     if (!arena) return;
     clearSmileBoxes();
     clearNightshadeSpinRings();
-    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-rose-fortress,.shooting-remna-trap-preview,.shooting-conjure-preview,.shooting-conjure-deploy-projectile,.shooting-conjure-turret,.shooting-conjure-ult-turret,.shooting-camilla-web-overlay,.shooting-camilla-web-burst,.shooting-camilla-bound-web-fx,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-sui-time-domain,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning,.shooting-ch07-complete-shield,.shooting-ch07-torii,.eclipse-hand-band,.eclipse-float-num,.eclipse-dash-line,.eclipse-dark-veil,.eclipse-beacon,.eclipse-state-pill,.po-submission-chip,.po-variety-banner,.tb-fx').forEach(el => el.remove());
+    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-rose-fortress,.shooting-remna-trap-preview,.shooting-conjure-preview,.shooting-conjure-deploy-projectile,.shooting-conjure-turret,.shooting-conjure-ult-turret,.shooting-camilla-web-overlay,.shooting-camilla-web-burst,.shooting-camilla-bound-web-fx,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-sui-time-domain,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning,.shooting-ch07-complete-shield,.shooting-ch07-torii,.eclipse-hand-band,.eclipse-float-num,.eclipse-dash-line,.eclipse-dark-veil,.eclipse-beacon,.eclipse-state-pill,.po-submission-chip,.po-variety-banner,.tb-fx,.shooting-v-laser-wrap').forEach(el => el.remove());
     clearEnemyBulletCanvas();
     if (state) {
       state.bullets = [];
@@ -9726,8 +9736,67 @@
 
 
   function hideIgnisLaser() {
-    if (!state || !state.ignisLaserEl) return;
-    state.ignisLaserEl.classList.remove('active');
+    if (!state) return;
+    if (state.ignisLaserEl) state.ignisLaserEl.classList.remove('active');
+    (state.vLaserEls || []).forEach(v => v && v.laser && v.laser.classList.remove('active'));
+  }
+
+  // build1752: Vレーザー（テスト）— 自機から左右斜めに2本。各ビームは画面外まで伸びて貫通する。
+  function ensureVLaser(c, index) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena || !state) return null;
+    if (!Array.isArray(state.vLaserEls)) state.vLaserEls = [];
+    let v = state.vLaserEls[index];
+    if (!v || !v.wrap || !v.wrap.isConnected) {
+      const wrap = document.createElement('div');
+      wrap.className = 'shooting-v-laser-wrap';
+      wrap.style.cssText = 'position:absolute;left:0;top:0;width:0;height:0;z-index:8;pointer-events:none;transform-origin:0 0';
+      const laser = document.createElement('div');
+      laser.className = 'shooting-ignis-laser';
+      laser.innerHTML = '<i></i><b></b>';
+      laser.style.left = '0px';
+      laser.style.top = '0px';
+      wrap.appendChild(laser);
+      arena.appendChild(wrap);
+      v = state.vLaserEls[index] = { wrap, laser };
+    }
+    const el = v.laser;
+    ['fire','aqua','wood','dark','light'].forEach(n => el.classList.remove('shooting-bullet-' + n));
+    const cls = getCharacterBulletClass(c && c.laserElement ? { element: c.laserElement } : c).trim();
+    if (cls) el.classList.add(cls);
+    el.dataset.element = String((c && c.laserElement) || (c && c.element) || '');
+    el.dataset.laserSize = String(c?.laserSize || 'M').toUpperCase() === 'L' ? 'L' : 'M';
+    el.style.setProperty('--ignis-laser-width', `${Number(c.laserWidth || 10)}px`);
+    return v;
+  }
+
+  function getVLaserTargets(x, y, angle, hitWidth) {
+    if (!state) return [];
+    // 方向：真上(0,-1)を angle だけ傾けたもの
+    const dx = Math.sin(angle), dy = -Math.cos(angle);
+    const onBeam = (tx, ty) => {
+      const rx = Number(tx || 0) - x, ry = Number(ty || 0) - y;
+      const along = rx * dx + ry * dy;
+      if (along <= 0) return false;
+      return Math.abs(rx * dy - ry * dx) <= hitWidth;
+    };
+    const targets = [];
+    if (isNormalBattle() || hasBossAdds()) {
+      (state.normalEnemies || []).forEach(enemy => {
+        if (!enemy || !enemy.el || enemy.hp <= 0) return;
+        if (onBeam(enemy.x, enemy.y)) targets.push({ kind: 'normal', target: enemy, x: enemy.x, y: enemy.y });
+      });
+    }
+    if (isFacelessStage() || isAmbushStage()) {
+      (state.facelessObjects || []).forEach(obj => {
+        if (!obj || obj.hp <= 0) return;
+        if (onBeam(obj.x, obj.y)) targets.push({ kind: 'object', target: obj, x: obj.x, y: obj.y });
+      });
+    }
+    if (!isNormalBattle() && !isShienIntangible() && state.boss && state.boss.hp > 0 && onBeam(state.boss.x, state.boss.y)) {
+      targets.push({ kind: 'boss', target: state.boss, x: state.boss.x, y: state.boss.y });
+    }
+    return targets;
   }
 
   function ensureIgnisLaser(c) {
@@ -9836,13 +9905,46 @@
     const startY = state.player.y - Number(c.shotOffsetY || 42);
     const size = String(c?.mainShot?.size || c?.laserSize || 'M').toUpperCase() === 'L' ? 'L' : 'M';
     const hitWidth = Number(c.laserHitWidth || (size === 'L' ? 50 : 34));
-    const targets = getIgnisLaserTargets(startX, startY, hitWidth);
+    const vAngles = Array.isArray(c && c.laserVAngles) && c.laserVAngles.length ? c.laserVAngles : null;
+    let targets;
+    let el = null;
+    if (vAngles) {
+      // build1752: Vレーザー。2本のどちらかに入った対象へ1回ずつ（重複ヒットなし）。
+      if (state.ignisLaserEl) state.ignisLaserEl.classList.remove('active');
+      const arena = document.getElementById('shooting-arena');
+      const aw = Number(arena?.clientWidth || 390);
+      const seen = new Set();
+      targets = [];
+      vAngles.forEach((a, i) => {
+        a = Number(a) || 0;
+        getVLaserTargets(startX, startY, a, hitWidth).forEach(t => {
+          if (seen.has(t.target)) return;
+          seen.add(t.target); targets.push(t);
+        });
+        const v = ensureVLaser(c, i);
+        if (v) {
+          const cosA = Math.max(0.2, Math.cos(a));
+          const toTop = (startY - 12) / cosA;
+          const sinA = Math.sin(a);
+          const toSide = Math.abs(sinA) > 0.001 ? (sinA > 0 ? (aw - startX) : startX) / Math.abs(sinA) : Infinity;
+          const len = Math.max(18, Math.min(toTop, toSide + 40));
+          v.wrap.style.transform = `translate(${startX}px,${startY}px) rotate(${a}rad)`;
+          v.laser.style.height = `${len}px`;
+          v.laser.classList.add('active');
+          v.laser.dataset.attackElement = normalizeCombatElement((c && c.laserElement) || (c && c.element));
+        }
+      });
+      targets.sort((p, q) => Number(q.y || 0) - Number(p.y || 0));
+      state.ignisLaserHideAt = now + Number(c.laserVisualHoldMs || 130);
+    } else {
+      targets = getIgnisLaserTargets(startX, startY, hitWidth);
+    }
 
     // v542: Laserは全サイズ共通で貫通。見た目も最初の敵で止めず画面上端まで伸ばす。
     const beamEndY = 12;
     const beamHeight = Math.max(18, startY - beamEndY);
 
-    const el = ensureIgnisLaser(c);
+    if (!vAngles) el = ensureIgnisLaser(c);
     if (el) {
       el.style.left = `${startX}px`;
       el.style.top = `${startY}px`;
@@ -25660,7 +25762,7 @@
     updateRoseFortress(ts);
     updateWolfAtkField(ts);
     updateToyfelBlackHoleField(ts);
-    if (state.ignisLaserEl && (
+    if ((state.ignisLaserEl || (state.vLaserEls && state.vLaserEls.length)) && (
       String(getCurrentCharacter()?.shotType || '') !== 'laser' ||
       ts >= Number(state.ignisLaserHideAt || 0)
     )) {
@@ -33970,8 +34072,12 @@
       // build1674: チャチャ（forbidden_shock）の落雷もノアULTと同じ稲妻演出に
       //  （上から走る稲妻・枝分かれ・瞬き・着弾の閃光と衝撃輪・画面の白閃）。
       const bolt = createNoahLightningBolt(tx, ty);
+      // build1752: テストのULT（木属性版）は緑の稲妻
+      const woodBolt = String(c && c.ultLightningTheme || '') === 'wood';
+      if (woodBolt) bolt.classList.add('nl-wood');
       arena.appendChild(bolt);
       spawnNoahLightningFlash(arena, tx);
+      if (woodBolt) arena.lastElementChild?.classList?.contains('shooting-noah-lightning-flash') && arena.lastElementChild.classList.add('nl-wood');
       setTimeout(() => bolt.remove(), 480);
     }
 

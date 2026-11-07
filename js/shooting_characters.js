@@ -2636,34 +2636,37 @@
     blackHoleStyle: 'fire',
   });
 
+  // build1752: テスト性能刷新。ショット＝Vレーザー（斜め2本）、ULT＝チャチャの木属性版（ランダム落雷・緑の稲妻）。
   SHOOTING_CHARACTERS[CHARACTER_ID.TESTCHAN] = buildShootingCharacter({
     ...ERI_BASE_PROFILE,
     id: CHARACTER_ID.TESTCHAN,
     effectKey: 'testchan',
-    label: 'TRI-LASER / BLACK SHIP',
-    description: '未来から来たアンドロイド、テスト。3WAYの緑色レーザーを照射するSR火力型。ULT「ブラックシップ」は5秒間、正面へ極太レーザーを照射する。弾幕消去・スタン等の追加効果はなく、純粋な高火力特化。',
-    ultDescription: '正面へ極太レーザーを5秒間連続照射する。0.25秒ごとにATK×35%のダメージ判定が発生し、全段命中時は最大ATK×700%相当。敵弾消去・スタン・無敵などの追加効果はない。',
-    ultName: 'ブラックシップ',
-    ultType: 'testchan_black_ship',
+    label: 'V-LASER / SKY STRIKE',
+    description: '未来から来たアンドロイド、テスト。斜め2本のVレーザーで敵を貫く木属性SR。ULTは空から緑の稲妻をランダムに落とし、命中した敵を麻痺させる。',
+    ultDescription: '8秒間に最大16回、空から緑の稲妻をランダムに落とす。1発ごとにATK×2.8の木属性ダメージを与え、命中した敵を3秒間麻痺させる。',
+    ultName: 'ブラックシップ・ストライク',
+    ultType: 'forbidden_shock', ultBaseType: 'damage', ultAddons: ['damage', 'stun'],
+    ninaUltDurationMs: 8000, ninaUltHitCount: 16, ninaUltHitAtkMultiplier: 2.8,
+    ninaUltParalyzeMs: 3000,
+    ultLightningTheme: 'wood',
     moveSpeed: 400,
-    fireRate: 250,
-    bulletSpeed: 920,
-    shotPowerRate: 0.075,
 
-    shotType: 'spread',
-    shotCount: 3,
-    shotAngleStep: 0.115,
+    // ---- 通常ショット：Vレーザー（左右斜めに2本・貫通）----
+    shotType: 'laser',
     shotStyle: 'testchan',
+    laserSize: 'M',
+    laserVAngles: [-0.26, 0.26], // 真上からの傾き（rad）。約±15°
+    shotCount: 2,
+    fireRate: 95,
+    laserWidth: 10,
+    laserHitWidth: 34,
+    laserDamageAtkRate: 0.095,
+    laserVisualHoldMs: 130,
 
     burstNeed: 32,
-    ultGainPerHit: 0.42,
+    ultGainPerHit: 0.676,
     coreTop: '38%',
     shotOffsetY: 38,
-
-    ultBeamDurationMs: 5000,
-    ultBeamTickMs: 250,
-    ultBeamTickAtkMultiplier: 0.35,
-    ultBeamWidth: 62,
   });
 
 

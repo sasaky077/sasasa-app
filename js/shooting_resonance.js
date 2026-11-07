@@ -317,18 +317,17 @@
     }),
 
     50: Object.freeze({
-      1: bonus('艦砲同調', 'ATK +5%', 'テストちゃんの基礎ATKが5%上昇する。', [
+      1: bonus('艦砲同調', 'ATK +5%', 'テストの基礎ATKが5%上昇する。', [
         { type:'statRate', hp:0, atk:0.05 }
       ]),
-      2: bonus('トライ・レーザー増幅', '通常射撃ダメージ +10%', '3WAY通常射撃の1Hitダメージを10%強化する。', [
-        { type:'profileMultiply', field:'shotPowerRate', multiplier:1.10 }
+      2: bonus('Vレーザー増幅', '通常射撃ダメージ +10%', 'Vレーザーの1Hitダメージを10%強化する。', [
+        { type:'profileMultiply', field:'laserDamageAtkRate', multiplier:1.10 }
       ]),
       3: bonus('ブラックシップ同調', 'ULTゲージ獲得量 +15%', '命中時のULTゲージ獲得量を15%増加する。', [
         { type:'profileMultiply', field:'ultGainPerHit', multiplier:1.15 }
       ]),
-      4: bonus('ブラックシップ・フルバースト', 'ULT 7秒・1Tick ATK×45%', 'ULT「ブラックシップ」の照射時間を5秒から7秒へ延長し、0.25秒ごとのダメージをATK×35%からATK×45%へ強化する。追加効果は付与せず、純粋な火力特化を維持する。', [
-        { type:'profileSet', field:'ultBeamDurationMs', value:7000 },
-        { type:'profileSet', field:'ultBeamTickAtkMultiplier', value:0.45 }
+      4: bonus('ブラックシップ・フルストライク', 'ULT落雷 ATK×2.8 → ×3.5', 'ULT「ブラックシップ・ストライク」の落雷1発のダメージをATK×2.8からATK×3.5へ強化する。', [
+        { type:'profileSet', field:'ninaUltHitAtkMultiplier', value:3.5 }
       ])
     }),
 
