@@ -3096,7 +3096,7 @@
     conjureLifetimeMs:3000, conjureVolleyIntervalMs:1000, conjureVolleyCount:3,
     conjurePlaceOffsetY:112, conjureTurretBulletSpeed:520,
     // build1659: 蜘蛛は弾を撃たず、走って張り付く。1体あたりのダメージは従来の蜘蛛糸3発分（ATK×0.4×3）
-    camillaSpiderAi:true, camillaSpiderSpeed:260, camillaSpiderLifeMs:6000, camillaSpiderLatchMs:260, camillaSpiderDamageRate:1.2,
+    camillaSpiderAi:true, camillaSpiderSpeed:260, camillaSpiderLifeMs:6000, camillaSpiderLatchMs:260, camillaSpiderDamageRate:1.4, // build1754: 1.2→1.4（ショット火力 約+17%）
     // build1677: 連打での出し放題とボスの常時拘束を是正（召喚0.7秒間隔・ボス拘束1秒＋再捕縛なし1秒 ※build1678で1.5→1秒）
     // build1692: 連タップで敵が勝手に溶けるほど強かったため、召喚間隔 0.7→1.2秒（火力 約6割）・ザコ拘束 3→1.5秒
     camillaSpiderIntervalMs:1200, camillaBossRootMs:1000, camillaBossRootImmuneMs:1000, camillaZakoRootMs:1500,
