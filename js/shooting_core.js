@@ -24116,9 +24116,10 @@
   }
 
   // 分身スプレッド: 3本の軌道が中心線から左右に扇状に展開。
+  // build1746: 上限を h*.32 → 画面上端近くまで。左右上部へ逃げても一閃・三巴が横向きに届く（安置の解消）。
   function getShienDashEndpoints(index, target, w, h) {
     const tx = clamp(Number(target?.x || w*.5), 26, w-26);
-    const ty = clamp(Number(target?.y || h*.78), h*.32, h-36);
+    const ty = clamp(Number(target?.y || h*.78), 40, h-36);
     if (index !== 4) return [{ side:0, x:tx, y:ty }];
     const spread = Math.min(w*.24, (w-64)/3);
     const center = clamp(tx, 26+spread, w-26-spread);
@@ -24213,7 +24214,8 @@
   function getShienHalfRect(idx, w, h) {
     const safe = w*SHIEN_HALF_SAFE;
     const zw = w - safe;
-    return { left: idx===1 ? safe : 0, top: h*.12, width: zw, height: h*.84,
+    // build1746: 上端12%が当たらず左右上部が安置になっていたため、上端から判定する（左右の安全地帯はそのまま）
+    return { left: idx===1 ? safe : 0, top: 0, width: zw, height: h*.96,
       safeLeft: idx===1 ? 0 : zw, safeWidth: safe };
   }
 
@@ -24256,7 +24258,8 @@
   function updateShienWave(now, sh, frame, local, w, h) {
     const el=sh.wave;
     if (!el) return;
-    const y0=Math.max(62,h*.18)+34;
+    // build1746: 波はシエンの下からではなく画面上端から押し寄せる（上部に残る安置の解消）
+    const y0=SHIEN_WAVE_HALF;
     const x0=SHIEN_WAVE_GAP, ww=Math.max(0,w-SHIEN_WAVE_GAP*2);
     el.style.left=`${x0}px`;el.style.width=`${ww}px`;
     if (local < frame.warnAt) { el.style.visibility='hidden'; return; }
@@ -24437,7 +24440,12 @@
     if ((state.enemyBullets || []).length > 90) return;
     const ox = Number(state.boss.x), oy = Number(state.boss.y) + 26;
     // build1669: 自機狙いをやめ、真下（±約8.6°のゆらぎ）へ撃つ。レイド・塔18F・位相回遊のシエン共通。
-    const base = Math.PI / 2 + (Math.random() - .5) * .3;
+    // build1746: ただし自機がシエンと同じ高さ〜上（左右上部の安置）にいる時だけは自機の方向へ撃つ。
+    const px = Number(state.player?.x), py = Number(state.player?.y);
+    const playerAbove = Number.isFinite(py) && py < oy + 90;
+    const base = playerAbove
+      ? Math.atan2(py - oy, px - ox) + (Math.random() - .5) * .2
+      : Math.PI / 2 + (Math.random() - .5) * .3;
     for (let i = 0; i < cfg.ways; i++) {
       const t = cfg.ways === 1 ? 0 : (i / (cfg.ways - 1)) * 2 - 1;
       const a = base + t * cfg.spread;
