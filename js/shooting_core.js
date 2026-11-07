@@ -37806,6 +37806,12 @@
       return ['RAID BATTLE', raidBossName || getShootingStageInfoBossName(stage)];
     }
 
+    // build1779: 記憶決戦は「SPECIAL PROC. / 記憶決戦 / ボス名」
+    if (stage.eventId === 'memory_battle') {
+      const bossName = String((stage.memoryBattle && stage.memoryBattle.bossName) || getShootingStageInfoBossName(stage) || '').trim();
+      return ['SPECIAL PROC.', '記憶決戦', bossName];
+    }
+
     // build1643: 位相回遊は階層番号を表示。
     if (stage.eventId === 'phase_odyssey') {
       return ['PHASE ODYSSEY', `FLOOR ${stageNo}`, stage.type === 'boss' ? `BOSS ${String(stage.phaseOdyssey?.bossName || '位相の守護者')}` : ''];
@@ -38198,6 +38204,24 @@
     return overlay;
   }
 
+  // build1778: ロゴは「画面の右下」ではなく「絵（contain表示）の右下」に置く。
+  // 縦長の端末（iPhone16など）では絵の上下に余白ができ、画面の右下だと絵の外（余白の帯）に落ちていたため。
+  function layoutShootingIcatchLogo(overlay) {
+    const art = overlay && overlay.querySelector('.shooting-stage-icatch-art');
+    const wrap = overlay && overlay.querySelector('.shooting-stage-icatch-logo-wrap');
+    if (!art || !wrap) return;
+    const nw = Number(art.naturalWidth || 0), nh = Number(art.naturalHeight || 0);
+    const vw = overlay.clientWidth || window.innerWidth, vh = overlay.clientHeight || window.innerHeight;
+    if (!(nw > 0 && nh > 0 && vw > 0 && vh > 0)) { wrap.style.removeProperty('right'); wrap.style.removeProperty('bottom'); return; }
+    const scale = Math.min(vw / nw, vh / nh);
+    const dw = nw * scale, dh = nh * scale;
+    const gapX = Math.max(0, (vw - dw) / 2), gapY = Math.max(0, (vh - dh) / 2);
+    const inset = Math.max(12, Math.min(22, dw * .045));
+    wrap.style.right = `${Math.round(gapX + inset)}px`;
+    wrap.style.bottom = `${Math.round(gapY + inset)}px`;
+    wrap.style.width = `${Math.round(Math.max(130, Math.min(260, dw * .46)))}px`;
+  }
+
   async function showShootingStageIcatch() {
     // build937:
     // アイキャッチ演出の約4秒を、出撃3人のULTカットイン画像の本ロード＋decodeに使う。
@@ -38215,7 +38239,13 @@
       const art = overlay.querySelector('.shooting-stage-icatch-art');
       if (!art) return;
 
+      art.onload = () => layoutShootingIcatchLogo(overlay);
       art.src = src;
+      if (art.complete && art.naturalWidth > 0) layoutShootingIcatchLogo(overlay);
+      if (!overlay.__icatchResizeBound) {
+        overlay.__icatchResizeBound = true;
+        window.addEventListener('resize', () => { if (overlay.classList.contains('is-visible')) layoutShootingIcatchLogo(overlay); });
+      }
       const bg = overlay.querySelector('.shooting-stage-icatch-bg');
       if (bg) bg.src = src;
       overlay.classList.remove('is-entered', 'is-fading');
