@@ -28,6 +28,7 @@ html body #daily-raid-root#daily-raid-root[data-raid-theme] :is(
   .daily-raid-attempt-overview,
   .daily-raid-lobby .drt-hp-card,
   .daily-raid-lobby .drt-break-card,
+  .daily-raid-lobby .drt-rank-card,
   .daily-raid-lobby .daily-raid-team-meta,
   .daily-raid-lobby .daily-raid-progress,
   .daily-raid-lobby .daily-raid-members,
@@ -43,7 +44,7 @@ html body #daily-raid-root#daily-raid-root[data-raid-theme] :is(
   -webkit-backdrop-filter:blur(6px)!important;backdrop-filter:blur(6px)!important;
 }
 /* 四隅の金の飾り */
-html body #daily-raid-root#daily-raid-root[data-raid-theme] :is(.drt-hp-card,.drt-break-card,.daily-raid-team-meta,.daily-raid-progress,.daily-raid-members,#daily-raid-start)::before{
+html body #daily-raid-root#daily-raid-root[data-raid-theme] :is(.drt-hp-card,.drt-break-card,.drt-rank-card,.daily-raid-team-meta,.daily-raid-progress,.daily-raid-members,#daily-raid-start)::before{
   content:''!important;position:absolute!important;inset:5px!important;pointer-events:none!important;display:block!important;
   background:
     linear-gradient(var(--rt-gold),var(--rt-gold)) left top/12px 1.5px no-repeat,
@@ -587,3 +588,43 @@ html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-member .
   overflow-wrap:anywhere !important;
   word-break:break-word !important;
 }
+
+/* ---------- build1780 チーム合計ダメージ / ランク到達ゲージ ---------- */
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-rank-card{padding:12px 18px 13px!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-rank-head{display:flex!important;justify-content:space-between!important;align-items:baseline!important;margin-bottom:8px!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-rank-title{
+  font:700 18px/1 "Cinzel",serif!important;letter-spacing:.08em!important;
+  background:linear-gradient(180deg,#d7b26a,#a57a2f)!important;-webkit-background-clip:text!important;background-clip:text!important;color:transparent!important;-webkit-text-fill-color:transparent!important;
+}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-rank-now{font:600 11px/1 "Cinzel",serif!important;letter-spacing:.14em!important;color:#6a5640!important;-webkit-text-fill-color:#6a5640!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-rank-now b{font:700 22px/1 "Cinzel",serif!important;margin-left:4px!important;color:var(--rt-deep)!important;-webkit-text-fill-color:var(--rt-deep)!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-rank-labels,
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-rank-bar{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:4px!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-rank-labels > span{display:flex!important;justify-content:flex-end!important;align-items:flex-end!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-rank-labels > span:nth-child(2){justify-content:space-between!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-rank-labels b[data-rank="B"]{text-align:left!important;padding:0 0 0 2px!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-rank-labels b{
+  text-align:right!important;padding-right:2px!important;font:700 13px/1 "Cinzel",serif!important;margin-bottom:4px!important;
+  color:rgba(80,64,44,.38)!important;-webkit-text-fill-color:rgba(80,64,44,.38)!important;transition:color .3s ease!important;
+}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-rank-labels b.is-done{color:#5d4128!important;-webkit-text-fill-color:#5d4128!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-rank-labels b.is-current{
+  color:var(--rt-deep)!important;-webkit-text-fill-color:var(--rt-deep)!important;font-size:16px!important;text-shadow:0 1px 0 #fff!important;
+}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-rank-bar i{
+  position:relative!important;display:block!important;height:12px!important;overflow:hidden!important;font-style:normal!important;
+  background:linear-gradient(180deg,rgba(236,232,226,.95),rgba(255,255,255,.9))!important;border:1px solid var(--rt-gold)!important;
+  box-shadow:inset 0 1px 2px rgba(80,60,40,.22)!important;
+}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-rank-bar i em{
+  position:absolute!important;inset:0!important;display:block!important;transform-origin:left center!important;transform:scaleX(0);transition:transform .5s ease!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.35) 0 35%,transparent 35%),linear-gradient(90deg,var(--rt-deep),var(--rt-mid) 70%,var(--rt-light))!important;
+}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-rank-bar i.is-held em{
+  background:repeating-linear-gradient(135deg,rgba(120,100,70,.45) 0 3px,rgba(255,250,236,.85) 3px 6px)!important;
+}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-rank-total{margin-top:9px!important;white-space:nowrap!important;font-family:"Cinzel","Noto Serif JP",serif!important;font-weight:700!important;line-height:1!important;font-variant-numeric:tabular-nums!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-rank-total em{font-style:normal!important;font-size:clamp(22px,7vw,28px)!important;color:var(--rt-deep)!important;-webkit-text-fill-color:var(--rt-deep)!important;text-shadow:0 1px 0 #fff!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-rank-total span{font-size:clamp(14px,4.4vw,18px)!important;color:#2b2118!important;-webkit-text-fill-color:#2b2118!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-rank-note{margin-top:6px!important;font:600 11px/1.4 "Noto Serif JP",serif!important;color:#6a5640!important;-webkit-text-fill-color:#6a5640!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-rank-note:empty{display:none!important}

@@ -1976,6 +1976,84 @@
     box.title=broken?'ブレイク中：以降の挑戦は全員の与ダメージ1.5倍':'全員の全挑戦の合計ダメージで溜まります。満タンでブレイク（以降の挑戦は全員ダメージ1.5倍）';
   }
 
+  // build1780: チーム合計ダメージとランク到達ゲージ
+  //  ランク基準（サーバーと同じ）：C=最大HP×100% / B=C＋ブレイク / A=ブレイク＋120% / S=ブレイク＋150%
+  //  ゲージは合計ダメージだけで埋まる3区画（〜C / C〜A / A〜S）。
+  //  Bはダメージ条件がCと同じなので、2区画目の左端にラベルだけ置き、ブレイク済みなら点灯する。
+  const RANK_STEPS=['C','B','A','S'];
+  const RANK_SEGS=['C','A','S'];
+  function getTeamTotalDamage(status){
+    const members=Array.isArray(status&&status.members)?status.members:[];
+    const sum=members.reduce((a,m)=>a+n(m.best_damage),0);
+    return Math.max(sum,n(status&&status.total_best));
+  }
+  function teamRankOf(total,maxHp,broken){
+    const r=total/Math.max(1,maxHp);
+    if(r<1) return '';
+    if(!broken) return 'C';
+    return r>=1.5?'S':r>=1.2?'A':'B';
+  }
+  function ensureTeamRankCard(root){
+    let card=root.querySelector('#daily-raid-teamrank');
+    if(card) return card;
+    const anchor=root.querySelector('.daily-raid-hpbox .drt-break-card');
+    if(!anchor) return null;
+    card=document.createElement('div');
+    card.className='drt-rank-card';
+    card.id='daily-raid-teamrank';
+    card.innerHTML=`
+      <div class="drt-rank-head"><span class="drt-rank-title">TEAM DAMAGE</span><span class="drt-rank-now" id="daily-raid-teamrank-now"></span></div>
+      <div class="drt-rank-labels"><span><b data-rank="C">C</b></span><span><b data-rank="B">B</b><b data-rank="A">A</b></span><span><b data-rank="S">S</b></span></div>
+      <div class="drt-rank-bar">${RANK_SEGS.map(r=>`<i data-rank="${r}"><em></em></i>`).join('')}</div>
+      <div class="drt-rank-total" id="daily-raid-teamrank-total"></div>
+      <div class="drt-rank-note" id="daily-raid-teamrank-note"></div>`;
+    anchor.insertAdjacentElement('afterend',card);
+    return card;
+  }
+  function renderTeamRank(root,status){
+    const card=ensureTeamRankCard(root);
+    if(!card) return;
+    const maxHp=Math.max(1,n(status&&status.max_hp)||100000);
+    const total=getTeamTotalDamage(status);
+    const hasBreak=!!status&&status.break_goal!=null;
+    const broken=!hasBreak||status.broken===true;
+        const rank=teamRankOf(total,maxHp,broken);
+    const cuts={C:maxHp,A:Math.ceil(maxHp*1.2),S:Math.ceil(maxHp*1.5)};
+    const clamp=v=>Math.max(0,Math.min(1,v));
+    const fills={
+      C:clamp(total/cuts.C),
+      A:clamp((total-cuts.C)/Math.max(1,cuts.A-cuts.C)),
+      S:clamp((total-cuts.A)/Math.max(1,cuts.S-cuts.A))
+    };
+    const reached=RANK_STEPS.indexOf(rank);
+    RANK_SEGS.forEach(r=>{
+      const seg=card.querySelector(`.drt-rank-bar i[data-rank="${r}"]`);
+      // ブレイク未達成でA/S区画にダメージが届いている分は「保留」表示
+      const held=(r==='A'||r==='S')&&!broken&&fills[r]>0;
+      if(seg){ seg.querySelector('em').style.transform=`scaleX(${fills[r]})`; seg.classList.toggle('is-held',held); }
+    });
+    RANK_STEPS.forEach((r,i)=>{
+      const lab=card.querySelector(`.drt-rank-labels b[data-rank="${r}"]`);
+      if(lab){ lab.classList.toggle('is-done',i<=reached); lab.classList.toggle('is-current',i===reached); }
+    });
+    const nowEl=card.querySelector('#daily-raid-teamrank-now');
+    nowEl.innerHTML=rank?`RANK <b>${rank}</b>`:'RANK <b>—</b>';
+    // 分母は次のランクに必要な合計ダメージ（Bはブレイク条件なのでCの次はA）
+    const target=total<cuts.C?cuts.C:total<cuts.A?cuts.A:cuts.S;
+    card.querySelector('#daily-raid-teamrank-total').innerHTML=`<em>${fmt(total)}</em><span> / ${fmt(target)}</span>`;
+    const pending=getPendingRaidDamage(status);
+    const notes=[];
+    if(total>=cuts.S) notes.push('最大ダメージ到達');
+    else{
+      const next=total<cuts.C?'C':total<cuts.A?'A':'S';
+      notes.push(`RANK ${next} まで あと ${fmt(target-total)}`);
+    }
+    if(!broken&&total>=cuts.C) notes.push('B以上はブレイクが条件');
+    if(pending>0&&status&&status.status!=='cleared') notes.push(`反映待ち ${fmt(pending)} を含む`);
+    card.querySelector('#daily-raid-teamrank-note').textContent=notes.join(' · ');
+    card.title='全員のBESTダメージの合計。C：最大HP分 / B：C＋ブレイク / A：ブレイク＋120% / S：ブレイク＋150%';
+  }
+
   // build1566: HP枠が伸びたとき、下端固定のページ切替インジケータが重ならないよう追従させる。
   function syncSwipeIndicatorPosition(){
     const root=document.getElementById('daily-raid-root');
@@ -2503,6 +2581,7 @@
     root.querySelector('#daily-raid-hpfill').style.transform=`scaleX(${cleared&&lapMode?0:Math.max(0,Math.min(1,hp/maxHp))})`;
     renderForecast(root,status,hp,maxHp,cleared);
     renderBreakAndRank(root,status,cleared);
+    renderTeamRank(root,status);
     renderBossHero(root,status);
     renderProgress(root,status);
     scheduleSwipeIndicatorSync();
