@@ -181,7 +181,7 @@
         const hitHp = Math.max(0, Math.floor(Number(rule.hitHp || 0)));
         const sec = Math.round(Math.max(3000, Number(rule.respawnMs || 8000)) / 1000);
         const gName = (window.ShootingEnemies && window.ShootingEnemies.getShootingEnemy(rule.enemyId) || {}).name || '守護者';
-        rows.push({ icon: 'shield', name: '守護者', text: `${gName}×${Math.max(1, Number(rule.count || 2))}がいる間ボスは全属性シールド。倒すと${sec}秒だけ解除` });
+        rows.push({ icon: 'shield', name: '守護者', text: `${gName}×${Math.max(1, Number(rule.count || 2))}がいる間、ボスは実体がなく攻撃がすり抜ける。倒すと${sec}秒だけ実体化` });
         if (hitHp > 0) rows.push({ icon: 'hit', name: 'HIT数', text: `守護者はどんな攻撃も1HIT＝1ダメージ（HP${hitHp}）` });
         if (Number(rule.spiderCount || 0) > 0) rows.push({ icon: 'drop', name: '吸血', text: '子蜘蛛に張り付かれると、ボスが回復する' });
       } else if (info[rule.type]) {

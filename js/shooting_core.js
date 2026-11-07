@@ -9817,7 +9817,7 @@
         if (onBeam(obj.x, obj.y)) targets.push({ kind: 'object', target: obj, x: obj.x, y: obj.y });
       });
     }
-    if (!isNormalBattle() && !isShienIntangible() && state.boss && state.boss.hp > 0 && onBeam(state.boss.x, state.boss.y)) {
+    if (!isNormalBattle() && !isBossPassThrough() && state.boss && state.boss.hp > 0 && onBeam(state.boss.x, state.boss.y)) {
       targets.push({ kind: 'boss', target: state.boss, x: state.boss.x, y: state.boss.y });
     }
     return targets;
@@ -9878,7 +9878,7 @@
 
     if (
       !isNormalBattle() &&
-      !isShienIntangible() &&
+      !isBossPassThrough() &&
       state.boss && state.boss.hp > 0 &&
       Math.abs(Number(state.boss.x || 0) - x) <= hitWidth &&
       Number(state.boss.y || 0) < startY
@@ -21503,7 +21503,7 @@
       }
       const hitBoss = !facelessObjectTarget &&
         !isNormalBattle() &&
-        !isShienIntangible() &&
+        !isBossPassThrough() &&
         bossRect &&
         p.bombIgnoreTarget !== state.boss &&
         !(p.pierce && p.piercedTargets && state.boss && p.piercedTargets.has(state.boss)) &&
@@ -24044,6 +24044,10 @@
   function isShienIntangible() {
     return !!(state && state.shien && state.shien.smoke);
   }
+  // build1775: 弾がボスをすり抜ける状態（シエンの霞化／記憶決戦の守護者がいる間）
+  function isBossPassThrough() {
+    return isShienIntangible() || isMemoryGuardShieldUp();
+  }
 
   function getShienArenaSize() {
     const arena = document.getElementById('shooting-arena');
@@ -25100,7 +25104,10 @@
     const st = document.createElement('style');
     st.id = 'memory-guard-style-v1759';
     st.textContent = `
-      #shooting-event-root #${BOSS_ID}.memory-guarded{filter:drop-shadow(0 0 6px rgba(120,200,255,.95)) drop-shadow(0 0 16px rgba(70,150,255,.7)) saturate(.75) !important}
+      #shooting-event-root #${BOSS_ID}.memory-guarded{opacity:.36 !important;filter:saturate(.35) brightness(1.25) drop-shadow(0 0 10px rgba(140,200,255,.9)) !important;animation:memoryGhost 1.6s ease-in-out infinite}
+      @keyframes memoryGhost{0%,100%{opacity:.30}50%{opacity:.46}}
+      #shooting-event-root #${BOSS_ID}.memory-materialize{animation:memoryMaterialize .7s ease-out}
+      @keyframes memoryMaterialize{0%{opacity:.35;filter:brightness(2.4) drop-shadow(0 0 24px #fff)}60%{opacity:1;filter:brightness(1.5) drop-shadow(0 0 14px rgba(255,240,200,.9))}100%{opacity:1;filter:none}}
       .shooting-mini-enemy.memory-guardian.mg-fallback{filter:hue-rotate(185deg) saturate(1.3) brightness(1.05)}
       .shooting-mini-enemy.memory-guardian{filter:drop-shadow(0 0 5px rgba(110,190,255,.85))}
       .shooting-mini-enemy-hp.mg-hp{width:64px;height:7px;opacity:1;border-color:rgba(40,90,160,.6);overflow:visible}
@@ -25323,7 +25330,7 @@
       if (mg.shieldUp) {
         mg.shieldUp = false;
         mg.nextSpawnAt = now + Math.max(3000, Number(rule.respawnMs || 8000));
-        showMemoryGuardNotice(`シールド解除！ ${Math.round(Math.max(3000, Number(rule.respawnMs || 8000)) / 1000)}秒間 攻撃が通る`, true);
+        showMemoryGuardNotice(`${(selectedStage.memoryBattle && selectedStage.memoryBattle.bossName) || 'ボス'}が実体化した！`, true);
       }
       if (now >= mg.nextSpawnAt) {
         spawnMemoryGuardians(rule, now, w, h);
@@ -25347,7 +25354,17 @@
       }
     }
     const bossEl = document.getElementById(BOSS_ID);
-    if (bossEl) bossEl.classList.toggle('memory-guarded', !!mg.shieldUp);
+    if (bossEl) {
+      const was = bossEl.classList.contains('memory-guarded');
+      bossEl.classList.toggle('memory-guarded', !!mg.shieldUp);
+      // build1775: 守護者が全滅 → 半透明の姿から実体化
+      if (was && !mg.shieldUp) {
+        bossEl.classList.remove('memory-materialize');
+        void bossEl.offsetWidth;
+        bossEl.classList.add('memory-materialize');
+        setTimeout(() => bossEl.classList.remove('memory-materialize'), 760);
+      }
+    }
   }
 
   function updateShienMechanics(now) {
