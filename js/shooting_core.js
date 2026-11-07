@@ -14625,12 +14625,12 @@
         const reviveMs = Math.max(1000, Number(link.reviveMs || 3000));
         if (!inori.linkBrokenAt) {
           inori.linkBrokenAt = now;
-          showMemoryGuardNotice('鳥居が共鳴している', false);
+          showMemoryGuardNotice('鳥居が共鳴している', false, 'TORII');
         } else if (now >= inori.linkBrokenAt + reviveMs) {
           inori.linkBrokenAt = 0;
           const missing = Number(alive[0].inoriSide || 1) * -1;
           spawnInoriTorii(now, [missing]);
-          showMemoryGuardNotice('鳥居が修復された', false);
+          showMemoryGuardNotice('鳥居、修復', false, 'TORII');
         }
       } else {
         inori.linkBrokenAt = 0;
@@ -25087,7 +25087,7 @@
 
   // ============================================================
   // build1759: 記憶決戦の掟「守護者」（＋頑丈・吸血の子蜘蛛）
-  //  守護者（青いカミラ等）が1体でも生きている間は、ボス本体にダメージが通らない。
+  //  守護者（カミラ等）が1体でも生きている間は、ボス本体にダメージが通らない。
   //  全滅させると respawnMs 後に再出現。守護者はHIT数で倒す敵（hitHp回当てると倒れる。威力は無関係）。
   //  守護者は子蜘蛛（カミラと同じ吸血・張り付き・交代で振り払い）を定期的に撒く。
   // ============================================================
@@ -25114,25 +25114,39 @@
       .shooting-mini-enemy-hp.mg-hp i{background:linear-gradient(90deg,#5aa6e8,#9fd4ff)}
       .shooting-mini-enemy-hp.mg-hp .mg-hits{position:absolute;left:100%;top:50%;transform:translateY(-50%);margin-left:4px;
         font:800 11px/1 sans-serif;color:#fff;text-shadow:0 0 3px #0a3a7a,0 0 2px #000,0 0 1px #000;white-space:nowrap}
-      .memory-guard-notice{position:absolute;left:50%;top:30%;z-index:40;transform:translateX(-50%);pointer-events:none;white-space:nowrap;
-        padding:6px 16px;border-radius:999px;font:800 13px/1.2 sans-serif;letter-spacing:.12em;color:#fff;
-        background:rgba(20,40,90,.72);border:1px solid rgba(160,210,255,.8);box-shadow:0 0 14px rgba(90,170,255,.6);
-        animation:memoryGuardNotice 1.8s ease-out forwards}
-      .memory-guard-notice.is-open{background:rgba(110,60,20,.72);border-color:rgba(255,215,150,.85);box-shadow:0 0 14px rgba(255,190,90,.6)}
-      @keyframes memoryGuardNotice{0%{opacity:0;transform:translateX(-50%) translateY(8px)}12%{opacity:1;transform:translateX(-50%)}78%{opacity:1}100%{opacity:0}}
+      /* build1776: テロップは戦闘中の他の演出（BATTLE CUT）と同じ言葉づかい：両端が消える薄い帯＋細線＋明朝 */
+      /* build1777: 邪魔にならないよう、小さく・上寄り（ボスHPの下）・短く */
+      .memory-guard-notice{position:absolute;left:50%;top:132px;z-index:40;transform:translate(-50%,-50%);pointer-events:none;white-space:nowrap;
+        min-width:160px;padding:5px 22px 6px;text-align:center;color:#fff;
+        background:linear-gradient(90deg,rgba(28,30,40,0),rgba(28,30,40,.42) 22%,rgba(28,30,40,.42) 78%,rgba(28,30,40,0));
+        text-shadow:0 1px 5px rgba(0,0,0,.6);
+        animation:memoryGuardNotice 1.3s ease-out forwards}
+      .memory-guard-notice::before,.memory-guard-notice::after{content:'';position:absolute;left:0;right:0;height:1px;
+        background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.6) 25%,rgba(255,255,255,.6) 75%,rgba(255,255,255,0))}
+      .memory-guard-notice::before{top:0}.memory-guard-notice::after{bottom:0}
+      .memory-guard-notice small{display:block;font:500 7px/1 'Cinzel',serif;letter-spacing:.3em;opacity:.78}
+      .memory-guard-notice strong{display:block;margin-top:3px;font:500 12.5px/1.2 'Noto Serif JP',serif;letter-spacing:.14em}
+      .memory-guard-notice.is-open::before,.memory-guard-notice.is-open::after{
+        background:linear-gradient(90deg,rgba(232,206,140,0),rgba(232,206,140,.85) 25%,rgba(232,206,140,.85) 75%,rgba(232,206,140,0))}
+      .memory-guard-notice.is-open small{color:#f0dcaa}
+      @keyframes memoryGuardNotice{0%{opacity:0;transform:translate(-50%,-50%) scale(.97)}12%{opacity:1;transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0}}
     `;
     document.head.appendChild(st);
   }
-  function showMemoryGuardNotice(text, open) {
+  function showMemoryGuardNotice(text, open, sub) {
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
     ensureMemoryGuardStyle();
     arena.querySelectorAll('.memory-guard-notice').forEach(e => e.remove());
     const el = document.createElement('div');
     el.className = 'memory-guard-notice' + (open ? ' is-open' : '');
-    el.textContent = text;
+    const smallEl = document.createElement('small');
+    smallEl.textContent = String(sub || 'MEMORY');
+    const strongEl = document.createElement('strong');
+    strongEl.textContent = String(text || '');
+    el.append(smallEl, strongEl);
     arena.appendChild(el);
-    setTimeout(() => el.remove(), 1900);
+    setTimeout(() => el.remove(), 1350);
   }
 
   function spawnMemoryGuardians(rule, now, w, h) {
@@ -25225,15 +25239,16 @@
     const st = document.createElement('style');
     st.id = 'memory-judgment-style-v1764';
     st.textContent = `
+      /* build1777: 神罰の予告は画面の縁だけを染め、文字は上寄りに小さく（弾を見る邪魔をしない） */
       .memory-judgment{position:absolute;inset:0;z-index:38;pointer-events:none;
-        background:radial-gradient(ellipse at 50% 45%,rgba(255,236,170,0) 35%,rgba(255,200,90,.22) 75%,rgba(160,90,10,.38) 100%);
+        background:radial-gradient(ellipse at 50% 50%,rgba(255,236,170,0) 58%,rgba(255,200,90,.14) 85%,rgba(160,90,10,.26) 100%);
         animation:mjPulse .5s ease-in-out infinite alternate}
-      .memory-judgment .mj-box{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);text-align:center;color:#fff8e2;
-        text-shadow:0 0 10px rgba(255,190,70,.95),0 0 3px #5a3200,0 0 1px #000}
-      .memory-judgment .mj-title{font:900 30px/1 'Noto Serif JP',serif;letter-spacing:.3em;margin-left:.3em}
-      .memory-judgment .mj-count{font:900 56px/1 'Cinzel',serif;margin-top:6px}
-      .memory-judgment .mj-hint{margin-top:8px;font:800 11px/1.4 sans-serif;letter-spacing:.06em;color:#fff;
-        padding:4px 10px;border-radius:999px;background:rgba(60,30,0,.55)}
+      .memory-judgment .mj-box{position:absolute;left:50%;top:132px;transform:translate(-50%,-50%);text-align:center;color:#fff8e2;
+        display:flex;align-items:baseline;gap:10px;white-space:nowrap;
+        text-shadow:0 0 8px rgba(255,190,70,.9),0 0 2px #5a3200,0 0 1px #000}
+      .memory-judgment .mj-title{font:700 15px/1 'Noto Serif JP',serif;letter-spacing:.3em}
+      .memory-judgment .mj-count{font:700 24px/1 'Cinzel',serif}
+      .memory-judgment .mj-hint{font:500 11px/1.2 'Noto Serif JP',serif;letter-spacing:.14em;color:#eef3ff}
       .memory-judgment.is-sealed{background:radial-gradient(ellipse at 50% 45%,rgba(160,200,255,0) 35%,rgba(120,160,255,.2) 80%,rgba(40,60,140,.32) 100%)}
       .memory-judgment.is-sealed .mj-title{color:#e6f0ff;text-shadow:0 0 10px rgba(110,160,255,.95),0 0 2px #000}
       @keyframes mjPulse{from{opacity:.75}to{opacity:1}}
@@ -25292,7 +25307,7 @@
     arena.appendChild(flash);
     setTimeout(() => flash.remove(), 600);
     if (mj.sealed || isMemoryJudgmentProtected(now)) {
-      showMemoryGuardNotice('神罰を退けた', true);
+      showMemoryGuardNotice('神罰を退けた', true, 'JUDGMENT');
       return;
     }
     const member = getActiveMember();
@@ -25302,7 +25317,7 @@
     member.hp = 0;
     triggerPlayerHitScreenShake();
     renderHud();
-    showMemoryGuardNotice(name ? `神罰 ― ${name}が倒れた` : '神罰', false);
+    showMemoryGuardNotice(name ? `${name}、倒れる` : '神罰', false, 'JUDGMENT');
     beginPlayerDefeat();
   }
 
@@ -25330,14 +25345,14 @@
       if (mg.shieldUp) {
         mg.shieldUp = false;
         mg.nextSpawnAt = now + Math.max(3000, Number(rule.respawnMs || 8000));
-        showMemoryGuardNotice(`${(selectedStage.memoryBattle && selectedStage.memoryBattle.bossName) || 'ボス'}が実体化した！`, true);
+        showMemoryGuardNotice(`${(selectedStage.memoryBattle && selectedStage.memoryBattle.bossName) || 'ボス'}、実体化`, true, 'MATERIALIZE');
       }
       if (now >= mg.nextSpawnAt) {
         spawnMemoryGuardians(rule, now, w, h);
         mg.shieldUp = true;
         const gName = (getShootingEnemy(rule.enemyId) || {}).name || '守護者';
         const bName = (selectedStage.memoryBattle && selectedStage.memoryBattle.bossName) || 'ボス';
-        showMemoryGuardNotice(mg.everSpawned ? `${gName}が再び現れた` : `${gName}が${bName}を守っている`, false);
+        showMemoryGuardNotice(mg.everSpawned ? `${gName}、再び` : `${gName}の守護`, false, 'GUARDIAN');
         mg.everSpawned = true;
       }
     } else {

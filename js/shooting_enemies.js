@@ -50,7 +50,7 @@
     RAID_SHIEN: 'shooting_raid_shien',
     RAID_CAMILLA: 'shooting_raid_camilla',
     CAMILLA_SPIDERLING: 'camilla_spiderling',
-    // build1759: 記憶決戦の守護者「青いカミラ」（頑丈・子蜘蛛を撒く）
+    // build1759: 記憶決戦の守護者「カミラ」（子蜘蛛を撒く）
     MEMORY_BLUE_CAMILLA: 'memory_blue_camilla',
     BULLET_HELL_TEST: 'shooting_bullet_hell_test',
     NOAH: 'shooting_noah',
@@ -687,7 +687,7 @@
     // 子蜘蛛（吸血）を撒く。移動・子蜘蛛は shooting_core.js updateMemoryMechanics。
     [SHOOTING_ENEMY_ID.MEMORY_BLUE_CAMILLA]: Object.freeze({
       id: SHOOTING_ENEMY_ID.MEMORY_BLUE_CAMILLA, kind: 'normal', implemented: true,
-      name: '青いカミラ', displayName: 'MEMORY / BLUE CAMILLA',
+      name: 'カミラ', displayName: 'MEMORY / CAMILLA',
       element: 'aqua', attackType: 'none', image: 'images/memory_blue_camilla.webp',
       fallbackImage: 'images/raid_enemy_03_battle.webp',
       hp: 2600, contactDamage: 0, moveSpeed: 0, scoreValue: 900,

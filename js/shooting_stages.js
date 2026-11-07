@@ -2088,7 +2088,7 @@
       timeLimitSeconds: 180,
       rules: Object.freeze([
         Object.freeze({ type: 'element_barrier' }),
-        // build1762: 青いカミラ×2が守る（リヴィアは全属性シールド）。2体倒すと8秒だけシールド解除→再出現。
+        // build1762: カミラ×2が守る（リヴィアは実体なし）。2体倒すと8秒だけ実体化→再出現。
         //  カミラは全ての攻撃を1HIT=1ダメージで数える（HP100）。PHASEごとにリヴィアからの位置が変わる。
         Object.freeze({
           type: 'guardians', enemyId: SHOOTING_ENEMY_ID.MEMORY_BLUE_CAMILLA, count: 2, respawnMs: 8000,
