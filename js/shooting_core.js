@@ -5174,9 +5174,12 @@
       state.boss.phase = 1;
     }
 
+    // build1749: レイドは共有HPの残りに関係なく、毎回第1段階から開始する。
+    // 段階は「この挑戦で自分が削った量」で進む（getRaidPersonalPhase）。
+    // 以前は共有HPの残りで開始段階を決めていたため、先に3/3を終えた人がいると
+    // 後から挑戦する人がいきなり第3段階と戦うことになっていた。
     if (isRaidStage() && state.boss) {
-      const remainingGauges = Math.max(1, Math.ceil(state.boss.hp / state.boss.gaugeHp));
-      state.boss.phase = Math.max(1, Math.min(3, 4 - remainingGauges));
+      state.boss.phase = 1;
     }
   }
 
@@ -5536,6 +5539,19 @@
     return Math.max(0, (Number(state.boss.gauges || 1) - p) * Math.max(1, Number(state.boss.gaugeHp || 1)));
   }
 
+  // build1749: レイドの段階＝この挑戦の今の周で自分が削った量 ÷ (その周のHP/3)
+  function getRaidPersonalGaugeInfo(){
+    if(!state || !state.boss) return { phase:1, gaugeHp:1, remaining:1 };
+    const gaugeHp = Math.max(1, Number(state.boss.gaugeHp || 1));
+    const lapStart = Number(state.raidLapStartHp || state.raidInitialHp || 0);
+    const dealt = Math.max(0, lapStart - Number(state.boss.hp || 0));
+    const phase = Math.max(1, Math.min(3, 1 + Math.floor(dealt / gaugeHp)));
+    const inGauge = gaugeHp - Math.max(0, dealt - (phase - 1) * gaugeHp);
+    // 共有HPが少ない周では、ゲージが空になる前にボスが倒れるので残りHPで頭打ち
+    const remaining = Math.max(0, Math.min(inGauge, Number(state.boss.hp || 0)));
+    return { phase, gaugeHp, remaining };
+  }
+
   function getBossPhaseFromHp(hp){
     if(!state || !state.boss) return 1;
     const gauges = Math.max(1, Number(state.boss.gauges || 1));
@@ -5592,7 +5608,8 @@
     const phase = state.boss.phase || 1;
     const gaugeHp = getBossGaugeHpForPhase(phase);
     const gaugeFloor = getBossGaugeFloorForPhase(phase);
-    const normalCurrentGaugeHp = clamp(state.boss.hp - gaugeFloor, 0, gaugeHp);
+    const raidGauge = isRaidStage() ? getRaidPersonalGaugeInfo() : null;
+    const normalCurrentGaugeHp = raidGauge ? raidGauge.remaining : clamp(state.boss.hp - gaugeFloor, 0, gaugeHp);
     const currentGaugeHp = isChapter43BossStage() ? getChapter43WaveCurrentHp() : normalCurrentGaugeHp;
     const currentGaugeMaxHp = isChapter43BossStage() ? getChapter43WaveMaxHp(phase) : gaugeHp;
     const amount = ch702Boss
@@ -20546,7 +20563,7 @@
     // BREAK演出が発生するため、フェーズ更新自体を無効化する。
     if (!state || state.boss.hp <= 0 || isFacelessStage() || isAmbushStage() || isScoreAttackStage()) return;
     const previous = state.boss.phase || 1;
-    const nextPhase = getBossPhaseFromHp(state.boss.hp);
+    const nextPhase = isRaidStage() ? getRaidPersonalGaugeInfo().phase : getBossPhaseFromHp(state.boss.hp);
     if (nextPhase !== previous) {
       state.boss.phase = nextPhase;
       beginBossPhaseBreak(nextPhase);
