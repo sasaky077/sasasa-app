@@ -1884,7 +1884,7 @@
     id: CHARACTER_ID.ROSE,
     effectKey: 'rose',
     label: 'SEED / FORTRESS',
-    description: '0.5秒ごとに7発の種子Spreadを放つ。ULTは5秒間、前方に盤面全幅の防御壁を固定設置。通常敵弾を吸収して操作中のキャラを1発につき最大HP3%回復。接触する敵には0.25秒ごとにATK×1.0の木属性ダメージ。',
+    description: '0.42秒ごとに7発の種子Spreadを放つ。ULTは5秒間、前方に盤面全幅の防御壁を固定設置。通常敵弾を吸収して操作中のキャラを1発につき最大HP3%回復。接触する敵には0.25秒ごとにATK×1.0の木属性ダメージ。',
     ultDescription: '5秒間、前方に盤面全幅の防御壁を設置。通常敵弾を吸収するたび操作中キャラの最大HPを3%回復（最大HP上限）。接触した敵へ0.25秒ごとにATK×1.0の木属性ダメージ。WARNING・HEAVY・レーザー等は防げない。展開中は通常射撃が停止する。',
     ultName: 'ローズフォートレス',
     ultType: 'rose_fortress',
@@ -1893,7 +1893,7 @@
     // ---- 通常ショット ----
     shotType: 'spread',
     shotStyle: 'rose-seed',
-    fireRate: 500,
+    fireRate: 420, // build1784: 500→420（連射を約1.2倍に）
     bulletSpeed: 335,
     shotPowerRate: 0.07286, // 旧6発×0.085と総火力をほぼ同等に維持
     shotCount: 7,

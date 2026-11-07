@@ -2084,7 +2084,7 @@
       panelImage: 'images/rivia_panel.webp', // build1765: 記憶決戦の一覧カードの立ち絵
       enemyId: SHOOTING_ENEMY_ID.REMNANT_03, element: 'aqua',
       background: 'images/battle_bg_01.webp',
-      bossGaugeHps: Object.freeze([7500, 7500, 7500]),
+      bossGaugeHps: Object.freeze([5000, 6000, 8000]), // build1783: 22,500 → 19,000
       timeLimitSeconds: 180,
       rules: Object.freeze([
         Object.freeze({ type: 'element_barrier' }),
