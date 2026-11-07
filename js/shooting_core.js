@@ -36004,6 +36004,22 @@
     const leftEl = overlay.querySelector('.arno-slash-left');
     arena.appendChild(overlay);
 
+    // build1755: 敵がいなくなったら「連打！」を待たずに終了する（最後の弾が届くまで少しだけ待つ）
+    const scheduleEmptyFinish = () => {
+      if (!state || !state.arnoSlashActive || state.nightshadeEmptyFinishing) return;
+      state.nightshadeEmptyFinishing = true;
+      clearTimeout(state.arnoSlashTimerId);
+      state.arnoSlashTimerId = setTimeout(() => {
+        if (state) state.nightshadeEmptyFinishing = false;
+        if (state && state.arnoSlashActive) finishArnoUlt();
+      }, 320);
+    };
+    state.nightshadeEmptyFinishing = false;
+    const emptyCheck = setInterval(() => {
+      if (!state || !state.arnoSlashActive) { clearInterval(emptyCheck); return; }
+      if (!getNightshadeBarrageTargets().length) { clearInterval(emptyCheck); scheduleEmptyFinish(); }
+    }, 120);
+
     const pelletsPerTap = Math.max(1, Math.floor(Number(c.nightshadePelletsPerTap || 4)));
     const pelletProfile = { ...c, arnoSlashDamageAtkRate: Math.max(0, Number(c.nightshadePelletAtkRate ?? 0.095)) };
 
@@ -36017,7 +36033,7 @@
       if (tapNow - Number(state.arnoSlashLastTapAt || -9999) < minInterval) return;
       if (Number(state.arnoSlashCount || 0) >= maxTaps) return;
       const targets = getNightshadeBarrageTargets();
-      if (!targets.length) return;
+      if (!targets.length) { scheduleEmptyFinish(); return; }
       state.arnoSlashLastTapAt = tapNow;
       state.arnoSlashCount = Math.max(0, Number(state.arnoSlashCount || 0)) + 1;
 
