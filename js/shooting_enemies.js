@@ -50,6 +50,8 @@
     RAID_SHIEN: 'shooting_raid_shien',
     RAID_CAMILLA: 'shooting_raid_camilla',
     CAMILLA_SPIDERLING: 'camilla_spiderling',
+    // build1759: 記憶決戦の守護者「青いカミラ」（頑丈・子蜘蛛を撒く）
+    MEMORY_BLUE_CAMILLA: 'memory_blue_camilla',
     BULLET_HELL_TEST: 'shooting_bullet_hell_test',
     NOAH: 'shooting_noah',
     // build1691: 死線（即死弾のみの弾幕）。build1692から位相回遊の「死線」階専用
@@ -679,6 +681,17 @@
       behavior: 'camilla_v1',
       camillaMechanics: true,
       uiScale: 1.15,
+    }),
+
+    // build1759: 記憶決戦の守護者。生きている間はボスに攻撃が通らない。頑丈（弱い攻撃は無効）。
+    // 子蜘蛛（吸血）を撒く。移動・子蜘蛛は shooting_core.js updateMemoryMechanics。
+    [SHOOTING_ENEMY_ID.MEMORY_BLUE_CAMILLA]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.MEMORY_BLUE_CAMILLA, kind: 'normal', implemented: true,
+      name: '青いカミラ', displayName: 'MEMORY / BLUE CAMILLA',
+      element: 'aqua', attackType: 'none', image: 'images/memory_blue_camilla.webp',
+      fallbackImage: 'images/raid_enemy_03_battle.webp',
+      hp: 2600, contactDamage: 0, moveSpeed: 0, scoreValue: 900,
+      behavior: 'memory_guardian_v1', uiScale: 1.85, // build1763: リヴィアより少し小さいくらい（約125px）
     }),
 
     // カミラが召喚する子蜘蛛（吸血）。通常敵として撃ち落とせる。

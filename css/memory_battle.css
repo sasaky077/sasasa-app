@@ -1,0 +1,343 @@
+/* ============================================================
+   build1765 — 記憶決戦 / MEMORY BATTLE（一覧画面・モック準拠）
+   #screen-memory-battle / .mb-* にスコープ。上部HUDと下部ナビは共通UI。
+   ============================================================ */
+html body #screen-memory-battle.memory-battle-screen{
+  --mb-ink:#2a2546;
+  --mb-ink-soft:#5b5576;
+  --mb-navy:#2b2a5a;
+  --mb-navy-2:#3e3a78;
+  --mb-gold:#c9a45c;
+  --mb-gold-2:#e8d29a;
+  --mb-gold-deep:#9a7432;
+  --mb-paper:#fbf8f1;
+  --mb-top:calc(var(--header-h, 76px) + 0px);
+  --mb-bottom:calc(76px + env(safe-area-inset-bottom, 0px));
+  position:fixed !important;
+  inset:0 !important;
+  display:none !important;
+  width:100% !important;
+  max-width:430px !important;
+  height:100dvh !important;
+  margin:0 auto !important;
+  padding:0 !important;
+  box-sizing:border-box !important;
+  overflow:hidden !important;
+  overscroll-behavior:none !important;
+  z-index:40 !important;
+  isolation:isolate;
+  background:#efedf3 !important;
+  color:var(--mb-ink);
+  font-family:'Noto Serif JP','Yu Mincho','Hiragino Mincho ProN',serif;
+}
+html body #screen-memory-battle.memory-battle-screen.active{display:block !important;}
+#screen-memory-battle *,#screen-memory-battle *::before,#screen-memory-battle *::after{box-sizing:border-box;}
+
+#screen-memory-battle .mb-backdrop{
+  position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse at 50% 38%,rgba(255,255,255,.75) 0%,rgba(255,255,255,0) 60%),
+    repeating-radial-gradient(circle at 70% 60%,rgba(120,110,160,.05) 0 2px,rgba(120,110,160,0) 2px 26px),
+    linear-gradient(180deg,#ebe8f1 0%,#f3f1f6 45%,#ece8f0 100%);
+}
+#screen-memory-battle .mb-composition{
+  position:absolute;z-index:2;top:0;left:0;right:0;bottom:var(--mb-bottom);
+  display:flex;flex-direction:column;min-height:0;
+  overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;padding-bottom:16px;
+}
+#screen-memory-battle .mb-composition::-webkit-scrollbar{display:none;}
+
+/* ---------- ヒーロー（夜空の城） ---------- */
+#screen-memory-battle .mb-hero{
+  /* build1769: 帯はスクロールせず上に固定（下の一覧だけがその下を流れる） */
+  position:sticky;top:0;z-index:4;flex:0 0 auto;overflow:hidden;
+  padding:calc(var(--mb-top) + 54px) 14px 22px; /* 上の共通戻るボタンの分だけ空ける */
+  color:#fff;
+  border-bottom:1px solid rgba(201,164,92,.75);
+  box-shadow:0 6px 14px rgba(30,26,70,.22);
+}
+#screen-memory-battle .mb-hero-art{
+  position:absolute;inset:0;z-index:0;
+  background:
+    linear-gradient(180deg,rgba(24,22,60,.10) 0%,rgba(24,22,60,.18) 55%,rgba(30,26,72,.72) 100%),
+    url('../images/memory_battle_hero.webp') center 30% / cover no-repeat,
+    radial-gradient(ellipse at 60% 35%,rgba(255,226,170,.30) 0%,rgba(255,226,170,0) 34%),
+    radial-gradient(1.2px 1.2px at 12% 22%,#fff 50%,transparent 51%),
+    radial-gradient(1px 1px at 28% 12%,#fff 50%,transparent 51%),
+    radial-gradient(1.4px 1.4px at 44% 30%,#fff 50%,transparent 51%),
+    radial-gradient(1px 1px at 72% 16%,#fff 50%,transparent 51%),
+    radial-gradient(1.2px 1.2px at 88% 34%,#fff 50%,transparent 51%),
+    radial-gradient(1px 1px at 63% 48%,#fff 50%,transparent 51%),
+    linear-gradient(170deg,#1c1b45 0%,#2f2c68 52%,#4a3f80 100%);
+}
+#screen-memory-battle .mb-hero-art::after{ /* 下端を淡く紙色へ溶かす */
+  content:'';position:absolute;left:0;right:0;bottom:-1px;height:26px;
+  background:linear-gradient(180deg,rgba(239,237,243,0),rgba(239,237,243,.18));
+}
+/* build1768: 戻るボタンは他コンテンツ（位相回遊・塔など）と共通の画像ボタン・共通位置に揃える */
+html body #screen-memory-battle .mb-back{
+  position:fixed !important;
+  left:var(--zb-back-x, 12px) !important;
+  top:var(--zb-back-y, calc(var(--header-h, 72px) + 8px)) !important;
+  z-index:6 !important;
+  width:82px !important;height:35px !important;padding:0 !important;margin:0 !important;
+  border:0 !important;border-radius:0 !important;box-shadow:none !important;
+  background:transparent url('../images/button_back.webp?v=1444-unified') center/100% 100% no-repeat !important;
+  font-size:0 !important;color:transparent !important;text-indent:-9999px !important;overflow:hidden !important;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+}
+html body #screen-memory-battle .mb-back:active{transform:translateY(1px);filter:brightness(.96);}
+@media(max-width:365px){ html body #screen-memory-battle .mb-back{width:75px !important;height:32px !important;} }
+#screen-memory-battle .mb-hero-row{position:relative;z-index:2;display:flex;align-items:flex-end;justify-content:space-between;gap:10px;}
+#screen-memory-battle .mb-title{
+  margin:0;font:700 clamp(36px,11.2vw,48px)/1.05 'Noto Serif JP',serif;letter-spacing:.06em;white-space:nowrap;
+  text-shadow:0 2px 8px rgba(10,8,40,.7),0 0 1px rgba(10,8,40,.9);
+}
+#screen-memory-battle .mb-title-en{
+  display:flex;align-items:center;gap:6px;margin-top:6px;color:var(--mb-gold-2);
+  font:500 clamp(8.5px,2.5vw,11px)/1 'Cinzel',serif;letter-spacing:.3em;white-space:nowrap;
+}
+#screen-memory-battle .mb-title-en i{flex:1 1 auto;min-width:10px;height:1px;background:linear-gradient(90deg,rgba(232,210,154,0),rgba(232,210,154,.9));}
+#screen-memory-battle .mb-title-en i:last-child{background:linear-gradient(90deg,rgba(232,210,154,.9),rgba(232,210,154,0));}
+#screen-memory-battle .mb-month{
+  flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:7px;
+  padding:9px 10px 9px;border-radius:10px;
+  background:linear-gradient(180deg,rgba(32,30,78,.92),rgba(46,42,98,.92));
+  border:1px solid rgba(201,164,92,.85);
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.06),0 3px 10px rgba(10,8,40,.35);
+}
+#screen-memory-battle .mb-month strong{font:700 clamp(12px,3.6vw,15px)/1.2 'Noto Serif JP',serif;letter-spacing:.04em;color:#fff6e2;white-space:nowrap;}
+#screen-memory-battle .mb-month span{
+  font:700 clamp(10px,3vw,12px)/1 'Noto Serif JP',serif;color:#3a2a10;letter-spacing:.06em;white-space:nowrap;
+  padding:6px 12px;border-radius:999px;background:linear-gradient(180deg,#f6e6bc,#d8b770);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6);
+}
+
+/* ---------- 導入文・区切り ---------- */
+#screen-memory-battle .mb-lead{
+  margin:14px 14px 0;text-align:center;
+  font:600 clamp(11px,3.15vw,13px)/1.6 'Noto Serif JP',serif;color:var(--mb-ink);letter-spacing:0;
+}
+#screen-memory-battle .mb-lead span{display:inline-block;}
+#screen-memory-battle .mb-divider{display:flex;align-items:center;justify-content:center;gap:8px;margin:6px 40px 0;}
+#screen-memory-battle .mb-divider i{flex:1 1 auto;height:1px;background:linear-gradient(90deg,rgba(201,164,92,0),rgba(201,164,92,.75));}
+#screen-memory-battle .mb-divider i:last-child{background:linear-gradient(90deg,rgba(201,164,92,.75),rgba(201,164,92,0));}
+#screen-memory-battle .mb-divider b{width:8px;height:8px;transform:rotate(45deg);border:1px solid var(--mb-gold);background:#fff;}
+
+/* ---------- 今月の踏破 ---------- */
+#screen-memory-battle .mb-progress{
+  position:relative;display:flex;align-items:center;margin:12px 12px 0;height:42px;
+}
+#screen-memory-battle .mb-progress-pill{
+  position:relative;z-index:2;display:flex;align-items:center;gap:8px;height:42px;padding:0 22px 0 18px;
+  color:#fff;background:linear-gradient(180deg,var(--mb-navy-2),var(--mb-navy));
+  clip-path:polygon(12px 0,calc(100% - 14px) 0,100% 50%,calc(100% - 14px) 100%,12px 100%,0 50%);
+}
+#screen-memory-battle .mb-progress-pill::before{
+  content:'';position:absolute;inset:2px;z-index:-1;pointer-events:none;
+  clip-path:polygon(11px 0,calc(100% - 13px) 0,100% 50%,calc(100% - 13px) 100%,11px 100%,0 50%);
+  border:1px solid rgba(201,164,92,.7);
+}
+#screen-memory-battle .mb-progress-pill span{font:700 13px/1 'Noto Serif JP',serif;letter-spacing:.06em;}
+#screen-memory-battle .mb-progress-pill b{font:600 28px/1 'Cinzel',serif;color:#fff;}
+#screen-memory-battle .mb-progress-pill small{font:600 14px/1 'Cinzel',serif;color:var(--mb-gold-2);}
+#screen-memory-battle .mb-progress-track{
+  position:relative;flex:1 1 auto;display:flex;align-items:center;justify-content:space-around;
+  height:30px;margin-left:-10px;padding:0 10px 0 18px;
+  border:1px solid rgba(201,164,92,.6);border-left:0;border-radius:0 15px 15px 0;
+  background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(240,236,228,.85));
+}
+#screen-memory-battle .mb-progress-track::before{
+  content:'';position:absolute;left:18px;right:12px;top:50%;height:1px;background:rgba(150,140,170,.5);
+}
+#screen-memory-battle .mb-progress-track i{
+  position:relative;width:9px;height:9px;transform:rotate(45deg);
+  background:#c7c2d0;border:1px solid rgba(255,255,255,.8);box-shadow:0 0 0 1px rgba(150,140,170,.35);
+}
+#screen-memory-battle .mb-progress-track i.is-done{background:linear-gradient(135deg,#f3dc9c,#b88a3c);box-shadow:0 0 0 1px rgba(154,116,50,.6),0 0 6px rgba(232,200,120,.8);}
+
+/* ---------- ステージカード ---------- */
+#screen-memory-battle .mb-list{list-style:none;margin:14px 0 0;padding:0 12px;display:flex;flex-direction:column;gap:12px;}
+#screen-memory-battle .mb-card{
+  position:relative;padding:0 12px 14px;border-radius:6px;
+  background:
+    radial-gradient(ellipse at 70% 20%,rgba(255,255,255,.9) 0%,rgba(255,255,255,0) 60%),
+    linear-gradient(180deg,#fdfbf6,#f6f1e6);
+  border:1.5px solid var(--mb-gold);
+  box-shadow:inset 0 0 0 4px #fdfaf3,inset 0 0 0 5px rgba(201,164,92,.55),0 6px 16px rgba(50,40,90,.12);
+  cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .12s,filter .12s;
+}
+#screen-memory-battle .mb-card::before,#screen-memory-battle .mb-card::after{ /* 四隅の飾り */
+  content:'';position:absolute;width:14px;height:14px;pointer-events:none;
+  border:1.5px solid var(--mb-gold);
+}
+#screen-memory-battle .mb-card::before{left:7px;bottom:7px;border-top:0;border-right:0;}
+#screen-memory-battle .mb-card::after{right:7px;bottom:7px;border-top:0;border-left:0;}
+#screen-memory-battle .mb-card:active{transform:translateY(1px);filter:brightness(.98);}
+#screen-memory-battle .mb-card:focus-visible{outline:2px solid var(--mb-gold);outline-offset:2px;}
+
+#screen-memory-battle .mb-card-head{display:flex;align-items:flex-start;gap:10px;min-height:86px;}
+#screen-memory-battle .mb-ribbon{
+  position:relative;flex:0 0 auto;width:60px;height:86px;margin-top:-1px;
+  display:flex;align-items:flex-start;justify-content:center;padding-top:16px;
+  background:linear-gradient(180deg,var(--mb-navy-2),var(--mb-navy));
+  clip-path:polygon(0 0,100% 0,100% 100%,50% 84%,0 100%);
+  box-shadow:inset 0 0 0 1px rgba(201,164,92,.6);
+}
+#screen-memory-battle .mb-ribbon::before{
+  content:'';position:absolute;inset:3px 3px 0;pointer-events:none;
+  border:1px solid rgba(201,164,92,.75);border-bottom:0;
+  clip-path:polygon(0 0,100% 0,100% 100%,50% 84%,0 100%);
+}
+#screen-memory-battle .mb-ribbon b{font:600 26px/1 'Cinzel',serif;color:#fff;letter-spacing:.02em;text-shadow:0 1px 3px rgba(0,0,0,.4);}
+#screen-memory-battle .mb-ribbon.is-small{width:46px;height:58px;padding-top:10px;}
+#screen-memory-battle .mb-ribbon.is-small b{font-size:18px;}
+#screen-memory-battle .mb-names{flex:1 1 auto;min-width:0;padding-top:16px;display:flex;flex-direction:column;align-items:center;gap:6px;}
+#screen-memory-battle .mb-boss{font:700 clamp(22px,7vw,30px)/1.1 'Noto Serif JP',serif;color:var(--mb-ink);letter-spacing:.06em;white-space:nowrap;}
+#screen-memory-battle .mb-sub{
+  display:flex;align-items:center;gap:8px;width:100%;justify-content:center;
+  font:600 clamp(11px,3.3vw,13.5px)/1.2 'Noto Serif JP',serif;color:var(--mb-ink-soft);letter-spacing:.06em;white-space:nowrap;
+}
+#screen-memory-battle .mb-sub i{flex:0 1 26px;height:1px;background:var(--mb-gold);opacity:.8;}
+#screen-memory-battle .mb-reward{
+  flex:0 0 auto;margin-top:12px;width:clamp(86px,25vw,104px);
+  display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 6px 7px;border-radius:8px;
+  background:linear-gradient(180deg,#fffdf7,#f5ecd7);
+  border:1.5px solid var(--mb-gold);
+  box-shadow:inset 0 0 0 2px #fffaf0,inset 0 0 0 3px rgba(201,164,92,.45),0 3px 8px rgba(120,90,40,.15);
+}
+#screen-memory-battle .mb-reward-gem{display:flex;align-items:center;gap:4px;}
+#screen-memory-battle .mb-reward-gem img{width:clamp(26px,7.6vw,32px);height:clamp(26px,7.6vw,32px);object-fit:contain;filter:drop-shadow(0 0 4px rgba(140,120,255,.6));}
+#screen-memory-battle .mb-reward-gem.is-shinju img{filter:drop-shadow(0 0 5px rgba(150,220,140,.75));}
+#screen-memory-battle .mb-reward-label{margin-top:-3px;font:700 clamp(8.5px,2.5vw,10px)/1 'Noto Serif JP',serif;color:var(--mb-ink-soft);letter-spacing:.04em;white-space:nowrap;}
+#screen-memory-battle .mb-reward-gem b{font:600 clamp(18px,5.4vw,22px)/1 'Cinzel',serif;color:var(--mb-ink);}
+#screen-memory-battle .mb-reward > span{
+  width:100%;text-align:center;padding:4px 0;border-radius:999px;
+  font:700 clamp(9.5px,2.8vw,11px)/1 'Noto Serif JP',serif;letter-spacing:.08em;color:#fff;
+  background:linear-gradient(180deg,var(--mb-navy-2),var(--mb-navy));
+}
+#screen-memory-battle .mb-reward.is-done b{font:700 18px/1.1 'Noto Serif JP',serif;color:var(--mb-gold-deep);letter-spacing:.2em;padding:5px 0 3px;}
+#screen-memory-battle .mb-reward.is-done > span{background:linear-gradient(180deg,#c9a45c,#9a7432);}
+
+#screen-memory-battle .mb-card-body{display:grid;grid-template-columns:minmax(0,34%) minmax(0,1fr);gap:10px;margin-top:10px;align-items:stretch;}
+#screen-memory-battle .mb-portrait{
+  position:relative;margin:0;width:100%;min-width:0;align-self:stretch;min-height:190px;border-radius:6px;overflow:hidden;
+  /* build1766: 立ち絵は淡い水彩・透過なので、紙色＋薄紫の地に置く */
+  background:radial-gradient(ellipse at 50% 30%,#ffffff 0%,#f3eff6 55%,#e6e0ee 100%);
+  border:1.5px solid var(--mb-gold);
+  box-shadow:inset 0 0 0 3px rgba(255,248,230,.85),inset 0 0 0 4px rgba(201,164,92,.5),0 3px 8px rgba(40,30,80,.2);
+}
+#screen-memory-battle .mb-portrait img{position:absolute !important;inset:4px !important;width:calc(100% - 8px) !important;height:calc(100% - 8px) !important;max-width:none !important;object-fit:cover;object-position:50% 12%;border-radius:3px;}
+#screen-memory-battle .mb-rules{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;}
+#screen-memory-battle .mb-rule{
+  display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;column-gap:7px;row-gap:5px;align-items:center;
+  padding:7px 8px;border-radius:8px;
+  background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(249,246,239,.95));
+  border:1px solid rgba(201,164,92,.35);
+  box-shadow:0 1px 3px rgba(60,50,90,.06);
+}
+#screen-memory-battle .mb-rule-icon{
+  grid-row:1;grid-column:1;width:30px;height:30px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle,#4b4688 0%,#2a2858 75%);color:#f3dfa6;
+  border:1.5px solid var(--mb-gold);box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);
+}
+#screen-memory-battle .mb-rule-icon svg{width:16px;height:16px;}
+#screen-memory-battle .mb-rule-icon.is-element{background:radial-gradient(circle,#fff 0%,#efe9da 80%);}
+#screen-memory-battle .mb-rule-icon.is-element img{width:22px;height:22px;object-fit:contain;}
+#screen-memory-battle .mb-rule-name{
+  grid-row:1;grid-column:2;justify-self:start;
+  padding:5px 12px;border-radius:999px;
+  font:700 clamp(10px,3vw,12px)/1 'Noto Serif JP',serif;letter-spacing:.08em;color:#fff;white-space:nowrap;
+  background:linear-gradient(180deg,var(--mb-navy-2),var(--mb-navy));
+}
+#screen-memory-battle .mb-rule-text{
+  grid-row:2;grid-column:1 / span 2;
+  font:600 clamp(10.5px,3.1vw,12px)/1.45 'Noto Serif JP',serif;color:var(--mb-ink);letter-spacing:.01em;
+}
+/* 横幅に余裕がある端末では、モック同様に「アイコン＋名前｜説明」の横並び */
+@media (min-width:410px){
+  #screen-memory-battle .mb-rule{grid-template-columns:auto auto minmax(0,1fr);grid-template-rows:auto;}
+  #screen-memory-battle .mb-rule-name{grid-row:1;grid-column:2;}
+  #screen-memory-battle .mb-rule-text{grid-row:1;grid-column:3;padding-left:8px;border-left:1px solid rgba(201,164,92,.5);}
+}
+
+/* build1771: 今月踏破したカードをひと目で分かるように（金のリボン・金の縁・踏破の印） */
+#screen-memory-battle .mb-card.is-cleared{
+  border-color:#d4ae5c;
+  background:
+    radial-gradient(ellipse at 75% 15%,rgba(255,236,190,.55) 0%,rgba(255,236,190,0) 60%),
+    linear-gradient(180deg,#fffaf0,#f7eedb);
+  box-shadow:inset 0 0 0 4px #fffaf0,inset 0 0 0 5px rgba(212,174,92,.8),0 0 0 1px rgba(212,174,92,.35),0 6px 18px rgba(170,130,50,.22);
+}
+#screen-memory-battle .mb-card.is-cleared .mb-ribbon{background:linear-gradient(180deg,#f2d891,#b88a3c);box-shadow:inset 0 0 0 1px rgba(255,248,220,.7);}
+#screen-memory-battle .mb-card.is-cleared .mb-ribbon::before{border-color:rgba(255,250,232,.85);}
+#screen-memory-battle .mb-card.is-cleared .mb-ribbon b{color:#3a2a10;text-shadow:0 1px 0 rgba(255,255,255,.5);}
+#screen-memory-battle .mb-card.is-cleared .mb-portrait img{filter:saturate(.75) brightness(.97);}
+#screen-memory-battle .mb-seal{
+  position:absolute;right:6px;top:8px;z-index:2;width:66px;height:66px;border-radius:50%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  transform:rotate(-14deg);
+  background:radial-gradient(circle,rgba(255,250,236,.94) 0%,rgba(250,236,200,.94) 70%);
+  border:2px solid #b88a3c;
+  box-shadow:0 0 0 3px rgba(255,250,236,.85),0 0 0 4px rgba(184,138,60,.75),0 4px 10px rgba(110,80,20,.3);
+  animation:mbSealIn .5s cubic-bezier(.2,1.6,.4,1) both;
+}
+#screen-memory-battle .mb-seal b{font:900 20px/1 'Noto Serif JP',serif;color:#8a5a12;letter-spacing:.06em;}
+#screen-memory-battle .mb-seal small{font:700 8.5px/1 'Cinzel',serif;color:#9a7432;letter-spacing:.24em;margin-left:.24em;}
+@keyframes mbSealIn{0%{opacity:0;transform:rotate(-14deg) scale(1.6)}100%{opacity:1;transform:rotate(-14deg) scale(1)}}
+
+/* 準備中のスロット */
+#screen-memory-battle .mb-card.is-locked{
+  display:flex;align-items:flex-start;gap:12px;padding:0 14px 0 12px;min-height:66px;cursor:default;
+  background:repeating-linear-gradient(135deg,rgba(240,237,244,.95) 0 9px,rgba(232,228,238,.95) 9px 18px);
+  border-color:rgba(180,165,130,.55);
+  box-shadow:inset 0 0 0 3px rgba(255,255,255,.6),0 2px 6px rgba(50,40,90,.06);
+}
+#screen-memory-battle .mb-card.is-locked::before,#screen-memory-battle .mb-card.is-locked::after{display:none;}
+#screen-memory-battle .mb-card.is-locked .mb-ribbon{opacity:.55;}
+#screen-memory-battle .mb-card.is-locked .mb-names{align-items:flex-start;padding-top:12px;gap:4px;}
+#screen-memory-battle .mb-card.is-locked .mb-boss{font-size:18px;color:rgba(60,54,80,.6);}
+#screen-memory-battle .mb-card.is-locked .mb-sub{justify-content:flex-start;font-size:11px;}
+#screen-memory-battle .mb-soon{
+  align-self:center;flex:0 0 auto;padding:6px 12px;border-radius:999px;
+  font:700 11px/1 'Noto Serif JP',serif;letter-spacing:.08em;color:var(--mb-ink-soft);
+  border:1px dashed rgba(90,83,112,.5);background:rgba(255,255,255,.6);
+}
+
+@media(max-width:360px){
+  #screen-memory-battle .mb-hero{padding-left:10px;padding-right:10px;}
+  #screen-memory-battle .mb-month{padding:7px 7px;}
+  #screen-memory-battle .mb-card{padding-left:9px;padding-right:9px;}
+  #screen-memory-battle .mb-ribbon{width:52px;height:78px;}
+  #screen-memory-battle .mb-progress-pill{padding:0 16px 0 12px;}
+}
+
+/* ============================================================
+   巡行の左タブ「記憶決戦」（独立コンテンツの入口）
+   ============================================================ */
+#screen-ninmu.junkou-rebuilt .junkou-tabs .junkou-tab.memory-battle-tab{
+  background:
+    radial-gradient(circle at 80% 30%,rgba(255,232,190,.28) 0%,rgba(255,232,190,0) 50%),
+    linear-gradient(150deg,#1e1d38 0%,#3a3460 70%,#5a4a6e 100%) !important;
+  border-color:rgba(214,189,138,.9) !important;
+  outline-color:rgba(255,246,220,.55) !important;
+}
+#screen-ninmu.junkou-rebuilt .junkou-tabs .junkou-tab.memory-battle-tab .junkou-tab-icon{color:#ecd59a !important;text-shadow:0 0 6px rgba(255,230,160,.6) !important;}
+#screen-ninmu.junkou-rebuilt .junkou-tabs .junkou-tab.memory-battle-tab .ninmu-cat-jp{color:#fff8ea !important;text-shadow:0 1px 3px rgba(10,10,30,.85) !important;}
+#screen-ninmu.junkou-rebuilt .junkou-tabs .junkou-tab.memory-battle-tab .ninmu-cat-en{color:#e6d3a6 !important;text-shadow:0 1px 2px rgba(10,10,30,.8) !important;}
+#screen-ninmu.junkou-rebuilt .junkou-tabs .junkou-tab.memory-battle-tab::before,
+#screen-ninmu.junkou-rebuilt .junkou-tabs .junkou-tab.memory-battle-tab::after{color:rgba(236,213,154,.95) !important;}
+
+/* 巡行の左タブが5つになったため、縦に収まるよう高さを縮められるようにする（ストーリー等の既存タブも同じ比率で縮む） */
+html body #screen-ninmu.junkou-rebuilt .junkou-tabs{gap:7px !important;padding-bottom:46px !important;} /* build1774: 下のナビのぼかし帯に最後のタブがかからないよう、余白を広げる */
+html body #screen-ninmu.junkou-rebuilt .junkou-tabs .junkou-tab{
+  flex:1 1 clamp(70px, 13vh, 118px) !important;
+  min-height:50px !important;
+  max-height:132px !important;
+  gap:3px !important;
+}
+@media (max-height:700px){
+  html body #screen-ninmu.junkou-rebuilt .junkou-tabs .junkou-tab .ninmu-cat-en{font-size:8px !important;}
+}

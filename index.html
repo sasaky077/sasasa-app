@@ -418,6 +418,7 @@
 </style>
   <link rel="stylesheet" href="css/resonance_tower.css?v=1715-despair-title-fix">
   <link rel="stylesheet" href="css/phase_odyssey.css?v=1740-boss-add-ult">
+  <link rel="stylesheet" href="css/memory_battle.css?v=1774-tabs">
   <link rel="stylesheet" href="css/towa_encounter.css?v=1553-rates-visible">
   <link rel="stylesheet" href="css/towa_dark_gacha.css?v=1552">
   <link rel="stylesheet" href="css/towa_notice.css?v=1556">
@@ -3606,6 +3607,12 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
         <span class="ninmu-cat-jp">位相回遊</span>
         <span class="ninmu-cat-en">PHASE</span>
       </button>
+      <!-- build1757: 記憶決戦。タブを押すと専用画面を開く（月1リセット・8戦の持ち物検査） -->
+      <button type="button" class="ninmu-cat-item junkou-tab memory-battle-tab" id="ninmu-cat-memory-battle" onclick="openMemoryBattle()" aria-label="記憶決戦を開く">
+        <span class="junkou-tab-icon" aria-hidden="true">✦</span>
+        <span class="ninmu-cat-jp">記憶決戦</span>
+        <span class="ninmu-cat-en">MEMORY</span>
+      </button>
     </nav>
 
     <div class="ninmu-right junkou-panel-column">
@@ -4808,6 +4815,17 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 
 window.NOTICE_ITEMS = [
   {
+    id: 'notice_memory_battle_release_20261107',
+    date: '2026.11.07',
+    title: '記憶決戦を実装しました',
+    body: '新コンテンツ「記憶決戦」をリリースしました。\n強敵を倒して、神聖樹を育てましょう。',
+    link: {
+      label: '今すぐプレイする',
+      target: 'memory_battle'
+    },
+    hidden: false
+  },
+  {
     id: 'notice_test_rebalance_20261107',
     date: '2026.11.07',
     title: 'キャラクター性能変更',
@@ -5902,6 +5920,10 @@ window.NOTICE_ITEMS = [
   const NOTICE_LINK_TARGETS = {
     phase_odyssey: function () {
       if (typeof window.openPhaseOdyssey === 'function') window.openPhaseOdyssey();
+    },
+    // build1774: 記憶決戦（未解放ならCH03-04の案内が出る）
+    memory_battle: function () {
+      if (typeof window.openMemoryBattle === 'function') window.openMemoryBattle();
     },
     // build1735: ナイトシェード ピックアップ邂逅（gacha_09）を選んだ状態で邂逅画面を開く
     gacha_nightshade: function () {
@@ -11202,7 +11224,7 @@ startTitleBgm();
 
   function syncChapter03ContentLockUI(forceUnlocked){
     var unlocked = forceUnlocked === true || isChapter03ContentUnlocked();
-    ['ninmu-cat-daily','ninmu-cat-special','ninmu-cat-phase-odyssey','raid-home-entry','shinju-home-entry','score-attack-home-entry','resonance-tower-home-entry'].forEach(function(id){
+    ['ninmu-cat-daily','ninmu-cat-special','ninmu-cat-phase-odyssey','ninmu-cat-memory-battle','raid-home-entry','shinju-home-entry','score-attack-home-entry','resonance-tower-home-entry'].forEach(function(id){
       var el = document.getElementById(id);
       if(!el) return;
       el.classList.toggle('is-ch03-locked', !unlocked);
@@ -20579,7 +20601,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1756-cluster-cross"></script>
+<script src="js/shooting_event.js?v=1773-no-hints"></script>
 <script src="js/shooting_party_filter.js?v=1744-summon"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1711-raid-piece"></script>
@@ -20609,6 +20631,7 @@ window.returnToTitleScreen = function(){
 <script src="js/score_attack.js?v=1713-title-rank"></script>
 <script src="js/resonance_tower.js?v=1719-despair-tab"></script>
 <script src="js/phase_odyssey.js?v=1721-po-elite-marker"></script>
+<script src="js/memory_battle.js?v=1773-no-hints"></script>
 <script src="js/towa_encounter.js?v=1748-towa-flash"></script>
 <script src="js/towa_notice.js?v=1554"></script>
 <script src="js/towa_dark_gacha.js?v=1560-soul-flame"></script>

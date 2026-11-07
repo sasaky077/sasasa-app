@@ -2063,8 +2063,106 @@
     });
   }
 
+  // ============================================================
+  // build1757: 記憶決戦（MEMORY BATTLE）
+  //  過去の脅威を「記憶の掟」付きで再現するボス戦8つ。難易度は横並びで、掟に合うキャラがいるか（持ち物検査）。
+  //  掟はステージごとに組み合わせる（rules配列）。月1回リセット・当月初クリアで報酬（サーバー側）。
+  //  ステージID：shooting_memory_01 〜 shooting_memory_08（一覧には登録せず、番号から生成）。
+  // ============================================================
+  const MEMORY_BATTLE_STAGE_PREFIX = 'shooting_memory_';
+  const MEMORY_BATTLE_RULE_INFO = Object.freeze({
+    linked_torii: Object.freeze({ name: '連なる鳥居', desc: '鳥居は片方だけ壊れると、残った鳥居が数秒で修復する。' }),
+    judgment: Object.freeze({ name: '神罰', desc: '定期的にカウントダウン後、出撃中のキャラが即死する。' }),
+    guardians: Object.freeze({ name: '守護者', desc: '守護者を全て倒すまでボスに攻撃が通らない。しばらくすると再び現れる。' }),
+    hit_count: Object.freeze({ name: 'HIT数', desc: '守護者は威力に関係なく、攻撃を当てた回数（hitHp）で倒れる。' }),
+    drain_spiders: Object.freeze({ name: '吸血の子蜘蛛', desc: '張り付いた子蜘蛛が体力を吸い、ボスを回復させる。' }),
+    element_barrier: Object.freeze({ name: '属性結界', desc: 'ボスにも取り巻きにも結界。弱点属性の攻撃しか通らない（無属性は等倍で通る）。includeAdds:false で取り巻きは対象外。' }),
+  });
+  const MEMORY_BATTLE_STAGES = Object.freeze([
+    Object.freeze({
+      no: 1, bossKey: 'livia', bossName: 'リヴィア', title: '雨冠の記憶',
+      panelImage: 'images/rivia_panel.webp', // build1765: 記憶決戦の一覧カードの立ち絵
+      enemyId: SHOOTING_ENEMY_ID.REMNANT_03, element: 'aqua',
+      background: 'images/battle_bg_01.webp',
+      bossGaugeHps: Object.freeze([7500, 7500, 7500]),
+      timeLimitSeconds: 180,
+      rules: Object.freeze([
+        Object.freeze({ type: 'element_barrier' }),
+        // build1762: 青いカミラ×2が守る（リヴィアは全属性シールド）。2体倒すと8秒だけシールド解除→再出現。
+        //  カミラは全ての攻撃を1HIT=1ダメージで数える（HP100）。PHASEごとにリヴィアからの位置が変わる。
+        Object.freeze({
+          type: 'guardians', enemyId: SHOOTING_ENEMY_ID.MEMORY_BLUE_CAMILLA, count: 2, respawnMs: 8000,
+          hitHp: 100, spiderIntervalMs: 7000, spiderCount: 3, spiderMax: 6, // build1761: 頑丈→HIT数（80HITで撃破・威力は無関係）
+        }),
+      ]),
+      extra: Object.freeze({ towerLiviaBoss: true, bossVisualScale: 1.03 }),
+    }),
+    // build1764: 02 イノリ（光）。闇しか通らない＋連なる鳥居＋神罰。ナイトシェードが1人で両方の掟を越えられる。
+    Object.freeze({
+      no: 2, bossKey: 'inori', bossName: 'イノリ', title: '祈りの門の記憶',
+      panelImage: 'images/inori_panel.webp',
+      enemyId: SHOOTING_ENEMY_ID.INORI, element: 'light',
+      background: 'images/battle_bg_01.webp',
+      bossGaugeHps: Object.freeze([9000, 10000, 11000]),
+      timeLimitSeconds: 180,
+      rules: Object.freeze([
+        Object.freeze({ type: 'element_barrier' }),
+        Object.freeze({ type: 'linked_torii', reviveMs: 3000 }),
+        Object.freeze({ type: 'judgment', firstMs: 15000, intervalMs: 20000, warnMs: 3000 }),
+      ]),
+      extra: Object.freeze({ bossElement: 'light', enemyElement: 'light', inoriToriiHp: 1300 }),
+    }),
+  ]);
+  const MEMORY_BATTLE_SLOT_COUNT = 8;
+  const memoryBattleStageCache = new Map();
+  function getMemoryBattleStageDef(no) {
+    const n = Math.floor(Number(no) || 0);
+    return MEMORY_BATTLE_STAGES.find(d => d.no === n) || null;
+  }
+  function memoryBattleStageId(no) {
+    return MEMORY_BATTLE_STAGE_PREFIX + String(Math.max(1, Math.floor(Number(no) || 1))).padStart(2, '0');
+  }
+  function makeMemoryBattleStage(no) {
+    const def = getMemoryBattleStageDef(no);
+    if (!def) return null;
+    if (memoryBattleStageCache.has(def.no)) return memoryBattleStageCache.get(def.no);
+    // build1764: 属性結界は全ステージ共通のデフォルト（rulesに無ければ先頭に足す）
+    const rules = (def.rules || []).some(r => r && r.type === 'element_barrier')
+      ? (def.rules || [])
+      : [Object.freeze({ type: 'element_barrier' })].concat(def.rules || []);
+    const ruleProps = {};
+    rules.forEach(rule => {
+      // 属性結界：既存の弱点バリア（weaknessOnlyElement）をボスの属性で張る。弱点属性だけ通る。
+      if (rule.type === 'element_barrier') ruleProps.weaknessOnlyElement = rule.element || def.element;
+    });
+    const stage = Object.freeze({
+      ...(def.extra || {}),
+      ...ruleProps,
+      id: memoryBattleStageId(def.no),
+      chapter: 0,
+      stageNo: def.no,
+      type: 'boss',
+      element: def.element,
+      background: def.background || 'images/battle_bg_01.webp',
+      enemyIds: Object.freeze([def.enemyId]),
+      eventId: 'memory_battle',
+      eventTitle: '記憶決戦',
+      name: def.title,
+      difficultyLabel: 'MEMORY ' + String(def.no).padStart(2, '0') + ' / ' + def.bossName,
+      bossGaugeHps: def.bossGaugeHps,
+      timeLimitSeconds: def.timeLimitSeconds || 180,
+      mission: Object.freeze({ type: SHOOTING_MISSION_TYPE.BOSS_CLEAR, text: def.bossName + 'を撃破' }),
+      memoryBattle: Object.freeze({ no: def.no, bossKey: def.bossKey, bossName: def.bossName, rules }),
+      playable: true,
+    });
+    memoryBattleStageCache.set(def.no, stage);
+    return stage;
+  }
+
   function getShootingStage(stageId) {
     const id = String(stageId || '');
+    const memoryMatch = id.match(/^shooting_memory_(\d{2})$/);
+    if (memoryMatch) return makeMemoryBattleStage(Number(memoryMatch[1]));
     // build1643: 位相回遊は階層番号から動的に生成（SHOOTING_STAGES一覧には登録しない）。
     const phaseOdysseyMatch = id.match(/^shooting_phase_odyssey_(\d{1,4})(?:_([a-z]+))?$/);
     if (phaseOdysseyMatch) return makePhaseOdysseyStage(Number(phaseOdysseyMatch[1]), phaseOdysseyMatch[2] || '');
@@ -2111,5 +2209,11 @@
     getShootingStagePrimaryEnemy,
     getPhaseOdysseyScaling,
     PHASE_ODYSSEY_BOSSES,
+    // build1757: 記憶決戦
+    MEMORY_BATTLE_STAGES,
+    MEMORY_BATTLE_RULE_INFO,
+    MEMORY_BATTLE_SLOT_COUNT,
+    getMemoryBattleStageDef,
+    memoryBattleStageId,
   });
 })();

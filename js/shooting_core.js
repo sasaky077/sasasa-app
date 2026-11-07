@@ -1031,6 +1031,10 @@
   function isResonanceTowerStage() {
     return !!(selectedStage && selectedStage.eventId === 'resonance_tower');
   }
+  // build1757: 記憶決戦。出撃記録・報酬は window.MemoryBattle（専用RPC）が持つ。
+  function isMemoryBattleStage() {
+    return !!(selectedStage && selectedStage.eventId === 'memory_battle' && selectedStage.memoryBattle);
+  }
   // build1661: ステージごとの出撃人数上限（塔16〜19Fは単騎＝1）。未指定は通常どおり PARTY_SIZE。
   function getStagePartySize() {
     const n = Math.floor(Number(selectedStage && selectedStage.maxPartySize));
@@ -3200,6 +3204,14 @@
     if (!stageId) return null;
     if (isResonanceTowerStage()) return window.ResonanceTower.finishRun(!!win);
     if (isPhaseOdysseyStage()) return finishPhaseOdysseyFloor(!!win);
+    if (isMemoryBattleStage()) {
+      const api = window.MemoryBattle;
+      if (!api || typeof api.finishRun !== 'function') return null;
+      return api.finishRun(!!win, Number(selectedStage.stageNo || 0)).catch(err => {
+        console.warn('[memory battle] finish failed', err);
+        return null;
+      });
+    }
 
     // Local display remains responsive; cloud ranking is server-confirmed below.
     if (scoreValue > getLocalShootingHighScore(stageId)) writeLocalShootingHighScore(stageId, scoreValue);
@@ -9277,6 +9289,17 @@
     return weaknessBarrierElementCache;
   }
 
+  // build1758: 記憶決戦の属性結界は取り巻き（ボスの手下・雑魚）にも張る。
+  // 取り巻きの属性をボスと同じにして、同じ弱点属性でしか倒せないようにする（属性で縛る掟）。
+  function getMemoryBarrierAddElement() {
+    const mb = selectedStage && selectedStage.memoryBattle;
+    if (!mb || !Array.isArray(mb.rules)) return '';
+    const rule = mb.rules.find(r => r && r.type === 'element_barrier');
+    if (!rule || rule.includeAdds === false) return '';
+    const el = normalizeCombatElement(rule.element || selectedStage.weaknessOnlyElement || selectedStage.element);
+    return el && el !== 'neutral' ? el : '';
+  }
+
   function isStageWeaknessOnlyTarget(targetElement) {
     const target = normalizeCombatElement(targetElement);
     if (!target || target === 'neutral') return false;
@@ -9378,7 +9401,7 @@
       return 0;
     }
     // build1643: イノリの全属性バリア。張っている間は本体へのダメージを一切通さない（鳥居は対象外）。
-    if (!incoming && (isInoriBarrierUp() || isEclipseImmune()) && combatElementTarget && combatElementTarget === state.boss) return 0; // build1682: エクリプス本体は光状態以外は無敵
+    if (!incoming && (isInoriBarrierUp() || isEclipseImmune() || isMemoryGuardShieldUp()) && combatElementTarget && combatElementTarget === state.boss) return 0; // build1759: 記憶決戦の守護者が生きている間も無効 // build1682: エクリプス本体は光状態以外は無敵
 
     // build1023:
     // 無属性は全属性へ常に等倍で通る共通ルール。
@@ -9434,7 +9457,7 @@
     const ignoreStageImmunity = !!(options && options.ignoreStageImmunity);
 
     if (isChapter403FireWallStage() && state && !state.ch403BarrierBroken && normalizeCombatElement(targetElement) === 'fire' && normalizedAttackElement !== 'aqua' && !ignoreStageImmunity) return 'immune';
-    if ((isInoriBarrierUp() || isEclipseImmune()) && combatElementTarget && combatElementTarget === state.boss && !(options && options.incoming)) return 'immune';
+    if ((isInoriBarrierUp() || isEclipseImmune() || isMemoryGuardShieldUp()) && combatElementTarget && combatElementTarget === state.boss && !(options && options.incoming)) return 'immune';
 
     if (
       normalizedAttackElement !== 'neutral' &&
@@ -13888,6 +13911,7 @@
     // build1643: イノリの鳥居も通常敵として扱う（自機弾・ULTが当たる）。召喚は updateInoriMechanics が管理。
     if (isInoriBattle()) return true;
     if (isEclipseBattle()) return true; // build1681: エクリプスの天秤
+    if (getMemoryGuardianRule()) return true; // build1759: 記憶決戦の守護者
     return !!(cfg && Array.isArray(cfg.enemyIds) && cfg.enemyIds.length);
   }
 
@@ -13903,7 +13927,8 @@
     // Keep the HP bar just above the visible unit as uiScale changes.
     const hpOffsetY = 30 * scale + 9;
     // build1726: イノリの鳥居は上側だとボスHP表示に重なって読めないため、鳥居の足元へ出す
-    const hpY = enemy.inoriSide ? enemy.y + 30 * scale + 4 : enemy.y - hpOffsetY;
+    // build1762: 記憶決戦の守護者もボスの近く（画面上部のHP表示の下）にいるため、バーは足元へ出す
+    const hpY = (enemy.inoriSide || enemy.memoryGuardian) ? enemy.y + 30 * scale + 4 : enemy.y - hpOffsetY;
 
     enemy.hpEl.style.transform =
       `translate3d(${enemy.x}px,${hpY}px,0) translate(-50%,-50%)`;
@@ -13938,6 +13963,12 @@
     const max = Math.max(1, Number(enemy.hpMax || 1));
     const ratio = Math.max(0, Math.min(1, Number(enemy.hp || 0) / max));
     if (fill) fill.style.transform = `scaleX(${ratio})`;
+    // build1762: HIT数で倒す敵は残りHIT数をバーの横に出す
+    if (enemy.memoryHitHp) {
+      let label = enemy.hpEl.querySelector('.mg-hits');
+      if (!label) { label = document.createElement('b'); label.className = 'mg-hits'; enemy.hpEl.appendChild(label); }
+      label.textContent = String(Math.max(0, Math.ceil(Number(enemy.hp || 0))));
+    }
 
     enemy.hpEl.classList.toggle('low', ratio <= .30);
 
@@ -14046,7 +14077,7 @@
     }
 
     // 属性アイコンはHPバーと同じレイヤーの独立DOMとして配置する。
-    const enemyElement = normalizeCombatElement(
+    const enemyElement = getMemoryBarrierAddElement() || normalizeCombatElement(
       enemyDef.element ||
       selectedStage?.enemyElement ||
       selectedStage?.element
@@ -14381,12 +14412,12 @@
     }
     enemy.baseX = enemy.x; enemy.baseY = enemy.y;
   }
-  function spawnInoriTorii(now) {
+  function spawnInoriTorii(now, onlySides) {
     const arena = document.getElementById('shooting-arena');
     const def = getShootingEnemy(window.ShootingEnemies?.SHOOTING_ENEMY_ID?.INORI_TORII || 'shooting_inori_torii');
     if (!arena || !def) return;
     const w = arena.clientWidth;
-    [-1, 1].forEach(side => {
+    (Array.isArray(onlySides) ? onlySides : [-1, 1]).forEach(side => {
       const enemy = createNormalEnemy(def, now);
       if (!enemy) return;
       enemy.inoriSide = side;
@@ -14403,6 +14434,7 @@
       state.normalEnemies.push(enemy);
     });
     state.inori.toriiSpawned = true;
+    if (Array.isArray(onlySides)) return; // build1764: 片側だけの修復ではレーザー周期をリセットしない
     state.inori.nextLaserAt = now + 1600; // 出現直後は少し待ってから初撃
   }
   function syncInoriBarrierDom() {
@@ -14585,6 +14617,24 @@
       (inori.beams || []).forEach(b => b.el && b.el.remove());
       inori.beams = [];
       showFacelessBattleCut('BARRIER BREAK', '全属性バリア消失');
+    }
+    // build1764: 記憶決戦の掟「連なる鳥居」— 片方だけ壊すと、残った鳥居が reviveMs 後に修復してしまう
+    const link = getMemoryRule('linked_torii');
+    if (link && inori.barrierUp && inori.toriiSpawned && state.boss.hp > 0) {
+      if (alive.length === 1) {
+        const reviveMs = Math.max(1000, Number(link.reviveMs || 3000));
+        if (!inori.linkBrokenAt) {
+          inori.linkBrokenAt = now;
+          showMemoryGuardNotice('鳥居が共鳴している', false);
+        } else if (now >= inori.linkBrokenAt + reviveMs) {
+          inori.linkBrokenAt = 0;
+          const missing = Number(alive[0].inoriSide || 1) * -1;
+          spawnInoriTorii(now, [missing]);
+          showMemoryGuardNotice('鳥居が修復された', false);
+        }
+      } else {
+        inori.linkBrokenAt = 0;
+      }
     }
     // 7秒後、鳥居が2基とも復活してバリアが戻る
     if (!inori.barrierUp && now >= inori.reviveAt && state.boss.hp > 0) {
@@ -16399,6 +16449,7 @@
     state.normalEnemies.forEach(enemy => {
       if (!enemy || !enemy.el) return;
       if (enemy.camSpider) { updateCamillaSpider(enemy, dt, now); return; }
+      if (enemy.memoryGuardian) { updateMemoryGuardian(enemy, dt, now); return; }
       const def = enemy.def || {};
       // build1643: イノリの鳥居は常にイノリの左右・少し後方に付き従う（移動AI・射撃なし。レーザーは本体側で管理）
       if (def.behavior === 'verdant_seed_v1') { // build1663: 成長の実は動かない（熟し具合は updateVerdantSeeds）
@@ -16755,6 +16806,9 @@
 
   function damageNormalEnemy(enemy, amount, now, big, elementReaction = '', suppressVisual = false) {
     if (!enemy || enemy.hp <= 0) return 0;
+    // build1761: HIT数で倒す敵（記憶決戦の守護者）。威力に関係なく、通った攻撃1回＝1ダメージ。
+    // 属性結界などで0になった攻撃は数えない。連射の速いショットや多段ULTが有利。
+    if (enemy.memoryHitHp && Number(amount) > 0) amount = 1;
     const appliedDamage = Math.min(enemy.hp, Math.max(0, Number(amount || 0)));
     if (appliedDamage > 0 && Number(now||performance.now()) < Number(enemy.camillaWebRootUntil||0)) absorbCamillaWebDamage(appliedDamage, now);
     enemy.hp = Math.max(0, enemy.hp - appliedDamage);
@@ -25027,6 +25081,275 @@
     }
   }
 
+  // ============================================================
+  // build1759: 記憶決戦の掟「守護者」（＋頑丈・吸血の子蜘蛛）
+  //  守護者（青いカミラ等）が1体でも生きている間は、ボス本体にダメージが通らない。
+  //  全滅させると respawnMs 後に再出現。守護者はHIT数で倒す敵（hitHp回当てると倒れる。威力は無関係）。
+  //  守護者は子蜘蛛（カミラと同じ吸血・張り付き・交代で振り払い）を定期的に撒く。
+  // ============================================================
+  function getMemoryGuardianRule() {
+    const mb = selectedStage && selectedStage.memoryBattle;
+    if (!mb || !Array.isArray(mb.rules)) return null;
+    return mb.rules.find(r => r && r.type === 'guardians') || null;
+  }
+  function isMemoryGuardShieldUp() {
+    return !!(state && state.memoryGuard && state.memoryGuard.shieldUp && getMemoryGuardianRule());
+  }
+  function ensureMemoryGuardStyle() {
+    if (document.getElementById('memory-guard-style-v1759')) return;
+    const st = document.createElement('style');
+    st.id = 'memory-guard-style-v1759';
+    st.textContent = `
+      #shooting-event-root #${BOSS_ID}.memory-guarded{filter:drop-shadow(0 0 6px rgba(120,200,255,.95)) drop-shadow(0 0 16px rgba(70,150,255,.7)) saturate(.75) !important}
+      .shooting-mini-enemy.memory-guardian.mg-fallback{filter:hue-rotate(185deg) saturate(1.3) brightness(1.05)}
+      .shooting-mini-enemy.memory-guardian{filter:drop-shadow(0 0 5px rgba(110,190,255,.85))}
+      .shooting-mini-enemy-hp.mg-hp{width:64px;height:7px;opacity:1;border-color:rgba(40,90,160,.6);overflow:visible}
+      .shooting-mini-enemy-hp.mg-hp i{background:linear-gradient(90deg,#5aa6e8,#9fd4ff)}
+      .shooting-mini-enemy-hp.mg-hp .mg-hits{position:absolute;left:100%;top:50%;transform:translateY(-50%);margin-left:4px;
+        font:800 11px/1 sans-serif;color:#fff;text-shadow:0 0 3px #0a3a7a,0 0 2px #000,0 0 1px #000;white-space:nowrap}
+      .memory-guard-notice{position:absolute;left:50%;top:30%;z-index:40;transform:translateX(-50%);pointer-events:none;white-space:nowrap;
+        padding:6px 16px;border-radius:999px;font:800 13px/1.2 sans-serif;letter-spacing:.12em;color:#fff;
+        background:rgba(20,40,90,.72);border:1px solid rgba(160,210,255,.8);box-shadow:0 0 14px rgba(90,170,255,.6);
+        animation:memoryGuardNotice 1.8s ease-out forwards}
+      .memory-guard-notice.is-open{background:rgba(110,60,20,.72);border-color:rgba(255,215,150,.85);box-shadow:0 0 14px rgba(255,190,90,.6)}
+      @keyframes memoryGuardNotice{0%{opacity:0;transform:translateX(-50%) translateY(8px)}12%{opacity:1;transform:translateX(-50%)}78%{opacity:1}100%{opacity:0}}
+    `;
+    document.head.appendChild(st);
+  }
+  function showMemoryGuardNotice(text, open) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    ensureMemoryGuardStyle();
+    arena.querySelectorAll('.memory-guard-notice').forEach(e => e.remove());
+    const el = document.createElement('div');
+    el.className = 'memory-guard-notice' + (open ? ' is-open' : '');
+    el.textContent = text;
+    arena.appendChild(el);
+    setTimeout(() => el.remove(), 1900);
+  }
+
+  function spawnMemoryGuardians(rule, now, w, h) {
+    const def = getShootingEnemy(rule.enemyId);
+    if (!def) return;
+    const n = Math.max(1, Math.floor(Number(rule.count || 2)));
+    for (let i = 0; i < n; i++) {
+      const enemy = createNormalEnemy(def, now);
+      if (!enemy) continue;
+      enemy.memoryGuardian = true;
+      const hitHp = Math.max(0, Math.floor(Number(rule.hitHp || 0)));
+      if (hitHp > 0) {
+        enemy.memoryHitHp = true; enemy.hp = hitHp; enemy.hpMax = hitHp;
+        if (enemy.hpEl) enemy.hpEl.classList.add('mg-hp');
+        renderMiniEnemyHp(enemy, false);
+      }
+      enemy.guardIndex = i;
+      const off = getMemoryGuardOffset(i, w, h);
+      enemy.baseX = clamp(Number(state.boss.x) + off.x, 30, w - 30);
+      enemy.baseY = clamp(Number(state.boss.y) + off.y, 40, h * .62);
+      enemy.x = enemy.baseX; enemy.y = enemy.baseY - 30;
+      enemy.mgSeed = Math.random() * Math.PI * 2;
+      enemy.nextSpiderAt = now + 2200 + i * 1400;
+      enemy.el.classList.add('memory-guardian');
+      positionUnit(enemy.el, enemy.x, enemy.y);
+      positionMiniEnemyHp(enemy);
+      state.normalEnemies.push(enemy);
+      state.normalSpawned = Number(state.normalSpawned || 0) + 1;
+    }
+  }
+
+  // build1762: 守護者の配置（ボスからの相対位置）。PHASEで変わる。
+  //  build1763: リヴィアの後ろは使わない（画面上部のHP表示に隠れるため）。カミラが大きくなったので間隔も広げた。
+  //  PHASE1：左右 / PHASE2：左前・右 / PHASE3：正面に縦2列（前・さらに前）
+  function getMemoryGuardOffset(index, w, h) {
+    const phase = Math.max(1, Math.min(3, Number(state?.boss?.phase || 1)));
+    const side = Math.min(140, w * .36);
+    const front = Math.min(140, h * .19);
+    const table = {
+      1: [{ x: -side, y: 0 }, { x: side, y: 0 }],
+      2: [{ x: -side * .78, y: front }, { x: side, y: 10 }],
+      3: [{ x: 0, y: front }, { x: 0, y: front * 1.85 }],
+    }[phase];
+    return table[index % table.length];
+  }
+
+  // updateNormalEnemies から呼ばれる（移動だけ。射撃はしない）
+  function updateMemoryGuardian(enemy, dt, now) {
+    if (enemy.el && !enemy.el.classList.contains('mg-fallback') && /raid_enemy_03_battle/.test(enemy.el.getAttribute('src') || '')) {
+      enemy.el.classList.add('mg-fallback'); // 専用画像が無い間は通常カミラを青く染めて代用
+    }
+    const stunned = now < Math.max(Number(state.normalEnemyStunUntil || 0), Number(state.fullEnemyStopUntil || 0), Number(state.angeEnemyFreezeUntil || 0));
+    if (!stunned) {
+      // build1762: PHASEごとに決まったリヴィアからの相対位置へ付き従う（リヴィアが動けば一緒に動く）
+      const arena = document.getElementById('shooting-arena');
+      const w = Number(arena?.clientWidth || 390), h = Number(arena?.clientHeight || 700);
+      const off = getMemoryGuardOffset(Number(enemy.guardIndex || 0), w, h);
+      enemy.baseX = clamp(Number(state.boss.x) + off.x, 30, w - 30);
+      enemy.baseY = clamp(Number(state.boss.y) + off.y, 40, h * .62);
+      const t = now / 1000;
+      const tx = enemy.baseX + Math.sin(t * 0.9 + enemy.mgSeed) * 10;
+      const ty = enemy.baseY + Math.sin(t * 1.7 + enemy.mgSeed) * 6;
+      enemy.x += (tx - enemy.x) * Math.min(1, dt * 3);
+      enemy.y += (ty - enemy.y) * Math.min(1, dt * 3);
+    }
+    positionUnit(enemy.el, enemy.x, enemy.y);
+    positionMiniEnemyHp(enemy);
+  }
+
+  // ============================================================
+  // build1764: 記憶決戦の掟「神罰」— 定期的な即死必中
+  //  warnMs のカウントダウン後、出撃中のキャラが即死する（避けられない）。
+  //  カウントダウン中〜発動の瞬間に「時間停止」（ナイトシェード・アルノ等の時間停止ULT、全体停止ULT）
+  //  または「無敵」（アンジェ・ノエル・リンリンのハート等）が効いていれば退けられる。
+  // ============================================================
+  function getMemoryRule(type) {
+    const mb = selectedStage && selectedStage.memoryBattle;
+    if (!mb || !Array.isArray(mb.rules)) return null;
+    return mb.rules.find(r => r && r.type === type) || null;
+  }
+  function isMemoryJudgmentProtected(now) {
+    if (!state) return false;
+    if (state.arnoSlashActive) return true;                       // 時間停止ULT（ナイトシェード・アルノ等）
+    if (now < Number(state.fullEnemyStopUntil || 0)) return true; // 全体停止ULT
+    const member = getActiveMember();
+    return !!(member && now < Number(member.invincibleUntil || 0)); // 無敵
+  }
+  function ensureMemoryJudgmentStyle() {
+    if (document.getElementById('memory-judgment-style-v1764')) return;
+    const st = document.createElement('style');
+    st.id = 'memory-judgment-style-v1764';
+    st.textContent = `
+      .memory-judgment{position:absolute;inset:0;z-index:38;pointer-events:none;
+        background:radial-gradient(ellipse at 50% 45%,rgba(255,236,170,0) 35%,rgba(255,200,90,.22) 75%,rgba(160,90,10,.38) 100%);
+        animation:mjPulse .5s ease-in-out infinite alternate}
+      .memory-judgment .mj-box{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);text-align:center;color:#fff8e2;
+        text-shadow:0 0 10px rgba(255,190,70,.95),0 0 3px #5a3200,0 0 1px #000}
+      .memory-judgment .mj-title{font:900 30px/1 'Noto Serif JP',serif;letter-spacing:.3em;margin-left:.3em}
+      .memory-judgment .mj-count{font:900 56px/1 'Cinzel',serif;margin-top:6px}
+      .memory-judgment .mj-hint{margin-top:8px;font:800 11px/1.4 sans-serif;letter-spacing:.06em;color:#fff;
+        padding:4px 10px;border-radius:999px;background:rgba(60,30,0,.55)}
+      .memory-judgment.is-sealed{background:radial-gradient(ellipse at 50% 45%,rgba(160,200,255,0) 35%,rgba(120,160,255,.2) 80%,rgba(40,60,140,.32) 100%)}
+      .memory-judgment.is-sealed .mj-title{color:#e6f0ff;text-shadow:0 0 10px rgba(110,160,255,.95),0 0 2px #000}
+      @keyframes mjPulse{from{opacity:.75}to{opacity:1}}
+      .memory-judgment-flash{position:absolute;inset:0;z-index:39;pointer-events:none;background:#fff6d8;animation:mjFlash .55s ease-out forwards}
+      @keyframes mjFlash{0%{opacity:.95}100%{opacity:0}}
+    `;
+    document.head.appendChild(st);
+  }
+  function updateMemoryJudgment(now) {
+    const rule = getMemoryRule('judgment');
+    if (!rule || !state || !state.boss) return;
+    if (state.ended || state.finishing || !(state.boss.hp > 0)) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    ensureMemoryJudgmentStyle();
+    let mj = state.memoryJudge;
+    const lockUntil = getBossLockUntil(now);
+    if (!mj) mj = state.memoryJudge = { nextAt: now + Math.max(3000, Number(rule.firstMs || 15000)), warnUntil: 0, sealed: false, el: null };
+    // KO演出・PHASE切替中は止める（発動を後ろへずらす）
+    if (state.koTransition || state.phaseTransition || now < lockUntil) {
+      if (!mj.warnUntil && mj.nextAt < now + 500) mj.nextAt = now + 500;
+      if (mj.warnUntil && mj.warnUntil < now + 500) mj.warnUntil = now + 500;
+      return;
+    }
+    const warnMs = Math.max(1000, Number(rule.warnMs || 3000));
+    if (!mj.warnUntil) {
+      if (now < mj.nextAt) return;
+      mj.warnUntil = now + warnMs;
+      mj.sealed = false;
+      mj.el = document.createElement('div');
+      mj.el.className = 'memory-judgment';
+      mj.el.innerHTML = '<div class="mj-box"><div class="mj-title">神罰</div><div class="mj-count"></div><div class="mj-hint" hidden></div></div>'; // build1773: 攻略のヒントは出さない
+      arena.appendChild(mj.el);
+    }
+    // カウントダウン
+    if (!mj.sealed && isMemoryJudgmentProtected(now)) {
+      mj.sealed = true;
+      if (mj.el) {
+        mj.el.classList.add('is-sealed');
+        const hint = mj.el.querySelector('.mj-hint');
+        if (hint) { hint.hidden = false; hint.textContent = '神罰を封じた'; }
+      }
+    }
+    const left = Math.max(0, mj.warnUntil - now);
+    const cnt = mj.el && mj.el.querySelector('.mj-count');
+    if (cnt) cnt.textContent = String(Math.ceil(left / 1000));
+    if (left > 0) return;
+
+    // 発動
+    if (mj.el) mj.el.remove();
+    mj.el = null;
+    mj.warnUntil = 0;
+    mj.nextAt = now + Math.max(5000, Number(rule.intervalMs || 20000));
+    const flash = document.createElement('div');
+    flash.className = 'memory-judgment-flash';
+    arena.appendChild(flash);
+    setTimeout(() => flash.remove(), 600);
+    if (mj.sealed || isMemoryJudgmentProtected(now)) {
+      showMemoryGuardNotice('神罰を退けた', true);
+      return;
+    }
+    const member = getActiveMember();
+    if (!member || member.hp <= 0) return;
+    const name = String((getCurrentCharacter() || {}).name || '');
+    showDamageNumber(state.player.x, state.player.y, Math.max(1, Math.round(member.hp)), 'player', true, '');
+    member.hp = 0;
+    triggerPlayerHitScreenShake();
+    renderHud();
+    showMemoryGuardNotice(name ? `神罰 ― ${name}が倒れた` : '神罰', false);
+    beginPlayerDefeat();
+  }
+
+  function updateMemoryMechanics(now) {
+    updateMemoryJudgment(now);
+    const rule = getMemoryGuardianRule();
+    if (!rule || !state || !state.boss) return;
+    if (state.ended || state.finishing || state.koTransition || !(state.boss.hp > 0)) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    if (now < getBossLockUntil(now)) return; // 登場演出中
+    const w = arena.clientWidth || 390, h = arena.clientHeight || 700;
+    ensureMemoryGuardStyle();
+    let mg = state.memoryGuard;
+    if (!mg) {
+      mg = state.memoryGuard = { cm: { spiderQueue: null, activeId: state.activeCharacterId }, nextSpawnAt: now + 300, shieldUp: false, everSpawned: false };
+    }
+
+    // 子蜘蛛：1フレーム1匹ずつ生成、張り付き・吸血・交代での振り払いはカミラと共通
+    flushCamillaSpiderQueue(mg.cm, now);
+    updateCamillaDrain(now, mg.cm, arena);
+
+    const guards = state.normalEnemies.filter(e => e && e.memoryGuardian && e.hp > 0 && e.el);
+    if (!guards.length) {
+      if (mg.shieldUp) {
+        mg.shieldUp = false;
+        mg.nextSpawnAt = now + Math.max(3000, Number(rule.respawnMs || 8000));
+        showMemoryGuardNotice(`シールド解除！ ${Math.round(Math.max(3000, Number(rule.respawnMs || 8000)) / 1000)}秒間 攻撃が通る`, true);
+      }
+      if (now >= mg.nextSpawnAt) {
+        spawnMemoryGuardians(rule, now, w, h);
+        mg.shieldUp = true;
+        const gName = (getShootingEnemy(rule.enemyId) || {}).name || '守護者';
+        const bName = (selectedStage.memoryBattle && selectedStage.memoryBattle.bossName) || 'ボス';
+        showMemoryGuardNotice(mg.everSpawned ? `${gName}が再び現れた` : `${gName}が${bName}を守っている`, false);
+        mg.everSpawned = true;
+      }
+    } else {
+      mg.shieldUp = true;
+      const spiderAlive = state.normalEnemies.filter(e => e && e.camSpider && e.hp > 0 && e.el).length;
+      const maxSp = Math.max(0, Math.floor(Number(rule.spiderMax || 6)));
+      for (const g of guards) {
+        if (now < Number(g.nextSpiderAt || 0)) continue;
+        g.nextSpiderAt = now + Math.max(1500, Number(rule.spiderIntervalMs || 7000));
+        const room = maxSp - spiderAlive - (mg.cm.spiderQueue ? mg.cm.spiderQueue.total - mg.cm.spiderQueue.next : 0);
+        if (room <= 0 || mg.cm.spiderQueue) continue;
+        mg.cm.spiderQueue = { total: Math.min(room, Math.max(1, Math.floor(Number(rule.spiderCount || 3)))), next: 0, bx: g.x, by: g.y };
+        break; // 同じフレームに2体分は積まない
+      }
+    }
+    const bossEl = document.getElementById(BOSS_ID);
+    if (bossEl) bossEl.classList.toggle('memory-guarded', !!mg.shieldUp);
+  }
+
   function updateShienMechanics(now) {
     if (!isShienBattle()) return;
     const sh=ensureShienState();
@@ -25821,6 +26144,8 @@
     updateShienMechanics(ts);
     // build1750: テスト3段階目（降機）
     updateTestBodyMechanics(ts);
+    // build1759: 記憶決戦の守護者・子蜘蛛
+    updateMemoryMechanics(ts);
     // build1592 RAID カミラ: 浮遊弾 / 巣レーザー / 捕縛罠 / 吸血子蜘蛛
     updateCamillaMechanics(ts);
     // build1630: リズム弾幕（譜面・仮ドラム・判定）
@@ -27745,7 +28070,7 @@
   // v163: first-clear gem reward must be tied to a server-issued shooting run.
   // A stage_id alone is no longer enough to claim gems from the console.
   async function beginSecureShootingRun() {
-    if (!state || !state.stageId || isDailyQuestStage() || isResonanceTowerStage() || isPhaseOdysseyStage()) return null;
+    if (!state || !state.stageId || isDailyQuestStage() || isResonanceTowerStage() || isPhaseOdysseyStage() || isMemoryBattleStage()) return null;
     if (state.secureRunToken) return state.secureRunToken;
     if (state.secureRunPromise) return state.secureRunPromise;
 
@@ -27872,7 +28197,7 @@
   }
 
   function buildAndGrantShootingClearRewards() {
-    if (isResonanceTowerStage() || isPhaseOdysseyStage()) return [];
+    if (isResonanceTowerStage() || isPhaseOdysseyStage() || isMemoryBattleStage()) return [];
     if (!state || state.clearRewardsGranted) return Array.isArray(state && state.clearRewards) ? state.clearRewards : [];
     state.clearRewardsGranted = true;
 
@@ -28301,6 +28626,9 @@
     if (!stage) return '';
     if (stage.eventId === 'phase_odyssey') {
       return `${String(stage.eventTitle || '位相回遊').trim()} ｜ FLOOR ${Math.max(1, Math.floor(Number(stage.stageNo || 1)))}`;
+    }
+    if (stage.eventId === 'memory_battle') {
+      return `記憶決戦 ｜ MEMORY ${String(Math.max(1, Math.floor(Number(stage.stageNo || 1)))).padStart(2, '0')}  ${String(stage.name || '').trim()}`;
     }
     if (stage.eventId === 'resonance_tower') {
       const floor = Math.max(0, Math.floor(Number(stage.stageNo || 0)));
@@ -30398,6 +30726,11 @@
       phaseOdysseyBattleCommitted = true;
     }
 
+    // build1757: 記憶決戦は出撃時に専用の出撃記録（トークン）を発行。報酬の確定は finishRun で。
+    if (isMemoryBattleStage() && window.MemoryBattle && typeof window.MemoryBattle.beginRun === 'function') {
+      void window.MemoryBattle.beginRun(Number(selectedStage.stageNo || 0));
+    }
+
     // 使用キャラランキング用。編成された各キャラを1出撃として記録。
     // 集計保存はゲーム開始をブロックしない。
     void recordShootingCharacterUsage(selectedPartyIds, selectedStage?.id || '');
@@ -30965,7 +31298,7 @@
     // 先に退避してからクリアし、古い戻り先が次回起動へ残らないようにする。
     const returnContext = window.__shootingReturnContext || null;
     window.__shootingReturnContext = null;
-    if (returnContext && (returnContext.type === 'resonanceTower' || returnContext.type === 'phaseOdyssey') && resultWasVisible) {
+    if (returnContext && (returnContext.type === 'resonanceTower' || returnContext.type === 'phaseOdyssey' || returnContext.type === 'memoryBattle') && resultWasVisible) {
       try { await (state?.secureFinalizePromise || Promise.resolve()); } catch (err) { console.warn('[tower] finalization not confirmed',err); }
     }
 
@@ -31107,6 +31440,11 @@
     }
     if (returnContext && returnContext.type === 'phaseOdyssey') {
       if (typeof window.openPhaseOdyssey==='function') window.openPhaseOdyssey();
+      clearShootingResultExitFade();
+      return;
+    }
+    if (returnContext && returnContext.type === 'memoryBattle') {
+      if (typeof window.openMemoryBattle==='function') window.openMemoryBattle();
       clearShootingResultExitFade();
       return;
     }
