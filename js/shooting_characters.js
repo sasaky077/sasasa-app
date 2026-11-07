@@ -2897,7 +2897,7 @@
   SHOOTING_CHARACTERS[CHARACTER_ID.RUIRUI] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON,
     id: CHARACTER_ID.RUIRUI, effectKey:'ruirui',
-    label:'CLUSTER(＋) / AQUA', description:'水属性のCLUSTER(＋)。着弾すると十字の4方向へ分裂弾を放ち、分裂弾は敵を貫通して画面端まで届く。ULTは周囲に円環を展開し、敵弾を減速させる。',
+    label:'CLUSTER(＋) / AQUA', description:'水属性のCLUSTER(＋)。着弾すると左右と上の3方向へ分裂弾を放ち、分裂弾は敵を貫通して画面端まで届く。ULTは周囲に円環を展開し、敵弾を減速させる。',
     // build1710: 分裂弾は貫通・画面端まで。威力 親0.27→0.32／分裂50%→80%
     shotType:'cluster', clusterSize:'M', clusterSplitCount:4, clusterFragmentDamageRate:0.8, clusterPattern:'cross',
     shotCount:1, fireRate:550, bulletSpeed:650, shotPowerRate:0.32,

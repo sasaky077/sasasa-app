@@ -8416,7 +8416,8 @@
 
   function getBombSplitAngles(count, pattern) {
     const n = count === 6 || count === 8 ? count : 4;
-    if (n === 4 && pattern === 'cross') return [0, 90, 180, 270]; // build1710: CLUSTER(＋) 十字
+    // build1710: CLUSTER(＋) 十字 → build1756: 手前（下）へ戻る分裂弾は敵弾と見間違えるため廃止。左右＋上の3方向。
+    if (n === 4 && pattern === 'cross') return [0, 180, 270];
     if (n === 4) return [45, 135, 225, 315]; // X字
     if (n === 6) return [-90, -30, 30, 90, 150, 210];
     return Array.from({ length: 8 }, (_, i) => i * 45);
