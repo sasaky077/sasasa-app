@@ -3,7 +3,8 @@
 // remain exclusively owned by shooting_core.js / ResonanceTower.
 (function(){
   'use strict';
-  const state = { query:'', elements:[], rarities:[], shotTypes:[], sort:'id' };
+  const state = { query:'', elements:[], rarities:[], shotTypes:[], pierce:'all', sort:'id' }; // build1741: pierce='all'|'yes'|'no'
+  const pierces=id=>{const SC=window.ShootingCharacters;return !!(SC&&typeof SC.isShootingCharacterPiercing==='function'&&SC.isShootingCharacterPiercing(id));};
   const elementOrder = ['fire','aqua','wood','light','dark'];
   const elementLabels = {fire:'FIRE',aqua:'AQUA',wood:'WOOD',light:'LIGHT',dark:'DARK'};
   const shotOrder = ['parallel','homing','cluster','bomb','spread','laser','piercing','orbit','charge','lightning','strike','conjure','trap'];
@@ -22,7 +23,7 @@
   function shot(value){const s=String(value||'').toLowerCase();return shotAliases[s]||s;}
   function getData(id){return window.ShootingCharacters?.SHOOTING_CHARACTERS?.[id]||{};}
   function currentRoster(){return document.querySelector('#shooting-character-select .shooting-party-roster');}
-  function isActive(){return state.query.trim()||state.elements.length||state.rarities.length||state.shotTypes.length||state.sort!=='id';}
+  function isActive(){return state.query.trim()||state.elements.length||state.rarities.length||state.shotTypes.length||state.pierce!=='all'||state.sort!=='id';}
   function ownedLevel(id){
     const data=window.ShootingCharacters?.getOwnedShootingInstance?.(id);
     return Math.max(0,Number(data?.characterLevel??data?.character_level??0)||0);
@@ -42,7 +43,8 @@
       const ok=(!query||normalize(c.name||'').includes(query))&&
         (!state.elements.length||state.elements.includes(elem(c.element)))&&
         (!state.rarities.length||state.rarities.includes(rarity(c.rarity)))&&
-        (!state.shotTypes.length||state.shotTypes.includes(shot(c.shotType||c.mainShot?.type)));
+        (!state.shotTypes.length||state.shotTypes.includes(shot(c.shotType||c.mainShot?.type)))&&
+        (state.pierce==='all'||(state.pierce==='yes')===pierces(id));
       wrap.classList.toggle('zpf-filtered-out',!ok);
       wrap.setAttribute('aria-hidden',ok?'false':'true');
       if(ok)visible++;
@@ -117,6 +119,7 @@
     const attrBottom=['light','dark'].map(k=>chip('elements',k,elementLabels[k],'images/type_'+k+'.webp')).join('');
     const rarities=['all','sr','r'].map(k=>chip('rarities',k,k==='all'?'すべて':k.toUpperCase())).join('');
     const shots=['all',...shotOrder].map(k=>chip('shotTypes',k,k==='all'?'すべて':shotLabels[k],k==='all'?'':'images/shot_'+(k==='lightning'?'plasma':k)+'.webp')).join('');
+    const pierceChips=['all','yes','no'].map(k=>`<button type="button" class="zcf-choice${state.pierce===k?' is-selected':''}" data-pierce="${k}" aria-pressed="${state.pierce===k}"><span class="zcf-choice-label">${{all:'すべて',yes:'貫通あり',no:'貫通なし'}[k]}</span></button>`).join('');
     const sorts=['id','element','rarity','level'].map(k=>{
       const label={id:'ID',element:'属性',rarity:'レアリティ',level:'レベル'}[k];
       return `<button type="button" class="zcf-choice${state.sort===k?' is-selected':''}" data-sort="${k}" aria-pressed="${state.sort===k}"><span class="zcf-choice-label">${label}</span></button>`;
@@ -128,6 +131,7 @@
         <section class="zcf-section"><h3 class="zcf-section-title">属性</h3><div class="zcf-grid zcf-grid-attr-top">${attrTop}</div><div class="zcf-grid zcf-grid-attr-bottom">${attrBottom}</div></section>
         <section class="zcf-section"><h3 class="zcf-section-title">レアリティ</h3><div class="zcf-grid zcf-grid-rarity">${rarities}</div></section>
         <section class="zcf-section"><h3 class="zcf-section-title">ショットタイプ</h3><div class="zcf-grid zcf-grid-shots">${shots}</div></section>
+        <section class="zcf-section"><h3 class="zcf-section-title">貫通</h3><div class="zcf-grid zcf-grid-pierce">${pierceChips}</div></section>
         <section class="zcf-section"><h3 class="zcf-section-title">並び順</h3><div class="zcf-grid zcf-grid-sort">${sorts}</div></section>
       </div><footer class="zcf-footer"><button type="button" class="zcf-footer-button zcf-reset" data-reset>リセット</button><button type="button" class="zcf-footer-button zcf-apply" data-close>決定</button></footer>
     </section>`;
@@ -136,7 +140,7 @@
       if(event.target===layer||target?.hasAttribute('data-close')){closeDialog();return;}
       if(!target)return;
       if(target.hasAttribute('data-reset')){
-        state.elements=[];state.rarities=[];state.shotTypes=[];state.sort='id';state.query='';
+        state.elements=[];state.rarities=[];state.shotTypes=[];state.pierce='all';state.sort='id';state.query='';
         apply();closeDialog();syncToolbar();openDialog();return;
       }
       const group=target.dataset.group,key=target.dataset.key;
@@ -146,12 +150,14 @@
         else if(values.includes(key))state[group]=values.filter(v=>v!==key);
         else state[group]=values.concat(key);
       }else if(target.dataset.sort)state.sort=target.dataset.sort;
+      else if(target.dataset.pierce){const v=target.dataset.pierce;state.pierce=(v!=='all'&&state.pierce===v)?'all':v;}
       else return;
       layer.querySelectorAll('[data-group]').forEach(b=>{
         const active=b.dataset.key==='all'?!state[b.dataset.group].length:state[b.dataset.group].includes(b.dataset.key);
         b.classList.toggle('is-selected',active);b.setAttribute('aria-pressed',String(active));
       });
       layer.querySelectorAll('[data-sort]').forEach(b=>{const active=b.dataset.sort===state.sort;b.classList.toggle('is-selected',active);b.setAttribute('aria-pressed',String(active));});
+      layer.querySelectorAll('[data-pierce]').forEach(b=>{const active=b.dataset.pierce===state.pierce;b.classList.toggle('is-selected',active);b.setAttribute('aria-pressed',String(active));});
       syncToolbar();
     });
     document.body.appendChild(layer);
@@ -161,7 +167,7 @@
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('shooting-party-filter-layer')){e.stopPropagation();closeDialog();}});
   function reset(){
     closeDialog();
-    state.query='';state.elements=[];state.rarities=[];state.shotTypes=[];state.sort='id';
+    state.query='';state.elements=[];state.rarities=[];state.shotTypes=[];state.pierce='all';state.sort='id';
     const input=document.querySelector('#zpf-filter-toolbar input');
     if(input&&document.activeElement===input)input.blur();
     syncToolbar();

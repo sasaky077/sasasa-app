@@ -30612,6 +30612,32 @@
     }, 700);
   }
 
+  // ============================================================
+  // build1740: BOSS戦の随伴敵（イノリの鳥居・カミラの子蜘蛛・ステージ設定の随伴敵）にもULTを当てる。
+  //  これまで多くのULTは「通常戦＝通常敵／BOSS戦＝BOSSのみ」で、BOSS戦の随伴敵は自機弾でしか削れなかった。
+  //  ※エクリプスの天秤は除外（光／闇どちらを壊すかが攻略の要。全体ULTで両方壊れると不利な闇状態になる）。
+  // ============================================================
+  function getBossAddUltTargets() {
+    if (!state || isNormalBattle() || !hasBossAdds()) return [];
+    return (state.normalEnemies || []).filter(enemy => enemy && enemy.el && enemy.hp > 0 && !enemy.eclipseScale);
+  }
+
+  function damageBossAddsByUlt(targets, amount, character, now, big, maxImpactFx = 0) {
+    if (!state || !Array.isArray(targets) || !targets.length) return 0;
+    const attackElement = getUltAttackElement(character || getCurrentCharacter());
+    let hits = 0;
+    targets.forEach((enemy, index) => {
+      if (!enemy || !enemy.el || enemy.hp <= 0) return;
+      const targetElement = getCombatTargetElement(enemy);
+      const finalDamage = applyElementDamage(amount, attackElement, targetElement);
+      damageNormalEnemy(enemy, finalDamage, now, !!big,
+        getElementDamageReaction(attackElement, targetElement), maxImpactFx > 0 && index >= maxImpactFx);
+      hits++;
+    });
+    state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
+    return hits;
+  }
+
   function applyUltDamage(amount, big, character, maxImpactFx = 0) {
     if (!state || state.ended || state.finishing) return;
     const c = character || getCurrentCharacter();
@@ -30631,6 +30657,8 @@
       renderHud();
       return;
     }
+    damageBossAddsByUlt(getBossAddUltTargets(), amount, c, performance.now(), big, maxImpactFx);
+    if (!state.boss || state.boss.hp <= 0) { renderHud(); return; }
     const targetElement = getCombatTargetElement(state.boss);
     const finalDamage = applyElementDamage(amount, attackElement, targetElement);
     const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(finalDamage || 0)));
@@ -30658,10 +30686,9 @@
         .filter(enemy => enemy && enemy.el && enemy.hp > 0)
         .map(enemy => ({ x: Number(enemy.x || 0), y: Number(enemy.y || 0) }));
     }
-    if (state.boss && state.boss.hp > 0) {
-      return [{ x: Number(state.boss.x || 0), y: Number(state.boss.y || 0) }];
-    }
-    return [];
+    const points = getBossAddUltTargets().map(enemy => ({ x: Number(enemy.x || 0), y: Number(enemy.y || 0) }));
+    if (state.boss && state.boss.hp > 0) points.push({ x: Number(state.boss.x || 0), y: Number(state.boss.y || 0) });
+    return points;
   }
 
   function spawnEriUltFeedback(kind, points) {
@@ -31600,10 +31627,9 @@
         .filter(enemy => enemy && enemy.el && enemy.hp > 0)
         .map(enemy => ({ ...enemy, isBoss: false }));
     }
-    if (state.boss && state.boss.hp > 0) {
-      return [{ uid: 'boss', x: state.boss.x, y: state.boss.y, isBoss: true }];
-    }
-    return [];
+    const list = getBossAddUltTargets().map(enemy => ({ ...enemy, isBoss: false })); // build1740
+    if (state.boss && state.boss.hp > 0) list.push({ uid: 'boss', x: state.boss.x, y: state.boss.y, isBoss: true });
+    return list;
   }
 
   function syncArnoAuraVisuals(now) {
@@ -31657,6 +31683,7 @@
       return;
     }
 
+    damageBossAddsByUlt(getBossAddUltTargets(), damage, c, now, false); // build1740
     if (!state.boss || state.boss.hp <= 0) return;
     const targetElement = getCombatTargetElement(state.boss);
     const finalDamage = applyElementDamage(damage, getUltAttackElement(c), targetElement);
@@ -32790,6 +32817,11 @@
       return;
     }
 
+    // build1740: BOSS戦の随伴敵（鳥居など）も、レーザー正面にいれば攻撃。
+    damageBossAddsByUlt(getBossAddUltTargets().filter(enemy =>
+      Number(enemy.y || 0) < py && Math.abs(Number(enemy.x || 0) - px) <= half + 28
+    ), damage, c, now, false);
+
     // SPECIAL EVENTのHP付きオブジェクトも、レーザー正面にいれば攻撃。
     if (isFacelessStage()) {
       (state.facelessObjects || []).forEach(obj => {
@@ -33577,6 +33609,11 @@
         list.push({ kind:'faceless', ref:obj, x:Number(obj.x || 0), y:Number(obj.y || 0) });
       });
     }
+
+    // build1740: BOSS戦の随伴敵（鳥居など）
+    getBossAddUltTargets().forEach(enemy => {
+      list.push({ kind:'normal', ref:enemy, x:Number(enemy.x || 0), y:Number(enemy.y || 0) });
+    });
 
     if (state.boss && state.boss.hp > 0) {
       list.push({ kind:'boss', ref:state.boss, x:Number(state.boss.x || 0), y:Number(state.boss.y || 0) });
@@ -34579,7 +34616,7 @@
     showUltCut(c.ultName || 'アブソリュート・レーテー', c.effectKey);
     const targets = isNormalBattle()
       ? (state.normalEnemies || []).filter(e => e && e.hp > 0)
-      : (state.boss && state.boss.hp > 0 ? [state.boss] : []);
+      : [...getBossAddUltTargets(), ...(state.boss && state.boss.hp > 0 ? [state.boss] : [])]; // build1740
     // バリアを先に消すことで、今回の全体攻撃にもIMMUNEが適用されない。
     targets.forEach(enemy => {
       if (!enemy.weaknessBarrierEl && !enemy.weaknessBarrier) return;

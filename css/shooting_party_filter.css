@@ -380,3 +380,8 @@ html body #shooting-event-root #shooting-character-select.zpf-screen .zpf-roster
     max-width:18px !important;max-height:18px !important;
   }
 }
+
+/* build1741: 貫通（すべて／貫通あり／貫通なし）。パーティ編成・神聖樹の加護キャラ選択で共通。 */
+:is(#shooting-party-filter-layer,#shinju-filter-layer) .zcf-grid-pierce{grid-template-columns:repeat(3,minmax(0,1fr));}
+:is(#shooting-party-filter-layer,#shinju-filter-layer) .zcf-grid-pierce .zcf-choice{min-height:37px !important;font-size:clamp(10px,2.45vw,14px) !important;}
+@media (max-height:700px){:is(#shooting-party-filter-layer,#shinju-filter-layer) .zcf-grid-pierce .zcf-choice{min-height:33px !important;}}

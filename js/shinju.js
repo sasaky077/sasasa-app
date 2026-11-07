@@ -851,7 +851,8 @@
   //  パーティ編成（shooting_party_filter.js）と同じ見た目・同じ選択肢。表示だけの処理で、
   //  加護の設定・コスト・使用中判定には触らない。ボタンは並べ替え（移動）するだけで作り直さない。
   // ============================================================
-  const pickerFilter = { query:'', elements:[], rarities:[], shotTypes:[], sort:'id' };
+  const pickerFilter = { query:'', elements:[], rarities:[], shotTypes:[], pierce:'all', sort:'id' }; // build1741: pierce='all'|'yes'|'no'
+  function pfPierces(id) { const m = getCharacterModule(); return !!(m && typeof m.isShootingCharacterPiercing === 'function' && m.isShootingCharacterPiercing(id)); }
   const PF_ELEMENTS = ['fire','aqua','wood','light','dark'];
   const PF_ELEMENT_LABELS = { fire:'FIRE', aqua:'AQUA', wood:'WOOD', light:'LIGHT', dark:'DARK' };
   const PF_SHOTS = ['parallel','homing','cluster','bomb','spread','laser','piercing','orbit','charge','lightning','strike','conjure','trap'];
@@ -872,7 +873,7 @@
     return Math.max(0, Number(d && (d.characterLevel ?? d.character_level)) || 0);
   }
   function pfRank(id) { const m = getCharacterModule(); return (m && typeof m.getShootingBaseOrderRank === 'function') ? m.getShootingBaseOrderRank(id) : id; }
-  function pfActive() { return !!(pickerFilter.query.trim() || pickerFilter.elements.length || pickerFilter.rarities.length || pickerFilter.shotTypes.length || pickerFilter.sort !== 'id'); }
+  function pfActive() { return !!(pickerFilter.query.trim() || pickerFilter.elements.length || pickerFilter.rarities.length || pickerFilter.shotTypes.length || pickerFilter.pierce !== 'all' || pickerFilter.sort !== 'id'); }
 
   function applyPickerFilter() {
     const grid = document.getElementById('shinju-blessing-picker-grid');
@@ -886,7 +887,8 @@
       const ok = (!q || pfNormalize(c.name || '').includes(q)) &&
         (!pickerFilter.elements.length || pickerFilter.elements.includes(pfElem(c.element))) &&
         (!pickerFilter.rarities.length || pickerFilter.rarities.includes(pfRarity(c.rarity))) &&
-        (!pickerFilter.shotTypes.length || pickerFilter.shotTypes.includes(pfShot(c.shotType || (c.mainShot && c.mainShot.type))));
+        (!pickerFilter.shotTypes.length || pickerFilter.shotTypes.includes(pfShot(c.shotType || (c.mainShot && c.mainShot.type)))) &&
+        (pickerFilter.pierce === 'all' || (pickerFilter.pierce === 'yes') === pfPierces(id));
       btn.classList.toggle('zpf-filtered-out', !ok);
       btn.setAttribute('aria-hidden', ok ? 'false' : 'true');
       if (ok) visible++;
@@ -923,7 +925,7 @@
   }
   function resetPickerFilter() {
     closePickerFilterDialog();
-    pickerFilter.query = ''; pickerFilter.elements = []; pickerFilter.rarities = []; pickerFilter.shotTypes = []; pickerFilter.sort = 'id';
+    pickerFilter.query = ''; pickerFilter.elements = []; pickerFilter.rarities = []; pickerFilter.shotTypes = []; pickerFilter.pierce = 'all'; pickerFilter.sort = 'id';
     syncPickerToolbar();
   }
   function pfChip(group, key, label, img) {
@@ -942,6 +944,7 @@
     const attrBottom = ['light','dark'].map(k => pfChip('elements', k, PF_ELEMENT_LABELS[k], 'images/type_' + k + '.webp')).join('');
     const rarities = ['all','sr','r'].map(k => pfChip('rarities', k, k === 'all' ? 'すべて' : k.toUpperCase())).join('');
     const shots = ['all', ...PF_SHOTS].map(k => pfChip('shotTypes', k, k === 'all' ? 'すべて' : PF_SHOT_LABELS[k], k === 'all' ? '' : 'images/shot_' + (k === 'lightning' ? 'plasma' : k) + '.webp')).join('');
+    const pierceChips = ['all','yes','no'].map(k => `<button type="button" class="zcf-choice${pickerFilter.pierce === k ? ' is-selected' : ''}" data-pierce="${k}" aria-pressed="${pickerFilter.pierce === k}"><span class="zcf-choice-label">${{ all:'すべて', yes:'貫通あり', no:'貫通なし' }[k]}</span></button>`).join('');
     const sorts = ['id','element','rarity','level'].map(k => {
       const label = { id:'ID', element:'属性', rarity:'レアリティ', level:'レベル' }[k];
       return `<button type="button" class="zcf-choice${pickerFilter.sort === k ? ' is-selected' : ''}" data-sort="${k}" aria-pressed="${pickerFilter.sort === k}"><span class="zcf-choice-label">${label}</span></button>`;
@@ -953,6 +956,7 @@
         <section class="zcf-section"><h3 class="zcf-section-title">属性</h3><div class="zcf-grid zcf-grid-attr-top">${attrTop}</div><div class="zcf-grid zcf-grid-attr-bottom">${attrBottom}</div></section>
         <section class="zcf-section"><h3 class="zcf-section-title">レアリティ</h3><div class="zcf-grid zcf-grid-rarity">${rarities}</div></section>
         <section class="zcf-section"><h3 class="zcf-section-title">ショットタイプ</h3><div class="zcf-grid zcf-grid-shots">${shots}</div></section>
+        <section class="zcf-section"><h3 class="zcf-section-title">貫通</h3><div class="zcf-grid zcf-grid-pierce">${pierceChips}</div></section>
         <section class="zcf-section"><h3 class="zcf-section-title">並び順</h3><div class="zcf-grid zcf-grid-sort">${sorts}</div></section>
       </div><footer class="zcf-footer"><button type="button" class="zcf-footer-button zcf-reset" data-reset>リセット</button><button type="button" class="zcf-footer-button zcf-apply" data-close>決定</button></footer>
     </section>`;
@@ -961,7 +965,7 @@
       if (event.target === layer || (target && target.hasAttribute('data-close'))) { closePickerFilterDialog(); return; }
       if (!target) return;
       if (target.hasAttribute('data-reset')) {
-        pickerFilter.elements = []; pickerFilter.rarities = []; pickerFilter.shotTypes = []; pickerFilter.sort = 'id'; pickerFilter.query = '';
+        pickerFilter.elements = []; pickerFilter.rarities = []; pickerFilter.shotTypes = []; pickerFilter.pierce = 'all'; pickerFilter.sort = 'id'; pickerFilter.query = '';
         syncPickerToolbar(); openPickerFilterDialog(); return;
       }
       const group = target.dataset.group, key = target.dataset.key;
@@ -971,12 +975,14 @@
         else if (values.includes(key)) pickerFilter[group] = values.filter(v => v !== key);
         else pickerFilter[group] = values.concat(key);
       } else if (target.dataset.sort) pickerFilter.sort = target.dataset.sort;
+      else if (target.dataset.pierce) { const v = target.dataset.pierce; pickerFilter.pierce = (v !== 'all' && pickerFilter.pierce === v) ? 'all' : v; }
       else return;
       layer.querySelectorAll('[data-group]').forEach(b => {
         const on = b.dataset.key === 'all' ? !pickerFilter[b.dataset.group].length : pickerFilter[b.dataset.group].includes(b.dataset.key);
         b.classList.toggle('is-selected', on); b.setAttribute('aria-pressed', String(on));
       });
       layer.querySelectorAll('[data-sort]').forEach(b => { const on = b.dataset.sort === pickerFilter.sort; b.classList.toggle('is-selected', on); b.setAttribute('aria-pressed', String(on)); });
+      layer.querySelectorAll('[data-pierce]').forEach(b => { const on = b.dataset.pierce === pickerFilter.pierce; b.classList.toggle('is-selected', on); b.setAttribute('aria-pressed', String(on)); });
       syncPickerToolbar();
     });
     document.body.appendChild(layer);

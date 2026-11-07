@@ -417,12 +417,12 @@
 #detail-modal.is-gacha-pickup-preview #detail-name{display:none!important}
 </style>
   <link rel="stylesheet" href="css/resonance_tower.css?v=1715-despair-title-fix">
-  <link rel="stylesheet" href="css/phase_odyssey.css?v=1734-nightshade-ring">
+  <link rel="stylesheet" href="css/phase_odyssey.css?v=1740-boss-add-ult">
   <link rel="stylesheet" href="css/towa_encounter.css?v=1553-rates-visible">
   <link rel="stylesheet" href="css/towa_dark_gacha.css?v=1552">
   <link rel="stylesheet" href="css/towa_notice.css?v=1556">
   <link rel="stylesheet" href="css/towa_preflight.css?v=1548-towa-black-burgundy">
-  <link rel="stylesheet" href="css/shooting_event.css?v=1734-nightshade-ring">
+  <link rel="stylesheet" href="css/shooting_event.css?v=1740-boss-add-ult">
   <link rel="stylesheet" href="css/shot_fx.css?v=1557-shot-fx">
   <link rel="stylesheet" href="css/tower15_boss.css?v=1485-tower15">
   <link rel="stylesheet" href="css/daily_stage_select.css?v=1388-shared-card">
@@ -436,11 +436,11 @@
   <link rel="stylesheet" href="css/story_stage_select.css?v=1739-story-reread">
   <link rel="stylesheet" href="css/faceless_stage_select.css?v=1437-noah-shared-card">
   <link rel="stylesheet" href="css/character_list.css?v=1368-translucent-header">
-  <link rel="stylesheet" href="css/character_filter.css?v=1373-filter-size-close">
+  <link rel="stylesheet" href="css/character_filter.css?v=1741-pierce">
   <link rel="stylesheet" href="css/character_detail_shot.css?v=1372-fixed-icons">
   <link rel="stylesheet" href="css/gacha_ratio.css?v=1374-rebuild">
   <link rel="stylesheet" href="css/party_formation.css?v=1502-lastclear-party">
-  <link rel="stylesheet" href="css/shooting_party_filter.css?v=1736-picker-filter">
+  <link rel="stylesheet" href="css/shooting_party_filter.css?v=1741-pierce">
 
   <style id="item-page-build682-fixes">
     /* build682: item page visual alignment */
@@ -15235,6 +15235,7 @@ function showTenResult(results){
     elements: [],
     rarities: [],
     shotTypes: [],
+    pierce: 'all', // build1741: 'all' | 'yes'（貫通あり） | 'no'（貫通なし）
     sort: 'id',
     query: ''
   };
@@ -15248,6 +15249,7 @@ function showTenResult(results){
     zukanIndexFilter.elements = [];
     zukanIndexFilter.rarities = [];
     zukanIndexFilter.shotTypes = [];
+    zukanIndexFilter.pierce = 'all';
     zukanIndexFilter.sort = 'id';
     isZukanFilterMenuOpen = false;
     isZukanNameSearchOpen = false;
@@ -15394,6 +15396,7 @@ function showTenResult(results){
     return (Array.isArray(zukanIndexFilter.elements) && zukanIndexFilter.elements.length > 0) ||
       (Array.isArray(zukanIndexFilter.rarities) && zukanIndexFilter.rarities.length > 0) ||
       (Array.isArray(zukanIndexFilter.shotTypes) && zukanIndexFilter.shotTypes.length > 0) ||
+      (zukanIndexFilter.pierce === 'yes' || zukanIndexFilter.pierce === 'no') ||
       zukanIndexFilter.sort !== 'id';
   }
 
@@ -15452,6 +15455,11 @@ function showTenResult(results){
       if(selectedElements.length && selectedElements.indexOf(normalizeZukanElement(chara.element)) < 0) return false;
       if(selectedRarities.length && selectedRarities.indexOf(normalizeZukanRarity(chara.rarity)) < 0) return false;
       if(selectedShotTypes.length && selectedShotTypes.indexOf(getZukanCharacterShotType(chara)) < 0) return false;
+      if(zukanIndexFilter.pierce === 'yes' || zukanIndexFilter.pierce === 'no'){
+        var SC = window.ShootingCharacters;
+        var pierces = !!(SC && typeof SC.isShootingCharacterPiercing === 'function' && SC.isShootingCharacterPiercing(chara.id));
+        if((zukanIndexFilter.pierce === 'yes') !== pierces) return false;
+      }
       if(query){
         var nameKey = normalizeZukanSearchText(chara.name || '');
         if(nameKey.indexOf(query) < 0) return false;
@@ -15513,6 +15521,12 @@ function showTenResult(results){
       button('R',isZukanRaritySelected('r'),"setZukanRarityFilter('r')",'zcf-rarity-r')
     ].join('');
     var shots = ['all'].concat(ZUKAN_SHOT_TYPE_ORDER).map(shotBtn).join('');
+    var pierceNow = zukanIndexFilter.pierce === 'yes' || zukanIndexFilter.pierce === 'no' ? zukanIndexFilter.pierce : 'all';
+    var pierce = [
+      button('すべて', pierceNow === 'all', "setZukanPierceFilter('all')", 'zcf-pierce-all'),
+      button('貫通あり', pierceNow === 'yes', "setZukanPierceFilter('yes')", 'zcf-pierce-yes'),
+      button('貫通なし', pierceNow === 'no', "setZukanPierceFilter('no')", 'zcf-pierce-no')
+    ].join('');
     var sorts = [
       button('ID', zukanIndexFilter.sort === 'id', "setZukanSort('id')", 'zcf-sort-id'),
       button('属性', zukanIndexFilter.sort === 'element', "setZukanSort('element')", 'zcf-sort-element'),
@@ -15532,6 +15546,8 @@ function showTenResult(results){
             '<div class="zcf-grid zcf-grid-rarity">' + rarity + '</div></section>' +
           '<section class="zcf-section"><h3 class="zcf-section-title">ショットタイプ</h3>' +
             '<div class="zcf-grid zcf-grid-shots">' + shots + '</div></section>' +
+          '<section class="zcf-section"><h3 class="zcf-section-title">貫通</h3>' +
+            '<div class="zcf-grid zcf-grid-pierce">' + pierce + '</div></section>' +
           '<section class="zcf-section"><h3 class="zcf-section-title">並び順</h3>' +
             '<div class="zcf-grid zcf-grid-sort">' + sorts + '</div></section>' +
         '</div>' +
@@ -15622,6 +15638,14 @@ function showTenResult(results){
     renderZukanFilterMenu();
   }
 
+  // build1741: 貫通は1つだけ選ぶ。選択中をもう一度押すと「すべて」に戻る。
+  function setZukanPierceFilter(value){
+    var v = value === 'yes' || value === 'no' ? value : 'all';
+    zukanIndexFilter.pierce = (v !== 'all' && zukanIndexFilter.pierce === v) ? 'all' : v;
+    renderBox();
+    renderZukanFilterMenu();
+  }
+
   function setZukanSort(value){
     zukanIndexFilter.sort = ['id','element','rarity','level'].indexOf(value) >= 0 ? value : 'id';
     renderBox();
@@ -15632,6 +15656,7 @@ function showTenResult(results){
     zukanIndexFilter.elements = [];
     zukanIndexFilter.rarities = [];
     zukanIndexFilter.shotTypes = [];
+    zukanIndexFilter.pierce = 'all';
     zukanIndexFilter.sort = 'id';
     renderBox();
     renderZukanFilterMenu();
@@ -15646,6 +15671,7 @@ function showTenResult(results){
   window.setZukanElementFilter = setZukanElementFilter;
   window.setZukanRarityFilter = setZukanRarityFilter;
   window.setZukanShotTypeFilter = setZukanShotTypeFilter;
+  window.setZukanPierceFilter = setZukanPierceFilter;
   window.setZukanSort = setZukanSort;
   window.resetZukanFilters = resetZukanFilters;
 
@@ -17426,12 +17452,18 @@ function buildShootingShotTypeValue(c, shot, isMain){
 
 // 貫通判定は shooting_core.js の通常SHOT実装に合わせる。
 // PIERCING (旧 shotgun / precision) は弾に pierce=true を付与する。
+// build1741: 貫通は「あり／なし」だけ。ショット自体が敵や壁で止まらずに進むか。
+//  判定は shooting_characters.js の共通関数（PIERCING系・LASER＝あり、その他＝なし）。
 function getDetailShotPiercingText(type){
+  var SC = window.ShootingCharacters;
+  if(SC && typeof SC.isShootingShotTypePiercing === 'function') return SC.isShootingShotTypePiercing(type) ? 'あり' : 'なし';
   var t = String(type || '').toLowerCase();
-  if(t === 'piercing' || t === 'shotgun' || t === 'precision') return 'あり';
-  // LASERは弾の貫通フラグではなく連続照射として処理される。
-  if(t === 'laser') return '連続照射';
-  return 'なし';
+  return (t === 'piercing' || t === 'shotgun' || t === 'precision' || t === 'laser') ? 'あり' : 'なし';
+}
+function getDetailMainShotPiercingText(c){
+  var SC = window.ShootingCharacters;
+  if(SC && typeof SC.isShootingMainShotPiercing === 'function') return SC.isShootingMainShotPiercing(c) ? 'あり' : 'なし';
+  return getDetailShotPiercingText((c && c.mainShot && c.mainShot.type) || (c && c.shotType));
 }
 
 function buildShootingStatusRowHTML(label, valueHtml){
@@ -17598,7 +17630,7 @@ function buildCharacterDetailHTML(data, options){
         buildShootingStatusRow('ATK', String(getDetailStatValue(data, c, 'ATK'))) +
         buildShootingStatusRowHTML('ショットタイプ(MAIN)', buildShootingShotTypeValue(c, c.mainShot, true)) +
         (c.subShot ? buildShootingStatusRowHTML('ショットタイプ(SUB)', buildShootingShotTypeValue(c, c.subShot, false)) : '') +
-        buildShootingStatusRow('貫通(MAIN)', c.shotType === 'cluster' ? '分裂弾が貫通・画面端まで' : getDetailShotPiercingText(c.shotType)) +
+        buildShootingStatusRow('貫通(MAIN)', getDetailMainShotPiercingText(c)) +
         (c.subShot ? buildShootingStatusRow('貫通(SUB)', getDetailShotPiercingText(c.subShot.type)) : '') +
         buildShootingStatusRow('共鳴', 'Lv.' + lb + ' / ' + MAX_LIMIT_BREAK) +
       '</div>' +
@@ -20208,7 +20240,7 @@ function fadeOutOpeningBgm(){
 
 
 
-<script src="js/shooting_characters.js?v=1737-lunatia"></script>
+<script src="js/shooting_characters.js?v=1741-pierce"></script>
 <script src="js/story_scenario.js?v=1730-ch09-04-images"></script>
 <script src="js/story_novel.js?v=1738-textbox-fit"></script>
 <script src="js/stage_select.js?v=1739-story-reread"></script>
@@ -20375,7 +20407,7 @@ function fadeOutOpeningBgm(){
   <link rel="stylesheet" href="css/gacha_confirm_redesign.css?v=1505-ornate-confirm">
 <script src="js/remnant_blessings.js?v=1416-names"></script>
 <!-- ローグライト（新規追加） -->
-<script src="js/shinju.js?v=1736-picker-filter"></script>
+<script src="js/shinju.js?v=1741-pierce"></script>
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
 (function () {
@@ -20445,8 +20477,8 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1734-nightshade-ring"></script>
-<script src="js/shooting_party_filter.js?v=1472-filter-screen-exit-reset"></script>
+<script src="js/shooting_event.js?v=1740-boss-add-ult"></script>
+<script src="js/shooting_party_filter.js?v=1741-pierce"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1711-raid-piece"></script>
 <script src="js/skin_system.js?v=1709-towa-skin"></script>
@@ -22158,7 +22190,7 @@ html body #global-user-frame .hud-sweep-line-player::after{
 })();
 </script>
 
-<script src="js/gacha_trial.js?v=1734-nightshade-ring"></script>
+<script src="js/gacha_trial.js?v=1740-boss-add-ult"></script>
 <script src="js/bgm_guard.js?v=1643-bgm-guard"></script>
 <script src="js/wake_lock.js?v=1643-wake-lock"></script>
 </body>

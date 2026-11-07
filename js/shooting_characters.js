@@ -3244,7 +3244,38 @@
     if (description) c.ultDescription = description;
   });
 
+  // ============================================================
+  // build1741: ショットの「貫通」あり／なし（キャラ詳細・各一覧の絞り込みで共通）
+  //  ショット自体が敵や壁で止まらずに進むか。
+  //   あり：PIERCING（散弾・精密射撃を含む。弾が敵・壁を抜けて進む）、LASER（射線上の全対象に当たり壁でも止まらない）
+  //   なし：それ以外（当たった時点で弾が消える。CLUSTERの分裂弾は貫通するがショット本体は止まる）
+  //  キャラ側で shotPierce: true/false を指定すれば、そちらを優先する。
+  // ============================================================
+  const PIERCING_SHOT_TYPES = Object.freeze(['piercing', 'shotgun', 'precision', 'laser']);
+  function isShootingShotTypePiercing(type) {
+    return PIERCING_SHOT_TYPES.includes(String(type || '').toLowerCase());
+  }
+  function isShootingMainShotPiercing(c) {
+    if (!c) return false;
+    if (typeof c.shotPierce === 'boolean') return c.shotPierce;
+    return isShootingShotTypePiercing((c.mainShot && c.mainShot.type) || c.shotType);
+  }
+  function isShootingSubShotPiercing(c) {
+    if (!c || !c.subShot) return false;
+    if (typeof c.subShot.pierce === 'boolean') return c.subShot.pierce;
+    return isShootingShotTypePiercing(c.subShot.type);
+  }
+  // 絞り込み用：MAIN か SUB のどちらかが貫通すれば「貫通あり」。
+  function isShootingCharacterPiercing(cOrId) {
+    const c = (cOrId && typeof cOrId === 'object') ? (SHOOTING_CHARACTERS[cOrId.id] || cOrId) : SHOOTING_CHARACTERS[cOrId];
+    return isShootingMainShotPiercing(c) || isShootingSubShotPiercing(c);
+  }
+
   window.ShootingCharacters = Object.freeze({
+    isShootingShotTypePiercing,
+    isShootingMainShotPiercing,
+    isShootingSubShotPiercing,
+    isShootingCharacterPiercing,
     CHARACTER_ID,
     SHOOTING_CHARACTER_MASTER,
     CHARACTER_CATALOG,
