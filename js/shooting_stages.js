@@ -2092,10 +2092,10 @@
         //  カミラは全ての攻撃を1HIT=1ダメージで数える（HP100）。PHASEごとにリヴィアからの位置が変わる。
         Object.freeze({
           type: 'guardians', enemyId: SHOOTING_ENEMY_ID.MEMORY_BLUE_CAMILLA, count: 2, respawnMs: 8000,
-          hitHp: 100, spiderIntervalMs: 7000, spiderCount: 3, spiderMax: 6, // build1761: 頑丈→HIT数（80HITで撃破・威力は無関係）
+          hitHp: 100, spiderIntervalMs: 7000, spiderCount: 3, spiderMax: 6, healPerTick: 125, // build1782: 回復は通常カミラ(250)の半分 // build1761: 頑丈→HIT数（80HITで撃破・威力は無関係）
         }),
       ]),
-      extra: Object.freeze({ towerLiviaBoss: true, bossVisualScale: 1.03 }),
+      extra: Object.freeze({ towerLiviaBoss: true, bossVisualScale: 1.03, bulletQuantityMultiplier: 0.80 }), // build1782: 弾幕量80%
     }),
     // build1764: 02 イノリ（光）。闇しか通らない＋連なる鳥居＋神罰。ナイトシェードが1人で両方の掟を越えられる。
     Object.freeze({

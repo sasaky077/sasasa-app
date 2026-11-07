@@ -25908,7 +25908,10 @@
       const cap = Number(state.boss.hpMax || state.boss.hp);
       const raidCap = isRaidStage() && Number(state.raidInitialHp) > 0 && !(Number(state.raidLapBase || 0) > 0) ? Number(state.raidInitialHp) : cap; // build1662: 2周目以降はその周の最大HPまで
       const before = Number(state.boss.hp);
-      const after = Math.min(cap, raidCap, before + CAMILLA_HEAL_PER_TICK);
+      // build1782: 記憶決戦は掟の healPerTick（リヴィアは半分の125）
+      const memGuardRule = isMemoryBattleStage() ? getMemoryGuardianRule() : null;
+      const healPerTick = memGuardRule && Number(memGuardRule.healPerTick) > 0 ? Number(memGuardRule.healPerTick) : CAMILLA_HEAL_PER_TICK;
+      const after = Math.min(cap, raidCap, before + healPerTick);
       if (after > before) { state.boss.hp = after; healed += Math.round(after - before); }
       spawnCamillaDrainFx(e.x, e.y, arena, 0);
     }
