@@ -5410,7 +5410,7 @@
     if (!arena) return;
     clearSmileBoxes();
     clearNightshadeSpinRings();
-    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-rose-fortress,.shooting-remna-trap-preview,.shooting-conjure-preview,.shooting-conjure-deploy-projectile,.shooting-conjure-turret,.shooting-conjure-ult-turret,.shooting-camilla-web-overlay,.shooting-camilla-web-burst,.shooting-camilla-bound-web-fx,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-sui-time-domain,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning,.shooting-ch07-complete-shield,.shooting-ch07-torii,.eclipse-hand-band,.eclipse-float-num,.eclipse-dash-line,.eclipse-dark-veil,.eclipse-beacon,.eclipse-state-pill,.po-submission-chip,.po-variety-banner').forEach(el => el.remove());
+    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-rose-fortress,.shooting-remna-trap-preview,.shooting-conjure-preview,.shooting-conjure-deploy-projectile,.shooting-conjure-turret,.shooting-conjure-ult-turret,.shooting-camilla-web-overlay,.shooting-camilla-web-burst,.shooting-camilla-bound-web-fx,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-sui-time-domain,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning,.shooting-ch07-complete-shield,.shooting-ch07-torii,.eclipse-hand-band,.eclipse-float-num,.eclipse-dash-line,.eclipse-dark-veil,.eclipse-beacon,.eclipse-state-pill,.po-submission-chip,.po-variety-banner,.tb-fx').forEach(el => el.remove());
     clearEnemyBulletCanvas();
     if (state) {
       state.bullets = [];
@@ -18341,6 +18341,8 @@
 
   function fireBarrageBoss(now) {
     const phase = state.boss.phase || 1;
+    // build1750: テストの3段階目は専用AI（updateTestBodyMechanics）。通常弾幕は撃たない。
+    if (isTestBodyPhase()) return;
 
     // CH03-4だけ、wave2/3では次の一斉生成前にも軽いsoft limitをかける。
     // 上限到達後に21〜25発を一度に追加して瞬間的にDOMが膨らむのを防ぐ。
@@ -21113,6 +21115,8 @@
         state.boss.y = blended.y;
       } else if (BOSS && BOSS.behavior === 'remnant07_v1') {
         updateChapter07BossMovement(now, w, h);
+      } else if (BOSS && BOSS.behavior === 'barrage_v1' && isTestBodyPhase()) {
+        // build1750: テスト3段階目の位置は updateTestBodyMechanics が直接動かす
       } else if (BOSS && BOSS.behavior === 'barrage_v1') {
         const phase = state.boss.phase || 1;
         const xAmp = phase === 1 ? w * 0.22 : phase === 2 ? w * 0.28 : w * 0.32;
@@ -24504,6 +24508,422 @@
     appendEnemyProjectile(pr);
   }
 
+  // ============================================================
+  // build1750: テスト 3段階目「降機」— 飛行船を降りたテスト本体
+  //  レイド・残響の塔16F など、テスト（raidVisualId 含む）共通。
+  //  動き：停止→直線ブースト（残像）→停止。ときどき画面中ほどまで降りる。
+  //  技  ：トライレーザー（3WAY予告→照射）/ ブーストチャージ（突進＋破片）/
+  //        ブラックシップ（乗り捨てた飛行船が極太レーザーで自機を追う）/ 3WAY連射。
+  //  即死弾（WARNING）は handleBossDangerAttack 側でそのまま継続する。
+  // ============================================================
+  const TEST_BODY_BOSS_ID = 'shooting_raid_test';
+  const TEST_BODY_SEQ = ['tri', 'charge', 'missile', 'tri', 'ship']; // build1751: 空からの強襲（missile）を追加
+  const TEST_BODY_TRI_DAMAGE = 240;
+  const TEST_BODY_CHARGE_DAMAGE = 280;
+  const TEST_BODY_SHIP_DAMAGE = 170;
+  const TEST_BODY_MISSILE_DAMAGE = 230;
+  const TEST_BODY_MISSILE_R = 40;        // 着弾の判定半径（予告円と同じ）
+  const TEST_BODY_MISSILE_WARN_MS = 1050; // 予告が出てから着弾まで
+  const TEST_BODY_MISSILE_WAVES = 3;
+  const TEST_BODY_MISSILE_PER_WAVE = 4;
+  const TEST_BODY_MISSILE_WAVE_GAP = 650;
+
+  function isTestBodyBoss() {
+    return !!(BOSS && (BOSS.id === TEST_BODY_BOSS_ID || BOSS.raidVisualId === TEST_BODY_BOSS_ID));
+  }
+  function isTestBodyPhase() {
+    return !!(state && state.boss && isTestBodyBoss() && !isNormalBattle() && Number(state.boss.phase || 1) >= 3);
+  }
+
+  function ensureTestBodyStyle() {
+    if (document.getElementById('testbody-style-v1750')) return;
+    const st = document.createElement('style');
+    st.id = 'testbody-style-v1750';
+    st.textContent = `
+      .tb-fx{position:absolute;pointer-events:none}
+      .tb-line{left:0;top:0;height:2px;transform-origin:0 50%;z-index:16;
+        background:linear-gradient(90deg,rgba(150,255,170,.95),rgba(80,255,140,.55) 70%,rgba(80,255,140,0));
+        box-shadow:0 0 6px rgba(80,255,140,.8);opacity:.85;animation:tbBlink .16s linear infinite alternate}
+      .tb-line.fire{height:16px;z-index:19;opacity:1;animation:none;border-radius:8px;
+        background:linear-gradient(180deg,rgba(60,255,130,.15),#eafff0 40%,#fff 50%,#eafff0 60%,rgba(60,255,130,.15));
+        box-shadow:0 0 14px 4px rgba(70,255,140,.85),0 0 34px 10px rgba(40,220,110,.45)}
+      .tb-line.charge{height:30px;opacity:.5;animation:tbBlink .12s linear infinite alternate;border-radius:15px;
+        background:repeating-linear-gradient(90deg,rgba(90,255,150,.55) 0 14px,rgba(90,255,150,.08) 14px 26px);box-shadow:none}
+      @keyframes tbBlink{from{opacity:.35}to{opacity:.95}}
+      .tb-after{z-index:11;opacity:.55;transform:translate(-50%,-50%);
+        filter:sepia(1) hue-rotate(70deg) saturate(4) brightness(1.15);animation:tbAfter .32s ease-out forwards}
+      @keyframes tbAfter{to{opacity:0;transform:translate(-50%,-50%) scale(.92)}}
+      .tb-depart{z-index:15;transform:translate(-50%,-50%);animation:tbDepart 1.5s cubic-bezier(.5,0,.8,.3) forwards}
+      @keyframes tbDepart{0%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) translateY(-320px) scale(.82)}}
+      .tb-ship{top:-6px;left:0;z-index:18;width:170px;transform:translateX(-50%);
+        filter:brightness(.16) contrast(1.4) drop-shadow(0 0 10px rgba(60,255,130,.9))}
+      .tb-column{top:0;bottom:0;left:0;width:76px;transform:translateX(-50%);z-index:16;
+        border-left:2px dashed rgba(110,255,160,.8);border-right:2px dashed rgba(110,255,160,.8);
+        background:rgba(70,255,140,.10);animation:tbBlink .14s linear infinite alternate}
+      .tb-column.fire{z-index:19;border:0;animation:tbBeam .09s linear infinite alternate;
+        background:linear-gradient(90deg,rgba(40,255,120,0),rgba(70,255,140,.55) 18%,#effff3 42%,#fff 50%,#effff3 58%,rgba(70,255,140,.55) 82%,rgba(40,255,120,0));
+        box-shadow:0 0 30px 10px rgba(60,255,130,.55)}
+      @keyframes tbBeam{from{opacity:.86}to{opacity:1}}
+      .tb-mark{left:0;top:0;z-index:15;border-radius:50%;transform:translate(-50%,-50%);
+        border:2px dashed rgba(255,70,60,.9);background:radial-gradient(circle,rgba(255,80,60,.30) 0 18%,rgba(255,80,60,.10) 19% 100%)}
+      .tb-mark::after{content:'';position:absolute;inset:0;border-radius:50%;border:2px solid rgba(255,90,70,.95);
+        animation:tbMarkShrink var(--tb-warn,1050ms) linear forwards}
+      @keyframes tbMarkShrink{from{transform:scale(1.9);opacity:.2}to{transform:scale(.12);opacity:1}}
+      .tb-missile{left:0;top:0;z-index:18;width:10px;height:46px;border-radius:5px 5px 3px 3px;transform:translate(-50%,-100%);
+        background:linear-gradient(180deg,rgba(120,255,170,0),#7dffad 35%,#fff 78%,#2f6f45 80%,#163a24);
+        box-shadow:0 0 10px 2px rgba(70,255,140,.8)}
+      .tb-boom{left:0;top:0;z-index:18;border-radius:50%;transform:translate(-50%,-50%) scale(.3);
+        background:radial-gradient(circle,#fff 0 22%,rgba(160,255,190,.95) 34%,rgba(60,240,120,.55) 58%,rgba(60,240,120,0) 72%);
+        animation:tbBoom .34s ease-out forwards}
+      @keyframes tbBoom{60%{opacity:1}to{opacity:0;transform:translate(-50%,-50%) scale(1.25)}}
+      .tb-skill-name{left:50%;top:22%;z-index:30;transform:translateX(-50%);white-space:nowrap;
+        font:800 13px/1 sans-serif;letter-spacing:.28em;color:#0d4a24;text-shadow:0 0 6px #fff,0 0 10px rgba(60,255,130,.9);
+        animation:tbName 1.1s ease-out forwards}
+      @keyframes tbName{0%{opacity:0;transform:translateX(-50%) translateY(6px)}15%{opacity:1;transform:translateX(-50%)}75%{opacity:1}100%{opacity:0}}
+    `;
+    document.head.appendChild(st);
+  }
+
+  function tbEl(arena, cls, tag) {
+    const el = document.createElement(tag || 'div');
+    el.className = 'tb-fx ' + cls;
+    el.setAttribute('aria-hidden', 'true');
+    arena.appendChild(el);
+    return el;
+  }
+  function tbSetLine(el, x, y, angle, len) {
+    el.style.width = `${len}px`;
+    el.style.transform = `translate(${x}px,${y}px) translateY(-50%) rotate(${angle}rad)`;
+  }
+  function tbSegDist(px, py, ax, ay, bx, by) {
+    const dx = bx - ax, dy = by - ay;
+    const l2 = dx * dx + dy * dy || 1;
+    const t = clamp(((px - ax) * dx + (py - ay) * dy) / l2, 0, 1);
+    return Math.hypot(px - (ax + dx * t), py - (ay + dy * t));
+  }
+  function tbRayLen(x, y, a, w, h) {
+    // 画面外まで届く長さ
+    return Math.hypot(w, h) + 40;
+  }
+  function tbDamage(now, amount, src) {
+    if (!state || state.koTransition || now < Number(state.player.invulnUntil || 0)) return false;
+    const member = getActiveMember();
+    if (!member || member.hp <= 0) return false;
+    damagePlayer(now, amount, 'raw', normalizeCombatElement(state.boss.element || BOSS.element || 'wood'), src || 'boss-laser');
+    return true;
+  }
+  function tbShowName(arena, text) {
+    if (!arena) return;
+    arena.querySelectorAll('.tb-skill-name').forEach(e => e.remove());
+    const el = tbEl(arena, 'tb-skill-name');
+    el.textContent = text;
+    setTimeout(() => el.remove(), 1150);
+  }
+  function tbAfterimage(arena) {
+    const bossEl = document.getElementById(BOSS_ID);
+    if (!arena || !bossEl || !state?.boss) return;
+    const r = bossEl.getBoundingClientRect();
+    const img = tbEl(arena, 'tb-after', 'img');
+    img.src = bossEl.getAttribute('src') || '';
+    img.style.width = `${Math.max(30, r.width)}px`;
+    img.style.left = `${state.boss.x}px`;
+    img.style.top = `${state.boss.y}px`;
+    setTimeout(() => img.remove(), 360);
+  }
+
+  function teardownTestBody() {
+    if (!state || !state.testBody) return;
+    document.querySelectorAll('.tb-fx').forEach(el => el.remove());
+    state.testBody = null;
+  }
+
+  function startTestBody(mt, arena) {
+    ensureTestBodyStyle();
+    const tb = state.testBody = {
+      mode: 'enter', modeAt: mt, seq: 0, nextSkillAt: mt + 2600, nextBoltAt: mt + 1700,
+      move: null, holdUntil: mt + 1500, lastAfterAt: 0, lines: [], hit: false,
+    };
+    // 通常弾だけ消す（即死弾は残す）
+    if (Array.isArray(state.enemyBullets)) {
+      state.enemyBullets = state.enemyBullets.filter(p => {
+        if (p && p.el && p.el.classList && p.el.classList.contains('shooting-danger-bullet')) return true;
+        p && p.el && p.el.remove();
+        return false;
+      });
+    }
+    // 乗り捨てた飛行船が上空へ離れていく
+    if (arena && BOSS && BOSS.image) {
+      const bossEl = document.getElementById(BOSS_ID);
+      const img = tbEl(arena, 'tb-depart', 'img');
+      img.src = String(BOSS.image);
+      img.style.width = `${Math.max(120, Math.min(260, (arena.clientWidth || 390) * .55))}px`;
+      img.style.left = `${state.boss.x}px`;
+      img.style.top = `${state.boss.y - 10}px`;
+      setTimeout(() => img.remove(), 1600);
+      if (bossEl) bossEl.style.removeProperty('opacity');
+    }
+    showFacelessBattleCut('降　機', 'TEST — SELF ENGAGE');
+    return tb;
+  }
+
+  function tbStartMove(tb, mt, w, h, opts) {
+    opts = opts || {};
+    const deep = !opts.up && Math.random() < 0.3;
+    const fromX = state.boss.x, fromY = state.boss.y;
+    let toX = 0, toY = 0;
+    for (let i = 0; i < 6; i++) {
+      toX = 60 + Math.random() * Math.max(10, w - 120);
+      toY = deep ? h * (0.32 + Math.random() * 0.12) : Math.max(64, h * (0.12 + Math.random() * 0.14));
+      if (Math.hypot(toX - fromX, toY - fromY) > 90) break;
+    }
+    const dist = Math.hypot(toX - fromX, toY - fromY);
+    tb.move = { fromX, fromY, toX, toY, start: mt, dur: clamp(dist / 1.25, 180, 420) };
+  }
+
+  function tbAimAngle(x, y) {
+    const aim = getEnemyAimPosition();
+    return Math.atan2(aim.y - y, aim.x - x);
+  }
+
+  function tbFireBolts(tb, mt, now) {
+    if (mt < tb.nextBoltAt) return;
+    if (!tb.boltLeft) tb.boltLeft = 3;
+    const a = tbAimAngle(state.boss.x, state.boss.y);
+    const speed = Number(BOSS.bulletSpeed || 248) * 1.28;
+    [-0.13, 0, 0.13].forEach(off => {
+      appendEnemyProjectile(makeProjectile('shooting-enemy-bullet',
+        state.boss.x, state.boss.y + 18,
+        Math.cos(a + off) * speed, Math.sin(a + off) * speed,
+        Number(BOSS.bulletDamage || 190)));
+    });
+    tb.boltLeft -= 1;
+    if (tb.boltLeft > 0) tb.nextBoltAt = mt + 105;
+    else { tb.boltLeft = 0; tb.nextBoltAt = mt + (tb.mode === 'ship' ? 1500 : 1050); }
+  }
+
+  function updateTestBodyMechanics(now) {
+    if (!state || !state.boss) return;
+    if (!isTestBodyPhase()) { if (state.testBody) teardownTestBody(); return; }
+    if (state.ended || state.finishing) return;
+    if (state.koTransition || state.phaseTransition || !(state.boss.hp > 0)) return;
+    const { arena, w, h } = getShienArenaSize();
+    if (!arena) return;
+    const mt = getBossMotionTime(now);
+    const frozen = now < getBossLockUntil(now);
+    let tb = state.testBody;
+    if (!tb) tb = startTestBody(mt, arena);
+    if (frozen) return;
+
+    const px = Number(state.player.x), py = Number(state.player.y);
+
+    // ---- 移動（enter / idle / ship 中）----
+    if (tb.mode !== 'tri' && tb.mode !== 'charge') { // missile / ship 中も動き回る
+      if (tb.move) {
+        const m = tb.move;
+        const p = clamp((mt - m.start) / m.dur, 0, 1);
+        const e = 1 - Math.pow(1 - p, 3);
+        state.boss.x = m.fromX + (m.toX - m.fromX) * e;
+        state.boss.y = m.fromY + (m.toY - m.fromY) * e;
+        if (mt - tb.lastAfterAt > 45 && p < 0.92) { tb.lastAfterAt = mt; tbAfterimage(arena); }
+        if (p >= 1) { tb.move = null; tb.holdUntil = mt + 650 + Math.random() * 450; }
+      } else if (mt >= tb.holdUntil) {
+        tbStartMove(tb, mt, w, h);
+      }
+    }
+
+    if (tb.mode === 'enter') {
+      if (mt >= tb.nextSkillAt - 900) tb.mode = 'idle';
+      return;
+    }
+
+    // ---- 3WAY連射（技の最中以外）----
+    if (tb.mode === 'idle' || tb.mode === 'ship' || tb.mode === 'missile') tbFireBolts(tb, mt, now);
+
+    // ---- 技の開始 ----
+    if (tb.mode === 'idle' && mt >= tb.nextSkillAt && !tb.move) {
+      const skill = TEST_BODY_SEQ[tb.seq % TEST_BODY_SEQ.length];
+      tb.seq += 1;
+      tb.mode = skill; tb.modeAt = mt; tb.hit = false;
+      if (skill === 'tri') {
+        tbShowName(arena, 'TRI-LASER');
+        const a = tbAimAngle(state.boss.x, state.boss.y);
+        tb.lines = [-0.3, 0, 0.3].map(off => {
+          const el = tbEl(arena, 'tb-line');
+          return { el, a: a + off, x: state.boss.x, y: state.boss.y + 10 };
+        });
+        tb.lines.forEach(l => tbSetLine(l.el, l.x, l.y, l.a, tbRayLen(l.x, l.y, l.a, w, h)));
+      } else if (skill === 'charge') {
+        tbShowName(arena, 'BOOST CHARGE');
+        const sx = state.boss.x, sy = state.boss.y;
+        const a = tbAimAngle(sx, sy);
+        const cx = Math.cos(a), cy = Math.sin(a);
+        // 画面端（余白40px）までの距離
+        const tx = cx > 0 ? (w - 40 - sx) / cx : cx < 0 ? (40 - sx) / cx : Infinity;
+        const ty = cy > 0 ? (h - 60 - sy) / cy : cy < 0 ? (50 - sy) / cy : Infinity;
+        const len = Math.max(120, Math.min(tx, ty));
+        const el = tbEl(arena, 'tb-line charge');
+        tbSetLine(el, sx, sy, a, len);
+        tb.charge = { el, sx, sy, ex: sx + cx * len, ey: sy + cy * len, a, len, travelled: 0, lastShard: 0, dashAt: mt + 720 };
+      } else if (skill === 'missile') {
+        tbShowName(arena, 'SKY RAID');
+        tb.missile = { list: [], wave: 0, nextWaveAt: mt + 250 };
+      } else if (skill === 'ship') {
+        tbShowName(arena, 'BLACK SHIP');
+        const ship = tbEl(arena, 'tb-ship', 'img');
+        ship.src = String(BOSS.image || '');
+        const col = tbEl(arena, 'tb-column');
+        tb.ship = { el: ship, col, x: -120, beamX: clamp(px, 40, w - 40), fireAt: mt + 1300, endAt: mt + 4400, outAt: mt + 5300, nextTickAt: 0 };
+        ship.style.left = '-120px';
+      }
+    }
+
+    // ---- トライレーザー ----
+    if (tb.mode === 'tri') {
+      const local = mt - tb.modeAt;
+      if (local >= 650 && local < 1080) {
+        tb.lines.forEach(l => l.el.classList.add('fire'));
+        if (!tb.hit) {
+          for (const l of tb.lines) {
+            const L = tbRayLen(l.x, l.y, l.a, w, h);
+            if (tbSegDist(px, py, l.x, l.y, l.x + Math.cos(l.a) * L, l.y + Math.sin(l.a) * L) < 14) {
+              if (tbDamage(now, TEST_BODY_TRI_DAMAGE, 'boss-laser')) { tb.hit = true; triggerPlayerHitScreenShake(); }
+              break;
+            }
+          }
+        }
+      }
+      if (local >= 1080) {
+        tb.lines.forEach(l => l.el.remove()); tb.lines = [];
+        tb.mode = 'idle'; tb.nextSkillAt = mt + 2500; tb.holdUntil = mt + 250;
+      }
+    }
+
+    // ---- ブーストチャージ ----
+    if (tb.mode === 'charge' && tb.charge) {
+      const c = tb.charge;
+      if (mt < c.dashAt) {
+        // 予告中は小刻みに震える
+        state.boss.x = c.sx + (Math.random() - .5) * 4;
+        state.boss.y = c.sy + (Math.random() - .5) * 4;
+      } else if (c.travelled < c.len) {
+        c.el.remove();
+        const prevX = state.boss.x, prevY = state.boss.y;
+        const step = Math.min(c.len - c.travelled, 1500 * Math.max(0, mt - (c.lastAt || c.dashAt)) / 1000);
+        c.lastAt = mt;
+        c.travelled += step;
+        state.boss.x = c.sx + Math.cos(c.a) * c.travelled;
+        state.boss.y = c.sy + Math.sin(c.a) * c.travelled;
+        if (mt - tb.lastAfterAt > 30) { tb.lastAfterAt = mt; tbAfterimage(arena); }
+        if (!tb.hit && tbSegDist(px, py, prevX, prevY, state.boss.x, state.boss.y) < 34) {
+          if (tbDamage(now, TEST_BODY_CHARGE_DAMAGE, 'boss-contact')) { tb.hit = true; triggerPlayerHitScreenShake(); }
+        }
+        // 通った跡に緑の破片を左右へ
+        while (c.lastShard + 52 <= c.travelled) {
+          c.lastShard += 52;
+          const bx = c.sx + Math.cos(c.a) * c.lastShard, by = c.sy + Math.sin(c.a) * c.lastShard;
+          [1, -1].forEach(side => {
+            const pa = c.a + side * Math.PI / 2;
+            appendEnemyProjectile(makeProjectile('shooting-enemy-bullet', bx, by,
+              Math.cos(pa) * 82 + Math.cos(c.a) * 18, Math.sin(pa) * 82 + Math.sin(c.a) * 18,
+              Math.max(1, Number(BOSS.bulletDamage || 190) - 30)));
+          });
+        }
+        if (c.travelled >= c.len) c.endAt = mt;
+      } else if (mt >= Number(c.endAt || mt) + 450) {
+        tb.charge = null;
+        tb.mode = 'idle'; tb.nextSkillAt = mt + 2700;
+        tbStartMove(tb, mt, w, h, { up: true });
+      }
+    }
+
+    // ---- 空からの強襲（ミサイル）----
+    if (tb.mode === 'missile' && tb.missile) {
+      const ms = tb.missile;
+      // 予告円を1波ずつ出す（各波の1発は自機の今いる位置）
+      if (ms.wave < TEST_BODY_MISSILE_WAVES && mt >= ms.nextWaveAt) {
+        const R = TEST_BODY_MISSILE_R;
+        const pts = [];
+        for (let i = 0; i < TEST_BODY_MISSILE_PER_WAVE; i++) {
+          let x = 0, y = 0;
+          for (let k = 0; k < 8; k++) {
+            if (i === 0) { x = clamp(px + (Math.random() - .5) * 24, R, w - R); y = clamp(py + (Math.random() - .5) * 24, h * .3, h - R); }
+            else { x = R + Math.random() * Math.max(10, w - R * 2); y = h * .3 + Math.random() * Math.max(10, h * .7 - R); }
+            if (pts.every(q => Math.hypot(q.x - x, q.y - y) > R * 1.7)) break;
+          }
+          pts.push({ x, y });
+        }
+        pts.forEach((pt, i) => {
+          const el = tbEl(arena, 'tb-mark');
+          el.style.width = el.style.height = `${R * 2}px`;
+          el.style.left = `${pt.x}px`; el.style.top = `${pt.y}px`;
+          const delay = i * 90;
+          el.style.setProperty('--tb-warn', `${TEST_BODY_MISSILE_WARN_MS + delay}ms`);
+          ms.list.push({ x: pt.x, y: pt.y, el, impactAt: mt + TEST_BODY_MISSILE_WARN_MS + delay, mEl: null, done: false });
+        });
+        ms.wave += 1;
+        ms.nextWaveAt = mt + TEST_BODY_MISSILE_WAVE_GAP;
+      }
+      ms.list.forEach(m => {
+        if (m.done) return;
+        const fallMs = 260;
+        if (mt >= m.impactAt - fallMs) {
+          if (!m.mEl) m.mEl = tbEl(arena, 'tb-missile');
+          const p = clamp((mt - (m.impactAt - fallMs)) / fallMs, 0, 1);
+          m.mEl.style.left = `${m.x}px`;
+          m.mEl.style.top = `${-50 + (m.y + 50) * p * p}px`;
+        }
+        if (mt >= m.impactAt) {
+          m.done = true;
+          m.el.remove(); m.mEl && m.mEl.remove();
+          const boom = tbEl(arena, 'tb-boom');
+          boom.style.width = boom.style.height = `${TEST_BODY_MISSILE_R * 2.6}px`;
+          boom.style.left = `${m.x}px`; boom.style.top = `${m.y}px`;
+          setTimeout(() => boom.remove(), 380);
+          if (Math.hypot(px - m.x, py - m.y) < TEST_BODY_MISSILE_R + 6) {
+            if (tbDamage(now, TEST_BODY_MISSILE_DAMAGE, 'boss-bomb')) triggerPlayerHitScreenShake();
+          }
+        }
+      });
+      if (ms.wave >= TEST_BODY_MISSILE_WAVES && ms.list.every(m => m.done)) {
+        tb.missile = null;
+        tb.mode = 'idle'; tb.nextSkillAt = mt + 2400;
+      }
+    }
+
+    // ---- ブラックシップ ----
+    if (tb.mode === 'ship' && tb.ship) {
+      const s = tb.ship;
+      const local = mt - tb.modeAt;
+      if (mt < s.fireAt) {
+        // 予告：飛行船が入ってきて、自機の上に柱の予告
+        s.beamX += clamp(px - s.beamX, -6, 6);
+        s.x = -120 + (s.beamX + 120) * clamp(local / 900, 0, 1);
+      } else if (mt < s.endAt) {
+        s.col.classList.add('fire');
+        const dt = Math.max(0, mt - (s.lastAt || mt)) / 1000;
+        s.beamX += clamp(px - s.beamX, -88 * dt, 88 * dt);
+        s.x = s.beamX;
+        if (Math.abs(px - s.beamX) < 34 && mt >= s.nextTickAt) {
+          if (tbDamage(now, TEST_BODY_SHIP_DAMAGE, 'boss-laser')) triggerPlayerHitScreenShake();
+          s.nextTickAt = mt + 300;
+        }
+      } else {
+        s.col.remove();
+        s.x += Math.max(0, mt - (s.lastAt || mt)) / 1000 * 380;
+        if (mt >= s.outAt || s.x > w + 160) {
+          s.el.remove();
+          tb.ship = null;
+          tb.mode = 'idle'; tb.nextSkillAt = mt + 2400;
+        }
+      }
+      if (tb.ship) {
+        s.lastAt = mt;
+        s.el.style.left = `${s.x}px`;
+        s.col.style.left = `${s.beamX}px`;
+      }
+    }
+  }
+
   function updateShienMechanics(now) {
     if (!isShienBattle()) return;
     const sh=ensureShienState();
@@ -25296,6 +25716,8 @@
     }
     // build1571 RAID シエン: 霞化 / 回転斬り / 出血
     updateShienMechanics(ts);
+    // build1750: テスト3段階目（降機）
+    updateTestBodyMechanics(ts);
     // build1592 RAID カミラ: 浮遊弾 / 巣レーザー / 捕縛罠 / 吸血子蜘蛛
     updateCamillaMechanics(ts);
     // build1630: リズム弾幕（譜面・仮ドラム・判定）
