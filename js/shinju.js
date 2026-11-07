@@ -546,7 +546,7 @@
     return {
       id,
       name: c.name || `CHARACTER ${id}`,
-      image: c.panelImage || c.image || '',
+      image: pfPanelImage(c), // build1743: 装備中の衣装
       owned: typeof module.isShootingCharacterOwned === 'function' ? !!module.isShootingCharacterOwned(id) : true,
     };
   }
@@ -802,7 +802,7 @@
         const selected = Number(state.blessings && state.blessings[slot]) === id;
         const otherSlot = assignedElsewhere.get(id);
         const disabled = !!otherSlot;
-        const img = c.panelImage || c.image || '';
+        const img = pfPanelImage(c); // build1743: 装備中の衣装
         const el = pfElem(c.element);
         const lv = pfLevel(id);
         return `
@@ -866,6 +866,11 @@
   function pfElem(v) { const k = String((Array.isArray(v) ? v[0] : v) || 'neutral').toLowerCase(); return PF_ELEMENTS.includes(k) ? k : 'neutral'; }
   function pfRarity(v) { return String(v || 'r').toLowerCase() === 'sr' ? 'sr' : 'r'; }
   function pfShot(v) { const k = String(v || '').toLowerCase(); return PF_SHOT_ALIASES[k] || k; }
+  function pfPanelImage(c) {
+    const m = getCharacterModule();
+    if (m && typeof m.getShootingSkinPanelImage === 'function') return m.getShootingSkinPanelImage(c);
+    return String((c && (c.panelImage || c.image)) || '');
+  }
   function pfChar(id) { const m = getCharacterModule(); return (m && m.SHOOTING_CHARACTERS && m.SHOOTING_CHARACTERS[id]) || {}; }
   function pfLevel(id) {
     const m = getCharacterModule();

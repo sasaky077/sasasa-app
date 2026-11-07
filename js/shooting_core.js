@@ -2803,7 +2803,7 @@
           Number(c.id),
           ownedData ? 1 : 0,
           level,
-          String(c.panelImage || c.image || '')
+          getCharacterPanelImage(c)
         ].join(':');
       })
       .join('|') + `|stage:${String(selectedStage?.id || '')}|replay:${isStoryReplayBattle() ? 1 : 0}`;
@@ -2986,7 +2986,7 @@
     members.innerHTML = record.partyIds.map(id => {
       const c = buildResonatedCharacterProfile(id) || SHOOTING_CHARACTERS[id];
       return `<span class="zpf-lastclear-member" title="${c.name}">
-        <img src="${c.panelImage || c.image}" alt="${c.name}" draggable="false">
+        <img src="${getCharacterPanelImage(c)}" alt="${c.name}" draggable="false">
         <small>${c.name}</small>
       </span>`;
     }).join('');
@@ -4642,12 +4642,12 @@
         ? `<button type="button" class="shooting-party-slot filled fixed" data-character-id="${id}" aria-label="${c.name}・ストーリー固定枠">
             <span class="zpf-slot-number">${i + 1}</span>
             ${getShootingPartySlotElementIconHtml(c)}
-            <img src="${c.panelImage || c.image}" alt="${c.name}" draggable="false"><small>${c.name}</small>
+            <img src="${getCharacterPanelImage(c)}" alt="${c.name}" draggable="false"><small>${c.name}</small>
           </button>`
         : `<button type="button" class="shooting-party-slot filled" data-character-id="${id}" onclick="removeShootingPartyCharacter(${id})" aria-label="${c.name}を外す">
             <span class="zpf-slot-number">${i + 1}</span>
             ${getShootingPartySlotElementIconHtml(c)}
-            <img src="${c.panelImage || c.image}" alt="${c.name}" draggable="false"><small>${c.name}</small><i>×</i>
+            <img src="${getCharacterPanelImage(c)}" alt="${c.name}" draggable="false"><small>${c.name}</small><i>×</i>
           </button>`;
     }).join('');
   }
@@ -4701,6 +4701,18 @@
       if (!c || isGachaTrialStage() || !skins || typeof skins.getBattleImage !== 'function') return base;
       const skinImage = String(skins.getBattleImage(c.id, base) || base);
       return failedSkinBattleImages.has(skinImage) ? base : skinImage;
+    } catch (_) {
+      return base;
+    }
+  }
+  // build1743: 編成パネル・交代ボタン・リザルト等の顔画像も、装備中の衣装に合わせる（キャラ一覧と同じ）。
+  //  衣装が無い／未所持なら通常のパネル画像。ガチャ試遊は通常衣装のまま。
+  function getCharacterPanelImage(c) {
+    const base = String((c && (c.panelImage || c.image)) || '');
+    try {
+      const skins = window.CharacterSkins;
+      if (!c || isGachaTrialStage() || !skins || typeof skins.getPanelImage !== 'function') return base;
+      return String(skins.getPanelImage(c.id, base) || base);
     } catch (_) {
       return base;
     }
@@ -5177,7 +5189,7 @@
         const c = getBattleCharacter(m.id);
         return `<button type="button" class="shooting-switch-btn" data-switch-id="${m.id}" onclick="switchShootingCharacter(${m.id})">
           <span class="shooting-switch-ult-ring" aria-hidden="true"></span>
-          <img src="${c.panelImage || c.image}" alt="${c.name}" draggable="false">
+          <img src="${getCharacterPanelImage(c)}" alt="${c.name}" draggable="false">
           <span class="shooting-switch-buff-badge" aria-hidden="true"></span>
           ${getCombatElementIcon(c.element) ? `<img class="shooting-switch-element" src="${getCombatElementIcon(c.element)}" alt="" aria-hidden="true" draggable="false">` : ''}
           <span class="shooting-switch-name">${c.name}</span>
@@ -22440,7 +22452,7 @@
     return Object.values(SHOOTING_CHARACTERS)
       .filter(c => c && isPublicShootingCharacterId(c.id) && isShootingCharacterOwned(c.id))
       .sort((a, b) => Number(a.id) - Number(b.id))
-      .map(c => String(c.panelImage || c.image || ''))
+      .map(c => getCharacterPanelImage(c))
       .filter(Boolean);
   }
 
@@ -27905,7 +27917,7 @@
     const survivors = state.party.filter(m => m.hp > 0);
     const resultMemberHtml = (m, value, suffix, markDown) => {
       const c = getBattleCharacter(m.id);
-      return `<span class="shooting-result-member${markDown && m.hp <= 0 ? ' down' : ''}" title="${c.name}"><img src="${c.panelImage || c.image}" alt="${c.name}"><b>${value}${suffix}</b></span>`;
+      return `<span class="shooting-result-member${markDown && m.hp <= 0 ? ' down' : ''}" title="${c.name}"><img src="${getCharacterPanelImage(c)}" alt="${c.name}"><b>${value}${suffix}</b></span>`;
     };
     if (kicker) kicker.textContent = isPhaseOdysseyStage()
       ? (win ? 'PHASE ODYSSEY · FLOOR CLEAR' : 'PHASE ODYSSEY · RUN END')
@@ -29769,7 +29781,7 @@
       const confirmedPartyIds=selectedPartyIds.map(Number);
       const confirmedMembers=confirmedPartyIds.map(id=>{
         const character=SHOOTING_CHARACTERS[id]||{};
-        return {id,name:character.name||'キャラクター',image:character.panelImage||character.image||''};
+        return {id,name:character.name||'キャラクター',image:getCharacterPanelImage(character)};
       });
       let accepted=false;
       try {

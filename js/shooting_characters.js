@@ -2803,7 +2803,7 @@
                     onclick="selectShootingCharacter(${c.id})"
                     ${owned ? '' : 'disabled aria-disabled="true"'}>
               <span class="shooting-character-portrait">
-                <img src="${c.panelImage || c.image}"
+                <img src="${getShootingSkinPanelImage(c)}"
                      alt="${owned ? c.name : '未所持'}"
                      draggable="false">
                 ${owned ? `<img class="shooting-character-element-icon"
@@ -3251,6 +3251,16 @@
   //   なし：それ以外（当たった時点で弾が消える。CLUSTERの分裂弾は貫通するがショット本体は止まる）
   //  キャラ側で shotPierce: true/false を指定すれば、そちらを優先する。
   // ============================================================
+  // build1743: 装備中の衣装のパネル画像（キャラ一覧と同じ。衣装なし／未所持は通常のパネル）
+  function getShootingSkinPanelImage(c) {
+    const base = String((c && (c.panelImage || c.image)) || '');
+    try {
+      const skins = window.CharacterSkins;
+      if (!c || !skins || typeof skins.getPanelImage !== 'function') return base;
+      return String(skins.getPanelImage(c.id, base) || base);
+    } catch (_) { return base; }
+  }
+
   const PIERCING_SHOT_TYPES = Object.freeze(['piercing', 'shotgun', 'precision', 'laser']);
   function isShootingShotTypePiercing(type) {
     return PIERCING_SHOT_TYPES.includes(String(type || '').toLowerCase());
@@ -3272,6 +3282,7 @@
   }
 
   window.ShootingCharacters = Object.freeze({
+    getShootingSkinPanelImage,
     isShootingShotTypePiercing,
     isShootingMainShotPiercing,
     isShootingSubShotPiercing,

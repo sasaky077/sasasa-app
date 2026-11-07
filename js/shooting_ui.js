@@ -636,7 +636,9 @@
     const desc = document.getElementById('shooting-character-info-desc');
 
     if (image) {
-      image.src = profile.panelImage || profile.image || '';
+      // build1743: 装備中の衣装のパネル画像
+      const SC = window.ShootingCharacters;
+      image.src = (SC && typeof SC.getShootingSkinPanelImage === 'function') ? SC.getShootingSkinPanelImage(profile) : (profile.panelImage || profile.image || '');
       image.alt = profile.name || '';
     }
     if (label) label.textContent = profile.label || 'CHARACTER';
