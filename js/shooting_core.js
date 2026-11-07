@@ -11157,16 +11157,17 @@
     if (ring) { ring.classList.remove('is-queued-pop'); void ring.offsetWidth; ring.classList.add('is-queued-pop'); }
   }
   function ensureSummonGaugeStyle() {
-    if (document.getElementById('summon-gauge-style-v1701')) return;
+    if (document.getElementById('summon-gauge-style-v1745')) return;
+    document.getElementById('summon-gauge-style-v1701')?.remove();
     const st = document.createElement('style');
-    st.id = 'summon-gauge-style-v1701';
+    st.id = 'summon-gauge-style-v1745';
     st.textContent = `
       #shooting-summon-gauge{position:absolute;left:0;top:0;width:34px;height:34px;margin:-17px 0 0 -17px;
-        pointer-events:none;z-index:6;border-radius:50%;--g:255,86,104;
+        pointer-events:none;z-index:13;border-radius:50%;--g:255,86,104;
         background:conic-gradient(rgba(var(--g),.95) calc(var(--p,0)*1turn),rgba(40,30,30,.22) 0);
         -webkit-mask:radial-gradient(circle,transparent 12px,#000 12.5px,#000 16px,transparent 16.5px);
                 mask:radial-gradient(circle,transparent 12px,#000 12.5px,#000 16px,transparent 16.5px);
-        opacity:.85;transition:opacity .15s}
+        opacity:.92;transition:opacity .15s}
       #shooting-summon-gauge.el-fire{--g:255,86,104}
       #shooting-summon-gauge.el-aqua{--g:70,170,255}
       #shooting-summon-gauge.el-wood{--g:96,205,96}
@@ -11178,8 +11179,8 @@
       #shooting-summon-gauge.is-queued{filter:drop-shadow(0 0 3px rgba(255,214,140,.95))}
       #shooting-summon-gauge.is-queued-pop{animation:summonGaugePop .22s ease-out}
       @keyframes summonGaugePop{0%{transform:scale(1.25)}100%{transform:scale(1)}}
-      #shooting-summon-gauge-count{position:absolute;left:0;top:0;margin:20px 0 0 -12px;width:24px;text-align:center;
-        pointer-events:none;z-index:6;font:700 9px/1 'Noto Serif JP',serif;color:#fff;text-shadow:0 0 3px #222,0 0 2px #000;letter-spacing:.02em}
+      #shooting-summon-gauge-count{position:absolute;left:0;top:0;margin:-5px 0 0 -12px;width:24px;text-align:center;
+        pointer-events:none;z-index:13;font:700 9px/1 'Noto Serif JP',serif;color:#fff;text-shadow:0 0 3px #222,0 0 2px #000;letter-spacing:.02em}
     `;
     document.head.appendChild(st);
   }
@@ -11224,9 +11225,15 @@
     ring.classList.toggle('is-full', full);
     ring.classList.toggle('is-queued', !!state.summonQueued);
     // transform はポップ演出に使うので、位置は left/top で置く（positionUnit は transform を上書きするため使わない）
+    // build1745: 自機の中心に置くと自機画像（z12）の裏に隠れて見えなかった。自機の右下（右端に近い時は左下）へ出し、前面に表示する。
     const px = Number(state.player.x || 0), py = Number(state.player.y || 0);
-    ring.style.left = px + 'px'; ring.style.top = py + 'px';
-    label.style.left = px + 'px'; label.style.top = py + 'px';
+    const playerEl = document.getElementById(PLAYER_ID);
+    const halfW = Math.max(18, Math.min(60, Number(playerEl && playerEl.offsetWidth || 74) * .5));
+    const arenaW = Number(arena.clientWidth || 390);
+    const side = (px + halfW + 26 > arenaW - 6) ? -1 : 1;
+    const gx = px + side * (halfW + 8), gy = py + 22;
+    ring.style.left = gx + 'px'; ring.style.top = gy + 'px';
+    label.style.left = gx + 'px'; label.style.top = gy + 'px';
     const text = full ? 'MAX' : (max - used) + '/' + max;
     if (label.textContent !== text) label.textContent = text;
 

@@ -3046,7 +3046,7 @@
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON,
     id: CHARACTER_ID.CONJURER,
     effectKey: 'conjure',
-    label: 'CONJURE / TURRET',
+    label: 'SUMMON / TURRET', // build1744: 表示名 CONJURE→SUMMON
     description: '無機構造物を生成して戦う設置型SR。タップ中に自機前方へ設置予告を表示し、離すと半透明砲台を生成する。最大3基。各砲台は3秒間、1秒ごとに8方向へ非貫通弾を射出する。',
     ultName: 'オーバーライド・コンストラクト',
     ultDescription: '自身の左右へ追従砲台を5秒間召喚。左右それぞれ毎秒5発、計25発ずつのHOMING弾を自動射出する。HOMING弾は敵に命中すると消滅する。ULT中も通常砲台の射撃・新規設置は継続できる。',
@@ -3084,7 +3084,7 @@
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON,
     id: CHARACTER_ID.CAMILLA,
     effectKey: 'camilla_web',
-    label: 'CONJURE / SPIDER',
+    label: 'SUMMON / SPIDER',
     description: '1.2秒に1体、蜘蛛を召喚（最大4体。足元のリングが溜まると次を出せる／溜まる前のタップは予約され自動で召喚）。蜘蛛はカサカサと走って最も近い敵に張り付き、ダメージを与えて移動を封じると消える（ザコ1.5秒／ボス1秒・解除後1秒は再捕縛なし）。',
     ultName: '血界・緋糸万華',
     shotType: 'conjure', mainShot: {type:'conjure'}, shotCount:1,

@@ -15281,7 +15281,7 @@ function showTenResult(results){
     all: 'すべて',
     parallel: 'PARALLEL',
     homing: 'HOMING',
-    conjure: 'CONJURE',
+    conjure: 'SUMMON', // build1744: 表示名をSUMMONに（内部キーは conjure のまま）
     cluster: 'CLUSTER',
     bomb: 'BOMB',
     spread: 'SPREAD',
@@ -17397,7 +17397,7 @@ function buildShootingShotTypeValue(c, shot, isMain){
   var element = getDetailShotElement(c, shot, isMain);
   var elementIcon = getElementIconImage(element || '');
   var elementLabel = getElementLabel(element || '') || '属性';
-  var shotName = shotType.toUpperCase();
+  var shotName = shotType === 'conjure' ? 'SUMMON' : shotType.toUpperCase(); // build1744: CONJURE→SUMMON（表示のみ）
   // build1710: CLUSTERは分裂の形（X字／十字）を名前に出す
   // build1731: ring＝CLUSTER(O)（ナイトシェード）
   if(shotType === 'cluster'){ var cp = String((isMain ? c.clusterPattern : shot && shot.pattern) || c.clusterPattern || 'x'); shotName = 'CLUSTER' + (cp === 'cross' ? '(＋)' : cp === 'ring' ? '(O)' : '(X)'); }
@@ -20240,7 +20240,7 @@ function fadeOutOpeningBgm(){
 
 
 
-<script src="js/shooting_characters.js?v=1743-skin-panels"></script>
+<script src="js/shooting_characters.js?v=1744-summon"></script>
 <script src="js/story_scenario.js?v=1742-ch08-09-scenes"></script>
 <script src="js/story_novel.js?v=1738-textbox-fit"></script>
 <script src="js/stage_select.js?v=1739-story-reread"></script>
@@ -20407,7 +20407,7 @@ function fadeOutOpeningBgm(){
   <link rel="stylesheet" href="css/gacha_confirm_redesign.css?v=1505-ornate-confirm">
 <script src="js/remnant_blessings.js?v=1416-names"></script>
 <!-- ローグライト（新規追加） -->
-<script src="js/shinju.js?v=1743-skin-panels"></script>
+<script src="js/shinju.js?v=1744-summon"></script>
 <!-- ホーム右側アイコン：イベントバナー直下へ自動追従 -->
 <script>
 (function () {
@@ -20477,8 +20477,8 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1740-boss-add-ult"></script>
-<script src="js/shooting_party_filter.js?v=1741-pierce"></script>
+<script src="js/shooting_event.js?v=1745-summon-gauge"></script>
+<script src="js/shooting_party_filter.js?v=1744-summon"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1711-raid-piece"></script>
 <script src="js/skin_system.js?v=1709-towa-skin"></script>

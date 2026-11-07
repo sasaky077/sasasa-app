@@ -856,7 +856,7 @@
   const PF_ELEMENTS = ['fire','aqua','wood','light','dark'];
   const PF_ELEMENT_LABELS = { fire:'FIRE', aqua:'AQUA', wood:'WOOD', light:'LIGHT', dark:'DARK' };
   const PF_SHOTS = ['parallel','homing','cluster','bomb','spread','laser','piercing','orbit','charge','lightning','strike','conjure','trap'];
-  const PF_SHOT_LABELS = { parallel:'PARALLEL', homing:'HOMING', cluster:'CLUSTER', bomb:'BOMB', spread:'SPREAD', laser:'LASER', piercing:'PIERCING', orbit:'ORBIT', charge:'CHARGE', lightning:'PLASMA', strike:'STRIKE', conjure:'CONJURE', trap:'TRAP' };
+  const PF_SHOT_LABELS = { parallel:'PARALLEL', homing:'HOMING', cluster:'CLUSTER', bomb:'BOMB', spread:'SPREAD', laser:'LASER', piercing:'PIERCING', orbit:'ORBIT', charge:'CHARGE', lightning:'PLASMA', strike:'STRIKE', conjure:'SUMMON', trap:'TRAP' };
   const PF_SHOT_ALIASES = { plasma:'lightning', orbit_forward:'orbit', charge_release:'charge', precision:'piercing', shotgun:'piercing', splash:'bomb', melee_slash:'strike', wolf_j_homing:'homing', rose_seed_splash:'spread', noah_hybrid:'laser' };
   function pfNormalize(v) {
     let t = String(v == null ? '' : v);
