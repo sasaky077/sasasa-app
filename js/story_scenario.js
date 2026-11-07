@@ -6732,7 +6732,7 @@
         "left": "",
         "right": "",
         "text": "塔から遠く離れた場所。\n九人の知らない誰かが、記録を閉じた。",
-        "location": "scene_many_tower.webp",
+        "location": "scene_secret_enemy.webp",
         "narration": true
       },
       {
@@ -6740,7 +6740,7 @@
         "left": "",
         "right": "",
         "text": "データは取れた。\nアンカーは…\n順調に育っている。",
-        "location": "scene_many_tower.webp",
+        "location": "scene_secret_enemy.webp",
         "narration": true
       },
             {
@@ -6748,7 +6748,7 @@
         "left": "",
         "right": "",
         "text": "そうか。それは素晴らしい…",
-        "location": "scene_many_tower.webp",
+        "location": "scene_secret_enemy.webp",
         "narration": true
       }
     ]
@@ -6828,7 +6828,7 @@
         "left": "",
         "right": "",
         "text": "最後の灯がともると、扉は音もなく開いた。",
-        "location": "scene_tower_door.webp",
+        "location": "scene_tower_door_open.webp",
         "narration": true
       },
       {
@@ -6836,14 +6836,14 @@
         "left": "アウラ",
         "right": "",
         "text": "開いたー！ エリ、すごい！",
-        "location": "scene_tower_door.webp"
+        "location": "scene_tower_door_open.webp"
       },
       {
         "speaker": "",
         "left": "",
         "right": "",
         "text": "そのとき。遠くに見える塔に、光が一つともった。",
-        "location": "scene_many_tower.webp",
+        "location": "scene_many_tower_bright.webp",
         "narration": true
       },
       {
@@ -6851,14 +6851,14 @@
         "left": "トイフェル",
         "right": "",
         "text": "……今の、見たかい？",
-        "location": "scene_many_tower.webp"
+        "location": "scene_many_tower_bright.webp"
       },
       {
         "speaker": "ジグ",
         "left": "ジグ",
         "right": "",
         "text": "おいおい……\n塔同士も、つながってんのかよ。",
-        "location": "scene_many_tower.webp"
+        "location": "scene_many_tower_bright.webp"
       }
     ]
   },
@@ -7013,16 +7013,16 @@
         "speaker": "",
         "left": "",
         "right": "",
-        "text": "同じころ。塔から遠く離れた場所で、\n誰かが光の門を見下ろしていた。",
-        "location": "scene_many_tower.webp",
+        "text": "同じころ。塔から遠く離れた場所。\n何者かの声が聞こえる。",
+        "location": "scene_secret_enemy_2.webp",
         "narration": true
       },
       {
         "speaker": "???",
         "left": "",
         "right": "",
-        "text": "門が開いた。\n……少し、早いね。",
-        "location": "scene_many_tower.webp",
+        "text": "門が開いた。\n……思ったより早い。",
+        "location": "scene_secret_enemy_2.webp",
         "narration": true
       },
       {
@@ -7030,7 +7030,7 @@
         "left": "",
         "right": "",
         "text": "ちょうどいい…イノリをぶつけてみよう。",
-        "location": "scene_many_tower.webp",
+        "location": "scene_secret_enemy_2.webp",
         "narration": true
       },
             {
@@ -7038,7 +7038,7 @@
         "left": "",
         "right": "",
         "text": "あの子の力も確かめておきたい。",
-        "location": "scene_many_tower.webp",
+        "location": "scene_secret_enemy_2.webp",
         "narration": true
       },
             {
