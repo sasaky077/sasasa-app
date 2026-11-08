@@ -350,27 +350,21 @@
     return data;
   }
 
+  // 進化素材は明示的な許可リストのみ。チケット・記憶・交換アイテムは所持していても表示しない。
+  function isEvolutionItem(id){
+    if(RETIRED_EVOLUTION_ITEMS.has(id)) return false;
+    if(id==='kyoumei_stone') return true;
+    if(/^soul_vessel_(fire|aqua|wood|dark|light|mystis|chaos)$/.test(id)) return true;
+    // レイド欠片の正本定義を参照し、名前が似た非レイド素材は含めない。
+    return typeof window.getRaidPieceItemMeta==='function' && !!window.getRaidPieceItemMeta(id);
+  }
+
   function getEvolutionIds(){
-    const master=evolutionMaster();
     const seen=new Set();
     const ids=[];
-
-    SELLABLE_DEFAULT_ORDER.forEach(id=>{
-      if(!seen.has(id)){seen.add(id);ids.push(id);}
-    });
-
-    Object.keys(state.items).forEach(id=>{
-      if(id.startsWith('level_exp_')) return;
-      if(id==='flower_r' || id==='flower_sr') return;
-      if(id==='inori_challenge_ticket') return; // build1821: イノリ挑戦TICKETは「その他」専用
-      if(RETIRED_EVOLUTION_ITEMS.has(id)) return; // 廃止アイテム: UIには出さない
-      if(!seen.has(id)){seen.add(id);ids.push(id);}
-    });
-
-    Object.keys(master).forEach(id=>{
-      if(RETIRED_EVOLUTION_ITEMS.has(id)) return;
-      if((state.items[id]||0)>0 && !seen.has(id)){seen.add(id);ids.push(id);}
-    });
+    function add(id){ if(isEvolutionItem(id) && !seen.has(id)){seen.add(id);ids.push(id);} }
+    SELLABLE_DEFAULT_ORDER.forEach(add);
+    Object.keys(state.items).forEach(add);
     return ids;
   }
 
@@ -428,8 +422,8 @@
           ? '<div class="item-row-actions item-row-actions-other"><button class="item-exchange-open-btn" type="button" data-open-flower-exchange>交換</button></div>'
           : (isFlowerSR
               ? '<div class="item-row-actions item-row-actions-other"><button class="item-exchange-open-btn" type="button" data-open-flower-sr-exchange>交換</button></div>'
-              : (meta.useTicket
-                  ? '<div class="item-row-actions item-row-actions-other"><button class="item-exchange-open-btn" type="button" data-use-item-ticket="'+escapeHtml(meta.id)+'" '+(qty>0?'':'disabled')+'>'+(meta.id.startsWith('phase_skip_ticket_')?'位相回遊へ':(meta.id==='inori_challenge_ticket'?'挑戦へ':'使用'))+'</button></div>'
+              : ((meta.useTicket || meta.id==='special_stage_ticket' || meta.id==='tower_limited_ten_ticket' || meta.id==='sr_guaranteed_ticket')
+                  ? '<div class="item-row-actions item-row-actions-other"><button class="item-exchange-open-btn" type="button" data-use-other-ticket="'+escapeHtml(meta.id)+'" '+(qty>0?'':'disabled')+'>使用</button></div>'
                   : ''));
 
         return ''+
@@ -932,12 +926,27 @@
           return;
         }
         if(e.target.closest('[data-open-flower-sr-exchange]')){openFlowerSRExchange();return;}
-        if(e.target.closest('[data-use-sr-ticket]')){useSRTicket();return;}
-        const ticketBtn=e.target.closest('[data-use-item-ticket]');
-        if(ticketBtn && !ticketBtn.disabled && window.ItemTickets){
-          ticketBtn.disabled=true;
-          Promise.resolve(window.ItemTickets.useFromItemScreen(ticketBtn.dataset.useItemTicket))
-            .finally(()=>{ if(!state.loading) refresh(); });
+        const ticketBtn=e.target.closest('[data-use-other-ticket]');
+        if(ticketBtn && !ticketBtn.disabled){
+          const id=ticketBtn.dataset.useOtherTicket;
+          if(id==='sr_guaranteed_ticket'){useSRTicket();return;}
+          if(id==='special_stage_ticket'){
+            if(typeof window.openNoahPiecePanel==='function') window.openNoahPiecePanel();
+            else toast('特別巡行「楽園 -ノア-」から使用できます');
+            return;
+          }
+          if(id==='tower_limited_ten_ticket'){
+            // チケットは限定邂逅の10連実行時に消費する。ここでは邂逅へ移動するだけ。
+            if(typeof window.showMainTab==='function') window.showMainTab('summon');
+            else toast('限定邂逅の10連から使用できます');
+            return;
+          }
+          if(window.ItemTickets){
+            ticketBtn.disabled=true;
+            Promise.resolve(window.ItemTickets.useFromItemScreen(id))
+              .catch(err=>{console.error('[ItemManagement] ticket use failed',err);toast('チケットを使用できませんでした');})
+              .finally(()=>{ if(!state.loading) refresh(); });
+          }
           return;
         }
       });
