@@ -1775,7 +1775,7 @@
         rules: Object.freeze([
           Object.freeze({ type: 'element_barrier' }),
           Object.freeze({ type: 'linked_torii', reviveMs: 3000 }),
-          Object.freeze({ type: 'judgment', firstMs: 15000, intervalMs: 20000, warnMs: 3000, damage: 1000, element: 'light' }),
+          Object.freeze({ type: 'judgment', trigger: 'torii_break', countdownMs: 8000, damage: 1000, element: 'light' }),
         ]),
       }),
       inoriToriiHp: 1300,

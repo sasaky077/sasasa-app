@@ -3539,7 +3539,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
         </div>
         <div class="testplay-guide-step-note">
           「巡行」→「ストーリー」を進めるか、<br>
-          特別巡行の「フェイスレス降臨」を遊んでみてください。
+          特別巡行のステージにも挑戦してみてください。
         </div>
       </div>
     </div>
@@ -3666,18 +3666,6 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
       </div>
       <div id="ninmu-panel-special" class="ninmu-panel" style="display:none">
         <div class="junkou-special-list" aria-label="特別巡行ステージ一覧">
-          <button type="button" class="junkou-special-card junkou-special-card-event shooting-entry-card" onclick="openShootingEvent()" aria-label="SPECIAL EVENT 無貌の天使">
-            <span class="junkou-special-copy">
-              <span class="junkou-special-kicker">SPECIAL EVENT</span>
-              <span class="junkou-special-rule" aria-hidden="true"></span>
-              <span class="junkou-special-title">無貌の天使</span>
-            </span>
-            <span class="junkou-special-art" aria-hidden="true">
-              <img src="images/icon_event_01.webp" alt="">
-            </span>
-            <span class="junkou-special-play" aria-hidden="true"><img src="images/special_play_button.webp" alt=""></span>
-          </button>
-
           <button type="button" class="junkou-special-card junkou-special-card-ticket shooting-entry-card shooting-special-ticket-card noah-stage-entry-card" data-open-noah-piece aria-label="SPECIAL STAGE 楽園 -ノア-">
             <span class="junkou-special-copy">
               <span class="junkou-special-kicker">SPECIAL STAGE</span>
@@ -4845,7 +4833,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=1594-raid-banner"></script>
+<script src="js/home_banners.js?v=1831-faceless-hidden"></script>
 <script id="sasaphia-notices-inline-v9">
 // =========================================================
 // Zeraphia Notices
@@ -19058,14 +19046,6 @@ function openHomeBanner(index){
   var banner = banners[index];
   if(!banner) return;
 
-  // バナー01（先頭バナー）はSPECIAL EVENT「無貌の天使」へ直接遷移
-  if(index === 0){
-    if(typeof openShootingEvent === 'function'){
-      openShootingEvent();
-    }
-    return;
-  }
-
   // actionTab があれば指定タブへ移動
   if(banner.actionTab){
     showMainTab(banner.actionTab);
@@ -20699,7 +20679,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1826-verdant-firstclear-pt"></script>
+<script src="js/shooting_event.js?v=1832-inori-judgment"></script>
 <script src="js/shooting_party_filter.js?v=1744-summon"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1813-tickets"></script>

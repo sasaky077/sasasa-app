@@ -16,7 +16,7 @@ window.HOME_EVENT_BANNERS = [
     img: 'images/home_banner_faceless_v1.webp',
     alt: 'フェイスレス降臨',
     actionName: 'openShootingEvent',
-    hidden: false
+    hidden: true
   },
   {
     id: 'event_daily_raid',

@@ -15678,7 +15678,7 @@
       arena.appendChild(el);
     }
     const cfg = getInoriConfig() || {};
-    const totalMs = Math.max(1000, Number(cfg.barrierDownMs || 7000));
+    const totalMs = isInoriSpecialStage() ? 8000 : Math.max(1000, Number(cfg.barrierDownMs || 7000));
     const leftMs = Math.max(0, Number(state.inori.reviveAt || 0) - now);
     const boss = document.getElementById(BOSS_ID);
     const base = Math.max(Number(boss && boss.offsetWidth || 126), Number(boss && boss.offsetHeight || 126));
@@ -15805,7 +15805,7 @@
     if (!cfg || !state || state.ended || state.finishing || !state.boss) return;
     if (!state.inori) {
       state.inori = {
-        barrierUp: true, toriiSpawned: false, reviveAt: 0, nextLaserAt: 0,
+        barrierUp: true, toriiSpawned: false, reviveAt: 0, waitingForJudgment: false, nextLaserAt: 0,
         nextCurseAt: now + Math.max(1000, Number(cfg.slowFirstMs || 6500)), beams: [], slowMemberId: 0,
       };
       spawnInoriTorii(now);
@@ -15813,10 +15813,11 @@
     const inori = state.inori;
     const alive = getAliveInoriTorii();
 
-    // 鳥居2基とも破壊 → バリア消失（7秒）
+    // build1832: TICKETイノリは2基破壊で8秒の神罰を開始し、着弾後に鳥居・結界を再生する。
     if (inori.barrierUp && inori.toriiSpawned && !alive.length) {
       inori.barrierUp = false;
-      inori.reviveAt = now + Math.max(1000, Number(cfg.barrierDownMs || 7000));
+      inori.waitingForJudgment = isInoriSpecialStage();
+      inori.reviveAt = now + (inori.waitingForJudgment ? 8000 : Math.max(1000, Number(cfg.barrierDownMs || 7000)));
       (inori.beams || []).forEach(b => b.el && b.el.remove());
       inori.beams = [];
       showFacelessBattleCut('BARRIER BREAK', '全属性バリア消失');
@@ -15839,8 +15840,8 @@
         inori.linkBrokenAt = 0;
       }
     }
-    // 7秒後、鳥居が2基とも復活してバリアが戻る
-    if (!inori.barrierUp && now >= inori.reviveAt && state.boss.hp > 0) {
+    // 神罰の着弾より前に鳥居・結界が復活しないようにする。
+    if (!inori.barrierUp && !inori.waitingForJudgment && now >= inori.reviveAt && state.boss.hp > 0) {
       inori.barrierUp = true;
       spawnInoriTorii(now);
       showFacelessBattleCut('TORII REVIVE', '鳥居が再び顕現');
@@ -26474,19 +26475,29 @@
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
     ensureMemoryJudgmentStyle();
-    let mj = state.memoryJudge;
-    const lockUntil = getBossLockUntil(now);
-    if (!mj) mj = state.memoryJudge = { nextAt: now + Math.max(3000, Number(rule.firstMs || 15000)), warnUntil: 0, sealed: false, el: null };
-    // KO演出・PHASE切替中は止める（発動を後ろへずらす）
-    if (state.koTransition || state.phaseTransition || now < lockUntil) {
-      if (!mj.warnUntil && mj.nextAt < now + 500) mj.nextAt = now + 500;
-      if (mj.warnUntil && mj.warnUntil < now + 500) mj.warnUntil = now + 500;
+    // build1832: TICKET版のみ。鳥居2基の破壊が唯一の発動条件。
+    // その他の記憶決戦ボスの定期神罰処理には影響しない。
+    const onToriiBreak = isInoriSpecialStage() && rule.trigger === 'torii_break';
+    if (onToriiBreak && !state.inori?.waitingForJudgment) {
+      if (state.memoryJudge?.el) state.memoryJudge.el.remove();
+      state.memoryJudge = null;
       return;
     }
-    const warnMs = Math.max(1000, Number(rule.warnMs || 3000));
+    let mj = state.memoryJudge;
+    const lockUntil = getBossLockUntil(now);
+    if (!mj) mj = state.memoryJudge = { nextAt: onToriiBreak ? now : now + Math.max(3000, Number(rule.firstMs || 15000)), warnUntil: 0, sealed: false, el: null };
+    // KO演出・PHASE切替中は止める（発動を後ろへずらす）
+    if (state.koTransition || state.phaseTransition || now < lockUntil) {
+      if (!onToriiBreak) {
+        if (!mj.warnUntil && mj.nextAt < now + 500) mj.nextAt = now + 500;
+        if (mj.warnUntil && mj.warnUntil < now + 500) mj.warnUntil = now + 500;
+      }
+      return;
+    }
+    const warnMs = onToriiBreak ? 8000 : Math.max(1000, Number(rule.warnMs || 3000));
     if (!mj.warnUntil) {
-      if (now < mj.nextAt) return;
-      mj.warnUntil = now + warnMs;
+      if (!onToriiBreak && now < mj.nextAt) return;
+      mj.warnUntil = onToriiBreak ? Number(state.inori.reviveAt) : now + warnMs;
       mj.sealed = false;
       mj.el = document.createElement('div');
       mj.el.className = 'memory-judgment';
@@ -26494,7 +26505,7 @@
       arena.appendChild(mj.el);
     }
     // カウントダウン
-    if (!mj.sealed && isMemoryJudgmentProtected(now)) {
+    if (!mj.sealed && (!onToriiBreak || mj.warnUntil - now <= 1000) && isMemoryJudgmentProtected(now)) {
       mj.sealed = true;
       if (mj.el) {
         mj.el.classList.add('is-sealed');
@@ -26511,7 +26522,13 @@
     if (mj.el) mj.el.remove();
     mj.el = null;
     mj.warnUntil = 0;
-    mj.nextAt = now + Math.max(5000, Number(rule.intervalMs || 20000));
+    if (onToriiBreak) {
+      // このフレームで神罰を確定。次フレームのupdateInoriMechanicsで鳥居・結界復活。
+      state.inori.waitingForJudgment = false;
+      state.inori.reviveAt = now;
+    } else {
+      mj.nextAt = now + Math.max(5000, Number(rule.intervalMs || 20000));
+    }
     const flash = document.createElement('div');
     flash.className = 'memory-judgment-flash';
     arena.appendChild(flash);
