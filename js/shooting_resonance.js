@@ -207,8 +207,9 @@
       3: bonus('光路同調', 'ULTゲージ獲得量 +15%', '命中時のULTゲージ獲得量を15%増加する。', [
         { type:'profileMultiply', field:'ultGainPerHit', multiplier:1.15 }
       ]),
-      4: bonus('SCRAMBLE RAY・極', 'ULTレーザー 6本 → 9本', 'ULT「SCRAMBLE RAY」で同時展開する閃光レーザーを9本へ増加する。', [
-        { type:'profileSet', field:'jigUltBeamCount', value:9 }
+      // build1794: 4凸は通常射撃を LASER M → LASER L に（イグニス・スマイルと同じL規格）
+      4: bonus('閃光拡張', '通常射撃 LASER M → LASER L', '通常射撃のレーザーが太いLASER Lになり、当たり判定とダメージが大きくなる。', [
+        { type:'laserSize', value:'L' }
       ])
     }),
     10: genericSet('オリオン'),
@@ -528,6 +529,15 @@
         Object.assign(profile, preset);
         profile.chargeSize = size;
         profile.mainShot = { ...(profile.mainShot || {}), type:'charge', size };
+        break;
+      }
+      case 'laserSize': {
+        // build1794: LASERのサイズ変更。L規格（幅16・判定50・95msごと・ATK×0.105）に揃える。
+        const size = String(effect.value || 'M').toUpperCase() === 'L' ? 'L' : 'M';
+        if (profile.shotType !== 'laser' || size !== 'L') break;
+        Object.assign(profile, { laserSize:'L', fireRate:95, laserWidth:16, laserHitWidth:50, laserVisualHoldMs:130 });
+        profile.laserDamageAtkRate = Math.max(Number(profile.laserDamageAtkRate || 0), 0.105);
+        profile.mainShot = { ...(profile.mainShot || {}), type:'laser', size:'L' };
         break;
       }
       case 'profileAdd': {

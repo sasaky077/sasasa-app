@@ -2294,7 +2294,7 @@
     label: 'LASER / WOOD', description: '細い高密度レーザーを照射するRレーザー型。ULTは6本の細レーザーを射出し、5秒間ランダム反射させて画面全域を掃射する。',
     shotType: 'laser', shotStyle: 'fia', laserSize: 'M', fireRate: 100, laserWidth: 10, laserHitWidth: 34, laserDamageAtkRate: 0.058, laserVisualHoldMs: 125,
     ultName: 'SCRAMBLE RAY',
-    ultDescription: 'ジグを起点に6本の細長い閃光レーザーを射出。5秒間、画面端でランダム反射しながら敵を貫通してダメージを与える。完凸時は9本に増加。',
+    ultDescription: 'ジグを起点に6本の細長い閃光レーザーを射出。5秒間、画面端でランダム反射しながら敵を貫通してダメージを与える。',
     ultBaseType: 'beam', ultAddons: ['damage','bullet_clear'], ultType: 'jig_scramble_ray',
     jigUltDurationMs: 5000,
     jigUltBeamCount: 6,
