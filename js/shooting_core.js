@@ -3578,6 +3578,23 @@
     renderHud();
   }
 
+  // build1785: 神聖樹「耐性SLOT」。状態異常（吸収・燃焼・出血）の継続ダメージを軽減する（最大50%）。
+  //  燃焼など今後追加する状態異常ダメージも、この関数を通して与えること。
+  function getStatusResistRate(member) {
+    const id = Number(member && member.id);
+    if (!id || !window.ShinjuProgress || typeof window.ShinjuProgress.getBlessingForCharacter !== 'function') return 0;
+    try {
+      const b = window.ShinjuProgress.getBlessingForCharacter(id);
+      return Math.max(0, Math.min(0.5, Number(b && b.statusResistRate || 0)));
+    } catch (_) { return 0; }
+  }
+  function applyStatusResist(member, damage) {
+    const dmg = Math.max(0, Number(damage || 0));
+    const rate = getStatusResistRate(member);
+    if (!rate || dmg <= 0) return dmg;
+    return Math.max(1, Math.round(dmg * (1 - rate)));
+  }
+
   function getActiveMember() {
     if (!state || !Array.isArray(state.party)) return null;
     return state.party.find(m => Number(m.id) === Number(state.activeCharacterId)) || state.party[0] || null;
@@ -25533,7 +25550,7 @@
     }
     if (now < Number(active.shienBleedNextAt || 0)) return;
     active.shienBleedNextAt = now + SHIEN_BLEED_TICK_MS;
-    const dmg = Math.min(active.hp, Math.max(1, Math.floor(Number(active.hpMax || 0) * SHIEN_BLEED_RATE)));
+    const dmg = Math.min(active.hp, applyStatusResist(active, Math.max(1, Math.floor(Number(active.hpMax || 0) * SHIEN_BLEED_RATE))));
     active.hp = Math.max(0, active.hp - dmg);
     showDamageNumber(state.player.x, state.player.y, dmg, 'player', false, '');
     spawnShienBloodFx();
@@ -25902,7 +25919,9 @@
       if (now - Number(e.latchedAt || now) >= CAMILLA_LATCH_MAX_MS) { removeCamillaSpider(e); removed = true; continue; }
       if (now < Number(e.nextDrainAt || 0)) continue;
       e.nextDrainAt = now + 1000;
-      const dmg = Math.min(member.hp, Math.max(1, Math.floor(Number(member.hpMax || 0) * CAMILLA_DRAIN_RATE)));
+      // build1789: 回復量は「実際に吸った量」に比例させる（耐性で吸収が減ればボスの回復も減る）
+      const baseDrain = Math.max(1, Math.floor(Number(member.hpMax || 0) * CAMILLA_DRAIN_RATE));
+      const dmg = Math.min(member.hp, applyStatusResist(member, baseDrain));
       member.hp = Math.max(0, member.hp - dmg);
       drained += dmg;
       const cap = Number(state.boss.hpMax || state.boss.hp);
@@ -25911,7 +25930,8 @@
       // build1782: 記憶決戦は掟の healPerTick（リヴィアは半分の125）
       const memGuardRule = isMemoryBattleStage() ? getMemoryGuardianRule() : null;
       const healPerTick = memGuardRule && Number(memGuardRule.healPerTick) > 0 ? Number(memGuardRule.healPerTick) : CAMILLA_HEAL_PER_TICK;
-      const after = Math.min(cap, raidCap, before + healPerTick);
+      const healRatio = Math.max(0, Math.min(1, dmg / baseDrain));
+      const after = Math.min(cap, raidCap, before + healPerTick * healRatio);
       if (after > before) { state.boss.hp = after; healed += Math.round(after - before); }
       spawnCamillaDrainFx(e.x, e.y, arena, 0);
     }
