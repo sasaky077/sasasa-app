@@ -9493,12 +9493,83 @@
     return applyMemoryArmor(applyHitComboDamage(elemental));
   }
 
+  // build1804: 装甲値（PHASEごとに再生）
+  function getMemoryArmorState(rule) {
+    if (!state || !state.boss || !rule || !(Number(rule.armorHp) > 0)) return null;
+    const phase = Math.max(1, Number(state.boss.phase || 1));
+    let ar = state.memoryArmor;
+    if (!ar || ar.phase !== phase) {
+      const regen = !!ar;
+      ar = state.memoryArmor = { phase, max: Number(rule.armorHp), hp: Number(rule.armorHp), broken: false, el: ar && ar.el };
+      if (regen) showMemoryGuardNotice('装甲、再生', false, 'ARMOR');
+    }
+    return ar;
+  }
+  function breakMemoryArmor(ar) {
+    if (!ar || ar.broken) return;
+    ar.broken = true;
+    ar.hp = 0;
+    showMemoryGuardNotice('装甲が砕けた', true, 'ARMOR BREAK');
+  }
+  function ensureMemoryArmorStyle() {
+    if (document.getElementById('memory-armor-style-v1804')) return;
+    const st = document.createElement('style');
+    st.id = 'memory-armor-style-v1804';
+    st.textContent = `
+      .memory-armor-bar{position:absolute;left:0;top:0;z-index:16;pointer-events:none;width:96px;margin-left:-48px;will-change:transform;
+        display:flex;align-items:center;gap:5px;font:700 8.5px/1 'Cinzel',serif;letter-spacing:.14em;color:#e8eef6;
+        text-shadow:0 0 3px #1a2533,0 0 1px #000}
+      .memory-armor-bar i{position:relative;flex:1;height:5px;border:1px solid rgba(200,215,235,.85);background:rgba(20,28,40,.55);overflow:hidden}
+      .memory-armor-bar i b{position:absolute;inset:0;transform-origin:left center;background:linear-gradient(90deg,#8fa3bd,#dbe6f5);transition:transform .15s}
+      .memory-armor-bar.is-broken{opacity:0;transition:opacity .4s}
+    `;
+    document.head.appendChild(st);
+  }
+  // 毎フレーム：装甲ゲージをボスの下に追従させる
+  function updateMemoryArmorVisual(now) {
+    const rule = getMemoryRule('armor');
+    if (!rule || !(Number(rule.armorHp) > 0) || !state || !state.boss) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const ar = getMemoryArmorState(rule);
+    if (!ar) return;
+    ensureMemoryArmorStyle();
+    if (!ar.el || !ar.el.isConnected) {
+      ar.el = document.createElement('div');
+      ar.el.className = 'memory-armor-bar';
+      ar.el.innerHTML = '<span>ARMOR</span><i><b></b></i>';
+      arena.appendChild(ar.el);
+    }
+    const hide = ar.broken || state.ended || !(state.boss.hp > 0);
+    if (ar.el.classList.contains('is-broken') !== hide) ar.el.classList.toggle('is-broken', hide);
+    const rate = (Math.round(ar.hp / Math.max(1, ar.max) * 50) / 50).toFixed(2);
+    const fill = ar.el.querySelector('b');
+    if (fill && fill.dataset.r !== rate) { fill.dataset.r = rate; fill.style.transform = `scaleX(${rate})`; }
+    const y = Number(state.boss.y || 0) + Math.max(36, getBossHalfWidthFast(now) * 1.25);
+    ar.el.style.transform = `translate(${Number(state.boss.x || 0).toFixed(1)}px,${y.toFixed(1)}px)`;
+  }
+
   // build1795: 記憶決戦の掟「装甲」。ボスへの1HITごとに固定値を差し引く（最低1）。
   function applyMemoryArmor(damage) {
     const dmg = Number(damage || 0);
     if (!(dmg > 0) || !state || !state.boss || combatElementTarget !== state.boss) return dmg;
     const rule = getMemoryRule('armor');
-    const cut = rule ? Math.max(0, Number(rule.cut || 0)) : 0;
+    if (!rule) return dmg;
+    // build1803: threshold＝この値未満の1HITは完全に弾く（重い一撃だけが通る）
+    // build1804: armorHp があれば「装甲値」。重い一撃（threshold以上）が装甲値も削り、0で砕ける。
+    //  砕けたらそのPHASEの間は全ての攻撃が通る。PHASEが変わると装甲は再生する。
+    const threshold = Math.max(0, Number(rule.threshold || 0));
+    const ar = getMemoryArmorState(rule);
+    if (ar && ar.broken) return dmg;
+    if (threshold > 0) {
+      if (dmg < threshold) return 0;
+      if (ar) {
+        ar.hp = Math.max(0, ar.hp - dmg);
+        if (ar.hp <= 0) breakMemoryArmor(ar);
+      }
+      return dmg;
+    }
+    const cut = Math.max(0, Number(rule.cut || 0));
     if (!cut) return dmg;
     return Math.max(1, dmg - cut);
   }
@@ -25633,6 +25704,7 @@
   function updateMemoryMechanics(now) {
     updateMemoryJudgment(now);
     updateMemorySniper(now);
+    updateMemoryArmorVisual(now);
     const rule = getMemoryGuardianRule();
     if (!rule || !state || !state.boss) return;
     if (state.ended || state.finishing || state.koTransition || !(state.boss.hp > 0)) return;

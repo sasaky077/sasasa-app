@@ -186,8 +186,14 @@
         const sec = Math.round(Math.max(5000, Number(rule.intervalMs || 13000)) / 1000);
         rows.push({ icon: 'sniper', name: '狙撃', text: `約${sec}秒ごとに自機を照準で捉え、即死の狙撃を撃ち込む` });
       } else if (rule.type === 'armor') {
+        const th = Math.max(0, Math.floor(Number(rule.threshold || 0)));
         const cut = Math.max(0, Math.floor(Number(rule.cut || 0)));
-        rows.push({ icon: 'armor', name: '装甲', text: `ボスへの攻撃は1HITごとに${cut}ダメージ差し引かれる` });
+        const arHp = Math.max(0, Math.floor(Number(rule.armorHp || 0)));
+        rows.push({ icon: 'armor', name: '装甲', text: th > 0
+          ? (arHp > 0
+            ? `1HIT${th}未満の攻撃は弾かれる。それ以上の攻撃で装甲を砕くと、そのPHASEの間すべての攻撃が通る`
+            : `ボスへの攻撃は1HITのダメージが${th}未満だと弾かれる`)
+          : `ボスへの攻撃は1HITごとに${cut}ダメージ差し引かれる` });
       } else if (rule.type === 'guardians') {
         const hitHp = Math.max(0, Math.floor(Number(rule.hitHp || 0)));
         const sec = Math.round(Math.max(3000, Number(rule.respawnMs || 8000)) / 1000);

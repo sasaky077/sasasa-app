@@ -2077,7 +2077,7 @@
     hit_count: Object.freeze({ name: 'HIT数', desc: '守護者は威力に関係なく、攻撃を当てた回数（hitHp）で倒れる。' }),
     drain_spiders: Object.freeze({ name: '吸血の子蜘蛛', desc: '張り付いた子蜘蛛が体力を吸い、ボスを回復させる。' }),
     sniper: Object.freeze({ name: '狙撃', desc: '定期的に自機を照準で捉え、即死の狙撃を撃ち込む。' }),
-    armor: Object.freeze({ name: '装甲', desc: 'ボスへの攻撃は1HITごとに一定のダメージが差し引かれる。' }),
+    armor: Object.freeze({ name: '装甲', desc: 'ボスへの1HITのダメージが一定未満なら弾かれる（threshold）。cut 指定時は1HITごとに一定値を差し引く。' }),
     element_barrier: Object.freeze({ name: '属性結界', desc: 'ボスにも取り巻きにも結界。弱点属性の攻撃しか通らない（無属性は等倍で通る）。includeAdds:false で取り巻きは対象外。' }),
   });
   const MEMORY_BATTLE_STAGES = Object.freeze([
@@ -2125,7 +2125,7 @@
       rules: Object.freeze([
         Object.freeze({ type: 'element_barrier' }),
         Object.freeze({ type: 'sniper', firstMs: 9000, intervalMs: 13000, lockMs: 2600, freezeMs: 550, radius: 36, ignoreTimeStop: true }), // build1796: 時間停止では防げない
-        Object.freeze({ type: 'armor', cut: 45 }),
+        Object.freeze({ type: 'armor', threshold: 270, armorHp: 2400 }), // build1804: 1HIT 270未満は無効。重い一撃で装甲値2400を削り切ると、そのPHASE中は全攻撃が通る
       ]),
       extra: Object.freeze({ bossElement: 'wood', enemyElement: 'wood' }),
     }),
