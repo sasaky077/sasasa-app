@@ -1500,6 +1500,20 @@
     return !!(selectedStage && selectedStage.id === SHOOTING_STAGE_ID.BULLET_HELL_TEST);
   }
 
+  // build1819: 特別巡行「境界者 -イノリ-」。挑戦TICKET（インベントリ inori_challenge_ticket）は begin_inori_attempt で消費。
+  function isInoriSpecialStage() {
+    return !!(selectedStage && selectedStage.id === SHOOTING_STAGE_ID.INORI_SPECIAL);
+  }
+  // 周回が進むほどHP・鳥居の耐久が上がる（ノアの周回と同じ5段階）
+  function getInoriSpecialLapConfig() {
+    const lap = isInoriSpecialStage() ? Math.max(1, Math.floor(Number(window.__inoriLap) || 1)) : 1;
+    if (lap === 1) return { lap, hp:1.0, torii:1.0 };
+    if (lap === 2) return { lap, hp:1.5, torii:1.3 };
+    if (lap === 3) return { lap, hp:2.0, torii:1.6 };
+    if (lap === 4) return { lap, hp:2.6, torii:2.0 };
+    return { lap, hp:3.3, torii:2.4 };
+  }
+
   // 15F reuses Noah's combat patterns but MUST NOT consume Noah special tickets.
   // SPECIAL STAGEのみ対象。塔のノアには倍率を適用しない。
   function getNoahLapConfig() {
@@ -1553,7 +1567,7 @@
   function isResponsiveBossStage() {
     // BOSS対象:
     // フェイスレス / 各種レムナント / ノア / すこあちゃん
-    if (isFacelessStage() || isNoahStage() || isAmbushStage() || isScoreAttackStage() ||
+    if (isFacelessStage() || isNoahStage() || isInoriSpecialStage() || isAmbushStage() || isScoreAttackStage() ||
         isSelectedBaseStage(SHOOTING_STAGE_ID.CH01_04) || isSelectedBaseStage(SHOOTING_STAGE_ID.CH02_04)) {
       return true;
     }
@@ -3746,6 +3760,8 @@
       secureRunToken: String(state.secureRunToken || ''),
       dailyQuestRunToken: isDailyQuestStage() ? String(activeDailyQuestRunToken || state.dailyQuestRunToken || '') : '',
       noahAttemptId: isNoahStage() ? String(window.__noahAttemptId || '') : '',
+      inoriAttemptId: isInoriSpecialStage() ? String(window.__inoriAttemptId || '') : '',
+      inoriLap: isInoriSpecialStage() ? Math.max(1, Math.floor(Number(window.__inoriLap) || 1)) : 0,
       phaseOdysseyFloor: isPhaseOdysseyStage() ? Number(selectedStage.stageNo || 0) : 0,
       towerAttempt: (isResonanceTowerStage() && window.ResonanceTower && typeof window.ResonanceTower.getResumeAttempt === 'function')
         ? window.ResonanceTower.getResumeAttempt()
@@ -4006,6 +4022,10 @@
       state.dailyQuestRunToken = activeDailyQuestRunToken;
     }
     if (isNoahStage() && snapshot.noahAttemptId) window.__noahAttemptId = String(snapshot.noahAttemptId);
+    if (isInoriSpecialStage() && snapshot.inoriAttemptId) {
+      window.__inoriAttemptId = String(snapshot.inoriAttemptId);
+      if (Number(snapshot.inoriLap) >= 1) window.__inoriLap = Number(snapshot.inoriLap);
+    }
 
     if (isRaidStage()) {
       state.raidInitialHp = Math.max(Number(snapshot.raidInitialHp || 0), Number(state.boss?.hp || 0));
@@ -4975,9 +4995,10 @@
     const noahLapHp = isNoahStage() ? getNoahLapConfig().hp : 0;
     const noahGaugeValues = noahLapHp ? [Math.floor(noahLapHp / 3), Math.floor(noahLapHp / 3), noahLapHp - 2 * Math.floor(noahLapHp / 3)] : null;
 
+    const inoriLapHpRate = isInoriSpecialStage() ? getInoriSpecialLapConfig().hp : 1; // build1819
     const stageBossGaugeHps = (noahGaugeValues || rawBossGaugeHps)
       ? (noahGaugeValues || rawBossGaugeHps)
-          .map(v => Math.max(1, Number(v || 1)))
+          .map(v => Math.max(1, Math.round(Number(v || 1) * inoriLapHpRate)))
           .filter(v => Number.isFinite(v) && v > 0)
       : null;
 
@@ -15570,7 +15591,7 @@
   function getInoriToriiHp() {
     const po = Number(selectedStage?.phaseOdyssey?.toriiHp || 0);
     if (po > 0) return po;
-    const stageHp = Number(selectedStage?.inoriToriiHp || 0);
+    const stageHp = Number(selectedStage?.inoriToriiHp || 0) * (isInoriSpecialStage() ? getInoriSpecialLapConfig().torii : 1); // build1819
     if (stageHp > 0) return stageHp;
     const def = getShootingEnemy(window.ShootingEnemies?.SHOOTING_ENEMY_ID?.INORI_TORII || 'shooting_inori_torii');
     return Math.max(1, Number(def && def.hp || 1500));
@@ -27652,6 +27673,11 @@
       meta.title = BOSS.name || 'トワ';
       meta.sub = 'THE LAST ECHO';
       meta.image = selectedStage.introImage || 'images/tower15_boss_battle_start.webp';
+    } else if (isInoriSpecialStage()) {
+      meta.kicker = 'SPECIAL STAGE';
+      meta.title = '境界者：イノリ';
+      meta.sub = `${getInoriSpecialLapConfig().lap}周目`;
+      meta.image = selectedStage.introImage || 'images/memory_inori_battle_start.webp';
     } else if (isNoahStage()) {
       meta.kicker = 'SPECIAL STAGE';
       meta.title = '理想郷：ノア';
@@ -31900,6 +31926,56 @@
 
   let specialTicketConsumePending = false;
 
+  // build1819: 特別巡行「境界者 -イノリ-」— TICKET確認と挑戦ID（attempt）の発行
+  async function confirmInoriTicketUse() {
+    const T = window.ItemTickets;
+    if (!T || typeof T.confirmTicket !== 'function') return true;
+    try { await T.fetchCounts(true); } catch (_) {}
+    if (T.getCount('inori_challenge_ticket') < 1) {
+      const message = 'イノリ挑戦TICKETがありません';
+      if (typeof window.showToast === 'function') window.showToast(message); else alert(message);
+      return false;
+    }
+    return T.confirmTicket('inori_challenge_ticket', '境界者 -イノリ-',
+      'イノリ挑戦TICKETを1枚使って出撃します。\n敗北・リタイアしてもTICKETは戻りません。', '出撃する');
+  }
+  let inoriAttemptStartPending = false;
+  async function ensureSelectedInoriAttemptStarted() {
+    if (!isInoriSpecialStage()) return true;
+    if (inoriAttemptStartPending) return false;
+    const sb = window.zsSupabase;
+    if (!sb || typeof sb.rpc !== 'function') {
+      const message = 'イノリ挑戦情報を作成できません';
+      if (typeof window.showToast === 'function') window.showToast(message); else alert(message);
+      return false;
+    }
+    inoriAttemptStartPending = true;
+    try {
+      const res = await sb.rpc('begin_inori_attempt');
+      if (res && res.error) throw res.error;
+      let data = res ? res.data : null;
+      if (typeof data === 'string') { try { data = JSON.parse(data); } catch (_) {} }
+      if (!data || data.ok === false) {
+        const m = String(data && data.message || '');
+        throw new Error(/ticket/i.test(m) ? 'イノリ挑戦TICKETがありません' : (m || 'イノリ挑戦情報の作成に失敗しました'));
+      }
+      const attemptId = data.attempt_id ? String(data.attempt_id) : '';
+      if (!attemptId) throw new Error('イノリ挑戦IDを取得できません');
+      window.__inoriAttemptId = attemptId;
+      if (Number.isInteger(Number(data.lap)) && Number(data.lap) >= 1) window.__inoriLap = Number(data.lap);
+      try { window.dispatchEvent(new CustomEvent('zeraphia:item-tickets-changed', { detail:{ id:'inori_challenge_ticket' } })); } catch (_) {}
+      try { if (window.ItemTickets) window.ItemTickets.fetchCounts(true); } catch (_) {}
+      return true;
+    } catch (err) {
+      console.error('[shooting] inori attempt start failed:', err);
+      const message = err && err.message ? err.message : 'イノリ挑戦情報の作成に失敗しました';
+      if (typeof window.showToast === 'function') window.showToast(message); else alert(message);
+      return false;
+    } finally {
+      inoriAttemptStartPending = false;
+    }
+  }
+
   async function ensureSelectedStageTicketConsumed() {
     const cost = getSelectedStageTicketCost();
     if (cost <= 0) return true;
@@ -32031,6 +32107,12 @@
       });
       return;
     }
+    // build1819: イノリの特別巡行も、出撃前にTICKET消費の確認を挟む
+    if (isInoriSpecialStage() && !options.inoriTicketConfirmed) {
+      if (!isShootingPartyReady()) return;
+      if (await confirmInoriTicketUse()) await window.startSelectedShootingCharacter({ inoriTicketConfirmed: true });
+      return;
+    }
     if (isStoryShootingStage()) ensureStoryEriLeader();
     if (!isShootingPartyReady()) return;
     const towerBattleStart=isResonanceTowerStage() || isPhaseOdysseyStage(); // 二重タップ防止（位相回遊も確認ダイアログを挟む）
@@ -32078,6 +32160,7 @@
     // "special stage ticket required". Noah must use only the dedicated RPC.
     if (!isNoahStage() && !(await ensureSelectedStageTicketConsumed())) return;
     if (!(await ensureSelectedNoahAttemptStarted())) return;
+    if (!(await ensureSelectedInoriAttemptStarted())) return; // build1819
 
     // build532: SCORE ATTACKは実際の編成確定後にattemptを作る。
     if (isScoreAttackStage() && window.ScoreAttack && typeof window.ScoreAttack.beginAttemptForParty === 'function') {
@@ -32508,6 +32591,11 @@
       });
       return;
     }
+    // build1819: イノリの特別巡行のRETRYも、TICKETを1枚使う確認を挟む
+    if (isInoriSpecialStage() && !options.inoriTicketConfirmed) {
+      if (await confirmInoriTicketUse()) await window.restartShootingEvent({ inoriTicketConfirmed: true });
+      return;
+    }
 
     // build812: DAILY巡行はRESULTから直接RETRYさせない。
     // UI表示が何らかの理由で崩れても、処理側で二重出撃を必ず止める。
@@ -32536,6 +32624,7 @@
     // atomic ticket-consumption path. Do not consume via the generic RPC first.
     if (!isNoahStage() && !(await ensureSelectedStageTicketConsumed())) return;
     if (!(await ensureSelectedNoahAttemptStarted())) return;
+    if (!(await ensureSelectedInoriAttemptStarted())) return; // build1819
 
     // SCORE ATTACKのRETRYは新しい挑戦なので、ここで新attemptを発行する。
     if (isScoreAttackStage() && window.ScoreAttack && typeof window.ScoreAttack.beginAttemptForParty === 'function') {
@@ -39447,6 +39536,9 @@
       return ['PHASE ODYSSEY', `FLOOR ${stageNo}`, stage.type === 'boss' ? `BOSS ${String(stage.phaseOdyssey?.bossName || '位相の守護者')}` : ''];
     }
 
+    if (isInoriSpecialStage()) {
+      return ['SPECIAL PROC.', `境界者 -イノリ- ${getInoriSpecialLapConfig().lap}周目`];
+    }
     // ノアはステージ名のみ。旧 STRESS TEST 表記は出さない。
     if (isNoahStage()) {
       return ['SPECIAL PROC.', '理想郷 -ノア-'];

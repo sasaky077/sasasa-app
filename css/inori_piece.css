@@ -1,0 +1,1241 @@
+/* build1819: 特別巡行「イノリ」— 楽園 -ノア- の欠片パネルCSS（#noah-piece-overlay）を #inori-piece-overlay へ複製して自動生成。
+   画像：noah.webp → inori_puzzle.webp / bg_noah.webp → inori_stage_bg.webp。手で編集せず、ノア側を直したら再生成する。 */
+#inori-piece-overlay.noah-piece-overlay{
+  background:rgba(247,244,237,.985) !important;
+}
+#inori-piece-overlay .noah-piece-screen{
+  background:
+    radial-gradient(ellipse at 50% 7%,rgba(255,255,255,.99) 0%,rgba(255,255,255,.74) 31%,rgba(255,255,255,0) 63%),
+    linear-gradient(180deg,#fbf9f4 0%,#f5f0e7 100%) !important;
+}
+#inori-piece-overlay .noah-piece-head{
+  flex:0 0 62px !important;
+  min-height:62px !important;
+  padding:max(7px,env(safe-area-inset-top)) 18px 3px !important;
+  grid-template-columns:72px minmax(0,1fr) 72px !important;
+  border:0 !important;
+  background:transparent !important;
+}
+#inori-piece-overlay .noah-piece-back{
+  min-width:52px !important;height:42px !important;padding:0 !important;
+  border:0 !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important;
+  color:#837361 !important;font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif !important;
+  font-size:11px !important;font-weight:500 !important;letter-spacing:.015em !important;
+}
+#inori-piece-overlay .noah-piece-title small{
+  margin:0 0 4px !important;color:#a98955 !important;font-family:"Cinzel","Times New Roman",serif !important;
+  font-size:5.5px !important;font-weight:600 !important;letter-spacing:.27em !important;
+}
+#inori-piece-overlay .noah-piece-title strong{
+  color:#6f5535 !important;font-size:15px !important;font-weight:500 !important;letter-spacing:.12em !important;
+}
+#inori-piece-overlay .noah-piece-body{
+  flex:1 1 auto !important;min-height:0 !important;width:100% !important;
+  padding:13px 18px max(14px,env(safe-area-inset-bottom)) !important;
+  display:flex !important;flex-direction:column !important;align-items:center !important;overflow:hidden !important;box-sizing:border-box !important;
+}
+#inori-piece-overlay .noah-piece-lead{margin:0 0 7px !important;text-align:center !important;}
+#inori-piece-overlay .noah-piece-lead .en{
+  margin:0 0 5px !important;color:#ad905f !important;font-family:"Cinzel","Times New Roman",serif !important;
+  font-size:6px !important;font-weight:500 !important;letter-spacing:.30em !important;
+}
+#inori-piece-overlay .noah-piece-lead h2{
+  margin:0 !important;color:#5f4c35 !important;font-size:16px !important;font-weight:500 !important;line-height:1.35 !important;letter-spacing:.10em !important;
+}
+#inori-piece-overlay .noah-piece-lead p{display:none !important;}
+#inori-piece-overlay .noah-piece-progress{
+  width:min(calc(100vw - 54px),292px) !important;min-height:26px !important;margin:0 0 8px !important;padding:0 2px !important;
+  display:flex !important;align-items:baseline !important;justify-content:center !important;gap:6px !important;border:0 !important;background:transparent !important;
+}
+#inori-piece-overlay .noah-piece-progress-label{margin-right:2px !important;color:rgba(103,83,55,.50) !important;font-size:7px !important;letter-spacing:.12em !important;}
+#inori-piece-overlay .noah-piece-progress strong{
+  color:#73582f !important;font-family:"Cinzel","Noto Serif JP",serif !important;font-size:22px !important;font-weight:400 !important;line-height:1 !important;
+}
+#inori-piece-overlay .noah-piece-progress span:not(.noah-piece-progress-label){
+  color:#aa8c57 !important;font-family:"Cinzel","Noto Serif JP",serif !important;font-size:8px !important;letter-spacing:.08em !important;
+}
+#inori-piece-overlay .noah-puzzle-frame{
+  position:relative !important;width:min(calc(100vw - 52px),292px) !important;aspect-ratio:1/1 !important;flex:0 0 auto !important;
+  margin:0 !important;padding:5px !important;box-sizing:border-box !important;border:1px solid rgba(150,121,76,.22) !important;border-radius:0 !important;
+  background:rgba(255,255,255,.68) !important;box-shadow:0 12px 34px rgba(77,58,31,.055),inset 0 0 0 1px rgba(255,255,255,.86) !important;
+}
+#inori-piece-overlay .noah-puzzle-frame::before{
+  content:"" !important;position:absolute !important;z-index:-1 !important;inset:-22px !important;pointer-events:none !important;
+  background:radial-gradient(circle at 50% 49%,rgba(255,255,255,.92),rgba(255,255,255,0) 70%) !important;filter:blur(10px) !important;
+}
+#inori-piece-overlay .noah-puzzle-grid{
+  width:100% !important;height:100% !important;display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  grid-template-rows:repeat(3,minmax(0,1fr)) !important;gap:1px !important;overflow:hidden !important;border-radius:0 !important;background:rgba(143,119,82,.105) !important;
+}
+#inori-piece-overlay .noah-puzzle-piece,
+#inori-piece-overlay .noah-puzzle-piece.open,
+#inori-piece-overlay .noah-puzzle-piece.locked{
+  position:relative !important;min-width:0 !important;min-height:0 !important;overflow:hidden !important;border-radius:0 !important;
+  background-image:url("../images/noah_logo_puzzle.webp") !important;background-repeat:no-repeat !important;background-size:300% 300% !important;
+  background-color:#faf8f3 !important;box-shadow:none !important;
+}
+#inori-piece-overlay .noah-puzzle-piece.locked{filter:saturate(.35) contrast(.82) !important;}
+#inori-piece-overlay .noah-puzzle-piece.locked::before{
+  content:"" !important;position:absolute !important;inset:0 !important;z-index:1 !important;display:block !important;
+  background:linear-gradient(180deg,rgba(250,248,243,.80),rgba(246,242,234,.84)) !important;opacity:1 !important;
+}
+#inori-piece-overlay .noah-puzzle-piece.locked::after{content:none !important;display:none !important;}
+#inori-piece-overlay .noah-puzzle-piece.open{filter:none !important;animation:noahPieceFocus797 .68s cubic-bezier(.20,.76,.20,1) both !important;}
+#inori-piece-overlay .noah-puzzle-piece.open::before,
+#inori-piece-overlay .noah-puzzle-piece.open::after{content:none !important;display:none !important;}
+#inori-piece-overlay .noah-piece-note{
+  margin:10px auto 0 !important;max-width:292px !important;color:rgba(92,74,50,.43) !important;font-size:7.5px !important;line-height:1.45 !important;letter-spacing:.035em !important;text-align:center !important;
+}
+#inori-piece-overlay .noah-piece-actions{
+  flex:0 0 auto !important;width:min(calc(100vw - 84px),238px) !important;margin:18px auto 0 !important;padding:0 !important;
+  border:0 !important;background:transparent !important;box-shadow:none !important;text-align:center !important;
+}
+#inori-piece-overlay .noah-piece-actions::before{
+  content:"" !important;display:block !important;width:52px !important;height:1px !important;margin:0 auto 10px !important;
+  background:linear-gradient(90deg,transparent,rgba(157,124,70,.30),transparent) !important;
+}
+#inori-piece-overlay .noah-piece-challenge{
+  width:100% !important;height:44px !important;min-height:44px !important;padding:0 14px !important;border:1px solid rgba(160,126,68,.34) !important;
+  border-radius:0 !important;background:linear-gradient(180deg,rgba(255,254,250,.96),rgba(247,241,230,.90)) !important;color:#674e2d !important;
+  box-shadow:0 5px 16px rgba(80,59,30,.045),inset 0 1px 0 rgba(255,255,255,.92) !important;text-shadow:none !important;
+  font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif !important;font-size:11px !important;font-weight:500 !important;line-height:1 !important;letter-spacing:.12em !important;white-space:nowrap !important;
+}
+#inori-piece-overlay .noah-piece-challenge::before,
+#inori-piece-overlay .noah-piece-challenge::after{content:none !important;display:none !important;}
+#inori-piece-overlay .noah-piece-challenge:active:not(:disabled){transform:translateY(1px) !important;background:linear-gradient(180deg,rgba(248,242,231,.98),rgba(241,232,216,.94)) !important;}
+#inori-piece-overlay .noah-piece-challenge:disabled{
+  border-color:rgba(147,128,98,.20) !important;background:rgba(249,246,240,.68) !important;color:rgba(94,77,54,.42) !important;box-shadow:none !important;opacity:1 !important;
+}
+#inori-piece-overlay .noah-piece-ticket{display:none !important;}
+#inori-piece-overlay .noah-piece-head-spacer{display:block !important;grid-column:3 !important;width:100% !important;height:1px !important;}
+#inori-piece-overlay .noah-piece-ticket-status{
+  display:block !important;margin:7px 0 0 !important;color:rgba(102,82,56,.48) !important;
+  font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif !important;font-size:7.5px !important;font-weight:400 !important;line-height:1.3 !important;letter-spacing:.08em !important;
+}
+#inori-piece-overlay .noah-piece-ticket-status b{
+  margin:0 2px !important;color:#71572f !important;font-family:"Cinzel","Noto Serif JP",serif !important;font-size:10px !important;font-weight:500 !important;
+}
+#inori-piece-overlay .noah-piece-complete{margin-top:8px !important;color:#81683f !important;font-size:8px !important;letter-spacing:.08em !important;}
+@media(max-height:700px){
+#inori-piece-overlay .noah-piece-head{flex-basis:56px !important;min-height:56px !important;padding-top:max(4px,env(safe-area-inset-top)) !important;}
+#inori-piece-overlay .noah-piece-body{padding-top:8px !important;}
+#inori-piece-overlay .noah-piece-lead{margin-bottom:4px !important;}
+#inori-piece-overlay .noah-piece-lead h2{font-size:15px !important;}
+#inori-piece-overlay .noah-piece-progress{width:min(calc(100vw - 60px),278px) !important;min-height:22px !important;margin-bottom:6px !important;}
+#inori-piece-overlay .noah-puzzle-frame{width:min(calc(100vw - 60px),278px) !important;}
+#inori-piece-overlay .noah-piece-note{margin-top:7px !important;}
+#inori-piece-overlay .noah-piece-actions{width:min(calc(100vw - 98px),226px) !important;margin-top:12px !important;}
+#inori-piece-overlay .noah-piece-actions::before{margin-bottom:8px !important;}
+#inori-piece-overlay .noah-piece-challenge{height:42px !important;min-height:42px !important;}
+}
+#inori-piece-overlay .noah-piece-body{
+  flex:0 0 auto !important;
+  min-height:auto !important;
+  padding-bottom:0 !important;
+  overflow:visible !important;
+}
+#inori-piece-overlay .noah-puzzle-frame{
+  width:min(calc(100vw - 50px),296px) !important;
+  padding:3px !important;
+  border:1px solid rgba(151,121,75,.16) !important;
+  background:rgba(255,255,255,.74) !important;
+  box-shadow:0 10px 28px rgba(76,57,31,.045),inset 0 0 0 1px rgba(255,255,255,.92) !important;
+}
+#inori-piece-overlay .noah-puzzle-grid{
+  position:relative !important;
+  isolation:isolate !important;
+  gap:0 !important;
+  background:#f8f6f1 !important;
+}
+#inori-piece-overlay .noah-puzzle-grid::before{
+  content:"" !important;
+  position:absolute !important;
+  inset:0 !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+  background-image:url("../images/noah_logo_puzzle.webp?v=798") !important;
+  background-repeat:no-repeat !important;
+  background-position:center !important;
+  background-size:100% 100% !important;
+  opacity:.25 !important;
+  filter:grayscale(1) contrast(.92) !important;
+}
+#inori-piece-overlay .noah-puzzle-piece{
+  z-index:1 !important;
+  border:0 !important;
+  box-shadow:inset 0 0 0 .5px rgba(137,113,76,.11) !important;
+}
+#inori-piece-overlay .noah-puzzle-piece.locked{
+  background-image:none !important;
+  background-color:rgba(250,248,243,.12) !important;
+  filter:none !important;
+}
+#inori-piece-overlay .noah-puzzle-piece.locked::before{
+  content:"" !important;
+  position:absolute !important;
+  inset:0 !important;
+  z-index:1 !important;
+  display:block !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(236,229,217,.04)) !important;
+  opacity:1 !important;
+}
+#inori-piece-overlay .noah-puzzle-piece.open{
+  background-image:url("../images/noah_logo_puzzle.webp?v=798") !important;
+  background-repeat:no-repeat !important;
+  background-size:300% 300% !important;
+  background-color:#f8f6f1 !important;
+  filter:none !important;
+  box-shadow:inset 0 0 0 .5px rgba(137,113,76,.10) !important;
+}
+#inori-piece-overlay .noah-piece-note{
+  margin-top:8px !important;
+}
+#inori-piece-overlay .noah-piece-actions{
+  flex:0 0 auto !important;
+  width:min(calc(100vw - 104px),218px) !important;
+  margin:14px auto 0 !important;
+  padding:0 !important;
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+#inori-piece-overlay .noah-piece-actions::before{
+  content:none !important;
+  display:none !important;
+}
+#inori-piece-overlay .noah-piece-challenge{
+  width:100% !important;
+  height:42px !important;
+  min-height:42px !important;
+  border-color:rgba(157,123,67,.28) !important;
+  background:linear-gradient(180deg,rgba(255,254,250,.98),rgba(248,243,234,.94)) !important;
+  box-shadow:0 4px 13px rgba(79,58,29,.035),inset 0 1px 0 rgba(255,255,255,.94) !important;
+  color:#654c2c !important;
+  font-size:11px !important;
+  letter-spacing:.13em !important;
+}
+#inori-piece-overlay .noah-piece-ticket-status{
+  margin-top:6px !important;
+  font-size:7.5px !important;
+  color:rgba(101,81,54,.48) !important;
+}
+@media(max-height:700px){
+#inori-piece-overlay .noah-puzzle-frame{
+    width:min(calc(100vw - 58px),280px) !important;
+  }
+#inori-piece-overlay .noah-piece-actions{
+    width:min(calc(100vw - 116px),210px) !important;
+    margin-top:10px !important;
+  }
+#inori-piece-overlay .noah-piece-challenge{
+    height:40px !important;
+    min-height:40px !important;
+  }
+}
+#inori-piece-overlay .noah-piece-screen{
+  display:block !important;
+  height:100dvh !important;
+  overflow:hidden !important;
+}
+#inori-piece-overlay .noah-piece-body{
+  display:block !important;
+  flex:none !important;
+  min-height:0 !important;
+  height:auto !important;
+  overflow:visible !important;
+  padding-bottom:0 !important;
+}
+#inori-piece-overlay .noah-puzzle-frame{
+  width:min(calc(100vw - 54px),286px) !important;
+  aspect-ratio:1 / 1 !important;
+  height:auto !important;
+  padding:4px !important;
+  margin:0 auto !important;
+  border:1px solid rgba(151,121,75,.18) !important;
+  background:rgba(255,255,255,.80) !important;
+  box-shadow:0 9px 26px rgba(76,57,31,.045),inset 0 0 0 1px rgba(255,255,255,.94) !important;
+}
+#inori-piece-overlay .noah-puzzle-grid{
+  position:relative !important;
+  width:100% !important;
+  height:100% !important;
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  grid-template-rows:repeat(3,minmax(0,1fr)) !important;
+  gap:1px !important;
+  overflow:hidden !important;
+  background:rgba(132,108,72,.13) !important;
+}
+#inori-piece-overlay .noah-puzzle-grid::before{
+  content:none !important;
+  display:none !important;
+}
+#inori-piece-overlay .noah-puzzle-piece{
+  position:relative !important;
+  min-width:0 !important;
+  min-height:0 !important;
+  overflow:hidden !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background-repeat:no-repeat !important;
+  background-size:300% 300% !important;
+  background-color:#faf8f3 !important;
+  box-shadow:none !important;
+  opacity:1 !important;
+  filter:none !important;
+  backface-visibility:hidden !important;
+  -webkit-backface-visibility:hidden !important;
+  transform-origin:center center !important;
+}
+#inori-piece-overlay .noah-puzzle-piece.locked{
+  background-image:url("../images/noah_logo_puzzle.webp?v=799") !important;
+  opacity:1 !important;
+  filter:none !important;
+}
+#inori-piece-overlay .noah-puzzle-piece.locked::before,
+#inori-piece-overlay .noah-puzzle-piece.locked::after{
+  content:none !important;
+  display:none !important;
+}
+#inori-piece-overlay .noah-puzzle-piece.open{
+  background-image:url("../images/inori_puzzle.webp") !important;
+  opacity:1 !important;
+  filter:none !important;
+  animation:noahPieceTurn799 .62s cubic-bezier(.22,.72,.18,1) both !important;
+}
+#inori-piece-overlay .noah-puzzle-piece.open::before,
+#inori-piece-overlay .noah-puzzle-piece.open::after{
+  content:none !important;
+  display:none !important;
+}
+#inori-piece-overlay .noah-piece-note{
+  margin:9px auto 0 !important;
+}
+#inori-piece-overlay .noah-piece-actions{
+  position:relative !important;
+  inset:auto !important;
+  float:none !important;
+  flex:none !important;
+  width:min(calc(100vw - 96px),230px) !important;
+  margin:13px auto 0 !important;
+  padding:0 !important;
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  text-align:center !important;
+}
+#inori-piece-overlay .noah-piece-actions::before{
+  content:none !important;
+  display:none !important;
+}
+#inori-piece-overlay .noah-piece-challenge{
+  width:100% !important;
+  height:43px !important;
+  min-height:43px !important;
+  padding:0 12px !important;
+  border:1px solid rgba(158,124,67,.31) !important;
+  border-radius:0 !important;
+  background:linear-gradient(180deg,rgba(255,254,250,.98),rgba(247,241,230,.93)) !important;
+  color:#654c2c !important;
+  box-shadow:0 4px 13px rgba(79,58,29,.035),inset 0 1px 0 rgba(255,255,255,.94) !important;
+  font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif !important;
+  font-size:11px !important;
+  font-weight:500 !important;
+  line-height:1 !important;
+  letter-spacing:.12em !important;
+  white-space:nowrap !important;
+  text-shadow:none !important;
+}
+#inori-piece-overlay .noah-piece-challenge:disabled{
+  border-color:rgba(145,123,90,.22) !important;
+  background:rgba(252,249,243,.90) !important;
+  color:rgba(94,75,50,.48) !important;
+  box-shadow:none !important;
+  opacity:1 !important;
+}
+#inori-piece-overlay .noah-piece-ticket-status{
+  display:block !important;
+  margin:7px 0 0 !important;
+  font-size:7.5px !important;
+  line-height:1.3 !important;
+  letter-spacing:.08em !important;
+  color:rgba(102,82,56,.50) !important;
+}
+#inori-piece-overlay .noah-piece-ticket-status b{
+  margin:0 2px !important;
+  color:#71572f !important;
+  font-size:10px !important;
+}
+@media(max-height:700px){
+#inori-piece-overlay .noah-piece-head{
+    flex-basis:56px !important;
+    min-height:56px !important;
+  }
+#inori-piece-overlay .noah-piece-body{
+    padding-top:7px !important;
+  }
+#inori-piece-overlay .noah-puzzle-frame{
+    width:min(calc(100vw - 62px),276px) !important;
+  }
+#inori-piece-overlay .noah-piece-actions{
+    width:min(calc(100vw - 112px),218px) !important;
+    margin-top:10px !important;
+  }
+#inori-piece-overlay .noah-piece-challenge{
+    height:41px !important;
+    min-height:41px !important;
+  }
+#inori-piece-overlay .noah-piece-ticket-status{
+    margin-top:5px !important;
+  }
+}
+#inori-piece-overlay .noah-puzzle-grid{
+  position:relative !important;
+  isolation:isolate !important;
+  gap:0 !important;
+  background-color:#faf8f3 !important;
+  background-image:url("../images/noah_logo_puzzle.webp?v=800") !important;
+  background-repeat:no-repeat !important;
+  background-position:center center !important;
+  background-size:100% 100% !important;
+}
+#inori-piece-overlay .noah-puzzle-grid::before{
+  content:none !important;
+  display:none !important;
+}
+#inori-piece-overlay .noah-puzzle-piece{
+  z-index:1 !important;
+  box-sizing:border-box !important;
+  background-color:transparent !important;
+  background-repeat:no-repeat !important;
+  box-shadow:inset 0 0 0 .5px rgba(132,108,72,.13) !important;
+}
+#inori-piece-overlay .noah-puzzle-piece.locked{
+  background-image:none !important;
+  background-color:transparent !important;
+  filter:none !important;
+  opacity:1 !important;
+}
+#inori-piece-overlay .noah-puzzle-piece.locked::before,
+#inori-piece-overlay .noah-puzzle-piece.locked::after{
+  content:none !important;
+  display:none !important;
+}
+#inori-piece-overlay .noah-puzzle-piece.open{
+  background-image:url("../images/inori_puzzle.webp") !important;
+  background-size:300% 300% !important;
+  background-repeat:no-repeat !important;
+  background-color:#faf8f3 !important;
+  filter:none !important;
+  opacity:1 !important;
+  animation:noahPieceTurn800 .62s cubic-bezier(.22,.72,.18,1) both !important;
+}
+#inori-piece-overlay .noah-puzzle-piece.open::before,
+#inori-piece-overlay .noah-puzzle-piece.open::after{
+  content:none !important;
+  display:none !important;
+}
+#inori-piece-overlay .noah-puzzle-piece:nth-child(1){background-position:0% 0% !important;}
+#inori-piece-overlay .noah-puzzle-piece:nth-child(2){background-position:50% 0% !important;}
+#inori-piece-overlay .noah-puzzle-piece:nth-child(3){background-position:100% 0% !important;}
+#inori-piece-overlay .noah-puzzle-piece:nth-child(4){background-position:0% 50% !important;}
+#inori-piece-overlay .noah-puzzle-piece:nth-child(5){background-position:50% 50% !important;}
+#inori-piece-overlay .noah-puzzle-piece:nth-child(6){background-position:100% 50% !important;}
+#inori-piece-overlay .noah-puzzle-piece:nth-child(7){background-position:0% 100% !important;}
+#inori-piece-overlay .noah-puzzle-piece:nth-child(8){background-position:50% 100% !important;}
+#inori-piece-overlay .noah-puzzle-piece:nth-child(9){background-position:100% 100% !important;}
+#inori-piece-overlay .noah-piece-note{
+  margin:10px auto 0 !important;
+  max-width:300px !important;
+  color:rgba(83,65,43,.70) !important;
+  font-size:8.5px !important;
+  font-weight:400 !important;
+  line-height:1.65 !important;
+  letter-spacing:.045em !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.70) !important;
+}
+#inori-piece-overlay .noah-piece-actions{
+  width:min(calc(100vw - 92px),236px) !important;
+  margin:12px auto 0 !important;
+}
+#inori-piece-overlay .noah-piece-challenge{
+  height:44px !important;
+  min-height:44px !important;
+  border:1px solid rgba(148,109,50,.45) !important;
+  background:linear-gradient(180deg,rgba(255,253,247,.99),rgba(246,238,224,.98)) !important;
+  color:#5c4324 !important;
+  box-shadow:
+    0 4px 12px rgba(74,53,24,.055),
+    inset 0 1px 0 rgba(255,255,255,.96) !important;
+  font-size:11.5px !important;
+  font-weight:500 !important;
+  letter-spacing:.10em !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.68) !important;
+}
+#inori-piece-overlay .noah-piece-challenge:active:not(:disabled){
+  transform:translateY(1px) !important;
+  background:linear-gradient(180deg,rgba(249,243,232,.99),rgba(241,230,211,.98)) !important;
+}
+#inori-piece-overlay .noah-piece-challenge:disabled{
+  border-color:rgba(145,112,61,.34) !important;
+  background:linear-gradient(180deg,rgba(252,249,242,.98),rgba(245,238,226,.96)) !important;
+  color:rgba(83,64,39,.68) !important;
+  box-shadow:
+    0 3px 10px rgba(70,50,24,.035),
+    inset 0 1px 0 rgba(255,255,255,.92) !important;
+  opacity:1 !important;
+}
+#inori-piece-overlay .noah-piece-ticket-status{
+  margin:7px 0 0 !important;
+  color:rgba(84,66,43,.67) !important;
+  font-size:8.2px !important;
+  line-height:1.35 !important;
+  letter-spacing:.07em !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.65) !important;
+}
+#inori-piece-overlay .noah-piece-ticket-status b{
+  color:#654820 !important;
+  font-size:10.5px !important;
+  font-weight:500 !important;
+}
+@media(max-height:700px){
+#inori-piece-overlay .noah-piece-note{
+    margin-top:8px !important;
+    font-size:8.2px !important;
+  }
+#inori-piece-overlay .noah-piece-actions{
+    width:min(calc(100vw - 104px),226px) !important;
+    margin-top:10px !important;
+  }
+#inori-piece-overlay .noah-piece-challenge{
+    height:42px !important;
+    min-height:42px !important;
+    font-size:11px !important;
+  }
+#inori-piece-overlay .noah-piece-ticket-status{
+    margin-top:5px !important;
+    font-size:8px !important;
+  }
+}
+#inori-piece-overlay .noah-puzzle-grid{
+  position:relative !important;
+}
+#inori-piece-overlay .noah-puzzle-grid::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  inset:0 !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+  background-image:url("../images/noah_puzzle_logo.webp?v=957") !important;
+  background-repeat:no-repeat !important;
+  background-position:center center !important;
+  background-size:84% auto !important;
+  opacity:1 !important;
+}
+#inori-piece-overlay .noah-puzzle-piece{
+  position:relative !important;
+  z-index:1 !important;
+}
+#inori-piece-overlay .noah-puzzle-piece.locked{
+  background-image:none !important;
+  background-color:transparent !important;
+  filter:none !important;
+}
+#inori-piece-overlay .noah-puzzle-piece.locked::before,
+#inori-piece-overlay .noah-puzzle-piece.locked::after{
+  content:none !important;
+  display:none !important;
+}
+#inori-piece-overlay .noah-puzzle-piece.open{
+  background-image:url("../images/inori_puzzle.webp") !important;
+  background-repeat:no-repeat !important;
+  background-size:300% 300% !important;
+  background-color:#f8f6f1 !important;
+}
+#inori-piece-overlay .noah-puzzle-frame{
+  width:min(calc(100vw - 54px),286px) !important;
+  aspect-ratio:1 / 1 !important;
+  padding:2px !important;
+  margin:0 auto !important;
+  border:1px solid rgba(145,116,73,.18) !important;
+  background:#f4f0e8 !important;
+  box-shadow:none !important;
+}
+#inori-piece-overlay .noah-puzzle-frame::before{
+  content:none !important;
+  display:none !important;
+}
+#inori-piece-overlay .noah-puzzle-grid{
+  position:relative !important;
+  width:100% !important;
+  height:100% !important;
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  grid-template-rows:repeat(3,minmax(0,1fr)) !important;
+  gap:2px !important;
+  padding:0 !important;
+  overflow:hidden !important;
+  border:0 !important;
+  background:rgba(147,118,76,.18) !important;
+}
+#inori-piece-overlay .noah-puzzle-grid::before{
+  content:none !important;
+  display:none !important;
+}
+#inori-piece-overlay .noah-puzzle-piece,
+#inori-piece-overlay .noah-puzzle-piece.locked,
+#inori-piece-overlay .noah-puzzle-piece.open{
+  position:relative !important;
+  min-width:0 !important;
+  min-height:0 !important;
+  overflow:hidden !important;
+  border:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  transform:none !important;
+  filter:none !important;
+  background-color:#fff !important;
+}
+#inori-piece-overlay .noah-puzzle-piece.locked{
+  background-image:none !important;
+}
+#inori-piece-overlay .noah-puzzle-piece.locked::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  z-index:0 !important;
+  width:300% !important;
+  height:300% !important;
+  pointer-events:none !important;
+  background-image:url("../images/noah_puzzle_logo.webp?v=958") !important;
+  background-repeat:no-repeat !important;
+  background-position:center center !important;
+  background-size:100% auto !important;
+  opacity:1 !important;
+}
+#inori-piece-overlay .noah-puzzle-piece.locked::after{
+  content:none !important;
+  display:none !important;
+}
+#inori-piece-overlay .noah-puzzle-piece:nth-child(3n+1).locked::before{ left:0 !important; }
+#inori-piece-overlay .noah-puzzle-piece:nth-child(3n+2).locked::before{ left:-100% !important; }
+#inori-piece-overlay .noah-puzzle-piece:nth-child(3n).locked::before{ left:-200% !important; }
+#inori-piece-overlay .noah-puzzle-piece:nth-child(-n+3).locked::before{ top:0 !important; }
+#inori-piece-overlay .noah-puzzle-piece:nth-child(n+4):nth-child(-n+6).locked::before{ top:-100% !important; }
+#inori-piece-overlay .noah-puzzle-piece:nth-child(n+7).locked::before{ top:-200% !important; }
+#inori-piece-overlay .noah-puzzle-piece.open{
+  background-image:url("../images/inori_puzzle.webp") !important;
+  background-repeat:no-repeat !important;
+  background-size:300% 300% !important;
+  animation:noahPieceTurn799 .62s cubic-bezier(.22,.72,.18,1) both !important;
+}
+#inori-piece-overlay .noah-puzzle-piece.open::before,
+#inori-piece-overlay .noah-puzzle-piece.open::after{
+  content:none !important;
+  display:none !important;
+}
+@media(max-height:700px){
+#inori-piece-overlay .noah-puzzle-frame{
+    width:min(calc(100vw - 60px),278px) !important;
+  }
+}
+html body #inori-piece-overlay.noah-piece-overlay{
+  --zn-lock:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Cpath d='M30 3 L57 30 L30 57 L3 30Z' fill='rgba(250,248,244,.85)' stroke='%239c958b' stroke-width='1.6'/%3E%3Cpath d='M30 9 L51 30 L30 51 L9 30Z' fill='none' stroke='%23b9b2a7' stroke-width='.8'/%3E%3Crect x='21' y='27' width='18' height='14' rx='2' fill='%238f887e'/%3E%3Cpath d='M24.5 27 v-4 a5.5 5.5 0 0 1 11 0 v4' fill='none' stroke='%238f887e' stroke-width='2.6'/%3E%3Ccircle cx='30' cy='33' r='2' fill='%23f4f1ec'/%3E%3Crect x='29.2' y='33' width='1.6' height='4.5' fill='%23f4f1ec'/%3E%3C/svg%3E");
+  --zn-flourish:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Cg fill='none' stroke='%23c9a35a' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M4 56 V18 Q4 4 18 4 H56'/%3E%3Cpath d='M10 56 V22 Q10 10 22 10 H56' stroke-width='.8'/%3E%3Cpath d='M4 30 Q16 28 18 18 Q28 16 30 4' stroke-width='1.1'/%3E%3C/g%3E%3Cpath d='M18 18 l3 -7 l3 7 l7 3 l-7 3 l-3 7 l-3 -7 l-7 -3z' fill='%23d1ad62'/%3E%3C/svg%3E");
+  --zn-star:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M20 1 L23 17 L39 20 L23 23 L20 39 L17 23 L1 20 L17 17Z' fill='%23c9a35a'/%3E%3Cpath d='M20 9 L21.5 18.5 L31 20 L21.5 21.5 L20 31 L18.5 21.5 L9 20 L18.5 18.5Z' fill='%23f3dfaa' opacity='.9'/%3E%3C/svg%3E");
+  --zn-gold:#c9a35a;
+  --zn-gold-deep:#9c7634;
+  --zn-ink:#3b2e1d;
+  background:#f6f1e6 url("../images/inori_stage_bg.webp") center top/cover no-repeat !important;
+}
+html body #inori-piece-overlay.noah-piece-overlay::before,
+html body #inori-piece-overlay.noah-piece-overlay::after{
+  content:none !important;
+}
+html body #inori-piece-overlay.noah-piece-overlay .noah-piece-screen{
+  position:relative !important;
+  box-sizing:border-box !important;
+  display:flex !important;
+  flex-direction:column !important;
+  width:100% !important;
+  max-width:460px !important;
+  height:100% !important;
+  margin:0 auto !important;
+  padding:max(10px,env(safe-area-inset-top,0px)) 16px max(14px,env(safe-area-inset-bottom,0px)) !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  background:
+    radial-gradient(ellipse 85% 34% at 50% 14%,rgba(255,253,246,.78),rgba(255,253,246,0) 75%),
+    radial-gradient(ellipse 70% 20% at 50% 78%,rgba(255,253,246,.55),rgba(255,253,246,0) 80%) !important;
+  border:0 !important;
+  box-shadow:none !important;
+  color:var(--zn-ink) !important;
+}
+html body #inori-piece-overlay .noah-piece-head{
+  position:relative !important;
+  display:flex !important;
+  justify-content:center !important;
+  align-items:center !important;
+  min-height:64px !important;
+  margin:0 !important;
+  padding:6px 0 0 !important;
+  background:none !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+html body #inori-piece-overlay .noah-piece-head::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:-4px;
+  width:22px;
+  height:22px;
+  transform:translateX(-50%);
+  background:var(--zn-star) center/contain no-repeat;
+}
+html body #inori-piece-overlay .noah-piece-back{
+  position:absolute !important;
+  left:0 !important;
+  top:10px !important;
+  width:auto !important;
+  height:auto !important;
+  padding:6px 4px !important;
+  border:0 !important;
+  background:none !important;
+  box-shadow:none !important;
+  font:500 15px/1 "Noto Serif JP","Yu Mincho",serif !important;
+  letter-spacing:.06em !important;
+  color:var(--zn-ink) !important;
+  text-shadow:0 0 6px rgba(255,255,255,.95),0 0 2px #fff !important;
+}
+html body #inori-piece-overlay .noah-piece-head-spacer{display:none !important}
+html body #inori-piece-overlay .noah-piece-title{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  gap:6px !important;
+  margin:18px 0 0 !important;
+}
+html body #inori-piece-overlay .noah-piece-title small{
+  font:600 10px/1 "Cinzel",serif !important;
+  letter-spacing:.3em !important;
+  text-indent:.3em !important;
+  color:#6e5530 !important;
+  text-shadow:0 0 6px #fff !important;
+}
+html body #inori-piece-overlay .noah-piece-title strong{
+  font:600 27px/1.15 "Noto Serif JP","Yu Mincho",serif !important;
+  letter-spacing:.1em !important;
+  color:var(--zn-ink) !important;
+  text-shadow:0 0 10px rgba(255,255,255,.95),0 0 3px #fff !important;
+}
+html body #inori-piece-overlay .noah-piece-body{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  flex:1 1 auto !important;
+  gap:10px !important;
+  margin:0 !important;
+  padding:0 !important;
+  background:none !important;
+}
+html body #inori-piece-overlay .noah-piece-lead{
+  margin:16px 0 0 !important;
+  padding:0 !important;
+  text-align:center !important;
+  background:none !important;
+}
+html body #inori-piece-overlay .noah-piece-lead .en{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:8px !important;
+  font:600 9.5px/1 "Cinzel",serif !important;
+  letter-spacing:.3em !important;
+  color:#6e5530 !important;
+  text-shadow:0 0 6px #fff !important;
+}
+html body #inori-piece-overlay .noah-piece-lead .en::before,
+html body #inori-piece-overlay .noah-piece-lead .en::after{
+  content:"";
+  width:44px;
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(156,118,52,.8));
+}
+html body #inori-piece-overlay .noah-piece-lead .en::after{transform:scaleX(-1)}
+html body #inori-piece-overlay .noah-piece-lead h2{
+  margin:8px 0 0 !important;
+  font:600 25px/1.25 "Noto Serif JP","Yu Mincho",serif !important;
+  letter-spacing:.08em !important;
+  color:var(--zn-ink) !important;
+  text-shadow:0 0 10px rgba(255,255,255,.95),0 0 3px #fff !important;
+}
+html body #inori-piece-overlay .noah-piece-lead p{display:none !important}
+html body #inori-piece-overlay .noah-piece-progress{
+  position:relative !important;
+  display:flex !important;
+  align-items:baseline !important;
+  justify-content:center !important;
+  gap:10px !important;
+  margin:2px 0 0 !important;
+  padding:12px 60px 0 !important;
+  background:none !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+html body #inori-piece-overlay .noah-piece-progress::before{
+  content:"✦";
+  position:absolute;
+  left:0;
+  right:0;
+  top:-2px;
+  font-size:9px;
+  line-height:10px;
+  text-align:center;
+  color:var(--zn-gold-deep);
+}
+html body #inori-piece-overlay .noah-piece-progress::after{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:12px;
+  height:1px;
+  background:
+    linear-gradient(90deg,transparent,rgba(156,118,52,.75)) left/52px 1px no-repeat,
+    linear-gradient(270deg,transparent,rgba(156,118,52,.75)) right/52px 1px no-repeat;
+  pointer-events:none;
+}
+html body #inori-piece-overlay .noah-piece-progress-label{
+  font:600 15px/1 "Noto Serif JP","Yu Mincho",serif !important;
+  letter-spacing:.08em !important;
+  color:var(--zn-ink) !important;
+  text-shadow:0 0 6px #fff !important;
+}
+html body #inori-piece-overlay #noah-piece-progress-now{
+  font:600 42px/1 "Cinzel","Noto Serif JP",serif !important;
+  background:linear-gradient(180deg,#f0d89a 0%,#c99a45 50%,#9c7330 100%);
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 1px 0 rgba(255,255,255,.9));
+}
+html body #inori-piece-overlay .noah-piece-progress > span:last-child{
+  font:500 20px/1 "Cinzel",serif !important;
+  color:var(--zn-ink) !important;
+}
+html body #inori-piece-overlay .noah-puzzle-frame{
+  position:relative !important;
+  box-sizing:border-box !important;
+  width:min(82%,318px) !important;
+  aspect-ratio:1/1 !important;
+  height:auto !important;
+  margin:6px auto 0 !important;
+  padding:12px !important;
+  overflow:visible !important;
+  background:rgba(255,253,248,.35) !important;
+  border:0 !important;
+  border-radius:2px !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.85),
+    0 0 0 2px var(--zn-gold),
+    0 0 0 4px rgba(255,251,238,.9),
+    0 0 0 5px rgba(201,163,90,.75),
+    0 8px 26px rgba(120,90,40,.22) !important;
+}
+html body #inori-piece-overlay .noah-puzzle-frame::before{
+  content:"";
+  position:absolute;
+  inset:-14px;
+  pointer-events:none;
+  z-index:3;
+  background:
+    var(--zn-flourish) 0 0/38px 38px no-repeat,
+    var(--zn-flourish) 100% 0/38px 38px no-repeat,
+    var(--zn-flourish) 0 100%/38px 38px no-repeat,
+    var(--zn-flourish) 100% 100%/38px 38px no-repeat;
+  -webkit-mask:none;
+}
+html body #inori-piece-overlay .noah-puzzle-frame::after{
+  content:"";
+  position:absolute;
+  inset:-15px;
+  pointer-events:none;
+  z-index:3;
+  background:
+    var(--zn-star) 50% 0/26px 26px no-repeat,
+    var(--zn-star) 50% 100%/26px 26px no-repeat,
+    var(--zn-star) 0 50%/26px 26px no-repeat,
+    var(--zn-star) 100% 50%/26px 26px no-repeat;
+}
+html body #inori-piece-overlay .noah-puzzle-grid{
+  position:relative !important;
+  display:grid !important;
+  grid-template-columns:repeat(3,1fr) !important;
+  grid-template-rows:repeat(3,1fr) !important;
+  gap:5px !important;
+  width:100% !important;
+  height:100% !important;
+  background:none !important;
+  box-shadow:none !important;
+}
+html body #inori-piece-overlay .noah-puzzle-piece{
+  position:relative !important;
+  overflow:hidden !important;
+  border:0 !important;
+  border-radius:3px !important;
+  filter:none !important;
+  opacity:1 !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.9),
+    0 0 0 1px rgba(190,180,165,.7),
+    0 2px 5px rgba(90,70,40,.14) !important;
+}
+html body #inori-piece-overlay .noah-puzzle-grid{
+  isolation:isolate !important;
+  overflow:hidden !important;
+  gap:2px !important;
+  border-radius:3px !important;
+  background:none !important;
+}
+html body #inori-piece-overlay .noah-puzzle-grid::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  inset:0 !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+  background:
+    linear-gradient(118deg,rgba(255,255,255,0) 28%,rgba(255,255,255,.7) 40%,rgba(255,255,255,0) 50%),
+    linear-gradient(62deg,rgba(226,221,214,0) 52%,rgba(226,221,214,.45) 58%,rgba(226,221,214,0) 63%),
+    linear-gradient(160deg,#fdfcfa,#f3f0eb 55%,#faf8f5) !important;
+  opacity:1 !important;
+}
+html body #inori-piece-overlay .noah-puzzle-grid::after{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  inset:0 !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+  background:url("../images/noah_logo_puzzle.webp") center/100% 100% no-repeat !important;
+  mix-blend-mode:multiply;
+  opacity:.62 !important;
+}
+html body #inori-piece-overlay .noah-puzzle-grid:not(:has(.noah-puzzle-piece.locked))::after{
+  content:none !important;
+  display:none !important;
+}
+html body #inori-piece-overlay .noah-puzzle-piece.locked{
+  z-index:1 !important;
+  background:linear-gradient(150deg,rgba(255,255,255,.28),rgba(255,255,255,0) 60%) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.75),
+    0 0 0 1px rgba(196,186,170,.6) !important;
+}
+html body #inori-piece-overlay .noah-puzzle-piece.locked::before{
+  content:none !important;
+  display:none !important;
+}
+html body #inori-piece-overlay .noah-puzzle-piece.locked::after{
+  content:"" !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  z-index:2 !important;
+  display:block !important;
+  width:32px !important;
+  height:32px !important;
+  transform:translate(-50%,-50%) !important;
+  background:var(--zn-lock) center/contain no-repeat !important;
+  opacity:.9 !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+html body #inori-piece-overlay .noah-puzzle-piece:nth-child(n+4):nth-child(-n+6).locked::after{
+  content:none !important;
+  display:none !important;
+}
+html body #inori-piece-overlay .noah-puzzle-piece.open{
+  z-index:1 !important;
+  background-image:none !important;
+  background-color:#f8f6f1 !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,248,226,.5),
+    0 0 0 1px rgba(201,163,90,.8) !important;
+}
+html body #inori-piece-overlay .noah-puzzle-piece.open::before{
+  content:"" !important;
+  display:block !important;
+  position:absolute !important;
+  z-index:0 !important;
+  right:auto !important;
+  bottom:auto !important;
+  width:calc(300% + 4px) !important;
+  height:calc(300% + 4px) !important;
+  pointer-events:none !important;
+  background:url("../images/inori_puzzle.webp") center/100% 100% no-repeat !important;
+  opacity:1 !important;
+}
+html body #inori-piece-overlay .noah-puzzle-piece.open::after{
+  content:none !important;
+  display:none !important;
+}
+html body #inori-piece-overlay .noah-puzzle-piece:nth-child(3n+1).open::before{left:0 !important}
+html body #inori-piece-overlay .noah-puzzle-piece:nth-child(3n+2).open::before{left:calc(-100% - 2px) !important}
+html body #inori-piece-overlay .noah-puzzle-piece:nth-child(3n).open::before{left:calc(-200% - 4px) !important}
+html body #inori-piece-overlay .noah-puzzle-piece:nth-child(-n+3).open::before{top:0 !important}
+html body #inori-piece-overlay .noah-puzzle-piece:nth-child(n+4):nth-child(-n+6).open::before{top:calc(-100% - 2px) !important}
+html body #inori-piece-overlay .noah-puzzle-piece:nth-child(n+7).open::before{top:calc(-200% - 4px) !important}
+html body #inori-piece-overlay .noah-puzzle-grid:not(:has(.noah-puzzle-piece.locked)){
+  gap:0 !important;
+}
+html body #inori-piece-overlay .noah-puzzle-grid:not(:has(.noah-puzzle-piece.locked)) .noah-puzzle-piece{
+  border-radius:0 !important;
+  box-shadow:none !important;
+}
+html body #inori-piece-overlay .noah-puzzle-grid:not(:has(.noah-puzzle-piece.locked)) .noah-puzzle-piece.open::before{
+  width:300% !important;
+  height:300% !important;
+}
+html body #inori-piece-overlay .noah-puzzle-grid:not(:has(.noah-puzzle-piece.locked)) .noah-puzzle-piece:nth-child(3n+2).open::before{left:-100% !important}
+html body #inori-piece-overlay .noah-puzzle-grid:not(:has(.noah-puzzle-piece.locked)) .noah-puzzle-piece:nth-child(3n).open::before{left:-200% !important}
+html body #inori-piece-overlay .noah-puzzle-grid:not(:has(.noah-puzzle-piece.locked)) .noah-puzzle-piece:nth-child(n+4):nth-child(-n+6).open::before{top:-100% !important}
+html body #inori-piece-overlay .noah-puzzle-grid:not(:has(.noah-puzzle-piece.locked)) .noah-puzzle-piece:nth-child(n+7).open::before{top:-200% !important}
+html body #inori-piece-overlay .noah-piece-note{
+  position:relative !important;
+  margin:14px 0 0 !important;
+  padding:0 0 14px !important;
+  font:500 12.5px/1.5 "Noto Serif JP","Yu Mincho",serif !important;
+  letter-spacing:.02em !important;
+  white-space:nowrap !important;
+  color:var(--zn-ink) !important;
+  text-align:center !important;
+  text-shadow:0 0 8px #fff,0 0 3px #fff !important;
+  background:none !important;
+}
+html body #inori-piece-overlay .noah-piece-note::after{
+  content:"✦";
+  position:absolute;
+  left:50%;
+  bottom:0;
+  width:200px;
+  transform:translateX(-50%);
+  font-size:9px;
+  line-height:10px;
+  color:var(--zn-gold-deep);
+  text-align:center;
+  background:
+    linear-gradient(90deg,transparent,rgba(156,118,52,.75)) left center/88px 1px no-repeat,
+    linear-gradient(270deg,transparent,rgba(156,118,52,.75)) right center/88px 1px no-repeat;
+}
+html body #inori-piece-overlay .noah-piece-actions{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  gap:6px !important;
+  width:100% !important;
+  margin:6px 0 0 !important;
+  padding:6px 0 4px !important;
+  background:none !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+html body #inori-piece-overlay .noah-piece-challenge{
+  position:relative !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:min(84%,300px) !important;
+  height:62px !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:999px !important;
+  background:
+    radial-gradient(ellipse 70% 90% at 50% 0%,rgba(255,255,255,.95),rgba(255,255,255,0) 70%),
+    linear-gradient(180deg,#fffdf7 0%,#f7eedb 60%,#efe1c3 100%) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.95),
+    inset 0 0 0 4px rgba(255,251,240,.9),
+    inset 0 0 0 5px rgba(201,163,90,.8),
+    0 0 0 2px var(--zn-gold),
+    0 0 0 4px rgba(255,250,236,.9),
+    0 0 0 5px rgba(156,118,52,.7),
+    0 6px 18px rgba(120,90,40,.25) !important;
+  font:600 21px/1 "Noto Serif JP","Yu Mincho",serif !important;
+  letter-spacing:.14em !important;
+  text-indent:.14em !important;
+  color:var(--zn-ink) !important;
+  text-shadow:0 1px 0 #fff !important;
+  cursor:pointer;
+}
+html body #inori-piece-overlay .noah-piece-challenge::before,
+html body #inori-piece-overlay .noah-piece-challenge::after{
+  content:"" !important;
+  position:absolute !important;
+  top:50% !important;
+  width:20px !important;
+  height:20px !important;
+  transform:translateY(-50%) !important;
+  background:var(--zn-star) center/contain no-repeat !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+html body #inori-piece-overlay .noah-piece-challenge::before{left:22px !important}
+html body #inori-piece-overlay .noah-piece-challenge::after{right:22px !important}
+html body #inori-piece-overlay .noah-piece-challenge:active{transform:translateY(1px);filter:brightness(.97)}
+html body #inori-piece-overlay .noah-piece-challenge:disabled{filter:grayscale(.6);opacity:.7}
+html body #inori-piece-overlay .noah-piece-ticket-status{
+  display:flex !important;
+  gap:8px !important;
+  margin:6px 0 0 !important;
+  font:500 11px/1.2 "Noto Serif JP",serif !important;
+  color:#5b4527 !important;
+  text-shadow:0 0 6px #fff,0 0 2px #fff !important;
+  background:none !important;
+}
+html body #inori-piece-overlay .noah-piece-ticket-status b{font-weight:700 !important;color:#7a5420 !important}
+html body #inori-piece-overlay .noah-piece-complete{
+  font:600 13px/1.4 "Noto Serif JP",serif !important;
+  color:#7a5420 !important;
+  text-shadow:0 0 6px #fff !important;
+}
+@media (max-height:740px){
+html body #inori-piece-overlay .noah-piece-head{min-height:52px !important}
+html body #inori-piece-overlay .noah-piece-title strong{font-size:23px !important}
+html body #inori-piece-overlay .noah-piece-lead h2{font-size:20px !important;margin-top:5px !important}
+html body #inori-piece-overlay #noah-piece-progress-now{font-size:34px !important}
+html body #inori-piece-overlay .noah-puzzle-frame{width:min(100%,286px) !important;padding:9px !important}
+html body #inori-piece-overlay .noah-puzzle-piece.locked::after{width:26px !important;height:26px !important}
+html body #inori-piece-overlay .noah-piece-note{margin-top:10px !important;font-size:12px !important}
+html body #inori-piece-overlay .noah-piece-challenge{height:52px !important;font-size:18px !important}
+}
+html body #inori-piece-overlay.noah-piece-overlay{
+  z-index:210 !important;
+}
+html body #inori-piece-overlay.noah-piece-overlay .noah-piece-screen{
+  position:absolute !important;
+  top:var(--header-h,72px) !important;
+  bottom:var(--bottom-nav-h,76px) !important;
+  left:50% !important;
+  transform:translateX(-50%) !important;
+  width:100% !important;
+  max-width:460px !important;
+  height:auto !important;
+  padding:2px 16px 10px !important;
+  overflow-y:auto !important;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+html body #inori-piece-overlay .noah-piece-screen::-webkit-scrollbar{display:none}
+html body #inori-piece-overlay .noah-piece-head{min-height:46px !important;padding-top:2px !important}
+html body #inori-piece-overlay .noah-piece-head::before{top:-2px;width:16px;height:16px}
+html body #inori-piece-overlay .noah-piece-back{top:6px !important;font-size:14px !important}
+html body #inori-piece-overlay .noah-piece-title{margin-top:10px !important;gap:3px !important}
+html body #inori-piece-overlay .noah-piece-title strong{font-size:22px !important}
+html body #inori-piece-overlay .noah-piece-body{gap:6px !important}
+html body #inori-piece-overlay .noah-piece-lead{margin-top:8px !important}
+html body #inori-piece-overlay .noah-piece-lead h2{font-size:20px !important;margin-top:5px !important}
+html body #inori-piece-overlay .noah-piece-progress{padding-top:9px !important}
+html body #inori-piece-overlay #noah-piece-progress-now{font-size:34px !important}
+html body #inori-piece-overlay .noah-piece-progress-label{font-size:13px !important}
+html body #inori-piece-overlay .noah-puzzle-frame{
+  width:min(76%,290px) !important;
+  padding:10px !important;
+  margin-top:4px !important;
+}
+html body #inori-piece-overlay .noah-puzzle-piece.locked::after{width:28px !important;height:28px !important}
+html body #inori-piece-overlay .noah-piece-note{margin-top:10px !important;padding-bottom:12px !important;font-size:12px !important}
+html body #inori-piece-overlay .noah-piece-actions{margin-top:2px !important;padding-top:4px !important}
+html body #inori-piece-overlay .noah-piece-challenge{height:52px !important;font-size:18px !important}
+@media (max-height:740px){
+html body #inori-piece-overlay .noah-piece-head{min-height:40px !important}
+html body #inori-piece-overlay .noah-piece-title{margin-top:6px !important}
+html body #inori-piece-overlay .noah-piece-title strong{font-size:19px !important}
+html body #inori-piece-overlay .noah-piece-lead{margin-top:4px !important}
+html body #inori-piece-overlay .noah-piece-lead h2{font-size:17px !important}
+html body #inori-piece-overlay #noah-piece-progress-now{font-size:28px !important}
+html body #inori-piece-overlay .noah-puzzle-frame{width:min(66%,240px) !important;padding:8px !important;margin-top:14px !important}
+html body #inori-piece-overlay .noah-puzzle-piece.locked::after{width:22px !important;height:22px !important}
+html body #inori-piece-overlay .noah-piece-challenge{height:46px !important;font-size:16px !important}
+}
+html body #inori-piece-overlay .noah-piece-back{
+  box-sizing:border-box !important;
+  display:inline-block !important;
+  flex:0 0 82px !important;
+  width:82px !important;
+  min-width:82px !important;
+  max-width:82px !important;
+  height:35px !important;
+  min-height:35px !important;
+  max-height:35px !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  background:transparent url('../images/button_back.webp?v=1444-unified') center/100% 100% no-repeat !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  font-size:0 !important;
+  line-height:0 !important;
+  letter-spacing:0 !important;
+  color:transparent !important;
+  -webkit-text-fill-color:transparent !important;
+  text-shadow:none !important;
+  text-indent:-9999px !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  cursor:pointer !important;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+html body #inori-piece-overlay .noah-piece-back > *{
+  display:none !important;
+}
+html body #inori-piece-overlay .noah-piece-back::before,
+html body #inori-piece-overlay .noah-piece-back::after{
+  content:none !important;
+  display:none !important;
+}
+html body #inori-piece-overlay .noah-piece-back:active{
+  transform:translateY(1px) !important;
+  filter:brightness(.96) !important;
+}
+html body #inori-piece-overlay .noah-piece-back{
+  position:absolute !important;
+  left:0 !important;
+  top:4px !important;
+  z-index:3 !important;
+}
+@media(max-width:365px){
+html body #inori-piece-overlay .noah-piece-back{
+    flex-basis:75px !important;
+    width:75px !important;
+    min-width:75px !important;
+    max-width:75px !important;
+    height:32px !important;
+    min-height:32px !important;
+    max-height:32px !important;
+  }
+}
+html body #inori-piece-overlay .noah-piece-back{
+  position:fixed !important;
+  left:var(--zb-back-x) !important;
+  top:var(--zb-back-y) !important;
+  right:auto !important;
+  bottom:auto !important;
+  inset-block-end:auto !important;
+  margin:0 !important;
+  transform:none !important;
+  z-index:6 !important;
+}
+html body #inori-piece-overlay.noah-piece-overlay .noah-piece-screen{
+  left:0 !important;
+  right:0 !important;
+  margin-left:auto !important;
+  margin-right:auto !important;
+  transform:none !important;
+}
+

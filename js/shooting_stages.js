@@ -106,6 +106,7 @@
     FACELESS_SUPER: 'shooting_event_faceless_super',
     RAID_TEST: 'shooting_raid_test',
     BULLET_HELL_TEST: 'shooting_event_bullet_hell_test',
+    INORI_SPECIAL: 'shooting_special_inori',          // build1819: 特別巡行「境界者 -イノリ-」（欠片9つでイノリ解放）
     SCORE_ATTACK_NORMAL: 'shooting_score_attack_normal',
     SCORE_ATTACK_HARD: 'shooting_score_attack_hard',
     OVERSEER_AMBUSH: 'shooting_event_overseer_ambush',
@@ -1741,6 +1742,37 @@
       playable: true,
     }),
 
+
+    // ============================================================
+    // build1819: SPECIAL STAGE 境界者 -イノリ-
+    //  ノアと同じ「挑戦TICKET×1 → クリアで欠片1つ → 9つでイノリ解放（2周目以降は限界突破用にもう1体）」。
+    //  戦闘はSTORY 9-4のイノリ（鳥居2基・全属性バリア）。周回が進むとHP・鳥居の耐久が上がる（shooting_core.js getInoriSpecialLapConfig）。
+    //  チケットの消費・欠片の付与はサーバー（begin_inori_attempt / finish_inori_attempt）。
+    // ============================================================
+    [SHOOTING_STAGE_ID.INORI_SPECIAL]: Object.freeze({
+      id: SHOOTING_STAGE_ID.INORI_SPECIAL,
+      chapter: 0,
+      stageNo: 4,
+      eventId: 'inori_special',
+      eventTitle: '境界者 -イノリ-',
+      stageInfoName: '境界者 -イノリ-',
+      difficultyLabel: 'SPECIAL STAGE',
+      type: 'boss',
+      background: 'images/battle_bg_01.webp',
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.INORI]),
+      bossElement: 'light',
+      enemyElement: 'light',
+      bossGauges: 3,
+      bossGaugeHps: Object.freeze([8000, 9500, 11000]),
+      inoriToriiHp: 1300,
+      introImage: 'images/memory_inori_battle_start.webp',
+      timeLimitSeconds: 180,
+      mission: Object.freeze({
+        type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
+        text: '境界者、イノリを撃破',
+      }),
+      playable: true,
+    }),
 
     // ============================================================
     // build1630: SPECIAL STAGE 律動（リズム弾幕・試作）

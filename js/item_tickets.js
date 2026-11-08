@@ -32,13 +32,19 @@
       kicker:'GENESIS ROULETTE', tag:'神聖樹',
       desc:'ルーレットを回して、神聖樹の創世ptを 30 / 50 / 80 / 100pt 獲得する。'
     },
+    // build1819: 特別巡行「境界者 -イノリ-」の挑戦TICKET（消費は begin_inori_attempt）
+    inori_challenge_ticket: {
+      id:'inori_challenge_ticket', name:'イノリ挑戦TICKET', img:'images/inori_stage_ticket.webp',
+      kicker:'SPECIAL TICKET -INORI-', tag:'クエスト',
+      desc:'特別巡行「境界者 -イノリ-」への挑戦に使用する。クリアでイノリの欠片を1つ獲得し、9つ集めるとイノリが仲間になる。'
+    },
     genesis_roulette_ticket_gold: {
       id:'genesis_roulette_ticket_gold', tier:'gold', name:'創世ptルーレット券（金）', img:'images/item_genesis_roulette_ticket_gold.webp',
       kicker:'GENESIS ROULETTE', tag:'神聖樹',
       desc:'ルーレットを回して、神聖樹の創世ptを 80 / 100pt 獲得する。'
     }
   });
-  const ORDER = ['raid_reset_ticket', 'phase_skip_ticket_silver', 'phase_skip_ticket_gold', 'genesis_roulette_ticket_silver', 'genesis_roulette_ticket_gold'];
+  const ORDER = ['inori_challenge_ticket', 'raid_reset_ticket', 'phase_skip_ticket_silver', 'phase_skip_ticket_gold', 'genesis_roulette_ticket_silver', 'genesis_roulette_ticket_gold'];
 
   // 表示用の当選割合（実際の抽選はサーバー。値を変える時はサーバー側と揃える）
   const ROULETTE = Object.freeze({
@@ -95,6 +101,7 @@
       });
       counts = next;
       countsAt = Date.now();
+      try { window.dispatchEvent(new CustomEvent('zeraphia:item-tickets-changed', { detail:{ counts:Object.assign({}, counts) } })); } catch (_) {}
       return counts;
     })().finally(() => { countsPromise = null; });
     return countsPromise;
@@ -424,6 +431,11 @@
       return;
     }
     if (id.startsWith('genesis_roulette_ticket_')) { await useGenesisRoulette(meta.tier); return; }
+    if (id === 'inori_challenge_ticket') {
+      if (typeof window.openInoriPiecePanel === 'function') window.openInoriPiecePanel();
+      else toast('特別巡行「境界者 -イノリ-」で使用できます');
+      return;
+    }
     if (id.startsWith('phase_skip_ticket_')) {
       // スキップは位相回遊の挑戦開始時に使う。画面を開いて案内する。
       if (typeof window.openPhaseOdyssey === 'function') {

@@ -428,7 +428,7 @@
           : (isFlowerSR
               ? '<div class="item-row-actions item-row-actions-other"><button class="item-exchange-open-btn" type="button" data-open-flower-sr-exchange>交換</button></div>'
               : (meta.useTicket
-                  ? '<div class="item-row-actions item-row-actions-other"><button class="item-exchange-open-btn" type="button" data-use-item-ticket="'+escapeHtml(meta.id)+'" '+(qty>0?'':'disabled')+'>'+(meta.id.startsWith('phase_skip_ticket_')?'位相回遊へ':'使用')+'</button></div>'
+                  ? '<div class="item-row-actions item-row-actions-other"><button class="item-exchange-open-btn" type="button" data-use-item-ticket="'+escapeHtml(meta.id)+'" '+(qty>0?'':'disabled')+'>'+(meta.id.startsWith('phase_skip_ticket_')?'位相回遊へ':(meta.id==='inori_challenge_ticket'?'挑戦へ':'使用'))+'</button></div>'
                   : ''));
 
         return ''+
