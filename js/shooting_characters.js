@@ -2867,6 +2867,9 @@
     ultDescription:'盤面の敵全員の属性バリアを解除し、敵全体へATK×2.0のダメージを与える。',
     ultType:'ryune_absolute_lethe', ultBaseType:'beam', ultAddons:['damage','barrier_clear'],
     ultDamageAtkMultiplier:2.0,
+    // build1799: ORBITは円を描く分だけ命中率が低く（実測約4割）、ULTが溜まるのが遅かった。
+    //  1HITあたりの回収量を 0.476（実効0.34）→ 1.0（実効0.50）に。約1.5倍の速さで溜まる。
+    ultGainPerHit: 1.0,
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.MEGMEG] = buildShootingCharacter({
