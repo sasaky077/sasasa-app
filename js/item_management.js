@@ -362,6 +362,7 @@
     Object.keys(state.items).forEach(id=>{
       if(id.startsWith('level_exp_')) return;
       if(id==='flower_r' || id==='flower_sr') return;
+      if(id==='inori_challenge_ticket') return; // build1821: イノリ挑戦TICKETは「その他」専用
       if(RETIRED_EVOLUTION_ITEMS.has(id)) return; // 廃止アイテム: UIには出さない
       if(!seen.has(id)){seen.add(id);ids.push(id);}
     });

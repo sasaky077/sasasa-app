@@ -341,3 +341,40 @@ html body #screen-ninmu.junkou-rebuilt .junkou-tabs .junkou-tab{
 @media (max-height:700px){
   html body #screen-ninmu.junkou-rebuilt .junkou-tabs .junkou-tab .ninmu-cat-en{font-size:8px !important;}
 }
+
+/* ============================================================
+   build1822 — MEMORY BATTLE: fixed hero / progress; boss cards scroll only.
+   ヘッダーから今月の踏破までを固定し、ボス情報欄だけ縦スクロールする。
+   ============================================================ */
+html body #screen-memory-battle.memory-battle-screen .mb-composition {
+  overflow: hidden !important;
+  overflow-x: hidden !important;
+  overflow-y: hidden !important;
+  overscroll-behavior: none !important;
+  padding-bottom: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+}
+html body #screen-memory-battle.memory-battle-screen .mb-hero {
+  position: relative !important;
+  top: auto !important;
+  flex-shrink: 0 !important;
+}
+html body #screen-memory-battle.memory-battle-screen .mb-lead,
+html body #screen-memory-battle.memory-battle-screen .mb-divider,
+html body #screen-memory-battle.memory-battle-screen .mb-progress {
+  flex-shrink: 0 !important;
+}
+html body #screen-memory-battle.memory-battle-screen .mb-list {
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior-y: contain !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y !important;
+  padding-bottom: max(18px, env(safe-area-inset-bottom, 0px)) !important;
+  scrollbar-width: none;
+}
+html body #screen-memory-battle.memory-battle-screen .mb-list::-webkit-scrollbar { display: none; }
+html body #screen-memory-battle.memory-battle-screen .mb-card { flex-shrink: 0 !important; }

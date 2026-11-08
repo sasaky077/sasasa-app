@@ -1746,7 +1746,8 @@
     // ============================================================
     // build1819: SPECIAL STAGE 境界者 -イノリ-
     //  ノアと同じ「挑戦TICKET×1 → クリアで欠片1つ → 9つでイノリ解放（2周目以降は限界突破用にもう1体）」。
-    //  戦闘はSTORY 9-4のイノリ（鳥居2基・全属性バリア）。周回が進むとHP・鳥居の耐久が上がる（shooting_core.js getInoriSpecialLapConfig）。
+    //  build1823: 戦闘ルールは記憶決戦02のイノリに統一（光属性結界・連なる鳥居・神罰）。
+    //  周回が進むとHP・鳥居の耐久が上がる（shooting_core.js getInoriSpecialLapConfig）。
     //  チケットの消費・欠片の付与はサーバー（begin_inori_attempt / finish_inori_attempt）。
     // ============================================================
     [SHOOTING_STAGE_ID.INORI_SPECIAL]: Object.freeze({
@@ -1763,7 +1764,20 @@
       bossElement: 'light',
       enemyElement: 'light',
       bossGauges: 3,
-      bossGaugeHps: Object.freeze([8000, 9500, 11000]),
+      // 記憶決戦02と同じ基礎HP。SPECIALの周回倍率は従来どおりcoreで適用。
+      bossGaugeHps: Object.freeze([9000, 10000, 11000]),
+      // 記憶決戦02と同じ属性結界：イノリの光属性には闇攻撃だけが有効。
+      weaknessOnlyElement: 'light',
+      // 記憶決戦の掟を既存戦闘エンジンのgetMemoryRuleで共用する。
+      // eventIdはinori_specialのままなのでTICKET・欠片処理は変更なし。
+      memoryBattle: Object.freeze({
+        no: 2, bossKey: 'inori', bossName: 'イノリ',
+        rules: Object.freeze([
+          Object.freeze({ type: 'element_barrier' }),
+          Object.freeze({ type: 'linked_torii', reviveMs: 3000 }),
+          Object.freeze({ type: 'judgment', firstMs: 15000, intervalMs: 20000, warnMs: 3000, damage: 1000, element: 'light' }),
+        ]),
+      }),
       inoriToriiHp: 1300,
       introImage: 'images/memory_inori_battle_start.webp',
       timeLimitSeconds: 180,

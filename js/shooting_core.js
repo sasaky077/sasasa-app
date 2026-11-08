@@ -26952,6 +26952,8 @@
       .camilla-heal-num{position:absolute;left:0;top:0;z-index:15;pointer-events:none;white-space:nowrap;
         font:700 13px/1 'Cinzel',serif;color:#ff5a74;text-shadow:0 0 4px #fff,0 0 8px rgba(255,255,255,.9);
         animation:camillaHealNum .8s ease-out forwards}
+      /* build1821: 記憶リヴィアの吸血回復は本体の上に緑色で表示。HIT管理のカミラには表示しない。 */
+      .camilla-heal-num.memory-livia-heal{color:#69ed9a;text-shadow:0 0 3px #124a32,0 0 6px rgba(80,255,166,.85),0 1px 2px rgba(0,0,0,.75)}
       @keyframes camillaHealNum{from{opacity:1;translate:0 0}to{opacity:0;translate:0 -24px}}
       #shooting-event-root .shooting-mini-enemy.camilla-spiderling:not(.defeated){filter:none;transition:opacity .18s ease}
       #shooting-event-root .shooting-mini-enemy.camilla-spiderling.camilla-spider-latched{background:radial-gradient(circle,rgba(230,20,50,.55) 0 34%,rgba(230,20,50,.18) 52%,transparent 68%)}
@@ -27206,9 +27208,13 @@
     setTimeout(() => orb.remove(), 540);
     if (healAmount > 0) {
       const num = document.createElement('span');
-      num.className = 'camilla-heal-num';
+      const memoryLivia = isMemoryBattleStage() && !!getMemoryGuardianRule();
+      num.className = 'camilla-heal-num' + (memoryLivia ? ' memory-livia-heal' : '');
       num.textContent = `+${healAmount}`;
-      num.style.transform = `translate3d(${tx + 18}px,${ty - 34}px,0)`;
+      // 通常カミラ戦は従来通り。記憶リヴィア戦ではリヴィアの上部にランダム分散。
+      const healX = memoryLivia ? tx + (Math.random() - .5) * 100 : tx + 18;
+      const healY = memoryLivia ? ty - 42 - Math.random() * 24 : ty - 34;
+      num.style.transform = `translate3d(${healX}px,${healY}px,0)`;
       arena.appendChild(num);
       setTimeout(() => num.remove(), 820);
     }
