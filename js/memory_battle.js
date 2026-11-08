@@ -11,8 +11,8 @@
   const SCREEN_ID = 'screen-memory-battle';
   const RUN_KEY = 'zeraphia_memory_battle_run_v1';
   const CACHE_KEY = 'zeraphia_memory_battle_state_cache_v1';
-  // build1770: 報酬は結晶ではなく神聖樹の栄養（聖樹の息吹・創世EXP +5）。表示用。実際の付与量はサーバー（memory_battle_reward_exp）
-  const REWARD_SHINJU_EXP = 5;
+  // build1834: 月間初回クリア報酬は創世pt 10。サーバーでは聖樹の息吹を付与し自動変換する。
+  const REWARD_SHINJU_PT = 10;
   const ELEMENT_LABEL = Object.freeze({ fire:'火', aqua:'水', wood:'木', light:'光', dark:'闇', neutral:'無' });
   // その属性のボスに「効果抜群」な属性（水＞火＞木＞水、光⇔闇）
   const WEAK_TO = Object.freeze({ aqua:'wood', fire:'aqua', wood:'fire', light:'dark', dark:'light' });
@@ -145,10 +145,10 @@
       }
       if (win && (!data || data.win !== true)) notify('記憶決戦：サーバーで勝利を確認できませんでした。報酬は未確定です。');
       if (win && data && data.win === true) {
-        notify(claimed ? `記憶決戦クリア！ 聖樹の息吹（創世EXP +${amount}）を付与しました` : '記憶決戦クリア済み：今月の初回報酬は受取済みです');
+        notify(claimed ? `記憶決戦クリア！ 創世pt +${amount} を獲得しました` : '記憶決戦クリア済み：今月の初回報酬は受取済みです');
         void refresh();
       }
-      // 結果画面は shinjuRewardExp があれば「聖樹の息吹 / 創世EXP +N」を報酬に並べる
+      // 結果画面は shinjuRewardExp（自動変換後の創世pt相当量）を報酬に並べる
       return { memoryConfirmed:!win || !!(data && data.win === true), firstClearClaimed:false, firstClearAmount:0, shinjuRewardExp: claimed ? amount : 0, highScore:0 };
     })().catch(err => {
       console.warn('[memory battle] finish', err && (err.message || err));
@@ -322,7 +322,7 @@
           </div>
           ${done
             ? '<div class="mb-reward is-done"><b>報酬受取済</b><span>今月クリア済</span></div>'
-            : `<div class="mb-reward"><div class="mb-reward-gem is-shinju"><img src="images/shinju_aura.webp" alt="神聖樹の栄養" decoding="async"><b>+${REWARD_SHINJU_EXP}</b></div><small class="mb-reward-label">神聖樹の栄養</small><span>今月初回</span></div>`}
+            : `<div class="mb-reward"><div class="mb-reward-gem is-shinju"><img src="images/shinju_aura.webp" alt="創世pt" decoding="async"><b>+${REWARD_SHINJU_PT}</b></div><small class="mb-reward-label">創世pt</small><span>今月初回</span></div>`}
         </div>
         ${done ? '<div class="mb-clear-banner">✓ 今月クリア済み　｜　初回報酬受取済み</div>' : ''}
         <div class="mb-card-body">

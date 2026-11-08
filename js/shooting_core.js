@@ -29965,9 +29965,9 @@
         if (!rewardExp) return;
         const shinjuDrop = {
           type: 'material',
-          name: '聖樹の息吹',
+          name: isMemoryBattleStage() ? '創世pt' : '聖樹の息吹',
           amount: 1,
-          detail: `神樹成長素材 / 創世EXP +${rewardExp}`,
+          detail: isMemoryBattleStage() ? `創世pt +${rewardExp}` : `神樹成長素材 / 創世EXP +${rewardExp}`,
           image: 'images/shinju_aura.webp',
         };
         state.clearRewards = Array.isArray(state.clearRewards)
