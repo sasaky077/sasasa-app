@@ -2158,7 +2158,7 @@
       rules: Object.freeze([
         Object.freeze({ type: 'element_barrier' }),
         Object.freeze({ type: 'sniper', firstMs: 9000, intervalMs: 13000, lockMs: 2600, freezeMs: 550, radius: 36, ignoreTimeStop: true }), // build1796: 時間停止では防げない
-        Object.freeze({ type: 'armor', threshold: 300, armorHp: 4000 }), // build1805: 1HIT 300未満は無効（無凸素のアイナ286・キョウ282は届かない。ATKスロットか凸が要る）。装甲値4000を砕くとそのPHASE中は全攻撃が通る
+        Object.freeze({ type: 'armor', threshold: 300, armorHp: 4000, dangerAfterBreak: true, fieldRadius: 90, fieldDamageRate: 0.08, fastBulletIntervalMs: 2600, fastBulletSpeed: 410 }), // build1805: 1HIT 300未満は無効（無凸素のアイナ286・キョウ282は届かない。ATKスロットか凸が要る）。装甲値4000を砕くとそのPHASE中は全攻撃が通る
       ]),
       extra: Object.freeze({ bossElement: 'wood', enemyElement: 'wood' }),
     }),

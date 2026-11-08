@@ -10368,7 +10368,7 @@
     if (!ar || ar.broken) return;
     ar.broken = true;
     ar.hp = 0;
-    showMemoryGuardNotice('装甲が砕けた', true, 'ARMOR BREAK');
+    showMemoryGuardNotice('装甲破壊・危険領域展開', false, 'DANGER');
   }
   function ensureMemoryArmorStyle() {
     if (document.getElementById('memory-armor-style-v1804')) return;
@@ -10406,6 +10406,73 @@
     if (fill && fill.dataset.r !== rate) { fill.dataset.r = rate; fill.style.transform = `scaleX(${rate})`; }
     const y = Number(state.boss.y || 0) + Math.max(36, getBossHalfWidthFast(now) * 1.25);
     ar.el.style.transform = `translate(${Number(state.boss.x || 0).toFixed(1)}px,${y.toFixed(1)}px)`;
+  }
+
+  // build1833: テスト専用・装甲破壊後の第2戦闘形態。
+  // 予兆から0.65秒後に高速即死弾を射出。フィールドはボスの移動に追従し、侵入時に継続ダメージ。
+  // PHASEが変わって装甲が再生されると停止。DOMは1要素のみ再利用する。
+  function updateMemoryArmorDanger(now) {
+    const rule = getMemoryRule('armor');
+    if (!rule || !rule.dangerAfterBreak || !state || !state.boss) return;
+    const ar = getMemoryArmorState(rule);
+    const arena = document.getElementById('shooting-arena');
+    if (!arena || !ar) return;
+    const hazard = state.memoryArmorDanger || (state.memoryArmorDanger = { phase: ar.phase, nextBulletAt: 0, warnedAt: 0, lastFieldTick: 0, fieldEl: null, warningEl: null });
+    const clearWarning = () => { if (hazard.warningEl) { hazard.warningEl.remove(); hazard.warningEl = null; } hazard.warnedAt = 0; };
+    const active = ar.broken && !state.ended && !state.finishing && !state.koTransition && !state.phaseTransition &&
+      state.running && !state.countdown && state.boss.hp > 0 && now >= getBossLockUntil(now);
+    if (!active || hazard.phase !== ar.phase) {
+      if (hazard.fieldEl) { hazard.fieldEl.remove(); hazard.fieldEl = null; }
+      clearWarning();
+      hazard.phase = ar.phase; hazard.nextBulletAt = 0; hazard.lastFieldTick = 0;
+      return;
+    }
+    if (!document.getElementById('memory-armor-danger-style-v1833')) {
+      const st = document.createElement('style'); st.id = 'memory-armor-danger-style-v1833';
+      st.textContent = `.mb-armor-danger-zone{position:absolute;z-index:9;pointer-events:none;border-radius:50%;border:2px solid rgba(255,72,62,.75);background:radial-gradient(circle,rgba(255,70,65,.04) 0%,rgba(238,42,59,.2) 65%,rgba(255,45,70,.4) 100%);box-shadow:0 0 18px rgba(252,42,65,.4),inset 0 0 20px rgba(240,20,60,.26);transform:translate(-50%,-50%);animation:mbArmorPulse 1.3s ease-in-out infinite alternate}`+
+        `.mb-armor-fast-warning{position:absolute;z-index:13;pointer-events:none;height:2px;transform-origin:0 50%;background:repeating-linear-gradient(90deg,#ff403d 0 14px,transparent 14px 21px);box-shadow:0 0 8px #ff4747;animation:mbArmorFlash .17s steps(2) infinite}`+
+        `@keyframes mbArmorPulse{to{opacity:.65;box-shadow:0 0 26px rgba(252,42,65,.67),inset 0 0 22px rgba(240,20,60,.5)}}@keyframes mbArmorFlash{50%{opacity:.25}}`;
+      document.head.appendChild(st);
+    }
+    const radius = Math.max(45, Number(rule.fieldRadius || 90));
+    if (!hazard.fieldEl || !hazard.fieldEl.isConnected) {
+      hazard.fieldEl = document.createElement('div'); hazard.fieldEl.className = 'mb-armor-danger-zone';
+      hazard.fieldEl.style.width = hazard.fieldEl.style.height = (radius * 2) + 'px';
+      arena.appendChild(hazard.fieldEl);
+    }
+    const bx = Number(state.boss.x || 0), by = Number(state.boss.y || 0);
+    hazard.fieldEl.style.left = bx.toFixed(1) + 'px'; hazard.fieldEl.style.top = by.toFixed(1) + 'px';
+    const member = getActiveMember();
+    if (member && member.hp > 0 && Math.hypot(Number(state.player.x)-bx,Number(state.player.y)-by) <= radius) {
+      if (!hazard.lastFieldTick) hazard.lastFieldTick = now;
+      if (now - hazard.lastFieldTick >= 750) {
+        hazard.lastFieldTick = now;
+        damagePlayer(now, Math.max(1, Math.ceil(Number(member.hpMax || member.hp) * Number(rule.fieldDamageRate || .08) * .75)),
+          'raw', 'wood', 'memory-armor-field');
+      }
+    } else { hazard.lastFieldTick = 0; }
+    const interval = Math.max(1800, Number(rule.fastBulletIntervalMs || 2600));
+    if (!hazard.nextBulletAt) hazard.nextBulletAt = now + 1100;
+    if (now < hazard.nextBulletAt) return;
+    if (!hazard.warnedAt) {
+      hazard.warnedAt = now;
+      const target = getEnemyAimPosition();
+      hazard.targetX = Number(target.x || state.player.x); hazard.targetY = Number(target.y || state.player.y);
+      const dx = hazard.targetX - bx, dy = hazard.targetY - by;
+      hazard.warningEl = document.createElement('div'); hazard.warningEl.className = 'mb-armor-fast-warning';
+      hazard.warningEl.style.width = Math.hypot(dx,dy).toFixed(1)+'px';
+      hazard.warningEl.style.transform = `translate(${bx.toFixed(1)}px,${by.toFixed(1)}px) rotate(${Math.atan2(dy,dx)}rad)`;
+      arena.appendChild(hazard.warningEl);
+      return;
+    }
+    if (now - hazard.warnedAt < 650) return;
+    const dx = hazard.targetX - bx, dy = hazard.targetY - by;
+    const mag = Math.max(1,Math.hypot(dx,dy));
+    clearWarning(); hazard.nextBulletAt = now + interval;
+    const speed = Math.max(240, Number(rule.fastBulletSpeed || 410));
+    const bullet = makeProjectile('shooting-enemy-bullet shooting-danger-bullet shooting-tower15-warning',
+      bx,by,dx/mag*speed,dy/mag*speed,999999);
+    if (bullet) { bullet.memoryArmorFastBullet = true; bullet.attackElement = 'wood'; state.enemyBullets.push(bullet); }
   }
 
   // build1795: 記憶決戦の掟「装甲」。ボスへの1HITごとに固定値を差し引く（最低1）。
@@ -26675,6 +26742,7 @@
     updateMemoryJudgment(now);
     updateMemorySniper(now);
     updateMemoryArmorVisual(now);
+    updateMemoryArmorDanger(now);
     const rule = getMemoryGuardianRule();
     if (!rule || !state || !state.boss) return;
     if (state.ended || state.finishing || state.koTransition || !(state.boss.hp > 0)) return;
@@ -29883,6 +29951,16 @@
       const finalizePromise = state.secureFinalizePromise
         || submitShootingHighScore(state.score, true);
       void Promise.resolve(finalizePromise).then(finalized => {
+        if (isMemoryBattleStage() && (!finalized || !finalized.memoryConfirmed)) {
+          if (list && list.isConnected) {
+            const warn = document.createElement('div');
+            warn.className = 'memory-battle-result-warning';
+            warn.style.cssText = 'grid-column:1/-1;padding:10px 12px;border:1px solid #bc685a;background:#fff0ed;color:#892f2f;font:700 12px/1.5 sans-serif;text-align:center';
+            warn.textContent = '記憶決戦のクリア記録を確認できませんでした。報酬は未確定です。';
+            list.appendChild(warn);
+          }
+          return;
+        }
         const rewardExp = Math.max(0, Number(finalized && finalized.shinjuRewardExp || 0));
         if (!rewardExp) return;
         const shinjuDrop = {

@@ -128,6 +128,7 @@
       let run = runPromise ? await runPromise : null;
       if (!run) run = loadRun();
       if (!run || !run.token || (stageNo && Number(run.stageNo) !== Number(stageNo))) {
+        if (win) notify('記憶決戦の出撃認証に失敗しました。初回報酬は未確定です。');
         return { memoryConfirmed:false, firstClearClaimed:false, firstClearAmount:0, highScore:0 };
       }
       const client = sb();
@@ -142,11 +143,16 @@
         // 受け取り待ちに入った栄養は、神聖樹側が自動で創世ptへ変換する
         try { await window.ShinjuProgress.refreshFromServer(); } catch (_) {}
       }
-      if (win && data && data.win === false) notify('記憶決戦：勝利を確認できませんでした（時間が短すぎる等）。');
+      if (win && (!data || data.win !== true)) notify('記憶決戦：サーバーで勝利を確認できませんでした。報酬は未確定です。');
+      if (win && data && data.win === true) {
+        notify(claimed ? `記憶決戦クリア！ 聖樹の息吹（創世EXP +${amount}）を付与しました` : '記憶決戦クリア済み：今月の初回報酬は受取済みです');
+        void refresh();
+      }
       // 結果画面は shinjuRewardExp があれば「聖樹の息吹 / 創世EXP +N」を報酬に並べる
-      return { memoryConfirmed:true, firstClearClaimed:false, firstClearAmount:0, shinjuRewardExp: claimed ? amount : 0, highScore:0 };
+      return { memoryConfirmed:!win || !!(data && data.win === true), firstClearClaimed:false, firstClearAmount:0, shinjuRewardExp: claimed ? amount : 0, highScore:0 };
     })().catch(err => {
       console.warn('[memory battle] finish', err && (err.message || err));
+      if (win) notify('記憶決戦：報酬の確定に失敗しました。通信状況を確認してください。');
       return { memoryConfirmed:false, firstClearClaimed:false, firstClearAmount:0, highScore:0 };
     });
     return finishing;
@@ -191,7 +197,7 @@
         const arHp = Math.max(0, Math.floor(Number(rule.armorHp || 0)));
         rows.push({ icon: 'armor', name: '装甲', text: th > 0
           ? (arHp > 0
-            ? `1HIT${th}未満は弾かれる。装甲を砕くと、そのPHASEの間すべて通る`
+            ? (rule.dangerAfterBreak ? `1HIT${th}未満は無効。装甲破壊後は危険領域と高速即死弾が出現` : `1HIT${th}未満は弾かれる。装甲を砕くと、そのPHASEの間すべて通る`)
             : `ボスへの攻撃は1HITのダメージが${th}未満だと弾かれる`)
           : `ボスへの攻撃は1HITごとに${cut}ダメージ差し引かれる` });
       } else if (rule.type === 'guardians') {
@@ -315,9 +321,10 @@
             <span class="mb-sub"><i></i>${esc(def.title || '')}<i></i></span>
           </div>
           ${done
-            ? '<div class="mb-reward is-done"><b>踏破</b><span>今月クリア済</span></div>'
+            ? '<div class="mb-reward is-done"><b>報酬受取済</b><span>今月クリア済</span></div>'
             : `<div class="mb-reward"><div class="mb-reward-gem is-shinju"><img src="images/shinju_aura.webp" alt="神聖樹の栄養" decoding="async"><b>+${REWARD_SHINJU_EXP}</b></div><small class="mb-reward-label">神聖樹の栄養</small><span>今月初回</span></div>`}
         </div>
+        ${done ? '<div class="mb-clear-banner">✓ 今月クリア済み　｜　初回報酬受取済み</div>' : ''}
         <div class="mb-card-body">
           <figure class="mb-portrait">${img ? `<img src="${esc(img)}" alt="${esc(def.bossName)}" decoding="async"${fallback && fallback !== img ? ` onerror="this.onerror=null;this.src='${esc(fallback)}'"` : ''}>` : ''}${done ? '<span class="mb-seal" aria-label="今月踏破"><b>踏破</b><small>CLEAR</small></span>' : ''}</figure>
           <ul class="mb-rules">${rules}</ul>

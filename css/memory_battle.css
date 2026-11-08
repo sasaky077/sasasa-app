@@ -378,3 +378,9 @@ html body #screen-memory-battle.memory-battle-screen .mb-list {
 }
 html body #screen-memory-battle.memory-battle-screen .mb-list::-webkit-scrollbar { display: none; }
 html body #screen-memory-battle.memory-battle-screen .mb-card { flex-shrink: 0 !important; }
+
+/* build1833: 月間クリア済みと報酬受取をカード内で明確化 */
+#screen-memory-battle .mb-card.is-cleared{border:2px solid #c29237 !important;box-shadow:0 0 0 2px rgba(205,164,75,.3),inset 0 0 0 3px #fff7e6,0 5px 18px rgba(135,90,20,.16) !important}
+#screen-memory-battle .mb-clear-banner{display:block;margin:7px 4px 0;padding:8px 5px;text-align:center;font:700 clamp(10px,3vw,12px)/1.4 'Noto Serif JP',serif;color:#654411;background:linear-gradient(95deg,#fff0c4,#f7df9d,#fff0c4);border:1px solid #c9a252;border-radius:5px;letter-spacing:.02em}
+#screen-memory-battle .mb-card.is-cleared .mb-reward.is-done{background:linear-gradient(180deg,#fff2c5,#e8cd88);border-color:#ae802e}
+#screen-memory-battle .mb-card.is-cleared .mb-reward.is-done b{font-size:clamp(11px,3.1vw,13px);line-height:1.25;letter-spacing:0;white-space:nowrap}
