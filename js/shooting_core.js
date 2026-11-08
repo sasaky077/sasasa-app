@@ -5465,6 +5465,18 @@
     }
   }
 
+  // build1810: 自機弾の位置更新を軽く。positionUnit は --unit-x/--unit-y（CSS変数）も毎フレーム書くため、
+  //  1発ごとに3回のstyle変更→スタイル再計算が重かった（弾が多いキャラ・ステージでカクつく）。
+  //  CSS変数を使う演出（ハヤテの月光など）がない普通の弾は transform だけを書く。
+  function positionPlayerBulletFast(el, x, y) {
+    if (!el) return;
+    if (el._fastPos === undefined) {
+      el._fastPos = !el._shotFx && !/hayate|ricochet|danger|warning|pulse/i.test(String(el.className || ''));
+    }
+    if (!el._fastPos || el._shotFx) { positionUnit(el, x, y); return; }
+    el.style.transform = `translate3d(${x}px,${y}px,0) translate(-50%,-50%)`;
+  }
+
   // build1557 SHOT FX
   // HOMING / SPREAD / PIERCING の見た目を共通デザインへ統一する。
   // makeProjectile()内で当たり判定サイズを計測した「後」にクラスを足すため、
@@ -21630,7 +21642,7 @@
       if (p.kind === 'generic_splash' || p.kind === 'generic_bomb') {
         positionGenericBombProjectile(p, now);
       } else {
-        positionUnit(p.el, p.x, p.y);
+        positionPlayerBulletFast(p.el, p.x, p.y); // build1810
       }
 
       // J字の折り返し中もFACELESS仮面だけは「物理壁」として扱う。
@@ -25714,7 +25726,7 @@
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
     if (now < getBossLockUntil(now)) return; // 登場演出中
-    const w = arena.clientWidth || 390, h = arena.clientHeight || 700;
+    const { w, h } = getArenaSizeFast(); // build1810: 毎フレームの強制レイアウトをやめる
     ensureMemoryGuardStyle();
     let mg = state.memoryGuard;
     if (!mg) {

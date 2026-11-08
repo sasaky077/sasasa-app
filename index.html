@@ -20641,7 +20641,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1809-turret-pivot"></script>
+<script src="js/shooting_event.js?v=1810-livia-perf"></script>
 <script src="js/shooting_party_filter.js?v=1744-summon"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1781-team-rank3"></script>
@@ -21517,11 +21517,12 @@ window.returnToTitleScreen = function(){
     scheduled = false;
     var reason = manualImmersive ? (manualReason || 'manual') : autoReason();
     var immersive = !!reason;
-    document.body.classList.toggle('ui-immersive', immersive);
+    // build1810: 変わった時だけ書く（body の属性を書くたびに画面全体のスタイル再計算が走っていた）
+    if(document.body.classList.contains('ui-immersive') !== immersive) document.body.classList.toggle('ui-immersive', immersive);
     if(immersive){
-      document.body.setAttribute('data-ui-immersive-reason', reason);
+      if(document.body.getAttribute('data-ui-immersive-reason') !== reason) document.body.setAttribute('data-ui-immersive-reason', reason);
     }else{
-      document.body.removeAttribute('data-ui-immersive-reason');
+      if(document.body.hasAttribute('data-ui-immersive-reason')) document.body.removeAttribute('data-ui-immersive-reason');
       restoreChrome();
     }
   }
@@ -21550,6 +21551,8 @@ window.returnToTitleScreen = function(){
       var t = records[i].target;
       // 戦闘画面の中身（弾・敵・HUD）の変化は無視。戦闘画面そのもの（表示/非表示）の変化は拾う。
       if(watchRoot && t !== watchRoot && watchRoot.contains(t)) continue;
+      // build1810: 値が変わっていない属性の再設定（classList.remove で無い class を外す等）は無視
+      if(records[i].type === 'attributes' && t && t.getAttribute && records[i].oldValue === t.getAttribute(records[i].attributeName)) continue;
       // 同じフレーム内に消えた要素（弾など）の変更も無視（画面の切り替えは親要素側の記録で拾える）
       if(t && t.nodeType === 1 && !t.isConnected) continue;
       queue();
@@ -21562,6 +21565,7 @@ window.returnToTitleScreen = function(){
       subtree:true,
       childList:true,
       attributes:true,
+      attributeOldValue:true,
       attributeFilter:['class','style','hidden']
     });
   }catch(_){ }
