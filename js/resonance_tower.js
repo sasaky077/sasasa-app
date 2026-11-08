@@ -110,6 +110,13 @@
       lead:'すべての弾が、死を告げる。<br>一度触れれば、そこで終わる。'})
   });
   const DESPAIR_TITLE_ID='despair_conqueror';
+  // build1814: 絶望の報酬はアカウントにつき指定階層初回のみ。
+  const DESPAIR_REWARDS=Object.freeze({
+    5:[{id:'raid_reset_ticket',name:'レイドリセット券',qty:1,symbol:'券'}],
+    10:[{id:'shinju_pt',name:'創世pt',qty:10,symbol:'pt'}],
+    15:[{id:'genesis_roulette_ticket_silver',name:'創世ptルーレット券（銀）',qty:1,symbol:'銀'}],
+    20:[{id:DESPAIR_TITLE_ID,name:'称号「絶望を超えし者（R）」',qty:1,symbol:'R'}]
+  });
   let mode='normal';
   // build1713: 絶望は「今週の通常の塔を20Fまで制覇した人」にだけ出現する腕試し。
   //  通常の塔の state を読むたびに記録し、未制覇の週は絶望タブを出さない（サーバー側でも begin を拒否する）。
@@ -306,6 +313,24 @@
         const claim=await rpcClient().rpc(m.rpcClaim);
         if(claim.error) console.warn('[tower] reward catch-up pending:',claim.error);
       }
+      if(requestedMode==='despair'){
+        const grant=await rpcClient().rpc('claim_despair_tower_first_rewards');
+        if(grant.error) console.warn('[tower] despair first reward catch-up pending:',grant.error);
+        else if(grant.data?.ok && Array.isArray(grant.data.newRewards) && grant.data.newRewards.length){
+          const lines=grant.data.newRewards.map(r=>{
+            const item=(DESPAIR_REWARDS[Number(r.floor)]||[]).find(x=>x.id===r.id);
+            return r.floor+'F '+(item?.name||r.id)+'×'+r.qty;
+          });
+          notify('絶望の未受取初回報酬：'+lines.join('・'));
+          if(grant.data.newRewards.some(r=>r.id===DESPAIR_TITLE_ID)){
+            try{window.ZeraphiaTitles?.loadMine?.(true);}catch(_){}
+          }
+          if(grant.data.newRewards.some(r=>r.id==='shinju_pt')){
+            try{window.ShinjuProgress?.refreshFromServer?.();}catch(_){}
+          }
+          window.dispatchEvent(new Event('zeraphia:inventory-refresh'));
+        }
+      }
       const {data,error}=await rpcClient().rpc(m.rpcState);
       if(requestedMode!==mode) return !!progress; // 通信中に塔を切り替えた
       if(error) throw error;
@@ -343,7 +368,7 @@
       return descriptions[number-1]+'\n所持キャラから'+partyRangeText(number)+'を編成。封印中 '+used+'体。';
     }
     if(kind==='ranking') return 'ランキングは初版では未公開です。階層進行と週次封印はサーバーで保存されます。';
-    if(mode==='despair') return '残響の塔（絶望）は、今週の残響の塔を制覇した人だけが挑める腕試しです。\n報酬は20Fを踏破したときの称号「絶望を超えし者」だけ。毎週日曜12:00に進行と封印がリセットされ、また踏破すると称号のランクが上がります（I→II→III…）。';
+    if(mode==='despair') return '残響の塔（絶望）は今週の通常の塔20F制覇で解放。\n5/10/15/20Fにアカウント1回限りの初回報酬があります。階層と封印は毎週日曜12:00にリセットされます。';
     return '各階層の初回突破報酬です。\n毎週日曜12:00にリセットされます。';
   }
   function openPanel(kind,number){
@@ -356,10 +381,21 @@
     if(rewardList)rewardList.remove();
     layer.querySelector('.resonance-tower-title-reward')?.remove();
     if(mode==='despair'){
-      // 絶望：報酬は20F踏破の称号のみ
-      if(kind==='rewards'||(kind==='floor'&&number===TOWER_FLOORS)){
-        const box=document.createElement('div'); box.className='resonance-tower-title-reward resonance-tower-reward-list';
-        box.innerHTML='<span class="rt-floor">20F</span><span><b>称号「絶望を超えし者」</b><small>踏破した回数がランクになる（I・II・III…）。3回・5回・10回で称号の見た目が変わる。プロフィール・フレンド・ランキングに表示できる。</small></span>';
+      if(kind==='rewards'||(kind==='floor'&&DESPAIR_REWARDS[number])){
+        const box=document.createElement('div');box.className='resonance-tower-reward-list';
+        box.setAttribute('aria-label','絶望の初回突破報酬');box.tabIndex=0;
+        const floors=kind==='rewards'?[5,10,15,20]:[number];
+        floors.forEach(f=>{
+          const row=document.createElement('div');row.className='resonance-tower-reward-row'+(cleared(f)?' is-cleared':'');
+          const tag=document.createElement('span');tag.className='resonance-tower-reward-floor';tag.textContent=String(f).padStart(2,'0')+'F';row.append(tag);
+          const items=document.createElement('span');items.className='resonance-tower-reward-items';
+          DESPAIR_REWARDS[f].forEach(item=>{
+            const el=document.createElement('span');el.className='resonance-tower-reward-item';
+            const sym=document.createElement('span');sym.className='resonance-tower-reward-symbol';sym.textContent=item.symbol;
+            const name=document.createElement('span');name.className='resonance-tower-reward-name';name.textContent=item.name;
+            const qty=document.createElement('b');qty.textContent='×'+item.qty;name.append(qty);el.append(sym,name);items.append(el);
+          });row.append(items);box.append(row);
+        });
         desc.insertAdjacentElement('afterend',box);
       }
     }else if(kind==='rewards'||kind==='floor'){
@@ -516,24 +552,24 @@
       }
       syncTowerWallet();
       attempt=null;render();
-      // 絶望：報酬は20F踏破の称号のみ（サーバーが付与した時だけ表示）
+      // 絶望の初回報酬は、サーバーが返したnew rewardsのみ通知する。
       if(runMode==='despair'){
         if(win){
-          const sealed=(data?.sealedCharacterIds||[]).length;
-          const granted=data?.titleGranted===true||data?.title_granted===true||String(data?.titleId||data?.title_id||'')===DESPAIR_TITLE_ID;
-          if(granted){
-            const lv=Math.max(1,Math.floor(Number(data?.titleLevel??data?.title_level??data?.titleCount??1))||1);
-            let label='絶望を超えし者';
-            try{
-              if(window.ZeraphiaTitles){
-                if(typeof window.ZeraphiaTitles.notifyAcquired==='function') window.ZeraphiaTitles.notifyAcquired(DESPAIR_TITLE_ID,lv);
-                if(typeof window.ZeraphiaTitles.labelOf==='function') label=window.ZeraphiaTitles.labelOf(DESPAIR_TITLE_ID,lv);
-              }
-            }catch(_){}
-            notify(lv>1 ? ('絶望を踏破！ 称号のランクが上がりました：「'+label+'」') : ('絶望を踏破！ 称号「'+label+'」を獲得しました。'));
-          }else{
-            notify('絶望・第'+data.floor+'層突破！ 使用した'+sealed+'体を今週封印しました');
-          }
+          const rewards=Array.isArray(data?.rewards)?data.rewards:[];
+          if(rewards.length){
+            const desc=rewards.map(r=>{
+              const item=(DESPAIR_REWARDS[Number(r.floor)]||[]).find(x=>x.id===r.id);
+              return (item?.name||r.id)+' ×'+r.qty;
+            }).join('・');
+            notify('絶望・第'+data.floor+'層 初回突破報酬：'+desc);
+            if(rewards.some(r=>r.id===DESPAIR_TITLE_ID)){
+              try{window.ZeraphiaTitles?.notifyAcquired?.(DESPAIR_TITLE_ID,1);}catch(_){}
+            }
+            if(rewards.some(r=>r.id==='shinju_pt')){
+              try{window.ShinjuProgress?.refreshFromServer?.();}catch(_){}
+            }
+            window.dispatchEvent(new Event('zeraphia:inventory-refresh'));
+          }else notify('絶望・第'+data.floor+'層突破！ （初回報酬は受取済み）');
         }
         return {towerConfirmed:true,firstClearClaimed:false,firstClearAmount:0,highScore:0};
       }

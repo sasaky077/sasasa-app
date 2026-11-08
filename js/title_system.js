@@ -18,10 +18,17 @@
   'use strict';
 
   const TITLE_MASTER = Object.freeze({
+    reason_knower: Object.freeze({
+      id:'reason_knower', name:'理を知る者', rarity:'SR',
+      desc:'位相回遊の100階層を初めて突破した証。',
+      how:'位相回遊100F 初回突破',
+      tone:'reason', tiers:Object.freeze([{min:1,key:'t1',label:'SR'}])
+    }),
     despair_conqueror: Object.freeze({
       id: 'despair_conqueror',
+      rarity: 'R',
       name: '絶望を超えし者',
-      desc: '残響の塔（絶望）の全20階を踏破した証。踏破するたびにランクが上がる。',
+      desc: '残響の塔（絶望）20Fを初めて踏破した証。',
       how: '今週の残響の塔を制覇し、残響の塔（絶望）20Fを踏破',
       tone: 'despair',
       // Lvがこの値以上で見た目が変わる（1：深紅／3：銀縁／5：金縁／10：輝く金縁）
@@ -64,7 +71,7 @@
   function labelOf(titleId, level){
     const t = getTitle(titleId);
     if(!t) return '';
-    return t.name + ' ' + roman(level);
+    return t.name + (t.rarity ? ' ('+t.rarity+')' : '') + (levelOf(level)>1 ? ' '+roman(level) : '');
   }
   function esc(v){
     return String(v==null?'':v).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch]);
@@ -82,7 +89,8 @@
         border:1px solid #c6a466;background:linear-gradient(180deg,#fffdf7,#f3e7cf);color:#6b5132;vertical-align:middle}
       .zt-title-badge::before{content:"✦";font-size:8px;opacity:.85}
       .zt-title-badge .zt-rank{font-family:Cinzel,"Noto Serif JP",serif;font-weight:700;letter-spacing:.04em;margin-left:2px}
-      /* 絶望を超えし者：ランクで見た目が変わる */
+      .zt-title-badge.tone-reason{border-color:#d7b66a;background:linear-gradient(180deg,#fff6d9,#e8ce8f);color:#684914;box-shadow:0 0 7px rgba(214,170,70,.35)}
+      /* 絶望を超えし者：既存ランクも表示可能 */
       .zt-title-badge.tone-despair{border-color:#a8305a;background:linear-gradient(180deg,#5a1530,#2a0814);color:#f6dbe5;box-shadow:0 0 6px rgba(168,48,90,.45)}
       .zt-title-badge.tone-despair.tier-t2{border-color:#d8dde6;box-shadow:0 0 0 1px rgba(216,221,230,.55) inset,0 0 7px rgba(200,210,225,.6)}
       .zt-title-badge.tone-despair.tier-t2 .zt-rank{color:#e7ecf3}
@@ -126,7 +134,7 @@
     const lv = levelOf(level);
     const tier = getTier(titleId, lv);
     return '<span class="zt-title-badge tone-' + esc(t.tone || 'gold') + (tier ? ' tier-' + esc(tier.key) : '') +
-      '" title="' + esc(t.desc + '（' + lv + '回獲得）') + '">' + esc(t.name) + '<span class="zt-rank">' + esc(roman(lv)) + '</span></span>';
+      '" title="' + esc(t.desc) + '">' + esc(t.name) + (t.rarity ? '<span class="zt-rank">'+esc(t.rarity)+'</span>' : '') + (lv>1 ? '<span class="zt-rank">'+esc(roman(lv))+'</span>' : '') + '</span>';
   }
 
   function readOwned(list){
@@ -271,10 +279,10 @@
     const list = Object.values(TITLE_MASTER).map(t => {
       const owned = state.owned.has(t.id);
       const lv = state.owned.get(t.id) || 1;
-      const nt = owned ? nextTier(t.id, lv) : null;
+      const nt = owned && lv>1 ? nextTier(t.id, lv) : null;
       const tiers = Array.isArray(t.tiers) ? '<span class="zt-tiers">' + t.tiers.map(x => badgeHTML(t.id, x.min)).join('') + '</span>' : '';
       const status = owned
-        ? ('獲得 ' + lv + '回' + (nt ? '・あと' + (nt.min - lv) + '回で見た目が変わる（' + esc(nt.label) + '）' : '・最高の見た目') + '　' + (state.equipped === t.id ? '設定中' : 'タップで設定'))
+        ? ('獲得済み' + (nt ? '・あと' + (nt.min - lv) + '回で見た目が変わる（' + esc(nt.label) + '）' : '') + '　' + (state.equipped === t.id ? '設定中' : 'タップで設定'))
         : ('未獲得：' + esc(t.how));
       return '<button type="button" class="zt-opt' + (state.equipped === t.id ? ' is-selected' : '') + '" data-zt-equip="' + esc(t.id) + '"' + (owned ? '' : ' disabled') + '>' +
         badgeHTML(t.id, lv) +

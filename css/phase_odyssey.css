@@ -1096,3 +1096,12 @@ html body #shooting-event-root .shooting-score.is-po-floor[data-po-len="11"] .sh
 #shooting-event-root .po-pause-mission-details p.is-anomaly b{
   flex:0 0 auto;padding:2px 5px 1px;font-size:10px;letter-spacing:.06em;color:#fff;background:rgba(168,50,31,.85);
 }
+
+/* build1814: reward overview stays on the existing second pager page */
+#screen-phase-odyssey .po-first-rewards{margin-top:9px;padding:10px 12px}
+#screen-phase-odyssey .po-first-rewards-note{margin:4px 0 7px;font-size:10px;line-height:1.5;color:#80715d}
+#screen-phase-odyssey .po-first-rewards-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 10px;margin:0;padding:0;list-style:none}
+#screen-phase-odyssey .po-first-rewards-list li{display:flex;align-items:baseline;gap:6px;padding:5px 0;border-bottom:1px solid rgba(151,121,79,.17);font-size:10px;line-height:1.4;color:#64523d}
+#screen-phase-odyssey .po-first-rewards-list li b{flex:0 0 27px;color:#94743c;font-family:Cinzel,serif}
+#screen-phase-odyssey .po-first-rewards-list li span{min-width:0;overflow-wrap:anywhere}
+@media(max-width:360px){#screen-phase-odyssey .po-first-rewards-list{gap:1px 6px}#screen-phase-odyssey .po-first-rewards-list li{font-size:9px}}

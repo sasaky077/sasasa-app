@@ -1561,6 +1561,7 @@
         if (res && res.error) throw res.error;
         try { localStorage.setItem(RANK_SENT_KEY + ':' + uid, String(best)); } catch (_) {}
         Object.keys(rankCache).forEach(k => delete rankCache[k]);
+        void claimFirstRewards();
         return true;
       })
       .catch(err => { console.warn('[phase odyssey] ranking submit failed', err); return false; })
@@ -1710,6 +1711,35 @@
     });
   }
 
+  // build1814: 初回報酬はサーバーに保存された最高到達階層で判定。
+  const FIRST_REWARD_NAMES = Object.freeze({
+    raid_reset_ticket:'レイドリセット券', gem:'結晶',
+    genesis_roulette_ticket_silver:'創世ptルーレット券（銀）',
+    phase_skip_ticket_silver:'位相スキップ券（銀）',
+    phase_skip_ticket_gold:'位相スキップ券（金）',
+    reason_knower:'称号「理を知る者（SR）」'
+  });
+  let firstRewardClaiming = null;
+  function claimFirstRewards(){
+    const sb = rankClient();
+    if(!sb || !userId()) return Promise.resolve(false);
+    if(firstRewardClaiming) return firstRewardClaiming;
+    firstRewardClaiming = sb.rpc('claim_phase_odyssey_first_rewards').then(({data,error})=>{
+      if(error) throw error;
+      if(!data || data.ok === false) throw new Error(data?.message || '初回報酬を確認できませんでした');
+      const items = Array.isArray(data.newRewards) ? data.newRewards : [];
+      if(items.length){
+        const lines=items.map(x=>'FLOOR '+x.floor+'：'+(FIRST_REWARD_NAMES[x.id]||x.id)+(x.type==='title'?'':' ×'+x.qty));
+        notify('初回突破報酬獲得！ '+lines.join(' / '));
+        try { window.ZeraphiaTitles?.loadMine?.(true); } catch(_){}
+        window.dispatchEvent(new Event('zeraphia:inventory-refresh'));
+      }
+      return true;
+    }).catch(err=>{console.warn('[phase odyssey] first rewards pending:',err);return false;})
+      .finally(()=>{firstRewardClaiming=null;});
+    return firstRewardClaiming;
+  }
+
   // ------------------------------------------------------------
   // 画面遷移
   // ------------------------------------------------------------
@@ -1727,7 +1757,7 @@
     requestAnimationFrame(layoutPager); // 画面の表示（active）反映後に、収まるかを判定し直す
     if (rec.run_status === 'select') setTimeout(openBuffSelect, 260);
     refreshSkipOwned(); // build1813: スキップ券の所持数
-    setTimeout(() => { submitBestFloor(); }, 600); // build1689: 既存の最高到達階もランキングへ取り込む
+    setTimeout(() => { submitBestFloor().then(()=>claimFirstRewards()); }, 600); // build1814: 過去の最高記録も含め初回報酬を照合
   }
   function close(){
     closeModal();
