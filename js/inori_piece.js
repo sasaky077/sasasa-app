@@ -117,8 +117,7 @@
           '<div class="noah-piece-note" id="inori-piece-note">ステージクリアごとに、イノリの欠片を1つ獲得できます。</div>' +
         '</div>' +
         '<footer class="noah-piece-actions">' +
-          '<div class="stage-piece-ticket-balance" aria-live="polite"><span>所持チケット</span><strong id="inori-piece-ticket-count">0</strong><span>枚</span><small>挑戦時に1枚消費</small></div>' +
-          '<button type="button" class="noah-piece-challenge" id="inori-piece-challenge">イノリに挑戦する</button>' +
+          '<button type="button" class="noah-piece-challenge" id="inori-piece-challenge"><span class="stage-ticket-button-title">イノリに挑戦する</span><span class="stage-ticket-button-count">所持チケット：<b id="inori-piece-ticket-count">0</b>枚</span></button>' +
           '<div class="noah-piece-complete" id="inori-piece-complete"></div>' +
         '</footer>' +
       '</section>';
