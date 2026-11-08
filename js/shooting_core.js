@@ -4336,7 +4336,8 @@
     // Use a per-hit rate appropriate for her multi-projectile shot instead;
     // keep actual hit detection, ULT projectiles, and all other units unchanged.
     if (Number(c.id) === Number(CHARACTER_ID.CONJURER) && c.shotType === 'conjure') {
-      return 0.40; // 30-point gauge: 75 qualifying hits, rather than 20.
+      // build1792: 扇状の旋回砲台になり命中数が増えたため、キャラ定義の値（0.16）を使う
+      return Number.isFinite(Number(c.conjureUltGainPerHit)) ? Number(c.conjureUltGainPerHit) : 0.40;
     }
     if (window.ShootingCharacters && typeof window.ShootingCharacters.getShootingUltGainPerHitEffective === 'function') {
       return Math.max(0, Number(window.ShootingCharacters.getShootingUltGainPerHitEffective(c) || 0));
@@ -10862,11 +10863,12 @@
   // ULT：自機左右へ完全追従する砲台を5秒間展開し、左右各25発のHOMING。
   // ============================================================
   function ensureConjureVisualStyles() {
-    if (document.getElementById('shooting-conjure-style-build991')) return;
+    if (document.getElementById('shooting-conjure-style-build1791')) return;
+    document.getElementById('shooting-conjure-style-build991')?.remove();
     const oldStyle = document.getElementById('shooting-conjure-style-build971');
     if (oldStyle) oldStyle.remove();
     const style = document.createElement('style');
-    style.id = 'shooting-conjure-style-build991';
+    style.id = 'shooting-conjure-style-build1791';
     style.textContent = `
       .shooting-conjure-preview,
       .shooting-conjure-turret,
@@ -10967,8 +10969,18 @@
       .shooting-conjure-ult-turret{width:54px;height:54px;opacity:.98}
       .shooting-conjure-ult-turret .shooting-conjure-object-img{filter:drop-shadow(0 0 9px rgba(229,245,248,.68))}
       .shooting-bullet-conjure{width:8px!important;height:8px!important;border-radius:1px!important;transform-origin:center;background:rgba(228,241,244,.92)!important;box-shadow:0 0 7px rgba(200,229,235,.75)!important}
+      /* build1791: 砲台の8方向弾は数が多いので、属性弾の三重グロー（24px）と装飾の疑似要素をやめて軽くする */
+      #shooting-arena .shooting-bullet.shooting-bullet-conjure{box-shadow:0 0 5px var(--conjure-glow,rgba(200,229,235,.8))!important;contain:strict}
+      #shooting-arena .shooting-bullet.shooting-bullet-conjure::before,
+      #shooting-arena .shooting-bullet.shooting-bullet-conjure::after{content:none!important;display:none!important}
+      #shooting-arena .shooting-bullet.shooting-bullet-conjure.shooting-bullet-wood{--conjure-glow:rgba(100,214,79,.85)}
+      #shooting-arena .shooting-bullet.shooting-bullet-conjure.shooting-bullet-fire{--conjure-glow:rgba(255,77,59,.85)}
+      #shooting-arena .shooting-bullet.shooting-bullet-conjure.shooting-bullet-aqua{--conjure-glow:rgba(57,172,255,.85)}
+      #shooting-arena .shooting-bullet.shooting-bullet-conjure.shooting-bullet-dark{--conjure-glow:rgba(166,91,233,.85)}
+      #shooting-arena .shooting-bullet.shooting-bullet-conjure.shooting-bullet-light{--conjure-glow:rgba(255,225,83,.9)}
+      .shooting-conjure-ult-turret{will-change:transform}
       .shooting-conjure-ult-homing{width:9px!important;height:14px!important;border-radius:45% 45% 55% 55%!important;background:linear-gradient(180deg,#fff,rgba(207,232,238,.95),rgba(135,170,180,.86))!important;box-shadow:0 0 8px rgba(208,239,245,.84)!important}
-      @keyframes shootingConjurePreviewPulse1001{to{opacity:1;filter:brightness(1.12)}}
+      @keyframes shootingConjurePreviewPulse1001{to{opacity:1}}
       @keyframes shootingConjureVolley{0%{transform:translate(-50%,-50%) scale(.84);filter:brightness(1.55)}100%{transform:translate(-50%,-50%) scale(1);filter:brightness(1)}}
     `;
     document.head.appendChild(style);
@@ -11194,8 +11206,14 @@
     const damage = Math.max(0, Number(c.atk || 0) * Number(c.shotPowerRate || 0.40));
     const attackElement = normalizeCombatElement(c.element) || 'neutral';
     const elementClass = getCharacterBulletClass(c);
+    // build1792: 扇モード（オリビア）は砲台の向き（aimAngle）を中心に扇状に撃つ。従来は全周8方向。
+    const fan = c.conjureAimMode === 'fan';
+    const aim = Number.isFinite(Number(turret.aimAngle)) ? Number(turret.aimAngle) : -Math.PI / 2;
+    const step = Number(c.conjureFanStep || 0.13);
     for (let i = 0; i < count; i++) {
-      const angle = -Math.PI / 2 + (Math.PI * 2 * i / count);
+      const angle = fan
+        ? aim + (i - (count - 1) / 2) * step
+        : -Math.PI / 2 + (Math.PI * 2 * i / count);
       const p = makeProjectile(
         'shooting-bullet shooting-bullet-conjure' + elementClass,
         Number(turret.x || 0), Number(turret.y || 0),
@@ -11211,12 +11229,56 @@
       p._hh = 4;
       state.bullets.push(p);
     }
-    if (turret.el) {
-      turret.el.classList.remove('volley');
-      void turret.el.offsetWidth;
-      turret.el.classList.add('volley');
-      setTimeout(() => { try { turret.el?.classList.remove('volley'); } catch (_) {} }, 180);
+    // build1791: 発射の脈動は Web Animations（transformのみ）で。
+    //  以前は class付け外し＋offsetWidth（強制レイアウト）＋setTimeout を毎射やっていて重かった。
+    const img = turret.el && (turret.imgEl || (turret.imgEl = turret.el.querySelector('.shooting-conjure-object-img')));
+    if (img && typeof img.animate === 'function') {
+      try {
+        img.animate(
+          [{ transform: 'translate(-50%,-50%) scale(.84)' }, { transform: 'translate(-50%,-50%) scale(1)' }],
+          { duration: 180, easing: 'ease-out' }
+        );
+      } catch (_) {}
     }
+  }
+
+  // build1792: 扇モードの砲台の狙い先（一番近い生存中の敵。いなければボス）
+  function findConjureAimTarget(turret) {
+    let best = null, bestD = Infinity;
+    const list = state && state.normalEnemies || [];
+    for (let i = 0; i < list.length; i++) {
+      const e = list[i];
+      if (!e || !(e.hp > 0) || !e.el) continue;
+      const d = (e.x - turret.x) * (e.x - turret.x) + (e.y - turret.y) * (e.y - turret.y);
+      if (d < bestD) { bestD = d; best = e; }
+    }
+    if (state && !isNormalBattle() && state.boss && state.boss.hp > 0) {
+      const b = state.boss;
+      const d = (b.x - turret.x) * (b.x - turret.x) + (b.y - turret.y) * (b.y - turret.y);
+      if (d < bestD) { bestD = d; best = b; }
+    }
+    return best;
+  }
+  function applyConjureTurretRotation(turret) {
+    const img = turret.el && (turret.imgEl || (turret.imgEl = turret.el.querySelector('.shooting-conjure-object-img')));
+    if (!img) return;
+    // 画像は上向きが正面。aimAngle（右=0, 上=-π/2）から回転量を出す。1°刻みで変わった時だけ書く。
+    const deg = Math.round((Number(turret.aimAngle) + Math.PI / 2) * 180 / Math.PI);
+    if (turret.rotDeg !== deg) { turret.rotDeg = deg; img.style.rotate = deg + 'deg'; }
+  }
+  function updateConjureTurretAim(turret, c, now) {
+    const last = Number(turret.aimAt || now);
+    const dt = Math.max(0, Math.min(0.1, (now - last) / 1000));
+    turret.aimAt = now;
+    const t = findConjureAimTarget(turret);
+    if (!t) return;
+    const want = Math.atan2(Number(t.y) - turret.y, Number(t.x) - turret.x);
+    let diff = want - Number(turret.aimAngle || 0);
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    const maxTurn = Math.max(0.5, Number(c.conjureAimTurnRate || 4.5)) * dt;
+    turret.aimAngle = Number(turret.aimAngle || 0) + Math.max(-maxTurn, Math.min(maxTurn, diff));
+    applyConjureTurretRotation(turret);
   }
 
   function spawnConjureTurret(c, x, y, now) {
@@ -11253,6 +11315,13 @@
     };
     positionUnit(el, turret.x, turret.y);
     state.conjureTurrets.push(turret);
+    // build1792: 扇モードは生成時に一番近い敵へ向けておく（以後は旋回して追う）
+    if (c.conjureAimMode === 'fan') {
+      const t = findConjureAimTarget(turret);
+      turret.aimAngle = t ? Math.atan2(Number(t.y) - turret.y, Number(t.x) - turret.x) : -Math.PI / 2;
+      turret.aimAt = now;
+      applyConjureTurretRotation(turret);
+    }
     // 生成直後を1射目とし、1秒後・2秒後の計3射。
     fireConjureTurretVolley(turret, c, now);
     turret.shotsFired = 1;
@@ -11380,20 +11449,33 @@
       ring.className = ring.className.replace(/\bel-\w+\b/g, '').trim();
       ring.classList.add(elClass);
     }
-    ring.style.setProperty('--p', rate.toFixed(3));
+    // build1791: リングの再描画（conic-gradient＋mask）を減らすため、2%刻みで変わった時だけ更新
+    const pStr = (Math.round(rate * 50) / 50).toFixed(2);
+    if (ring.dataset.p !== pStr) { ring.dataset.p = pStr; ring.style.setProperty('--p', pStr); }
     ring.classList.toggle('is-ready', !full && rate >= 1);
     ring.classList.toggle('is-full', full);
     ring.classList.toggle('is-queued', !!state.summonQueued);
     // transform はポップ演出に使うので、位置は left/top で置く（positionUnit は transform を上書きするため使わない）
     // build1745: 自機の中心に置くと自機画像（z12）の裏に隠れて見えなかった。自機の右下（右端に近い時は左下）へ出し、前面に表示する。
     const px = Number(state.player.x || 0), py = Number(state.player.y || 0);
-    const playerEl = document.getElementById(PLAYER_ID);
-    const halfW = Math.max(18, Math.min(60, Number(playerEl && playerEl.offsetWidth || 74) * .5));
-    const arenaW = Number(arena.clientWidth || 390);
+    // build1791: 自機の幅は毎フレーム測らない（offsetWidth＝強制レイアウト）。キャラが替わった時だけ測る。
+    if (state.summonGaugeHalfWFor !== c.id || !(state.summonGaugeHalfW > 0)) {
+      const playerEl = document.getElementById(PLAYER_ID);
+      state.summonGaugeHalfW = Math.max(18, Math.min(60, Number(playerEl && playerEl.offsetWidth || 74) * .5));
+      state.summonGaugeHalfWFor = c.id;
+    }
+    const halfW = state.summonGaugeHalfW;
+    // build1791: 盤面の幅も毎フレーム測らない（0.5秒ごとに測り直す）
+    if (!(state.summonGaugeArenaW > 0) || now - Number(state.summonGaugeArenaWAt || 0) > 500) {
+      state.summonGaugeArenaW = Number(arena.clientWidth || 390);
+      state.summonGaugeArenaWAt = now;
+    }
+    const arenaW = state.summonGaugeArenaW;
     const side = (px + halfW + 26 > arenaW - 6) ? -1 : 1;
     const gx = px + side * (halfW + 8), gy = py + 22;
-    ring.style.left = gx + 'px'; ring.style.top = gy + 'px';
-    label.style.left = gx + 'px'; label.style.top = gy + 'px';
+    const gxs = Math.round(gx) + 'px', gys = Math.round(gy) + 'px';
+    if (ring.style.left !== gxs) { ring.style.left = gxs; label.style.left = gxs; }
+    if (ring.style.top !== gys) { ring.style.top = gys; label.style.top = gys; }
     const text = full ? 'MAX' : (max - used) + '/' + max;
     if (label.textContent !== text) label.textContent = text;
 
@@ -11604,7 +11686,11 @@
       if (!c) return;
       if (turret.camillaSpider) { updateCamillaPlayerSpider(turret, c, now); return; }
       const lifeLeft = Number(turret.expireAt || 0) - now;
-      if (turret.el) turret.el.classList.toggle('is-expiring', lifeLeft <= 500);
+      if (turret.el) {
+        const exp = lifeLeft <= 500;
+        if (turret.expiringShown !== exp) { turret.expiringShown = exp; turret.el.classList.toggle('is-expiring', exp); }
+      }
+      if (c.conjureAimMode === 'fan') updateConjureTurretAim(turret, c, now);
       const maxShots = Math.max(1, Math.floor(Number(c.conjureVolleyCount || 3)));
       const interval = Math.max(100, Number(c.conjureVolleyIntervalMs || 1000));
       while (turret.shotsFired < maxShots && now >= Number(turret.nextShotAt || Infinity)) {

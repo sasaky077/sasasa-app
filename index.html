@@ -7371,6 +7371,32 @@ document.addEventListener('touchend', function (e) {
       commonMaterialIds: GACHA_EVOLUTION_MATERIAL_IDS,
       itemMixed: true
     },
+    // build1793: オリビアPU 再開
+    {
+      id: 'gacha_05',
+      category: 'normal',
+      poolType: 'pickup',
+      title: '限定邂逅',
+      detailTitle: 'OLIVIA PICKUP ENCOUNTER',
+      desc: 'SR6% / R64% / 進化素材30%。オリビア1.2%・恒常SR各0.96%。',
+      thumbTitle: 'オリビアPU',
+      img: 'images/gacha_banner_04.webp',
+      cost: 5,
+      srRate: GACHA_PICKUP_OLIVIA_SR_TOTAL_RATE,
+      rRate: GACHA_PICKUP_OLIVIA_R_RATE,
+      materialRate: GACHA_PICKUP_OLIVIA_MATERIAL_RATE,
+      characterRateMap: GACHA_PICKUP_OLIVIA_SR_RATE_MAP,
+      pickupCharaId: GACHA_PICKUP_OLIVIA_ID,
+      limitedCharacterIds: [GACHA_PICKUP_OLIVIA_ID],
+      limitedRCharacterIds: [],
+      srCharacterIds: [GACHA_PICKUP_OLIVIA_ID].concat(GACHA_PERMANENT_SR_IDS),
+      rCharacterIds: GACHA_R_IDS,
+      pityCharacterIds: [GACHA_PICKUP_OLIVIA_ID].concat(GACHA_PERMANENT_SR_IDS),
+      disablePity: false,
+      disableTenGuarantee: true,
+      commonMaterialIds: GACHA_EVOLUTION_MATERIAL_IDS,
+      itemMixed: true
+    },
     {
       id: 'gacha_04',
       category: 'normal',
@@ -7397,34 +7423,7 @@ document.addEventListener('touchend', function (e) {
     }
   ];
 
-  // build1732: オリビアのピックアップ（gacha_05）は一旦終了。再開するときは GACHA_BANNERS へ戻す。
-  //  （確率表 GACHA_PICKUP_OLIVIA_* は残してある）
-  const GACHA_BANNER_OLIVIA_PICKUP_PAUSED =
-    {
-      id: 'gacha_05',
-      category: 'normal',
-      poolType: 'pickup',
-      title: '限定邂逅',
-      detailTitle: 'OLIVIA PICKUP ENCOUNTER',
-      desc: 'SR6% / R64% / 進化素材30%。オリビア1.2%・恒常SR各0.96%。',
-      thumbTitle: 'オリビアPU',
-      img: 'images/gacha_banner_04.webp',
-      cost: 5,
-      srRate: GACHA_PICKUP_OLIVIA_SR_TOTAL_RATE,
-      rRate: GACHA_PICKUP_OLIVIA_R_RATE,
-      materialRate: GACHA_PICKUP_OLIVIA_MATERIAL_RATE,
-      characterRateMap: GACHA_PICKUP_OLIVIA_SR_RATE_MAP,
-      pickupCharaId: GACHA_PICKUP_OLIVIA_ID,
-      limitedCharacterIds: [GACHA_PICKUP_OLIVIA_ID],
-      limitedRCharacterIds: [],
-      srCharacterIds: [GACHA_PICKUP_OLIVIA_ID].concat(GACHA_PERMANENT_SR_IDS),
-      rCharacterIds: GACHA_R_IDS,
-      pityCharacterIds: [GACHA_PICKUP_OLIVIA_ID].concat(GACHA_PERMANENT_SR_IDS),
-      disablePity: false,
-      disableTenGuarantee: true,
-      commonMaterialIds: GACHA_EVOLUTION_MATERIAL_IDS,
-      itemMixed: true
-    };
+  // build1793: オリビアのピックアップ（gacha_05）を再開（GACHA_BANNERS の スマイルPU の次）。
 
   var currentGachaId = null; // 選択中のガチャID
   var pityCount = parseInt(localStorage.getItem('pity_count') || '0', 10); // 天井カウント
@@ -20371,7 +20370,7 @@ function fadeOutOpeningBgm(){
 
 
 
-<script src="js/shooting_characters.js?v=1784-rose-rate"></script>
+<script src="js/shooting_characters.js?v=1792-olivia-fan"></script>
 <script src="js/story_scenario.js?v=1742-ch08-09-scenes"></script>
 <script src="js/story_novel.js?v=1738-textbox-fit"></script>
 <script src="js/stage_select.js?v=1739-story-reread"></script>
@@ -20608,7 +20607,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1789-drain-heal"></script>
+<script src="js/shooting_event.js?v=1792-olivia-fan"></script>
 <script src="js/shooting_party_filter.js?v=1744-summon"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1781-team-rank3"></script>
@@ -21506,8 +21505,26 @@ window.returnToTitleScreen = function(){
   };
   window.syncGameChrome = sync;
 
+  // build1791: 戦闘中は弾・敵の移動で毎フレーム大量のDOM変更が起きる。
+  //  そのたびに sync（getComputedStyle＋getBoundingClientRect＝強制レイアウト）を走らせていて重かったため、
+  //  戦闘画面（#shooting-event-root）の中の変更は無視する（没入表示の判定に関係しない）。
+  var watchRoot = null;
+  function onMutations(records){
+    if(scheduled) return;
+    if(!watchRoot || !watchRoot.isConnected) watchRoot = document.getElementById('shooting-event-root');
+    for(var i=0;i<records.length;i++){
+      var t = records[i].target;
+      // 戦闘画面の中身（弾・敵・HUD）の変化は無視。戦闘画面そのもの（表示/非表示）の変化は拾う。
+      if(watchRoot && t !== watchRoot && watchRoot.contains(t)) continue;
+      // 同じフレーム内に消えた要素（弾など）の変更も無視（画面の切り替えは親要素側の記録で拾える）
+      if(t && t.nodeType === 1 && !t.isConnected) continue;
+      queue();
+      return;
+    }
+  }
+
   try{
-    new MutationObserver(queue).observe(document.documentElement, {
+    new MutationObserver(onMutations).observe(document.documentElement, {
       subtree:true,
       childList:true,
       attributes:true,
