@@ -28509,7 +28509,9 @@
     const enemy = enemyId && window.ShootingEnemies ? window.ShootingEnemies.getShootingEnemy(enemyId) : null;
     const phases = Math.max(1, Number(enemy && enemy.gauges || 3));
     const mission = stage?.mission?.text || 'リズムを撃破';
-    const firstClearGems = Math.max(0, Number(stage?.firstClearGems || 5));
+    const isVerdant = stage?.eventId === 'verdant';
+    const firstClearGems = Math.max(0, Number(stage?.firstClearGems ?? 5));
+    const firstClearShinjuPt = Math.max(0, Number(stage?.firstClearShinjuPt || 0));
     const fixed = Array.isArray(stage?.fixedItemDrops) ? stage.fixedItemDrops : [];
     const goldCount = fixed.filter(row => row && row.id === 'level_exp_large').reduce((sum, row) => sum + Number(row.count || 0), 0);
     const attrs = buildStageSelectAttributePreview(stageId);
@@ -28534,11 +28536,15 @@
                 <span class="zss-reward-icon"><img src="images/item_exp_gold.webp" alt="強化素材・金"></span>
                 <span class="zfs-gem-count">×${goldCount}</span>
               </span>` : ''}
-              <span class="zss-reward-chip zfs-first-clear-gem" title="初回クリア報酬：結晶 ×${firstClearGems}" aria-label="初回のみ 結晶 ${firstClearGems}個">
+              ${isVerdant ? `<span class="zss-reward-chip zfs-first-clear-gem" title="初回クリア報酬：創世pt ×${firstClearShinjuPt}" aria-label="初回のみ 創世pt ${firstClearShinjuPt}">
+                <span class="zss-reward-icon"><img src="images/shinju_aura.webp" alt="創世pt"></span>
+                <span class="zfs-gem-count">×${firstClearShinjuPt}</span>
+                <span class="zfs-first-label">初回のみ・創世pt</span>
+              </span>` : `<span class="zss-reward-chip zfs-first-clear-gem" title="初回クリア報酬：結晶 ×${firstClearGems}" aria-label="初回のみ 結晶 ${firstClearGems}個">
                 <span class="zss-reward-icon"><img src="images/icon_gem.webp" alt="結晶"></span>
                 <span class="zfs-gem-count">×${firstClearGems}</span>
                 <span class="zfs-first-label">初回のみ</span>
-              </span>
+              </span>`}
             </span>
           </div>
         </div>
@@ -29834,13 +29840,17 @@
         || submitShootingHighScore(state.score, true);
       void Promise.resolve(finalizePromise).then(finalized => {
         if (!finalized || !finalized.firstClearClaimed || !finalized.firstClearAmount) return;
+        const isVerdantFirstClear = ['shooting_event_verdant_advanced', 'shooting_event_verdant_super'].includes(String(state?.stageId || selectedStage?.id || ''));
         const gemDrop = {
-          type: 'gem',
-          name: '結晶',
+          type: isVerdantFirstClear ? 'material' : 'gem',
+          name: isVerdantFirstClear ? '創世pt' : '結晶',
           amount: finalized.firstClearAmount,
           detail: '初回クリア報酬',
-          image: 'images/icon_gem.webp',
+          image: isVerdantFirstClear ? 'images/shinju_aura.webp' : 'images/icon_gem.webp',
         };
+        if (isVerdantFirstClear && window.ShinjuProgress && typeof window.ShinjuProgress.refreshFromServer === 'function') {
+          void window.ShinjuProgress.refreshFromServer();
+        }
         state.clearRewards = Array.isArray(state.clearRewards)
           ? [...state.clearRewards, gemDrop]
           : [gemDrop];
@@ -37327,6 +37337,16 @@
     if (!arena) return;
     ensureInoriGuardStyle();
     if (state.inoriGuard) clearInoriGuard();
+    // build1825: イノリの凸段階別ULT（0～4凸）。キャラ所有情報から読み取る。
+    // ガチャ試遊は最大育成（4凸）として扱い、通常戦では所持中の限界突破に従う。
+    const inoriLb = Math.max(0, Math.min(4, Math.floor(
+      isGachaTrialStage() ? 4 : getShootingResonanceLevel(111)
+    )));
+    c = Object.assign({}, c, {
+      inoriToriiDurationMs: [3000, 4000, 5000, 6000, 7000][inoriLb],
+      inoriToriiHits: [20, 25, 30, 35, 40][inoriLb],
+      inoriJudgmentPerCombo: [6, 7, 8, 9, 10][inoriLb],
+    });
     showUltCut(c.ultName || '双鳥居・祈りの帳', c.effectKey, c);
     ultScreenFlash('ult-flash-eri', c);
     const now = performance.now();

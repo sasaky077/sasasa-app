@@ -1,5 +1,5 @@
 // ZERAPHIA build1757 — 記憶決戦 / MEMORY BATTLE
-// 過去の脅威を「記憶の掟」付きで再現するボス戦。全8戦・難易度は横並び（持ち物検査）。
+// 過去の脅威を「記憶の掟」付きで再現するボス戦。リヴィア・テストの2戦・難易度は横並び（持ち物検査）。
 //
 // ・ステージ定義（ボス・掟）は shooting_stages.js の MEMORY_BATTLE_STAGES が正本。
 // ・月1回リセット（日本時間 毎月1日 0:00）。各ステージ、当月の初クリアで結晶（サーバーが付与）。
@@ -226,6 +226,7 @@
   function panelImage(def){ return String(def.panelImage || '') || bossImage(def); }
 
   // ---------- 画面 ----------
+  // build1824: 内部ステージ番号はサーバー記録との整合のため維持。表示は2体を連番にする。
   function ensureScreen(){
     let root = $(SCREEN_ID);
     if (root) return root;
@@ -282,37 +283,33 @@
     const root = $(SCREEN_ID);
     if (!root) return;
     const S = stages();
-    const total = (S && S.MEMORY_BATTLE_SLOT_COUNT) || 8;
+    const visibleDefs = S && Array.isArray(S.MEMORY_BATTLE_STAGES)
+      ? S.MEMORY_BATTLE_STAGES.filter(def => def && (def.no === 1 || def.no === 3))
+      : [];
+    const total = visibleDefs.length || 2;
     const cleared = clearedSet();
     const mk = monthKey();
     const reset = daysToReset();
     root.querySelector('[data-mb-month]').textContent = monthLabel(mk) + 'の記憶';
     root.querySelector('[data-mb-reset]').textContent = reset.days > 0 ? `リセットまで あと${reset.days}日` : `リセットまで あと${reset.hours}時間`;
-    root.querySelector('[data-mb-count]').textContent = String(cleared.size);
+    root.querySelector('[data-mb-count]').textContent = String(visibleDefs.filter(def => cleared.has(def.no)).length);
     root.querySelector('[data-mb-total]').textContent = '/ ' + total;
     const track = [];
-    for (let no = 1; no <= total; no++) track.push(`<i class="${cleared.has(no) ? 'is-done' : ''}"></i>`);
+    for (const def of visibleDefs) track.push(`<i class="${cleared.has(def.no) ? 'is-done' : ''}"></i>`);
     root.querySelector('[data-mb-track]').innerHTML = track.join('');
 
     const list = root.querySelector('[data-mb-list]');
     const rows = [];
-    for (let no = 1; no <= total; no++) {
-      const def = S && typeof S.getMemoryBattleStageDef === 'function' ? S.getMemoryBattleStageDef(no) : null;
-      if (!def) {
-        rows.push(`<li class="mb-card is-locked" data-no="${no}">
-          <span class="mb-ribbon is-small"><b>${pad2(no)}</b></span>
-          <div class="mb-names"><strong class="mb-boss">？？？</strong><span class="mb-sub">記憶は、まだ眠っている</span></div>
-          <span class="mb-soon">準備中</span>
-        </li>`);
-        continue;
-      }
+    for (const [index, def] of visibleDefs.entries()) {
+      const no = def.no; // サーバー・戦闘用の内部ステージ番号（テストは03のまま）
+      const displayNo = index + 1; // 画面上は01 リヴィア / 02 テスト
       const done = cleared.has(no);
       const img = panelImage(def);
       const fallback = bossImage(def);
       const rules = ruleRows(def).map(r => `<li class="mb-rule">${ruleIconHtml(r.icon)}<span class="mb-rule-name">${esc(r.name)}</span><span class="mb-rule-text">${esc(r.text)}</span></li>`).join('');
       rows.push(`<li class="mb-card${done ? ' is-cleared' : ''}" data-no="${no}" role="button" tabindex="0" aria-label="${esc(def.bossName)}に挑戦">
         <div class="mb-card-head">
-          <span class="mb-ribbon"><b>${pad2(no)}</b></span>
+          <span class="mb-ribbon"><b>${pad2(displayNo)}</b></span>
           <div class="mb-names">
             <strong class="mb-boss">${esc(def.bossName)}</strong>
             <span class="mb-sub"><i></i>${esc(def.title || '')}<i></i></span>

@@ -2970,8 +2970,8 @@
 
   // build1817: イノリ (ID111) — 光 SR / LASER(+)。
   //  SHOT：縦のLASER M。敵に当たると、その位置を起点に横一線のレーザーも走る（横は縦の50%の威力・起点の敵には当たらない）。
-  //  ULT：自機の左右に鳥居（chara_111_object）を設置。鳥居は敵弾を受け止め、壊れる（30HIT）か7秒経つまで自分は無敵。
-  //       build1818: 鳥居が消えた時、建っていた間のコンボ数×10の「神罰」を敵1体へ。
+  //  ULT：自機の左右に鳥居（chara_111_object）を設置。鳥居は敵弾を受け止め、壊れる（0～4凸で20～40HIT）か3～7秒経つまで自分は無敵。
+  //       build1818: 鳥居が消えた時、建っていた間のコンボ数×6～10の「神罰」を敵1体へ。
   //       鳥居からは光属性レーザーが真上へ照射され続ける。入手経路は未設定（ガチャ排出枠・配布には追加しない）。
   SHOOTING_CHARACTERS[CHARACTER_ID.INORI] = buildShootingCharacter({
     ...ERI_BASE_PROFILE,
@@ -2982,9 +2982,9 @@
     laserWidth: 10, laserHitWidth: 34, laserDamageAtkRate: 0.058, laserVisualHoldMs: 125,
     laserCross: true, laserCrossDamageRate: 0.5, laserCrossMaxOrigins: 2, laserCrossHitHalfHeight: 22,
     ultName: '双鳥居・祈りの帳',
-    ultDescription: '自機の左右に鳥居を2基設置する。鳥居は敵弾を受け止め（1基あたり30HITで崩れる）、2基とも崩れるか7秒経つまで自分は無敵。鳥居からは真上へ光属性レーザーを照射し続ける（0.15秒ごとにATK×0.08）。鳥居が消えた時、建っていた間に達成したコンボ数×10のダメージの「神罰」が盤面の敵1体に降り注ぐ。',
+    ultDescription: '自機の左右に鳥居を2基設置する。鳥居は敵弾を受け止め（0～4凸で各20/25/30/35/40HIT）、2基とも崩れるか3/4/5/6/7秒経つまで自分は無敵。鳥居からは真上へ光属性レーザーを照射し続ける（0.15秒ごとにATK×0.08）。鳥居が消えた時、建っていた間のコンボ数×6/7/8/9/10の「神罰」が盤面の敵1体に降り注ぐ。',
     ultType: 'inori_torii_guard', ultBaseType: 'summon', ultAddons: ['invincible', 'bullet_block', 'damage'],
-    inoriToriiDurationMs: 7000, inoriToriiOffsetX: 64, inoriToriiOffsetY: -6, inoriToriiHits: 30, inoriJudgmentPerCombo: 10,
+    inoriToriiDurationMs: 3000, inoriToriiOffsetX: 64, inoriToriiOffsetY: -6, inoriToriiHits: 20, inoriJudgmentPerCombo: 6,
     inoriToriiLaserTickMs: 150, inoriToriiLaserAtkRate: 0.08, inoriToriiLaserWidth: 14, inoriToriiLaserHitWidth: 30,
     burstNeed: 32, ultGainPerHit: 0.6,
     coreTop: '38%', shotOffsetY: 42,

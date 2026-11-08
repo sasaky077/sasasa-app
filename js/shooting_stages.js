@@ -1902,7 +1902,8 @@
       }),
       mission: Object.freeze({ type: SHOOTING_MISSION_TYPE.BOSS_CLEAR, text: '樹獣の女王を開花させずに倒せ' }),
       fixedItemDrops: Object.freeze([Object.freeze({ id: 'level_exp_large', count: 2 })]),
-      firstClearGems: 5,
+      firstClearGems: 0,
+      firstClearShinjuPt: 100,
       playable: true,
     }),
     [SHOOTING_STAGE_ID.VERDANT_SUPER]: Object.freeze({
@@ -1929,7 +1930,8 @@
       }),
       mission: Object.freeze({ type: SHOOTING_MISSION_TYPE.BOSS_CLEAR, text: '樹獣の女王を開花させずに倒せ' }),
       fixedItemDrops: Object.freeze([Object.freeze({ id: 'level_exp_large', count: 2 })]),
-      firstClearGems: 10,
+      firstClearGems: 0,
+      firstClearShinjuPt: 100,
       playable: true,
     }),
 
@@ -2145,21 +2147,6 @@
       ]),
       extra: Object.freeze({ towerLiviaBoss: true, bossVisualScale: 1.03, bulletQuantityMultiplier: 0.80 }), // build1782: 弾幕量80%
     }),
-    // build1764: 02 イノリ（光）。闇しか通らない＋連なる鳥居＋神罰。ナイトシェードが1人で両方の掟を越えられる。
-    Object.freeze({
-      no: 2, bossKey: 'inori', bossName: 'イノリ', title: '祈りの門の記憶',
-      panelImage: 'images/inori_panel.webp',
-      enemyId: SHOOTING_ENEMY_ID.INORI, element: 'light',
-      background: 'images/battle_bg_01.webp',
-      bossGaugeHps: Object.freeze([9000, 10000, 11000]),
-      timeLimitSeconds: 180,
-      rules: Object.freeze([
-        Object.freeze({ type: 'element_barrier' }),
-        Object.freeze({ type: 'linked_torii', reviveMs: 3000 }),
-        Object.freeze({ type: 'judgment', firstMs: 15000, intervalMs: 20000, warnMs: 3000, damage: 1000, element: 'light' }), // build1801: 即死→光属性1000ダメージ
-      ]),
-      extra: Object.freeze({ bossElement: 'light', enemyElement: 'light', inoriToriiHp: 1300, introImage: 'images/memory_inori_battle_start.webp' }), // build1798: 記憶のイノリ専用イントロ
-    }),
     // build1795: 03 テスト（木）。火しか通らない＋狙撃（即死）＋装甲（1HITごとに固定値カット）。
     Object.freeze({
       no: 3, bossKey: 'test', bossName: 'テスト', title: '白き照準の記憶',
@@ -2176,7 +2163,7 @@
       extra: Object.freeze({ bossElement: 'wood', enemyElement: 'wood' }),
     }),
   ]);
-  const MEMORY_BATTLE_SLOT_COUNT = 8;
+  const MEMORY_BATTLE_SLOT_COUNT = 2; // build1824: UIはリヴィア / テストのみ（内部番号 01 / 03 を維持）
   const memoryBattleStageCache = new Map();
   function getMemoryBattleStageDef(no) {
     const n = Math.floor(Number(no) || 0);

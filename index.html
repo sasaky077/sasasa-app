@@ -3608,7 +3608,7 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
         <span class="ninmu-cat-jp">位相回遊</span>
         <span class="ninmu-cat-en">PHASE</span>
       </button>
-      <!-- build1757: 記憶決戦。タブを押すと専用画面を開く（月1リセット・8戦の持ち物検査） -->
+      <!-- build1757: 記憶決戦。タブを押すと専用画面を開く（月1リセット・2戦の持ち物検査） -->
       <button type="button" class="ninmu-cat-item junkou-tab memory-battle-tab" id="ninmu-cat-memory-battle" onclick="openMemoryBattle()" aria-label="記憶決戦を開く">
         <span class="junkou-tab-icon" aria-hidden="true">✦</span>
         <span class="ninmu-cat-jp">記憶決戦</span>
@@ -4837,6 +4837,17 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 
 window.NOTICE_ITEMS = [
   {
+    id: 'notice_inori_release_20261108',
+    date: '2026.11.08',
+    title: '新コンテンツ実装のお知らせ',
+    body: '境界者：イノリ を実装しました。\nイノリを解放して、入手しましょう。\n9枚開放で「イノリ」をGETできます。',
+    link: {
+      label: '早速イノリをプレイする',
+      target: 'inori_challenge'
+    },
+    hidden: false
+  },
+  {
     id: 'notice_song_mimosa_20261108',
     date: '2026.11.08',
     title: '楽曲リリース',
@@ -5963,6 +5974,9 @@ window.NOTICE_ITEMS = [
 
   // build1643: お知らせのリンクボタン。target はコンテンツ名（下の NOTICE_LINK_TARGETS で定義）。
   const NOTICE_LINK_TARGETS = {
+    inori_challenge: function () {
+      if (typeof window.openInoriPiecePanel === 'function') window.openInoriPiecePanel();
+    },
     phase_odyssey: function () {
       if (typeof window.openPhaseOdyssey === 'function') window.openPhaseOdyssey();
     },
@@ -20428,7 +20442,7 @@ function fadeOutOpeningBgm(){
 
 
 
-<script src="js/shooting_characters.js?v=1818-inori-judgment"></script>
+<script src="js/shooting_characters.js?v=1825-inori-lb"></script>
 <script src="js/story_scenario.js?v=1742-ch08-09-scenes"></script>
 <script src="js/story_novel.js?v=1738-textbox-fit"></script>
 <script src="js/stage_select.js?v=1739-story-reread"></script>
@@ -20665,7 +20679,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1823-inori-memory-rules"></script>
+<script src="js/shooting_event.js?v=1826-verdant-firstclear-pt"></script>
 <script src="js/shooting_party_filter.js?v=1744-summon"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1813-tickets"></script>
@@ -20697,7 +20711,7 @@ window.returnToTitleScreen = function(){
 <script src="js/score_attack.js?v=1713-title-rank"></script>
 <script src="js/resonance_tower.js?v=1815-weekly-rewards"></script>
 <script src="js/phase_odyssey.js?v=1816-reward-list"></script>
-<script src="js/memory_battle.js?v=1807-guard-row"></script>
+<script src="js/memory_battle.js?v=1824-two-bosses"></script>
 <script src="js/towa_encounter.js?v=1748-towa-flash"></script>
 <script src="js/towa_notice.js?v=1554"></script>
 <script src="js/towa_dark_gacha.js?v=1560-soul-flame"></script>
