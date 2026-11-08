@@ -1646,6 +1646,39 @@
     apply(lobby,'lobby');
   }
 
+  // build1813: レイドリセット券。本日の3回を終えた（未討伐・挑戦中でない）時、所持していれば
+  //  「本日の3回終了」のボタンを「リセットして再挑戦」に変える。1〜2回目の途中で使う場合はアイテム画面から。
+  let raidResetOwned=0;
+  function canOfferResetTicket(status){
+    const me=status&&status.me||{};
+    const attempts=Math.max(0,Math.min(3,n(me.attempt_count)));
+    const inBattle=!!me.attempt_started_at&&!me.attempt_finished_at;
+    const cleared=!!(status&&status.status==='cleared')||(status&&status.raid_id&&n(status.current_hp)<=0);
+    return !!(status&&status.raid_id)&&!isAdmin()&&raidResetOwned>0&&attempts>=3&&!inBattle&&!cleared;
+  }
+  function renderResetTicket(status){
+    if(status&&status.raid_id&&ensureRoot().querySelector('#daily-raid-start')) render(status);
+  }
+  function refreshResetTicketCount(status){
+    const T=window.ItemTickets;
+    if(!T) return;
+    T.fetchCounts().then(()=>{ raidResetOwned=T.getCount('raid_reset_ticket'); renderResetTicket(status||currentStatus); }).catch(()=>{});
+  }
+  async function useRaidResetTicket(){
+    const T=window.ItemTickets;
+    if(!T) return;
+    const btn=ensureRoot().querySelector('#daily-raid-start');
+    if(btn) btn.disabled=true;
+    try{
+      const ok=await T.useRaidReset({message:'本日のレイドの挑戦回数を 0 / 3 に戻します。\nこれまでの挑戦で共有HPへ反映済みのダメージはそのまま残ります。\nよろしいですか？'});
+      raidResetOwned=T.getCount('raid_reset_ticket');
+      if(ok){
+        try{ const status=await fetchStatus(); if(status&&status.raid_id){ await hydrateMemberPanels(status); render(status); } }catch(_){}
+      }
+      if(currentStatus&&currentStatus.raid_id) render(currentStatus);
+    }finally{ if(btn&&btn.dataset.resetTicket==='1') btn.disabled=false; }
+  }
+
   function updateAttemptOverview(status){
     const root=ensureRoot();
     const box=root.querySelector('#daily-raid-attempt-overview');
@@ -2651,6 +2684,12 @@
     else if(inBattle) start.innerHTML='<span>TODAY\'S ATTEMPT</span><b>挑戦中</b>';
     else if(attemptCount>=3) start.innerHTML=lapMode&&status.first_kill?'<span>BEST DAMAGE LOCKED</span><b>ランク確定待ち</b>':'<span>BEST DAMAGE LOCKED</span><b>本日の3回終了</b>';
     else start.innerHTML=`<span>${attemptCount+1} / 3 ATTEMPT</span><b>バトル開始</b>`;
+    // build1813: レイドリセット券
+    start.dataset.resetTicket=canOfferResetTicket(status)?'1':'';
+    if(start.dataset.resetTicket==='1'){
+      start.disabled=false;
+      start.innerHTML=`<span>本日の3回終了 · リセット券 ×${raidResetOwned}</span><b>リセットして再挑戦</b>`;
+    }
   }
 
   async function open(options){
@@ -2666,6 +2705,7 @@
     if(options&&options.immediate) root.classList.add('show'); else requestAnimationFrame(()=>root.classList.add('show'));
     try{
       const status=await fetchStatus();
+      refreshResetTicketCount(status); // build1813
       if(status&&status.raid_id){ await hydrateMemberPanels(status); render(status); }
       else{
         // チーム未所属でもその日のボスで表示する
@@ -2762,7 +2802,9 @@
   }
 
   async function start(){
-    const btn=document.getElementById('daily-raid-start'); if(btn) btn.disabled=true;
+    const btn=document.getElementById('daily-raid-start');
+    if(btn&&btn.dataset.resetTicket==='1'){ await useRaidResetTicket(); return; } // build1813
+    if(btn) btn.disabled=true;
     try{
       // ロビーの「挑戦する」では挑戦回数を消費しない。
       // ここではパーティ編成画面を開くだけ。

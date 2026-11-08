@@ -92,6 +92,14 @@
     img:'images/gacha_ticket_10.webp',kicker:'SR GUARANTEED',
     desc:'指定SR13体から1体確定。邂逅の「超特別邂逅」から使用。',tag:'ガチャ'});
 
+  // build1813: 使用型チケット（レイドリセット券・位相回遊スキップ券・創世ptルーレット券）。定義は item_tickets.js
+  if(window.ItemTickets && Array.isArray(window.ItemTickets.ORDER)){
+    window.ItemTickets.ORDER.forEach(id=>{
+      const m=window.ItemTickets.ITEMS[id];
+      if(m) OTHER_ITEMS.push({id:m.id,source:'inventory',name:m.name,img:m.img,kicker:m.kicker,desc:m.desc,tag:m.tag,useTicket:true});
+    });
+  }
+
   const FLOWER_SR_EXCHANGES = [
     {id:'noah_ticket_1',cost:1,name:'ノア挑戦チケット ×1',img:'images/special_stage_ticket.webp',desc:'SPECIAL STAGE「理想郷 -ノア-」へ挑戦'},
     {id:'flower_r_3',cost:1,name:'聖霊花(R) ×3',img:'images/item_flower_r.webp',desc:'聖霊花(R)を3個獲得'},
@@ -419,10 +427,12 @@
           ? '<div class="item-row-actions item-row-actions-other"><button class="item-exchange-open-btn" type="button" data-open-flower-exchange>交換</button></div>'
           : (isFlowerSR
               ? '<div class="item-row-actions item-row-actions-other"><button class="item-exchange-open-btn" type="button" data-open-flower-sr-exchange>交換</button></div>'
-              : (meta.id==='sr_guaranteed_ticket' ? '' : ''));
+              : (meta.useTicket
+                  ? '<div class="item-row-actions item-row-actions-other"><button class="item-exchange-open-btn" type="button" data-use-item-ticket="'+escapeHtml(meta.id)+'" '+(qty>0?'':'disabled')+'>'+(meta.id.startsWith('phase_skip_ticket_')?'位相回遊へ':'使用')+'</button></div>'
+                  : ''));
 
         return ''+
-          '<article class="item-row item-row-other'+(qty<=0?' is-zero':'')+'">'+
+          '<article class="item-row item-row-other'+(qty<=0?' is-zero':'')+(meta.useTicket?' is-ticket':'')+'">'+
             renderIcon(meta,'other')+
             '<div class="item-row-main">'+
               '<div class="item-row-kicker">'+escapeHtml(meta.kicker||'OTHER ITEM')+'</div>'+
@@ -922,6 +932,13 @@
         }
         if(e.target.closest('[data-open-flower-sr-exchange]')){openFlowerSRExchange();return;}
         if(e.target.closest('[data-use-sr-ticket]')){useSRTicket();return;}
+        const ticketBtn=e.target.closest('[data-use-item-ticket]');
+        if(ticketBtn && !ticketBtn.disabled && window.ItemTickets){
+          ticketBtn.disabled=true;
+          Promise.resolve(window.ItemTickets.useFromItemScreen(ticketBtn.dataset.useItemTicket))
+            .finally(()=>{ if(!state.loading) refresh(); });
+          return;
+        }
       });
     }
 

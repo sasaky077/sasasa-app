@@ -131,6 +131,8 @@
       // build1679: 階層の「お題・異常」ルールの版。0＝旧ルール（このbuild以前に始めたrun）。新しく始めたrunだけ1になる。
       variety: 0,
       last_bonus: null,
+      // build1813: 位相回遊スキップ券。この階まで「踏破済み」として、強化を1階ずつ続けて選ぶ（0＝スキップ中ではない）
+      skip_until: 0,
       updated_at: new Date().toISOString()
     };
   }
@@ -174,6 +176,7 @@
       runs_started: Math.max(0, toInt(raw.runs_started, 0)),
       variety: Math.max(0, toInt(raw.variety, 0)),
       last_bonus: raw.last_bonus && typeof raw.last_bonus === 'object' ? raw.last_bonus : null,
+      skip_until: Math.max(0, toInt(raw.skip_until, 0)),
       updated_at: String(raw.updated_at || base.updated_at)
     });
     // 壊れたrunは安全側（未開始）へ戻す。最高記録は維持する。
@@ -182,6 +185,7 @@
       rec.current_floor = 0;
     }
     if (RUN_ACTIVE.includes(rec.run_status) && !rec.run_seed) rec.run_seed = 1 + Math.floor(Math.random() * 2147483646);
+    if (!RUN_ACTIVE.includes(rec.run_status) || rec.skip_until < rec.current_floor) rec.skip_until = 0;
     if (rec.run_status === 'select' && !rec.pending_choices.length) rec.pending_choices = rollChoices(rec);
     return rec;
   }
@@ -784,6 +788,7 @@
     if (retire) retire.hidden = !active;
     const note = root.querySelector('[data-po-party-note]');
     if (note) note.textContent = active ? '挑戦中は編成を変更できません。' : '最初に選んだ3人で最後まで挑戦します。';
+    renderSkipButton(); // build1813
     layoutPager();
   }
 
@@ -1040,6 +1045,28 @@
       modalCleanup = () => { if (prev) prev(); finish(false); };
     });
   }
+  // build1813: 複数ボタンの選択（[key,label] の配列。最後が主ボタン）。resolve(key | null)
+  function askChoice(kicker, title, message, buttons){
+    return new Promise(resolve => {
+      let settled = false;
+      const finish = v => { if (settled) return; settled = true; resolve(v); };
+      openModal('confirm', sheet => {
+        sheetHead(sheet, kicker, title, message);
+        const actions = el('div', 'po-sheet-actions' + (buttons.length > 1 ? ' is-stack' : ''));
+        const no = el('button', 'po-btn', 'やめる'); no.type = 'button';
+        no.addEventListener('click', () => { finish(null); closeModal(); });
+        actions.append(no);
+        buttons.forEach(([key, label], i) => {
+          const b = el('button', 'po-btn' + (i === buttons.length - 1 ? ' is-primary' : ' is-sub'), label); b.type = 'button';
+          b.addEventListener('click', () => { finish(key); closeModal(); }, { once:true });
+          actions.append(b);
+        });
+        sheet.append(actions);
+      });
+      const prev = modalCleanup;
+      modalCleanup = () => { if (prev) prev(); finish(null); };
+    });
+  }
   function confirmDialog(kicker, title, message, yesLabel, onYes){
     askConfirm(kicker, title, message, yesLabel).then(ok => { if (ok) onYes(); });
   }
@@ -1150,7 +1177,14 @@
     if (!screen() || !screen().classList.contains('active')) return; // 他画面へ移動済みなら出さない
     if (!rec.pending_choices.length) { rec.pending_choices = rollChoices(rec); save({ cloud:false }); }
     openModal('buff', sheet => {
+      if (rec.skip_until > 0) {
+        // build1813: スキップ券。踏破済みにした階層の強化を、1階ずつ続けて選ぶ
+        const left = rec.skip_until - rec.current_floor + 1;
+        sheetHead(sheet, `SKIP ${rec.current_floor} / ${rec.skip_until}　FLOOR ${rec.current_floor} CLEAR`, '強化を選択（スキップ）',
+          `スキップした階層の強化を順番に選んでください（残り ${left} 回）`);
+      } else {
       sheetHead(sheet, `FLOOR ${rec.current_floor} CLEAR`, '強化を選択', '次の階層へ進む前に、報酬を1つ選んでください');
+      }
       // build1643: 次の属性バリア階層と突破可否を、強化を選ぶ前に見えるよう一番上に出す
       const warn = barrierStatusText(rec);
       if (warn) sheet.append(el('p', 'po-barrier-warn is-top' + (warn.includes('突破できません') ? ' is-danger' : ''), warn));
@@ -1160,7 +1194,9 @@
         const why = [lb.anomaly ? '異常を突破' : '', lb.challenge ? 'SUB MISSION達成' : ''].filter(Boolean).join('・');
         sheet.append(el('p', 'po-variety-note is-bonus', `${why}！ 強化の★が${lb.bump}段階アップ`));
       }
-      const nextTxt = nextFloorPreviewText(rec);
+      // スキップ中（最後の1回以外）は、戦わない階層のお題を出さない
+      const skipping = rec.skip_until > 0 && rec.current_floor < rec.skip_until;
+      const nextTxt = skipping ? '' : nextFloorPreviewText(rec);
       if (nextTxt) sheet.append(el('p', 'po-variety-note', nextTxt));
       const cards = el('div', 'po-buff-cards');
       rec.pending_choices.forEach((b, index) => {
@@ -1197,6 +1233,7 @@
       details.append(summaryEl, buildStatusPanel(rec, { selecting:true }));
       sheet.append(details);
       const nextFloor = rec.current_floor + 1;
+      if (skipping) { sheet.append(el('p', 'po-sheet-foot', `スキップ：FLOOR ${rec.skip_until} まで踏破済み　続けて強化を選びます`)); return; }
       const next = el('p', 'po-sheet-foot' + (isBossFloor(nextFloor) ? ' is-boss' : ''), isBossFloor(nextFloor)
         ? `次の階層：FLOOR ${nextFloor}　BOSS「${bossForFloor(nextFloor, rec).name}」`
         : `次の階層：FLOOR ${nextFloor}　HP・ULTは引き継がれます`);
@@ -1220,10 +1257,160 @@
     rec.pending_choices = [];
     rec.current_floor += 1;
     rec.run_status = 'ready';
+    // build1813: スキップ中は、踏破済みにした階まで続けて強化を選ぶ
+    if (rec.skip_until > 0) {
+      if (rec.current_floor <= rec.skip_until) {
+        rec.run_status = 'select';
+        rec.pending_choices = rollChoices(rec);
+        save({ cloud:false });
+        closeModal();
+        render();
+        setTimeout(openBuffSelect, 120);
+        return;
+      }
+      const skipped = rec.skip_until;
+      rec.skip_until = 0;
+      const prevBest = rec.best_floor;
+      rec.best_floor = Math.max(rec.best_floor, skipped);
+      save();
+      closeModal();
+      render();
+      if (rec.best_floor > prevBest) { const party = rec.selected_members.slice(); setTimeout(() => { submitBestFloor(party); }, 0); }
+      notify(`スキップ完了！ ${skipped}階層分の強化を獲得。FLOOR ${rec.current_floor}から挑戦できます`);
+      return;
+    }
     save();
     closeModal();
     render();
     notify(`強化「${buffName(pickedBuff)}」${TIER[pickedBuff.q].label} を獲得。FLOOR ${rec.current_floor}へ進めます`);
+  }
+
+  // ------------------------------------------------------------
+  // build1813: 位相回遊スキップ券
+  //  ・使えるのは挑戦の最初だけ：未開始（編成を選んで開始と同時に）／FLOOR 1 で強化をまだ持っていない挑戦中
+  //  ・ルーレット（抽選・チケット消費はサーバー）で 10/20/30/40 のどれかが決まり、その階まで踏破済みになる
+  //  ・踏破済みにした階の数だけ、強化（3択）を続けて選ぶ。HP・ULTは開始時のまま
+  // ------------------------------------------------------------
+  function canSkipNow(rec){
+    const r = rec || load();
+    if (!isRunActive(r)) return true;
+    return r.current_floor === 1 && !r.build_list.length && !r.skip_until && ['ready', 'suspended'].includes(r.run_status);
+  }
+  let skipOwned = 0;
+  function refreshSkipOwned(){
+    const T = window.ItemTickets;
+    if (!T) return;
+    T.fetchCounts().then(() => {
+      skipOwned = T.getCount('phase_skip_ticket_silver') + T.getCount('phase_skip_ticket_gold');
+      renderSkipButton();
+    }).catch(() => {});
+  }
+  function ensureSkipStyle(){
+    if (document.getElementById('po-skip-style-v1813')) return;
+    const st = document.createElement('style');
+    st.id = 'po-skip-style-v1813';
+    st.textContent = `
+      #screen-phase-odyssey .po-skip-btn{display:flex;align-items:center;justify-content:center;gap:6px;margin:8px auto 0;padding:5px 14px 5px 6px;
+        border-radius:999px;border:1px solid rgba(214,189,138,.9);background:linear-gradient(180deg,#fffaf0,#f3e7cc);cursor:pointer;
+        font:600 11px/1.3 'Noto Serif JP',serif;color:#4a3a5c;letter-spacing:.05em;box-shadow:0 2px 6px rgba(39,43,82,.16)}
+      #screen-phase-odyssey .po-skip-btn img{width:34px;height:34px;object-fit:contain;margin:-6px 0;filter:drop-shadow(0 1px 2px rgba(0,0,0,.2))}
+      #screen-phase-odyssey .po-skip-btn b{font-weight:700;color:#7a5a20}
+      #screen-phase-odyssey .po-skip-btn[hidden]{display:none}
+      #phase-odyssey-layer .po-sheet-actions.is-stack{flex-wrap:wrap}
+      #phase-odyssey-layer .po-sheet-actions.is-stack .po-btn.is-primary{order:-1;flex:1 1 100%}
+      #phase-odyssey-layer .po-sheet-actions.is-stack .po-btn{flex:1 1 0}
+    `;
+    document.head.appendChild(st);
+  }
+  function renderSkipButton(){
+    const root = screen();
+    if (!root) return;
+    const party = root.querySelector('.po-party');
+    if (!party) return;
+    let btn = root.querySelector('[data-po-skip]');
+    if (!btn) {
+      ensureSkipStyle();
+      btn = el('button', 'po-skip-btn');
+      btn.type = 'button';
+      btn.dataset.poSkip = '1';
+      btn.addEventListener('click', () => offerSkip());
+      const retire = party.querySelector('[data-po-retire]');
+      party.insertBefore(btn, retire || null);
+    }
+    const rec = load();
+    const show = skipOwned > 0 && canSkipNow(rec);
+    btn.hidden = !show;
+    if (show) {
+      const T = window.ItemTickets;
+      const gold = T ? T.getCount('phase_skip_ticket_gold') : 0;
+      btn.innerHTML = `<img src="images/item_phase_skip_ticket_${gold > 0 ? 'gold' : 'silver'}.webp" alt=""><span>スキップ券を使う <b>×${skipOwned}</b></span>`;
+    }
+  }
+  async function offerSkip(tier){
+    const T = window.ItemTickets;
+    if (!T) { notify('スキップ券を使用できません'); return; }
+    const rec = load();
+    if (!canSkipNow(rec)) {
+      notify(rec.skip_until ? 'スキップの強化選択中です' : 'スキップ券は挑戦の最初（FLOOR 1・強化なし）にだけ使えます。挑戦を終了すると使えるようになります');
+      if (rec.run_status === 'select') setTimeout(openBuffSelect, 200);
+      return;
+    }
+    if (!isRunActive(rec)) {
+      const party = rec.draft_members.filter(isOwned).slice(0, PARTY_SIZE);
+      if (party.length !== PARTY_SIZE) {
+        notify('「挑戦開始」から出撃メンバー3人を選ぶと、開始時にスキップ券を使えます');
+        return;
+      }
+      const names = party.map(id => (getChar(id) || {}).name || '').filter(Boolean).join('・');
+      const ok = await askConfirm('PHASE ODYSSEY / SKIP', 'スキップして挑戦開始',
+        `${names}\nこの3人で挑戦を開始し、スキップ券を使います。\n開始後は敗北するまで編成を変更できません。`, '開始する');
+      if (!ok) return;
+      return runSkip(party, tier);
+    }
+    return runSkip(null, tier);
+  }
+  // party: 未開始ならこの3人でrunを開始してからスキップ。null＝FLOOR 1 の挑戦中runに適用。
+  async function runSkip(party, tier){
+    const T = window.ItemTickets;
+    if (!T) return false;
+    let snapshot = null;
+    if (party) {
+      // チケットの抽選・消費より前にrunを作る。ルーレットを回さずにやめた時は、開始前の状態へ戻す
+      if (!isRunActive(load())) {
+        snapshot = JSON.stringify(load());
+        if (!startRun(party)) { notify('挑戦を開始できませんでした'); return false; }
+      }
+      render();
+    }
+    let applied = false;
+    // サーバーの結果が届いた時点で保存する（演出中にアプリが落ちても、再開時に強化選択から続けられる）
+    const apply = floor => {
+      const rec = load();
+      if (!floor || floor < 1 || !isRunActive(rec) || rec.current_floor !== 1 || rec.build_list.length) return;
+      rec.skip_until = Math.max(1, toInt(floor, 1));
+      rec.run_status = 'select';
+      rec.pending_choices = rollChoices(rec);
+      rec.last_bonus = null;
+      save();
+      applied = true;
+    };
+    const floor = await T.spinPhaseSkip(tier, apply);
+    if (!applied && floor) apply(floor);
+    if (!applied) {
+      if (snapshot) {
+        const rec = load();
+        if (rec.current_floor === 1 && !rec.build_list.length && !rec.skip_until) {
+          try { record = normalize(JSON.parse(snapshot)); save({ cloud:false }); } catch (_) {}
+        }
+      }
+      render();
+      refreshSkipOwned();
+      return false;
+    }
+    render();
+    refreshSkipOwned();
+    setTimeout(openBuffSelect, 150);
+    return true;
   }
 
   // ------------------------------------------------------------
@@ -1282,9 +1469,24 @@
         return false;
       }
       const names = party.map(id => (getChar(id) || {}).name || '').filter(Boolean).join('・');
-      const ok = await askConfirm('PHASE ODYSSEY / START', '挑戦開始',
-        `${names}\nこの3人で FLOOR 1 から挑戦します。\n開始後は敗北するまで編成を変更できません。`, '挑戦する');
-      if (!ok) return false;
+      // build1813: スキップ券を持っていれば、開始時に使うかを選べる
+      let owned = 0;
+      try { if (window.ItemTickets) { await window.ItemTickets.fetchCounts(); owned = window.ItemTickets.getCount('phase_skip_ticket_silver') + window.ItemTickets.getCount('phase_skip_ticket_gold'); } } catch (_) {}
+      const choice = await askChoice('PHASE ODYSSEY / START', '挑戦開始',
+        `${names}\nこの3人で FLOOR 1 から挑戦します。\n開始後は敗北するまで編成を変更できません。`,
+        owned > 0 ? [['skip', `スキップ券 ×${owned}`], ['start', '挑戦する']] : [['start', '挑戦する']]);
+      if (!choice) return false;
+      if (choice === 'skip') {
+        // 戦闘画面を閉じて位相回遊の画面に戻り、そこでルーレットと強化選択を行う
+        rec.draft_members = party.slice();
+        save({ cloud:false });
+        setTimeout(async () => {
+          try { if (typeof window.closeShootingEvent === 'function') await window.closeShootingEvent(); } catch (_) {}
+          open();
+          setTimeout(() => { runSkip(party); }, 280);
+        }, 0);
+        return false;
+      }
       if (!startRun(party)) { notify('挑戦を開始できませんでした'); return false; }
     }
     return beginFloor(floor, party);
@@ -1524,6 +1726,7 @@
     render();
     requestAnimationFrame(layoutPager); // 画面の表示（active）反映後に、収まるかを判定し直す
     if (rec.run_status === 'select') setTimeout(openBuffSelect, 260);
+    refreshSkipOwned(); // build1813: スキップ券の所持数
     setTimeout(() => { submitBestFloor(); }, 600); // build1689: 既存の最高到達階もランキングへ取り込む
   }
   function close(){
@@ -1579,6 +1782,7 @@
     getDraftMembers, prepareBattle, bossForFloor: f => Object.assign({}, bossForFloor(f)),
     getState: () => JSON.parse(JSON.stringify(load())),
     open, close, render, openBuffSelect, openStatus,
+    offerSkip: tier => offerSkip(tier), // build1813
     // build1643: 属性バリアを越えて通るダメージの割合（0〜1）。挑戦中の位相回遊の戦闘でのみ使われる。
     getBarrierPierce: element => {
       const rec = load();
