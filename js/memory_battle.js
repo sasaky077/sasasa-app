@@ -191,15 +191,16 @@
         const arHp = Math.max(0, Math.floor(Number(rule.armorHp || 0)));
         rows.push({ icon: 'armor', name: '装甲', text: th > 0
           ? (arHp > 0
-            ? `1HIT${th}未満の攻撃は弾かれる。それ以上の攻撃で装甲を砕くと、そのPHASEの間すべての攻撃が通る`
+            ? `1HIT${th}未満は弾かれる。装甲を砕くと、そのPHASEの間すべて通る`
             : `ボスへの攻撃は1HITのダメージが${th}未満だと弾かれる`)
           : `ボスへの攻撃は1HITごとに${cut}ダメージ差し引かれる` });
       } else if (rule.type === 'guardians') {
         const hitHp = Math.max(0, Math.floor(Number(rule.hitHp || 0)));
         const sec = Math.round(Math.max(3000, Number(rule.respawnMs || 8000)) / 1000);
         const gName = (window.ShootingEnemies && window.ShootingEnemies.getShootingEnemy(rule.enemyId) || {}).name || '守護者';
-        rows.push({ icon: 'shield', name: '守護者', text: `${gName}×${Math.max(1, Number(rule.count || 2))}がいる間、ボスは実体がなく攻撃がすり抜ける。倒すと${sec}秒だけ実体化` });
-        if (hitHp > 0) rows.push({ icon: 'hit', name: 'HIT数', text: `守護者はどんな攻撃も1HIT＝1ダメージ（HP${hitHp}）` });
+        // build1807: HIT数の説明は守護者の行にまとめる（カードの高さを他のステージと揃える）
+        rows.push({ icon: 'shield', name: '守護者', text: `${gName}×${Math.max(1, Number(rule.count || 2))}がいる間はすり抜け、撃破で${sec}秒実体化`
+          + (hitHp > 0 ? `。${gName}はHIT数で倒す` : '') });
         if (Number(rule.spiderCount || 0) > 0) rows.push({ icon: 'drop', name: '吸血', text: '子蜘蛛に張り付かれると、ボスが回復する' });
       } else if (info[rule.type]) {
         rows.push({ icon: 'rule', name: info[rule.type].name, text: info[rule.type].desc });
@@ -327,7 +328,21 @@
       </li>`);
     }
     list.innerHTML = rows.join('');
+    requestAnimationFrame(equalizeCardHeights);
   }
+
+  // build1807: 掟の行数・文の長さが違っても、解放済みカードの高さを揃える（一番高いカードに合わせる）
+  function equalizeCardHeights(){
+    const root = $(SCREEN_ID);
+    if (!root || !root.getClientRects().length) return; // 非表示中は測らない（fixed配置なので offsetParent は使えない）
+    const bodies = [...root.querySelectorAll('.mb-card:not(.is-locked) .mb-card-body')];
+    if (bodies.length < 2) return;
+    bodies.forEach(b => { b.style.minHeight = ''; });
+    const max = Math.max(...bodies.map(b => b.getBoundingClientRect().height));
+    if (max > 0) bodies.forEach(b => { b.style.minHeight = Math.ceil(max) + 'px'; });
+  }
+  let equalizeTimer = 0;
+  window.addEventListener('resize', () => { clearTimeout(equalizeTimer); equalizeTimer = setTimeout(equalizeCardHeights, 150); });
 
   function startStage(no){
     const S = stages();

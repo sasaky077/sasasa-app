@@ -2117,7 +2117,7 @@
     // build1795: 03 テスト（木）。火しか通らない＋狙撃（即死）＋装甲（1HITごとに固定値カット）。
     Object.freeze({
       no: 3, bossKey: 'test', bossName: 'テスト', title: '白き照準の記憶',
-      panelImage: 'images/test_panel.webp',
+      panelImage: 'images/test_panel.webp?v=1806',
       enemyId: SHOOTING_ENEMY_ID.RAID_TEST, element: 'wood',
       background: 'images/battle_bg_01.webp',
       bossGaugeHps: Object.freeze([7000, 8000, 9000]),
