@@ -29375,6 +29375,21 @@
     };
   }
 
+  // build1800: 取りこぼした指の操作状態を、発射・設置・交代などを起こさずに片付ける。
+  function releaseStalePointerState() {
+    pointerActive = false;
+    pointerIsTouch = false;
+    activePointerId = null;
+    nativeTouchActive = false;
+    nativeTouchPointerFallback = false;
+    activeTouchIdentifier = null;
+    heldInputFromFooter = false;
+    try { clearNativeTouchCancelTimer(); } catch (_) {}
+    try { clearMiaChargeState(); } catch (_) {}
+    try { clearConjurePlacementPreview(); } catch (_) {}
+    try { clearRemnaTrapPlacementPreview(); } catch (_) {}
+  }
+
   function onPointerDown(e) {
     if (!state || state.ended || state.finishing || state.paused) return;
 
@@ -29396,7 +29411,12 @@
       activePointerId !== null &&
       e.pointerId !== activePointerId
     ) {
-      return;
+      // build1800: 画面に触れている指がこれ1本だけ（isPrimary）なら、前の指は離されている。
+      //  前の指の pointerup/touchend を取りこぼして「操作中」のまま固まると、
+      //  以後のタップ（設置・チャージ・ダブルタップULT）が全部無視されていた（キャラを替えても直らない）。
+      //  その場合は前の指の状態を捨てて、このタップを新しい操作として受け付ける。
+      if (e.isPrimary !== false) releaseStalePointerState();
+      else return;
     }
 
     const now = performance.now();
