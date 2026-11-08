@@ -4815,6 +4815,22 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
 
 window.NOTICE_ITEMS = [
   {
+    id: 'notice_song_mimosa_20261108',
+    date: '2026.11.08',
+    title: '楽曲リリース',
+    body: '「遥か遠くの物語 / mimosa」をYouTubeにリリースしました。\n\n記念として、結晶を50個プレゼントします。',
+    link: {
+      label: '楽曲を聴く',
+      url: 'https://youtu.be/jxsieC3AkGs?si=6bRxfTYnorE8IUvJ'
+    },
+    reward: {
+      type: 'gem',
+      claimId: 'notice_song_mimosa_20261108',
+      amount: 50
+    },
+    hidden: false
+  },
+  {
     id: 'notice_shinju_rebalance_20261108',
     date: '2026.11.08',
     title: '【神聖樹】バランス調整と新規効果の追加',
@@ -5941,6 +5957,16 @@ window.NOTICE_ITEMS = [
   };
   function renderNoticeLink(item) {
     const link = item && item.link;
+    // build1808: 外部リンク（YouTube等）。https:// のURLだけ許可し、別タブで開く。
+    if (link && /^https:\/\/[^\s"'<>]+$/.test(String(link.url || ''))) {
+      return `
+      <div class="notice-link-row">
+        <a class="notice-link-btn" href="${escapeHtml(link.url)}" target="_blank" rel="noopener noreferrer" data-notice-ext style="text-decoration:none">
+          <span>${escapeHtml(link.label || 'リンクを開く')}</span><b aria-hidden="true">›</b>
+        </a>
+      </div>
+    `;
+    }
     if (!link || !NOTICE_LINK_TARGETS[link.target]) return '';
     return `
       <div class="notice-link-row">
@@ -6432,6 +6458,14 @@ window.NOTICE_ITEMS = [
     }).join('');
 
     // build1643: お知らせから各コンテンツへ移動するリンク
+    list.querySelectorAll('[data-notice-ext]').forEach(function (anchor) {
+      anchor.addEventListener('click', function (event) {
+        event.stopPropagation(); // 既定動作（別タブで開く）はそのまま
+        const itemEl = anchor.closest('[data-notice-id]');
+        const noticeId = itemEl ? itemEl.getAttribute('data-notice-id') : '';
+        if (noticeId) { markNoticeAsRead(noticeId); updateNoticeBadge(); }
+      });
+    });
     list.querySelectorAll('[data-notice-link]').forEach(function (button) {
       button.addEventListener('click', function (event) {
         event.preventDefault();
