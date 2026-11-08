@@ -2112,7 +2112,7 @@
         Object.freeze({ type: 'linked_torii', reviveMs: 3000 }),
         Object.freeze({ type: 'judgment', firstMs: 15000, intervalMs: 20000, warnMs: 3000 }),
       ]),
-      extra: Object.freeze({ bossElement: 'light', enemyElement: 'light', inoriToriiHp: 1300 }),
+      extra: Object.freeze({ bossElement: 'light', enemyElement: 'light', inoriToriiHp: 1300, introImage: 'images/memory_inori_battle_start.webp' }), // build1798: 記憶のイノリ専用イントロ
     }),
     // build1795: 03 テスト（木）。火しか通らない＋狙撃（即死）＋装甲（1HITごとに固定値カット）。
     Object.freeze({
