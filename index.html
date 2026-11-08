@@ -17567,6 +17567,8 @@ function buildShootingShotTypeValue(c, shot, isMain){
   // build1710: CLUSTERは分裂の形（X字／十字）を名前に出す
   // build1731: ring＝CLUSTER(O)（ナイトシェード）
   if(shotType === 'cluster'){ var cp = String((isMain ? c.clusterPattern : shot && shot.pattern) || c.clusterPattern || 'x'); shotName = 'CLUSTER' + (cp === 'cross' ? '(＋)' : cp === 'ring' ? '(O)' : '(X)'); }
+  // build1817: LASER(+)（イノリ）— 当たった敵を起点に横一線のレーザー
+  if(shotType === 'laser' && isMain && c.laserCross) shotName = 'LASER(＋)';
   var fallbackCount = isMain ? c.shotCount : 1;
   var count = Math.max(1, Math.floor(Number((shot && shot.count) || fallbackCount || 1)));
   var countText = String(count);
@@ -20406,7 +20408,7 @@ function fadeOutOpeningBgm(){
 
 
 
-<script src="js/shooting_characters.js?v=1801-shion"></script>
+<script src="js/shooting_characters.js?v=1818-inori-judgment"></script>
 <script src="js/story_scenario.js?v=1742-ch08-09-scenes"></script>
 <script src="js/story_novel.js?v=1738-textbox-fit"></script>
 <script src="js/stage_select.js?v=1739-story-reread"></script>
@@ -20643,7 +20645,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1816-daily-po"></script>
+<script src="js/shooting_event.js?v=1818-inori-judgment"></script>
 <script src="js/shooting_party_filter.js?v=1744-summon"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1813-tickets"></script>

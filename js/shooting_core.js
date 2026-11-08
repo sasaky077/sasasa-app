@@ -6321,6 +6321,7 @@
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
     clearSmileBoxes();
+    clearInoriGuard(); // build1817
     clearNightshadeSpinRings();
     arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-rose-fortress,.shooting-remna-trap-preview,.shooting-conjure-preview,.shooting-conjure-deploy-projectile,.shooting-conjure-turret,.shooting-conjure-ult-turret,.shooting-camilla-web-overlay,.shooting-camilla-web-burst,.shooting-camilla-bound-web-fx,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-sui-time-domain,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning,.shooting-ch07-complete-shield,.shooting-ch07-torii,.eclipse-hand-band,.eclipse-float-num,.eclipse-dash-line,.eclipse-dark-veil,.eclipse-beacon,.eclipse-state-pill,.po-submission-chip,.po-variety-banner,.tb-fx,.shooting-v-laser-wrap').forEach(el => el.remove());
     clearEnemyBulletCanvas();
@@ -7098,6 +7099,8 @@
     if (!(Number(dealtDamage || 0) > 0)) return;
     state.combo = (state.combo || 0) + 1;
     state.maxCombo = Math.max(state.maxCombo || 0, state.combo);
+    // build1818: イノリULT中に達成したコンボ数（途中でコンボが途切れても通算）＝神罰の威力
+    if (state.inoriGuard) { state.inoriGuard.comboHits = (state.inoriGuard.comboHits || 0) + 1; state.inoriGuard.comboDirty = true; }
     state.lastComboHitAt = Number(now || performance.now());
     pulseCombo(state.combo > 0 && state.combo % HIT_COMBO_STEP === 0);
   }
@@ -10877,6 +10880,135 @@
   }
 
 
+
+  // build1817: レーザーのダメージ適用（通常LASER・LASER(+)の横レーザー・イノリULTの鳥居レーザーで共用）。
+  //  命中数（実ダメージが入った数）を返す。ULTゲージやコンボの加算は呼び出し側で行う。
+  function applyLaserDamageToEntries(c, entries, damage, laserAttackElement, now, countBarrierContact) {
+    let hitCount = 0;
+    (entries || []).forEach(entry => {
+      if (!entry || !entry.target) return;
+      if (entry.kind === 'object') {
+        const targetElement = getCombatTargetElement(entry.target, state.boss?.element);
+        const finalDamage = applyElementDamage(damage, laserAttackElement, targetElement);
+        const appliedObjectDamage = damageFacelessObject(entry.target, finalDamage, now, getElementDamageReaction(laserAttackElement, targetElement));
+        addLegacyCombatScore(Math.round(finalDamage * 60));
+        if (appliedObjectDamage > 0) hitCount++;
+        return;
+      }
+
+      if (entry.kind === 'boss') {
+        if (!state.boss || state.boss.hp <= 0) return;
+        const targetElement = getCombatTargetElement(state.boss);
+
+        // build1166: CH01-04のレーザーも、属性バリア接触は救援用の内部回数だけ加算。
+        // 表示上のHIT/COMBOは実ダメージが入った時だけ加算する。
+        const ch104BarrierContact = !!(
+          isChapter104BossStage() &&
+          !state.ch104RescueTriggered &&
+          isStageWeaknessOnlyTarget(targetElement)
+        );
+        if (ch104BarrierContact && countBarrierContact) registerChapter104BarrierContact(c.id);
+
+        const finalDamage = applyElementDamage(damage, laserAttackElement, targetElement);
+        const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(finalDamage || 0)));
+        state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
+        createHit(state.boss.x, state.boss.y, false);
+        showBossDamageNumber(appliedDamage, false, getElementDamageReaction(laserAttackElement, targetElement));
+        flashBossHit(false);
+        if (!addScoreAttackDamageScore(appliedDamage)) addLegacyCombatScore(Math.round(damage * 100));
+        updateBossPhase();
+        if (state.boss.hp <= 0) beginBossDefeat();
+        if (appliedDamage > 0) hitCount++;
+        return;
+      }
+
+      if (entry.kind === 'normal' && entry.target.hp > 0) {
+        const targetElement = getCombatTargetElement(entry.target);
+        const finalDamage = applyElementDamage(damage, laserAttackElement, targetElement);
+        const appliedEnemyDamage = damageNormalEnemy(entry.target, finalDamage, now, false, getElementDamageReaction(laserAttackElement, targetElement));
+        if (appliedEnemyDamage > 0) hitCount++;
+      }
+    });
+
+    return hitCount;
+  }
+
+  // build1817: LASER(+) — 縦レーザーが当たった敵（手前から最大N体）を起点に、左右へ横一線のレーザー。
+  //  横レーザーは起点を含め縦レーザーで当たった敵には当たらない（同じ敵への二重ヒットを防ぐ）。
+  const LASER_CROSS_EL_BASE = 8; // ensureVLaser のスロット 8〜11 を横レーザーに使う
+  function ensureLaserCrossStyle() {
+    if (document.getElementById('shooting-laser-cross-style-v1817')) return;
+    const st = document.createElement('style');
+    st.id = 'shooting-laser-cross-style-v1817';
+    // 横レーザーは縦より細く・淡く（威力50%の見た目）。光の帯が画面を覆いすぎないようにぼかしも弱める
+    st.textContent = `
+      #shooting-event-root #shooting-arena .shooting-ignis-laser.is-cross{--ignis-laser-width:6px!important;width:6px!important;opacity:0}
+      #shooting-event-root #shooting-arena .shooting-ignis-laser.is-cross.active{opacity:.82}
+      #shooting-event-root #shooting-arena .shooting-ignis-laser.is-cross b{width:140%;filter:blur(4px);opacity:.6}
+    `;
+    document.head.appendChild(st);
+  }
+  function fireLaserCross(c, verticalTargets, baseDamage, element, now, hitWidth) {
+    ensureLaserCrossStyle();
+    const maxOrigins = Math.max(1, Math.floor(Number(c.laserCrossMaxOrigins || 2)));
+    const origins = (verticalTargets || []).filter(t => t && t.target && Number(t.target.hp || 0) >= 0).slice(0, maxOrigins);
+    // 使わない横レーザーは消す
+    for (let i = origins.length * 2; i < maxOrigins * 2; i++) {
+      const v = state.vLaserEls && state.vLaserEls[LASER_CROSS_EL_BASE + i];
+      if (v && v.laser) v.laser.classList.remove('active');
+    }
+    if (!origins.length) return 0;
+    const arena = document.getElementById('shooting-arena');
+    const aw = Number(arena?.clientWidth || 390);
+    const half = Math.max(8, Number(c.laserCrossHitHalfHeight || 22));
+    const damage = baseDamage * Math.max(0, Number(c.laserCrossDamageRate ?? 0.5));
+    const exclude = new Set(verticalTargets.map(t => t && t.target).filter(Boolean));
+    const hitEntries = [];
+    origins.forEach((o, i) => {
+      const ox = Number(o.x || 0), oy = Number(o.y || 0);
+      // 見た目：起点から左右へ（rotate ±90°）
+      [[-Math.PI / 2, ox], [Math.PI / 2, aw - ox]].forEach(([angle, len], k) => {
+        const v = ensureVLaser(c, LASER_CROSS_EL_BASE + i * 2 + k);
+        if (!v) return;
+        v.wrap.style.transform = `translate(${ox}px,${oy}px) rotate(${angle}rad)`;
+        v.laser.style.height = `${Math.max(12, len + 20)}px`;
+        v.laser.classList.add('active', 'is-cross');
+        v.laser.dataset.attackElement = element;
+      });
+      getLaserCrossTargets(oy, half).forEach(t => {
+        if (exclude.has(t.target)) return;
+        exclude.add(t.target);
+        hitEntries.push(t);
+      });
+    });
+    state.ignisLaserHideAt = Math.max(Number(state.ignisLaserHideAt || 0), now + Number(c.laserVisualHoldMs || 130));
+    if (!hitEntries.length || damage <= 0) return 0;
+    return applyLaserDamageToEntries(c, hitEntries, damage, element, now, false);
+  }
+  function getLaserCrossTargets(lineY, half) {
+    const targets = [];
+    if (!state) return targets;
+    if (isNormalBattle() || hasBossAdds()) {
+      (state.normalEnemies || []).forEach(enemy => {
+        if (!enemy || !enemy.el || enemy.hp <= 0) return;
+        if (Math.abs(Number(enemy.y || 0) - lineY) > half + Math.min(30, Number(enemy._hh || 20))) return;
+        targets.push({ kind: 'normal', target: enemy, x: enemy.x, y: enemy.y });
+      });
+    }
+    if (isFacelessStage() || isAmbushStage()) {
+      (state.facelessObjects || []).forEach(obj => {
+        if (!obj || obj.hp <= 0) return;
+        if (Math.abs(Number(obj.y || 0) - lineY) > half + 20) return;
+        targets.push({ kind: 'object', target: obj, x: obj.x, y: obj.y });
+      });
+    }
+    if (!isNormalBattle() && !isBossPassThrough() && state.boss && state.boss.hp > 0 &&
+        Math.abs(Number(state.boss.y || 0) - lineY) <= half + 40) {
+      targets.push({ kind: 'boss', target: state.boss, x: state.boss.x, y: state.boss.y });
+    }
+    return targets;
+  }
+
   function createGenericHomingProjectile(c, side, startY, damage, bulletClass) {
     const startX = Number(state.player.x || 0) + side * Number(c.shotSpacing || 28) * 0.5;
     const speed = Math.max(260, Number(c.bulletSpeed || 640));
@@ -10973,52 +11105,9 @@
     );
     if (el) el.dataset.attackElement = laserAttackElement;
 
-    let hitCount = 0;
-    targets.forEach(entry => {
-      if (!entry || !entry.target) return;
-      if (entry.kind === 'object') {
-        const targetElement = getCombatTargetElement(entry.target, state.boss?.element);
-        const finalDamage = applyElementDamage(damage, laserAttackElement, targetElement);
-        const appliedObjectDamage = damageFacelessObject(entry.target, finalDamage, now, getElementDamageReaction(laserAttackElement, targetElement));
-        addLegacyCombatScore(Math.round(finalDamage * 60));
-        if (appliedObjectDamage > 0) hitCount++;
-        return;
-      }
-
-      if (entry.kind === 'boss') {
-        if (!state.boss || state.boss.hp <= 0) return;
-        const targetElement = getCombatTargetElement(state.boss);
-
-        // build1166: CH01-04のレーザーも、属性バリア接触は救援用の内部回数だけ加算。
-        // 表示上のHIT/COMBOは実ダメージが入った時だけ加算する。
-        const ch104BarrierContact = !!(
-          isChapter104BossStage() &&
-          !state.ch104RescueTriggered &&
-          isStageWeaknessOnlyTarget(targetElement)
-        );
-        if (ch104BarrierContact) registerChapter104BarrierContact(c.id);
-
-        const finalDamage = applyElementDamage(damage, laserAttackElement, targetElement);
-        const appliedDamage = Math.min(state.boss.hp, Math.max(0, Number(finalDamage || 0)));
-        state.boss.hp = Math.max(0, state.boss.hp - appliedDamage);
-        createHit(state.boss.x, state.boss.y, false);
-        showBossDamageNumber(appliedDamage, false, getElementDamageReaction(laserAttackElement, targetElement));
-        flashBossHit(false);
-        if (!addScoreAttackDamageScore(appliedDamage)) addLegacyCombatScore(Math.round(damage * 100));
-        updateBossPhase();
-        if (state.boss.hp <= 0) beginBossDefeat();
-        if (appliedDamage > 0) hitCount++;
-        return;
-      }
-
-      if (entry.kind === 'normal' && entry.target.hp > 0) {
-        const targetElement = getCombatTargetElement(entry.target);
-        const finalDamage = applyElementDamage(damage, laserAttackElement, targetElement);
-        const appliedEnemyDamage = damageNormalEnemy(entry.target, finalDamage, now, false, getElementDamageReaction(laserAttackElement, targetElement));
-        if (appliedEnemyDamage > 0) hitCount++;
-      }
-    });
-
+    let hitCount = applyLaserDamageToEntries(c, targets, damage, laserAttackElement, now, true);
+    // build1817: LASER(+)（イノリ）— 縦レーザーが当たった敵を起点に、横一線のレーザーも走る
+    if (c && c.laserCross) hitCount += fireLaserCross(c, targets, damage, laserAttackElement, now, hitWidth);
     state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
     if (hitCount <= 0) return;
 
@@ -23095,6 +23184,11 @@
         p.el.remove();
         return false;
       }
+      // build1817: イノリULTの鳥居も敵弾を受け止める（耐久あり）
+      if (state.inoriGuard && tryBlockEnemyBulletWithInoriTorii(p, smileBulletStartX, smileBulletStartY, now)) {
+        p.el.remove();
+        return false;
+      }
       // build1668: クラリネのデコイも同じ線分判定で敵弾を遮断（HPなし）。
       if (tryBlockEnemyBulletWithClarineDecoy(p, smileBulletStartX, smileBulletStartY, now)) {
         p.el.remove();
@@ -27323,6 +27417,7 @@
     updateAinaStealth(ts);
     updateHaoTrigger(ts);
     updateSmileBoxes(ts);
+    updateInoriGuard(ts); // build1817
     updateNightshadeSpinRings(ts);
     updateConjurePlacementPreview(ts);
     updateRemnaTrapPlacementPreview(ts);
@@ -37057,6 +37152,260 @@
     state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), now + 250);
   }
 
+
+  // ============================================================
+  // build1817: イノリ ULT「双鳥居・祈りの帳」
+  //  ・自機の左右に鳥居（chara_111_object）を2基設置（設置位置は固定）。
+  //  ・鳥居は敵弾を受け止める（1基あたり inoriToriiHits 発で崩れる）。
+  //  ・2基とも崩れるか inoriToriiDurationMs 経つまで、発動したキャラは無敵。
+  //  ・鳥居から真上へ光属性レーザーを照射し続ける（inoriToriiLaserTickMs ごとに ATK×inoriToriiLaserAtkRate）。
+  //  ・build1818: 鳥居の耐久は被弾HIT数（1基 inoriToriiHits=30）、最長 inoriToriiDurationMs=7秒。
+  //    鳥居が建っている間に達成したコンボ数 × inoriJudgmentPerCombo(10) のダメージで、
+  //    鳥居が消えた瞬間に「神罰」が盤面の敵1体（ボス優先・いなければHPが最も高い敵）へ降り注ぐ。
+  //  ※ボスのイノリ（state.inori）とは別物。状態は state.inoriGuard に持つ。
+  // ============================================================
+  const INORI_TORII_HALF_W = 30;
+  const INORI_TORII_HALF_H = 32;
+  function ensureInoriGuardStyle() {
+    if (document.getElementById('shooting-inori-guard-style-v1817')) return;
+    const st = document.createElement('style');
+    st.id = 'shooting-inori-guard-style-v1817';
+    st.textContent = `
+      #shooting-event-root .shooting-inori-guard-torii{position:absolute;left:0;top:0;width:72px;height:72px;z-index:11;pointer-events:none;
+        transform-origin:50% 50%;animation:inoriToriiIn .34s cubic-bezier(.2,.9,.3,1.25) both}
+      #shooting-event-root .shooting-inori-guard-torii > img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
+        filter:drop-shadow(0 0 6px rgba(255,236,170,.85)) drop-shadow(0 2px 3px rgba(80,60,40,.35))}
+      #shooting-event-root .shooting-inori-guard-torii > i{position:absolute;left:50%;bottom:-6px;width:88px;height:18px;margin-left:-44px;border-radius:50%;
+        background:radial-gradient(ellipse at center,rgba(255,244,196,.75),rgba(255,226,140,.25) 55%,transparent 72%)}
+      #shooting-event-root .shooting-inori-guard-torii > b{position:absolute;left:8px;right:8px;bottom:-10px;height:4px;border-radius:3px;background:rgba(60,48,30,.35);overflow:hidden}
+      #shooting-event-root .shooting-inori-guard-torii > b > u{display:block;height:100%;width:var(--hp,100%);background:linear-gradient(90deg,#fff3c4,#ffd35e);transition:width .12s ease}
+      #shooting-event-root .shooting-inori-guard-torii.is-hit > img{animation:inoriToriiHit .16s ease}
+      #shooting-event-root .shooting-inori-guard-torii.is-break{animation:inoriToriiBreak .42s ease forwards}
+      @keyframes inoriToriiIn{from{opacity:0;transform:var(--pos) translateY(-26px) scale(.7)}to{opacity:1;transform:var(--pos) translateY(0) scale(1)}}
+      @keyframes inoriToriiHit{0%{filter:brightness(2.2) drop-shadow(0 0 10px #fff)}100%{filter:drop-shadow(0 0 6px rgba(255,236,170,.85))}}
+      @keyframes inoriToriiBreak{to{opacity:0;transform:var(--pos) translateY(10px) scale(.86) rotate(-6deg);filter:blur(1px)}}
+      #shooting-event-root .shooting-inori-guard-beam{position:absolute;left:0;top:0;width:var(--w,14px);margin-left:calc(var(--w,14px) / -2);z-index:8;pointer-events:none;
+        transform-origin:50% 100%;border-radius:999px;
+        background:linear-gradient(90deg,rgba(255,236,160,0),rgba(255,246,206,.9) 30%,#fff 50%,rgba(255,246,206,.9) 70%,rgba(255,236,160,0));
+        box-shadow:0 0 10px rgba(255,226,120,.85),0 0 22px rgba(255,210,80,.45);opacity:.92;animation:inoriBeamPulse .22s ease-in-out infinite alternate}
+      @keyframes inoriBeamPulse{from{opacity:.78}to{opacity:1}}
+      #shooting-event-root .shooting-inori-guard-veil{position:absolute;left:0;top:0;width:96px;height:96px;margin:-48px 0 0 -48px;z-index:12;pointer-events:none;border-radius:50%;
+        border:2px solid rgba(255,238,170,.85);box-shadow:0 0 14px rgba(255,226,120,.7),inset 0 0 18px rgba(255,240,190,.45);
+        background:radial-gradient(circle,rgba(255,250,224,.18),rgba(255,236,170,.08) 60%,transparent 72%);animation:inoriVeil 1.1s ease-in-out infinite alternate}
+      @keyframes inoriVeil{from{opacity:.65}to{opacity:1}}
+      #shooting-event-root .shooting-inori-judgment-count{position:absolute;left:0;top:0;z-index:13;pointer-events:none;white-space:nowrap;
+        font:700 12px/1 "Noto Serif JP",serif;letter-spacing:.06em;color:#7a5410;
+        padding:3px 9px;border-radius:999px;background:rgba(255,250,232,.9);border:1px solid rgba(214,170,70,.85);
+        box-shadow:0 0 8px rgba(255,214,110,.6)}
+      #shooting-event-root .shooting-inori-judgment-count b{font-family:Cinzel,serif;font-size:14px;color:#a36d0c;margin-left:4px}
+      #shooting-event-root .shooting-inori-judgment-count.is-pulse{animation:inoriJcPulse .18s ease}
+      @keyframes inoriJcPulse{50%{transform:var(--pos) scale(1.12)}}
+      #shooting-event-root .shooting-inori-judgment{position:absolute;left:0;top:0;width:var(--jw,120px);z-index:21;pointer-events:none;
+        transform-origin:50% 100%;animation:inoriJudgment .9s ease-out forwards}
+      #shooting-event-root .shooting-inori-judgment > i{position:absolute;left:0;right:0;top:0;bottom:0;border-radius:0 0 50% 50%/0 0 30px 30px;
+        background:linear-gradient(180deg,rgba(255,255,255,0),rgba(255,248,214,.92) 40%,#fff 75%,rgba(255,236,160,.95));
+        box-shadow:0 0 26px rgba(255,226,120,.95),0 0 60px rgba(255,200,70,.6)}
+      #shooting-event-root .shooting-inori-judgment > u{position:absolute;left:50%;bottom:-40px;width:200px;height:80px;margin-left:-100px;border-radius:50%;
+        background:radial-gradient(ellipse,rgba(255,255,255,.95),rgba(255,226,130,.6) 40%,transparent 70%);animation:inoriJudgmentBurst .9s ease-out forwards}
+      #shooting-event-root .shooting-inori-judgment > em{position:absolute;left:50%;bottom:30px;transform:translateX(-50%);white-space:nowrap;
+        font:900 26px/1 "Noto Serif JP",serif;letter-spacing:.2em;color:#fff;text-shadow:0 0 6px #e8a520,0 0 16px rgba(255,200,60,.9),0 2px 0 #8a5a10}
+      @keyframes inoriJudgment{0%{opacity:0;transform:var(--pos) scaleY(.1)}12%{opacity:1;transform:var(--pos) scaleY(1)}70%{opacity:1}100%{opacity:0;transform:var(--pos) scaleY(1) scaleX(.4)}}
+      @keyframes inoriJudgmentBurst{0%{transform:scale(.2);opacity:0}20%{opacity:1}100%{transform:scale(1.6);opacity:0}}
+      @media (prefers-reduced-motion:reduce){#shooting-event-root .shooting-inori-guard-beam,#shooting-event-root .shooting-inori-guard-veil{animation:none}}
+    `;
+    document.head.appendChild(st);
+  }
+  function clearInoriGuard() {
+    if (!state || !state.inoriGuard) return;
+    const g = state.inoriGuard;
+    (g.torii || []).forEach(t => { t.el?.remove(); t.beam?.remove(); });
+    g.veil?.remove();
+    g.counter?.remove();
+    // この鳥居で付けた無敵だけを解除（他の無敵は残す）
+    const member = (state.party || []).find(m => m && Number(m.id) === Number(g.memberId));
+    if (member && Number(member.invincibleUntil || 0) === Number(g.invincibleUntil || -1)) member.invincibleUntil = performance.now();
+    state.inoriGuard = null;
+  }
+  function useInoriToriiGuardUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    ensureInoriGuardStyle();
+    if (state.inoriGuard) clearInoriGuard();
+    showUltCut(c.ultName || '双鳥居・祈りの帳', c.effectKey, c);
+    ultScreenFlash('ult-flash-eri', c);
+    const now = performance.now();
+    const width = Math.max(120, Number(arena.clientWidth || 0));
+    const height = Math.max(120, Number(arena.clientHeight || 0));
+    const px = Number(state.player.x ?? width * .5);
+    const py = Number(state.player.y ?? height * .75);
+    const off = Math.max(40, Number(c.inoriToriiOffsetX || 64));
+    const y = clamp(py + Number(c.inoriToriiOffsetY || -6), 60, Math.max(60, height - 40));
+    const hits = Math.max(1, Math.floor(Number(c.inoriToriiHits || 30)));
+    const duration = Math.max(500, Number(c.inoriToriiDurationMs || 7000));
+    const torii = [-1, 1].map(side => {
+      const x = clamp(px + side * off, 30, Math.max(30, width - 30));
+      const el = document.createElement('div');
+      el.className = 'shooting-inori-guard-torii';
+      el.innerHTML = '<i></i><img src="images/chara_111_object.webp" alt="" draggable="false"><b><u></u></b>';
+      const pos = `translate3d(${x}px,${y}px,0) translate(-50%,-50%)`;
+      el.style.setProperty('--pos', pos);
+      el.style.transform = pos;
+      arena.appendChild(el);
+      const beam = document.createElement('div');
+      beam.className = 'shooting-inori-guard-beam';
+      const topY = y - INORI_TORII_HALF_H;
+      beam.style.setProperty('--w', `${Math.max(6, Number(c.inoriToriiLaserWidth || 14))}px`);
+      beam.style.height = `${Math.max(10, topY - 6)}px`;
+      beam.style.transform = `translate3d(${x}px,6px,0)`;
+      arena.appendChild(beam);
+      return { el, beam, x, y, topY, hp: hits, maxHp: hits, alive: true, lastHitFxAt: 0 };
+    });
+    const member = getActiveMember();
+    const invincibleUntil = now + duration;
+    if (member) member.invincibleUntil = Math.max(Number(member.invincibleUntil || 0), invincibleUntil);
+    const veil = document.createElement('div');
+    veil.className = 'shooting-inori-guard-veil';
+    arena.appendChild(veil);
+    // 神罰の威力表示（2基の鳥居の間・上）
+    const counter = document.createElement('div');
+    counter.className = 'shooting-inori-judgment-count';
+    const cpos = `translate3d(${px}px,${Math.max(20, y - 70)}px,0) translate(-50%,-50%)`;
+    counter.style.setProperty('--pos', cpos);
+    counter.style.transform = cpos;
+    counter.innerHTML = '神罰<b>0</b>';
+    arena.appendChild(counter);
+    state.inoriGuard = {
+      owner: c, torii, veil, counter, memberId: member ? Number(member.id) : 0,
+      invincibleUntil: member ? Number(member.invincibleUntil) : 0,
+      endAt: now + duration, nextTickAt: now + 120, comboHits: 0, comboDirty: false,
+    };
+    state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), now + 300);
+    renderHud();
+  }
+  // 敵弾が鳥居に当たったら受け止める（スマイルの箱と同じ線分判定）。true＝弾を消す
+  function tryBlockEnemyBulletWithInoriTorii(bullet, fromX, fromY, now) {
+    const g = state && state.inoriGuard;
+    if (!g) return false;
+    const toX = Number(bullet.x || 0), toY = Number(bullet.y || 0);
+    const hw = Math.max(0, Number(bullet._hw || bullet.canvasHalfWidth || 0));
+    const hh = Math.max(0, Number(bullet._hh || bullet.canvasHalfHeight || 0));
+    for (const t of g.torii) {
+      if (!t.alive) continue;
+      const hit = segmentAabbEntryT(fromX, fromY, toX, toY,
+        t.x - INORI_TORII_HALF_W - hw, t.x + INORI_TORII_HALF_W + hw,
+        t.y - INORI_TORII_HALF_H - hh, t.y + INORI_TORII_HALF_H + hh);
+      if (hit === null) continue;
+      t.hp -= 1;
+      const bar = t.el.querySelector('u');
+      if (bar) bar.style.setProperty('--hp', `${Math.max(0, t.hp / t.maxHp * 100)}%`);
+      if (now - t.lastHitFxAt >= 110) {
+        t.lastHitFxAt = now;
+        t.el.classList.remove('is-hit'); void t.el.offsetWidth; t.el.classList.add('is-hit');
+      }
+      if (t.hp <= 0) breakInoriTorii(t);
+      return true;
+    }
+    return false;
+  }
+  function breakInoriTorii(t) {
+    if (!t.alive) return;
+    t.alive = false;
+    t.beam?.remove();
+    t.el.classList.add('is-break');
+    const el = t.el;
+    setTimeout(() => el.remove(), 450);
+  }
+  // build1818: 神罰。鳥居が建っていた間のコンボ数 × 10 の固定ダメージを、盤面の敵1体へ。
+  function pickInoriJudgmentTarget() {
+    if (!isNormalBattle() && !isBossPassThrough() && state.boss && state.boss.hp > 0) {
+      return { kind: 'boss', target: state.boss, x: state.boss.x, y: state.boss.y };
+    }
+    let best = null;
+    (state.normalEnemies || []).forEach(e => {
+      if (!e || !e.el || e.hp <= 0) return;
+      if (!best || Number(e.hp) > Number(best.hp)) best = e;
+    });
+    if (best) return { kind: 'normal', target: best, x: best.x, y: best.y };
+    if (isFacelessStage() || isAmbushStage()) {
+      const obj = (state.facelessObjects || []).filter(o => o && o.hp > 0).sort((a, b) => Number(b.hp) - Number(a.hp))[0];
+      if (obj) return { kind: 'object', target: obj, x: obj.x, y: obj.y };
+    }
+    return null;
+  }
+  function castInoriJudgment(g, now) {
+    if (!state || state.ended || state.finishing || !g) return;
+    const per = Math.max(0, Number(g.owner.inoriJudgmentPerCombo ?? 10));
+    const damage = Math.max(0, Math.floor(Number(g.comboHits || 0))) * per;
+    if (damage <= 0) return;
+    const target = pickInoriJudgmentTarget();
+    if (!target) return;
+    const arena = document.getElementById('shooting-arena');
+    if (arena) {
+      const fx = document.createElement('div');
+      fx.className = 'shooting-inori-judgment';
+      const h = Math.max(80, Number(target.y || 0) + 20);
+      const pos = `translate3d(${Number(target.x || 0)}px,0px,0) translateX(-50%)`;
+      fx.style.setProperty('--pos', pos);
+      fx.style.transform = pos;
+      fx.style.height = `${h}px`;
+      fx.style.setProperty('--jw', `${Math.min(170, 90 + damage / 40)}px`);
+      fx.innerHTML = '<i></i><u></u><em>神罰</em>';
+      arena.appendChild(fx);
+      setTimeout(() => fx.remove(), 950);
+      ultScreenFlash('ult-flash-eri', g.owner);
+    }
+    // 固定ダメージ（無属性扱い：属性の有利不利で増減しない）
+    const hits = applyLaserDamageToEntries(g.owner, [target], damage, 'neutral', now, false);
+    state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
+    if (hits > 0 && isNormalBattle()) evaluateNormalMission(now);
+    renderHud();
+  }
+  function updateInoriGuard(now) {
+    const g = state && state.inoriGuard;
+    if (!g) return;
+    if (state.ended || state.finishing) { clearInoriGuard(); return; }
+    const alive = g.torii.filter(t => t.alive);
+    if (!alive.length || now >= g.endAt) {
+      g.torii.forEach(breakInoriTorii);
+      g.veil?.remove();
+      g.counter?.remove();
+      const member = (state.party || []).find(m => m && Number(m.id) === Number(g.memberId));
+      if (member && Number(member.invincibleUntil || 0) === Number(g.invincibleUntil || -1)) member.invincibleUntil = now;
+      state.inoriGuard = null;
+      castInoriJudgment(g, now);
+      return;
+    }
+    if (g.comboDirty && g.counter) {
+      g.comboDirty = false;
+      const per = Math.max(0, Number(g.owner.inoriJudgmentPerCombo ?? 10));
+      const b = g.counter.querySelector('b');
+      if (b) b.textContent = (Math.max(0, g.comboHits) * per).toLocaleString('ja-JP');
+      g.counter.classList.remove('is-pulse'); void g.counter.offsetWidth; g.counter.classList.add('is-pulse');
+    }
+    // 無敵の膜は発動キャラが出場中の時だけ自機に重ねる
+    if (g.veil) {
+      const show = Number(state.activeCharacterId) === Number(g.memberId);
+      g.veil.style.display = show ? '' : 'none';
+      if (show) g.veil.style.transform = `translate3d(${Number(state.player.x || 0)}px,${Number(state.player.y || 0)}px,0)`;
+    }
+    if (now < g.nextTickAt) return;
+    g.nextTickAt = now + Math.max(60, Number(g.owner.inoriToriiLaserTickMs || 150));
+    const c = g.owner;
+    const damage = Math.max(0, Number(c.atk || 0)) * Math.max(0, Number(g.owner.inoriToriiLaserAtkRate || 0.08));
+    if (damage <= 0) return;
+    const element = getUltAttackElement(g.owner);
+    const hitWidth = Math.max(8, Number(g.owner.inoriToriiLaserHitWidth || 30));
+    let hits = 0;
+    alive.forEach(t => { hits += applyLaserDamageToEntries(c, getIgnisLaserTargets(t.x, t.topY, hitWidth), damage, element, now, false); });
+    state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
+    if (hits > 0) {
+      state.shotsHit += hits;
+      for (let i = 0; i < hits; i++) registerComboHit(g.owner.id, now);
+    }
+    if (isNormalBattle() && hits > 0) evaluateNormalMission(now);
+  }
+
   // build1312: ハオULT『天機・五刻の雷』。盤面固定の成長トリガーを自キャラが回収すると全体落雷。
   const HAO_TRIGGER_DEFAULT_MULTIPLIERS = Object.freeze([1.0, 1.8, 3.0, 4.0, 5.0]);
 
@@ -37883,6 +38232,7 @@
     ) usePainterElementSpreadUlt(c);
     else if (c.ultType === 'hao_fivefold_trigger') useHaoUlt(c);
     else if (c.ultType === 'smile_surprise_box') useSmileSurpriseBoxUlt(c);
+    else if (c.ultType === 'inori_torii_guard') useInoriToriiGuardUlt(c); // build1817
     else if (c.ultType === 'aina_stealth') useAinaStealthUlt(c);
     else if (c.ultType === 'forbidden_shock') useNinaUlt(c); // 旧ニーナ落雷演出を70%威力で再利用
     else if (c.ultType === 'nina_output_max' || c.ultType === 'nina_lightning_storm') useNinaOutputMax(c);

@@ -52,7 +52,7 @@
     LEONA_CROSS: 39,
     KUREHA: 41,
     KYOU: 42, SUZU: 43, MELORIA: 44, KIRIMARU: 45, AIRENA: 46,
-    LINLIN: 47, MUUMUU: 48, MEGMEG: 49, CHACHA: 51, RUIRUI: 53, HAO: 54, SMILE: 56, NIGHTSHADE: 57, TOWA: 101, // ID52 is reserved for Noah (existing saves/RPC)
+    LINLIN: 47, MUUMUU: 48, MEGMEG: 49, CHACHA: 51, RUIRUI: 53, HAO: 54, SMILE: 56, NIGHTSHADE: 57, TOWA: 101, INORI: 111, // ID52 is reserved for Noah (existing saves/RPC)
   });
 
   // ============================================================
@@ -111,7 +111,7 @@
     102: 'sr', // カミラ
     41: 'sr',  // シャオラン
     42: 'r', 43: 'r', 44: 'r', 45: 'r', 46: 'r',
-    47: 'r', 48: 'r', 49: 'r', 51: 'r', 53: 'r', 54: 'sr', 56: 'sr', 57: 'sr', 101: 'sr',
+    47: 'r', 48: 'r', 49: 'r', 51: 'r', 53: 'r', 54: 'sr', 56: 'sr', 57: 'sr', 101: 'sr', 111: 'sr',
   });
 
   // 現行互換：R はSRに対して基本性能(HP/ATK)を20%落とす。育成/凸の新倍率は別フェーズで統合予定。
@@ -1314,6 +1314,25 @@
     "portraitImage": "images/chara_56.webp",
     "homeImage": "images/chara_56_cut.webp",
     "upImage": "images/chara_56_up.webp",
+    "homeScale": 0.82,
+    "homeOffsetX": 0,
+    "homeOffsetY": -24,
+    "hidden": false
+  },
+  // build1817: SR 光属性・イノリ（ID111）。レムナント：イノリのプレイアブル版。既存キャラと同じ画像パス規則。
+  "111": {
+    "id": 111,
+    "name": "イノリ",
+    "element": "light",
+    "hp": 600,
+    "atk": 290,
+    "image": "images/chara_111_battle_back.webp",
+    "panelImage": "images/chara_111_panel.webp",
+    "cutinImage": "images/chara_111_cutin.webp",
+    "uiScale": { "panel": 1, "battleBack": 1.2, "battleUp": 1 },
+    "portraitImage": "images/chara_111.webp",
+    "homeImage": "images/chara_111_cut.webp",
+    "upImage": "images/chara_111_up.webp",
     "homeScale": 0.82,
     "homeOffsetX": 0,
     "homeOffsetY": -24,
@@ -2946,6 +2965,28 @@
     smileItemAtkMultiplier: 1.5, smileItemAtkDurationMs: 5000,
     smileItemInvincibleDurationMs: 3000, smileItemHealPercent: 0.33,
     burstNeed: 32, ultGainPerHit: 0.676,
+    coreTop: '38%', shotOffsetY: 42,
+  });
+
+  // build1817: イノリ (ID111) — 光 SR / LASER(+)。
+  //  SHOT：縦のLASER M。敵に当たると、その位置を起点に横一線のレーザーも走る（横は縦の50%の威力・起点の敵には当たらない）。
+  //  ULT：自機の左右に鳥居（chara_111_object）を設置。鳥居は敵弾を受け止め、壊れる（30HIT）か7秒経つまで自分は無敵。
+  //       build1818: 鳥居が消えた時、建っていた間のコンボ数×10の「神罰」を敵1体へ。
+  //       鳥居からは光属性レーザーが真上へ照射され続ける。入手経路は未設定（ガチャ排出枠・配布には追加しない）。
+  SHOOTING_CHARACTERS[CHARACTER_ID.INORI] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE,
+    id: CHARACTER_ID.INORI, effectKey: 'inori',
+    label: 'LASER(+) / TORII',
+    description: '光属性のLASER(+)。縦のレーザーが敵に当たると、そこを起点に横一線のレーザーも走る（横は50%の威力）。ULTで左右に鳥居を建て、壊れるまで無敵になり、鳥居から光のレーザーを放つ。鳥居が消えると、その間のコンボ数に応じた神罰が敵に降り注ぐ。',
+    shotType: 'laser', laserSize: 'M', fireRate: 100,
+    laserWidth: 10, laserHitWidth: 34, laserDamageAtkRate: 0.058, laserVisualHoldMs: 125,
+    laserCross: true, laserCrossDamageRate: 0.5, laserCrossMaxOrigins: 2, laserCrossHitHalfHeight: 22,
+    ultName: '双鳥居・祈りの帳',
+    ultDescription: '自機の左右に鳥居を2基設置する。鳥居は敵弾を受け止め（1基あたり30HITで崩れる）、2基とも崩れるか7秒経つまで自分は無敵。鳥居からは真上へ光属性レーザーを照射し続ける（0.15秒ごとにATK×0.08）。鳥居が消えた時、建っていた間に達成したコンボ数×10のダメージの「神罰」が盤面の敵1体に降り注ぐ。',
+    ultType: 'inori_torii_guard', ultBaseType: 'summon', ultAddons: ['invincible', 'bullet_block', 'damage'],
+    inoriToriiDurationMs: 7000, inoriToriiOffsetX: 64, inoriToriiOffsetY: -6, inoriToriiHits: 30, inoriJudgmentPerCombo: 10,
+    inoriToriiLaserTickMs: 150, inoriToriiLaserAtkRate: 0.08, inoriToriiLaserWidth: 14, inoriToriiLaserHitWidth: 30,
+    burstNeed: 32, ultGainPerHit: 0.6,
     coreTop: '38%', shotOffsetY: 42,
   });
 
