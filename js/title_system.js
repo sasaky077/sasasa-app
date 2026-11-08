@@ -20,15 +20,15 @@
   const TITLE_MASTER = Object.freeze({
     reason_knower: Object.freeze({
       id:'reason_knower', name:'理を知る者', rarity:'SR',
-      desc:'位相回遊の100階層を初めて突破した証。',
-      how:'位相回遊100F 初回突破',
-      tone:'reason', tiers:Object.freeze([{min:1,key:'t1',label:'SR'}])
+      desc:'位相回遊100Fから50Fごとの初回突破で I〜V に昇格する称号。',
+      how:'位相回遊100F / 150F / 200F / 250F / 300F',
+      tone:'reason', tiers:Object.freeze([{min:1,key:'t1',label:'I'}, {min:2,key:'t2',label:'II'}, {min:3,key:'t3',label:'III'}, {min:4,key:'t4',label:'IV'}, {min:5,key:'t5',label:'V'}])
     }),
     despair_conqueror: Object.freeze({
       id: 'despair_conqueror',
       rarity: 'R',
       name: '絶望を超えし者',
-      desc: '残響の塔（絶望）20Fを初めて踏破した証。',
+      desc: '残響の塔（絶望）20Fを毎週踏破することで昇格する称号。',
       how: '今週の残響の塔を制覇し、残響の塔（絶望）20Fを踏破',
       tone: 'despair',
       // Lvがこの値以上で見た目が変わる（1：深紅／3：銀縁／5：金縁／10：輝く金縁）
@@ -71,7 +71,7 @@
   function labelOf(titleId, level){
     const t = getTitle(titleId);
     if(!t) return '';
-    return t.name + (t.rarity ? ' ('+t.rarity+')' : '') + (levelOf(level)>1 ? ' '+roman(level) : '');
+    return t.name + ' ' + roman(levelOf(level)) + (t.rarity ? ' ('+t.rarity+')' : '');
   }
   function esc(v){
     return String(v==null?'':v).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch]);
@@ -134,7 +134,7 @@
     const lv = levelOf(level);
     const tier = getTier(titleId, lv);
     return '<span class="zt-title-badge tone-' + esc(t.tone || 'gold') + (tier ? ' tier-' + esc(tier.key) : '') +
-      '" title="' + esc(t.desc) + '">' + esc(t.name) + (t.rarity ? '<span class="zt-rank">'+esc(t.rarity)+'</span>' : '') + (lv>1 ? '<span class="zt-rank">'+esc(roman(lv))+'</span>' : '') + '</span>';
+      '" title="' + esc(t.desc) + '">' + esc(t.name) + '<span class="zt-rank">'+esc(roman(lv))+'</span>' + (t.rarity ? '<span class="zt-rank">'+esc(t.rarity)+'</span>' : '') + '</span>';
   }
 
   function readOwned(list){
@@ -279,10 +279,10 @@
     const list = Object.values(TITLE_MASTER).map(t => {
       const owned = state.owned.has(t.id);
       const lv = state.owned.get(t.id) || 1;
-      const nt = owned && lv>1 ? nextTier(t.id, lv) : null;
+      const nt = owned ? nextTier(t.id, lv) : null;
       const tiers = Array.isArray(t.tiers) ? '<span class="zt-tiers">' + t.tiers.map(x => badgeHTML(t.id, x.min)).join('') + '</span>' : '';
       const status = owned
-        ? ('獲得済み' + (nt ? '・あと' + (nt.min - lv) + '回で見た目が変わる（' + esc(nt.label) + '）' : '') + '　' + (state.equipped === t.id ? '設定中' : 'タップで設定'))
+        ? ('獲得済み' + (nt ? '・次の昇格：' + esc(nt.label) + (t.id==='reason_knower' ? '（'+(100+(nt.min-1)*50)+'F）' : '（あと'+(nt.min-lv)+'回）') : '') + '　' + (state.equipped === t.id ? '設定中' : 'タップで設定'))
         : ('未獲得：' + esc(t.how));
       return '<button type="button" class="zt-opt' + (state.equipped === t.id ? ' is-selected' : '') + '" data-zt-equip="' + esc(t.id) + '"' + (owned ? '' : ' disabled') + '>' +
         badgeHTML(t.id, lv) +

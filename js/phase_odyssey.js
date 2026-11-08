@@ -1717,7 +1717,7 @@
     genesis_roulette_ticket_silver:'創世ptルーレット券（銀）',
     phase_skip_ticket_silver:'位相スキップ券（銀）',
     phase_skip_ticket_gold:'位相スキップ券（金）',
-    reason_knower:'称号「理を知る者（SR）」'
+    reason_knower:'称号「理を知る者」'
   });
   let firstRewardClaiming = null;
   function claimFirstRewards(){
@@ -1729,7 +1729,7 @@
       if(!data || data.ok === false) throw new Error(data?.message || '初回報酬を確認できませんでした');
       const items = Array.isArray(data.newRewards) ? data.newRewards : [];
       if(items.length){
-        const lines=items.map(x=>'FLOOR '+x.floor+'：'+(FIRST_REWARD_NAMES[x.id]||x.id)+(x.type==='title'?'':' ×'+x.qty));
+        const lines=items.map(x=>'FLOOR '+x.floor+'：'+(FIRST_REWARD_NAMES[x.id]||x.id)+(x.type==='title' ? ' '+(['','I','II','III','IV','V'][Number(x.level)]||'') : ' ×'+x.qty));
         notify('初回突破報酬獲得！ '+lines.join(' / '));
         try { window.ZeraphiaTitles?.loadMine?.(true); } catch(_){}
         window.dispatchEvent(new Event('zeraphia:inventory-refresh'));
