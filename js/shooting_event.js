@@ -10,7 +10,7 @@
   const currentVersionParam = current && current.src
     ? new URL(current.src, location.href).searchParams.get('v')
     : '';
-  const MODULE_VERSION = '20261108-build1800-tap-recover';
+  const MODULE_VERSION = '20261108-build1802-test-images';
   window.__sasaphiaShootingLoaderVersion = MODULE_VERSION;
 
   window.openShootingEvent = window.openShootingEvent || function (...args) {

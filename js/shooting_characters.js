@@ -2333,7 +2333,7 @@
     ultDelayMs: 1200,
     ultDamageAtkMultiplier: 2.8,
     ultDebuffDurationMs: 6000,
-    ultEnemyDamageMultiplier: 0.70,
+    ultEnemyDamageMultiplier: 0.50, // build1801: 受けるダメージ 30%軽減 → 50%軽減
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.ORION] = buildShootingCharacter({

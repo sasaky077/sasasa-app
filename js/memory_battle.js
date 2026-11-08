@@ -178,7 +178,10 @@
         rows.push({ icon: 'torii', name: '連なる鳥居', text: `鳥居は片方だけ壊れると、${sec}秒で修復される` });
       } else if (rule.type === 'judgment') {
         const sec = Math.round(Math.max(5000, Number(rule.intervalMs || 20000)) / 1000);
-        rows.push({ icon: 'judgment', name: '神罰', text: `約${sec}秒ごとに、出撃中のキャラが即死する` });
+        const dmg = Math.max(0, Math.floor(Number(rule.damage || 0)));
+        rows.push({ icon: 'judgment', name: '神罰', text: dmg > 0
+          ? `約${sec}秒ごとに、出撃中のキャラへ${dmg.toLocaleString('ja-JP')}ダメージ`
+          : `約${sec}秒ごとに、出撃中のキャラが即死する` });
       } else if (rule.type === 'sniper') {
         const sec = Math.round(Math.max(5000, Number(rule.intervalMs || 13000)) / 1000);
         rows.push({ icon: 'sniper', name: '狙撃', text: `約${sec}秒ごとに自機を照準で捉え、即死の狙撃を撃ち込む` });

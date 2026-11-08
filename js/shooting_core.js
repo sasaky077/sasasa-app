@@ -820,6 +820,49 @@
     document.head.appendChild(shionUltStyle);
   }
 
+  // build1801: シオンULTの呪印を分かりやすく（明るい紫の魔法陣・回転する外輪・刻印中の敵に小さな印・自機に軽減バッジ）
+  if (!document.getElementById('shooting-shion-ult-style-v1801')) {
+    const st = document.createElement('style');
+    st.id = 'shooting-shion-ult-style-v1801';
+    st.textContent = `
+      .shooting-shion-curse-mark{width:96px!important;height:96px!important;z-index:34}
+      .shooting-shion-curse-mark::before{inset:0!important;border-radius:50%;
+        border:2px dashed rgba(214,150,255,.95)!important;
+        background:radial-gradient(circle,rgba(190,110,255,.30) 0 34%,rgba(150,70,230,.16) 52%,rgba(120,40,200,0) 70%)!important;
+        box-shadow:0 0 14px rgba(190,100,255,.85),0 0 28px rgba(140,60,230,.55),inset 0 0 16px rgba(210,150,255,.55)!important;
+        animation:shionSigilSpin 2.4s linear infinite}
+      .shooting-shion-curse-mark::after{width:62px!important;height:62px!important;border-radius:50%!important;filter:none!important;
+        transform:translate(-50%,-50%)!important;box-shadow:0 0 10px rgba(200,120,255,.8)!important;
+        border:1.5px solid rgba(235,195,255,.95);
+        background:repeating-conic-gradient(from 15deg,rgba(240,205,255,.95) 0 4deg,transparent 4deg 60deg)!important;
+        -webkit-mask:radial-gradient(circle,transparent 0 30%,#000 31%);mask:radial-gradient(circle,transparent 0 30%,#000 31%);
+        animation:shionSigilSpin 3.2s linear infinite reverse}
+      @keyframes shionSigilSpin{to{rotate:360deg}}
+      @keyframes shootingShionCurseArm{
+        0%{opacity:0;scale:.3}
+        30%{opacity:1;scale:1.12}
+        60%{opacity:.85;scale:.96}
+        100%{opacity:1;scale:1}
+      }
+      @keyframes shootingShionCurseDetonate{
+        0%{opacity:1;scale:1;filter:brightness(1.4)}
+        40%{opacity:.95;scale:1.35;filter:brightness(2)}
+        100%{opacity:0;scale:1.9}
+      }
+      /* 弱体化中：刻印された敵に小さな紫の印、画面の縁を紫に */
+      .shooting-shion-curse-tag{position:absolute;left:0;top:0;z-index:33;pointer-events:none;width:30px;height:30px;margin:-15px 0 0 -15px;
+        border-radius:50%;border:1.5px solid rgba(220,160,255,.95);will-change:transform;
+        background:radial-gradient(circle,rgba(200,120,255,.55) 0 30%,rgba(160,80,240,0) 70%);
+        box-shadow:0 0 8px rgba(190,100,255,.9)}
+      .shooting-shion-curse-tag::after{content:"呪";position:absolute;inset:0;display:grid;place-items:center;
+        font:700 13px/1 'Noto Serif JP',serif;color:#fff;text-shadow:0 0 4px #8a3fe0,0 0 2px #3a0d6a}
+      #shooting-event-root.shion-curse-active .shooting-arena,#shooting-event-root.shion-curse-active #shooting-arena{
+        box-shadow:inset 0 0 46px rgba(150,70,230,.45)!important}
+      .shooting-player-buff-badge.shion{background:linear-gradient(90deg,#7a3fd0,#b276ff);box-shadow:0 0 8px rgba(170,100,255,.7)}
+    `;
+    document.head.appendChild(st);
+  }
+
   // CH04 final ITEM: CSSファイルの更新状況に依存せず、大きく脈動させる。
   if (!document.getElementById('shooting-ch04-item-style-v152')) {
     const style = document.createElement('style');
@@ -5842,6 +5885,12 @@
         if (hasAtkBuff) {
           const mult = buffStatus.atkBuffMultiplier.toFixed(1);
           badges.push(`<span class="shooting-player-buff-badge atk">ATK×${mult} ${(atkBuffLeft / 1000).toFixed(1)}s</span>`);
+        }
+        // build1801: シオンULTの弱体化中は「被ダメ -50%」を表示（パーティ全員に効く）
+        const shionLeft = Number(state.shionEnemyDebuffUntil || 0) - nowHud;
+        if (shionLeft > 0) {
+          const cut = Math.round((1 - Math.max(0.05, Math.min(1, Number(state.shionEnemyDamageMultiplier || 0.7)))) * 100);
+          badges.push(`<span class="shooting-player-buff-badge shion">被ダメ-${cut}% ${(shionLeft / 1000).toFixed(1)}s</span>`);
         }
         buffBadges.innerHTML = badges.join('');
         buffBadges.setAttribute('aria-hidden', badges.length ? 'false' : 'true');
@@ -25450,6 +25499,14 @@
     const member = getActiveMember();
     if (!member || member.hp <= 0) return;
     const name = String((getCurrentCharacter() || {}).name || '');
+    // build1801: rule.damage があれば即死ではなく固定ダメージ（属性相性・シオンULTの軽減・HP強化が効く）
+    const fixed = Math.max(0, Number(rule.damage || 0));
+    if (fixed > 0) {
+      triggerPlayerHitScreenShake();
+      damagePlayer(now, fixed, 'raw', normalizeCombatElement(rule.element || selectedStage.bossElement || selectedStage.element) || 'neutral', 'judgment');
+      if (member.hp <= 0) showMemoryGuardNotice(name ? `${name}、倒れる` : '神罰', false, 'JUDGMENT');
+      return;
+    }
     showDamageNumber(state.player.x, state.player.y, Math.max(1, Math.round(member.hp)), 'player', true, '');
     member.hp = 0;
     triggerPlayerHitScreenShake();
@@ -26437,6 +26494,8 @@
     updateTestBodyMechanics(ts);
     // build1759: 記憶決戦の守護者・子蜘蛛
     updateMemoryMechanics(ts);
+    // build1801: シオンULTの弱体化中、敵に「呪」の印を付けて追従
+    syncShionCurseTags(ts);
     // build1592 RAID カミラ: 浮遊弾 / 巣レーザー / 捕縛罠 / 吸血子蜘蛛
     updateCamillaMechanics(ts);
     // build1630: リズム弾幕（譜面・仮ドラム・判定）
@@ -26553,6 +26612,9 @@
       introImage = 'images/score_attack_intro.webp';
     } else if (selectedStage.introImage) {
       introImage = String(selectedStage.introImage);
+    } else if (isTestBodyBoss()) {
+      // build1802: テスト（レイド・残響の塔16F・記憶決戦03）は共通のイントロ画像
+      introImage = 'images/test_battle_start.webp';
     } else if (/_battle\.(webp|png|jpg|jpeg)$/i.test(battleImage)) {
       introImage = battleImage.replace(/_battle\.(webp|png|jpg|jpeg)$/i, '_battle_start.$1');
     }
@@ -35233,6 +35295,30 @@
     renderHud();
   }
 
+
+  // build1801: 弱体化（被ダメ軽減）中は、刻印された敵に小さな「呪」の印を付けて追従させる
+  function syncShionCurseTags(now) {
+    if (!state) return;
+    const active = now < Number(state.shionEnemyDebuffUntil || 0) && !state.ended;
+    let tags = state.shionCurseTags || (state.shionCurseTags = new Map());
+    if (!active) {
+      if (tags.size) { tags.forEach(el => el.remove()); tags.clear(); }
+      return;
+    }
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const targets = [];
+    if (!isNormalBattle() && state.boss && state.boss.hp > 0) targets.push(state.boss);
+    (state.normalEnemies || []).forEach(e => { if (e && e.hp > 0 && e.el && targets.length < 8) targets.push(e); });
+    const keep = new Set(targets);
+    tags.forEach((el, t) => { if (!keep.has(t)) { el.remove(); tags.delete(t); } });
+    targets.forEach(t => {
+      let el = tags.get(t);
+      if (!el) { el = document.createElement('i'); el.className = 'shooting-shion-curse-tag'; el.setAttribute('aria-hidden', 'true'); arena.appendChild(el); tags.set(t, el); }
+      const off = t === state.boss ? -Math.max(30, getBossHalfWidthFast(now) * 1.2) : -24;
+      el.style.transform = `translate(${Number(t.x || 0).toFixed(1)}px,${(Number(t.y || 0) + off).toFixed(1)}px)`;
+    });
+  }
 
   function spawnShionCurseMarks(points) {
     const arena = document.getElementById('shooting-arena');

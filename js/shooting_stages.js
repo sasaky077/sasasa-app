@@ -2072,7 +2072,7 @@
   const MEMORY_BATTLE_STAGE_PREFIX = 'shooting_memory_';
   const MEMORY_BATTLE_RULE_INFO = Object.freeze({
     linked_torii: Object.freeze({ name: '連なる鳥居', desc: '鳥居は片方だけ壊れると、残った鳥居が数秒で修復する。' }),
-    judgment: Object.freeze({ name: '神罰', desc: '定期的にカウントダウン後、出撃中のキャラが即死する。' }),
+    judgment: Object.freeze({ name: '神罰', desc: '定期的にカウントダウン後、出撃中のキャラに大ダメージ（damage 未指定なら即死）。' }),
     guardians: Object.freeze({ name: '守護者', desc: '守護者を全て倒すまでボスに攻撃が通らない。しばらくすると再び現れる。' }),
     hit_count: Object.freeze({ name: 'HIT数', desc: '守護者は威力に関係なく、攻撃を当てた回数（hitHp）で倒れる。' }),
     drain_spiders: Object.freeze({ name: '吸血の子蜘蛛', desc: '張り付いた子蜘蛛が体力を吸い、ボスを回復させる。' }),
@@ -2110,7 +2110,7 @@
       rules: Object.freeze([
         Object.freeze({ type: 'element_barrier' }),
         Object.freeze({ type: 'linked_torii', reviveMs: 3000 }),
-        Object.freeze({ type: 'judgment', firstMs: 15000, intervalMs: 20000, warnMs: 3000 }),
+        Object.freeze({ type: 'judgment', firstMs: 15000, intervalMs: 20000, warnMs: 3000, damage: 1000, element: 'light' }), // build1801: 即死→光属性1000ダメージ
       ]),
       extra: Object.freeze({ bossElement: 'light', enemyElement: 'light', inoriToriiHp: 1300, introImage: 'images/memory_inori_battle_start.webp' }), // build1798: 記憶のイノリ専用イントロ
     }),
