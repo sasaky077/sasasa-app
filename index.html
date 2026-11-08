@@ -417,7 +417,7 @@
 #detail-modal.is-gacha-pickup-preview #detail-name{display:none!important}
 </style>
   <link rel="stylesheet" href="css/resonance_tower.css?v=1715-despair-title-fix">
-  <link rel="stylesheet" href="css/phase_odyssey.css?v=1740-boss-add-ult">
+  <link rel="stylesheet" href="css/phase_odyssey.css?v=1816-reward-list">
   <link rel="stylesheet" href="css/memory_battle.css?v=1774-tabs">
   <link rel="stylesheet" href="css/towa_encounter.css?v=1553-rates-visible">
   <link rel="stylesheet" href="css/towa_dark_gacha.css?v=1552">
@@ -426,7 +426,7 @@
   <link rel="stylesheet" href="css/shooting_event.css?v=1740-boss-add-ult">
   <link rel="stylesheet" href="css/shot_fx.css?v=1557-shot-fx">
   <link rel="stylesheet" href="css/tower15_boss.css?v=1485-tower15">
-  <link rel="stylesheet" href="css/daily_stage_select.css?v=1388-shared-card">
+  <link rel="stylesheet" href="css/daily_stage_select.css?v=1816-daily-left">
   <link rel="stylesheet" href="css/raid_event.css?v=852-raid-glass-canonical">
   <link rel="stylesheet" href="css/raid_theme.css?v=1781-team-rank3">
   <link rel="stylesheet" href="css/item_management.css?v=1488-retired-origin-wing">
@@ -3894,6 +3894,8 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
           </ul>
         </section>
       </div>
+      <!-- build1816: 初回突破報酬（内容は phase_odyssey.js の FIRST_REWARD_TABLE から描画） -->
+      <section class="po-card po-first-rewards" data-po-rewards aria-label="初回突破報酬"></section>
      </div>
      </div>
     </div>
@@ -20641,7 +20643,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1812-pbullet-canvas2"></script>
+<script src="js/shooting_event.js?v=1816-daily-po"></script>
 <script src="js/shooting_party_filter.js?v=1744-summon"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1813-tickets"></script>
@@ -20671,7 +20673,7 @@ window.returnToTitleScreen = function(){
 
 <script src="js/score_attack.js?v=1713-title-rank"></script>
 <script src="js/resonance_tower.js?v=1815-weekly-rewards"></script>
-<script src="js/phase_odyssey.js?v=1815-reason-tiers"></script>
+<script src="js/phase_odyssey.js?v=1816-reward-list"></script>
 <script src="js/memory_battle.js?v=1807-guard-row"></script>
 <script src="js/towa_encounter.js?v=1748-towa-flash"></script>
 <script src="js/towa_notice.js?v=1554"></script>

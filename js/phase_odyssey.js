@@ -789,6 +789,7 @@
     const note = root.querySelector('[data-po-party-note]');
     if (note) note.textContent = active ? '挑戦中は編成を変更できません。' : '最初に選んだ3人で最後まで挑戦します。';
     renderSkipButton(); // build1813
+    renderFirstRewards(root, rec); // build1816
     layoutPager();
   }
 
@@ -1709,6 +1710,66 @@
       }, { passive:true });
       loadRanking(sheet, rankScope);
     });
+  }
+
+  // build1816: 初回突破報酬の一覧（表示用）。付与はサーバー（claim_phase_odyssey_first_rewards）で、内容はサーバーと揃える。
+  const FIRST_REWARD_TABLE = Object.freeze([
+    [10, 'レイドリセット券 ×1'],
+    [20, '結晶 ×10'],
+    [30, '結晶 ×10'],
+    [40, '創世ptルーレット券（銀） ×1'],
+    [50, '位相スキップ券（銀） ×1'],
+    [60, '位相スキップ券（銀） ×1'],
+    [70, '結晶 ×30'],
+    [80, '位相スキップ券（金） ×1'],
+    [90, '結晶 ×100'],
+    [100, '称号「理を知る者 I」'],
+    [150, '称号「理を知る者 II」'],
+    [200, '称号「理を知る者 III」'],
+    [250, '称号「理を知る者 IV」'],
+    [300, '称号「理を知る者 V」']
+  ]);
+  function renderFirstRewards(root, rec){
+    const box = root.querySelector('[data-po-rewards]');
+    if (!box) return;
+    const best = Math.max(0, toInt(rec.best_floor, 0));
+    const got = FIRST_REWARD_TABLE.filter(([f]) => best >= f).length;
+    const nextRow = FIRST_REWARD_TABLE.find(([f]) => best < f);
+    // 挑戦ページにも「次の初回報酬」を1行で出し、タップで報酬一覧（ルールページ）へ
+    const status = root.querySelector('.po-status');
+    if (status) {
+      let link = status.querySelector('[data-po-next-reward]');
+      if (!link) {
+        link = el('button', 'po-next-reward');
+        link.type = 'button';
+        link.dataset.poNextReward = '1';
+        link.addEventListener('click', () => {
+          gotoPage(1, true);
+          setTimeout(() => {
+            const target = root.querySelector('[data-po-rewards]');
+            const page = target && target.closest('.po-page');
+            if (target && page && page.classList.contains('is-vscroll')) page.scrollTo({ top: target.offsetTop - 6, behavior: 'smooth' });
+            else if (target) target.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+          }, 380);
+        });
+        status.append(link);
+      }
+      link.innerHTML = nextRow
+        ? `<span>次の初回突破報酬</span><b>FLOOR ${nextRow[0]}</b><em>${nextRow[1]}</em><i aria-hidden="true">›</i>`
+        : `<span>初回突破報酬</span><em>すべて獲得済み</em><i aria-hidden="true">›</i>`;
+    }
+    box.innerHTML =
+      '<header class="po-section-head is-compact"><div><h2>初回突破報酬</h2><span class="po-section-en">FIRST CLEAR REWARD</span></div>' +
+        `<span class="po-first-rewards-count">${got} / ${FIRST_REWARD_TABLE.length}</span></header>` +
+      '<p class="po-first-rewards-note">各階層を初めて突破した時に1回だけ受け取れます（アカウントごと・最高到達記録で判定）。' +
+        (nextRow ? `次の報酬：<b>FLOOR ${nextRow[0]}</b>` : 'すべて獲得済み') + '</p>' +
+      '<ul class="po-first-rewards-list">' +
+        FIRST_REWARD_TABLE.map(([f, label]) => {
+          const done = best >= f;
+          const isTitle = f >= 100;
+          return `<li class="${done ? 'is-got' : ''}${isTitle ? ' is-title' : ''}${nextRow && nextRow[0] === f ? ' is-next' : ''}"><b>${f}F</b><span>${label}</span>${done ? '<i aria-label="獲得済み">✓</i>' : ''}</li>`;
+        }).join('') +
+      '</ul>';
   }
 
   // build1814: 初回報酬はサーバーに保存された最高到達階層で判定。

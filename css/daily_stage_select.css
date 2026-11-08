@@ -103,9 +103,12 @@
 #shooting-daily-stage-select.zds-screen .zds-materials {
   display:flex;align-items:center;min-width:0;gap:4px;flex-wrap:nowrap;
 }
-#shooting-daily-stage-select.zds-screen .zds-record-state {
-  font:700 15px/1 "Noto Serif JP",serif;color:#ac771b;
+/* build1816: 右欄の大きな数字は「残り回数」。CHAPTERのRANKと同じCinzelの数字で表示する
+   （story_stage_select.css の共通ルールより詳細度を上げて、サイズを端末ごとに固定） */
+#shooting-daily-stage-select.zds-screen .zss-record .zss-record-rank b.zds-record-state {
+  font:700 26px/1 "Cinzel","Noto Serif JP",serif;color:#ac771b;letter-spacing:0;
 }
+#shooting-daily-stage-select.zds-screen .zss-card.is-exhausted .zss-record .zss-record-rank b.zds-record-state {color:#b0a18c}
 #shooting-daily-stage-select.zds-screen .zds-gimmicks .shooting-stage-gimmicks,
 #shooting-daily-stage-select.zds-screen .zss-gimmicks .shooting-stage-gimmicks,
 #shooting-daily-stage-select.zds-screen .zss-gimmicks .shooting-stage-gimmick-list {
@@ -128,7 +131,7 @@
   #shooting-daily-stage-select.zds-screen .zds-section > .zss-card .zss-reward-count {height:9px;line-height:9px;font-size:8px}
   #shooting-daily-stage-select.zds-screen .zds-section > .zss-card .zss-record {margin:5px 0;gap:4px}
   #shooting-daily-stage-select.zds-screen .zds-section > .zss-card .zss-record-rank {padding-bottom:5px}
-  #shooting-daily-stage-select.zds-screen .zds-section > .zss-card .zds-record-state {font-size:12px}
+  #shooting-daily-stage-select.zds-screen .zds-section > .zss-card .zss-record .zss-record-rank b.zds-record-state {font-size:22px}
   #shooting-daily-stage-select.zds-screen .zds-section > .zss-card .zss-record-score b {font-size:12px}
 }
 @media(max-height:620px){
@@ -155,7 +158,7 @@
   #shooting-daily-stage-select.zds-screen .zds-section > .zss-card .zss-record-rank {padding-bottom:3px}
   #shooting-daily-stage-select.zds-screen .zds-section > .zss-card .zss-record span {font-size:7px}
   #shooting-daily-stage-select.zds-screen .zds-section > .zss-card .zss-record-score b {font-size:10px}
-  #shooting-daily-stage-select.zds-screen .zds-section > .zss-card .zds-record-state {font-size:10px}
+  #shooting-daily-stage-select.zds-screen .zds-section > .zss-card .zss-record .zss-record-rank b.zds-record-state {font-size:17px}
   #shooting-daily-stage-select.zds-screen .zds-section > .zss-card .zss-gimmicks .shooting-stage-gimmick-chip {font-size:8px}
   #shooting-daily-stage-select.zds-screen .zds-section > .zss-card .zss-gimmicks .shooting-stage-gimmick-elements img {width:12px;height:12px}
 }
@@ -165,3 +168,11 @@
   #shooting-daily-stage-select.zds-screen .zds-section > .zss-card .zss-reward-chip {flex-basis:33px;width:33px;min-width:33px}
   #shooting-daily-stage-select.zds-screen .zds-section > .zss-card .zss-rewards {gap:3px}
 }
+
+/* build1816: 報酬アイコンが右の「残り回数」欄へはみ出さないよう、行の幅に収めて縮める */
+#shooting-daily-stage-select.zds-screen .zds-section > .zss-card .zss-card-body{min-width:0;overflow:hidden}
+#shooting-daily-stage-select.zds-screen .zds-section > .zss-card .zss-card-row-reward{min-width:0;overflow:hidden}
+#shooting-daily-stage-select.zds-screen .zds-section > .zss-card .zss-rewards,
+#shooting-daily-stage-select.zds-screen .zds-section > .zss-card .zds-materials{flex:1 1 auto;min-width:0;overflow:hidden}
+#shooting-daily-stage-select.zds-screen .zds-section > .zss-card .zss-rewards .zss-reward-chip{flex:0 1 34px!important;min-width:0!important;width:auto!important}
+#shooting-daily-stage-select.zds-screen .zds-section > .zss-card .zss-rewards .zss-reward-icon img{max-width:100%;height:auto;aspect-ratio:1}

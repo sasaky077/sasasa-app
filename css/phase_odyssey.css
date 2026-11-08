@@ -1105,3 +1105,23 @@ html body #shooting-event-root .shooting-score.is-po-floor[data-po-len="11"] .sh
 #screen-phase-odyssey .po-first-rewards-list li b{flex:0 0 27px;color:#94743c;font-family:Cinzel,serif}
 #screen-phase-odyssey .po-first-rewards-list li span{min-width:0;overflow-wrap:anywhere}
 @media(max-width:360px){#screen-phase-odyssey .po-first-rewards-list{gap:1px 6px}#screen-phase-odyssey .po-first-rewards-list li{font-size:9px}}
+
+/* build1816: 初回突破報酬（ルールページ） */
+#screen-phase-odyssey .po-first-rewards .po-section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
+#screen-phase-odyssey .po-first-rewards-count{font:700 12px/1 Cinzel,serif;color:#94743c;letter-spacing:.04em;white-space:nowrap}
+#screen-phase-odyssey .po-first-rewards-note b{color:#5d4a7a;font-family:Cinzel,serif}
+#screen-phase-odyssey .po-first-rewards-list li{position:relative}
+#screen-phase-odyssey .po-first-rewards-list li i{margin-left:auto;flex:none;font-style:normal;font-weight:700;color:#6f8b4e}
+#screen-phase-odyssey .po-first-rewards-list li.is-got{color:#a3967f}
+#screen-phase-odyssey .po-first-rewards-list li.is-got b{color:#b7a27a}
+#screen-phase-odyssey .po-first-rewards-list li.is-next{background:linear-gradient(90deg,rgba(214,189,138,.28),rgba(214,189,138,0));}
+#screen-phase-odyssey .po-first-rewards-list li.is-title span{color:#5d4a7a;font-weight:600}
+#screen-phase-odyssey .po-first-rewards-list li.is-title.is-got span{color:#a3967f;font-weight:400}
+#screen-phase-odyssey .po-first-rewards-list li b{flex-basis:34px}
+#screen-phase-odyssey .po-next-reward{grid-column:1 / -1;display:flex;align-items:baseline;gap:6px;width:100%;margin-top:6px;padding:5px 8px;
+  border:1px solid rgba(214,189,138,.7);border-radius:6px;background:linear-gradient(90deg,rgba(255,250,238,.95),rgba(246,236,214,.75));
+  font:500 10px/1.3 'Noto Serif JP',serif;color:#6b5a44;text-align:left;cursor:pointer;min-width:0}
+#screen-phase-odyssey .po-next-reward span{flex:none;color:#8c7651;font-size:9.5px}
+#screen-phase-odyssey .po-next-reward b{flex:none;font:700 11px/1 Cinzel,serif;color:#5d4a7a}
+#screen-phase-odyssey .po-next-reward em{flex:1 1 auto;min-width:0;font-style:normal;font-weight:600;color:#4a3a5c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#screen-phase-odyssey .po-next-reward i{flex:none;font-style:normal;color:#9e6c29;font-size:14px;line-height:1}

@@ -27853,6 +27853,9 @@
       }
 
       if (remaining) remaining.textContent = `${Math.max(0, Number(attempt.remaining || 0))} / ${Math.max(1, Number(attempt.max || 1))}`;
+      // build1816: 右欄の大きな数字＝今日の残り回数（CHAPTERのRANK表示と同じ位置・同じ書体）
+      const left = row.querySelector('[data-daily-left]');
+      if (left) left.textContent = String(Math.max(0, Number(attempt.remaining || 0)));
       const exhausted = Number(attempt.remaining || 0) <= 0;
       row.classList.toggle('is-exhausted', exhausted);
       row.setAttribute('aria-disabled', exhausted ? 'true' : 'false');
@@ -28082,7 +28085,7 @@
         </div>
         <div class="zss-record zds-record" aria-label="挑戦回数">
           <div class="zss-record-rank">
-            <span>挑戦回数</span><b class="zds-record-state">残り</b>
+            <span>残り回数</span><b class="zds-record-state" data-daily-left>1</b>
           </div>
           <div class="zss-record-score">
             <span>DAILY</span><b data-daily-remaining>1 / 1</b>
