@@ -99,12 +99,11 @@
         '<header class="noah-piece-head">' +
           '<button type="button" class="noah-piece-back" data-inori-close>‹ 戻る</button>' +
           '<div class="noah-piece-title"><small>SPECIAL STAGE</small><strong id="inori-piece-title">境界者 -イノリ-</strong></div>' +
-          '<div class="noah-piece-ticket">所持枚数 <b id="inori-piece-ticket-count">0</b>枚</div>' +
+          '<div class="noah-piece-head-spacer" aria-hidden="true"></div>' +
         '</header>' +
         '<div class="noah-piece-body">' +
           '<div class="noah-piece-lead">' +
             '<div class="en">FRAGMENTS OF THE BOUNDARY</div>' +
-            '<h2>境界の向こうへ</h2>' +
             '<p>イノリを打ち破り、欠片を集める。<br>9つの欠片が揃ったとき、祈りは仲間になる。</p>' +
           '</div>' +
           '<div class="noah-piece-lap-row" style="text-align:center;margin:6px 0 -6px;font:600 13px/1.2 \'Noto Serif JP\',serif;letter-spacing:.18em;color:#8c6c48;text-shadow:0 0 6px #fff,0 0 2px #fff;white-space:nowrap">' +
@@ -118,9 +117,8 @@
           '<div class="noah-piece-note" id="inori-piece-note">ステージクリアごとに、イノリの欠片を1つ獲得できます。</div>' +
         '</div>' +
         '<footer class="noah-piece-actions">' +
-          '<button type="button" class="noah-piece-challenge" id="inori-piece-challenge">' +
-            '<small>イノリ挑戦TICKET ×1</small>イノリに挑戦する' +
-          '</button>' +
+          '<div class="stage-piece-ticket-balance" aria-live="polite"><span>所持チケット</span><strong id="inori-piece-ticket-count">0</strong><span>枚</span><small>挑戦時に1枚消費</small></div>' +
+          '<button type="button" class="noah-piece-challenge" id="inori-piece-challenge">イノリに挑戦する</button>' +
           '<div class="noah-piece-complete" id="inori-piece-complete"></div>' +
         '</footer>' +
       '</section>';
@@ -152,8 +150,6 @@
     if (button) {
       // ノアと同じく、TICKETが無くても編成画面（ステージ情報）までは開ける。消費確認は出撃時。
       button.disabled = false;
-      const small = button.querySelector('small');
-      if (small) small.textContent = 'イノリ挑戦TICKET　所持 ' + ticket + '枚';
     }
     const complete = document.getElementById('inori-piece-complete');
     if (complete) { complete.classList.toggle('show', !!lastRewardMessage); complete.textContent = lastRewardMessage; }
