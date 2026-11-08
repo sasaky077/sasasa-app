@@ -5708,7 +5708,10 @@
     const bossHud = document.querySelector(`#${ROOT_ID} .shooting-boss-hud`);
     if (bossHud) {
       const bossName = bossHud.querySelector('.shooting-boss-name');
-      const displayName = ch702Boss ? ch702Boss.name : String(BOSS.displayName || BOSS.name || 'BOSS');
+      // build1795: 記憶決戦は「MEMORY / ボス名」（レイド用の「RAID ENEMY」表記を出さない）
+      const memoryBossName = isMemoryBattleStage() && selectedStage && selectedStage.memoryBattle && selectedStage.memoryBattle.bossName
+        ? 'MEMORY　' + selectedStage.memoryBattle.bossName : '';
+      const displayName = ch702Boss ? ch702Boss.name : (memoryBossName || String(BOSS.displayName || BOSS.name || 'BOSS'));
       if (bossName && bossName.textContent !== displayName) bossName.textContent = displayName;
     }
     renderBossElementIcon();
@@ -9437,7 +9440,18 @@
     }
 
     const elemental = base * rate * (incoming ? 1 : getRaidBreakDamageMultiplier());
-    return incoming ? elemental : applyHitComboDamage(elemental);
+    if (incoming) return elemental;
+    return applyMemoryArmor(applyHitComboDamage(elemental));
+  }
+
+  // build1795: 記憶決戦の掟「装甲」。ボスへの1HITごとに固定値を差し引く（最低1）。
+  function applyMemoryArmor(damage) {
+    const dmg = Number(damage || 0);
+    if (!(dmg > 0) || !state || !state.boss || combatElementTarget !== state.boss) return dmg;
+    const rule = getMemoryRule('armor');
+    const cut = rule ? Math.max(0, Number(rule.cut || 0)) : 0;
+    if (!cut) return dmg;
+    return Math.max(1, dmg - cut);
   }
 
   // build1563: DAILY RAIDの共有ブレイク達成中は、与ダメージ1.5倍（受けるダメージは対象外）。
@@ -10863,12 +10877,13 @@
   // ULT：自機左右へ完全追従する砲台を5秒間展開し、左右各25発のHOMING。
   // ============================================================
   function ensureConjureVisualStyles() {
-    if (document.getElementById('shooting-conjure-style-build1791')) return;
+    if (document.getElementById('shooting-conjure-style-build1797')) return;
     document.getElementById('shooting-conjure-style-build991')?.remove();
+    document.getElementById('shooting-conjure-style-build1791')?.remove();
     const oldStyle = document.getElementById('shooting-conjure-style-build971');
     if (oldStyle) oldStyle.remove();
     const style = document.createElement('style');
-    style.id = 'shooting-conjure-style-build1791';
+    style.id = 'shooting-conjure-style-build1797';
     style.textContent = `
       .shooting-conjure-preview,
       .shooting-conjure-turret,
@@ -10928,7 +10943,7 @@
         opacity:.95;
       }
       /* build1659: ULT「血界・緋糸万華」— 画面全体に張り巡らされる緋色の蜘蛛の巣 */
-      .shooting-camilla-bound-web-fx{position:absolute;left:0;top:0;z-index:12;pointer-events:none;
+      .shooting-camilla-bound-web-fx{position:absolute;left:0;top:0;z-index:12;pointer-events:none;will-change:transform;
         background:center/contain no-repeat;opacity:.95;animation:camillaBoundIn .22s ease-out}
       @keyframes camillaBoundIn{from{opacity:0}to{opacity:.95}} /* build1665: scaleは配置transformまで拡縮して位置がずれるため不透明度のみ */
       /* build1659: ULTの蜘蛛の巣は背面（背景のすぐ上）。自機・敵・弾・ゲージ等のUIはすべてこの上に重なる */
@@ -10957,13 +10972,18 @@
       @keyframes camillaWebBurst{0%{scale:.25;opacity:1}55%{scale:1.05;opacity:1}100%{scale:1.15;opacity:0}}
       /* build1659: カミラの蜘蛛（カサカサ動く） */
       .shooting-conjure-turret.camilla-spider{width:40px;height:40px;opacity:1}
-      .camilla-spider .shooting-conjure-object-img{filter:none;rotate:var(--spider-face,0rad);
+      .shooting-conjure-turret.camilla-spider{will-change:transform}
+      .camilla-spider .shooting-conjure-object-img{filter:none;will-change:translate;
         animation:camillaSpiderSkitter .09s steps(2) infinite}
       .camilla-spider.is-paused .shooting-conjure-object-img{animation:none}
       .camilla-spider.is-latched .shooting-conjure-object-img{animation:none;scale:1.18}
       .camilla-spider.is-vanishing{opacity:0;transition:opacity .14s ease}
       @keyframes camillaSpiderSkitter{0%{translate:-1px 0}100%{translate:1px 1px}}
-      .shooting-conjure-turret{opacity:.96;transition:opacity .22s ease}
+      .shooting-conjure-turret{opacity:.96;transition:opacity .22s ease;will-change:transform}
+      /* build1797: 設置砲台の画像のドロップシャドウ（毎回ぼかし処理）をやめ、軽い円形の光に置き換える */
+      .shooting-conjure-turret:not(.camilla-spider) .shooting-conjure-object-img{filter:none}
+      .shooting-conjure-turret:not(.camilla-spider)::before{content:"";position:absolute;inset:-6px;border-radius:50%;pointer-events:none;
+        background:radial-gradient(circle,rgba(225,238,245,.42) 0 38%,rgba(225,238,245,0) 70%)}
       .shooting-conjure-turret.is-expiring{opacity:.28}
       .shooting-conjure-turret.volley .shooting-conjure-object-img{animation:shootingConjureVolley .18s ease-out}
       .shooting-conjure-ult-turret{width:54px;height:54px;opacity:.98}
@@ -10998,10 +11018,8 @@
   }
 
   function getConjurePlacementPoint(c) {
-    const arena = document.getElementById('shooting-arena');
-    if (!arena || !state?.player) return null;
-    const w = Number(arena.clientWidth || 0);
-    const h = Number(arena.clientHeight || 0);
+    if (!state?.player || !document.getElementById('shooting-arena')) return null;
+    const { w, h } = getArenaSizeFast(); // build1797
     const offsetY = Math.max(56, Number(c?.conjurePlaceOffsetY || 146));
     return {
       x: clamp(Number(state.player.x || w * .5), 28, Math.max(28, w - 28)),
@@ -11564,17 +11582,30 @@
     getCamillaWebDataUri.cache = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
     return getCamillaWebDataUri.cache;
   }
+  // build1797: 盤面サイズ・ボスの幅は毎フレーム測らない（offsetWidth/clientWidth＝強制レイアウト）。
+  //  蜘蛛や守護者は1体ごとに読んでいて、体数ぶん毎フレームのレイアウト計算が走っていた。
+  function getArenaSizeFast() {
+    const r = getArenaInputRect();
+    if (r && r.width > 0 && r.height > 0) return { w: r.width, h: r.height };
+    const arena = document.getElementById('shooting-arena');
+    return { w: Number(arena && arena.clientWidth || 360), h: Number(arena && arena.clientHeight || 640) };
+  }
+  function getBossHalfWidthFast(now) {
+    const t = Number(now || performance.now());
+    if (state && state._bossHalfW > 0 && t - Number(state._bossHalfWAt || 0) < 500) return state._bossHalfW;
+    const boss = document.getElementById(BOSS_ID);
+    const half = Math.max(30, Number(boss && boss.offsetWidth || 128) * Math.max(.1, Number(getResponsiveBossDisplayScale() || 1)) * 0.32);
+    if (state) { state._bossHalfW = half; state._bossHalfWAt = t; }
+    return half;
+  }
+
   function getCamillaSpiderTargets() {
     const list = (state?.normalEnemies || []).filter(e => e && e.hp > 0 && e.el);
     if (!isNormalBattle() && state?.boss && Number(state.boss.hp) > 0) list.push(state.boss);
     return list;
   }
   function getCamillaSpiderReach(target) {
-    if (target === state?.boss) {
-      const boss = document.getElementById(BOSS_ID);
-      const half = Math.max(30, Number(boss && boss.offsetWidth || 128) * Math.max(.1, Number(getResponsiveBossDisplayScale() || 1)) * 0.32);
-      return half;
-    }
+    if (target === state?.boss) return getBossHalfWidthFast();
     return Math.max(20, Number(target._hw || 26));
   }
   // build1659: カミラのショット（蜘蛛）の巣は敵・BOSSより前面に描く（ULTの巣は背面のまま）
@@ -11615,9 +11646,7 @@
   function updateCamillaPlayerSpider(spider, c, now) {
     const dt = Math.min(0.05, Math.max(0, (now - Number(spider.lastAt || now)) / 1000));
     spider.lastAt = now;
-    const arena = document.getElementById('shooting-arena');
-    const w = Number(arena && arena.clientWidth || 360);
-    const h = Number(arena && arena.clientHeight || 640);
+    const { w, h } = getArenaSizeFast();
 
     // 張り付き中：標的に追従し、時間が来たら捕縛＋ダメージを与えて消える
     if (spider.latchTarget) {
@@ -11665,8 +11694,11 @@
     spider.y = clamp(spider.y + Math.sin(moveAngle) * speed * dt, 16, Math.max(16, h - 16));
     positionUnit(spider.el, spider.x, spider.y);
     if (spider.el) {
-      spider.el.style.setProperty('--spider-face', `${(spider.heading + Math.PI / 2).toFixed(3)}rad`);
-      spider.el.classList.toggle('is-paused', paused);
+      // build1797: 向きは画像に直接（CSS変数だと子孫まで再計算が走る）。0.06rad刻みで変わった時だけ書く。
+      const img = spider.imgEl || (spider.imgEl = spider.el.querySelector('.shooting-conjure-object-img'));
+      const face = Math.round((spider.heading + Math.PI / 2) / 0.06) * 0.06;
+      if (img && spider.faceShown !== face) { spider.faceShown = face; img.style.rotate = face.toFixed(2) + 'rad'; }
+      if (spider.pausedShown !== paused) { spider.pausedShown = paused; spider.el.classList.toggle('is-paused', paused); }
     }
 
     // 標的に触れたら張り付く
@@ -16254,7 +16286,8 @@
         arena.appendChild(fx);
         holder.camWebFx = fx;
       }
-      fx.style.width = fx.style.height = `${Math.round(size)}px`;
+      const px = Math.round(size); // build1797: 大きさは変わった時だけ書く
+      if (fx._sizePx !== px) { fx._sizePx = px; fx.style.width = fx.style.height = `${px}px`; }
       positionUnit(fx, x, y);
     };
     for (const e of (state.normalEnemies || [])) {
@@ -16265,11 +16298,13 @@
     }
     if (state.boss) {
       const bound = !isNormalBattle() && Number(state.boss.hp) > 0 && now < Number(state.boss.camillaWebRootUntil || 0);
-      const bossEl = document.getElementById(BOSS_ID);
-      const size = Math.max(90, Number(bossEl && bossEl.offsetWidth || 128) * Math.max(.1, Number(getResponsiveBossDisplayScale() || 1)) * 0.95);
+      // build1797: ボスの幅は毎フレーム測らない（getBossHalfWidthFast は幅×倍率×0.32 を0.5秒キャッシュ）
+      const size = Math.max(90, getBossHalfWidthFast(now) / 0.32 * 0.95);
       sync(state.boss, Number(state.boss.x || 0), Number(state.boss.y || 0), size, bound);
     }
-    // 撃破されて一覧から外れた敵の表示も残さない
+    // 撃破されて一覧から外れた敵の表示も残さない（build1797: 掃除は0.5秒ごと）
+    if (now - Number(state.camWebSweepAt || 0) < 500 && anyBound) return;
+    state.camWebSweepAt = now;
     arena.querySelectorAll('.shooting-camilla-bound-web-fx').forEach(fx => {
       const owned = (state.normalEnemies || []).some(e => e && e.camWebFx === fx) || (state.boss && state.boss.camWebFx === fx);
       if (!owned) fx.remove();
@@ -25304,8 +25339,7 @@
     const stunned = now < Math.max(Number(state.normalEnemyStunUntil || 0), Number(state.fullEnemyStopUntil || 0), Number(state.angeEnemyFreezeUntil || 0));
     if (!stunned) {
       // build1762: PHASEごとに決まったリヴィアからの相対位置へ付き従う（リヴィアが動けば一緒に動く）
-      const arena = document.getElementById('shooting-arena');
-      const w = Number(arena?.clientWidth || 390), h = Number(arena?.clientHeight || 700);
+      const { w, h } = getArenaSizeFast(); // build1797
       const off = getMemoryGuardOffset(Number(enemy.guardIndex || 0), w, h);
       enemy.baseX = clamp(Number(state.boss.x) + off.x, 30, w - 30);
       enemy.baseY = clamp(Number(state.boss.y) + off.y, 40, h * .62);
@@ -25424,8 +25458,124 @@
     beginPlayerDefeat();
   }
 
+  // ============================================================
+  // build1795: 記憶決戦の掟「狙撃」— 照準で自機を追い、止まった位置へ即死の狙撃
+  //  lockMs の間、照準が敵の認識する自機の位置（getEnemyAimPosition）を追う。
+  //  最後の freezeMs は照準が止まり、その位置へ撃ち込む。照準の円（radius）の中にいれば出撃中のキャラが即死。
+  //  無敵が効いていれば退けられる（ignoreTimeStop:false のステージは時間停止・全体停止でも可）。
+  //  気配遮断中は敵が認識する位置（発動時の位置）を狙う。
+  // ============================================================
+  function ensureMemorySniperStyle() {
+    if (document.getElementById('memory-sniper-style-v1795')) return;
+    const st = document.createElement('style');
+    st.id = 'memory-sniper-style-v1795';
+    st.textContent = `
+      .memory-sniper-reticle{position:absolute;left:0;top:0;z-index:37;pointer-events:none;width:var(--ms-d,72px);height:var(--ms-d,72px);
+        margin:calc(var(--ms-d,72px) / -2) 0 0 calc(var(--ms-d,72px) / -2);will-change:transform}
+      .memory-sniper-reticle i{position:absolute;inset:0;border-radius:50%;border:1.5px solid rgba(255,96,72,.85);
+        box-shadow:0 0 6px rgba(255,70,50,.5),inset 0 0 6px rgba(255,70,50,.25);animation:msSpin 2.4s linear infinite}
+      .memory-sniper-reticle i::before,.memory-sniper-reticle i::after{content:"";position:absolute;left:50%;top:50%;background:rgba(255,110,90,.9)}
+      .memory-sniper-reticle i::before{width:1.5px;height:calc(100% + 16px);transform:translate(-50%,-50%)}
+      .memory-sniper-reticle i::after{height:1.5px;width:calc(100% + 16px);transform:translate(-50%,-50%)}
+      .memory-sniper-reticle b{position:absolute;left:50%;top:-16px;transform:translateX(-50%);font:700 9px/1 'Cinzel',serif;letter-spacing:.2em;color:#ffd9cf;
+        text-shadow:0 0 4px rgba(255,60,40,.9),0 0 1px #000;white-space:nowrap}
+      .memory-sniper-reticle.is-frozen i{border-color:#ff3b2a;border-width:2.5px;animation:msBlink .12s steps(2) infinite}
+      .memory-sniper-reticle.is-frozen b{color:#fff}
+      @keyframes msSpin{to{transform:rotate(360deg)}}
+      @keyframes msBlink{50%{opacity:.35}}
+      .memory-sniper-beam{position:absolute;left:0;top:0;z-index:38;pointer-events:none;height:5px;margin-top:-2.5px;transform-origin:0 50%;
+        background:linear-gradient(90deg,rgba(255,255,255,.2),#fff 30%,#ffd0c4 70%,rgba(255,80,60,.6));
+        box-shadow:0 0 10px rgba(255,90,70,.9),0 0 22px rgba(255,60,40,.55);animation:msBeam .38s ease-out forwards}
+      @keyframes msBeam{0%{opacity:1}100%{opacity:0;height:1px}}
+      .memory-sniper-impact{position:absolute;left:0;top:0;z-index:38;pointer-events:none;width:90px;height:90px;margin:-45px 0 0 -45px;border-radius:50%;
+        background:radial-gradient(circle,#fff 0 18%,rgba(255,170,140,.85) 34%,rgba(255,70,50,0) 70%);animation:msImpact .42s ease-out forwards}
+      @keyframes msImpact{0%{transform:scale(.4);opacity:1}100%{transform:scale(1.3);opacity:0}}
+    `;
+    document.head.appendChild(st);
+  }
+  function clearMemorySniper() {
+    const ms = state && state.memorySniper;
+    if (ms && ms.el) { try { ms.el.remove(); } catch (_) {} ms.el = null; }
+  }
+  function updateMemorySniper(now) {
+    const rule = getMemoryRule('sniper');
+    if (!rule || !state || !state.boss || !state.player) return;
+    if (state.ended || state.finishing || !(state.boss.hp > 0)) { clearMemorySniper(); return; }
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    ensureMemorySniperStyle();
+    let ms = state.memorySniper;
+    if (!ms) ms = state.memorySniper = { nextAt: now + Math.max(3000, Number(rule.firstMs || 9000)), lockStart: 0, fireAt: 0, x: 0, y: 0, el: null };
+    const lockMs = Math.max(1200, Number(rule.lockMs || 2600));
+    const freezeMs = Math.max(200, Math.min(lockMs - 300, Number(rule.freezeMs || 550)));
+    const radius = Math.max(16, Number(rule.radius || 36));
+    // KO演出・PHASE切替中・登場演出中は撃たない（予定を後ろへずらし、照準は消す）
+    if (state.koTransition || state.phaseTransition || now < getBossLockUntil(now)) {
+      if (ms.fireAt) { ms.fireAt = 0; ms.lockStart = 0; clearMemorySniper(); }
+      if (ms.nextAt < now + 1200) ms.nextAt = now + 1200;
+      return;
+    }
+    if (!ms.fireAt) {
+      if (now < ms.nextAt) return;
+      ms.lockStart = now;
+      ms.fireAt = now + lockMs;
+      const aim = getEnemyAimPosition();
+      ms.x = Number(aim.x || 0); ms.y = Number(aim.y || 0);
+      ms.el = document.createElement('div');
+      ms.el.className = 'memory-sniper-reticle';
+      ms.el.style.setProperty('--ms-d', Math.round(radius * 2) + 'px');
+      ms.el.innerHTML = '<i></i><b>LOCK</b>';
+      arena.appendChild(ms.el);
+    }
+    const frozen = now >= ms.fireAt - freezeMs;
+    if (!frozen) {
+      // 敵が認識している自機の位置へ、少し遅れて追従する
+      const aim = getEnemyAimPosition();
+      const k = Math.min(1, 0.22);
+      ms.x += (Number(aim.x || 0) - ms.x) * k;
+      ms.y += (Number(aim.y || 0) - ms.y) * k;
+    } else if (ms.el && !ms.el.classList.contains('is-frozen')) {
+      ms.el.classList.add('is-frozen');
+    }
+    if (ms.el) ms.el.style.transform = `translate(${ms.x.toFixed(1)}px,${ms.y.toFixed(1)}px)`;
+    if (now < ms.fireAt) return;
+
+    // 発射
+    clearMemorySniper();
+    ms.fireAt = 0; ms.lockStart = 0;
+    ms.nextAt = now + Math.max(5000, Number(rule.intervalMs || 13000));
+    const bx = Number(state.boss.x || 0), by = Number(state.boss.y || 0);
+    const len = Math.hypot(ms.x - bx, ms.y - by);
+    const beam = document.createElement('div');
+    beam.className = 'memory-sniper-beam';
+    beam.style.width = Math.round(len) + 'px';
+    beam.style.transform = `translate(${bx.toFixed(1)}px,${by.toFixed(1)}px) rotate(${Math.atan2(ms.y - by, ms.x - bx)}rad)`;
+    const impact = document.createElement('div');
+    impact.className = 'memory-sniper-impact';
+    impact.style.transform = `translate(${ms.x.toFixed(1)}px,${ms.y.toFixed(1)}px)`;
+    arena.appendChild(beam); arena.appendChild(impact);
+    setTimeout(() => { beam.remove(); impact.remove(); }, 460);
+    const px = Number(state.player.x || 0), py = Number(state.player.y || 0);
+    if (Math.hypot(px - ms.x, py - ms.y) > radius) return; // 照準の外：外れ
+    // build1796: 狙撃は時間停止（アルノ等）・全体停止では防げない（ignoreTimeStop）。無敵だけが退ける。
+    const sniperProtected = rule.ignoreTimeStop
+      ? (() => { const m = getActiveMember(); return !!(m && now < Number(m.invincibleUntil || 0)); })()
+      : isMemoryJudgmentProtected(now);
+    if (sniperProtected) { showMemoryGuardNotice('狙撃を退けた', true, 'SNIPE'); return; }
+    const member = getActiveMember();
+    if (!member || member.hp <= 0) return;
+    const name = String((getCurrentCharacter() || {}).name || '');
+    showDamageNumber(px, py, Math.max(1, Math.round(member.hp)), 'player', true, '');
+    member.hp = 0;
+    triggerPlayerHitScreenShake();
+    renderHud();
+    showMemoryGuardNotice(name ? `${name}、撃ち抜かれる` : '狙撃', false, 'SNIPE');
+    beginPlayerDefeat();
+  }
+
   function updateMemoryMechanics(now) {
     updateMemoryJudgment(now);
+    updateMemorySniper(now);
     const rule = getMemoryGuardianRule();
     if (!rule || !state || !state.boss) return;
     if (state.ended || state.finishing || state.koTransition || !(state.boss.hp > 0)) return;

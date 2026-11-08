@@ -160,6 +160,8 @@
     drop: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5c-3.2 4.6-6.3 8.3-6.3 12a6.3 6.3 0 0 0 12.6 0c0-3.7-3.1-7.4-6.3-12zm-2.6 12.6c.2 1.6 1.2 2.8 2.7 3.1" fill="currentColor"/></svg>',
     torii: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 4.5c3 .9 6.2 1.3 9.5 1.3s6.5-.4 9.5-1.3v2.6c-.9.2-1.8.4-2.8.6V9H20v2h-2.6v9.5h-2.2V11H8.8v9.5H6.6V11H4V9h2.6V7.7c-1-.2-1.9-.4-2.8-.6z" fill="currentColor"/></svg>',
     judgment: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 1.8 5 13.2h5.6L9.4 22.2 19 9.8h-5.8z" fill="currentColor"/></svg>',
+    sniper: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 1.5v5M12 17.5v5M1.5 12h5M17.5 12h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/></svg>',
+    armor: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4.5h16v6.2c0 5-3.4 9-8 10.8-4.6-1.8-8-5.8-8-10.8z" fill="currentColor" opacity=".25"/><path d="M4 4.5h16v6.2c0 5-3.4 9-8 10.8-4.6-1.8-8-5.8-8-10.8zM8 9h8M8 12.5h8M9.5 16h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
     rule: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="currentColor"/></svg>',
   });
   function ruleRows(def){
@@ -177,6 +179,12 @@
       } else if (rule.type === 'judgment') {
         const sec = Math.round(Math.max(5000, Number(rule.intervalMs || 20000)) / 1000);
         rows.push({ icon: 'judgment', name: '神罰', text: `約${sec}秒ごとに、出撃中のキャラが即死する` });
+      } else if (rule.type === 'sniper') {
+        const sec = Math.round(Math.max(5000, Number(rule.intervalMs || 13000)) / 1000);
+        rows.push({ icon: 'sniper', name: '狙撃', text: `約${sec}秒ごとに自機を照準で捉え、即死の狙撃を撃ち込む` });
+      } else if (rule.type === 'armor') {
+        const cut = Math.max(0, Math.floor(Number(rule.cut || 0)));
+        rows.push({ icon: 'armor', name: '装甲', text: `ボスへの攻撃は1HITごとに${cut}ダメージ差し引かれる` });
       } else if (rule.type === 'guardians') {
         const hitHp = Math.max(0, Math.floor(Number(rule.hitHp || 0)));
         const sec = Math.round(Math.max(3000, Number(rule.respawnMs || 8000)) / 1000);

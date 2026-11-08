@@ -2076,6 +2076,8 @@
     guardians: Object.freeze({ name: '守護者', desc: '守護者を全て倒すまでボスに攻撃が通らない。しばらくすると再び現れる。' }),
     hit_count: Object.freeze({ name: 'HIT数', desc: '守護者は威力に関係なく、攻撃を当てた回数（hitHp）で倒れる。' }),
     drain_spiders: Object.freeze({ name: '吸血の子蜘蛛', desc: '張り付いた子蜘蛛が体力を吸い、ボスを回復させる。' }),
+    sniper: Object.freeze({ name: '狙撃', desc: '定期的に自機を照準で捉え、即死の狙撃を撃ち込む。' }),
+    armor: Object.freeze({ name: '装甲', desc: 'ボスへの攻撃は1HITごとに一定のダメージが差し引かれる。' }),
     element_barrier: Object.freeze({ name: '属性結界', desc: 'ボスにも取り巻きにも結界。弱点属性の攻撃しか通らない（無属性は等倍で通る）。includeAdds:false で取り巻きは対象外。' }),
   });
   const MEMORY_BATTLE_STAGES = Object.freeze([
@@ -2111,6 +2113,21 @@
         Object.freeze({ type: 'judgment', firstMs: 15000, intervalMs: 20000, warnMs: 3000 }),
       ]),
       extra: Object.freeze({ bossElement: 'light', enemyElement: 'light', inoriToriiHp: 1300 }),
+    }),
+    // build1795: 03 テスト（木）。火しか通らない＋狙撃（即死）＋装甲（1HITごとに固定値カット）。
+    Object.freeze({
+      no: 3, bossKey: 'test', bossName: 'テスト', title: '白き照準の記憶',
+      panelImage: 'images/test_panel.webp',
+      enemyId: SHOOTING_ENEMY_ID.RAID_TEST, element: 'wood',
+      background: 'images/battle_bg_01.webp',
+      bossGaugeHps: Object.freeze([7000, 8000, 9000]),
+      timeLimitSeconds: 180,
+      rules: Object.freeze([
+        Object.freeze({ type: 'element_barrier' }),
+        Object.freeze({ type: 'sniper', firstMs: 9000, intervalMs: 13000, lockMs: 2600, freezeMs: 550, radius: 36, ignoreTimeStop: true }), // build1796: 時間停止では防げない
+        Object.freeze({ type: 'armor', cut: 45 }),
+      ]),
+      extra: Object.freeze({ bossElement: 'wood', enemyElement: 'wood' }),
     }),
   ]);
   const MEMORY_BATTLE_SLOT_COUNT = 8;

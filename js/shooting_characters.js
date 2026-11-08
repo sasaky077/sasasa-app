@@ -3050,7 +3050,7 @@
     id: CHARACTER_ID.CONJURER,
     effectKey: 'conjure',
     label: 'SUMMON / TURRET', // build1744: 表示名 CONJURE→SUMMON
-    description: '無機構造物を生成して戦う設置型SR。タップ中に自機前方へ設置予告を表示し、離すと半透明砲台を生成する。最大3基。各砲台は近くの敵へ旋回しながら、3秒間、1秒ごとに5発の扇状弾を射出する。',
+    description: '無機構造物を生成して戦う設置型SR。タップ中に自機前方へ設置予告を表示し、離すと半透明砲台を生成する。最大2基。各砲台は近くの敵へ旋回しながら、3秒間、1秒ごとに5発の扇状弾を射出する。',
     ultName: 'オーバーライド・コンストラクト',
     ultDescription: '自身の左右へ追従砲台を5秒間召喚。左右それぞれ毎秒5発、計25発ずつのHOMING弾を自動射出する。HOMING弾は敵に命中すると消滅する。ULT中も通常砲台の射撃・新規設置は継続できる。',
     shotType: 'conjure',
@@ -3060,7 +3060,7 @@
     bulletSpeed: 520,
     // build1792: 8方向→「近くの敵へ旋回して撃つ扇状5発」。命中が大きく増えるので1発の威力は0.40→0.18。
     shotPowerRate: 0.18,
-    conjureMaxTurrets: 3,
+    conjureMaxTurrets: 2,        // build1797: 3→2（扇状化で強くなりすぎたため）
     conjureLifetimeMs: 3000,
     conjureVolleyIntervalMs: 1000,
     conjureVolleyCount: 3,
