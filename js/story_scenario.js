@@ -6453,7 +6453,7 @@
         "speaker": "トイフェル",
         "left": "トイフェル",
         "right": "",
-        "text": "サポート、頼んだよ。",
+        "text": "サポートは頼んだよ。",
         "location": "scene_in_tower.webp"
       }
     ],

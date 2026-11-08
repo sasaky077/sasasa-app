@@ -5465,11 +5465,826 @@
     }
   }
 
+
+  // ============================================================
+  // build1811: 自機弾のCanvas描画（第1段階）
+  //  対象：SHOT FX（SPREAD / PIERCING / HOMING）。通常弾など他の弾は build1812 の自動変換で扱う。
+  //  DOM要素を作らず、データ（p.x/p.y/_hw/_hh）だけで当たり判定・移動を行い、
+  //  毎フレーム1枚のCanvasへまとめて描く。見た目は CSS（v199属性色・shot_fx.css）をスプライトで再現。
+  //  ・問題があれば PLAYER_BULLET_CANVAS_ENABLED=false で即座に従来のDOM弾へ戻せる。
+  // ============================================================
+  const PLAYER_BULLET_CANVAS_ENABLED = true;
+  const PLAYER_BULLET_CANVAS_ID = 'shooting-player-bullet-canvas';
+  const PLAYER_BULLET_ELEMENTS = ['fire', 'aqua', 'wood', 'dark', 'light'];
+  const playerBulletSpriteCache = new Map();
+
+  function createPlayerBulletVirtualElement(className) {
+    const names = new Set(String(className || '').split(/\s+/).filter(Boolean));
+    const virtual = {
+      __playerCanvas: true,
+      id: '',
+      style: { setProperty() {}, removeProperty() {}, getPropertyValue() { return ''; } },
+      classList: {
+        contains(n) { return names.has(n); },
+        add(...items) { items.forEach(i => names.add(i)); },
+        remove(...items) { items.forEach(i => names.delete(i)); },
+        toggle(n, force) { const on = force === undefined ? !names.has(n) : !!force; if (on) names.add(n); else names.delete(n); return on; },
+        replace(a, b) { if (!names.has(a)) return false; names.delete(a); names.add(b); return true; },
+      },
+      __alive: true,
+      remove() { this.__alive = false; },
+      animate() { return null; },
+      getBoundingClientRect() { return { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 }; },
+    };
+    Object.defineProperty(virtual, 'className', { get() { return [...names].join(' '); }, set(v) { names.clear(); String(v || '').split(/\s+/).filter(Boolean).forEach(n => names.add(n)); } });
+    Object.defineProperty(virtual, 'isConnected', { get() { return virtual.__alive; } });
+    return virtual;
+  }
+  function getPlayerBulletElementKey(className) {
+    const m = String(className || '').match(/shooting-bullet-(fire|aqua|wood|dark|light|noah)\b/);
+    return m ? m[1] : 'neutral';
+  }
+  // SHOT FX 適用後の弾をCanvasへ切り替える（DOMを外して仮想要素に置き換える）
+  function convertPlayerBulletToCanvas(p, kind) {
+    if (!PLAYER_BULLET_CANVAS_ENABLED || !p || !p.el || p.el.__playerCanvas || p.canvasRendered) return p;
+    const el = p.el;
+    const v = createPlayerBulletVirtualElement(el.className);
+    v._shotFx = el._shotFx; v._shotFxPx = el._shotFxPx; v._shotFxPy = el._shotFxPy; v._shotFxRot = el._shotFxRot;
+    try { el.remove(); } catch (_) {}
+    p.el = v;
+    p.playerCanvasKind = kind;
+    p.playerCanvasElement = getPlayerBulletElementKey(v.className);
+    return p;
+  }
+
+  // ---- スプライト（CSSの見た目を一度だけ描いて使い回す） ----
+  const PB_FX_PALETTE = Object.freeze({
+    neutral: { hi:'#fff6dc', mid:'#e2b45c', deep:'#8c6424', rgb:'226,180,92' },
+    fire:    { hi:'#ffe9d6', mid:'#ff6b3d', deep:'#b02a14', rgb:'255,107,61' },
+    aqua:    { hi:'#e3f7ff', mid:'#38a8ff', deep:'#1556a8', rgb:'56,168,255' },
+    wood:    { hi:'#ecffe2', mid:'#46c25e', deep:'#1f7432', rgb:'70,194,94' },
+    dark:    { hi:'#f3e8ff', mid:'#9b5cf0', deep:'#4f2394', rgb:'155,92,240' },
+    light:   { hi:'#fffbe0', mid:'#ffc42e', deep:'#a8770a', rgb:'255,196,46' },
+    noah:    { hi:'#ffffff', mid:'#b9bcc6', deep:'#5e6270', rgb:'176,180,192' },
+  });
+  // box-shadow（ぼかしのみ）を、形の外側にだけ描く。形を遠くへ描いて影だけを戻すやり方。
+  function pbShadow(ctx, drawPath, color, blur, scale) {
+    const off = 4000;
+    ctx.save();
+    ctx.shadowColor = color;
+    ctx.shadowBlur = blur * scale;
+    ctx.shadowOffsetX = off * scale;
+    ctx.translate(-off, 0);
+    ctx.fillStyle = '#000';
+    drawPath(ctx);
+    ctx.fill();
+    ctx.restore();
+  }
+  function pbRoundRect(ctx, x, y, w, h, r) {
+    const rr = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + rr, y); ctx.lineTo(x + w - rr, y); ctx.arcTo(x + w, y, x + w, y + rr, rr);
+    ctx.lineTo(x + w, y + h - rr); ctx.arcTo(x + w, y + h, x + w - rr, y + h, rr);
+    ctx.lineTo(x + rr, y + h); ctx.arcTo(x, y + h, x, y + h - rr, rr);
+    ctx.lineTo(x, y + rr); ctx.arcTo(x, y, x + rr, y, rr); ctx.closePath();
+  }
+  function buildPlayerBulletSprite(kind, elKey, charged, moon, scale) {
+    // 描画領域（要素の中心を原点にした CSS px）。グローと尾が収まるよう余白を取る
+    const box = kind === 'spread' ? { l: -22, t: -24, r: 22, b: 40 }
+      : kind === 'homing' ? { l: -30, t: -30, r: 30, b: 50 }
+      : { l: -30, t: (charged ? -52 : -44), r: 30, b: (charged ? 110 : 84) }; // pierce
+    const cw = Math.ceil((box.r - box.l) * scale), ch = Math.ceil((box.b - box.t) * scale);
+    const cv = document.createElement('canvas');
+    cv.width = cw; cv.height = ch;
+    const ctx = cv.getContext('2d');
+    ctx.scale(scale, scale);
+    ctx.translate(-box.l, -box.t);
+    const pal = PB_FX_PALETTE[elKey] || PB_FX_PALETTE.neutral;
+    const rgba = a => `rgba(${pal.rgb},${a})`;
+    if (kind === 'spread') {
+      const w = 8, h = 11, x = -w / 2, y = -h / 2;
+      const path = c => { c.beginPath(); c.ellipse(0, 0, w / 2, h / 2, 0, 0, Math.PI * 2); };
+      if (moon) { pbShadow(ctx, path, 'rgba(255,210,58,.6)', 18, scale); pbShadow(ctx, path, 'rgba(255,244,157,.95)', 8, scale); }
+      else { pbShadow(ctx, path, rgba(.36), 13, scale); pbShadow(ctx, path, rgba(.9), 6, scale); }
+      // 本体：楕円の放射グラデ（ellipse 60% 55% at 50% 38%）
+      ctx.save();
+      path(ctx); ctx.clip();
+      ctx.translate(0, y + h * .38);
+      ctx.scale(1, (h * .55) / (w * .6));
+      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, w * .6);
+      g.addColorStop(0, '#fff'); g.addColorStop(.34, '#fff'); g.addColorStop(.52, pal.hi); g.addColorStop(.82, pal.mid); g.addColorStop(1, pal.deep);
+      ctx.fillStyle = g; ctx.fillRect(-w, -h * 2, w * 2, h * 4);
+      ctx.restore();
+      path(ctx); ctx.lineWidth = 1; ctx.strokeStyle = rgba(moon ? .6 : .55); ctx.stroke();
+      // ::before 尾（top 72%, 8x16 三角）
+      const ty = y + h * .72;
+      const tg = ctx.createLinearGradient(0, ty, 0, ty + 16);
+      tg.addColorStop(0, rgba(.78)); tg.addColorStop(.5, rgba(.34)); tg.addColorStop(1, rgba(0));
+      ctx.beginPath(); ctx.moveTo(x + w * .04, ty); ctx.lineTo(x + w * .96, ty); ctx.lineTo(0, ty + 16); ctx.closePath();
+      ctx.fillStyle = tg; ctx.fill();
+      // ::after 白い一筋（top 96%, 1.5x8）
+      const sy = y + h * .96;
+      const sg = ctx.createLinearGradient(0, sy, 0, sy + 8);
+      sg.addColorStop(0, 'rgba(255,255,255,.9)'); sg.addColorStop(1, 'rgba(255,255,255,0)');
+      pbRoundRect(ctx, -.75, sy, 1.5, 8, 1); ctx.fillStyle = sg; ctx.fill();
+    } else if (kind === 'homing') {
+      const r = 7;
+      const path = c => { c.beginPath(); c.arc(0, 0, r, 0, Math.PI * 2); };
+      pbShadow(ctx, path, rgba(.42), 16, scale);
+      pbShadow(ctx, path, rgba(.95), 7, scale);
+      const g = ctx.createRadialGradient(0, -r + 14 * .42, 0, 0, -r + 14 * .42, Math.hypot(r, r + 14 * .08));
+      g.addColorStop(0, '#fff'); g.addColorStop(.20, '#fff'); g.addColorStop(.30, pal.hi); g.addColorStop(.58, pal.mid); g.addColorStop(1, pal.deep);
+      path(ctx); ctx.fillStyle = g; ctx.fill();
+      path(ctx); ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.stroke();
+      // ::before 尾（top 55%, 12x26, 台形）
+      const ty = -r + 14 * .55;
+      ctx.save();
+      ctx.beginPath(); ctx.moveTo(-6, ty); ctx.lineTo(6, ty); ctx.lineTo(.96, ty + 26); ctx.lineTo(-.96, ty + 26); ctx.closePath(); ctx.clip();
+      const tg = ctx.createLinearGradient(0, ty, 0, ty + 26);
+      tg.addColorStop(0, rgba(.62)); tg.addColorStop(.45, rgba(.24)); tg.addColorStop(.88, rgba(0));
+      ctx.fillStyle = tg; ctx.fillRect(-6, ty, 12, 26);
+      const cg = ctx.createLinearGradient(0, ty, 0, ty + 26);
+      cg.addColorStop(0, 'rgba(255,255,255,.55)'); cg.addColorStop(.4, 'rgba(255,255,255,0)');
+      ctx.fillStyle = cg; ctx.fillRect(-1.5, ty, 3, 26);
+      ctx.restore();
+      // ::after 外周リング（24px）
+      const ringR = 12 * Math.SQRT2; // CSS radial-gradient(circle) は farthest-corner 基準
+      const rg = ctx.createRadialGradient(0, 0, 0, 0, 0, ringR);
+      rg.addColorStop(0, 'rgba(0,0,0,0)'); rg.addColorStop(.56, 'rgba(0,0,0,0)'); rg.addColorStop(.60, rgba(.55)); rg.addColorStop(.68, rgba(.12)); rg.addColorStop(.74, 'rgba(0,0,0,0)'); rg.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = rg; ctx.fillRect(-12, -12, 24, 24);
+    } else { // pierce
+      const w = charged ? 9 : 6, h = charged ? 46 : 34, x = -w / 2, y = -h / 2;
+      const path = c => {
+        c.beginPath();
+        c.moveTo(x + 3, y); c.lineTo(x + w - 3, y); c.arcTo(x + w, y, x + w, y + 3, 3);
+        c.lineTo(x + w, y + h * .5); c.quadraticCurveTo(x + w, y + h, 0, y + h); c.quadraticCurveTo(x, y + h, x, y + h * .5);
+        c.lineTo(x, y + 3); c.arcTo(x, y, x + 3, y, 3); c.closePath();
+      };
+      pbShadow(ctx, path, rgba(charged ? .45 : .35), charged ? 22 : 15, scale);
+      pbShadow(ctx, path, rgba(charged ? .95 : .85), charged ? 10 : 7, scale);
+      const g = ctx.createLinearGradient(0, y, 0, y + h);
+      g.addColorStop(0, '#fff'); g.addColorStop(.14, pal.hi); g.addColorStop(.40, pal.mid); g.addColorStop(.75, rgba(.45)); g.addColorStop(1, rgba(0));
+      path(ctx); ctx.fillStyle = g; ctx.fill();
+      path(ctx); ctx.lineWidth = charged ? 2 : 1.5; ctx.strokeStyle = rgba(charged ? .7 : .6); ctx.globalAlpha = .6; ctx.stroke(); ctx.globalAlpha = 1;
+      // ::before 芯と長い残光（top 4px）
+      const cw2 = charged ? 3 : 2, chh = charged ? 84 : 62;
+      const cg = ctx.createLinearGradient(0, y + 4, 0, y + 4 + chh);
+      cg.addColorStop(0, '#fff'); cg.addColorStop(.30, 'rgba(255,255,255,.95)'); cg.addColorStop(.55, rgba(.55)); cg.addColorStop(1, rgba(0));
+      pbRoundRect(ctx, -cw2 / 2, y + 4, cw2, chh, 1); ctx.fillStyle = cg; ctx.fill();
+      // ::after 菱形の穂先（top -5 / charged -7）
+      const ds = charged ? 11 : 8, dTop = y + (charged ? -7 : -5);
+      ctx.save();
+      ctx.translate(0, dTop + ds / 2); ctx.rotate(Math.PI / 4);
+      const dpath = c => pbRoundRect(c, -ds / 2, -ds / 2, ds, ds, 1);
+      pbShadow(ctx, dpath, rgba(.9), 7, scale);
+      const dg = ctx.createLinearGradient(-ds / 2, -ds / 2, ds / 2, ds / 2);
+      dg.addColorStop(0, '#fff'); dg.addColorStop(.45, '#fff'); dg.addColorStop(.60, pal.hi); dg.addColorStop(1, pal.mid);
+      dpath(ctx); ctx.fillStyle = dg; ctx.fill();
+      dpath(ctx); ctx.lineWidth = 1.5; ctx.strokeStyle = pal.deep; ctx.globalAlpha = .55; ctx.stroke(); ctx.globalAlpha = 1;
+      ctx.restore();
+    }
+    return { canvas: cv, ax: -box.l, ay: -box.t, w: box.r - box.l, h: box.b - box.t };
+  }
+  function getPlayerBulletSprite(kind, elKey, charged, moon, scale) {
+    const key = kind + '|' + elKey + '|' + (charged ? 1 : 0) + '|' + (moon ? 1 : 0) + '|' + scale;
+    let sp = playerBulletSpriteCache.get(key);
+    if (!sp) { sp = buildPlayerBulletSprite(kind, elKey, charged, moon, scale); playerBulletSpriteCache.set(key, sp); }
+    return sp;
+  }
+
+  function ensurePlayerBulletCanvas() {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return null;
+    let canvas = document.getElementById(PLAYER_BULLET_CANVAS_ID);
+    if (!canvas) {
+      canvas = document.createElement('canvas');
+      canvas.id = PLAYER_BULLET_CANVAS_ID;
+      canvas.setAttribute('aria-hidden', 'true');
+      const f = (n, v) => canvas.style.setProperty(n, v, 'important');
+      f('position', 'absolute'); f('inset', '0'); f('width', '100%'); f('height', '100%');
+      f('z-index', '9'); f('display', 'block'); f('pointer-events', 'none'); f('background', 'transparent');
+      f('filter', 'none'); f('transform', 'none'); f('opacity', '1'); f('visibility', 'visible');
+      arena.appendChild(canvas);
+    }
+    const fresh = performance.now() - lastArenaSize.at < 120 && lastArenaSize.w > 0;
+    const cssW = Math.max(1, fresh ? lastArenaSize.w : arena.clientWidth);
+    const cssH = Math.max(1, fresh ? lastArenaSize.h : arena.clientHeight);
+    const dpr = Math.min(1.5, Math.max(1, Number(window.devicePixelRatio || 1)));
+    const pw = Math.round(cssW * dpr), ph = Math.round(cssH * dpr);
+    if (canvas.width !== pw || canvas.height !== ph) { canvas.width = pw; canvas.height = ph; canvas.__pbDpr = dpr; }
+    return canvas;
+  }
+  function clearPlayerBulletCanvas() {
+    const canvas = document.getElementById(PLAYER_BULLET_CANVAS_ID);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (ctx) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height); }
+    canvas.__pbHadBullets = false;
+  }
+
+  // ============================================================
+  // build1812: 自機弾のCanvas描画（第2段階）— CSSからスプライトを自動生成
+  //  キャラごとの弾デザイン（アルノ型・ネム・スゥ・ボム・オリビアの砲台弾など）は種類が多く、
+  //  手書きで再現すると食い違いが出るため、実際のDOM弾の「計算済みスタイル」を一度だけ読み取り、
+  //  背景グラデーション・box-shadow・角丸・枠線・::before/::after を Canvas に描き写す。
+  //  ・対応できない表現（CSSアニメーション、画像、ブレンドモード、子要素など）を含む弾は従来どおりDOMのまま。
+  //  ・JSが毎フレーム見た目を変える弾（チャージ弾・罠など）は PB_CSS_DENY_RE で除外する。
+  //  ・同じ見た目の2発目以降は、DOMを作らずに直接Canvas弾として生成する。
+  // ============================================================
+  const PB_CSS_DENY_RE = /shooting-(?:remna-trap|mia-charge-shot|charge-wave|camilla-web-projectile|conjure-ult-homing|ult-shot|clarine-decoy|bullet-kaina-charge|bullet-mia-charge)|trap-|is-max|ricochet/;
+  const pbCssSpecCache = new Map();   // key -> spec | false（非対応）
+  let pbCssStateSig = '';
+  let pbCssStateSigAt = -1;
+
+  function pbGetStateSig(now) {
+    // ルート・アリーナのクラスで弾の見た目が変わるCSSがあるため、キャッシュキーに含める（フレーム内で使い回す）
+    if (pbCssStateSigAt === now) return pbCssStateSig;
+    const root = document.getElementById(ROOT_ID);
+    const arena = document.getElementById('shooting-arena');
+    pbCssStateSig = (root ? root.className : '') + '#' + (arena ? arena.className : '');
+    pbCssStateSigAt = now;
+    return pbCssStateSig;
+  }
+  function pbInlineSig(el) {
+    const st = el && el.style;
+    if (!st || !st.length) return '';
+    let out = '';
+    for (let i = 0; i < st.length; i++) {
+      const n = st[i];
+      if (n === 'transform' || n === '--unit-x' || n === '--unit-y') continue;
+      out += n + ':' + st.getPropertyValue(n) + ';';
+    }
+    return out;
+  }
+  function pbSplitTop(str) {
+    const out = []; let depth = 0, cur = '';
+    for (let i = 0; i < str.length; i++) {
+      const ch = str[i];
+      if (ch === '(') depth++;
+      else if (ch === ')') depth--;
+      if (ch === ',' && depth === 0) { out.push(cur.trim()); cur = ''; } else cur += ch;
+    }
+    if (cur.trim()) out.push(cur.trim());
+    return out;
+  }
+  function pbSplitSpace(str) {
+    const out = []; let depth = 0, cur = '';
+    for (let i = 0; i < str.length; i++) {
+      const ch = str[i];
+      if (ch === '(') depth++;
+      else if (ch === ')') depth--;
+      if (/\s/.test(ch) && depth === 0) { if (cur) out.push(cur); cur = ''; } else cur += ch;
+    }
+    if (cur) out.push(cur);
+    return out;
+  }
+  function pbIsColorToken(t) { return /^(rgba?\(|hsla?\(|#|color\(|transparent$|currentcolor$|[a-z]+$)/i.test(t) && !/^(circle|ellipse|at|to|closest-side|closest-corner|farthest-side|farthest-corner|left|right|top|bottom|center)$/i.test(t); }
+  function pbParseRgba(c) {
+    const m = String(c).match(/^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:\s*[,/]\s*([\d.]+%?))?\s*\)$/i);
+    if (!m) return null;
+    let a = m[4] === undefined ? 1 : (m[4].endsWith('%') ? parseFloat(m[4]) / 100 : parseFloat(m[4]));
+    return [Number(m[1]), Number(m[2]), Number(m[3]), a];
+  }
+  function pbLen(v, ref) {
+    v = String(v || '').trim();
+    if (v.endsWith('%')) return parseFloat(v) / 100 * ref;
+    if (v.endsWith('px')) return parseFloat(v);
+    const n = parseFloat(v);
+    return Number.isFinite(n) ? n : NaN;
+  }
+  function pbParseStops(tokens, rayLen) {
+    // tokens: ["rgb(..) 10%", "rgb(..)", ...]
+    const stops = [];
+    for (const t of tokens) {
+      const parts = pbSplitSpace(t);
+      if (!parts.length || !pbIsColorToken(parts[0])) return null; // カラーヒント等は非対応
+      const color = parts[0];
+      const positions = parts.slice(1).map(v => pbLen(v, rayLen) / Math.max(1e-6, rayLen));
+      if (positions.some(v => !Number.isFinite(v))) return null;
+      if (!positions.length) stops.push({ color, pos: null });
+      else positions.forEach(pos => stops.push({ color, pos }));
+    }
+    if (stops.length < 1) return null;
+    if (stops[0].pos === null) stops[0].pos = 0;
+    if (stops[stops.length - 1].pos === null) stops[stops.length - 1].pos = 1;
+    let maxPos = stops[0].pos;
+    for (let i = 1; i < stops.length; i++) { if (stops[i].pos !== null) { if (stops[i].pos < maxPos) stops[i].pos = maxPos; maxPos = stops[i].pos; } }
+    for (let i = 1; i < stops.length; i++) {
+      if (stops[i].pos !== null) continue;
+      let j = i; while (stops[j].pos === null) j++;
+      const a = stops[i - 1].pos, b = stops[j].pos, n = j - i + 1;
+      for (let k = i; k < j; k++) stops[k].pos = a + (b - a) * (k - i + 1) / n;
+    }
+    return stops;
+  }
+  function pbAddStops(grad, stops, scaleTo) {
+    // 透明な色停止点は隣の色のアルファ0に置き換える（Canvasは非乗算補間で黒ずむため）
+    const rgba = stops.map(st => pbParseRgba(st.color));
+    const out = [];
+    for (let i = 0; i < stops.length; i++) {
+      const c = rgba[i];
+      const pos = Math.min(1, Math.max(0, stops[i].pos / scaleTo));
+      if (c && c[3] === 0) {
+        const prev = i > 0 ? rgba[i - 1] : null, next = i < stops.length - 1 ? rgba[i + 1] : null;
+        if (prev && prev[3] > 0) out.push([pos, `rgba(${prev[0]},${prev[1]},${prev[2]},0)`]);
+        if (next && next[3] > 0) out.push([pos, `rgba(${next[0]},${next[1]},${next[2]},0)`]);
+        if ((!prev || prev[3] === 0) && (!next || next[3] === 0)) out.push([pos, 'rgba(0,0,0,0)']);
+      } else out.push([pos, stops[i].color]);
+    }
+    for (const [pos, col] of out) { try { grad.addColorStop(pos, col); } catch (_) { return false; } }
+    return true;
+  }
+  function pbPosKeyword(v, axis) {
+    const k = String(v).toLowerCase();
+    if (k === 'center') return '50%';
+    if (k === 'left' || k === 'top') return '0%';
+    if (k === 'right' || k === 'bottom') return '100%';
+    return v;
+  }
+  function pbParseGradient(str) {
+    const m = String(str).match(/^(repeating-)?(radial|linear)-gradient\((.*)\)$/i);
+    if (!m || m[1]) return null;
+    const args = pbSplitTop(m[3]);
+    if (!args.length) return null;
+    const first = pbSplitSpace(args[0]);
+    const hasCfg = first.length && !pbIsColorToken(first[0]);
+    const cfg = hasCfg ? first : [];
+    const stopTokens = hasCfg ? args.slice(1) : args;
+    return { type: m[2].toLowerCase(), cfg, stopTokens };
+  }
+  function pbPaintGradient(ctx, g, x, y, w, h) {
+    if (g.type === 'linear') {
+      let dirX = 0, dirY = 1; // 既定 180deg（下向き）
+      const c = g.cfg;
+      if (c.length) {
+        if (c[0] === 'to') {
+          let sx = 0, sy = 0;
+          c.slice(1).forEach(t => { if (t === 'left') sx = -1; if (t === 'right') sx = 1; if (t === 'top') sy = -1; if (t === 'bottom') sy = 1; });
+          if (sx && sy) { dirX = sx * h; dirY = sy * w; } else { dirX = sx; dirY = sy; }
+        } else {
+          const a = String(c[0]);
+          let rad = NaN;
+          if (a.endsWith('deg')) rad = parseFloat(a) * Math.PI / 180;
+          else if (a.endsWith('grad')) rad = parseFloat(a) * Math.PI / 200;
+          else if (a.endsWith('rad')) rad = parseFloat(a);
+          else if (a.endsWith('turn')) rad = parseFloat(a) * Math.PI * 2;
+          if (!Number.isFinite(rad)) return false;
+          dirX = Math.sin(rad); dirY = -Math.cos(rad);
+        }
+      }
+      const dl = Math.hypot(dirX, dirY) || 1; dirX /= dl; dirY /= dl;
+      const L = Math.abs(w * dirX) + Math.abs(h * dirY);
+      const stops = pbParseStops(g.stopTokens, L);
+      if (!stops) return false;
+      const cx = x + w / 2, cy = y + h / 2;
+      const lo = Math.min(0, stops[0].pos), hi = Math.max(1, stops[stops.length - 1].pos);
+      const sxp = cx - dirX * L / 2 + dirX * L * lo, syp = cy - dirY * L / 2 + dirY * L * lo;
+      const exp = cx - dirX * L / 2 + dirX * L * hi, eyp = cy - dirY * L / 2 + dirY * L * hi;
+      const grad = ctx.createLinearGradient(sxp, syp, exp, eyp);
+      const span = hi - lo;
+      if (!pbAddStops(grad, stops.map(st => ({ color: st.color, pos: (st.pos - lo) })), span)) return false;
+      ctx.fillStyle = grad;
+      ctx.fillRect(x, y, w, h);
+      return true;
+    }
+    // radial
+    let shape = null, sizeTok = [], posTok = ['50%', '50%'];
+    const c = g.cfg;
+    const atIdx = c.indexOf('at');
+    const pre = atIdx >= 0 ? c.slice(0, atIdx) : c;
+    if (atIdx >= 0) {
+      const pt = c.slice(atIdx + 1).map(pbPosKeyword);
+      if (pt.length === 1) posTok = [pt[0], '50%']; else if (pt.length === 2) posTok = pt; else return false;
+      // "top 50%" のような縦→横の並びは稀なので、キーワードが縦軸なら入れ替える
+      const raw = c.slice(atIdx + 1);
+      if (raw.length === 2 && /^(top|bottom)$/i.test(raw[0])) posTok = [pbPosKeyword(raw[1]), pbPosKeyword(raw[0])];
+    }
+    pre.forEach(t => { if (t === 'circle' || t === 'ellipse') shape = t; else sizeTok.push(t); });
+    const cx = x + pbLen(posTok[0], w), cy = y + pbLen(posTok[1], h);
+    if (!Number.isFinite(cx) || !Number.isFinite(cy)) return false;
+    const dl = cx - x, dr = x + w - cx, dt = cy - y, db = y + h - cy;
+    const isCircle = shape === 'circle' || (!shape && sizeTok.length === 1 && !String(sizeTok[0]).endsWith('%') && !/-/.test(sizeTok[0]));
+    let rx, ry;
+    const kw = sizeTok.length === 1 && /-/.test(sizeTok[0]) ? sizeTok[0] : (sizeTok.length ? null : 'farthest-corner');
+    if (kw) {
+      const fx = Math.max(Math.abs(dl), Math.abs(dr)), fy = Math.max(Math.abs(dt), Math.abs(db));
+      const nx = Math.min(Math.abs(dl), Math.abs(dr)), ny = Math.min(Math.abs(dt), Math.abs(db));
+      if (isCircle) {
+        if (kw === 'farthest-corner') rx = Math.hypot(fx, fy);
+        else if (kw === 'closest-corner') rx = Math.hypot(nx, ny);
+        else if (kw === 'farthest-side') rx = Math.max(fx, fy);
+        else if (kw === 'closest-side') rx = Math.min(nx, ny);
+        else return false;
+        ry = rx;
+      } else {
+        if (kw === 'farthest-corner') { rx = fx * Math.SQRT2; ry = fy * Math.SQRT2; }
+        else if (kw === 'closest-corner') { rx = nx * Math.SQRT2; ry = ny * Math.SQRT2; }
+        else if (kw === 'farthest-side') { rx = fx; ry = fy; }
+        else if (kw === 'closest-side') { rx = nx; ry = ny; }
+        else return false;
+      }
+    } else if (sizeTok.length === 1) {
+      rx = ry = pbLen(sizeTok[0], w);
+    } else if (sizeTok.length === 2) {
+      rx = pbLen(sizeTok[0], w); ry = pbLen(sizeTok[1], h);
+    } else return false;
+    if (!(rx > 0) || !(ry > 0)) return true; // 大きさ0：最後の色で塗る仕様だが実用上は描かない
+    const stops = pbParseStops(g.stopTokens, rx);
+    if (!stops) return false;
+    const hi = Math.max(1, stops[stops.length - 1].pos);
+    ctx.save();
+    ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+    ctx.translate(cx, cy);
+    ctx.scale(1, ry / rx);
+    const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, rx * hi);
+    if (!pbAddStops(grad, stops, hi)) { ctx.restore(); return false; }
+    ctx.fillStyle = grad;
+    const big = Math.max(w, h * rx / ry) * 4 + rx * 4;
+    ctx.fillRect(-big, -big, big * 2, big * 2);
+    ctx.restore();
+    return true;
+  }
+  function pbParseShadows(str) {
+    if (!str || str === 'none') return [];
+    const out = [];
+    for (const item of pbSplitTop(str)) {
+      const parts = pbSplitSpace(item);
+      let inset = false, color = null; const nums = [];
+      for (const t of parts) {
+        if (t === 'inset') inset = true;
+        else if (/^-?[\d.]+(px)?$/.test(t)) nums.push(parseFloat(t));
+        else if (pbIsColorToken(t)) color = t;
+        else return null;
+      }
+      if (nums.length < 2) return null;
+      out.push({ inset, color: color || 'rgba(0,0,0,1)', x: nums[0], y: nums[1], blur: nums[2] || 0, spread: nums[3] || 0 });
+    }
+    return out;
+  }
+  function pbParseRadii(cs, w, h) {
+    const read = (prop) => {
+      const parts = pbSplitSpace(cs.getPropertyValue(prop) || '0px');
+      const rx = pbLen(parts[0], w), ry = pbLen(parts[1] !== undefined ? parts[1] : parts[0], h);
+      return [Math.max(0, rx || 0), Math.max(0, ry || 0)];
+    };
+    const tl = read('border-top-left-radius'), tr = read('border-top-right-radius');
+    const br = read('border-bottom-right-radius'), bl = read('border-bottom-left-radius');
+    let f = 1;
+    const chk = (sum, len) => { if (sum > len && sum > 0) f = Math.min(f, len / sum); };
+    chk(tl[0] + tr[0], w); chk(bl[0] + br[0], w); chk(tl[1] + bl[1], h); chk(tr[1] + br[1], h);
+    return [tl[0] * f, tl[1] * f, tr[0] * f, tr[1] * f, br[0] * f, br[1] * f, bl[0] * f, bl[1] * f];
+  }
+  function pbBoxPath(ctx, x, y, w, h, r, grow) {
+    const g = grow || 0;
+    const X = x - g, Y = y - g, W = w + g * 2, H = h + g * 2;
+    if (W <= 0 || H <= 0) return false;
+    const adj = (v) => (v > 0 ? Math.max(0, v + g) : 0);
+    const R = r ? r.map(adj) : [0, 0, 0, 0, 0, 0, 0, 0];
+    const [tlx, tly, trx, try_, brx, bry, blx, bly] = R;
+    ctx.moveTo(X + tlx, Y);
+    ctx.lineTo(X + W - trx, Y);
+    if (trx && try_) ctx.ellipse(X + W - trx, Y + try_, trx, try_, 0, -Math.PI / 2, 0); else ctx.lineTo(X + W, Y);
+    ctx.lineTo(X + W, Y + H - bry);
+    if (brx && bry) ctx.ellipse(X + W - brx, Y + H - bry, brx, bry, 0, 0, Math.PI / 2); else ctx.lineTo(X + W, Y + H);
+    ctx.lineTo(X + blx, Y + H);
+    if (blx && bly) ctx.ellipse(X + blx, Y + H - bly, blx, bly, 0, Math.PI / 2, Math.PI); else ctx.lineTo(X, Y + H);
+    ctx.lineTo(X, Y + tly);
+    if (tlx && tly) ctx.ellipse(X + tlx, Y + tly, tlx, tly, 0, Math.PI, Math.PI * 1.5); else ctx.lineTo(X, Y);
+    ctx.closePath();
+    return true;
+  }
+  function pbParseClip(str, w, h) {
+    if (!str || str === 'none') return null;
+    const m = String(str).match(/^polygon\((.*)\)$/i);
+    if (!m) return false;
+    const pts = [];
+    for (const pair of pbSplitTop(m[1])) {
+      const t = pbSplitSpace(pair);
+      if (t.length === 3 && /^(nonzero|evenodd)$/.test(t[0])) t.shift();
+      if (t.length !== 2) return false;
+      const px = pbLen(t[0], w), py = pbLen(t[1], h);
+      if (!Number.isFinite(px) || !Number.isFinite(py)) return false;
+      pts.push([px, py]);
+    }
+    return pts.length >= 3 ? pts : false;
+  }
+  function pbParseMatrix(str) {
+    if (!str || str === 'none') return [1, 0, 0, 1, 0, 0];
+    let m = String(str).match(/^matrix\((.*)\)$/);
+    if (m) { const v = m[1].split(',').map(Number); return v.length === 6 && v.every(Number.isFinite) ? v : null; }
+    m = String(str).match(/^matrix3d\((.*)\)$/);
+    if (m) {
+      const v = m[1].split(',').map(Number);
+      if (v.length !== 16 || !v.every(Number.isFinite)) return null;
+      // 2D相当（z成分なし）のみ対応
+      if (Math.abs(v[2]) > 1e-6 || Math.abs(v[6]) > 1e-6 || Math.abs(v[8]) > 1e-6 || Math.abs(v[9]) > 1e-6 || Math.abs(v[10] - 1) > 1e-6 || Math.abs(v[3]) > 1e-6 || Math.abs(v[7]) > 1e-6 || Math.abs(v[15] - 1) > 1e-6) return null;
+      return [v[0], v[1], v[4], v[5], v[12], v[13]];
+    }
+    return null;
+  }
+  // 1つの箱（要素本体 or 擬似要素）の見た目を読み取る。非対応なら null。
+  function pbReadBox(cs, isPseudo) {
+    if (cs.display === 'none' || cs.visibility === 'hidden') return isPseudo ? 'skip' : null;
+    if (isPseudo) {
+      const content = cs.content;
+      if (!content || content === 'none' || content === 'normal') return 'skip';
+      if (content !== '""' && content !== "''") return null; // 文字を描く擬似要素は非対応
+      if (cs.position !== 'absolute') return null;
+    }
+    if ((cs.animationName && cs.animationName !== 'none') || (cs.mixBlendMode && cs.mixBlendMode !== 'normal')) return null;
+    const bgImg = cs.backgroundImage || 'none';
+    if (/url\(/i.test(bgImg)) return null;
+    const bgSize = String(cs.backgroundSize || 'auto');
+    if (bgImg !== 'none' && !/^auto(?:,\s*auto)*$/.test(bgSize.replace(/auto auto/g, 'auto'))) return null;
+    const bL = parseFloat(cs.borderLeftWidth) || 0, bR = parseFloat(cs.borderRightWidth) || 0;
+    const bT = parseFloat(cs.borderTopWidth) || 0, bB = parseFloat(cs.borderBottomWidth) || 0;
+    const pL = parseFloat(cs.paddingLeft) || 0, pR = parseFloat(cs.paddingRight) || 0;
+    const pT = parseFloat(cs.paddingTop) || 0, pB = parseFloat(cs.paddingBottom) || 0;
+    let w = parseFloat(cs.width), h = parseFloat(cs.height);
+    if (!Number.isFinite(w) || !Number.isFinite(h)) return null;
+    if (cs.boxSizing !== 'border-box') { w += pL + pR + bL + bR; h += pT + pB + bT + bB; }
+    if (w <= 0 || h <= 0) return 'skip';
+    let border = null;
+    if (bL || bR || bT || bB) {
+      if (bL !== bR || bL !== bT || bL !== bB) return null;
+      const styles = [cs.borderTopStyle, cs.borderRightStyle, cs.borderBottomStyle, cs.borderLeftStyle];
+      if (styles.some(v => v !== 'solid')) return null;
+      const cols = [cs.borderTopColor, cs.borderRightColor, cs.borderBottomColor, cs.borderLeftColor];
+      if (cols.some(v => v !== cols[0])) return null;
+      border = { w: bL, color: cols[0] };
+    }
+    const layers = [];
+    if (bgImg !== 'none') {
+      for (const layer of pbSplitTop(bgImg)) {
+        if (layer === 'none') continue;
+        const g = pbParseGradient(layer);
+        if (!g) return null;
+        layers.push(g);
+      }
+    }
+    const shadows = pbParseShadows(cs.boxShadow);
+    if (!shadows) return null;
+    const clip = pbParseClip(cs.clipPath, w, h);
+    if (clip === false) return null;
+    const matrix = pbParseMatrix(cs.transform);
+    if (!matrix) return null;
+    const originParts = pbSplitSpace(cs.transformOrigin || '');
+    const ox = pbLen(originParts[0], w), oy = pbLen(originParts[1], h);
+    let filter = cs.filter && cs.filter !== 'none' ? cs.filter : '';
+    if (filter && /url\(/.test(filter)) return null;
+    return {
+      w, h, radii: pbParseRadii(cs, w, h), bgColor: cs.backgroundColor, layers: layers.reverse(), border, shadows, clip,
+      matrix, ox: Number.isFinite(ox) ? ox : w / 2, oy: Number.isFinite(oy) ? oy : h / 2,
+      opacity: Number(cs.opacity === '' ? 1 : cs.opacity), filter,
+      left: parseFloat(cs.left) || 0, top: parseFloat(cs.top) || 0,
+      ml: parseFloat(cs.marginLeft) || 0, mt: parseFloat(cs.marginTop) || 0,
+      zIndex: cs.zIndex, overflow: cs.overflow,
+    };
+  }
+  function buildPlayerBulletCssSpec(el) {
+    try {
+      const cs = getComputedStyle(el);
+      const main = pbReadBox(cs, false);
+      if (!main || main === 'skip') return false;
+      // 本体の transform は positionUnit の平行移動だけのはず。回転・拡大を含むものは対象外。
+      const mm = main.matrix;
+      if (Math.abs(mm[0] - 1) > 1e-3 || Math.abs(mm[3] - 1) > 1e-3 || Math.abs(mm[1]) > 1e-3 || Math.abs(mm[2]) > 1e-3) return false;
+      if (main.overflow && main.overflow !== 'visible') return false;
+      if (el.children && el.children.length) return false;
+      const pseudos = [];
+      for (const ps of ['::before', '::after']) {
+        const b = pbReadBox(getComputedStyle(el, ps), true);
+        if (b === null) return false;
+        if (b === 'skip') continue;
+        // 擬似要素の位置：要素のパディングボックス基準
+        b.px = (parseFloat(cs.borderLeftWidth) || 0) + b.left + b.ml;
+        b.py = (parseFloat(cs.borderTopWidth) || 0) + b.top + b.mt;
+        b.behind = main.zIndex === 'auto' && parseInt(b.zIndex, 10) < 0;
+        pseudos.push(b);
+      }
+      return { main, pseudos, offX: main.left + main.ml, offY: main.top + main.mt, sprites: new Map() };
+    } catch (_) { return false; }
+  }
+  function pbBoxExtent(b) {
+    let e = 0;
+    b.shadows.forEach(sh => { if (!sh.inset) e = Math.max(e, sh.blur + Math.max(0, sh.spread) + Math.max(Math.abs(sh.x), Math.abs(sh.y))); });
+    return e;
+  }
+  function pbBoxBounds(b, tx, ty) {
+    // 変換後の外接矩形（影の広がり込み）
+    const e = pbBoxExtent(b) + 1;
+    const [a, bb, c, d, e2, f] = b.matrix;
+    const pts = [[-e, -e], [b.w + e, -e], [-e, b.h + e], [b.w + e, b.h + e]].map(([x, y]) => {
+      const lx = x - b.ox, ly = y - b.oy;
+      return [tx + b.ox + a * lx + c * ly + e2, ty + b.oy + bb * lx + d * ly + f];
+    });
+    const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+    return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
+  }
+  function pbShadowAt(ctx, pathFn, sh, evenodd) {
+    // 形を遠くへ描き、影だけを元の位置へ戻す（変換行列を考慮）
+    const off = 3000;
+    const m = ctx.getTransform ? ctx.getTransform() : null;
+    const a = m ? m.a : 1, b = m ? m.b : 0, c = m ? m.c : 0, d = m ? m.d : 1;
+    const s = Math.sqrt(Math.abs(a * d - b * c)) || 1;
+    ctx.save();
+    ctx.shadowColor = sh.color;
+    ctx.shadowBlur = sh.blur * s;
+    const lx = off + sh.x, ly = sh.y;
+    ctx.shadowOffsetX = a * lx + c * ly;
+    ctx.shadowOffsetY = b * lx + d * ly;
+    ctx.translate(-off, 0);
+    ctx.beginPath();
+    pathFn(ctx);
+    ctx.fillStyle = '#000';
+    if (evenodd) ctx.fill('evenodd'); else ctx.fill();
+    ctx.restore();
+  }
+  function pbPaintBox(ctx, b) {
+    // ctx は箱の左上を原点にした座標系
+    const { w, h, radii } = b;
+    ctx.save();
+    if (b.opacity < 1) ctx.globalAlpha *= Math.max(0, b.opacity);
+    if (b.clip) { ctx.beginPath(); b.clip.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.closePath(); ctx.clip(); }
+    // 外側の影（後ろに書いたものほど下）
+    for (let i = b.shadows.length - 1; i >= 0; i--) {
+      const sh = b.shadows[i];
+      if (sh.inset) continue;
+      if (sh.blur === 0 && sh.x === 0 && sh.y === 0) {
+        // ぼかし無しの輪（spreadのみ）：形を広げた輪を直接塗る
+        if (sh.spread <= 0) continue;
+        ctx.beginPath(); pbBoxPath(ctx, 0, 0, w, h, radii, sh.spread); pbBoxPath(ctx, 0, 0, w, h, radii, 0);
+        ctx.fillStyle = sh.color; ctx.fill('evenodd');
+        continue;
+      }
+      // CSSの外側の影は本体の内側には描かれない
+      ctx.save();
+      ctx.beginPath(); ctx.rect(-4000, -4000, 8000, 8000); pbBoxPath(ctx, 0, 0, w, h, radii, 0); ctx.clip('evenodd');
+      pbShadowAt(ctx, c => pbBoxPath(c, sh.x * 0, 0, w, h, radii, sh.spread), sh, false);
+      ctx.restore();
+    }
+    // 背景
+    ctx.save();
+    ctx.beginPath(); pbBoxPath(ctx, 0, 0, w, h, radii, 0); ctx.clip();
+    const bg = pbParseRgba(b.bgColor);
+    if (b.bgColor && (!bg || bg[3] > 0)) { ctx.fillStyle = b.bgColor; ctx.fillRect(0, 0, w, h); }
+    for (const g of b.layers) { if (!pbPaintGradient(ctx, g, 0, 0, w, h)) { ctx.restore(); ctx.restore(); return false; } }
+    // 内側の影
+    for (let i = b.shadows.length - 1; i >= 0; i--) {
+      const sh = b.shadows[i];
+      if (!sh.inset) continue;
+      pbShadowAt(ctx, c => { c.rect(-200, -200, w + 400, h + 400); pbBoxPath(c, sh.x, sh.y, w, h, radii, -sh.spread); }, { ...sh, x: 0, y: 0 }, true);
+    }
+    ctx.restore();
+    // 枠線
+    if (b.border && b.border.w > 0) {
+      ctx.beginPath(); pbBoxPath(ctx, 0, 0, w, h, radii, 0); pbBoxPath(ctx, 0, 0, w, h, radii, -b.border.w);
+      ctx.fillStyle = b.border.color; ctx.fill('evenodd');
+    }
+    ctx.restore();
+    return true;
+  }
+  function pbApplyBoxTransform(ctx, b, tx, ty) {
+    const [a, bb, c, d, e, f] = b.matrix;
+    ctx.translate(tx + b.ox, ty + b.oy);
+    ctx.transform(a, bb, c, d, e, f);
+    ctx.translate(-b.ox, -b.oy);
+  }
+  function buildPlayerBulletCssSprite(spec, scale) {
+    const m = spec.main;
+    let bx0 = Infinity, by0 = Infinity, bx1 = -Infinity, by1 = -Infinity;
+    const add = (r) => { bx0 = Math.min(bx0, r[0]); by0 = Math.min(by0, r[1]); bx1 = Math.max(bx1, r[2]); by1 = Math.max(by1, r[3]); };
+    add(pbBoxBounds({ ...m, matrix: [1, 0, 0, 1, 0, 0] }, 0, 0));
+    spec.pseudos.forEach(p => add(pbBoxBounds(p, p.px, p.py)));
+    bx0 = Math.floor(bx0 - 2); by0 = Math.floor(by0 - 2); bx1 = Math.ceil(bx1 + 2); by1 = Math.ceil(by1 + 2);
+    const cw = Math.max(1, Math.ceil((bx1 - bx0) * scale)), ch = Math.max(1, Math.ceil((by1 - by0) * scale));
+    if (cw > 1024 || ch > 1024) return null;
+    const cv = document.createElement('canvas');
+    cv.width = cw; cv.height = ch;
+    const ctx = cv.getContext('2d');
+    // 要素全体へのfilter（彩度など）は、別キャンバスで描いてからまとめて掛ける
+    let target = ctx, tmp = null;
+    if (m.filter && 'filter' in ctx) { tmp = document.createElement('canvas'); tmp.width = cw; tmp.height = ch; target = tmp.getContext('2d'); }
+    target.scale(scale, scale);
+    target.translate(-bx0, -by0);
+    if (m.opacity < 1) target.globalAlpha = Math.max(0, m.opacity);
+    if (m.clip) { target.beginPath(); m.clip.forEach(([x, y], i) => (i ? target.lineTo(x, y) : target.moveTo(x, y))); target.closePath(); target.clip(); }
+    const paintPseudo = (p) => { target.save(); pbApplyBoxTransform(target, p, p.px, p.py); const ok = pbPaintBox(target, p); target.restore(); return ok; };
+    for (const p of spec.pseudos) if (p.behind && !paintPseudo(p)) return null;
+    const mainNoClip = { ...m, clip: null, opacity: 1 };
+    if (!pbPaintBox(target, mainNoClip)) return null;
+    for (const p of spec.pseudos) if (!p.behind && !paintPseudo(p)) return null;
+    if (tmp) { ctx.filter = m.filter; ctx.drawImage(tmp, 0, 0); ctx.filter = 'none'; }
+    // 要素の中心（= 弾の座標）がスプライト内のどこか
+    return { canvas: cv, ax: (m.w / 2 - bx0), ay: (m.h / 2 - by0) };
+  }
+  function getPlayerBulletCssSprite(spec, scale) {
+    let sp = spec.sprites.get(scale);
+    if (sp === undefined) { sp = buildPlayerBulletCssSprite(spec, scale) || null; spec.sprites.set(scale, sp); }
+    return sp;
+  }
+  function isPlayerBulletCssCandidateClass(cls) {
+    const c = String(cls || '');
+    return /(^|\s)shooting-bullet(\s|$)/.test(c) && !c.includes('shooting-enemy-bullet') && !c.includes('shot-fx') && !PB_CSS_DENY_RE.test(c);
+  }
+  // DOMで生成された自機弾を、見た目が描き写せるならCanvas弾へ切り替える
+  function tryConvertPlayerBulletCss(p, now) {
+    const el = p.el;
+    if (!el || el.__playerCanvas || p.canvasRendered || p.playerCanvasKind || p.pbCssRejected) return false;
+    if (!el.isConnected) return false;
+    const cls = el.className;
+    if (typeof cls !== 'string' || !isPlayerBulletCssCandidateClass(cls)) { p.pbCssRejected = true; return false; }
+    const inline = pbInlineSig(el);
+    const key = cls + '|' + inline + '|' + pbGetStateSig(now);
+    let spec = pbCssSpecCache.get(key);
+    if (spec === undefined) {
+      spec = buildPlayerBulletCssSpec(el);
+      if (spec && !getPlayerBulletCssSprite(spec, 2)) spec = false;
+      if (pbCssSpecCache.size > 400) pbCssSpecCache.clear();
+      pbCssSpecCache.set(key, spec);
+    }
+    if (!spec) { p.pbCssRejected = true; return false; }
+    const v = createPlayerBulletVirtualElement(cls);
+    try { el.remove(); } catch (_) {}
+    p.el = v;
+    p.playerCanvasKind = 'css';
+    p.pbCssSpec = spec;
+    return true;
+  }
+  // 2発目以降：同じ見た目（インラインstyle無し）が確認済みなら、DOMを作らずにCanvas弾を作る
+  function makePlayerBulletCssDirect(cls, x, y, vx, vy, damage, ownerId) {
+    if (!PLAYER_BULLET_CANVAS_ENABLED || !isPlayerBulletCssCandidateClass(cls)) return null;
+    const spec = pbCssSpecCache.get(cls + '||' + pbGetStateSig(performance.now()));
+    if (!spec) return null;
+    const size = unitSizeCache.get(cls + '|' + window.innerWidth + 'x' + window.innerHeight);
+    if (!size) return null;
+    return { el: createPlayerBulletVirtualElement(cls), x, y, vx, vy, damage: damage || 1, ownerId: ownerId || null,
+      playerCanvasKind: 'css', pbCssSpec: spec, _hw: size[0], _hh: size[1] };
+  }
+
+  function renderPlayerBulletCanvas() {
+    if (!PLAYER_BULLET_CANVAS_ENABLED || !state) return;
+    const list = state.bullets || [];
+    let any = false;
+    const nowTs = performance.now();
+    for (let i = 0; i < list.length; i++) {
+      const p = list[i];
+      if (!p) continue;
+      // build1812: DOMで生まれた弾は、描き写せるならここでCanvas弾へ切り替える（描画前なのでDOMは表示されない）
+      if (!p.playerCanvasKind && p.el && !p.el.__playerCanvas && !p.pbCssRejected) tryConvertPlayerBulletCss(p, nowTs);
+      if (p.playerCanvasKind && p.el && p.el.__alive) any = true;
+    }
+    const existing = document.getElementById(PLAYER_BULLET_CANVAS_ID);
+    if (!any) { if (existing && existing.__pbHadBullets) clearPlayerBulletCanvas(); return; }
+    const canvas = ensurePlayerBulletCanvas();
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d', { alpha: true });
+    if (!ctx) return;
+    const dpr = Number(canvas.__pbDpr || 1);
+    const scale = Math.round(dpr * 2) / 2 >= 1.5 ? 2 : 1.5; // スプライトは少し高精細に作る
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.globalAlpha = 1;
+    ctx.imageSmoothingEnabled = true;
+    const root = document.getElementById(ROOT_ID);
+    const moon = !!(root && root.classList.contains('hayate-moonlight-active'));
+    for (let i = 0; i < list.length; i++) {
+      const p = list[i];
+      if (!p || !p.playerCanvasKind || !p.el || !p.el.__alive) continue;
+      const kind = p.playerCanvasKind;
+      if (kind === 'css') {
+        const csp = p.pbCssSpec && getPlayerBulletCssSprite(p.pbCssSpec, scale);
+        if (!csp) continue;
+        const k2 = dpr / scale;
+        ctx.setTransform(k2, 0, 0, k2, (Number(p.x || 0) + p.pbCssSpec.offX) * dpr, (Number(p.y || 0) + p.pbCssSpec.offY) * dpr);
+        ctx.drawImage(csp.canvas, -csp.ax * scale, -csp.ay * scale);
+        continue;
+      }
+      const charged = kind === 'pierce' && p.el.classList.contains('charged');
+      const isMoon = moon && kind === 'spread' && p.el.classList.contains('shooting-bullet-hayate');
+      const sp = getPlayerBulletSprite(kind, p.playerCanvasElement || 'neutral', charged, isMoon, scale);
+      const x = Number(p.x || 0), y = Number(p.y || 0);
+      const rot = Number(p.el._shotFxRot || 0);
+      const k = dpr / scale;
+      if (rot) {
+        const c = Math.cos(rot) * k, s = Math.sin(rot) * k;
+        ctx.setTransform(c, s, -s, c, x * dpr, y * dpr);
+      } else {
+        ctx.setTransform(k, 0, 0, k, x * dpr, y * dpr);
+      }
+      ctx.drawImage(sp.canvas, -sp.ax * scale, -sp.ay * scale);
+    }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    canvas.__pbHadBullets = true;
+  }
+
   // build1810: 自機弾の位置更新を軽く。positionUnit は --unit-x/--unit-y（CSS変数）も毎フレーム書くため、
   //  1発ごとに3回のstyle変更→スタイル再計算が重かった（弾が多いキャラ・ステージでカクつく）。
   //  CSS変数を使う演出（ハヤテの月光など）がない普通の弾は transform だけを書く。
   function positionPlayerBulletFast(el, x, y) {
     if (!el) return;
+    // build1811: Canvas弾は座標データがそのまま表示位置。回転を追う弾（HOMING）だけ向きを更新する。
+    if (el.__playerCanvas) { if (el._shotFx === 2) positionUnit(el, x, y); return; }
     if (el._fastPos === undefined) {
       el._fastPos = !el._shotFx && !/hayate|ricochet|danger|warning|pulse/i.test(String(el.className || ''));
     }
@@ -5496,8 +6311,10 @@
       const vy = Number(p.vy || 0);
       el._shotFxRot = (vx || vy) ? Math.atan2(vx, -vy) : 0;
     }
+    // build1811: すでにCanvas弾（通常弾として生成済み）なら種類だけ差し替える
+    if (el.__playerCanvas) { p.playerCanvasKind = kind; p.pbCssSpec = null; p.playerCanvasElement = getPlayerBulletElementKey(el.className); return p; }
     positionUnit(el, Number(p.x || 0), Number(p.y || 0));
-    return p;
+    return convertPlayerBulletToCanvas(p, kind); // build1811
   }
 
   function clearProjectiles() {
@@ -5507,6 +6324,7 @@
     clearNightshadeSpinRings();
     arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-rose-fortress,.shooting-remna-trap-preview,.shooting-conjure-preview,.shooting-conjure-deploy-projectile,.shooting-conjure-turret,.shooting-conjure-ult-turret,.shooting-camilla-web-overlay,.shooting-camilla-web-burst,.shooting-camilla-bound-web-fx,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-sui-time-domain,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning,.shooting-ch07-complete-shield,.shooting-ch07-torii,.eclipse-hand-band,.eclipse-float-num,.eclipse-dash-line,.eclipse-dark-veil,.eclipse-beacon,.eclipse-state-pill,.po-submission-chip,.po-variety-banner,.tb-fx,.shooting-v-laser-wrap').forEach(el => el.remove());
     clearEnemyBulletCanvas();
+    clearPlayerBulletCanvas(); // build1811
     if (state) {
       state.bullets = [];
       state.enemyBullets = [];
@@ -7003,6 +7821,11 @@
       return p;
     }
 
+    // build1812: 見た目を確認済みの自機弾は、DOMを作らずCanvas弾として生成する（1発目はDOMで生まれ、描画前に変換される）
+    if (PLAYER_BULLET_CANVAS_ENABLED && !classNameForGuard.includes('shooting-enemy-bullet')) {
+      const direct = makePlayerBulletCssDirect(cls, x, y, vx, vy, damage, ownerId);
+      if (direct) return direct;
+    }
     const el = document.createElement('i');
     el.className = cls;
     arena.appendChild(el);
@@ -26607,6 +27430,8 @@
     updateProjectiles(dt, ts, frameLayout);
     // 同じ更新済み座標を使って、検証ステージの敵弾だけを一枚へ描画する。
     renderCanvasEnemyBullets();
+    // build1811: 自機弾（Canvas対象のもの）を一枚へ描画
+    try { renderPlayerBulletCanvas(); } catch (err) { console.warn('[shooting] player bullet canvas skipped:', err); }
 
     // SCORE ATTACKでは無関係なイベント/CH04系の更新を毎フレーム呼ばない。
     // キャラクター固有処理（Arno/Mimosa等）はゲーム性に関わるので維持。
