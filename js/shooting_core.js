@@ -10997,13 +10997,14 @@
   // ULT：自機左右へ完全追従する砲台を5秒間展開し、左右各25発のHOMING。
   // ============================================================
   function ensureConjureVisualStyles() {
-    if (document.getElementById('shooting-conjure-style-build1797')) return;
+    if (document.getElementById('shooting-conjure-style-build1809')) return;
     document.getElementById('shooting-conjure-style-build991')?.remove();
     document.getElementById('shooting-conjure-style-build1791')?.remove();
+    document.getElementById('shooting-conjure-style-build1797')?.remove();
     const oldStyle = document.getElementById('shooting-conjure-style-build971');
     if (oldStyle) oldStyle.remove();
     const style = document.createElement('style');
-    style.id = 'shooting-conjure-style-build1797';
+    style.id = 'shooting-conjure-style-build1809';
     style.textContent = `
       .shooting-conjure-preview,
       .shooting-conjure-turret,
@@ -11012,8 +11013,10 @@
         width:50px;height:50px;transform:translate(-50%,-50%);
       }
       .shooting-conjure-object-img{
-        position:absolute;left:50%;top:50%;width:100%;height:100%;
-        transform:translate(-50%,-50%);object-fit:contain;pointer-events:none;
+        /* build1809: 中心合わせは translate を使わず inset:0 で。translate があると rotate/scale の中心がずれて、
+           砲台の向きを変えるたびに画像が円を描くように動いて見えていた */
+        position:absolute;left:0;top:0;width:100%;height:100%;
+        transform:none;object-fit:contain;pointer-events:none;
         user-select:none;-webkit-user-drag:none;
         filter:drop-shadow(0 0 7px rgba(225,238,245,.62));
       }
@@ -11121,7 +11124,7 @@
       .shooting-conjure-ult-turret{will-change:transform}
       .shooting-conjure-ult-homing{width:9px!important;height:14px!important;border-radius:45% 45% 55% 55%!important;background:linear-gradient(180deg,#fff,rgba(207,232,238,.95),rgba(135,170,180,.86))!important;box-shadow:0 0 8px rgba(208,239,245,.84)!important}
       @keyframes shootingConjurePreviewPulse1001{to{opacity:1}}
-      @keyframes shootingConjureVolley{0%{transform:translate(-50%,-50%) scale(.84);filter:brightness(1.55)}100%{transform:translate(-50%,-50%) scale(1);filter:brightness(1)}}
+      @keyframes shootingConjureVolley{0%{transform:scale(.84);filter:brightness(1.55)}100%{transform:scale(1);filter:brightness(1)}}
     `;
     document.head.appendChild(style);
   }
@@ -11373,7 +11376,7 @@
     if (img && typeof img.animate === 'function') {
       try {
         img.animate(
-          [{ transform: 'translate(-50%,-50%) scale(.84)' }, { transform: 'translate(-50%,-50%) scale(1)' }],
+          [{ transform: 'scale(.84)' }, { transform: 'scale(1)' }],
           { duration: 180, easing: 'ease-out' }
         );
       } catch (_) {}
