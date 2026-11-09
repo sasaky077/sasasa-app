@@ -15754,3 +15754,67 @@ html body #shooting-event-root .shooting-combo .shooting-combo-bonus.is-up{anima
   animation:ns1848-rune-in .2s ease-out both!important;
 }
 @keyframes ns1848-rune-in{0%{transform:scale(.75);opacity:0}100%{transform:scale(1);opacity:.38}}
+
+/* ============================================================
+   build1851 — 落雷（ノア／チャチャ／テスト）を「透き通る稲光」に
+   ・太い塗りの線をやめ、白熱の細い芯＋薄い光の層を加算合成（screen）で重ねる
+   ・枝は細く薄く、小枝つき。背後に淡い光の柱が一瞬残る
+   ・属性色の drop-shadow（ベタっと見える原因）は外す
+   ============================================================ */
+#shooting-event-root .shooting-noah-lightning.nl-v2{
+  width:180px;
+  filter:none!important;
+  /* build1852: 稲妻の色はULT属性色（--ult-element-rgb）。未設定時だけ青白 */
+  --nl-c1:var(--ult-element-rgb,110,150,255);
+  --nl-c2:var(--ult-element-rgb,165,195,255);
+}
+#shooting-event-root .shooting-noah-lightning.nl-v2.nl-wood{--nl-c1:40,200,100;--nl-c2:120,235,160;}
+#shooting-event-root .shooting-noah-lightning.nl-v2 .nl-bolt{animation:nl2Flicker .44s linear both;}
+#shooting-event-root .shooting-noah-lightning.nl-v2 path{
+  animation:noahBoltDraw .06s cubic-bezier(.3,0,.9,.6) forwards;
+}
+#shooting-event-root .shooting-noah-lightning.nl-v2 .nl-halo{stroke:rgba(var(--nl-c1),.16)!important;stroke-width:22!important;}
+#shooting-event-root .shooting-noah-lightning.nl-v2 .nl-glow{stroke:rgba(var(--nl-c1),.42)!important;stroke-width:8!important;}
+#shooting-event-root .shooting-noah-lightning.nl-v2 .nl-mid{stroke:rgba(var(--nl-c2),.85)!important;stroke-width:3.4!important;}
+#shooting-event-root .shooting-noah-lightning.nl-v2 .nl-core{stroke:rgba(255,255,255,.98)!important;stroke-width:1.4!important;}
+#shooting-event-root .shooting-noah-lightning.nl-v2 .nl-branch{stroke:rgba(var(--nl-c2),.9)!important;stroke-width:1.2!important;animation-delay:.025s;}
+#shooting-event-root .shooting-noah-lightning.nl-v2 .nl-branch-glow{stroke:rgba(var(--nl-c1),.3)!important;stroke-width:5!important;animation-delay:.025s;}
+#shooting-event-root .shooting-noah-lightning.nl-v2 .nl-twig{fill:none;stroke:rgba(var(--nl-c2),.75);stroke-width:.9;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;animation-delay:.045s;}
+/* 稲光の残光：淡い縦の光の柱 */
+#shooting-event-root .shooting-noah-lightning.nl-v2 .nl-sheath{
+  position:absolute;left:50%;top:0;bottom:0;width:70px;margin-left:-35px;pointer-events:none;
+  background:linear-gradient(90deg,rgba(var(--nl-c1),0),rgba(var(--nl-c1),.10) 35%,rgba(var(--nl-c2),.16) 50%,rgba(var(--nl-c1),.10) 65%,rgba(var(--nl-c1),0));
+  -webkit-mask:linear-gradient(180deg,transparent,#000 18%,#000 82%,rgba(0,0,0,.4));
+          mask:linear-gradient(180deg,transparent,#000 18%,#000 82%,rgba(0,0,0,.4));
+  opacity:0;animation:nl2Sheath .44s ease-out both;
+}
+@keyframes nl2Sheath{0%{opacity:0}10%{opacity:1}30%{opacity:.35}42%{opacity:.8}100%{opacity:0}}
+@keyframes nl2Flicker{
+  0%,22%{opacity:1}
+  28%{opacity:.12}
+  36%{opacity:.95}
+  44%{opacity:.3}
+  52%{opacity:.75}
+  100%{opacity:0}
+}
+/* 着弾：塗りの円をやめ、柔らかい光のにじみ＋細い光輪 */
+#shooting-event-root .shooting-noah-lightning.nl-v2 .nl-impact i{
+  width:110px;height:110px;margin:-55px 0 0 -55px;
+  background:radial-gradient(circle,rgba(255,255,255,.95) 0 6%,rgba(var(--nl-c2),.55) 16%,rgba(var(--nl-c1),.22) 36%,rgba(var(--nl-c1),0) 66%)!important;
+}
+#shooting-event-root .shooting-noah-lightning.nl-v2 .nl-impact b{
+  width:70px;height:70px;margin:-35px 0 0 -35px;
+  border:1.2px solid rgba(var(--nl-c2),.7)!important;
+  box-shadow:0 0 8px rgba(var(--nl-c1),.45),inset 0 0 8px rgba(var(--nl-c1),.25)!important;
+}
+#shooting-event-root .shooting-noah-lightning.nl-v2 .nl-impact u{
+  width:3px;height:3px;margin:-1.5px 0 0 -1.5px;background:#fff;
+  box-shadow:0 0 5px rgba(var(--nl-c1),.9)!important;
+}
+/* 画面の閃光も白ベタを弱めて、空が一瞬光る感じに */
+#shooting-event-root .shooting-noah-lightning-flash{
+  background:radial-gradient(ellipse at var(--fx,50%) 18%,rgba(255,255,255,.34),rgba(var(--ult-element-rgb,190,210,255),.14) 42%,rgba(var(--ult-element-rgb,170,195,255),0) 75%)!important;
+}
+#shooting-event-root .shooting-noah-lightning-flash.nl-wood{
+  background:radial-gradient(ellipse at var(--fx,50%) 18%,rgba(225,255,235,.3),rgba(160,240,190,.13) 42%,rgba(120,220,160,0) 75%)!important;
+}
