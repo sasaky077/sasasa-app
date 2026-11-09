@@ -23132,8 +23132,8 @@
       const smileBulletStartX = Number(p.x || 0);
       const smileBulletStartY = Number(p.y || 0);
 
-      // トイフェルULT中：敵弾は通常の移動・当たり判定を行わず、
-      // 現在位置に近い左右どちらかのブラックホールへ吸収される。
+      // トイフェルULT中：敵弾は通常の移動を行わず、現在位置に近い左右どちらかの
+      // ブラックホールへ吸収される。build1850: 吸収途中の弾も自機への当たり判定は有効。
       if (isToyfelBlackHoleFieldActive(now)) {
         const field = state.toyfelBlackHoleField;
         const holes = Array.isArray(field?.holes) ? field.holes : [];
@@ -23183,6 +23183,21 @@
           p.el.style.filter = `blur(${(0.3 + proximity * 1.15).toFixed(2)}px)`;
 
           if (!p.canvasRendered) positionUnit(p.el, p.x, p.y);
+
+          // build1850: 吸い込まれていく途中の敵弾にも当たり判定を残す（自機に触れたら被弾）。
+          // 吸収半径に入って消えた弾だけが無害になる。
+          if (now >= Number(state.player.invulnUntil || 0) &&
+              !(getCurrentCharacter().id === CHARACTER_ID.HAYATE && now < (state.hayateMoonlightUntil || 0))) {
+            const hitPlayerCore = p.raidLaser
+              ? raidLaserHitsPlayerCore(p, playerCoreRect, arenaRect)
+              : rectsHit(getUnitRect(p, arenaRect), playerCoreRect, 0, 1);
+            if (hitPlayerCore) {
+              if (p.inoriSlow) applyInoriSlow(now);
+              damagePlayer(now, p.damage, classifyIncomingAttack(p), getIncomingAttackElement(p), 'enemy-bullet');
+              try { p.el.remove(); } catch (_) {}
+              return false;
+            }
+          }
           return true;
         }
       }
