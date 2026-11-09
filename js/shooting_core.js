@@ -3693,12 +3693,55 @@
     if (!state) return;
     state.ainaStealthUntil = 0;
     const player = document.getElementById(PLAYER_ID);
-    if (player) player.classList.remove('aina-stealth-active');
+    if (player) player.classList.remove('aina-stealth-active', 'aina-stealth-hurry');
+    // build1863: 影・残像・タイマー輪を片付ける（影から抜け出る演出つき）
+    document.querySelectorAll('.shooting-aina-shade').forEach(el => {
+      el.classList.add('is-ending'); setTimeout(() => el.remove(), 360);
+    });
+    document.querySelectorAll('.shooting-aina-decoy').forEach(el => {
+      el.classList.add('is-ending'); setTimeout(() => el.remove(), 360);
+    });
   }
 
   function updateAinaStealth(now) {
     if (state && Number(state.ainaStealthUntil || 0) > 0 && !isAinaStealthActive(now)) {
       endAinaStealth();
+      return;
+    }
+    // build1863: 残り時間の輪と、終わり間際の点滅
+    if (state && isAinaStealthActive(now)) {
+      const left = Math.max(0, Number(state.ainaStealthUntil || 0) - now);
+      const total = Math.max(1, Number(state.ainaStealthTotalMs || 10000));
+      const shade = document.querySelector('#' + PLAYER_ID + ' .shooting-aina-shade');
+      if (shade) {
+        const p = (Math.round(left / total * 100) / 100).toFixed(2);
+        if (shade.dataset.p !== p) { shade.dataset.p = p; shade.style.setProperty('--aina-left', p); }
+      }
+      document.getElementById(PLAYER_ID)?.classList.toggle('aina-stealth-hurry', left <= 2000);
+    }
+  }
+
+  function spawnAinaStealthVisuals() {
+    const player = document.getElementById(PLAYER_ID);
+    const arena = document.getElementById('shooting-arena');
+    document.querySelectorAll('.shooting-aina-shade,.shooting-aina-decoy').forEach(el => el.remove());
+    if (player) {
+      const shade = document.createElement('div');
+      shade.className = 'shooting-aina-shade';
+      shade.setAttribute('aria-hidden', 'true');
+      shade.innerHTML = '<i class="as-veil"></i><i class="as-wisp w1"></i><i class="as-wisp w2"></i><i class="as-wisp w3"></i><i class="as-timer"></i>';
+      shade.style.setProperty('--aina-left', '1');
+      player.appendChild(shade);
+    }
+    if (arena) {
+      // 敵が狙い続ける「囮の位置」に残像と標的マーク
+      const img = document.getElementById('shooting-player-image');
+      const decoy = document.createElement('div');
+      decoy.className = 'shooting-aina-decoy';
+      decoy.setAttribute('aria-hidden', 'true');
+      decoy.innerHTML = (img && img.src ? `<img src="${img.src}" alt="" draggable="false">` : '') + '<i class="ad-reticle"></i><span>DECOY</span>';
+      arena.appendChild(decoy);
+      decoy.style.transform = `translate3d(${Number(state.ainaStealthAimX || 0)}px,${Number(state.ainaStealthAimY || 0)}px,0)`;
     }
   }
 
@@ -3716,11 +3759,13 @@
       const style = document.createElement('style');
       style.id = 'shooting-aina-stealth-css';
       style.textContent = `
-        #${PLAYER_ID}.aina-stealth-active { opacity:.46; filter:drop-shadow(0 0 7px rgba(180,220,210,.56)); transition:opacity .35s,filter .35s; }
+        /* build1863: 見た目は css/shooting_event.css（影・残像・タイマー輪）へ移行 */
       `;
       document.head.appendChild(style);
     }
     document.getElementById(PLAYER_ID)?.classList.add('aina-stealth-active');
+    state.ainaStealthTotalMs = Math.max(1000, Number(c.ainaStealthDurationMs || 10000));
+    spawnAinaStealthVisuals(); // build1863
     renderHud();
   }
 
@@ -3852,6 +3897,8 @@
       inoriAttemptId: isInoriSpecialStage() ? String(window.__inoriAttemptId || '') : '',
       inoriLap: isInoriSpecialStage() ? Math.max(1, Math.floor(Number(window.__inoriLap) || 1)) : 0,
       phaseOdysseyFloor: isPhaseOdysseyStage() ? Number(selectedStage.stageNo || 0) : 0,
+      // build1862: 中断からの再開回数（1戦闘につき1回まで）
+      resumeCount: Math.max(0, Math.floor(Number(state.resumeCount || 0))),
       towerAttempt: (isResonanceTowerStage() && window.ResonanceTower && typeof window.ResonanceTower.getResumeAttempt === 'function')
         ? window.ResonanceTower.getResumeAttempt()
         : null,
@@ -4176,6 +4223,19 @@
     }
     renderHud();
 
+    // build1862: 再開回数を引き継ぐ（再開したら+1）。
+    state.resumeCount = Math.max(0, Math.floor(Number(snapshot.resumeCount || 0))) + (snapshot.abandonOnResume ? 0 : 1);
+
+    // build1862: 「諦める」を選んだ場合は、そのまま敗北として通常のRESULT処理へ流す。
+    //  各モードの敗北処理（位相回遊のラン終了・塔・レイドの確定・チケット消費）をそのまま使う。
+    if (snapshot.abandonOnResume) {
+      state.running = false;
+      state.countdown = false;
+      state.resumeAbandoned = true;
+      requestAnimationFrame(() => { if (state && !state.ended) endGame(false); });
+      return true;
+    }
+
     // 保存データは再開開始後も更新される。再開中に再度落ちても続きから戻れる。
     if (isPhaseOdysseyStage()) {
       // 戦闘開始は画像ロード・デコードと描画がすべて終わってから。
@@ -4220,10 +4280,137 @@
     return m ? Number(m[1]) : 0;
   }
 
+  // build1862: 中断した戦闘の「再開／諦める」ダイアログ
+  function getResumeStageLabel(snapshot) {
+    try {
+      const st = getShootingStage(String(snapshot.stageId || ''));
+      if (snapshot.phaseOdysseyFloor) return `位相回遊　FLOOR ${snapshot.phaseOdysseyFloor}`;
+      const label = [st && st.difficultyLabel, st && st.name].filter(Boolean).join('　');
+      return label || 'バトル';
+    } catch (_) { return 'バトル'; }
+  }
+  function getResumeAbandonNote(snapshot) {
+    const id = String(snapshot.stageId || '');
+    if (snapshot.phaseOdysseyFloor) return '敗北扱いとなり、位相回遊のランはここで終了します。';
+    if (snapshot.raidContext) return 'ここまでに与えたダメージで挑戦が確定します。';
+    if (snapshot.towerAttempt) return '残響の塔は敗北扱いになります。';
+    if (snapshot.inoriAttemptId || snapshot.noahAttemptId || /memory/.test(id)) return '敗北扱いになります（挑戦チケットは戻りません）。';
+    return '敗北扱いになります（消費したスタミナは戻りません）。';
+  }
+  function ensureResumeDialogStyle() {
+    if (document.getElementById('shooting-resume-dialog-style')) return;
+    const st = document.createElement('style');
+    st.id = 'shooting-resume-dialog-style';
+    st.textContent = `
+      .srd-backdrop{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:16px;
+        background:radial-gradient(ellipse at 50% 45%,rgba(30,24,36,.45),rgba(14,10,18,.72));animation:srdFade .2s ease-out both}
+      .srd-panel{position:relative;width:min(330px,100%);padding:22px 18px 16px;border-radius:14px;text-align:center;
+        font-family:"Noto Serif JP",serif;color:#3f3226;
+        background:radial-gradient(120% 70% at 50% 0%,rgba(255,255,255,.95),rgba(255,255,255,0) 60%),linear-gradient(180deg,#fffaf0,#f4ead6);
+        border:1px solid #b8955a;
+        box-shadow:0 0 0 3px rgba(255,251,240,.95),0 0 0 4px rgba(184,149,90,.75),0 16px 36px rgba(0,0,0,.42);
+        animation:srdPop .26s cubic-bezier(.2,1.3,.4,1) both}
+      .srd-panel i.c{position:absolute;width:9px;height:9px;transform:rotate(45deg);background:linear-gradient(135deg,#f6e2a8,#b98a3a);box-shadow:0 0 0 1.5px #fffaf0,0 0 0 2.5px rgba(184,149,90,.8)}
+      .srd-panel i.tl{left:-5px;top:-5px}.srd-panel i.tr{right:-5px;top:-5px}.srd-panel i.bl{left:-5px;bottom:-5px}.srd-panel i.br{right:-5px;bottom:-5px}
+      .srd-panel small.en{display:block;font:600 8.5px/1 "Cinzel",serif;letter-spacing:.42em;color:#a8874f;margin-bottom:6px}
+      .srd-panel h3{margin:0;font-size:16px;font-weight:700;letter-spacing:.12em}
+      .srd-rule{position:relative;width:64%;height:1px;margin:10px auto 12px;background:linear-gradient(90deg,rgba(184,149,90,0),#b8955a 30%,#b8955a 70%,rgba(184,149,90,0))}
+      .srd-rule::after{content:"";position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;transform:rotate(45deg);background:#c9a25a;box-shadow:0 0 0 2px #fbf5e8}
+      .srd-stage{font-size:13.5px;font-weight:700;letter-spacing:.08em}
+      .srd-meta{display:flex;justify-content:center;gap:14px;margin:8px 0 2px;font-size:11px;color:#6d5a42;letter-spacing:.06em}
+      .srd-meta b{font:700 13px/1 "Cinzel",serif;color:#3f3226;margin-left:3px}
+      .srd-note{margin:10px 2px 0;font:500 10.5px/1.7 "Noto Sans JP",sans-serif;color:#7d6748}
+      .srd-note.warn{color:#a0402e}
+      .srd-btns{display:grid;gap:9px;margin-top:14px}
+      .srd-btn{appearance:none;-webkit-appearance:none;border:0;cursor:pointer;height:44px;border-radius:10px;
+        font:700 14px/1 "Noto Serif JP",serif;letter-spacing:.14em;-webkit-tap-highlight-color:transparent;transition:transform .1s ease,filter .15s ease}
+      .srd-btn:active{transform:scale(.97)}
+      .srd-btn.resume{color:#fff8e6;background:linear-gradient(180deg,#d9b267,#b4873a 55%,#94692a);
+        box-shadow:0 0 0 1px #7a5520,inset 0 1px 0 rgba(255,255,255,.45),0 4px 10px rgba(120,80,20,.35);text-shadow:0 1px 1px rgba(70,40,10,.6)}
+      .srd-btn.resume[disabled]{filter:grayscale(1) opacity(.45);cursor:default}
+      .srd-btn.abandon{color:#6d5a42;background:linear-gradient(180deg,#fffaf0,#efe4cd);box-shadow:0 0 0 1px rgba(184,149,90,.8),inset 0 1px 0 #fff}
+      .srd-btn.abandon.is-confirm{color:#fff;background:linear-gradient(180deg,#c0563f,#9b3826);box-shadow:0 0 0 1px #6e2216,inset 0 1px 0 rgba(255,255,255,.35)}
+      @keyframes srdFade{from{opacity:0}to{opacity:1}}
+      @keyframes srdPop{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
+    `;
+    document.head.appendChild(st);
+  }
+  function askShootingResumeChoice(snapshot) {
+    return new Promise(resolve => {
+      ensureResumeDialogStyle();
+      const used = Math.max(0, Number(snapshot.resumeCount || 0)) >= 1;
+      const party = Array.isArray(snapshot.party) ? snapshot.party : [];
+      const alive = party.filter(m => Number(m.hp || 0) > 0).length;
+      const hpNow = party.reduce((a, m) => a + Math.max(0, Number(m.hp || 0)), 0);
+      const hpMax = party.reduce((a, m) => a + Math.max(0, Number(m.hpMax || 0)), 0);
+      const hpRate = hpMax > 0 ? Math.round(hpNow / hpMax * 100) : 0;
+      let isBossStage = !!snapshot.raidContext;
+      try { const st0 = getShootingStage(String(snapshot.stageId || '')); if (st0 && st0.type && st0.type !== 'normal') isBossStage = true; } catch (_) {}
+      const bossRate = isBossStage && snapshot.boss && Number(snapshot.boss.hpMax) > 0
+        ? Math.max(0, Math.round(Number(snapshot.boss.hp || 0) / Number(snapshot.boss.hpMax) * 100)) : null;
+      const back = document.createElement('div');
+      back.className = 'srd-backdrop';
+      back.innerHTML =
+        '<div class="srd-panel" role="dialog" aria-modal="true">' +
+          '<i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i>' +
+          '<small class="en">INTERRUPTED BATTLE</small><h3>中断した戦闘があります</h3><div class="srd-rule"></div>' +
+          `<div class="srd-stage">${getResumeStageLabel(snapshot)}</div>` +
+          '<div class="srd-meta">' +
+            `<span>味方<b>${alive}/${party.length || 0}</b></span><span>HP<b>${hpRate}%</b></span>` +
+            (bossRate !== null ? `<span>BOSS<b>${bossRate}%</b></span>` : '') +
+          '</div>' +
+          (used
+            ? '<p class="srd-note warn">この戦闘はすでに1回再開しています。<br>再開は1戦闘につき1回までです。</p>'
+            : '<p class="srd-note">再開は1戦闘につき1回までです。</p>') +
+          '<div class="srd-btns">' +
+            `<button type="button" class="srd-btn resume"${used ? ' disabled' : ''}>再開する</button>` +
+            '<button type="button" class="srd-btn abandon">諦める</button>' +
+          '</div>' +
+          `<p class="srd-note abandon-note" hidden>${getResumeAbandonNote(snapshot)}<br>もう一度押すと確定します。</p>` +
+        '</div>';
+      document.body.appendChild(back);
+      const done = v => { back.remove(); resolve(v); };
+      const resumeBtn = back.querySelector('.srd-btn.resume');
+      const abandonBtn = back.querySelector('.srd-btn.abandon');
+      const note = back.querySelector('.abandon-note');
+      if (resumeBtn && !used) resumeBtn.addEventListener('click', () => done('resume'));
+      let armed = false;
+      abandonBtn.addEventListener('click', () => {
+        if (!armed) {
+          armed = true;
+          abandonBtn.classList.add('is-confirm');
+          abandonBtn.textContent = '諦める（敗北で確定）';
+          if (note) note.hidden = false;
+          return;
+        }
+        done('abandon');
+      });
+    });
+  }
+
   async function tryRestoreShootingBattle() {
     const snapshot = readShootingResumeState();
     if (!snapshot) return false;
     // すでにシューティング画面を開いている場合は自動介入しない。
+    if (document.getElementById(ROOT_ID)?.classList.contains('open')) return false;
+
+    // build1862: 位相回遊は、終わった／進んだランの古いデータなら確認せず破棄
+    if (window.PhaseOdyssey && typeof window.PhaseOdyssey.isStageId === 'function' &&
+        window.PhaseOdyssey.isStageId(snapshot.stageId)) {
+      const run0 = window.PhaseOdyssey.getState?.();
+      const floor0 = Number(snapshot.phaseOdysseyFloor || 0);
+      if (!run0 || !['battle', 'suspended'].includes(run0.run_status) ||
+          Number(run0.current_floor) !== floor0 ||
+          window.PhaseOdyssey.stageIdForFloor(floor0) !== snapshot.stageId) {
+        clearShootingResumeState();
+        return false;
+      }
+    }
+
+    // build1862: 再開するか諦めるかを選ぶ。再開は1戦闘につき1回まで（延命対策）。
+    const choice = await askShootingResumeChoice(snapshot);
+    if (choice === 'abandon') snapshot.abandonOnResume = true;
+    else if (choice !== 'resume') return false;
     if (document.getElementById(ROOT_ID)?.classList.contains('open')) return false;
 
     // build1643: 残響の塔は、出撃トークンとサーバーの進行データを復元できる場合だけ再開できる。
@@ -6435,7 +6622,7 @@
     clearNightshadeSpinRings();
     document.querySelectorAll('.shooting-wolf-berserk-aura').forEach(el => el.remove()); // build1860
     document.getElementById(PLAYER_ID)?.classList.remove('is-wolf-berserk', 'is-wolf-berserk-hurry');
-    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-rose-fortress,.shooting-remna-trap-preview,.shooting-conjure-preview,.shooting-conjure-deploy-projectile,.shooting-conjure-turret,.shooting-conjure-ult-turret,.shooting-camilla-web-overlay,.shooting-camilla-web-burst,.shooting-camilla-bound-web-fx,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-wolf-berserk-aura,.shooting-sui-time-domain,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning,.shooting-ch07-complete-shield,.shooting-ch07-torii,.eclipse-hand-band,.eclipse-float-num,.eclipse-dash-line,.eclipse-dark-veil,.eclipse-beacon,.eclipse-state-pill,.po-submission-chip,.po-variety-banner,.tb-fx,.shooting-v-laser-wrap').forEach(el => el.remove());
+    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-rose-fortress,.shooting-remna-trap-preview,.shooting-conjure-preview,.shooting-conjure-deploy-projectile,.shooting-conjure-turret,.shooting-conjure-ult-turret,.shooting-camilla-web-overlay,.shooting-camilla-web-burst,.shooting-camilla-bound-web-fx,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-wolf-berserk-aura,.shooting-aina-shade,.shooting-aina-decoy,.shooting-sui-time-domain,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning,.shooting-ch07-complete-shield,.shooting-ch07-torii,.eclipse-hand-band,.eclipse-float-num,.eclipse-dash-line,.eclipse-dark-veil,.eclipse-beacon,.eclipse-state-pill,.po-submission-chip,.po-variety-banner,.tb-fx,.shooting-v-laser-wrap').forEach(el => el.remove());
     clearEnemyBulletCanvas();
     clearPlayerBulletCanvas(); // build1811
     if (state) {
@@ -40165,7 +40352,8 @@
 
     // SCORE ATTACK
     if (stage.scoreAttack || stageId.includes('score_attack')) {
-      const bossName = getShootingStageInfoBossName(stage);
+      // build1864: 敵定義名（テストエネミー）ではなく、すこあちゃん固定
+      const bossName = 'すこあちゃん';
       return ['SCORE ATTACK', `${bossName}${difficulty ? `(${difficulty})` : ''}`];
     }
 
@@ -40258,6 +40446,20 @@
     overlay.classList.add('is-visible');
     overlay.setAttribute('aria-hidden', 'false');
     void overlay.offsetWidth;
+    // build1864: 長い行は右に見切れないよう、行ごとに文字サイズを縮めて枠内に収める
+    try {
+      const copy = overlay.querySelector('.shooting-stage-info-copy');
+      const maxW = copy ? copy.clientWidth : 0;
+      [line1El, line2El, line3El].forEach(el => {
+        el.style.fontSize = '';
+        if (!maxW || el.style.display === 'none') return;
+        const w = el.scrollWidth;
+        if (w > maxW) {
+          const base = parseFloat(getComputedStyle(el).fontSize) || 24;
+          el.style.fontSize = `${Math.max(12, Math.floor(base * (maxW / w) * 0.98))}px`;
+        }
+      });
+    } catch (_) {}
     overlay.classList.add('is-revealing');
 
     await waitShootingTransition(revealEnd + SHOOTING_STAGE_INFO_HOLD_MS);
