@@ -2477,8 +2477,97 @@
       return true;
     }
     state.missionFailed = true;
-    endGame(false);
+    beginTimeOverSequence(now); // build1835: 3・2・1 → TIME OVER → フェードアウト → RESULT
     return true;
+  }
+
+  // ------------------------------------------------------------
+  // build1835: 制限時間の終わりを演出する
+  //  ・残り3秒から画面中央に「3」「2」「1」
+  //  ・時間切れ（敗北扱い）は「TIME OVER」を見せてから暗転し、RESULTへ
+  //    （生存ミッションの時間到達はこれまでどおりSTAGE CLEARの演出）
+  // ------------------------------------------------------------
+  function ensureTimeOverStyle() {
+    if (document.getElementById('shooting-timeover-style-v1835')) return;
+    const st = document.createElement('style');
+    st.id = 'shooting-timeover-style-v1835';
+    st.textContent = `
+      #shooting-event-root .shooting-final-count{position:absolute;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;pointer-events:none}
+      #shooting-event-root .shooting-final-count b{display:block;font:700 112px/1 Cinzel,"Noto Serif JP",serif;color:#fff;letter-spacing:0;
+        -webkit-text-stroke:2px rgba(120,40,40,.55);
+        text-shadow:0 0 18px rgba(255,90,70,.75),0 0 42px rgba(200,40,40,.45),0 4px 0 rgba(90,20,20,.35);
+        animation:shootingFinalCount .9s cubic-bezier(.2,.9,.3,1) both}
+      @keyframes shootingFinalCount{0%{opacity:0;transform:scale(1.9)}18%{opacity:1;transform:scale(1)}72%{opacity:.95;transform:scale(.96)}100%{opacity:0;transform:scale(.82)}}
+      #shooting-event-root .shooting-timeover{position:absolute;inset:0;z-index:61;display:flex;flex-direction:column;align-items:center;justify-content:center;
+        pointer-events:auto;background:rgba(20,14,24,0);transition:background .5s ease}
+      #shooting-event-root .shooting-timeover.is-dim{background:rgba(20,14,24,.38)}
+      #shooting-event-root .shooting-timeover::before{content:"";position:absolute;left:0;right:0;top:50%;height:96px;margin-top:-48px;
+        background:linear-gradient(90deg,transparent,rgba(40,10,14,.72) 18%,rgba(40,10,14,.72) 82%,transparent);
+        transform:scaleX(0);animation:shootingTimeoverBand .38s cubic-bezier(.2,.9,.3,1) .05s forwards}
+      #shooting-event-root .shooting-timeover strong{position:relative;font:900 44px/1 Cinzel,"Noto Serif JP",serif;letter-spacing:.14em;color:#fff;
+        text-shadow:0 0 14px rgba(255,90,70,.9),0 0 34px rgba(220,50,40,.6);opacity:0;animation:shootingTimeoverText .5s cubic-bezier(.2,.9,.3,1.25) .16s forwards}
+      #shooting-event-root .shooting-timeover small{position:relative;margin-top:10px;font:600 12px/1 "Noto Serif JP",serif;letter-spacing:.3em;color:rgba(255,236,230,.92);
+        opacity:0;animation:shootingTimeoverText .4s ease .42s forwards}
+      #shooting-event-root .shooting-timeover i{position:absolute;inset:0;background:#120c16;opacity:0;transition:opacity .6s ease}
+      #shooting-event-root .shooting-timeover.is-fade i{opacity:1}
+      @keyframes shootingTimeoverBand{to{transform:scaleX(1)}}
+      @keyframes shootingTimeoverText{0%{opacity:0;transform:scale(1.4);letter-spacing:.4em}100%{opacity:1;transform:scale(1)}}
+      @media (prefers-reduced-motion:reduce){#shooting-event-root .shooting-final-count b,#shooting-event-root .shooting-timeover strong,#shooting-event-root .shooting-timeover small,#shooting-event-root .shooting-timeover::before{animation:none;opacity:1;transform:none}}
+    `;
+    document.head.appendChild(st);
+  }
+  function getTimeOverHost() {
+    return document.getElementById('shooting-arena') || document.getElementById(ROOT_ID);
+  }
+  function updateFinalCountdown(now) {
+    if (!state) return;
+    const limit = getBattleTimeLimitSeconds();
+    let n = 0;
+    if (limit > 0 && !state.ended && !state.finishing && !state.countdown && !state.chapter4ItemPhase) {
+      const left = getBattleTimeLeft(now);
+      if (left > 0 && left <= 3) n = Math.ceil(left);
+    }
+    if (n === Number(state.finalCountShown || 0)) return;
+    state.finalCountShown = n;
+    const host = getTimeOverHost();
+    let el = host && host.querySelector('.shooting-final-count');
+    if (!n) { el?.remove(); return; }
+    if (!host) return;
+    ensureTimeOverStyle();
+    if (!el) { el = document.createElement('div'); el.className = 'shooting-final-count'; el.setAttribute('aria-hidden', 'true'); host.appendChild(el); }
+    el.innerHTML = `<b>${n}</b>`; // 毎回作り直してアニメーションをやり直す
+  }
+  function removeTimeOverDom() {
+    document.querySelectorAll('#shooting-event-root .shooting-final-count, #shooting-event-root .shooting-timeover').forEach(el => el.remove());
+  }
+  function beginTimeOverSequence(now) {
+    if (!state || state.ended || state.finishing) return;
+    state.finishing = true;
+    state.running = false;
+    state.finalCountShown = 0;
+    cancelAnimationFrame(rafId);
+    const host = getTimeOverHost();
+    host?.querySelector('.shooting-final-count')?.remove();
+    ensureTimeOverStyle();
+    let overlay = null;
+    if (host) {
+      overlay = document.createElement('div');
+      overlay.className = 'shooting-timeover';
+      overlay.setAttribute('role', 'status');
+      overlay.innerHTML = '<strong>TIME OVER</strong><small>制限時間終了</small><i></i>';
+      host.appendChild(overlay);
+      requestAnimationFrame(() => overlay.classList.add('is-dim'));
+    }
+    try { fadeOutShootingBattleBgm(1600, false); } catch (_) {}
+    renderHud();
+    // TIME OVERを見せる → 暗転 → RESULT
+    setTimeout(() => { overlay?.classList.add('is-fade'); }, 1500);
+    setTimeout(() => {
+      if (!state || state.ended) { overlay?.remove(); return; }
+      state.finishing = false;
+      endGame(false);
+      setTimeout(() => overlay?.remove(), 80);
+    }, 2150);
   }
 
   function getRaidStartingHp() {
@@ -27498,6 +27587,7 @@
     if (Number(state.noahMovementFreezeUntil || 0) > 0) {
       if (ts < Number(state.noahMovementFreezeUntil || 0)) {
         if (checkBattleTimeLimit(ts)) return;
+        updateFinalCountdown(ts); // build1835
 
         const noahFreezeDt = Math.min(0.032, Math.max(0, (ts - (prevTs || ts)) / 1000));
         prevTs = ts;
@@ -27518,6 +27608,7 @@
 
 
     if (checkBattleTimeLimit(ts)) return;
+    updateFinalCountdown(ts); // build1835
     respawnScoreAttackBoss(ts);
 
     const dt = Math.min(0.032, Math.max(0, (ts - (prevTs || ts)) / 1000));
@@ -30154,6 +30245,10 @@
 
     // RESULTへ入るタイミングで戦闘BGMを短くフェードアウト。
     fadeOutShootingBattleBgm(520, true);
+
+    // build1835: 残り3秒のカウントはRESULTへ持ち越さない（TIME OVERの幕は自分で片付ける）
+    document.querySelectorAll('#shooting-event-root .shooting-final-count').forEach(el => el.remove());
+    if (state) state.finalCountShown = 0;
 
     // CH04専用ギミックはRESULTへ持ち越さない。
     removeOverseerWatchDom();
