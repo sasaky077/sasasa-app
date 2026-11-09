@@ -582,3 +582,85 @@ html body:not(.ui-immersive) #screen-setting.settings-premium .setting-premium-p
     grid-template-rows:21px minmax(0,1fr) minmax(0,1fr)!important;
   }
 }
+
+/* ============================================================
+   build1844: 「タイトル画面へ戻る」— アカウント欄の下に置く独立ボタン
+   ============================================================ */
+#screen-setting.settings-premium .setting-title-return{
+  position:relative;
+  display:flex;align-items:center;gap:12px;
+  width:100%;
+  height:clamp(54px,8.6dvh,70px);
+  margin:clamp(12px,2.2dvh,20px) 0 0;
+  padding:0 18px 0 22px;
+  box-sizing:border-box;
+  border:1px solid rgba(162,111,39,.85);
+  border-radius:12px;
+  overflow:hidden;
+  cursor:pointer;
+  text-align:left;
+  color:#2f211b;
+  background:
+    radial-gradient(ellipse 45% 120% at 88% 110%,rgba(214,186,140,.32),transparent 70%),
+    radial-gradient(ellipse at 10% 0%,rgba(255,255,255,.95),transparent 60%),
+    linear-gradient(110deg,#fffdf8,#f8f0df 60%,#efe1c3);
+  box-shadow:0 2px 0 rgba(207,167,87,.3),inset 0 0 0 2px rgba(255,252,242,.96),0 4px 12px rgba(105,72,34,.14);
+  -webkit-tap-highlight-color:transparent;
+}
+/* 内側の金の細線と四隅の切り欠き風の飾り */
+#screen-setting.settings-premium .setting-title-return::before{
+  content:'';position:absolute;inset:4px;border-radius:9px;pointer-events:none;
+  border:1px solid rgba(199,150,66,.55);
+}
+#screen-setting.settings-premium .setting-title-return::after{
+  content:'';position:absolute;right:46px;bottom:5px;width:120px;height:62%;pointer-events:none;opacity:.32;
+  background:
+    linear-gradient(0deg,rgba(168,128,70,.55),rgba(168,128,70,0)) 70% 100% / 3px 70% no-repeat,
+    linear-gradient(0deg,rgba(168,128,70,.45),rgba(168,128,70,0)) 52% 100% / 2px 48% no-repeat,
+    linear-gradient(0deg,rgba(168,128,70,.45),rgba(168,128,70,0)) 86% 100% / 2px 42% no-repeat,
+    radial-gradient(ellipse 50% 30% at 70% 100%,rgba(168,128,70,.5),transparent 70%);
+}
+#screen-setting.settings-premium .setting-title-return:active{filter:brightness(.96);transform:translateY(1px)}
+#screen-setting.settings-premium .setting-title-return:focus-visible{outline:2px solid #b88a46;outline-offset:2px}
+#screen-setting.settings-premium .setting-title-return-icon{position:relative;z-index:1;flex:none;display:flex;align-items:center}
+#screen-setting.settings-premium .setting-title-return-icon img{
+  display:block;width:clamp(34px,9vw,44px);height:clamp(34px,9vw,44px);object-fit:contain;
+  filter:drop-shadow(0 1px 2px rgba(104,77,40,.25));
+}
+#screen-setting.settings-premium .setting-title-return-label{
+  position:relative;z-index:1;flex:1 1 auto;min-width:0;white-space:nowrap;
+  font:700 clamp(15px,4.3vw,20px)/1.2 'Noto Serif JP','Yu Mincho',serif;letter-spacing:.06em;color:#2f211b;
+}
+#screen-setting.settings-premium .setting-title-return-arrow{
+  position:relative;z-index:1;flex:none;color:#895a23;font:500 28px/1 Georgia,serif;
+}
+@media(max-width:359px), (max-height:700px){
+  #screen-setting.settings-premium .setting-title-return{height:clamp(46px,8.3dvh,56px);margin-top:9px}
+}
+
+/* build1844: 「データ引継ぎ」「その他の設定」を外したので、行の割り付けを組み直す
+   ・アカウント欄：見出し／2行（保護・ユーザーID）／タイトルへ戻る／注意書き
+   ・「その他の設定」用だった最下段（22px）は無くす */
+html body:not(.ui-immersive) #screen-setting.settings-premium .setting-screen-scroll.app-scroll-region{
+  grid-template-rows:minmax(0,2fr) minmax(0,1.12fr) minmax(0,3.75fr)!important;
+}
+html body:not(.ui-immersive) #screen-setting.settings-premium .setting-premium-account{
+  grid-template-rows:clamp(22px,3.35dvh,34px) minmax(0,1fr) auto auto!important;
+}
+html body:not(.ui-immersive) #screen-setting.settings-premium .setting-premium-account-rows{
+  grid-template-rows:repeat(2,minmax(0,1fr))!important;
+}
+html body:not(.ui-immersive) #screen-setting.settings-premium .setting-title-return{
+  margin-top:clamp(8px,1.6dvh,16px)!important;
+}
+@media (max-width:359px), (max-height:620px){
+  html body:not(.ui-immersive) #screen-setting.settings-premium .setting-screen-scroll.app-scroll-region{
+    grid-template-rows:minmax(0,2fr) minmax(0,1.12fr) minmax(0,3.75fr)!important;
+  }
+  html body:not(.ui-immersive) #screen-setting.settings-premium .setting-premium-account{
+    grid-template-rows:21px minmax(0,1fr) auto auto!important;
+  }
+  html body:not(.ui-immersive) #screen-setting.settings-premium .setting-title-return{
+    height:42px!important;margin-top:6px!important;
+  }
+}
