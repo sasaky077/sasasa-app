@@ -7539,6 +7539,8 @@ document.addEventListener('touchend', function (e) {
   // build1747: 10連カード開封の長押し高速化
   var tenRevealNextTimer = null;
   var tenRevealFastHold = false;
+  // build1845: 10連が完全にオープンするまで詳細を開かせない
+  var tenDetailUnlocked = false;
 
   var visibleGachaBanners = [];
   var summonPagerTouchStartX = null;
@@ -12096,6 +12098,8 @@ function setTenResultFooterVisible(visible){
   // CSS側に display:grid!important があるため、通常の inline display:none では隠せない。
   // JS側も important 指定で明示的に上書きする。
   footer.style.setProperty('display', visible ? 'grid' : 'none', 'important');
+  // build1845: 結果ボタンが出た＝完全オープン。このときだけ詳細タップを解禁する。
+  tenDetailUnlocked = !!visible;
 }
   function setHomeBtnVisible(visible){ /* 削除済み */ }
   function setReloadBtnVisible(visible){ /* 削除済み */ }
@@ -14643,6 +14647,7 @@ async function startTenRevealSequence(results, options){
 function buildTenResultCards(results){
   var grid = document.getElementById('ten-result-grid');
   grid.innerHTML = '';
+  tenDetailUnlocked = false;
 
   results.forEach(function(data, index){
     var div = document.createElement('div');
@@ -14690,6 +14695,8 @@ function setTenRevealFastHold(on){
   var HOLD_MS = 300;
   var holdTimer = null;
   var suppressClickUntil = 0;
+  // build1845: ロック中に始まったタップ/長押しは、指を離した時点で解禁されていても詳細を開かない
+  var gestureStartedLocked = false;
   function isRevealing(){
     var modal = document.getElementById('ten-result-modal');
     return !!(modal && modal.classList.contains('active') &&
@@ -14700,10 +14707,29 @@ function setTenRevealFastHold(on){
     var st = document.createElement('style');
     st.id = 'ten-fast-style';
     st.textContent =
-      '#ten-result-modal .ten-fast-indicator{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);' +
-      'z-index:60;pointer-events:none;padding:5px 16px;border-radius:999px;font:700 12px/1.4 sans-serif;letter-spacing:.12em;color:#fff;' +
-      'background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.35);opacity:0;transition:opacity .15s}' +
-      '#ten-result-modal.is-ten-fast .ten-fast-indicator{opacity:1}' +
+      '#ten-result-modal .ten-fast-indicator{position:fixed;left:50%;top:50%;z-index:60;pointer-events:none;' +
+      'display:flex;align-items:center;gap:10px;padding:9px 22px 9px 18px;border-radius:999px;' +
+      'transform:translate(-50%,-50%) scale(.94);opacity:0;transition:opacity .18s ease,transform .18s ease;' +
+      'background:linear-gradient(180deg,rgba(38,30,22,.88),rgba(18,14,10,.9));' +
+      'border:1px solid rgba(214,182,120,.85);' +
+      'box-shadow:0 0 0 3px rgba(20,14,8,.35),inset 0 0 0 1px rgba(255,236,190,.16),inset 0 1px 0 rgba(255,240,205,.28),0 8px 26px rgba(0,0,0,.45),0 0 22px rgba(214,176,98,.28);' +
+      '-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}' +
+      '#ten-result-modal .ten-fast-indicator::before,#ten-result-modal .ten-fast-indicator::after{content:"";position:absolute;top:50%;width:5px;height:5px;' +
+      'background:#d9bd7e;transform:translateY(-50%) rotate(45deg);box-shadow:0 0 6px rgba(240,205,130,.8)}' +
+      '#ten-result-modal .ten-fast-indicator::before{left:-3px}' +
+      '#ten-result-modal .ten-fast-indicator::after{right:-3px}' +
+      '#ten-result-modal.is-ten-fast .ten-fast-indicator{opacity:1;transform:translate(-50%,-50%) scale(1)}' +
+      '#ten-result-modal .ten-fast-chevrons{display:flex;align-items:center;gap:0}' +
+      '#ten-result-modal .ten-fast-chevrons svg{width:11px;height:14px;display:block;opacity:.25;filter:drop-shadow(0 0 3px rgba(240,200,120,.7))}' +
+      '#ten-result-modal.is-ten-fast .ten-fast-chevrons svg{animation:tenFastChev .72s linear infinite}' +
+      '#ten-result-modal.is-ten-fast .ten-fast-chevrons svg:nth-child(2){animation-delay:.12s}' +
+      '#ten-result-modal.is-ten-fast .ten-fast-chevrons svg:nth-child(3){animation-delay:.24s}' +
+      '@keyframes tenFastChev{0%,100%{opacity:.22}35%{opacity:1}}' +
+      '#ten-result-modal .ten-fast-label{display:flex;flex-direction:column;align-items:flex-start;line-height:1}' +
+      '#ten-result-modal .ten-fast-label b{font:700 13px/1.1 "Noto Serif JP",serif;letter-spacing:.2em;' +
+      'background:linear-gradient(180deg,#fff6dc 0%,#f0d495 55%,#c79a4c 100%);-webkit-background-clip:text;background-clip:text;color:transparent;' +
+      'filter:drop-shadow(0 1px 0 rgba(0,0,0,.6))}' +
+      '#ten-result-modal .ten-fast-label small{margin-top:3px;font:600 7.5px/1 "Cinzel","Noto Serif JP",serif;letter-spacing:.34em;color:rgba(222,196,140,.78)}' +
       '#ten-result-modal .ten-result-grid{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}' +
       '#ten-result-modal .ten-result-grid img{-webkit-user-drag:none;pointer-events:none}';
     document.head.appendChild(st);
@@ -14712,7 +14738,10 @@ function setTenRevealFastHold(on){
     if(modal.querySelector('.ten-fast-indicator')) return;
     var el = document.createElement('div');
     el.className = 'ten-fast-indicator';
-    el.textContent = '▶▶ 高速開封中';
+    // build1845: iPhoneで▶が絵文字化するため、矢印はSVGで描く
+    var chev = '<svg viewBox="0 0 11 14" aria-hidden="true"><path d="M2 1.5 L8.5 7 L2 12.5" fill="none" stroke="#e9cd8c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    el.innerHTML = '<span class="ten-fast-chevrons" aria-hidden="true">' + chev + chev + chev + '</span>' +
+      '<span class="ten-fast-label"><b>高速開封中</b><small>FAST REVEAL</small></span>';
     (modal.querySelector('.ten-result-modal-inner') || modal).appendChild(el);
   }
   function cancelHold(){
@@ -14728,6 +14757,7 @@ function setTenRevealFastHold(on){
     ensureStyle();
     ensureIndicator(modal);
     modal.addEventListener('pointerdown', function(e){
+      gestureStartedLocked = !tenDetailUnlocked;
       if(!isRevealing()) return;
       if(e.target && e.target.closest && e.target.closest('button')) return;
       if(holdTimer) clearTimeout(holdTimer);
@@ -14741,7 +14771,13 @@ function setTenRevealFastHold(on){
     });
     window.addEventListener('blur', cancelHold);
     modal.addEventListener('click', function(e){
-      if(Date.now() < suppressClickUntil){ e.stopPropagation(); e.preventDefault(); }
+      var startedLocked = gestureStartedLocked;
+      gestureStartedLocked = false;
+      if(Date.now() < suppressClickUntil){ e.stopPropagation(); e.preventDefault(); return; }
+      // 開封中に押し始めた指を、全開封後に離しても詳細は開かない
+      if(startedLocked && tenDetailUnlocked && e.target && e.target.closest && e.target.closest('.ten-result-card')){
+        e.stopPropagation(); e.preventDefault();
+      }
     }, true);
     modal.addEventListener('contextmenu', function(e){ if(isRevealing()) e.preventDefault(); });
   }
@@ -14905,6 +14941,7 @@ function showTenResult(results){
     // 10枚すべての演出が完了した、このタイミングでのみ詳細タップを解禁する。
     (function(d){
       card.onclick = function(){
+        if(!tenDetailUnlocked) return; // build1845: 開封中は詳細を開かない
         var displayData = getGachaPresentationResult(d);
         if(isGachaMaterialResult(displayData)){
           showGachaMaterialDetail(displayData, true);
