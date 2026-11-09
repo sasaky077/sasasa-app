@@ -3004,9 +3004,9 @@
     clusterRingRadius: 140, clusterRingSpinMs: 560, clusterRingTicks: 4, clusterRingTickRate: 0.20,
     shotElement: 'dark', shotCount: 1, fireRate: 560, bulletSpeed: 720, shotPowerRate: 0.26,
     ultName: 'ナイトシェード・バラージ',
-    ultDescription: '敵弾を全消去して時間停止。4秒間、タップするたびに散弾4発を敵全体へランダムにばら撒く。1発ATK×0.095（最大12回＝48発）。',
+    ultDescription: '敵弾を全消去して時間停止。4秒間、タップするたびに散弾4発を敵全体へランダムにばら撒く。1発ATK×0.20（最大12回＝48発）。',
     ultType: 'nightshade_barrage', ultBaseType: 'damage', ultAddons: ['bullet_clear', 'time_stop', 'damage'],
-    nightshadeBarrageDurationMs: 4000, nightshadePelletsPerTap: 4, nightshadePelletAtkRate: 0.095,
+    nightshadeBarrageDurationMs: 4000, nightshadePelletsPerTap: 4, nightshadePelletAtkRate: 0.20, // build1846: 0.095→0.20（並みのULTより少し強い程度に）
     nightshadeMaxTaps: 12, nightshadeMinTapIntervalMs: 80,
     burstNeed: 32, ultGainPerHit: 0.60,
     coreTop: '38%', shotOffsetY: 42,
@@ -3198,7 +3198,7 @@
       case 'sui_time_domain':
         return '自機に追従する半径' + String(num(c.suiDomainRadius, 275)) + 'pxの時空領域を' + sec(c.suiDomainDurationMs, 6000) + '間展開。領域内の敵弾を' + pct(1 - num(c.suiDomainBulletSpeedMultiplier, 0.2), 0.8) + '減速し、領域内の操作キャラのATKを' + mul(c.suiDomainAtkMultiplier, 1.3) + 'にする。' + note('敵弾全消去・回復・全体攻撃なし');
       case 'nightshade_barrage':
-        return CLEAR + '時間を停止。' + sec(c.nightshadeBarrageDurationMs, 4000) + '間、タップするたびに散弾' + String(num(c.nightshadePelletsPerTap, 4)) + '発を敵全体へランダムにばら撒く。1発' + atk(c.nightshadePelletAtkRate, 0.095) + '（最大' + String(num(c.nightshadeMaxTaps, 12)) + '回）。';
+        return CLEAR + '時間を停止。' + sec(c.nightshadeBarrageDurationMs, 4000) + '間、タップするたびに散弾' + String(num(c.nightshadePelletsPerTap, 4)) + '発を敵全体へランダムにばら撒く。1発' + atk(c.nightshadePelletAtkRate, 0.20) + '（最大' + String(num(c.nightshadeMaxTaps, 12)) + '回）。';
       case 'nightshade_snipe':
         return 'BOSS（いなければ一番近い敵）へ直線の狙撃弾。射線上の敵すべての属性バリアを剥がし、' + sec(c.nightshadeStunMs, 5000) + '間スタン。命中した敵に' + atk(c.nightshadeDamageAtkMultiplier, 2.5) + 'のダメージ。';
       case 'meloria_stun':
