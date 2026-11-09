@@ -57,19 +57,20 @@ html body #screen-main > button.home-type-entry.hm2.locked-visual .hm2-label{
 }
 html body #screen-main > button.home-type-entry.hm2.locked-visual .hm2-rule{ opacity:.5 !important; }
 html body #screen-main > button.home-type-entry.hm2.locked-visual .hm2-chev{opacity:0 !important;}
-/* 残響の塔：赤い煙は彩度だけ落として暗さを残し、白文字と「残」が沈まないようにする */
+/* 残響の塔：ロック中は赤い煙を消し、他の項目と同じ「濃い文字」で表示する
+   （端末によって煙が描かれず、白文字と「残」が背景に溶けていたため） */
 html body #screen-main > button.home-type-entry.hm2--tower.locked-visual .hm2-row::before{
-  filter:blur(6px) grayscale(.75) brightness(.78) !important;
-  opacity:.9 !important;
+  display:none !important;
 }
 html body #screen-main > button.home-type-entry.hm2--tower.locked-visual .hm2-label{
-  opacity:.95 !important;
+  opacity:.82 !important;
   filter:none !important;
-  color:#f1ebe6 !important;
+  color:#4d4640 !important;
+  text-shadow:0 0 4px rgba(255,255,255,.95),0 0 10px rgba(255,255,255,.75) !important;
 }
 html body #screen-main > button.home-type-entry.hm2--tower.locked-visual .hm2-label-head{
-  color:#d9a3a6 !important;
-  text-shadow:0 0 1px #fff2ea,0 0 5px rgba(255,255,255,.35),0 1px 2px rgba(0,0,0,.6) !important;
+  color:#8e3b41 !important;
+  text-shadow:0 0 4px rgba(255,255,255,.95),0 0 10px rgba(255,255,255,.8) !important;
 }
 
 /* ---------- ボトムナビ ---------- */
@@ -89,4 +90,9 @@ html body #bottom-nav-shared .bottom-nav-item.locked-visual > .bottom-nav-label{
 @media (max-width:380px),(max-height:700px){
   html body #screen-main > button.home-type-entry.hm2 > .content-lock-overlay,
   html body #screen-main .home-type-entry > .content-lock-overlay{ --lk:34px; }
+}
+
+/* build1843: 残響の塔の鍵は「残」に重ならないよう、塔のアイコン上部へ少し上げる */
+html body #screen-main > button.home-type-entry.hm2--tower > .content-lock-overlay{
+  transform:translate(-50%,-92%) !important;
 }
