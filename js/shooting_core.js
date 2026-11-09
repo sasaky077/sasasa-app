@@ -24614,7 +24614,28 @@
     state.gojoPurpleField = null;
   }
 
+  // build1849: マグダレーナの鎌の掃除。拘束終了で消える演出に入り、少し後にDOMを外す。
+  function sweepGojoScythes(now) {
+    if (!state || !Array.isArray(state.gojoScythes) || !state.gojoScythes.length) return;
+    state.gojoScythes = state.gojoScythes.filter(rec => {
+      if (!rec || !rec.el || !rec.el.isConnected) return false;
+      if (!rec.faded && now >= rec.fadeAt) {
+        rec.faded = true;
+        rec.el.classList.remove('fly', 'grab');
+        rec.el.classList.add('release', 'fade');
+      }
+      if (now >= rec.removeAt) { rec.el.remove(); return false; }
+      return true;
+    });
+  }
+
+  function removeAllGojoScythes() {
+    document.querySelectorAll('#shooting-arena .shooting-gojo-purple-wave').forEach(el => el.remove());
+    if (state) state.gojoScythes = [];
+  }
+
   function updateGojoPurpleField(dt, now) {
+    sweepGojoScythes(now);
     if (!state || !state.gojoPurpleField) return;
 
     const field = state.gojoPurpleField;
@@ -33041,6 +33062,7 @@
       closeDailyStageSelect();
     }
     clearUltTimers();
+    removeAllGojoScythes(); // build1849
     clearHaoTrigger();
     if (state) {
       state.running = false;
@@ -33588,6 +33610,13 @@
     arena.appendChild(wave);
     wave.style.transformOrigin = '50% 50%';
 
+    // build1849: 鎌の後片付けはULTタイマーに頼らず、毎フレームの掃除で確実に行う。
+    // （他キャラのULT発動で clearUltTimers() が走ると、鎌を消すタイマーごと消えて残っていた）
+    const scytheRec = { el: wave, fadeAt: now + MAX_TRAVEL_MS + HOLD_MS + 600, removeAt: now + MAX_TRAVEL_MS + HOLD_MS + 1020, faded: false };
+    if (!Array.isArray(state.gojoScythes)) state.gojoScythes = [];
+    state.gojoScythes = state.gojoScythes.filter(r => r && r.el && r.el.isConnected);
+    state.gojoScythes.push(scytheRec);
+
     const setScytheTransform = (x, y, deg = 0, scale = 1) => {
       wave.style.transform =
         `translate3d(${x}px,${y}px,0) translate(-50%,-50%) rotate(${deg}deg) scale(${scale})`;
@@ -33611,6 +33640,9 @@
         setTimeout(() => root.classList.remove('ult-miss'), 450);
       }
       pushUltTimer(() => wave.isConnected && wave.remove(), 480);
+      scytheRec.faded = true;
+      scytheRec.fadeAt = performance.now();
+      scytheRec.removeAt = scytheRec.fadeAt + 480;
       renderHud();
     };
 
@@ -33718,6 +33750,8 @@
       }
 
       captureAtImpact(x, y);
+      scytheRec.fadeAt = performance.now() + HOLD_MS;
+      scytheRec.removeAt = scytheRec.fadeAt + 420;
 
       pushUltTimer(() => {
         if (!state) return;
