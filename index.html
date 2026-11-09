@@ -10130,6 +10130,52 @@ startTitleBgm();
     throw new Error('user_profiles確定後の読込に失敗しました');
   }
 
+  // build1839: ドメイン変更・管理者移行後のSTORYクリア履歴をクラウドから安全に再取得。
+  // 未クリア端末側の空データで上書きされる前に復旧する。
+  // 現在のAuthユーザーに結びつくプロフィールのデータだけを読む。
+  try {
+    var localStoryClears = {};
+    try { localStoryClears = JSON.parse(localStorage.getItem('zeraphia_story_stage_clears_v1') || '{}') || {}; }
+    catch (_) { localStoryClears = {}; }
+    if (!localStoryClears['shooting_ch03_04']) {
+      // 専用サーバー関数はAuth所有者を検証し、移行前スナップショットのみを返す。
+      // player_progress はバックグラウンド同期で上書きされるため復元元には使わない。
+      var recoveryResponse = await sb.rpc('get_story_recovery_secure');
+      if (recoveryResponse.error) throw recoveryResponse.error;
+      var recovery = recoveryResponse.data && recoveryResponse.data.ok ? recoveryResponse.data : null;
+      var cloudItems = recovery && recovery.localStorage || {};
+      var cloudStage = cloudItems['zeraphia_story_stage_clears_v1'];
+      var cloudStageClears = cloudStage && (cloudStage.parsed || (cloudStage.raw && JSON.parse(cloudStage.raw))) || {};
+      if (cloudStageClears && cloudStageClears['shooting_ch03_04'] === true) {
+        // 両方にあるキーのうち、既にクリアしたステージは true を優先。
+        var mergedStory = Object.assign({}, cloudStageClears, localStoryClears);
+        Object.keys(cloudStageClears).forEach(function(stage){
+          if (cloudStageClears[stage] === true) mergedStory[stage] = true;
+        });
+        localStorage.setItem('zeraphia_story_stage_clears_v1', JSON.stringify(mergedStory));
+        // ステージ別スコア履歴も復元。ただし既存端末の新記録は優先する。
+        var cloudRecord = cloudItems['zeraphia_shooting_stage_records_v1'];
+        if (cloudRecord && (cloudRecord.raw || cloudRecord.parsed)) {
+          var remoteRecords = cloudRecord.parsed || JSON.parse(cloudRecord.raw);
+          var localRecords = {};
+          try { localRecords = JSON.parse(localStorage.getItem('zeraphia_shooting_stage_records_v1') || '{}') || {}; }
+          catch (_) { localRecords = {}; }
+          localStorage.setItem('zeraphia_shooting_stage_records_v1', JSON.stringify(Object.assign({}, remoteRecords, localRecords)));
+        }
+        ['zeraphia_gacha_tutorial_completed_v1', 'zeraphia_tutorial_levelup_reward_ch01_03_v1', 'zeraphia_tutorial_levelup_ch01_03_follow_ui_v3'].forEach(function(key){
+          if (localStorage.getItem(key) != null) return;
+          var item = cloudItems[key];
+          if (item && typeof item.raw === 'string') localStorage.setItem(key, item.raw);
+        });
+        console.info('[story recovery] restored cleared stages from cloud for current authenticated player');
+        if (typeof syncChapter03ContentLockUI === 'function') syncChapter03ContentLockUI();
+        if (typeof syncCharacterContentLockUI === 'function') syncCharacterContentLockUI();
+      }
+    }
+  } catch (storyRecoverError) {
+    console.warn('[story recovery] unable to load cloud story progress', storyRecoverError);
+  }
+
   // Auth所有者は起動直後に確認済み。ここでは初期ストーリーキャラを保証する。
   await ensureStarterStoryCharactersOwned();
   // 既存クリア履歴を基に未受領の記憶の欠片を補填する。
