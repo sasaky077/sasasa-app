@@ -9549,8 +9549,12 @@
     el.style.setProperty('--ring-size', `${Math.round(radius * 2)}px`);
     el.style.setProperty('--bomb-rgb', visual.rgb);
     el.style.setProperty('--spin-ms', `${Math.round(spinMs)}ms`);
-    el.style.setProperty('--spin-dir', Math.random() < .5 ? '1' : '-1');
-    el.innerHTML = '<i class="ns-ring-base"></i><i class="ns-ring-spin"><b></b><b></b><b></b></i>';
+    el.style.setProperty('--spin-dir', '1'); // build1847: 常に時計回り
+    el.innerHTML = '<i class="ns-ring-wrap">' +
+      '<i class="ns-ring-rune"></i><i class="ns-ring-base"></i>' + // build1848: 靄・内側の帯を削除（軽量化）
+      '<i class="ns-ring-swirl"></i>' +
+      '<i class="ns-ring-spin"><b></b><b></b><b></b></i>' +
+      '</i>';
     arena.appendChild(el);
     positionUnit(el, Number(x || 0), Number(y || 0));
     if (!Array.isArray(state.nsSpinRings)) state.nsSpinRings = [];
@@ -9591,7 +9595,7 @@
       }
       if (ring.done >= ring.ticks && elapsed >= ring.spinMs) {
         ring.el.classList.add('is-ending');
-        const el = ring.el; setTimeout(() => el.remove(), 180);
+        const el = ring.el; setTimeout(() => el.remove(), 320); // build1847: クルンと回って消える
         return false;
       }
       return true;

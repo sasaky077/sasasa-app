@@ -15647,3 +15647,110 @@ html body #shooting-event-root .shooting-combo .shooting-combo-bonus.is-up{anima
 }
 #shooting-event-root .shooting-ns-spin-ring.is-ending{transition:opacity .18s ease-out;opacity:0;}
 #shooting-event-root .shooting-ns-spin-ring.is-ending .ns-ring-base{animation:none;transform:scale(1.08);transition:transform .18s ease-out;}
+
+/* ============================================================
+   build1847 — ナイトシェード エナジーサークル（モック準拠）
+   紫の魔法陣＋時計回りに旋回する光の帯。終了時はクルンと回って中心へ消える。
+   ============================================================ */
+#shooting-event-root .shooting-ns-spin-ring.is-ending{transition:none!important;opacity:1!important;}
+#shooting-event-root .shooting-ns-spin-ring .ns-ring-wrap{position:absolute;inset:0;border-radius:50%;}
+#shooting-event-root .shooting-ns-spin-ring.is-ending .ns-ring-wrap{animation:ns1847-out .3s cubic-bezier(.45,0,.75,.35) forwards;}
+@keyframes ns1847-out{
+  0%{transform:rotate(0deg) scale(1);opacity:1}
+  30%{transform:rotate(80deg) scale(1.07);opacity:1}
+  100%{transform:rotate(330deg) scale(.12);opacity:0}
+}
+/* 内側の淡い紫の靄 */
+#shooting-event-root .shooting-ns-spin-ring .ns-ring-haze{
+  position:absolute;inset:0;border-radius:50%;
+  background:radial-gradient(circle,rgba(140,70,235,0) 0%,rgba(130,60,220,.07) 52%,rgba(150,80,250,.2) 66%,rgba(175,105,255,0) 71%);
+  animation:ns1847-in .2s ease-out both;
+}
+/* 外周の細い光輪 */
+#shooting-event-root .shooting-ns-spin-ring .ns-ring-base{
+  inset:2px!important;
+  border:1.5px solid rgba(200,150,255,.9)!important;
+  box-shadow:0 0 8px rgba(150,70,255,.9),0 0 18px rgba(130,60,240,.45),inset 0 0 12px rgba(150,70,255,.45)!important;
+  animation:ns1847-in .2s ease-out both!important;
+}
+/* 内側の刻印リング（目盛り＋細線）。ゆっくり時計回り */
+#shooting-event-root .shooting-ns-spin-ring .ns-ring-rune{
+  position:absolute;inset:15%;border-radius:50%;
+  border:1px solid rgba(160,95,250,.6);
+  background:repeating-conic-gradient(rgba(150,80,245,.9) 0deg 1.6deg,transparent 1.6deg 7.5deg);
+  -webkit-mask:radial-gradient(circle closest-side,transparent calc(100% - 7px),#000 calc(100% - 6px),#000 calc(100% - 2px),transparent calc(100% - 1px));
+          mask:radial-gradient(circle closest-side,transparent calc(100% - 7px),#000 calc(100% - 6px),#000 calc(100% - 2px),transparent calc(100% - 1px));
+  opacity:.8;
+  animation:ns1847-rune var(--spin-ms,560ms) linear both;
+}
+/* 大きく旋回する光の帯（モックの渦巻き） */
+#shooting-event-root .shooting-ns-spin-ring .ns-ring-swirl{
+  position:absolute;inset:-9%;border-radius:50%;
+  background:conic-gradient(from 0deg,
+    rgba(120,40,240,0) 0deg,rgba(120,40,240,0) 30deg,rgba(130,50,245,.75) 115deg,rgba(175,95,255,.95) 155deg,rgba(245,225,255,1) 172deg,#fff 177deg,rgba(120,40,240,0) 180deg,
+    rgba(120,40,240,0) 210deg,rgba(130,50,245,.7) 295deg,rgba(175,95,255,.95) 335deg,rgba(245,225,255,1) 352deg,#fff 357deg,rgba(120,40,240,0) 360deg);
+  -webkit-mask:radial-gradient(circle closest-side,transparent calc(100% - 20px),rgba(0,0,0,.35) calc(100% - 15px),#000 calc(100% - 7px),#000 calc(100% - 4px),transparent 100%);
+          mask:radial-gradient(circle closest-side,transparent calc(100% - 20px),rgba(0,0,0,.35) calc(100% - 15px),#000 calc(100% - 7px),#000 calc(100% - 4px),transparent 100%);
+  filter:drop-shadow(0 0 5px rgba(150,60,255,.95)) drop-shadow(0 0 1px rgba(90,20,200,.6));
+  animation:ns1847-swirl var(--spin-ms,560ms) cubic-bezier(.25,.1,.3,1) both;
+}
+#shooting-event-root .shooting-ns-spin-ring .ns-ring-swirl.is-inner{
+  inset:24%;opacity:.85;
+  -webkit-mask:radial-gradient(circle closest-side,transparent calc(100% - 9px),#000 calc(100% - 5px),#000 calc(100% - 2px),transparent 100%);
+          mask:radial-gradient(circle closest-side,transparent calc(100% - 9px),#000 calc(100% - 5px),#000 calc(100% - 2px),transparent 100%);
+  animation:ns1847-swirl-inner var(--spin-ms,560ms) cubic-bezier(.3,.1,.35,1) both;
+}
+/* 彗星の尾（外周を1周する主光） */
+#shooting-event-root .shooting-ns-spin-ring .ns-ring-spin{
+  inset:-2px!important;
+  background:conic-gradient(from 0deg,rgba(160,80,255,0) 0deg,rgba(160,80,255,0) 120deg,
+    rgba(130,50,245,.8) 240deg,rgba(190,120,255,1) 325deg,#fff 356deg,rgba(160,80,255,0) 360deg)!important;
+  -webkit-mask:radial-gradient(circle closest-side,transparent calc(100% - 9px),#000 calc(100% - 7px),#000 calc(100% - 1px),transparent 100%)!important;
+          mask:radial-gradient(circle closest-side,transparent calc(100% - 9px),#000 calc(100% - 7px),#000 calc(100% - 1px),transparent 100%)!important;
+}
+#shooting-event-root .shooting-ns-spin-ring .ns-ring-spin b{
+  background:radial-gradient(circle,#fff 0%,#f3dcff 30%,rgba(190,110,255,.55) 52%,rgba(190,110,255,0) 74%)!important;
+  width:18px!important;height:18px!important;margin:-6px 0 0 -9px!important;
+  transform-origin:9px calc(var(--ring-size,280px) / 2 + 6px)!important;
+}
+#shooting-event-root .shooting-ns-spin-ring .ns-ring-spin b:nth-child(2),
+#shooting-event-root .shooting-ns-spin-ring .ns-ring-spin b:nth-child(3){
+  width:8px!important;height:8px!important;margin:-2px 0 0 -4px!important;opacity:.7;
+  transform-origin:4px calc(var(--ring-size,280px) / 2 + 2px)!important;
+}
+#shooting-event-root .shooting-ns-spin-ring .ns-ring-spin b:nth-child(2){transform:rotate(-40deg)!important;}
+#shooting-event-root .shooting-ns-spin-ring .ns-ring-spin b:nth-child(3){transform:rotate(-80deg)!important;opacity:.45;}
+@keyframes ns1847-in{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes ns1847-rune{0%{transform:rotate(-30deg) scale(.7);opacity:0}25%{opacity:.8}100%{transform:rotate(60deg) scale(1);opacity:.8}}
+@keyframes ns1847-swirl{
+  0%{transform:rotate(-60deg) scale(.72);opacity:0}
+  18%{opacity:1}
+  100%{transform:rotate(380deg) scale(1);opacity:1}
+}
+@keyframes ns1847-swirl-inner{
+  0%{transform:rotate(30deg) scale(.6);opacity:0}
+  20%{opacity:.85}
+  100%{transform:rotate(560deg) scale(1);opacity:.85}
+}
+
+/* ============================================================
+   build1848 — エナジーサークル軽量・静音版
+   ・靄／内側の帯を撤去（JS側でDOMも出さない）
+   ・帯のぼかし影をやめ、彗星の先端だけ光らせる
+   ・刻印リングは薄く・回さない
+   ============================================================ */
+#shooting-event-root .shooting-ns-spin-ring .ns-ring-haze,
+#shooting-event-root .shooting-ns-spin-ring .ns-ring-swirl.is-inner{display:none!important;}
+#shooting-event-root .shooting-ns-spin-ring .ns-ring-swirl{filter:none!important;opacity:.78;}
+#shooting-event-root .shooting-ns-spin-ring .ns-ring-spin{filter:none!important;}
+#shooting-event-root .shooting-ns-spin-ring .ns-ring-spin b:first-child{
+  box-shadow:0 0 10px 3px rgba(170,90,255,.75),0 0 3px 1px rgba(255,255,255,.9);
+}
+#shooting-event-root .shooting-ns-spin-ring .ns-ring-base{
+  box-shadow:0 0 7px rgba(150,70,255,.7),inset 0 0 8px rgba(150,70,255,.3)!important;
+}
+#shooting-event-root .shooting-ns-spin-ring .ns-ring-rune{
+  opacity:.38!important;
+  animation:ns1848-rune-in .2s ease-out both!important;
+}
+@keyframes ns1848-rune-in{0%{transform:scale(.75);opacity:0}100%{transform:scale(1);opacity:.38}}
