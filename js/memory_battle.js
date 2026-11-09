@@ -197,7 +197,7 @@
         const arHp = Math.max(0, Math.floor(Number(rule.armorHp || 0)));
         rows.push({ icon: 'armor', name: '装甲', text: th > 0
           ? (arHp > 0
-            ? (rule.dangerAfterBreak ? `1HIT${th}未満は無効。装甲破壊後は危険領域と高速即死弾が出現` : `1HIT${th}未満は弾かれる。装甲を砕くと、そのPHASEの間すべて通る`)
+            ? (rule.dangerAfterBreak ? `装甲を砕くまでボスにダメージは通らない（1HIT${th}以上で装甲を削る）。装甲破壊後は危険領域と高速即死弾が出現` : `装甲を砕くまでボスにダメージは通らない（1HIT${th}以上で装甲を削る）。砕くと、そのPHASEの間すべて通る`)
             : `ボスへの攻撃は1HITのダメージが${th}未満だと弾かれる`)
           : `ボスへの攻撃は1HITごとに${cut}ダメージ差し引かれる` });
       } else if (rule.type === 'guardians') {

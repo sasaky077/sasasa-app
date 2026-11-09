@@ -10585,8 +10585,10 @@
     if (threshold > 0) {
       if (dmg < threshold) return 0;
       if (ar) {
+        // build1861: 装甲値がある間はボス本体へダメージを通さない。重い一撃は装甲値だけを削る。
         ar.hp = Math.max(0, ar.hp - dmg);
         if (ar.hp <= 0) breakMemoryArmor(ar);
+        return 0;
       }
       return dmg;
     }
