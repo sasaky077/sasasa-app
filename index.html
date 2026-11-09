@@ -8509,8 +8509,23 @@ function renderResultElementBadge(data){
   var storedUserIdAtBoot = normalizeZeraphiaUserId(localStorage.getItem('zukan_user_id'));
   var hadStoredUserIdAtBoot = !!storedUserIdAtBoot;
   var userId = storedUserIdAtBoot;
+  // build1838: 新規プレイヤーIDは英小文字・数字の10文字（旧IDは変更しない）。
+  // Secure random bytes are used rather than Math.random() for public identifiers.
+  function generateZeraphiaUserId(){
+    var alphabet = '0123456789abcdefghijklmnopqrstuvwxyz';
+    var result = '';
+    var bytes = new Uint8Array(32);
+    while(result.length < 10){
+      crypto.getRandomValues(bytes);
+      for(var j=0;j<bytes.length && result.length < 10;j++){
+        // Reject 252..255 to avoid modulo bias for alphabet length 36.
+        if(bytes[j] < 252) result += alphabet[bytes[j] % 36];
+      }
+    }
+    return result;
+  }
   if(!userId){
-    userId = 'user_' + Math.random().toString(36).slice(2,10).toLowerCase();
+    userId = generateZeraphiaUserId();
   }
   localStorage.setItem('zukan_user_id', userId);
 
