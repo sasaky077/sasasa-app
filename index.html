@@ -10192,6 +10192,40 @@ startTitleBgm();
     console.warn('[story recovery] unable to load cloud story progress', storyRecoverError);
   }
 
+  // build1842: 移行済み3人の「前回クリア編成」をサーバーのクリア実績から復元。
+  // 残響の塔/絶望の塔のみ。通常クエストの編成はサーバーに正確な記録がないため推測しない。
+  // 新ドメインで既にクリアした履歴があれば、その記録日時が新しい方を優先する。
+  try {
+    var lastPartyUserId = String(localStorage.getItem('zukan_user_id') || '').trim().toLowerCase();
+    if (['hz2i8gmxjp', 's5lu9zix6h', 't49hhfvvgu'].indexOf(lastPartyUserId) !== -1) {
+      var partyRecoveryResponse = await sb.rpc('get_migrated_tower_last_clear_parties');
+      if (partyRecoveryResponse.error) throw partyRecoveryResponse.error;
+      var partyRecovery = partyRecoveryResponse.data;
+      if (partyRecovery && partyRecovery.ok && partyRecovery.parties && typeof partyRecovery.parties === 'object') {
+        var lastPartyStorageKey = 'zeraphia_shooting_last_clear_party_v1:' + lastPartyUserId;
+        var existingLastParties = {};
+        try { existingLastParties = JSON.parse(localStorage.getItem(lastPartyStorageKey) || '{}') || {}; }
+        catch (_) { existingLastParties = {}; }
+        var restoredCount = 0;
+        Object.keys(partyRecovery.parties).forEach(function(stageId) {
+          var oldRecord = partyRecovery.parties[stageId];
+          if (!oldRecord || !Array.isArray(oldRecord.partyIds) || !oldRecord.partyIds.length) return;
+          var currentRecord = existingLastParties[stageId];
+          if (!currentRecord || Number(oldRecord.clearedAt || 0) > Number(currentRecord.clearedAt || 0)) {
+            existingLastParties[stageId] = oldRecord;
+            restoredCount++;
+          }
+        });
+        if (restoredCount) {
+          localStorage.setItem(lastPartyStorageKey, JSON.stringify(existingLastParties));
+          console.info('[party recovery] restored', restoredCount, 'tower clear parties');
+        }
+      }
+    }
+  } catch (partyRecoveryError) {
+    console.warn('[party recovery] tower last clear parties unavailable', partyRecoveryError);
+  }
+
   // Auth所有者は起動直後に確認済み。ここでは初期ストーリーキャラを保証する。
   await ensureStarterStoryCharactersOwned();
   // 既存クリア履歴を基に未受領の記憶の欠片を補填する。
