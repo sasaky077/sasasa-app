@@ -2180,10 +2180,12 @@
     id: CHARACTER_ID.WOLF,
     effectKey: 'wolf',
     label: 'HOMING / PREDATOR FIELD',
-    description: '左右2発がいったん肩より後ろへ沈み込み、深いJ字を描いてUターン。2本の軌道は同じ標的へ収束するホーミング射撃。ULTは敵弾を全消去し、中央に10秒間ATK×1.5の強化フィールドを展開する。',
-    ultDescription: '発動時に画面内の敵弾をすべて消去。フィールド中央へ円形のATK UP領域を10秒間展開し、領域内の操作キャラのATKを1.5倍にする。',
-    ultName: '月喰みの狩場',
-    ultType: 'wolf_atk_field',
+    description: '左右2発がいったん肩より後ろへ沈み込み、深いJ字を描いてUターン。2本の軌道は同じ標的へ収束するホーミング射撃。ULT「月夜の黒狼」で7秒間バーサク状態になり、ATK×1.5・ショットが近接STRIKEに変わる。',
+    ultDescription: '7秒間バーサク状態になる。赤いオーラをまとい、ATKが1.5倍、ショットが前方を爪で薙ぎ払う近接STRIKEに変わる。',
+    ultName: '月夜の黒狼',
+    ultType: 'wolf_berserk', // build1860: 旧 wolf_atk_field（月喰みの狩場）
+    berserkDurationMs: 7000, berserkAtkMultiplier: 1.5,
+    berserkFireRate: 420, berserkShotPowerRate: 0.95, berserkSlashRange: 182, berserkSlashWidth: 128,
     moveSpeed: 400,
     fireRate: 285,
     bulletSpeed: 900,
@@ -2554,10 +2556,11 @@
     id: CHARACTER_ID.CHLOE,
     effectKey: 'chloe',
     label: 'BOMB / ELEMENT PAINT',
-    description: '光属性のBOMB M。ULT「虹のかかる世界」は6属性の貫通弾を同時に放ち、命中した敵の属性を書き換える。',
-    ultDescription: '無・火・水・木・闇・光の6属性弾を同時発射。全弾貫通し、命中ごとに対象属性を上書きする。',
+    description: '光属性のBOMB M。ULT「虹のかかる世界」は時間を止めてパレットから色を選び、敵を指でなぞってその色に塗り替える。',
+    ultDescription: '時間を停止し、6色（無・火・水・木・闇・光）のパレットから1色を選ぶ（5秒以内に選ばないと、パーティに有利な色を自動選択）。4秒間、敵を指でなぞるとその色に塗られ、ATK×3.0のダメージを与えて属性を塗り替える（1体1回・インクが尽きると終了）。',
     ultName: '虹のかかる世界',
-    ultType: 'painter_rainbow_world',
+    ultType: 'painter_palette', // build1853: 旧 painter_rainbow_world（6色扇状）
+    paletteChooseMs: 5000, palettePaintMs: 4000, paletteInkPx: 1100, paletteBrushRadius: 22, palettePaintAtkMultiplier: 3.0, // build1854: なぞり塗り
     shotType: 'bomb',
     bombSize: 'M',
     shotCount: 1,
@@ -3225,6 +3228,8 @@
         const m = Array.isArray(c.haoTriggerMultipliers) && c.haoTriggerMultipliers.length ? c.haoTriggerMultipliers : [1, 1.8, 3, 4, 5];
         return CLEAR + '前方に紋様を設置。敵が触れると敵全体に落雷のダメージ。威力は' + sec(c.haoTriggerUpgradeMs, 2000) + 'ごとに成長（ATK×' + m.map(v => fmtNum(v)).join('→') + '）。' + note('設置後' + sec(c.haoTriggerSafetyMs, 500) + 'は反応しない');
       }
+      case 'painter_palette':
+        return '時間を停止し、6色のパレットから1色を選ぶ（' + sec(c.paletteChooseMs, 5000) + '以内に選ばないと、パーティに有利な色を自動選択）。' + sec(c.palettePaintMs, 4000) + '間、敵を指でなぞるとその色に塗られ、' + atk(c.palettePaintAtkMultiplier, 3.0) + 'のダメージを与えて属性を塗り替える。' + note('1体につき1回・インクが尽きると終了');
       case 'painter_rainbow_world':
       case 'painter_element_spread':
         return '6属性の弾を同時に発射。弾は敵を貫通し、命中ごとに' + atk(c.paintSpreadDamageAtkMultiplier, 1.75) + 'のダメージを与え、敵の属性をその弾の属性に変える。';
@@ -3267,6 +3272,8 @@
       // --- 強化 ---
       case 'speed_storm':
         return CLEAR + '3.5秒間無敵。効果中は通常ショットの連射速度が' + mul(1 / Math.max(0.01, num(c.moonlightFireRateMultiplier, 0.6))) + '、威力が' + mul(c.moonlightPowerMultiplier, 2.47) + '。';
+      case 'wolf_berserk':
+        return sec(c.berserkDurationMs, 7000) + '間バーサク状態。ATKが' + fmtNum(num(c.berserkAtkMultiplier, 1.5)) + '倍になり、ショットが前方を薙ぎ払う近接STRIKE（1撃' + atk(c.berserkShotPowerRate, 0.95) + '）に変わる。' + note('ウルフ操作中のみ有効');
       case 'wolf_atk_field':
         return CLEAR + 'フィールド中央にATK強化エリアを' + sec(c.ultFieldDurationMs, 10000) + '間展開。エリア内の操作キャラのATKが' + mul(c.ultFieldAtkMultiplier, 1.5) + '。';
       case 'nina_output_max':

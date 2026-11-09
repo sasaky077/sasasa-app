@@ -6433,7 +6433,9 @@
     clearSmileBoxes();
     clearInoriGuard(); // build1817
     clearNightshadeSpinRings();
-    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-rose-fortress,.shooting-remna-trap-preview,.shooting-conjure-preview,.shooting-conjure-deploy-projectile,.shooting-conjure-turret,.shooting-conjure-ult-turret,.shooting-camilla-web-overlay,.shooting-camilla-web-burst,.shooting-camilla-bound-web-fx,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-sui-time-domain,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning,.shooting-ch07-complete-shield,.shooting-ch07-torii,.eclipse-hand-band,.eclipse-float-num,.eclipse-dash-line,.eclipse-dark-veil,.eclipse-beacon,.eclipse-state-pill,.po-submission-chip,.po-variety-banner,.tb-fx,.shooting-v-laser-wrap').forEach(el => el.remove());
+    document.querySelectorAll('.shooting-wolf-berserk-aura').forEach(el => el.remove()); // build1860
+    document.getElementById(PLAYER_ID)?.classList.remove('is-wolf-berserk', 'is-wolf-berserk-hurry');
+    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-rose-fortress,.shooting-remna-trap-preview,.shooting-conjure-preview,.shooting-conjure-deploy-projectile,.shooting-conjure-turret,.shooting-conjure-ult-turret,.shooting-camilla-web-overlay,.shooting-camilla-web-burst,.shooting-camilla-bound-web-fx,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-wolf-berserk-aura,.shooting-sui-time-domain,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning,.shooting-ch07-complete-shield,.shooting-ch07-torii,.eclipse-hand-band,.eclipse-float-num,.eclipse-dash-line,.eclipse-dark-veil,.eclipse-beacon,.eclipse-state-pill,.po-submission-chip,.po-variety-banner,.tb-fx,.shooting-v-laser-wrap').forEach(el => el.remove());
     clearEnemyBulletCanvas();
     clearPlayerBulletCanvas(); // build1811
     if (state) {
@@ -10858,7 +10860,20 @@
     p.y += p.vy * dt;
   }
 
+  // build1860: ウルフULT「月夜の黒狼」（バーサク）。ウルフが操作中の間だけATK倍率が乗る。
+  function getWolfBerserkStatus(now) {
+    const bz = state && state.wolfBerserk;
+    if (!bz || now >= Number(bz.until || 0)) return null;
+    const cur = getCurrentCharacter();
+    if (!cur || Number(cur.id) !== Number(bz.ownerId)) return null;
+    return bz;
+  }
+
   function getWolfAtkFieldStatus(now) {
+    const bz = getWolfBerserkStatus(now);
+    if (bz) {
+      return { active:true, left: Math.max(0, Number(bz.until || 0) - now), multiplier: Number(bz.multiplier || 1.5) };
+    }
     const field = state && state.wolfAtkField;
     if (!field || now >= Number(field.until || 0)) {
       return { active:false, left:0, multiplier:1 };
@@ -10873,7 +10888,69 @@
     };
   }
 
+  function updateWolfBerserk(now) {
+    if (!state || !state.wolfBerserk) return;
+    const bz = state.wolfBerserk;
+    const player = document.getElementById(PLAYER_ID);
+    let aura = player && player.querySelector('.shooting-wolf-berserk-aura');
+    if (now >= Number(bz.until || 0)) {
+      if (aura) { aura.classList.add('is-ending'); setTimeout(() => aura.remove(), 320); }
+      if (player) player.classList.remove('is-wolf-berserk');
+      state.wolfBerserk = null;
+      return;
+    }
+    const on = !!getWolfBerserkStatus(now);
+    if (on && player && !aura) {
+      aura = document.createElement('div');
+      aura.className = 'shooting-wolf-berserk-aura';
+      aura.setAttribute('aria-hidden', 'true');
+      aura.innerHTML = '<i class="wb-glow"></i><i class="wb-flame"></i><i class="wb-flame is-b"></i><i class="wb-ring"></i>';
+      player.appendChild(aura);
+    }
+    if (aura) aura.classList.toggle('is-hidden', !on);
+    if (player) {
+      player.classList.toggle('is-wolf-berserk', on);
+      player.classList.toggle('is-wolf-berserk-hurry', on && Number(bz.until || 0) - now <= 1500);
+    }
+  }
+
+  function useWolfBerserkUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+    showUltCut(c.ultName || '月夜の黒狼', c.effectKey);
+    ultScreenFlash('ult-flash-wolf');
+    const now = performance.now();
+    const player = document.getElementById(PLAYER_ID);
+    const old = player && player.querySelector('.shooting-wolf-berserk-aura');
+    if (old) old.remove();
+    state.wolfBerserk = {
+      ownerId: c.id,
+      until: now + Math.max(1000, Number(c.berserkDurationMs || 7000)),
+      multiplier: Math.max(1, Number(c.berserkAtkMultiplier || 1.5)),
+    };
+    state.lastShotAt = 0; // すぐにSTRIKEを出せるように
+    state.ultLockUntil = now + 320;
+    updateWolfBerserk(now);
+    renderHud();
+  }
+
+  // バーサク中のウルフはショットがSTRIKE（近接の爪撃）に変わる
+  function getWolfBerserkShotProfile(c, now) {
+    if (!c || !getWolfBerserkStatus(now) || Number(c.id) !== Number(state.wolfBerserk.ownerId)) return c;
+    return {
+      ...c,
+      shotType: 'strike',
+      shotCount: 1,
+      fireRate: Number(c.berserkFireRate || 420),
+      shotPowerRate: Number(c.berserkShotPowerRate || 0.95),
+      slashRange: Number(c.berserkSlashRange || 182),
+      slashWidth: Number(c.berserkSlashWidth || 128),
+      slashVisualMs: 170,
+      wolfBerserkStrike: true,
+    };
+  }
+
   function updateWolfAtkField(now) {
+    updateWolfBerserk(now);
     if (!state || !state.wolfAtkField) return;
     const field = state.wolfAtkField;
     if (now < Number(field.until || 0)) return;
@@ -11975,7 +12052,8 @@
     const arena = document.getElementById('shooting-arena');
     if (!arena || !state) return;
     const el = document.createElement('div');
-    el.className = 'shooting-veronica-slash';
+    el.className = 'shooting-veronica-slash' + (c && c.wolfBerserkStrike ? ' is-wolf-claw' : '');
+    if (c && c.wolfBerserkStrike) el.innerHTML = '<i></i><i></i><i></i>';
     el.style.left = `${Number(state.player.x || 0)}px`;
     el.style.top = `${Number(state.player.y || 0) - 6}px`;
     el.style.setProperty('--veronica-slash-width', `${Math.max(60, Number(c.slashWidth || 120))}px`);
@@ -13106,7 +13184,7 @@
     // CH04-3のストーリー演出で明示的に攻撃封印中の間だけSHOTを止める。
     if (isChapter43BossStage() && state?.chapter43AttackSealed) return;
 
-    const c = getCurrentCharacter();
+    const c = getWolfBerserkShotProfile(getCurrentCharacter(), now); // build1860: バーサク中はSTRIKE
 
     // ロゼULT: 壁展開中はロゼの通常射撃だけ停止。味方への交代・移動は可能。
     if (c && Number(c.id) === CHARACTER_ID.ROSE &&
@@ -36384,38 +36462,55 @@
   function noahBoltPathD(pts) {
     return 'M' + pts.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L');
   }
+  // build1851: 透き通る稲光。太い塗りをやめ、細い白熱の芯＋薄い光の層（加算合成）で描く。
+  //  枝は本数を増やして細く・薄く・長さもまちまちに。背後に淡い光の柱（稲光の残光）を置く。
+  let noahBoltSeq = 0;
   function createNoahLightningBolt(x, targetY) {
-    const W = 160, cx = W / 2;
+    const W = 180, cx = W / 2;
     const H = Math.max(54, Math.round(targetY));
+    const fid = 'nlb' + (++noahBoltSeq);
     const el = document.createElement('div');
-    el.className = 'shooting-noah-lightning strike';
+    el.className = 'shooting-noah-lightning strike nl-v2';
     el.style.left = `${Math.round(x - cx)}px`;
     el.style.top = '0px';
     el.style.height = `${H}px`;
 
-    const segs = Math.max(6, Math.min(14, Math.round(H / 36)));
-    const main = buildNoahBoltPoints(cx + (Math.random() * 2 - 1) * 26, -6, cx, H, segs, 22);
+    const segs = Math.max(7, Math.min(18, Math.round(H / 26)));
+    const main = buildNoahBoltPoints(cx + (Math.random() * 2 - 1) * 30, -6, cx, H, segs, 20);
     const mainD = noahBoltPathD(main);
     let branches = '';
-    const branchCount = H > 140 ? 2 : 1;
+    let branchGlows = '';
+    const branchCount = H > 220 ? 4 : (H > 120 ? 3 : 2);
     for (let b = 0; b < branchCount; b++) {
-      const at = Math.floor(segs * (.25 + Math.random() * .4));
+      const at = Math.floor(segs * (.15 + Math.random() * .6));
       const start = main[Math.min(main.length - 2, Math.max(1, at))];
-      const side = (b % 2 ? 1 : -1) * (Math.random() < .5 ? 1 : -1);
-      const len = H * (.18 + Math.random() * .16);
-      const end = [start[0] + side * (22 + Math.random() * 34), start[1] + len];
-      const d = noahBoltPathD(buildNoahBoltPoints(start[0], start[1], end[0], end[1], 4, 9));
-      branches += `<path class="nl-branch-glow" pathLength="1" d="${d}"/><path class="nl-branch" pathLength="1" d="${d}"/>`;
+      const side = Math.random() < .5 ? -1 : 1;
+      const len = H * (.12 + Math.random() * .2);
+      const end = [start[0] + side * (16 + Math.random() * 40), start[1] + len];
+      const pts = buildNoahBoltPoints(start[0], start[1], end[0], end[1], 5, 8);
+      const d = noahBoltPathD(pts);
+      const op = (.45 + Math.random() * .45).toFixed(2);
+      branchGlows += `<path class="nl-branch-glow" pathLength="1" style="opacity:${op}" d="${d}"/>`;
+      branches += `<path class="nl-branch" pathLength="1" style="opacity:${op}" d="${d}"/>`;
+      // 小枝（さらに細かく分かれる）
+      if (Math.random() < .7) {
+        const s2 = pts[Math.min(pts.length - 2, 2)];
+        const e2 = [s2[0] + side * (8 + Math.random() * 18), s2[1] + len * (.35 + Math.random() * .3)];
+        const d2 = noahBoltPathD(buildNoahBoltPoints(s2[0], s2[1], e2[0], e2[1], 3, 5));
+        branches += `<path class="nl-twig" pathLength="1" style="opacity:${(op * .8).toFixed(2)}" d="${d2}"/>`;
+      }
     }
     let sparks = '';
-    for (let i = 0; i < 7; i++) {
-      const a = -Math.PI * (.08 + Math.random() * .84); // 主に上向き・左右へ飛ぶ
-      const d = 26 + Math.random() * 34;
+    for (let i = 0; i < 6; i++) {
+      const a = -Math.PI * (.08 + Math.random() * .84);
+      const d = 22 + Math.random() * 30;
       sparks += `<u style="--dx:${Math.round(Math.cos(a) * d)}px;--dy:${Math.round(Math.sin(a) * d)}px"></u>`;
     }
     el.innerHTML =
-      `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true" focusable="false"><g class="nl-bolt">` +
-      `<path class="nl-glow" pathLength="1" d="${mainD}"/>${branches}` +
+      `<span class="nl-sheath"></span>` +
+      `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true" focusable="false">` +
+      `<defs><filter id="${fid}" x="-60%" y="-10%" width="220%" height="120%"><feGaussianBlur stdDeviation="3.2"/></filter></defs><g class="nl-bolt">` +
+      `<g class="nl-soft" filter="url(#${fid})"><path class="nl-halo" pathLength="1" d="${mainD}"/><path class="nl-glow" pathLength="1" d="${mainD}"/>${branchGlows}</g>${branches}` +
       `<path class="nl-mid" pathLength="1" d="${mainD}"/><path class="nl-core" pathLength="1" d="${mainD}"/>` +
       `</g></svg><span class="nl-impact"><i></i><b></b>${sparks}</span>`;
     return el;
@@ -38331,6 +38426,293 @@
     return list;
   }
 
+  // ============================================================
+  // build1853: クロエULT「虹のかかる世界」→ パレット選択式
+  //  時間停止 → 6色パレットから1色タップ（5秒で自動＝おすすめ色）
+  //  → build1854: 敵を指でなぞって塗る。触れた敵へダメージ＋属性をその色に塗り替え。
+  // ============================================================
+  const PALETTE_ELEMENTS = ['neutral', 'fire', 'aqua', 'wood', 'dark', 'light'];
+  const PALETTE_LABEL = { neutral:'無', fire:'火', aqua:'水', wood:'木', dark:'闇', light:'光' };
+  const PALETTE_EN = { neutral:'NEUTRAL', fire:'FIRE', aqua:'AQUA', wood:'WOOD', dark:'DARK', light:'LIGHT' };
+
+  // パーティ全員の属性で殴ったとき、一番WEAKを取りやすい色＝おすすめ
+  function getPaletteRecommendedElement() {
+    const members = (state && Array.isArray(state.party) ? state.party : []).filter(Boolean);
+    let best = 'neutral', bestScore = -Infinity;
+    PALETTE_ELEMENTS.forEach(el => {
+      if (el === 'neutral') return;
+      let score = 0;
+      members.forEach(m => {
+        const ch = getBattleCharacter(m.id) || {};
+        const atkEl = normalizeCombatElement(ch.shotElement || ch.element) || 'neutral';
+        score += getElementDamageMultiplier(atkEl, el) * (Number(m.hp || 0) > 0 ? 1 : .25);
+      });
+      if (score > bestScore + 1e-6) { bestScore = score; best = el; }
+    });
+    return best;
+  }
+
+  function getPalettePaintTargets() {
+    const list = [];
+    (state.normalEnemies || []).forEach(e => { if (e && e.el && e.hp > 0) list.push({ ref:e, x:Number(e.x || 0), y:Number(e.y || 0) }); });
+    (state.facelessObjects || []).forEach(o => { if (o && o.el && o.hp > 0) list.push({ ref:o, x:Number(o.x || 0), y:Number(o.y || 0) }); });
+    if (!isNormalBattle() && state.boss && state.boss.hp > 0) list.push({ ref:state.boss, x:Number(state.boss.x || 0), y:Number(state.boss.y || 0), boss:true });
+    return list;
+  }
+
+  function usePainterPaletteUlt(c) {
+    if (!state || state.arnoSlashActive) return;
+    const now = performance.now();
+    const pickMs = Math.max(1500, Number(c.paletteChooseMs || 5000));
+    const root = document.getElementById(ROOT_ID);
+    const arena = document.getElementById('shooting-arena');
+    if (!root || !arena) return;
+
+    ensureArnoSlashStyle();
+    ensureBombVisualStyles();
+    clearEnemyBulletsOnly();
+    showUltCut(c.ultName || '虹のかかる世界', c.effectKey, c);
+
+    state.arnoSlashActive = true;
+    state.arnoSlashStartedAt = now;
+    state.arnoSlashUntil = now + pickMs + 1200; // 色決定後、なぞり時間ぶん延長する
+    state.arnoSlashOriginX = Number(state.player?.x || 0);
+    state.arnoSlashOriginY = Number(state.player?.y || 0);
+    state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), now + pickMs + 1200);
+    state.playerShotLockUntil = Math.max(Number(state.playerShotLockUntil || 0), now + pickMs + 1200);
+
+    root.classList.add('arno-slash-time-stop');
+    root.querySelectorAll('.shooting-arno-slash-overlay').forEach(el => el.remove());
+    const recommended = getPaletteRecommendedElement();
+    const overlay = document.createElement('div');
+    overlay.className = 'shooting-arno-slash-overlay shooting-palette-overlay';
+    overlay.style.setProperty('--pal-ms', `${pickMs}ms`);
+    overlay.innerHTML =
+      '<div class="pal-panel">' +
+        '<i class="pal-corner tl"></i><i class="pal-corner tr"></i><i class="pal-corner bl"></i><i class="pal-corner br"></i>' +
+        '<div class="pal-head"><small>SELECT ELEMENT</small><b>属性を選択してください</b><i class="pal-rule"></i></div>' +
+        '<div class="pal-grid">' +
+        PALETTE_ELEMENTS.map(el => {
+          const v = getBombElementVisual(el);
+          const icon = getCombatElementIcon(el);
+          return `<button type="button" class="pal-btn element-${el}" data-el="${el}" style="--pal-rgb:${v.rgb}">` +
+            `<span class="pal-blob">${icon ? `<img src="${icon}" alt="">` : ''}</span>` +
+            `<span class="pal-name">${PALETTE_LABEL[el]}<small>${PALETTE_EN[el]}</small></span>` +
+            '</button>';
+        }).join('') +
+        '</div>' +
+        `<div class="pal-time">残り <em>${Math.ceil(pickMs / 1000)}</em> 秒</div>` +
+        '<div class="pal-timer"><i></i></div>' +
+      '</div>';
+    arena.appendChild(overlay);
+    // build1859: 下部UI（フッター・交代レール）に被せない
+    try {
+      const ar = arena.getBoundingClientRect();
+      const scaleY = ar.height / Math.max(1, arena.clientHeight);
+      let topOfBottomUi = ar.bottom;
+      root.querySelectorAll('.shooting-footer, .shooting-switch-rail, .shooting-switch-rail *').forEach(el => {
+        const r = el.getBoundingClientRect();
+        if (r.height > 0 && r.width > 0 && r.top < topOfBottomUi && r.top > ar.top + ar.height * .5) topOfBottomUi = r.top;
+      });
+      const panel = overlay.querySelector('.pal-panel');
+      if (panel) panel.style.bottom = `${Math.round(Math.max(0, ar.bottom - topOfBottomUi) / scaleY + 8)}px`;
+    } catch (_) {}
+
+    let chosen = false;
+    const choose = el => {
+      if (chosen || !state || !state.arnoSlashActive) return;
+      chosen = true;
+      clearTimeout(state.arnoSlashTimerId);
+      overlay.classList.add('is-chosen');
+      overlay.querySelectorAll('.pal-btn').forEach(b => b.classList.toggle('is-picked', b.dataset.el === el));
+      setTimeout(() => startPaletteFingerPaint(c, el), 260); // build1854: なぞって塗る
+    };
+    overlay.querySelectorAll('.pal-btn').forEach(btn => {
+      btn.addEventListener('pointerdown', ev => { ev.preventDefault(); ev.stopPropagation(); choose(btn.dataset.el); }, { passive:false });
+    });
+    overlay.addEventListener('pointerdown', ev => { ev.preventDefault(); ev.stopPropagation(); }, { passive:false });
+
+    deferAllEnemyAttackResume(now + pickMs + 1200);
+    prevTs = now;
+    renderHud();
+    state.arnoSlashTimerId = setTimeout(() => choose(recommended), pickMs);
+    const palTimeEl = overlay.querySelector('.pal-time em');
+    const palTick = () => {
+      if (chosen || !overlay.isConnected) return;
+      const left = Math.max(0, pickMs - (performance.now() - now));
+      if (palTimeEl) palTimeEl.textContent = String(Math.ceil(left / 1000));
+      requestAnimationFrame(palTick);
+    };
+    requestAnimationFrame(palTick);
+  }
+
+  // build1854: 選んだ色で、敵を指でなぞって塗る。
+  //  ・インク量（なぞれる長さ）と制限時間のどちらかが尽きたら終了
+  //  ・筆に触れた敵は1回だけ：ダメージ（塗る前の属性で計算）→ 属性をその色に塗り替え
+  function startPaletteFingerPaint(c, element) {
+    if (!state || !state.arnoSlashActive) return;
+    const arena = document.getElementById('shooting-arena');
+    const old = arena && arena.querySelector('.shooting-palette-overlay');
+    if (old) { old.classList.add('hide'); setTimeout(() => old.isConnected && old.remove(), 200); }
+    if (!arena) { finishArnoUlt(); return; }
+
+    const paintMs = Math.max(1500, Number(c.palettePaintMs || 4000));
+    const inkMax = Math.max(200, Number(c.paletteInkPx || 1100));
+    const brush = Math.max(8, Number(c.paletteBrushRadius || 22));
+    const damage = Math.max(0, Number(c.atk || 0) * Math.max(0, Number(c.palettePaintAtkMultiplier ?? 3.0)));
+    const visual = getBombElementVisual(element);
+    const icon = getCombatElementIcon(element);
+    const W = arena.clientWidth, H = arena.clientHeight;
+
+    // 時間停止の終わりを、なぞり時間ぶん延長
+    const now0 = performance.now();
+    state.arnoSlashUntil = now0 + paintMs + 900;
+    state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), now0 + paintMs + 900);
+    state.playerShotLockUntil = Math.max(Number(state.playerShotLockUntil || 0), now0 + paintMs + 900);
+    deferAllEnemyAttackResume(now0 + paintMs + 900);
+
+    const ov = document.createElement('div');
+    ov.className = `shooting-arno-slash-overlay shooting-paint-overlay element-${element}`;
+    ov.style.setProperty('--pal-rgb', visual.rgb);
+    ov.style.setProperty('--pal-ms', `${paintMs}ms`);
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    ov.innerHTML =
+      `<canvas class="paint-canvas" width="${Math.round(W * dpr)}" height="${Math.round(H * dpr)}"></canvas>` +
+      `<div class="paint-hud"><div class="paint-plaque"><span class="paint-chip">${icon ? `<img src="${icon}" alt="">` : ''}</span>` +
+      `<span class="paint-plaque-text"><small>${PALETTE_EN[element]} PAINT</small><b>敵をなぞるとダメージ&amp;属性変化</b></span></div>` +
+      `<div class="paint-meter"><span class="paint-time"><small>残り</small><em>${(paintMs / 1000).toFixed(1)}</em><small>秒</small></span>` +
+      `<span class="paint-ink-label">INK</span><div class="paint-ink"><i></i></div></div></div>` +
+      `<img class="paint-brush is-idle" src="images/chloe_ult_brush.webp" alt="" draggable="false">`;
+    arena.appendChild(ov);
+    // build1855: 筆（画像の穂先＝上端の右寄り 75%,0% を指先に合わせる）
+    const brushEl = ov.querySelector('.paint-brush');
+    let brushX = W * .5, brushY = H * .45, brushTilt = 0;
+    const placeBrush = (x, y, tilt) => {
+      if (!brushEl) return;
+      brushEl.style.transform = `translate3d(${x}px,${y}px,0) rotate(${tilt}deg)`;
+    };
+    placeBrush(brushX, brushY, 0);
+    const canvas = ov.querySelector('canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    const inkBar = ov.querySelector('.paint-ink i');
+
+    let ink = inkMax;
+    let last = null;
+    let ended = false;
+    const painted = new Set();
+
+    const toLocal = ev => {
+      const r = arena.getBoundingClientRect();
+      const sx = r.width / Math.max(1, W), sy = r.height / Math.max(1, H);
+      return { x: (ev.clientX - r.left) / sx, y: (ev.clientY - r.top) / sy };
+    };
+    const segDist = (px, py, ax, ay, bx, by) => {
+      const dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy;
+      const t = l2 > 0 ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / l2)) : 0;
+      return Math.hypot(px - (ax + dx * t), py - (ay + dy * t));
+    };
+    const paintTargetsAlong = (a, b) => {
+      const t = performance.now();
+      getPalettePaintTargets().forEach(tg => {
+        if (painted.has(tg.ref)) return;
+        const rad = tg.boss ? 46 : Math.max(18, Number(tg.ref._hw || 22));
+        if (segDist(tg.x, tg.y, a.x, a.y, b.x, b.y) > brush + rad) return;
+        painted.add(tg.ref);
+        applyPainterSpreadDamage(tg.ref, damage, element, t, c);
+        // しぶき＋目印
+        const mark = document.createElement('div');
+        mark.className = `shooting-palette-mark element-${element}`;
+        mark.style.setProperty('--pal-rgb', visual.rgb);
+        let drops = '';
+        for (let i = 0; i < 6; i++) {
+          const ang = Math.random() * Math.PI * 2, d = 26 + Math.random() * 22;
+          drops += `<u style="--dx:${Math.round(Math.cos(ang) * d)}px;--dy:${Math.round(Math.sin(ang) * d)}px;--sz:${Math.round(7 + Math.random() * 8)}px"></u>`;
+        }
+        mark.innerHTML = `<i></i>${drops}${icon ? `<img src="${icon}" alt="">` : ''}`;
+        arena.appendChild(mark);
+        positionUnit(mark, tg.x, tg.y);
+        setTimeout(() => mark.remove(), 1000);
+        finalizePainterSpreadHit(t);
+        if (navigator.vibrate) { try { navigator.vibrate(12); } catch (_) {} }
+      });
+    };
+    const drawSeg = (a, b) => {
+      // 下地（にじみ）→ 本体 → ハイライト
+      ctx.strokeStyle = `rgba(${visual.rgb},.28)`; ctx.lineWidth = brush * 2 + 10;
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      ctx.strokeStyle = `rgba(${visual.rgb},.82)`; ctx.lineWidth = brush * 2;
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = Math.max(2, brush * .35);
+      ctx.beginPath(); ctx.moveTo(a.x - 2, a.y - 3); ctx.lineTo(b.x - 2, b.y - 3); ctx.stroke();
+    };
+    const stroke = p => {
+      if (ended) return;
+      // 筆を指先へ。横の動きに合わせて少し傾ける
+      const vx = p.x - brushX;
+      brushTilt = brushTilt * .7 + Math.max(-18, Math.min(18, vx * .9)) * .3;
+      brushX = p.x; brushY = p.y;
+      if (brushEl) brushEl.classList.remove('is-idle');
+      placeBrush(brushX, brushY, brushTilt);
+      const a = last || p;
+      let b = p;
+      let len = Math.hypot(b.x - a.x, b.y - a.y);
+      if (last && len < 2) return;
+      if (len > ink) { // インクが足りない分は手前で止める
+        const f = ink / Math.max(1e-6, len);
+        b = { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f };
+        len = ink;
+      }
+      drawSeg(a, b);
+      paintTargetsAlong(a, b);
+      ink -= len;
+      last = b;
+      if (inkBar) inkBar.style.transform = `scaleX(${Math.max(0, ink / inkMax)})`;
+      if (ink <= 0) end();
+    };
+
+    const end = () => {
+      if (ended) return;
+      ended = true;
+      clearTimeout(state && state.arnoSlashTimerId);
+      ov.classList.add('is-done');
+      if (brushEl) brushEl.classList.add('is-gone');
+      setTimeout(() => {
+        ov.classList.add('hide');
+        setTimeout(() => ov.isConnected && ov.remove(), 260);
+        if (state && state.arnoSlashActive) finishArnoUlt();
+      }, 420);
+    };
+
+    ov.addEventListener('pointerdown', ev => {
+      ev.preventDefault(); ev.stopPropagation();
+      try { ov.setPointerCapture(ev.pointerId); } catch (_) {}
+      last = null;
+      stroke(toLocal(ev));
+    }, { passive:false });
+    ov.addEventListener('pointermove', ev => {
+      if (!(ev.buttons & 1) && ev.pointerType === 'mouse') return;
+      ev.preventDefault();
+      if (last === null) return;
+      stroke(toLocal(ev));
+    }, { passive:false });
+    ['pointerup', 'pointercancel'].forEach(type => ov.addEventListener(type, () => { last = null; }));
+
+    state.arnoSlashTimerId = setTimeout(end, paintMs);
+    // build1856: 残り時間の数字表示
+    const timeEl = ov.querySelector('.paint-time em');
+    const paintStart = performance.now();
+    const tick = () => {
+      if (ended || !ov.isConnected) return;
+      const left = Math.max(0, paintMs - (performance.now() - paintStart));
+      if (timeEl) timeEl.textContent = (left / 1000).toFixed(1);
+      ov.classList.toggle('is-hurry', left <= 1000);
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+
   function useNightshadeBarrageUlt(c) {
     if (!state || state.arnoSlashActive) return;
     const now = performance.now();
@@ -38581,7 +38963,9 @@
     else if (c.ultType === 'mimosa_item_spawn') useMimosaUlt(c);
     else if (c.ultType === 'mito_summon_double') useMitoUlt(c);
     else if (c.ultType === 'wolf_atk_field') useWolfUlt(c);
+    else if (c.ultType === 'wolf_berserk') useWolfBerserkUlt(c); // build1860
     else if (c.ultType === 'toyfel_double_black_hole') useToyfelUlt(c);
+    else if (c.ultType === 'painter_palette') usePainterPaletteUlt(c); // build1853: クロエ
     else if (
       c.ultType === 'painter_element_spread' ||
       c.ultType === 'painter_rainbow_world' ||
