@@ -278,8 +278,7 @@ html body #screen-main > button.hm2--right .home-menu-notice-anchor > *{
 
 /* ---------- lock overlay: over the icon/label block ---------- */
 html body #screen-main > button.home-type-entry.hm2 > .content-lock-overlay{
-  width:44px !important;
-  height:44px !important;
+  /* build1841: 大きさは content_lock.css の --lk に任せる（位置は既存JSがアイコン中心へ） */
   top:46% !important;
 }
 
