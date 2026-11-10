@@ -1,0 +1,215 @@
+/* =========================================================
+   build1878 — HOME v2（キャラ主役のレイアウト）
+   色は今の羊皮紙＋金。見出し＝しっぽり明朝 B1／本文＝Noto Serif JP／英数字＝Cinzel
+   ========================================================= */
+:root{
+  --hv2-head:"Shippori Mincho B1","Noto Serif JP",serif;
+  --hv2-body:"Noto Serif JP",serif;
+  --hv2-latin:"Cinzel","Times New Roman",serif;
+  --hv2-ink:#4a3a28; --hv2-ink2:#7d6748; --hv2-gold:#b8934a; --hv2-gold3:#8f6c2e; --hv2-red:#c0473b;
+  --hv2-nav-h:84px;
+  --hv2-banner-h:calc((min(100vw,560px) - 20px) / 3);
+}
+
+/* ---------- 旧ホームの要素は画面外へ（機能・通知・ロックはそのまま生かす） ---------- */
+html.home-v2 #screen-main .home-type-entry,
+html.home-v2 #screen-main .home-menu-notice-anchor{
+  position:fixed!important;left:-300vw!important;top:0!important;opacity:0!important;pointer-events:none!important;
+}
+html.home-v2 #screen-main .home-sky-scroll-layer,
+html.home-v2 #screen-main > .home-bg-building,
+html.home-v2 #screen-main > .favorite-area{display:none!important}
+
+/* ---------- 土台 ---------- */
+html.home-v2 #home-v2{position:fixed;inset:0;z-index:1;overflow:hidden;pointer-events:none;background:#efe4cd}
+html.home-v2 #home-v2 > *{pointer-events:auto}
+html.home-v2 #home-v2 .hv2-bg,
+html.home-v2 #home-v2 .hv2-halo,
+html.home-v2 #home-v2 .hv2-grain,
+html.home-v2 #home-v2 .hv2-chara{pointer-events:none}
+#home-v2 .hv2-bg{position:absolute;inset:0;background:url(../images/home_bg.webp) center 20%/cover no-repeat}
+#home-v2 .hv2-bg::after{content:"";position:absolute;inset:0;background:
+  radial-gradient(ellipse 70% 42% at 50% 42%,rgba(255,250,236,0) 0,rgba(255,250,236,.05) 50%,rgba(170,130,80,.18) 100%),
+  linear-gradient(180deg,rgba(150,115,70,.22) 0,rgba(150,115,70,0) 16%,rgba(150,115,70,0) 70%,rgba(120,90,50,.3) 100%)}
+#home-v2 .hv2-halo{position:absolute;left:50%;top:40%;width:120%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;opacity:.7;
+  background:radial-gradient(circle,rgba(255,246,220,.95) 0,rgba(255,232,180,.55) 26%,rgba(255,220,150,.12) 46%,rgba(255,220,150,0) 58%)}
+#home-v2 .hv2-grain{position:absolute;inset:0;opacity:.12;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .35 0 0 0 0 .2 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")}
+#home-v2 .hv2-chara{position:absolute;left:50%;bottom:calc(var(--hv2-nav-h) + 40px);height:calc(100% - var(--hv2-nav-h) - 90px);max-width:none;transform:translateX(-46%);
+  filter:drop-shadow(0 0 1px rgba(150,110,50,.45)) drop-shadow(0 10px 22px rgba(90,62,26,.32));animation:hv2-breath 6s ease-in-out infinite}
+@keyframes hv2-breath{0%,100%{transform:translateX(-46%) translateY(0)}50%{transform:translateX(-46%) translateY(-5px)}}
+
+/* ---------- 汎用の金枠 ---------- */
+#home-v2 .hv2-rbtn,
+html.hv2-home #global-user-frame .hud-resource,
+html.home-v2 #bottom-nav-shared.bottom-nav .bottom-nav-item{
+  border-style:solid!important;border-color:transparent!important;
+  border-image:url(../images/home_frame.webp) 64 fill / 14px stretch!important;
+}
+
+/* ---------- 左：六角の板 ---------- */
+#home-v2 .hv2-side{position:absolute;left:10px;top:calc(104px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:4px;z-index:3}
+#home-v2 .hv2-sbtn{position:relative;width:62px;border:0;background:none;padding:0;-webkit-tap-highlight-color:transparent}
+#home-v2 .hv2-hex{position:relative;width:54px;height:64px;margin:0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  background:url(../images/home_frame_hex.webp) center/100% 100% no-repeat;filter:drop-shadow(0 3px 5px rgba(80,55,20,.28))}
+#home-v2 .hv2-hex img{width:22px;height:22px;object-fit:contain}
+#home-v2 .hv2-hex .t{font:700 10px/1 var(--hv2-head);letter-spacing:.02em;color:var(--hv2-ink);white-space:nowrap}
+#home-v2 .hv2-sbtn:active .hv2-hex{transform:scale(.94)}
+
+/* ---------- 右：主要導線 ---------- */
+#home-v2 .hv2-right{position:absolute;right:10px;width:46%;bottom:calc(var(--hv2-nav-h) + var(--hv2-banner-h) + 196px);display:flex;flex-direction:column;gap:9px;z-index:3}
+#home-v2 .hv2-rbtn{position:relative;height:56px;display:flex;align-items:center;gap:10px;padding:0 14px;background:none;overflow:visible;
+  font:700 16px/1 var(--hv2-head);letter-spacing:.16em;color:var(--hv2-ink);text-align:left;filter:drop-shadow(0 3px 6px rgba(80,55,20,.25))}
+#home-v2 .hv2-rbtn .ic{width:32px;height:32px;object-fit:contain;flex:none;position:relative;z-index:1}
+#home-v2 .hv2-rbtn span{position:relative;z-index:1}
+#home-v2 .hv2-rbtn small{display:block;font:600 8px/1 var(--hv2-latin);letter-spacing:.24em;color:var(--hv2-gold);margin-bottom:4px}
+#home-v2 .hv2-rbtn .art{position:absolute;right:8px;top:8px;bottom:8px;width:44%;background:center/cover no-repeat;opacity:.55;
+  -webkit-mask:linear-gradient(90deg,transparent,#000 60%);mask:linear-gradient(90deg,transparent,#000 60%)}
+#home-v2 .hv2-rbtn:active{transform:scale(.97)}
+
+/* ---------- 通知・ロック ---------- */
+#home-v2 .hv2-dot{position:absolute;right:2px;top:0;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--hv2-red);color:#fff;
+  font:700 10px/16px var(--hv2-latin);text-align:center;font-style:normal;box-shadow:0 0 0 1.5px #fff;z-index:2}
+#home-v2 .hv2-rbtn .hv2-dot{right:-4px;top:-6px}
+#home-v2 .hv2-lock{display:none}
+#home-v2 .is-locked .hv2-lock{display:block;position:absolute;inset:0;border-radius:4px;background:rgba(250,244,230,.55)
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='5' y='10' width='14' height='10' rx='1.5' fill='%238f6c2e'/%3E%3Cpath d='M8 10V7a4 4 0 018 0v3' fill='none' stroke='%238f6c2e' stroke-width='2'/%3E%3C/svg%3E") center/20px no-repeat;z-index:2}
+#home-v2 .is-locked img,#home-v2 .is-locked .t,#home-v2 .is-locked span{filter:grayscale(.8);opacity:.6}
+
+/* ---------- 吹き出し ---------- */
+#home-v2 .hv2-talk{position:absolute;left:12px;width:47%;bottom:calc(var(--hv2-nav-h) + var(--hv2-banner-h) + 132px);z-index:3;pointer-events:none;
+  border-style:solid;border-color:transparent;border-image:url(../images/home_frame_talk.webp) 90 90 60 90 fill / 26px 26px 18px 26px stretch;
+  padding:8px 14px 12px 16px;filter:drop-shadow(0 3px 6px rgba(80,55,20,.22));animation:hv2-talk .7s ease-out both}
+#home-v2 .hv2-talk h4{margin:0 0 7px 22px;font:700 13px/1 var(--hv2-head);letter-spacing:.14em;color:var(--hv2-gold3)}
+#home-v2 .hv2-talk p{margin:0;font:500 12px/1.7 var(--hv2-body);letter-spacing:.05em;color:var(--hv2-ink)}
+@keyframes hv2-talk{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ---------- 出撃 ---------- */
+#home-v2 .hv2-sortie{position:absolute;right:6px;width:70%;max-width:390px;aspect-ratio:1000/436;bottom:calc(var(--hv2-nav-h) + var(--hv2-banner-h) + 24px);z-index:4;border:0;padding:0;
+  background:url(../images/home_frame_sortie.webp) center/100% 100% no-repeat;filter:drop-shadow(0 4px 10px rgba(80,55,20,.3));color:var(--hv2-ink)}
+#home-v2 .hv2-sortie .txt{position:absolute;left:13%;top:47%;transform:translateY(-50%);text-align:left}
+#home-v2 .hv2-sortie b{display:block;font:800 30px/1 var(--hv2-head);letter-spacing:.1em;color:#5a4428;text-shadow:0 1px 0 #fff}
+#home-v2 .hv2-sortie b i{font-style:normal;font-size:20px;color:var(--hv2-gold);margin-left:4px}
+#home-v2 .hv2-sortie small{display:block;margin-top:3px;font:700 10px/1 var(--hv2-head);letter-spacing:.3em;color:var(--hv2-ink2)}
+#home-v2 .hv2-sortie .shine{position:absolute;left:11%;right:13%;top:27%;bottom:27%;overflow:hidden;pointer-events:none}
+#home-v2 .hv2-sortie .shine::after{content:"";position:absolute;top:0;bottom:0;width:30%;left:-40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.7),transparent);animation:hv2-glint 4.2s ease-in-out infinite}
+@keyframes hv2-glint{0%,60%{left:-40%}100%{left:130%}}
+#home-v2 .hv2-sortie:active{transform:scale(.97)}
+
+/* ---------- 下段バナー（既存のバナーを3:1で下へ） ---------- */
+html.home-v2 #screen-main #home-event-banner-wrap{
+  position:fixed!important;left:10px!important;right:10px!important;top:auto!important;width:auto!important;max-width:540px;margin:0 auto!important;
+  bottom:calc(var(--hv2-nav-h) + 16px)!important;height:var(--hv2-banner-h)!important;z-index:3!important;
+  border:1.5px solid #c9a35a!important;box-shadow:0 3px 10px rgba(80,55,20,.25)!important;border-radius:0!important;overflow:hidden!important;background:#f3e8d2!important}
+html.home-v2 #screen-main #home-event-banner-wrap img{object-fit:cover!important;width:100%!important;height:100%!important}
+html.home-v2 #screen-main #home-event-banner-dots{bottom:-1px!important}
+
+/* ---------- ヘッダー（共通UI）：枠なしのユーザー欄＋コインと結晶 ---------- */
+html.hv2-home #global-user-frame{background:none!important;box-shadow:none!important;border:none!important}
+html.hv2-home #global-user-frame::before,html.hv2-home #global-user-frame::after{display:none!important}
+html.hv2-home #global-user-frame .hud-left{display:flex!important;align-items:flex-start!important;gap:6px!important}
+html.hv2-home #global-user-frame .hv2-face{flex:none;width:50px;height:50px;margin:6px 4px 0 4px;transform:rotate(45deg);overflow:hidden;border:1.5px solid var(--hv2-gold);
+  box-shadow:0 0 0 3px rgba(255,252,244,.9),0 0 0 4px rgba(184,147,74,.5);background:#efe4cd}
+html.hv2-home #global-user-frame .hv2-face img{width:142%;height:142%;object-fit:cover;transform:rotate(-45deg);margin:-21% 0 0 -21%}
+html.hv2-home #global-user-frame .hud-lv-circle{background:none!important;border:none!important;box-shadow:none!important;width:auto!important;height:auto!important;min-width:0!important;padding:0!important;margin:0!important}
+html.hv2-home #global-user-frame .hud-lv-circle::before,html.hv2-home #global-user-frame .hud-lv-circle::after{display:none!important}
+html.hv2-home #global-user-frame .hud-lv-core{display:flex!important;flex-direction:row!important;align-items:baseline!important;gap:4px!important;background:none!important;box-shadow:none!important;border:none!important;width:auto!important;height:auto!important;position:static!important;transform:none!important}
+html.hv2-home #global-user-frame .hud-lv-label{font:600 10px/1 var(--hv2-latin)!important;letter-spacing:.12em!important;color:var(--hv2-ink2)!important}
+html.hv2-home #global-user-frame .hud-lv-num{font:500 22px/1 var(--hv2-latin)!important;color:var(--hv2-ink)!important;text-shadow:0 1px 0 rgba(255,255,255,.9)!important}
+html.hv2-home #global-user-frame .hud-left{flex-wrap:nowrap!important}
+html.hv2-home #global-user-frame .hud-name{font:800 17px/1.1 var(--hv2-head)!important;letter-spacing:.12em!important;color:#3f3226!important;
+  text-shadow:0 1px 0 rgba(255,255,255,.95),0 0 10px rgba(255,248,230,.9)!important}
+html.hv2-home #global-user-frame .hud-sweep-line{display:none!important}
+html.hv2-home #global-user-frame .hv2-exp{display:block!important;width:118px;margin-top:5px}
+html.hv2-home #global-user-frame .hv2-exp .bar{position:relative;display:block;height:4px;background:rgba(255,250,236,.75);box-shadow:0 0 0 1px rgba(184,147,74,.35)}
+html.hv2-home #global-user-frame .hv2-exp .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#8f6c2e,#c9a35a 70%,#e6cf98)}
+html.hv2-home #global-user-frame .hv2-exp .bar::after{content:"";position:absolute;right:-9px;top:50%;margin-top:-5px;border-left:9px solid #b8934a;border-top:5px solid transparent;border-bottom:5px solid transparent}
+html.hv2-home #global-user-frame .hv2-exp .nums{display:flex;justify-content:space-between;margin-top:3px;font:600 8px/1 var(--hv2-latin);letter-spacing:.06em;color:var(--hv2-ink2);text-shadow:0 1px 0 rgba(255,255,255,.9)}
+html.hv2-home #global-user-frame .hud-right{display:flex!important;flex-direction:column!important;gap:5px!important;align-items:flex-end!important}
+html.hv2-home #global-user-frame .hud-resource{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:6px!important;min-width:136px!important;height:30px!important;padding:0 7px 0 6px!important;background:none!important;box-shadow:none!important}
+html.hv2-home #global-user-frame .hud-res-icon{width:20px!important;height:20px!important}
+html.hv2-home #global-user-frame .hud-res-val{font:600 13px/1 var(--hv2-latin)!important;color:var(--hv2-ink)!important;letter-spacing:.03em!important}
+html.hv2-home #global-user-frame .hud-gem-plus-btn{width:17px!important;height:17px!important;border-radius:50%!important;border:1px solid var(--hv2-gold)!important;background:none!important;color:var(--hv2-gold3)!important;font-size:12px!important;line-height:15px!important;padding:0!important}
+
+/* ---------- 下部ナビ（共通UI）：金枠のタイル ---------- */
+html.home-v2 #bottom-nav-shared.bottom-nav{
+  height:calc(var(--hv2-nav-h) + env(safe-area-inset-bottom,0px))!important;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px))!important;
+  display:grid!important;grid-template-columns:repeat(5,1fr)!important;gap:4px!important;align-items:stretch!important;
+  background:linear-gradient(180deg,rgba(253,248,236,.94),rgba(236,222,190,.97))!important;border-top:1px solid #a98443!important;
+  box-shadow:0 -1px 0 #fff8e6 inset,0 -4px 14px rgba(60,40,15,.25)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+html.home-v2 #bottom-nav-shared.bottom-nav::before,html.home-v2 #bottom-nav-shared.bottom-nav::after{display:none!important}
+html.home-v2 #bottom-nav-shared.bottom-nav .bottom-nav-item{
+  border-image-width:9px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:2px!important;
+  background:none!important;box-shadow:none!important;margin:0!important;padding:0!important;min-width:0!important;width:auto!important;height:auto!important;transform:none!important;opacity:.92}
+html.home-v2 #bottom-nav-shared.bottom-nav .bottom-nav-item::before,html.home-v2 #bottom-nav-shared.bottom-nav .bottom-nav-item::after{display:none!important}
+html.home-v2 #bottom-nav-shared.bottom-nav .bottom-nav-item > img{width:32px!important;height:32px!important;object-fit:contain!important;opacity:.8;filter:none!important;transform:none!important;margin:0!important}
+html.home-v2 #bottom-nav-shared.bottom-nav .bottom-nav-label{font:700 11.5px/1 var(--hv2-head)!important;letter-spacing:.02em!important;color:var(--hv2-ink2)!important;text-shadow:none!important;margin:0!important;transform:none!important}
+html.home-v2 #bottom-nav-shared.bottom-nav .bottom-nav-item.active{opacity:1;border-image-width:11px!important;filter:drop-shadow(0 0 6px rgba(255,210,110,.75))!important}
+html.home-v2 #bottom-nav-shared.bottom-nav .bottom-nav-item.active > img{opacity:1;filter:drop-shadow(0 0 6px rgba(255,214,120,.8))!important}
+html.home-v2 #bottom-nav-shared.bottom-nav .bottom-nav-item.active .bottom-nav-label{color:var(--hv2-ink)!important}
+html.home-v2 #bottom-nav-shared.bottom-nav .bottom-nav-item.locked-visual{opacity:.6}
+
+/* v1878b 調整 */
+#home-v2 .hv2-side{top:calc(96px + env(safe-area-inset-top,0px));gap:2px}
+#home-v2 .hv2-hex{width:50px;height:58px}
+#home-v2 .hv2-hex img{width:20px;height:20px}
+#home-v2 .hv2-hex .t{font-size:9.5px}
+#home-v2 .hv2-talk{width:50%;bottom:calc(var(--hv2-nav-h) + var(--hv2-banner-h) + 148px)}
+#home-v2 .hv2-talk p{letter-spacing:.02em}
+html.hv2-home #global-user-frame .hud-left{display:grid!important;grid-template-columns:auto auto!important;grid-template-rows:auto auto!important;column-gap:8px!important;row-gap:0!important;align-items:start!important}
+html.hv2-home #global-user-frame .hv2-face{grid-row:1 / 3;grid-column:1}
+html.hv2-home #global-user-frame .hud-lv-circle{grid-row:1;grid-column:2;align-self:end!important}
+html.hv2-home #global-user-frame .hud-info{grid-row:2;grid-column:2;display:block!important;max-width:none!important;width:auto!important;overflow:visible!important;margin:0!important;padding:0!important}
+html.hv2-home #global-user-frame .hud-name{max-width:150px!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+/* v1878c */
+html.home-v2 #screen-main .hm2-body,
+html.home-v2 #screen-main .home-type-letter-layer{display:none!important}
+html.home-v2 body #screen-main #home-event-banner-wrap.home-event-banner-wrap{width:calc(min(100vw,560px) - 20px)!important;max-width:none!important;left:0!important;right:0!important;margin:0 auto!important;transform:none!important}
+html.home-v2 body #screen-main #home-event-banner-wrap .home-event-banner-track{height:100%!important}
+html.home-v2 body #screen-main #home-event-banner-wrap .home-event-banner-item{flex:0 0 100%!important;width:100%!important;height:100%!important;padding:0!important;border:0!important}
+html.hv2-home #global-user-frame .hud-info{display:flex!important;flex-direction:column!important;align-items:flex-start!important}
+html.hv2-home #global-user-frame .hud-name{order:1;position:static!important;transform:none!important;margin:1px 0 0!important}
+html.hv2-home #global-user-frame .hv2-exp{order:2}
+html.hv2-home #global-user-frame .hud-info > *:not(.hud-name):not(.hv2-exp):not(.hud-sweep-line){order:3}
+
+/* ヘッダーの作り替えはホームを開いている間だけ（他の画面は今までのヘッダー） */
+#global-user-frame .hv2-face,#global-user-frame .hv2-exp{display:none}
+html.hv2-home #global-user-frame .hv2-face{display:block}
+
+/* build1879: ホーム専用の立ち絵（chara_XX_home.webp：透過・太ももで切れた縦長）
+   画面の上からバナーの上端まで大きく。下端の切れ目はやわらかく消す */
+#home-v2 .hv2-chara.is-home-art{
+  bottom:calc(var(--hv2-nav-h) + var(--hv2-banner-h) + 6px);
+  height:calc(100% - var(--hv2-nav-h) - var(--hv2-banner-h) - 34px);
+  width:auto;transform:translateX(-50%);animation:hv2-breath2 6s ease-in-out infinite;
+  -webkit-mask:linear-gradient(180deg,#000 0,#000 86%,transparent 100%);mask:linear-gradient(180deg,#000 0,#000 86%,transparent 100%);
+}
+@keyframes hv2-breath2{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-5px)}}
+/* build1880: 元素材は左端で髪や服が切れているので、ホームでも画面の左端に合わせる */
+#home-v2 .hv2-chara.is-home-art{left:0;right:auto;transform:none;animation:hv2-breath3 6s ease-in-out infinite;max-width:none}
+@keyframes hv2-breath3{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+/* build1882: ホーム立ち絵は「左端だけ見切れ・右側は切らない」規格で統一。常に画面の左端に合わせる */
+
+/* build1883: ヘッダーの位置調整 — RANK は名前と左揃え、コインと結晶は上詰め */
+html.hv2-home body #global-user-frame.global-user-frame{align-items:start!important}
+html.hv2-home body #global-user-frame .hud-left{align-self:start!important}
+html.hv2-home body #global-user-frame .hud-lv-circle{justify-self:start!important;align-self:end!important}
+html.hv2-home body #global-user-frame .hud-lv-core{justify-content:flex-start!important;text-align:left!important}
+html.hv2-home body #global-user-frame .hud-info{justify-self:start!important;align-items:flex-start!important;text-align:left!important}
+html.hv2-home body #global-user-frame .hud-right{align-self:start!important;margin-top:4px!important}
+#home-v2 .hv2-rbtn{font-size:15px;letter-spacing:.06em;white-space:nowrap}
+#home-v2 .hv2-rbtn small{letter-spacing:.18em}
+/* build1884: コインと結晶をヘッダーの上端に固定（端末ごとの既存ルールに左右されないよう絶対配置） */
+html.hv2-home body #global-user-frame .hud-right{position:absolute!important;top:calc(env(safe-area-inset-top,0px) + 6px)!important;right:10px!important;margin:0!important;transform:none!important}
+html.hv2-home body #global-user-frame .hud-right .hud-resource{position:relative!important;top:0!important;bottom:auto!important;transform:none!important;margin:0!important}
+html.hv2-home body #global-user-frame{position:fixed}
+/* build1885: 原因＝既存の共通ヘッダーCSS（style.css）が、アイコン・数字・＋ボタンに
+   align-self:end と top:1px を指定していて、枠（30px）の下端に張り付いていた。ホームでは中央に戻す */
+html.hv2-home body #global-user-frame .hud-resource .hud-res-icon,
+html.hv2-home body #global-user-frame .hud-resource .hud-res-val,
+html.hv2-home body #global-user-frame .hud-resource .hud-gem-plus-btn{
+  align-self:center!important;top:0!important;bottom:auto!important;margin:0!important;transform:none!important}
+html.hv2-home body #global-user-frame .hud-resource .hud-res-val{line-height:1!important}
+html.hv2-home body #global-user-frame .hud-resource::before,
+html.hv2-home body #global-user-frame .hud-resource::after{display:none!important}
+html.hv2-home body #global-user-frame .hud-resource{align-items:center!important}
