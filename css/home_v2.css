@@ -289,3 +289,81 @@ html.home-v2 body #bottom-nav-shared.bottom-nav .bottom-nav-item:not(.active) im
    文字を小さくした時にさらに下がっていた。高さを固定して、その中で上下中央に置く */
 #home-v2 .hv2-talk h4{display:flex!important;align-items:center;width:max-content;height:13px;line-height:1!important;white-space:nowrap}
 @media (max-height:760px){ #home-v2 .hv2-talk h4{height:11px} }
+
+/* =========================================================
+   build1899: ホームのレイアウトを全端末「上から積む」形に統一
+   ・右の3ボタン → その下に吹き出し（右列）→ 出撃はバナーの上
+   ・下の位置はナビの実際の高さ（ホームバー分の safe-area を含む）で計算
+     （大きいiPhoneでバナーの下端がナビに隠れていた）
+   ・吹き出しの名前は枠の上のタブ（音声マークの横）に置く
+   ========================================================= */
+:root{--hv2-nav-total:calc(var(--hv2-nav-h) + env(safe-area-inset-bottom,0px));--hv2-top:calc(env(safe-area-inset-top,0px) + 96px);--hv2-rh:56px;--hv2-rgap:9px}
+html.home-v2 body #screen-main #home-event-banner-wrap.home-event-banner-wrap{bottom:calc(var(--hv2-nav-total) + 14px)!important}
+#home-v2 .hv2-sortie{bottom:calc(var(--hv2-nav-total) + var(--hv2-banner-h) + 22px)!important}
+#home-v2 .hv2-chara.is-home-art{bottom:calc(var(--hv2-nav-total) + var(--hv2-banner-h) + 6px)!important;height:calc(100% - var(--hv2-nav-total) - var(--hv2-banner-h) - 34px)!important}
+#home-v2 .hv2-side{top:calc(var(--hv2-top) + 8px)!important}
+#home-v2 .hv2-right{top:var(--hv2-top)!important;bottom:auto!important;width:50%!important;gap:var(--hv2-rgap)!important}
+#home-v2 .hv2-rbtn{height:var(--hv2-rh)!important}
+#home-v2 .hv2-talk{--tb:26px;left:auto!important;right:10px!important;width:50%;
+  top:calc(var(--hv2-top) + 3 * var(--hv2-rh) + 2 * var(--hv2-rgap) + 14px)!important;bottom:auto!important;
+  padding-top:6px!important;border-image-width:26px 26px 18px 26px!important}
+/* 名前はタブの中、音声マーク（枠画像の x≈50〜105 / y≈45、上枠90pxを --tb に縮尺）の右に上下中央で置く */
+#home-v2 .hv2-talk h4{position:absolute!important;margin:0!important;height:auto!important;
+  top:calc(var(--tb) * -0.5)!important;left:calc(var(--tb) * 0.32)!important;transform:translateY(-50%)}
+@media (max-height:760px){
+  :root{--hv2-top:calc(env(safe-area-inset-top,0px) + 100px);--hv2-rh:42px;--hv2-rgap:5px}
+  #home-v2 .hv2-side{top:calc(var(--hv2-top) - 20px)!important}
+  #home-v2 .hv2-talk{--tb:22px;top:calc(var(--hv2-top) + 3 * var(--hv2-rh) + 2 * var(--hv2-rgap) + 12px)!important;border-image-width:22px 22px 15px 22px!important;padding-top:4px!important}
+  #home-v2 .hv2-sortie{bottom:calc(var(--hv2-nav-total) + var(--hv2-banner-h) + 16px)!important}
+  html.home-v2 body #screen-main #home-event-banner-wrap.home-event-banner-wrap{bottom:calc(var(--hv2-nav-total) + 10px)!important}
+}
+/* build1899b: 枠は border-image だけで描き、実際の border 幅は0に（名前・本文の位置を --tb 基準で決めるため） */
+#home-v2 .hv2-talk{border-width:0!important;padding:calc(var(--tb) + 2px) 14px 12px 16px!important}
+#home-v2 .hv2-talk h4{top:calc(var(--tb) * 0.5)!important;left:calc(var(--tb) * 1.22 + 2px)!important}
+@media (max-height:760px){ #home-v2 .hv2-talk{padding:calc(var(--tb) + 1px) 12px 9px 14px!important} }
+
+/* =========================================================
+   build1900: 全端末を SE と同じ構成・サイズに統一
+   右の3ボタンと吹き出しは「出撃の上」から積み上げる（下基準）。
+   縦長の端末ではキャラが大きく顔が下がるため、上基準だと顔に被っていた。
+   ========================================================= */
+:root{
+  --hv2-nav-h:72px;--hv2-rh:42px;--hv2-rgap:5px;--hv2-talk-h:68px;
+  --hv2-sortie-w:min(60vw, 336px);
+  --hv2-sortie-bottom:calc(var(--hv2-nav-total) + var(--hv2-banner-h) + 16px);
+  --hv2-talk-bottom:calc(var(--hv2-sortie-bottom) + var(--hv2-sortie-w) * 0.436 + 8px);
+  --hv2-right-bottom:calc(var(--hv2-talk-bottom) + var(--hv2-talk-h) + 12px);
+}
+html.home-v2 #bottom-nav-shared.bottom-nav{padding:5px 5px calc(5px + env(safe-area-inset-bottom,0px))!important}
+html.home-v2 body #bottom-nav-shared.bottom-nav .bottom-nav-item img,
+html.home-v2 body #bottom-nav-shared.bottom-nav .bottom-nav-item.active img,
+html.home-v2 body #bottom-nav-shared.bottom-nav .bottom-nav-item:not(.active) img{width:26px!important;height:26px!important}
+html.home-v2 #bottom-nav-shared.bottom-nav .bottom-nav-label{font-size:10.5px!important}
+html.home-v2 body #screen-main #home-event-banner-wrap.home-event-banner-wrap{bottom:calc(var(--hv2-nav-total) + 10px)!important}
+
+#home-v2 .hv2-side{top:calc(env(safe-area-inset-top,0px) + 80px)!important;gap:0!important}
+#home-v2 .hv2-sbtn{width:54px}
+#home-v2 .hv2-hex{width:44px;height:50px;gap:2px}
+#home-v2 .hv2-hex img{width:18px;height:18px}
+#home-v2 .hv2-hex .t{font-size:8.5px}
+
+#home-v2 .hv2-right{top:auto!important;bottom:var(--hv2-right-bottom)!important;width:50%!important;gap:var(--hv2-rgap)!important}
+#home-v2 .hv2-rbtn{height:var(--hv2-rh)!important;padding:0 10px!important;gap:8px;font-size:13.5px}
+#home-v2 .hv2-rbtn .ic{width:24px;height:24px}
+#home-v2 .hv2-rbtn small{font-size:7px;margin-bottom:2px}
+
+#home-v2 .hv2-talk{--tb:22px;top:auto!important;bottom:var(--hv2-talk-bottom)!important;min-height:var(--hv2-talk-h);
+  border-image-width:22px 22px 15px 22px!important;padding:calc(var(--tb) + 1px) 12px 9px 14px!important}
+#home-v2 .hv2-talk h4{font-size:11px}
+#home-v2 .hv2-talk p{font-size:11px;line-height:1.55}
+
+#home-v2 .hv2-sortie{width:var(--hv2-sortie-w)!important;bottom:var(--hv2-sortie-bottom)!important}
+#home-v2 .hv2-sortie b{font-size:26px}
+#home-v2 .hv2-sortie b i{font-size:17px}
+#home-v2 .hv2-sortie small{font-size:9px}
+
+/* 縦が足りない端末では吹き出しを省き、3ボタンを出撃の上へ */
+@media (max-height:620px){
+  #home-v2 .hv2-talk{display:none!important}
+  :root{--hv2-right-bottom:calc(var(--hv2-talk-bottom) + 4px)}
+}
