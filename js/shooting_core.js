@@ -16180,9 +16180,17 @@
         beam.el.classList.remove('is-warn');
         beam.el.classList.add('is-fire');
       }
+      // build1875: 箱が光線の下に入ったら、光線は箱で止まる
+      if (beam.firing) {
+        const sh = findSmileBoxShield(beam.x, beam.topY, beam.x, beam.topY + 4000, 0);
+        const bottom = sh ? Math.max(0, (beam.el.parentElement?.clientHeight || 0) - sh.y) : 0;
+        if (beam.cutBottom !== bottom) { beam.cutBottom = bottom; beam.el.style.bottom = `${Math.round(bottom)}px`; }
+        if (sh) showSmileBoxShield(sh, now, !beam.shieldShown), beam.shieldShown = true;
+      }
       if (beam.firing && !beam.hit && state.player && Number(state.player.y || 0) >= beam.topY &&
           Math.abs(Number(state.player.x || 0) - beam.x) <= beam.width * 0.5 + 6 &&
-          now >= Number(state.player.invulnUntil || 0)) {
+          now >= Number(state.player.invulnUntil || 0) &&
+          !findSmileBoxShieldAbove(beam.topY)) {
         beam.hit = true;
         damagePlayer(now, Math.max(1, Number(cfg.laserDamage || 350)), 'boss-heavy',
           normalizeCombatElement(state?.boss?.element || BOSS?.element), 'enemy-bullet');
@@ -16597,7 +16605,16 @@
       if (now >= hd.fireAt && !hd.fired) { hd.fired = true; hd.el.classList.add('is-strike'); }
       if (hd.fired && !hd.hit && now < hd.endAt) {
         const px = Number(state.player.x || 0);
-        if (Math.abs(px - hd.x) < hd.width / 2 + 6 && now >= Number(state.player.invulnUntil || 0) && !state.ended && !state.finishing) {
+        // build1875: 上から振り下ろす手は箱で止まる（箱より下は安全）
+        const shCol = findSmileBoxShield(hd.x, 0, hd.x, 4000, 0);
+        const inner = hd.el.firstElementChild;
+        if (inner) {
+          const cut = shCol ? Math.max(0, (hd.el.clientHeight || 0) - shCol.y) : 0;
+          if (hd.cutBottom !== cut) { hd.cutBottom = cut; inner.style.bottom = `${Math.round(cut)}px`; }
+        }
+        if (shCol) { showSmileBoxShield(shCol, now, !hd.shieldShown); hd.shieldShown = true; }
+        if (Math.abs(px - hd.x) < hd.width / 2 + 6 && now >= Number(state.player.invulnUntil || 0) && !state.ended && !state.finishing &&
+            !findSmileBoxShieldAbove(0)) {
           hd.hit = true;
           damagePlayer(now, Math.max(1, Number(cfg.handDamage || 320)), 'heavy', 'dark', 'eclipse-hand');
         }
@@ -21650,6 +21667,7 @@
       state.ambushLaserEl.remove();
       state.ambushLaserEl = null;
       state.ambushLaserActiveUntil = 0;
+      state.ambushShieldShown = false;
       return;
     }
     if (!state.ambushLaserEl || now >= Number(state.player.invulnUntil || 0) === false) return;
@@ -21662,11 +21680,15 @@
     const left = centerX - width * .5;
     const right = centerX + width * .5;
     const originY = Number(state.ambushLaserOriginY || state.boss.y || 0);
+    // build1875: ボスから撃ち下ろす極太レーザーも、箱の真後ろは安全
+    const ambushShield = findSmileBoxShieldAbove(originY);
+    if (ambushShield) showSmileBoxShield(ambushShield, now, !state.ambushShieldShown), state.ambushShieldShown = true;
     if (
       state.player.x >= left &&
       state.player.x <= right &&
       state.player.y >= originY &&
-      now >= Number(state.player.invulnUntil || 0)
+      now >= Number(state.player.invulnUntil || 0) &&
+      !ambushShield
     ) {
       // v184: 乱入WAVE2終盤攻撃は即死ではなく、
       // そのWAVEの通常弾ダメージの2倍に抑える。
@@ -26148,6 +26170,9 @@
     if (px < SHIEN_WAVE_GAP || px > w - SHIEN_WAVE_GAP) return;
     const top=Math.min(prevY,curY)-SHIEN_WAVE_HALF, bottom=Math.max(prevY,curY)+SHIEN_WAVE_HALF;
     if (py < top || py > bottom) return;
+    // build1875: 上から迫る衝撃波は、箱の真後ろなら届かない
+    const waveShield = findSmileBoxShieldAbove(0);
+    if (waveShield) { sh.hit=true; showSmileBoxShield(waveShield, now, true); return; }
     const member=getActiveMember();
     if (!member || member.hp<=0) return;
     const before=member.hp;
@@ -26665,10 +26690,22 @@
       const local = mt - tb.modeAt;
       if (local >= 650 && local < 1080) {
         tb.lines.forEach(l => l.el.classList.add('fire'));
+        // build1875: 箱に当たったレーザーは箱の手前で止める（見た目）
+        tb.lines.forEach(l => {
+          const L0 = tbRayLen(l.x, l.y, l.a, w, h);
+          const sh = findSmileBoxShield(l.x, l.y, l.x + Math.cos(l.a) * L0, l.y + Math.sin(l.a) * L0, 0);
+          const L = sh ? Math.max(10, sh.t * L0) : L0;
+          if (l.shownLen !== Math.round(L)) { l.shownLen = Math.round(L); tbSetLine(l.el, l.x, l.y, l.a, L); }
+          if (sh) { showSmileBoxShield(sh, now, !l.shieldShown); l.shieldShown = true; }
+        });
         if (!tb.hit) {
           for (const l of tb.lines) {
             const L = tbRayLen(l.x, l.y, l.a, w, h);
             if (tbSegDist(px, py, l.x, l.y, l.x + Math.cos(l.a) * L, l.y + Math.sin(l.a) * L) < 14) {
+              // build1875: 発射口→自機の手前に箱があれば遮られる
+              const along = Math.max(0, (px - l.x) * Math.cos(l.a) + (py - l.y) * Math.sin(l.a));
+              const sh = findSmileBoxShield(l.x, l.y, l.x + Math.cos(l.a) * along, l.y + Math.sin(l.a) * along, 0);
+              if (sh) { showSmileBoxShield(sh, now, true); tb.hit = true; break; }
               if (tbDamage(now, TEST_BODY_TRI_DAMAGE, 'boss-laser')) { tb.hit = true; triggerPlayerHitScreenShake(); }
               break;
             }
@@ -26786,9 +26823,19 @@
         const dt = Math.max(0, mt - (s.lastAt || mt)) / 1000;
         s.beamX += clamp(px - s.beamX, -88 * dt, 88 * dt);
         s.x = s.beamX;
+        // build1875: 上から降る柱は箱で止まる
+        const shipShield = findSmileBoxShield(s.beamX, 0, s.beamX, 4000, 0);
+        if (s.col) {
+          const cut = shipShield ? Math.max(0, h - shipShield.y) : 0;
+          if (s.cutBottom !== cut) { s.cutBottom = cut; s.col.style.bottom = `${Math.round(cut)}px`; }
+        }
+        if (shipShield) { showSmileBoxShield(shipShield, now, !s.shieldShown); s.shieldShown = true; }
         if (Math.abs(px - s.beamX) < 34 && mt >= s.nextTickAt) {
-          if (tbDamage(now, TEST_BODY_SHIP_DAMAGE, 'boss-laser')) triggerPlayerHitScreenShake();
-          s.nextTickAt = mt + 300;
+          if (findSmileBoxShieldAbove(0)) { s.nextTickAt = mt + 300; }
+          else {
+            if (tbDamage(now, TEST_BODY_SHIP_DAMAGE, 'boss-laser')) triggerPlayerHitScreenShake();
+            s.nextTickAt = mt + 300;
+          }
         }
       } else {
         s.col.remove();
@@ -27383,6 +27430,44 @@
     if (now < arm.holdUntil) return arm.len;
     return arm.len * Math.max(0, 1 - Math.pow((now - arm.holdUntil) / 170, 1.6));
   }
+  // build1874: スマイルのびっくり箱は怪腕・ヘルフレイムを受け止める。
+  //  原点から角度 ang の直線が、設置中の箱に当たるまでの距離（当たらなければ Infinity）。
+  function hazeSmileBoxBlockDist(ox, oy, ang, len, pad) {
+    if (!state || !Array.isArray(state.smileBoxes) || !state.smileBoxes.length) return Infinity;
+    const now = performance.now();
+    const ex = ox + Math.cos(ang) * len, ey = oy + Math.sin(ang) * len;
+    let best = Infinity, bestBox = null;
+    for (const box of state.smileBoxes) {
+      if (!box || !box.el?.isConnected || now >= box.explodeAt) continue;
+      const tt = segmentAabbEntryT(ox, oy, ex, ey,
+        box.x - SMILE_BOX_HALF_WIDTH - pad, box.x + SMILE_BOX_HALF_WIDTH + pad,
+        box.y - SMILE_BOX_HALF_HEIGHT - pad, box.y + SMILE_BOX_HALF_HEIGHT + pad);
+      if (tt === null) continue;
+      const d = tt * len;
+      if (d < best) { best = d; bestBox = box; }
+    }
+    hazeSmileBoxBlockDist.lastBox = bestBox;
+    return best;
+  }
+  function hazeSmileBoxFlash(box, now) {
+    if (!box || !box.el) return;
+    if (now - Number(box.lastHitFxAt || 0) < 90) return;
+    box.lastHitFxAt = now;
+    box.el.classList.remove('smile-box-hit');
+    void box.el.offsetWidth;
+    box.el.classList.add('smile-box-hit');
+  }
+  function hazeBlockSpark(x, y, big) {
+    const arena = hazeArena();
+    if (!arena) return;
+    const fx = document.createElement('div');
+    fx.className = 'haze-block-spark' + (big ? ' is-big' : '');
+    fx.setAttribute('aria-hidden', 'true');
+    fx.innerHTML = '<i></i><b></b><u></u><u></u><u></u><u></u><u></u>' + (big ? '<em>BLOCK!</em>' : '');
+    fx.style.transform = `translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0)`;
+    arena.appendChild(fx);
+    setTimeout(() => fx.remove(), big ? 760 : 360);
+  }
   function updateHazeArms(h, now, arena, w, hh) {
     for (const arm of h.arms) {
       if (now < arm.warnAt) continue;
@@ -27390,7 +27475,20 @@
       if (now < arm.fireAt) continue;
       if (arm.warnEl) { arm.warnEl.remove(); arm.warnEl = null; }
       const t = now - arm.fireAt;
-      const d = hazeArmReach(arm, now, 0);
+      let d = hazeArmReach(arm, now, 0);
+      // びっくり箱に刺さったら、そこで止まる（以後その腕は箱の手前まで）
+      if (!arm.blockedLen && now < arm.holdUntil && d > 8) {
+        const bd = hazeSmileBoxBlockDist(arm.ox, arm.oy, arm.ang, arm.len, (arm.armW || 84) * 0.28);
+        if (bd < d) {
+          arm.blockedLen = Math.max(8, bd + 10); // 爪の先が少し食い込む
+          const bx = arm.ox + Math.cos(arm.ang) * bd, by = arm.oy + Math.sin(arm.ang) * bd;
+          hazeBlockSpark(bx, by, true);
+          hazeSmileBoxFlash(hazeSmileBoxBlockDist.lastBox, now);
+          arm.impacted = true;
+          if (arm.el) arm.el.classList.add('is-blocked');
+        }
+      }
+      if (arm.blockedLen) d = Math.min(d, arm.blockedLen);
       if (arm.el) {
         arm.el.style.visibility = '';
         arm.el.classList.add('is-fire');
@@ -27398,7 +27496,8 @@
         const L = Math.max(40, Math.round(arm.len));
         const lags = [70, 35, 0];
         for (let i = 0; i < arm.parts.length; i++) {
-          const dd = i === 2 ? d : (now < arm.holdUntil ? hazeArmReach(arm, now, lags[i]) : 0);
+          let dd = i === 2 ? d : (now < arm.holdUntil ? hazeArmReach(arm, now, lags[i]) : 0);
+          if (arm.blockedLen) dd = Math.min(dd, arm.blockedLen);
           const shaft = Math.max(0, dd - arm.clawH);
           const part = arm.parts[i];
           // 伸びの途中は横幅を細く→着弾で少し膨らむ（アヤネの scaleX 演出）
@@ -27798,6 +27897,24 @@
     const k = k0 < .12 ? (k0 / .12) * (k0 / .12) * .06 : (k0 > .9 ? .94 + .06 * (1 - Math.pow(1 - (k0 - .9) / .1, 2)) : .06 + (k0 - .12) / .78 * .88);
     const ang = HAZE_FLAME_A0 + (HAZE_FLAME_A1 - HAZE_FLAME_A0) * k;
     f.beamEl.style.transform = `translate3d(${o.x.toFixed(1)}px,${o.y.toFixed(1)}px,0) rotate(${(ang * 180 / Math.PI).toFixed(2)}deg)`;
+    // びっくり箱に当たったら、レーザーはそこで止まる（箱の後ろは安全）
+    {
+      const bd = hazeSmileBoxBlockDist(o.x, o.y, ang, f.len, 0);
+      const vis = Number.isFinite(bd) ? Math.max(20, bd) : f.len;
+      if (Math.abs(vis - (f.visLen || f.len)) > 0.5) {
+        f.visLen = vis;
+        f.beamEl.style.width = `${Math.round(vis)}px`;
+      }
+      f.beamEl.classList.toggle('is-blocked', Number.isFinite(bd));
+      if (Number.isFinite(bd)) {
+        hazeSmileBoxFlash(hazeSmileBoxBlockDist.lastBox, now);
+        if (now - Number(f.lastSparkAt || 0) > 70) {
+          f.lastSparkAt = now;
+          hazeBlockSpark(o.x + Math.cos(ang) * bd, o.y + Math.sin(ang) * bd, !f.blockedOnce);
+          f.blockedOnce = true;
+        }
+      }
+    }
     // 当たり判定：前フレーム→今フレームの間にレーザーが自機を横切ったか（すり抜け防止）
     if (!f.hit) {
       const px = state.player.x - o.x, py = state.player.y - o.y;
@@ -27806,7 +27923,9 @@
       while (pa < HAZE_FLAME_A0 - Math.PI / 2) pa += Math.PI * 2;
       while (pa > HAZE_FLAME_A0 + Math.PI * 1.5) pa -= Math.PI * 2;
       const tol = Math.atan2(16, Math.max(1, dist));
-      if (dist < f.len && pa >= f.prevAng - tol && pa <= ang + tol) {
+      // 自機の方向で箱がレーザーを遮っていれば当たらない
+      const shield = hazeSmileBoxBlockDist(o.x, o.y, Math.atan2(py, px), dist, 6);
+      if (dist < f.len && shield >= dist && pa >= f.prevAng - tol && pa <= ang + tol) {
         const rule = getHazeRule('haze_hellflame') || {};
         if (hazeHitPlayer(now, Math.max(0, Number(rule.damageRate || 0.35)), true)) f.hit = true;
       }
@@ -27844,7 +27963,7 @@
   }
 
   function clearHazeMechanics() {
-    document.querySelectorAll('.haze-arm,.haze-arm-warn,.haze-arm-impact,.haze-callout,.haze-eye-flash,.haze-true-eye,.haze-mirage-burst,.haze-clone-fade,.haze-dash-ghost,.haze-flame,.haze-flame-warn,.haze-ember,.haze-burn-aura')
+    document.querySelectorAll('.haze-arm,.haze-arm-warn,.haze-arm-impact,.haze-block-spark,.haze-callout,.haze-eye-flash,.haze-true-eye,.haze-mirage-burst,.haze-clone-fade,.haze-dash-ghost,.haze-flame,.haze-flame-warn,.haze-ember,.haze-burn-aura')
       .forEach(el => el.remove());
     const root = document.getElementById(ROOT_ID);
     if (root) root.classList.remove('haze-flame-active', 'haze-shake', 'haze-shake-big');
@@ -38376,6 +38495,50 @@
     state.smileBoxes = [];
   }
 
+  // build1875: 「前から飛んでくるもの」はびっくり箱で防げる（弾以外のレーザー・柱・衝撃波も）。
+  //  発射元(x0,y0)→自機(x1,y1) の線分が設置中の箱を通れば遮られる。戻り値は箱と接触点、なければ null。
+  function findSmileBoxShield(x0, y0, x1, y1, pad = 0) {
+    if (!state || !Array.isArray(state.smileBoxes) || !state.smileBoxes.length) return null;
+    const now = performance.now();
+    let best = null;
+    for (const box of state.smileBoxes) {
+      if (!box || !box.el?.isConnected || now >= box.explodeAt) continue;
+      const t = segmentAabbEntryT(x0, y0, x1, y1,
+        box.x - SMILE_BOX_HALF_WIDTH - pad, box.x + SMILE_BOX_HALF_WIDTH + pad,
+        box.y - SMILE_BOX_HALF_HEIGHT - pad, box.y + SMILE_BOX_HALF_HEIGHT + pad);
+      if (t === null) continue;
+      if (!best || t < best.t) best = { box, t, x: x0 + (x1 - x0) * t, y: y0 + (y1 - y0) * t };
+    }
+    return best;
+  }
+  // 遮った演出（火花＋箱が揺れる）。big で「BLOCK!」
+  function showSmileBoxShield(hit, now, big) {
+    if (!hit || !hit.box) return;
+    const box = hit.box;
+    if (now - Number(box.lastShieldFxAt || 0) < (big ? 0 : 120)) return;
+    box.lastShieldFxAt = now;
+    if (box.el) {
+      box.el.classList.remove('smile-box-hit');
+      void box.el.offsetWidth;
+      box.el.classList.add('smile-box-hit');
+    }
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const fx = document.createElement('div');
+    fx.className = 'haze-block-spark' + (big ? ' is-big' : '');
+    fx.setAttribute('aria-hidden', 'true');
+    fx.innerHTML = '<i></i><b></b><u></u><u></u><u></u><u></u><u></u>' + (big ? '<em>BLOCK!</em>' : '');
+    fx.style.transform = `translate3d(${hit.x.toFixed(1)}px,${hit.y.toFixed(1)}px,0)`;
+    arena.appendChild(fx);
+    setTimeout(() => fx.remove(), big ? 760 : 360);
+  }
+  // 自機の真上（列の上端 topY）から降ってくる縦の攻撃用
+  function findSmileBoxShieldAbove(topY) {
+    if (!state || !state.player) return null;
+    const px = Number(state.player.x || 0), py = Number(state.player.y || 0);
+    if (py <= topY) return null;
+    return findSmileBoxShield(px, topY, px, py, 0);
+  }
   function tryBlockEnemyBulletWithSmileBox(bullet, fromX, fromY, now) {
     if (!state || !Array.isArray(state.smileBoxes) || !state.smileBoxes.length) return false;
     const toX = Number(bullet.x || 0);
