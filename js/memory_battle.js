@@ -1,5 +1,5 @@
 // ZERAPHIA build1757 — 記憶決戦 / MEMORY BATTLE
-// 過去の脅威を「記憶の掟」付きで再現するボス戦。リヴィア・テストの2戦・難易度は横並び（持ち物検査）。
+// 過去の脅威を「記憶の掟」付きで再現するボス戦。リヴィア・テスト・ヘイズの3戦・難易度は横並び（持ち物検査）。
 //
 // ・ステージ定義（ボス・掟）は shooting_stages.js の MEMORY_BATTLE_STAGES が正本。
 // ・月1回リセット（日本時間 毎月1日 0:00）。各ステージ、当月の初クリアで結晶（サーバーが付与）。
@@ -290,9 +290,9 @@
     if (!root) return;
     const S = stages();
     const visibleDefs = S && Array.isArray(S.MEMORY_BATTLE_STAGES)
-      ? S.MEMORY_BATTLE_STAGES.filter(def => def && (def.no === 1 || def.no === 3))
+      ? S.MEMORY_BATTLE_STAGES.filter(def => def && (def.no === 1 || def.no === 3 || def.no === 4))
       : [];
-    const total = visibleDefs.length || 2;
+    const total = visibleDefs.length || 3;
     const cleared = clearedSet();
     const mk = monthKey();
     const reset = daysToReset();
@@ -308,7 +308,7 @@
     const rows = [];
     for (const [index, def] of visibleDefs.entries()) {
       const no = def.no; // サーバー・戦闘用の内部ステージ番号（テストは03のまま）
-      const displayNo = index + 1; // 画面上は01 リヴィア / 02 テスト
+      const displayNo = index + 1; // 画面上は01 リヴィア / 02 テスト / 03 ヘイズ
       const done = cleared.has(no);
       const img = panelImage(def);
       const fallback = bossImage(def);
