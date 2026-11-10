@@ -173,19 +173,23 @@
   }
   // build1890: セリフは文字だけ じわっとフェードアウト → 差し替え → フェードイン。
   //  ホーム表示中は一定間隔で自動送り。タップした時はその場で送り、自動送りのタイマーを数え直す。
-  var LINE_AUTO_MS = 9000, LINE_FADE_MS = 700;
+  var LINE_AUTO_MS = 9000, LINE_FADE_MS = 1400;
   var lineTimer = 0, lineFading = false;
   function nextLine(){
     if (!root || !lineSet.length || lineFading) return;
-    var pp = root.querySelector('.hv2-talk p');
+    var talk = root.querySelector('.hv2-talk');
+    var pp = talk && talk.querySelector('p');
     if (!pp) return;
+    // build1902: 吹き出しごと消えて → 少し間をおいて → 新しいセリフで現れる
     lineFading = true;
-    pp.classList.add('is-fading');
+    talk.classList.add('is-out');
     setTimeout(function(){
       lineIdx = (lineIdx + 1) % lineSet.length;
       pp.innerHTML = lineSet[lineIdx];
-      pp.classList.remove('is-fading');
-      setTimeout(function(){ lineFading = false; }, LINE_FADE_MS);
+      setTimeout(function(){
+        talk.classList.remove('is-out');
+        setTimeout(function(){ lineFading = false; }, LINE_FADE_MS);
+      }, 400);
     }, LINE_FADE_MS);
     scheduleAutoLine();
   }

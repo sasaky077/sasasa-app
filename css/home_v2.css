@@ -369,3 +369,13 @@ html.home-v2 body #screen-main #home-event-banner-wrap.home-event-banner-wrap{bo
 }
 /* build1901: 吹き出しを横に広げて、名前のタブを長くする（50% → 58%・右寄せのまま左へ伸ばす） */
 #home-v2 .hv2-talk{width:58%!important}
+/* build1902: セリフの切り替えは吹き出しごと。消える時は下へ少し沈みながら薄く、現れる時は登場アニメーションを再生 */
+#home-v2 .hv2-talk{transition:opacity .7s ease,transform .7s ease}
+#home-v2 .hv2-talk.is-out{animation:none!important;opacity:0;transform:translateY(5px)}
+#home-v2 .hv2-talk:not(.is-out){animation:hv2-talk .7s ease-out both}
+#home-v2 .hv2-talk p,#home-v2 .hv2-talk p.is-fading{opacity:1;filter:none;transition:none}
+/* build1903: じわっと消えて、じわっと出る（1.4秒・ゆるやかな曲線） */
+#home-v2 .hv2-talk{transition:opacity 1.4s cubic-bezier(.45,0,.55,1),transform 1.4s cubic-bezier(.45,0,.55,1)}
+#home-v2 .hv2-talk.is-out{transform:translateY(3px)}
+#home-v2 .hv2-talk:not(.is-out){animation:hv2-talk-in 1.4s cubic-bezier(.45,0,.55,1) both}
+@keyframes hv2-talk-in{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
