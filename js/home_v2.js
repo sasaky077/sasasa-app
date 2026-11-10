@@ -257,14 +257,14 @@
   function fitTalkName(h4){
     var talk = h4 && h4.parentNode;
     if (!talk) return;
-    h4.style.fontSize = ''; h4.style.letterSpacing = ''; talk.style.width = '';
+    h4.style.fontSize = ''; h4.style.letterSpacing = ''; talk.style.removeProperty('width');
     requestAnimationFrame(function(){
       var base = parseFloat(getComputedStyle(h4).fontSize) || 13;
       var minFs = Math.max(10, base * 0.82);
       // 枠画像 900px のうちタブの右端は約 x=470（左右の固定枠 90px、中央は伸縮）
       var avail = function(){
         var tr = talk.getBoundingClientRect();
-        var bw = parseFloat(getComputedStyle(talk).borderLeftWidth) || 26;
+        var bw = parseFloat(getComputedStyle(talk).getPropertyValue('--tb')) || 26;
         var tabRight = bw + (470 - 90) / 720 * Math.max(0, tr.width - bw * 2) - 10;
         return tabRight - (h4.getBoundingClientRect().left - tr.left);
       };
@@ -276,9 +276,9 @@
         h4.style.fontSize = tries[i][1].toFixed(1) + 'px';
         if (fits()) return;
       }
-      var maxW = Math.min(window.innerWidth, 560) * 0.68;
+      var maxW = Math.min(window.innerWidth, 560) * 0.72;
       var w = talk.getBoundingClientRect().width;
-      while (!fits() && w < maxW) { w += 6; talk.style.width = w + 'px'; }
+      while (!fits() && w < maxW) { w += 6; talk.style.setProperty('width', w + 'px', 'important'); }
     });
   }
 
@@ -323,7 +323,10 @@
     } catch(_){}
   }
 
-  window.addEventListener('resize', function(){ var h = root && root.querySelector('.hv2-talk h4'); if (h) fitTalkName(h); });
+  var refitName = function(){ var h = root && root.querySelector('.hv2-talk h4'); if (h) fitTalkName(h); };
+  window.addEventListener('resize', refitName);
+  // build1901: 見出しフォント（しっぽり明朝）の読み込み前に測ると幅を小さく見積もるので、読み込み後に測り直す
+  try { if (document.fonts) { document.fonts.ready.then(refitName); document.fonts.addEventListener('loadingdone', refitName); } } catch(_){}
   window.HomeV2 = { refresh: function(){ refresh(true); } };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', build, { once:true });
   else build();

@@ -367,3 +367,5 @@ html.home-v2 body #screen-main #home-event-banner-wrap.home-event-banner-wrap{bo
   #home-v2 .hv2-talk{display:none!important}
   :root{--hv2-right-bottom:calc(var(--hv2-talk-bottom) + 4px)}
 }
+/* build1901: 吹き出しを横に広げて、名前のタブを長くする（50% → 58%・右寄せのまま左へ伸ばす） */
+#home-v2 .hv2-talk{width:58%!important}
