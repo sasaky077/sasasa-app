@@ -10793,6 +10793,11 @@
     barrier.style.transform = `translate3d(${Number(x || 0)}px,${Number(y || 0)}px,0) translate(-50%,-50%) scale(var(--boss-shield-scale,1))`;
   }
 
+  // build1896: RAID boss-only 40% resistance, preserving visual HP and result consistency.
+  function getRaidBossDefenseMultiplier() {
+    return isRaidStage() && state && state.boss && combatElementTarget === state.boss ? 0.6 : 1;
+  }
+
   function applyElementDamage(amount, attackElement, targetElement, options) {
     const base = Math.max(0, Number(amount || 0));
     const normalizedAttackElement = normalizeCombatElement(attackElement) || 'neutral';
@@ -10818,10 +10823,10 @@
       // build1643: 位相回遊の強化「破魔の刻印」「○属性バリア破り」：バリア越しに一部（または等倍）が通る
       const pierce = incoming ? 0 : getPhaseOdysseyBarrierPierce(targetElement);
       if (pierce <= 0) return 0;
-      return applyHitComboDamage(base * pierce * getRaidBreakDamageMultiplier());
+      return applyHitComboDamage(base * pierce * getRaidBreakDamageMultiplier() * getRaidBossDefenseMultiplier());
     }
 
-    const elemental = base * rate * (incoming ? 1 : getRaidBreakDamageMultiplier());
+    const elemental = base * rate * (incoming ? 1 : getRaidBreakDamageMultiplier() * getRaidBossDefenseMultiplier());
     if (incoming) return elemental;
     return applyMemoryArmor(applyHitComboDamage(elemental));
   }
@@ -25052,7 +25057,8 @@
           if (bh.damageElemental && bh.attackElement) {
             bossTickDamage = applyElementDamage(damage, bh.attackElement, getCombatTargetElement(state.boss));
           }
-          const applied = Math.min(state.boss.hp, Math.max(0, applyHitComboDamage(bossTickDamage)));
+          const applied = Math.min(state.boss.hp, Math.max(0, applyHitComboDamage(bossTickDamage *
+            (bh.damageElemental && bh.attackElement ? 1 : (isRaidStage() ? 0.6 : 1)))));
           state.boss.hp = Math.max(0, state.boss.hp - applied);
           if ((bh.damagePulseIndex % 2) === 1) {
             createHit(
@@ -27791,7 +27797,7 @@
   // ---------------- 陽炎 ----------------
   function hazeDamageBossDirect(amount) {
     if (!state || !state.boss || state.boss.hp <= 0) return 0;
-    const applied = Math.min(state.boss.hp, Math.max(0, Math.round(amount)));
+    const applied = Math.min(state.boss.hp, Math.max(0, Math.round(amount * (isRaidStage() ? 0.6 : 1))));
     if (applied <= 0) return 0;
     state.boss.hp = Math.max(0, state.boss.hp - applied);
     showBossDamageNumber(applied, true, '');
