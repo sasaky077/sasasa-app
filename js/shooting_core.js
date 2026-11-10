@@ -27004,9 +27004,9 @@
     return !!(member && now < Number(member.invincibleUntil || 0)); // 無敵
   }
   function ensureMemoryJudgmentStyle() {
-    if (document.getElementById('memory-judgment-style-v1764')) return;
+    if (document.getElementById('memory-judgment-style-v1876')) return;
     const st = document.createElement('style');
-    st.id = 'memory-judgment-style-v1764';
+    st.id = 'memory-judgment-style-v1876';
     st.textContent = `
       /* build1777: 神罰の予告は画面の縁だけを染め、文字は上寄りに小さく（弾を見る邪魔をしない） */
       .memory-judgment{position:absolute;inset:0;z-index:38;pointer-events:none;
@@ -27021,6 +27021,9 @@
       .memory-judgment.is-sealed{background:radial-gradient(ellipse at 50% 45%,rgba(160,200,255,0) 35%,rgba(120,160,255,.2) 80%,rgba(40,60,140,.32) 100%)}
       .memory-judgment.is-sealed .mj-title{color:#e6f0ff;text-shadow:0 0 10px rgba(110,160,255,.95),0 0 2px #000}
       @keyframes mjPulse{from{opacity:.75}to{opacity:1}}
+      /* build1876: 時間停止中はカウントダウンも止まる（脈動も止め、数字を少し沈める） */
+      .memory-judgment.is-frozen{animation-play-state:paused}
+      .memory-judgment.is-frozen .mj-count{opacity:.62;filter:saturate(.4)}
       .memory-judgment-flash{position:absolute;inset:0;z-index:39;pointer-events:none;background:#fff6d8;animation:mjFlash .55s ease-out forwards}
       @keyframes mjFlash{0%{opacity:.95}100%{opacity:0}}
     `;
@@ -27044,9 +27047,28 @@
     let mj = state.memoryJudge;
     const lockUntil = getBossLockUntil(now);
     if (!mj) mj = state.memoryJudge = { nextAt: onToriiBreak ? now : now + Math.max(3000, Number(rule.firstMs || 15000)), warnUntil: 0, sealed: false, el: null };
+    // build1876: TICKET版イノリ — 時間停止中は神罰のカウントダウンも止まる（内部・表示とも）。
+    //  停止が明けたら残り時間から再開し、0で神罰が落ちる。鳥居復活の時刻も同じだけ後ろへずらす。
+    //  アルノ型の時間停止（arnoSlash）とPAUSEは、終了時に全体の時刻がまとめてずれるのでここでは動かさない。
+    if (onToriiBreak) {
+      const dtJ = Math.max(0, Math.min(250, now - Number(mj.lastTickTs || now)));
+      mj.lastTickTs = now;
+      if (state.arnoSlashActive || state.paused) {
+        if (mj.el) mj.el.classList.add('is-frozen');
+        return;
+      }
+      const timeStopped = state.koTransition || state.phaseTransition || isEntireEnemyActionLocked(now);
+      if (timeStopped) {
+        if (mj.warnUntil) mj.warnUntil += dtJ;
+        if (state.inori && Number(state.inori.reviveAt || 0) > 0) state.inori.reviveAt += dtJ;
+        if (mj.el) mj.el.classList.add('is-frozen');
+        return;
+      }
+      if (mj.el) mj.el.classList.remove('is-frozen');
+    }
     // KO演出・PHASE切替中は止める（発動を後ろへずらす）
-    if (state.koTransition || state.phaseTransition || now < lockUntil) {
-      if (!onToriiBreak) {
+    if (!onToriiBreak && (state.koTransition || state.phaseTransition || now < lockUntil)) {
+      {
         if (!mj.warnUntil && mj.nextAt < now + 500) mj.nextAt = now + 500;
         if (mj.warnUntil && mj.warnUntil < now + 500) mj.warnUntil = now + 500;
       }
