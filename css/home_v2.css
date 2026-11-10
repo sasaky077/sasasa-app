@@ -397,3 +397,6 @@ html.home-v2 body #screen-main #home-event-banner-wrap.home-event-banner-wrap{bo
 }
 /* build1906: EXPバー右端の▶を削除 */
 html.hv2-home #global-user-frame .hv2-exp .bar::after{display:none!important;content:none!important}
+
+/* build1907: セリフウインドウをもう少し横広に（58% → 64%・右寄せのまま左へ伸ばす） */
+#home-v2 .hv2-talk{width:64%!important}

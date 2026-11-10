@@ -272,7 +272,8 @@
         var tabRight = bw + (470 - 90) / 720 * Math.max(0, tr.width - bw * 2) - 10;
         return tabRight - (h4.getBoundingClientRect().left - tr.left);
       };
-      var fits = function(){ return h4.scrollWidth <= avail(); };
+      // build1907: タブの右端に余白 10px を残す（ギリギリに見えないように）
+      var fits = function(){ return h4.scrollWidth + 10 <= avail(); };
       // ① 字間を詰める ② 文字を少し小さく（下限10px） ③ それでも入らなければ吹き出しを横に広げる
       var tries = [['.08em', base], ['.02em', base], ['0', base * 0.92], ['-.02em', minFs]];
       for (var i = 0; i < tries.length; i++) {
