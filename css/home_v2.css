@@ -267,3 +267,11 @@ html.home-v2 body #bottom-nav-shared.bottom-nav .bottom-nav-item:not(.active) im
   html.home-v2 body #bottom-nav-shared.bottom-nav .bottom-nav-item.active img,
   html.home-v2 body #bottom-nav-shared.bottom-nav .bottom-nav-item:not(.active) img{width:26px!important;height:26px!important}
 }
+/* build1888: 立ち絵の上下の揺れをなくす */
+#home-v2 .hv2-chara,#home-v2 .hv2-chara.is-home-art{animation:none!important}
+#home-v2 .hv2-chara:not(.is-home-art){transform:translateX(-46%)}
+/* build1888: SE等では右の3ボタンと吹き出しを少し下げる */
+@media (max-height:760px){
+  #home-v2 .hv2-right{top:calc(100px + env(safe-area-inset-top,0px))}
+  #home-v2 .hv2-talk{top:calc(100px + 3 * 42px + 2 * 5px + 10px + env(safe-area-inset-top,0px))}
+}
