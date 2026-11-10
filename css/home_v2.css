@@ -285,3 +285,7 @@ html.home-v2 body #bottom-nav-shared.bottom-nav .bottom-nav-item:not(.active) im
 #home-v2 .hv2-talk.is-swap{animation:none}
 /* build1895: 吹き出しの名前は1行固定・はみ出さない（幅はJSで合わせる） */
 #home-v2 .hv2-talk h4{display:inline-block;white-space:nowrap;max-width:none}
+/* build1898: 名前の上下ずれ修正。inline-block だと行の高さ・ベースラインの影響で下にずれ、
+   文字を小さくした時にさらに下がっていた。高さを固定して、その中で上下中央に置く */
+#home-v2 .hv2-talk h4{display:flex!important;align-items:center;width:max-content;height:13px;line-height:1!important;white-space:nowrap}
+@media (max-height:760px){ #home-v2 .hv2-talk h4{height:11px} }
