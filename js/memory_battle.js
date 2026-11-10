@@ -419,7 +419,7 @@
         </div>
         ${done ? '<div class="mb-clear-banner">✓ 今月クリア済み　｜　初回報酬受取済み</div>' : ''}
         <div class="mb-card-body">
-          <figure class="mb-portrait">${img ? `<img src="${esc(img)}" alt="${esc(def.bossName)}" decoding="async"${fallback && fallback !== img ? ` onerror="this.onerror=null;this.src='${esc(fallback)}'"` : ''}>` : ''}${done ? '<span class="mb-seal" aria-label="今月踏破"><b>踏破</b><small>CLEAR</small></span>' : ''}</figure>
+          <figure class="mb-portrait">${img ? `<img src="${esc(img)}" alt="${esc(def.bossName)}" decoding="async"${fallback && fallback !== img ? ` onerror="this.onerror=null;this.src='${esc(fallback)}'"` : ''}>` : ''}${done ? '<span class="mb-seal is-img" aria-label="今月踏破"><img src="images/memory_stamp_cleared.webp" alt="CLEARED" decoding="async"></span>' : ''}</figure>
           <ul class="mb-rules">${rules}</ul>
         </div>
       </li>`);
