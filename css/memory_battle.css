@@ -385,11 +385,189 @@ html body #screen-memory-battle.memory-battle-screen .mb-card { flex-shrink: 0 !
 #screen-memory-battle .mb-card.is-cleared .mb-reward.is-done{background:linear-gradient(180deg,#fff2c5,#e8cd88);border-color:#ae802e}
 #screen-memory-battle .mb-card.is-cleared .mb-reward.is-done b{font-size:clamp(11px,3.1vw,13px);line-height:1.25;letter-spacing:0;white-space:nowrap}
 
-/* build1891: ホームバナーから飛んできたボスのカードを光らせる */
-html body .mb-card.is-spotlight{animation:mb-spotlight 2.4s ease-out both!important;position:relative;z-index:1}
+
+/* ============================================================
+   build1880 — one boss per page, horizontal snap + responsive portrait.
+   Compact fixed header and independently scrollable boss contents.
+   Keep all content reachable on iPhone SE and iPhone 16 Pro.
+   ============================================================ */
+html body #screen-memory-battle.memory-battle-screen .mb-composition{
+  min-height:0 !important;
+  overflow:hidden !important;
+  padding-bottom:0 !important;
+}
+html body #screen-memory-battle.memory-battle-screen .mb-hero{
+  padding:calc(var(--mb-top) + 30px) 12px 13px !important;
+}
+#screen-memory-battle .mb-hero-row{gap:5px;}
+#screen-memory-battle .mb-title{font-size:clamp(27px,8.4vw,36px);}
+#screen-memory-battle .mb-month{gap:4px;padding:6px 7px;}
+#screen-memory-battle .mb-month strong{font-size:clamp(10px,3vw,13px);}
+#screen-memory-battle .mb-month span{font-size:clamp(8px,2.6vw,11px);padding:5px 8px;}
+#screen-memory-battle .mb-lead{margin:7px 10px 0;font-size:clamp(10px,2.9vw,12px);line-height:1.35;}
+#screen-memory-battle .mb-divider{margin-top:3px;}
+#screen-memory-battle .mb-progress{height:34px;margin:7px 10px 0;}
+#screen-memory-battle .mb-progress-pill{height:34px;padding:0 17px 0 13px;gap:5px;}
+#screen-memory-battle .mb-progress-pill span{font-size:11px;}
+#screen-memory-battle .mb-progress-pill b{font-size:23px;}
+#screen-memory-battle .mb-progress-pill small{font-size:12px;}
+#screen-memory-battle .mb-progress-track{height:25px;}
+#screen-memory-battle .mb-carousel-controls{
+  flex:0 0 auto;min-height:31px;margin:5px 12px 1px;
+  display:flex;align-items:center;justify-content:center;gap:9px;color:var(--mb-navy);
+}
+#screen-memory-battle .mb-carousel-arrow{
+  appearance:none;border:1px solid rgba(154,116,50,.5);border-radius:6px;
+  background:linear-gradient(180deg,#fffdfa,#e9e2d5);color:var(--mb-navy);
+  width:33px;height:29px;padding:0;font:700 23px/1 system-ui;cursor:pointer;
+}
+#screen-memory-battle .mb-carousel-arrow:disabled{opacity:.3;cursor:default;}
+#screen-memory-battle .mb-carousel-position{min-width:55px;text-align:center;font:700 13px/1 'Cinzel',serif;letter-spacing:.08em;}
+#screen-memory-battle .mb-carousel-hint{font:600 10px/1 'Noto Serif JP',serif;color:var(--mb-ink-soft);white-space:nowrap;}
+html body #screen-memory-battle.memory-battle-screen .mb-list{
+  flex:1 1 0 !important;display:flex !important;flex-direction:row !important;
+  align-items:stretch !important;gap:10px !important;
+  min-width:0 !important;min-height:0 !important;
+  margin:4px 0 0 !important;padding:2px 12px 8px !important;
+  overflow-x:auto !important;overflow-y:hidden !important;
+  scroll-snap-type:x mandatory;scroll-padding-inline:12px;
+  overscroll-behavior-x:contain !important;overscroll-behavior-y:none !important;
+  -webkit-overflow-scrolling:touch;touch-action:pan-x pan-y !important;
+}
+html body #screen-memory-battle.memory-battle-screen .mb-card{
+  flex:0 0 100% !important;width:100% !important;
+  min-width:0 !important;min-height:0 !important;height:100% !important;
+  overflow-y:auto !important;overflow-x:hidden !important;
+  overscroll-behavior-y:contain !important;scroll-snap-align:start;
+  -webkit-overflow-scrolling:touch;touch-action:auto;
+  scrollbar-width:thin;padding-bottom:14px;
+}
+#screen-memory-battle .mb-card-head{min-height:72px;gap:6px;}
+#screen-memory-battle .mb-ribbon{width:clamp(43px,13vw,55px);height:73px;padding-top:14px;}
+#screen-memory-battle .mb-ribbon b{font-size:23px;}
+#screen-memory-battle .mb-names{padding-top:13px;gap:5px;}
+#screen-memory-battle .mb-boss{font-size:clamp(19px,5.6vw,25px);}
+#screen-memory-battle .mb-sub{font-size:clamp(9px,2.8vw,12px);gap:3px;}
+#screen-memory-battle .mb-sub i{flex-basis:14px;}
+#screen-memory-battle .mb-reward{width:clamp(76px,23vw,97px);margin-top:9px;padding:6px 4px;gap:5px;}
+#screen-memory-battle .mb-reward-gem img{width:25px;height:25px;}
+#screen-memory-battle .mb-reward-gem b{font-size:18px;}
+#screen-memory-battle .mb-card-body{margin-top:7px;gap:7px;grid-template-columns:minmax(0,35%) minmax(0,1fr);min-height:0 !important;}
+#screen-memory-battle .mb-portrait{min-height:160px;}
+#screen-memory-battle .mb-portrait img{object-fit:contain;object-position:center top;}
+#screen-memory-battle .mb-rule{padding:6px;row-gap:4px;column-gap:5px;}
+#screen-memory-battle .mb-rule-icon{width:24px;height:24px;}
+#screen-memory-battle .mb-rule-icon svg{width:14px;height:14px;}
+#screen-memory-battle .mb-rule-icon.is-element img{width:19px;height:19px;}
+#screen-memory-battle .mb-rule-name{padding:4px 7px;font-size:10px;}
+#screen-memory-battle .mb-rule-text{font-size:10.5px;line-height:1.4;}
+@media(max-width:390px){
+  #screen-memory-battle .mb-card{padding-left:8px !important;padding-right:8px !important;}
+  #screen-memory-battle .mb-card-body{grid-template-columns:minmax(0,32%) minmax(0,1fr);}
+}
+/* The SE has less vertical room: keep the hero readable and let only the card scroll. */
+@media(max-height:740px){
+  html body #screen-memory-battle.memory-battle-screen .mb-hero{padding-top:calc(var(--mb-top) + 15px) !important;padding-bottom:9px !important;}
+  #screen-memory-battle .mb-title{font-size:30px;}
+  #screen-memory-battle .mb-lead{margin-top:4px;font-size:10px;}
+  #screen-memory-battle .mb-divider{display:none;}
+  #screen-memory-battle .mb-progress{margin-top:4px;height:31px;}
+  #screen-memory-battle .mb-progress-pill{height:31px;}
+  #screen-memory-battle .mb-carousel-controls{min-height:27px;margin-top:3px;}
+  #screen-memory-battle .mb-carousel-arrow{height:25px;}
+}
+
+/* build1881: full-height left-side boss artwork */
+html body #screen-memory-battle.memory-battle-screen .mb-card {
+  display:flex !important; flex-direction:column !important; box-sizing:border-box !important;
+}
+html body #screen-memory-battle.memory-battle-screen .mb-card-head { flex:0 0 auto !important; }
+html body #screen-memory-battle.memory-battle-screen .mb-card-body {
+  display:grid !important; flex:1 1 auto !important; min-height:0 !important;
+  grid-template-columns:minmax(0,35%) minmax(0,1fr) !important; align-items:stretch !important;
+}
+html body #screen-memory-battle.memory-battle-screen .mb-portrait {
+  height:100% !important; min-height:0 !important; box-sizing:border-box !important;
+}
+html body #screen-memory-battle.memory-battle-screen .mb-portrait img {
+  object-fit:cover !important; object-position:center center !important;
+}
+html body #screen-memory-battle.memory-battle-screen .mb-rules {
+  min-width:0 !important; min-height:0 !important; overflow-y:auto !important;
+  overscroll-behavior:contain; scrollbar-width:thin;
+}
+@media(max-width:390px) {
+  html body #screen-memory-battle.memory-battle-screen .mb-card-body {
+    grid-template-columns:minmax(0,32%) minmax(0,1fr) !important;
+  }
+}
+
+/* build1882: memory title/gesture/navigation improvements */
+html body #screen-memory-battle.memory-battle-screen .mb-list {
+  touch-action:pan-y !important;
+  scroll-snap-type:x mandatory !important;
+}
+html body #screen-memory-battle.memory-battle-screen .mb-card {
+  flex:0 0 calc(100% - 24px) !important;
+  width:calc(100% - 24px) !important;
+  touch-action:pan-y !important;
+}
+html body #screen-memory-battle.memory-battle-screen .mb-carousel-arrow {
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  outline-offset:2px;
+  color:#3a356b !important;
+  font-size:27px !important;
+  font-weight:400 !important;
+}
+html body #screen-memory-battle.memory-battle-screen .mb-carousel-arrow:focus:not(:focus-visible) {
+  outline:none;
+}
+html body #screen-memory-battle.memory-battle-screen .mb-hero {
+  padding-top:calc(var(--mb-top) + 57px) !important;
+}
+html body #screen-memory-battle.memory-battle-screen .mb-back {
+  position:absolute !important;
+  top:calc(var(--mb-top) + 7px) !important;
+  left:12px !important;
+  z-index:8 !important;
+}
+@media(max-height:740px) {
+  html body #screen-memory-battle.memory-battle-screen .mb-hero {
+    padding-top:calc(var(--mb-top) + 46px) !important;
+  }
+}
+
+/* build1883: only one perfectly centered boss card is visible.
+   Keep programmatic scrollTo/touch gesture navigation; clip neighbors. */
+html body #screen-memory-battle.memory-battle-screen .mb-list {
+  box-sizing:border-box !important;
+  width:100% !important;
+  padding-left:12px !important;
+  padding-right:12px !important;
+  overflow-x:hidden !important;
+  overflow-y:hidden !important;
+  scroll-snap-type:none !important;
+  scroll-padding-inline:0 !important;
+  touch-action:pan-y !important;
+}
+html body #screen-memory-battle.memory-battle-screen .mb-list > .mb-card {
+  box-sizing:border-box !important;
+  flex:0 0 100% !important;
+  width:100% !important;
+  max-width:100% !important;
+  scroll-snap-align:none !important;
+}
+
+/* build1894: ホームバナーから飛んできたボスのカードを光らせる */
+html body #screen-memory-battle .mb-card.is-spotlight{animation:mb-spotlight 2.4s ease-out both!important}
 @keyframes mb-spotlight{
-  0%{box-shadow:0 0 0 0 rgba(220,60,80,0),0 0 0 0 rgba(255,214,120,0)}
-  20%{box-shadow:0 0 0 3px rgba(220,60,80,.85),0 0 22px 6px rgba(255,120,120,.55)}
-  60%{box-shadow:0 0 0 2px rgba(220,60,80,.6),0 0 14px 3px rgba(255,120,120,.35)}
+  0%{box-shadow:0 0 0 0 rgba(220,60,80,0),0 0 0 0 rgba(255,120,120,0)}
+  20%{box-shadow:inset 0 0 0 3px rgba(220,60,80,.85),0 0 18px 4px rgba(255,120,120,.5)}
+  60%{box-shadow:inset 0 0 0 2px rgba(220,60,80,.6),0 0 10px 2px rgba(255,120,120,.3)}
   100%{box-shadow:0 0 0 0 rgba(220,60,80,0),0 0 0 0 rgba(255,120,120,0)}
 }
+/* build1894: 隣のカードの端が右にのぞいていたので、カード間の隙間を左右の余白より広くして完全に隠す */
+html body #screen-memory-battle.memory-battle-screen .mb-list{gap:28px !important}

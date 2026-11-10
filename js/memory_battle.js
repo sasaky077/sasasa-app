@@ -1,5 +1,5 @@
 // ZERAPHIA build1757 — 記憶決戦 / MEMORY BATTLE
-// 過去の脅威を「記憶の掟」付きで再現するボス戦。リヴィア・テストの2戦・難易度は横並び（持ち物検査）。
+// 過去の脅威を「記憶の掟」付きで再現するボス戦。リヴィア・テスト・ヘイズの3戦・難易度は横並び（持ち物検査）。
 //
 // ・ステージ定義（ボス・掟）は shooting_stages.js の MEMORY_BATTLE_STAGES が正本。
 // ・月1回リセット（日本時間 毎月1日 0:00）。各ステージ、当月の初クリアで結晶（サーバーが付与）。
@@ -169,10 +169,6 @@
     sniper: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 1.5v5M12 17.5v5M1.5 12h5M17.5 12h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/></svg>',
     armor: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4.5h16v6.2c0 5-3.4 9-8 10.8-4.6-1.8-8-5.8-8-10.8z" fill="currentColor" opacity=".25"/><path d="M4 4.5h16v6.2c0 5-3.4 9-8 10.8-4.6-1.8-8-5.8-8-10.8zM8 9h8M8 12.5h8M9.5 16h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
     rule: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="currentColor"/></svg>',
-    // build1866: ヘイズの掟
-    claw: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20c3-6 4-10 3-16M10 21c2-6 3-10 3-17M15 20c2-5 3-9 4-14" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></svg>',
-    mirage: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="10" r="3.4" fill="currentColor"/><circle cx="5" cy="12" r="2.6" fill="currentColor" opacity=".4"/><circle cx="19" cy="12" r="2.6" fill="currentColor" opacity=".4"/><path d="M4 19c2.5-1.5 5-1.5 8 0s5.5 1.5 8 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
-    flame: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5c1 3.6 5.5 5.7 5.5 11a5.5 5.5 0 0 1-11 0c0-2.6 1.4-4.2 2.6-5.6.2 1.8 1 2.9 2.2 3.4-.4-3.3-.1-6 .7-8.8z" fill="currentColor"/></svg>',
   });
   function ruleRows(def){
     const info = (stages() && stages().MEMORY_BATTLE_RULE_INFO) || {};
@@ -212,11 +208,8 @@
         rows.push({ icon: 'shield', name: '守護者', text: `${gName}×${Math.max(1, Number(rule.count || 2))}がいる間はすり抜け、撃破で${sec}秒実体化`
           + (hitHp > 0 ? `。${gName}はHIT数で倒す` : '') });
         if (Number(rule.spiderCount || 0) > 0) rows.push({ icon: 'drop', name: '吸血', text: '子蜘蛛に張り付かれると、ボスが回復する' });
-      } else if (rule.type === 'haze_burn') {
-        // build1866: 燃焼は怪腕の行で説明する（カードの高さをそろえる）
       } else if (info[rule.type]) {
-        const hazeIcon = { haze_arm: 'claw', haze_mirage: 'mirage', haze_hellflame: 'flame' }[rule.type]; // build1866
-        rows.push({ icon: hazeIcon || 'rule', name: info[rule.type].name, text: info[rule.type].desc });
+        rows.push({ icon: 'rule', name: info[rule.type].name, text: info[rule.type].desc });
       }
     });
     return rows;
@@ -236,10 +229,13 @@
     } catch (_) { return ''; }
   }
   // カードの立ち絵：ステージ定義の panelImage（images/rivia_panel.webp 等）。無ければ戦闘画像。
-  function panelImage(def){ return String(def.panelImage || '') || bossImage(def); }
+  function panelImage(def){
+    const portraits = {1:'images/memory_rivia.webp',3:'images/memory_test.webp',4:'images/memory_haze.webp'};
+    return portraits[Number(def.no)] || String(def.panelImage || '') || bossImage(def);
+  }
 
   // ---------- 画面 ----------
-  // build1824: 内部ステージ番号はサーバー記録との整合のため維持。表示は2体を連番にする。
+  // build1880: 内部番号は維持し、表示は横スワイプ式1ボス1ページ。
   function ensureScreen(){
     let root = $(SCREEN_ID);
     if (root) return root;
@@ -271,13 +267,64 @@
           <div class="mb-progress-pill"><span>今月の踏破</span><b data-mb-count>0</b><small data-mb-total>/ 8</small></div>
           <div class="mb-progress-track" data-mb-track aria-hidden="true"></div>
         </div>
+        <nav class="mb-carousel-controls" aria-label="ボスの切り替え">
+          <button type="button" class="mb-carousel-arrow" data-mb-prev aria-label="前のボス">‹</button>
+          <span class="mb-carousel-position" data-mb-position aria-live="polite">01 / 03</span>
+          <span class="mb-carousel-hint">左右にスワイプして切替</span>
+          <button type="button" class="mb-carousel-arrow" data-mb-next aria-label="次のボス">›</button>
+        </nav>
         <ol class="mb-list" data-mb-list></ol>
       </main>`;
     if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(root, anchor.nextSibling);
     else document.body.appendChild(root);
     root.querySelector('[data-mb-back]').addEventListener('click', close);
     const list = root.querySelector('[data-mb-list]');
+    root.querySelector('[data-mb-prev]').addEventListener('click', () => moveBoss(-1));
+    root.querySelector('[data-mb-next]').addEventListener('click', () => moveBoss(1));
+    list.addEventListener('scroll', () => {
+      if (bossScrollRaf) return;
+      bossScrollRaf = requestAnimationFrame(() => { bossScrollRaf = 0; updateBossPosition(); });
+    }, { passive:true });
+    let downX = null, downY = null;
+    list.addEventListener('pointerdown', e => { downX = e.clientX; downY = e.clientY; }, {passive:true});
+    list.addEventListener('pointerup', e => {
+      if (downX !== null && Math.abs(e.clientX-downX)>12 && Math.abs(e.clientX-downX)>Math.abs(e.clientY-downY))
+        lastBossSwipe = Date.now();
+      downX = downY = null;
+    }, {passive:true});
+    list.addEventListener('pointercancel', () => { downX = downY = null; }, {passive:true});
+    // build1882: iOS Safari/PWA reliably detects a horizontal swipe from anywhere
+    // inside the card, including images and the scrollable rule descriptions.
+    let gesture = null;
+    list.addEventListener('touchstart', e => {
+      if (e.touches.length !== 1) { gesture = null; return; }
+      const t = e.touches[0];
+      gesture = {x:t.clientX, y:t.clientY, horizontal:false};
+    }, {passive:true});
+    list.addEventListener('touchmove', e => {
+      if (!gesture || e.touches.length !== 1) return;
+      const t = e.touches[0];
+      const dx = t.clientX - gesture.x, dy = t.clientY - gesture.y;
+      if (!gesture.horizontal && Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)*1.25)
+        gesture.horizontal = true;
+      if (gesture.horizontal && e.cancelable) e.preventDefault();
+    }, {passive:false});
+    list.addEventListener('touchend', e => {
+      if (!gesture) return;
+      const start = gesture;
+      gesture = null;
+      const t = e.changedTouches[0];
+      if (!t) return;
+      const dx = t.clientX - start.x, dy = t.clientY - start.y;
+      if (Math.abs(dx) >= 38 && Math.abs(dx) > Math.abs(dy)*1.2) {
+        lastBossSwipe = Date.now();
+        moveBoss(dx < 0 ? 1 : -1);
+      }
+    }, {passive:true});
+    list.addEventListener('touchcancel', () => { gesture = null; }, {passive:true});
+
     list.addEventListener('click', e => {
+      if (Date.now()-lastBossSwipe < 350) return;
       const card = e.target.closest('.mb-card[data-no]');
       if (!card || card.classList.contains('is-locked')) return;
       startStage(Number(card.dataset.no));
@@ -292,12 +339,50 @@
     return root;
   }
 
+  let bossIndex = 0;
+  let bossScrollRaf = 0;
+  let lastBossSwipe = 0;
+  function updateBossPosition(){
+    const root = $(SCREEN_ID);
+    if (!root) return;
+    const list = root.querySelector('[data-mb-list]');
+    const count = list ? list.querySelectorAll('.mb-card').length : 0;
+    if (!count) return;
+    // Use nearest card offset instead of assuming viewport width or gap.
+    const cards = [...list.querySelectorAll('.mb-card')];
+    const left = list.scrollLeft;
+    const start = cards[0].offsetLeft;
+    let index = 0;
+    cards.forEach((card, i) => {
+      if (Math.abs(card.offsetLeft - start - left) < Math.abs(cards[index].offsetLeft - start - left)) index = i;
+    });
+    bossIndex = index;
+    const position = root.querySelector('[data-mb-position]');
+    if (position) position.textContent = pad2(index+1) + ' / ' + pad2(count);
+    root.querySelector('[data-mb-prev]').disabled = index === 0;
+    root.querySelector('[data-mb-next]').disabled = index === count-1;
+  }
+  function moveBoss(direction){
+    const root = $(SCREEN_ID);
+    const list = root && root.querySelector('[data-mb-list]');
+    if (!list) return;
+    const cards = [...list.querySelectorAll('.mb-card')];
+    if (!cards.length) return;
+    const next = Math.max(0, Math.min(cards.length-1, bossIndex+direction));
+    list.scrollTo({left:cards[next].offsetLeft-cards[0].offsetLeft,behavior:'smooth'});
+    bossIndex = next;
+    const position = root.querySelector('[data-mb-position]');
+    if (position) position.textContent = pad2(next+1) + ' / ' + pad2(cards.length);
+    root.querySelector('[data-mb-prev]').disabled = next === 0;
+    root.querySelector('[data-mb-next]').disabled = next === cards.length - 1;
+  }
+
   function render(){
     const root = $(SCREEN_ID);
     if (!root) return;
     const S = stages();
     const visibleDefs = S && Array.isArray(S.MEMORY_BATTLE_STAGES)
-      ? S.MEMORY_BATTLE_STAGES.filter(def => def && (def.no === 1 || def.no === 3 || def.no === 4)) // build1866: 04 ヘイズ（表示は03）
+      ? S.MEMORY_BATTLE_STAGES.filter(def => def && (def.no === 1 || def.no === 3 || def.no === 4))
       : [];
     const total = visibleDefs.length || 3;
     const cleared = clearedSet();
@@ -312,10 +397,11 @@
     root.querySelector('[data-mb-track]').innerHTML = track.join('');
 
     const list = root.querySelector('[data-mb-list]');
+    const keepIndex = bossIndex;
     const rows = [];
     for (const [index, def] of visibleDefs.entries()) {
       const no = def.no; // サーバー・戦闘用の内部ステージ番号（テストは03のまま）
-      const displayNo = index + 1; // 画面上は01 リヴィア / 02 テスト
+      const displayNo = index + 1; // 画面上は01 リヴィア / 02 テスト / 03 ヘイズ
       const done = cleared.has(no);
       const img = panelImage(def);
       const fallback = bossImage(def);
@@ -325,7 +411,7 @@
           <span class="mb-ribbon"><b>${pad2(displayNo)}</b></span>
           <div class="mb-names">
             <strong class="mb-boss">${esc(def.bossName)}</strong>
-            <span class="mb-sub"><i></i>${esc(def.title || '')}<i></i></span>
+            <span class="mb-sub"><i></i>${esc(({1:'雨宿りの守護者の記憶',3:'未知との遭遇の記憶',4:'揺らめく陽炎の記憶'})[no] || def.title || '')}<i></i></span>
           </div>
           ${done
             ? '<div class="mb-reward is-done"><b>報酬受取済</b><span>今月クリア済</span></div>'
@@ -339,7 +425,14 @@
       </li>`);
     }
     list.innerHTML = rows.join('');
-    requestAnimationFrame(equalizeCardHeights);
+    requestAnimationFrame(() => {
+      const cards = [...list.querySelectorAll('.mb-card')];
+      if (cards.length) {
+        bossIndex=Math.max(0,Math.min(keepIndex,cards.length-1));
+        list.scrollLeft = cards[bossIndex].offsetLeft - cards[0].offsetLeft;
+      }
+      updateBossPosition();
+    });
   }
 
   // build1807: 掟の行数・文の長さが違っても、解放済みカードの高さを揃える（一番高いカードに合わせる）
@@ -349,8 +442,7 @@
     const bodies = [...root.querySelectorAll('.mb-card:not(.is-locked) .mb-card-body')];
     if (bodies.length < 2) return;
     bodies.forEach(b => { b.style.minHeight = ''; });
-    const max = Math.max(...bodies.map(b => b.getBoundingClientRect().height));
-    if (max > 0) bodies.forEach(b => { b.style.minHeight = Math.ceil(max) + 'px'; });
+    // Cards scroll independently; they must not force their heights onto each other.
   }
   let equalizeTimer = 0;
   window.addEventListener('resize', () => { clearTimeout(equalizeTimer); equalizeTimer = setTimeout(equalizeCardHeights, 150); });
@@ -385,23 +477,26 @@
     if (typeof window.showMainTab === 'function') window.showMainTab('ninmu');
   }
 
-  // build1891: 指定したボスのカードまでスクロールして光らせる（ホームバナー等から）
+  // build1893: 指定したボスのページへスライドして光らせる（ホームバナー等から）
   function focusBoss(no){
     open();
     let tries = 0;
     const tick = () => {
       const scr = $(SCREEN_ID);
-      const card = scr && scr.querySelector('.mb-card[data-no="' + Number(no) + '"]');
-      if (!card) { if (++tries < 40) setTimeout(tick, 100); return; }
-      try { card.scrollIntoView({ block:'start', behavior:'smooth' }); } catch (_) { card.scrollIntoView(); }
+      const list = scr && scr.querySelector('[data-mb-list]');
+      const cards = list ? [...list.querySelectorAll('.mb-card')] : [];
+      const idx = cards.findIndex(c => Number(c.dataset.no) === Number(no));
+      if (idx < 0) { if (++tries < 40) setTimeout(tick, 100); return; }
+      moveBoss(idx - bossIndex);
+      const card = cards[idx];
       card.classList.remove('is-spotlight'); void card.offsetWidth; card.classList.add('is-spotlight');
       setTimeout(() => card.classList.remove('is-spotlight'), 2600);
     };
-    setTimeout(tick, 120);
+    setTimeout(tick, 160);
   }
 
   window.MemoryBattle = Object.freeze({ open, close, focusBoss, refresh, render, beginRun, finishRun, getState: () => serverState ? JSON.parse(JSON.stringify(serverState)) : null });
   window.openMemoryBattle = open;
-  window.openMemoryBattleHaze = () => focusBoss(4); // build1891: 記憶決戦03「ヘイズ」（内部no 4）
+  window.openMemoryBattleHaze = () => focusBoss(4); // build1893: 記憶決戦03「ヘイズ」（内部no 4）
   window.closeMemoryBattle = close;
 })();

@@ -12,7 +12,7 @@
 
 window.HOME_EVENT_BANNERS = [
   {
-    // build1891: 記憶決戦03「ヘイズ」— 記憶決戦の一覧を開いてヘイズのカードを光らせる
+    // build1891: 記憶決戦03「ヘイズ」— 記憶決戦を開いてヘイズのページへスライドし、光らせる
     id: 'event_memory_haze',
     img: 'images/home_banner_memory_haze.webp',
     alt: '記憶決戦 新BOSS ヘイズに挑め',
