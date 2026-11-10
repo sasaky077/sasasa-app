@@ -379,3 +379,21 @@ html.home-v2 body #screen-main #home-event-banner-wrap.home-event-banner-wrap{bo
 #home-v2 .hv2-talk.is-out{transform:translateY(3px)}
 #home-v2 .hv2-talk:not(.is-out){animation:hv2-talk-in 1.4s cubic-bezier(.45,0,.55,1) both}
 @keyframes hv2-talk-in{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+/* build1904: 原因＝消す時に登場アニメーションを外していたため、トランジションが効かずに瞬時に消えていた。
+   アニメーションをやめ、表示・非表示ともトランジションだけで1.4秒かけて切り替える */
+#home-v2 .hv2-talk,#home-v2 .hv2-talk:not(.is-out),#home-v2 .hv2-talk.is-out{animation:none!important}
+#home-v2 .hv2-talk{opacity:1;transform:none;transition:opacity 1.4s cubic-bezier(.45,0,.55,1),transform 1.4s cubic-bezier(.45,0,.55,1)!important}
+#home-v2 .hv2-talk.is-out{opacity:0;transform:translateY(3px)}
+/* build1905: 左の機能ボタンを大きく（44×50 → 54×62） */
+#home-v2 .hv2-sbtn{width:62px!important}
+#home-v2 .hv2-hex{width:54px!important;height:62px!important;gap:3px!important}
+#home-v2 .hv2-hex img{width:24px!important;height:24px!important}
+#home-v2 .hv2-hex .t{font-size:10px!important}
+#home-v2 .hv2-side{gap:2px!important}
+@media (max-height:640px){
+  #home-v2 .hv2-hex{width:48px!important;height:55px!important}
+  #home-v2 .hv2-hex img{width:21px!important;height:21px!important}
+  #home-v2 .hv2-hex .t{font-size:9px!important}
+}
+/* build1906: EXPバー右端の▶を削除 */
+html.hv2-home #global-user-frame .hv2-exp .bar::after{display:none!important;content:none!important}

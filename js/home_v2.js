@@ -62,7 +62,7 @@
         return '<button type="button" class="hv2-rbtn" data-r="' + i + '"><img class="ic" src="images/home_icon_' + s.key + '.webp" alt=""><span><small>' + s.en + '</small>' + s.label + '</span>' +
           (s.art ? '<i class="art" style="background-image:url(' + s.art + ')"></i>' : '') + '<i class="hv2-dot" hidden></i><i class="hv2-lock" aria-hidden="true"></i></button>';
       }).join('') + '</section>' +
-      '<div class="hv2-talk"><h4></h4><p></p></div>' +
+      '<div class="hv2-talk is-out"><h4></h4><p></p></div>' +
       '<button type="button" class="hv2-sortie"><span class="txt"><b>出撃<i>»</i></b><small>巡行に出発</small></span><span class="shine"></span></button>';
     main.insertBefore(root, main.firstChild);
 
@@ -307,6 +307,9 @@
       lineIdx = Math.floor(Math.random() * lineSet.length);
       if (pp) pp.innerHTML = lineSet[lineIdx];
       scheduleAutoLine();
+      // build1904: 最初の表示もトランジションでじわっと（アニメーションは使わない）
+      var talkEl = root.querySelector('.hv2-talk');
+      if (talkEl) requestAnimationFrame(function(){ requestAnimationFrame(function(){ talkEl.classList.remove('is-out'); }); });
       var fimg = document.querySelector('#global-user-frame .hv2-face img');
       if (fimg && p.panelImage) fimg.src = p.panelImage;
     }
