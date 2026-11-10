@@ -213,3 +213,6 @@ html.hv2-home body #global-user-frame .hud-resource .hud-res-val{line-height:1!i
 html.hv2-home body #global-user-frame .hud-resource::before,
 html.hv2-home body #global-user-frame .hud-resource::after{display:none!important}
 html.hv2-home body #global-user-frame .hud-resource{align-items:center!important}
+/* build1886: 立ち絵をタップでセリフ切り替え */
+html.home-v2 #home-v2 .hv2-chara{pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent;z-index:2}
+#home-v2 .hv2-talk.is-swap{animation:hv2-talk .45s ease-out both}

@@ -26,7 +26,7 @@
   ];
   var NAV_ICON = { 'bnav-ninmu':'story', 'bnav-zukan':'chara', 'bnav-main':'home', 'bnav-summon':'gacha', 'bnav-setting':'menu' };
 
-  var root = null, built = false;
+  var root = null, built = false, hitCanvas = null;
 
   function $(sel, base){ return (base || document).querySelector(sel); }
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
@@ -71,6 +71,22 @@
     });
     root.querySelectorAll('.hv2-rbtn').forEach(function(b){
       b.addEventListener('click', function(){ forward(RIGHT[Number(b.dataset.r)].src); });
+    });
+    // 立ち絵のタップ：透明な部分は無視（不透明な画素の上だけ反応）
+    var chara = root.querySelector('.hv2-chara');
+    chara.addEventListener('click', function(ev){
+      try {
+        var r = chara.getBoundingClientRect();
+        var c = hitCanvas || (hitCanvas = document.createElement('canvas'));
+        c.width = 1; c.height = 1;
+        var g = c.getContext('2d', { willReadFrequently:true });
+        g.clearRect(0, 0, 1, 1);
+        var sx = (ev.clientX - r.left) / r.width * chara.naturalWidth;
+        var sy = (ev.clientY - r.top) / r.height * chara.naturalHeight;
+        g.drawImage(chara, sx, sy, 1, 1, 0, 0, 1, 1);
+        if (g.getImageData(0, 0, 1, 1).data[3] < 30) return;
+      } catch(_){}
+      nextLine();
     });
     root.querySelector('.hv2-sortie').addEventListener('click', function(){
       if (typeof window.showMainTab === 'function') window.showMainTab('ninmu');
@@ -139,6 +155,23 @@
     if (dot) { dot.hidden = !v; if (v) dot.textContent = v; }
   }
 
+  // build1886: キャラ別のひと言（js/home_lines.js）。立ち絵タップで次のセリフへ
+  var lineSet = LINES, lineIdx = 0;
+  function getLines(id){
+    var all = window.HOME_LINES || {};
+    var list = all[Number(id)] || all.DEFAULT || LINES;
+    return (Array.isArray(list) && list.length) ? list : LINES;
+  }
+  function nextLine(){
+    if (!root || !lineSet.length) return;
+    lineIdx = (lineIdx + 1) % lineSet.length;
+    var talk = root.querySelector('.hv2-talk');
+    var pp = root.querySelector('.hv2-talk p');
+    if (!talk || !pp) return;
+    talk.classList.remove('is-swap'); void talk.offsetWidth; talk.classList.add('is-swap');
+    pp.innerHTML = lineSet[lineIdx];
+  }
+
   var lastPartner = '';
   function refresh(force){
     if (!root) return;
@@ -167,7 +200,9 @@
       var h4 = root.querySelector('.hv2-talk h4');
       var pp = root.querySelector('.hv2-talk p');
       if (h4) h4.textContent = p.name || '';
-      if (pp) pp.innerHTML = LINES[Math.floor(Math.random() * LINES.length)];
+      lineSet = getLines(p.id);
+      lineIdx = Math.floor(Math.random() * lineSet.length);
+      if (pp) pp.innerHTML = lineSet[lineIdx];
       var fimg = document.querySelector('#global-user-frame .hv2-face img');
       if (fimg && p.panelImage) fimg.src = p.panelImage;
     }
