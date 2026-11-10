@@ -283,3 +283,5 @@ html.home-v2 body #bottom-nav-shared.bottom-nav .bottom-nav-item:not(.active) im
 #home-v2 .hv2-talk p{transition:opacity .7s ease,filter .7s ease}
 #home-v2 .hv2-talk p.is-fading{opacity:0;filter:blur(1.5px)}
 #home-v2 .hv2-talk.is-swap{animation:none}
+/* build1895: 吹き出しの名前は1行固定・はみ出さない（幅はJSで合わせる） */
+#home-v2 .hv2-talk h4{display:inline-block;white-space:nowrap;max-width:none}

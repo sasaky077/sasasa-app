@@ -225,6 +225,35 @@
       function(){ if (p.homeImage) tryLoad(p.homeImage, function(src){ apply(src, false); }, function(){ apply(p.homeImage, false); }); });
   }
 
+  // build1895: 吹き出しの名前は枠の上のタブ（枠画像の左〜約52%）に収める。長い名前は字間→文字サイズの順に縮める
+  function fitTalkName(h4){
+    var talk = h4 && h4.parentNode;
+    if (!talk) return;
+    h4.style.fontSize = ''; h4.style.letterSpacing = ''; talk.style.width = '';
+    requestAnimationFrame(function(){
+      var base = parseFloat(getComputedStyle(h4).fontSize) || 13;
+      var minFs = Math.max(10, base * 0.82);
+      // 枠画像 900px のうちタブの右端は約 x=470（左右の固定枠 90px、中央は伸縮）
+      var avail = function(){
+        var tr = talk.getBoundingClientRect();
+        var bw = parseFloat(getComputedStyle(talk).borderLeftWidth) || 26;
+        var tabRight = bw + (470 - 90) / 720 * Math.max(0, tr.width - bw * 2) - 10;
+        return tabRight - (h4.getBoundingClientRect().left - tr.left);
+      };
+      var fits = function(){ return h4.scrollWidth <= avail(); };
+      // ① 字間を詰める ② 文字を少し小さく（下限10px） ③ それでも入らなければ吹き出しを横に広げる
+      var tries = [['.08em', base], ['.02em', base], ['0', base * 0.92], ['-.02em', minFs]];
+      for (var i = 0; i < tries.length; i++) {
+        h4.style.letterSpacing = tries[i][0];
+        h4.style.fontSize = tries[i][1].toFixed(1) + 'px';
+        if (fits()) return;
+      }
+      var maxW = Math.min(window.innerWidth, 560) * 0.68;
+      var w = talk.getBoundingClientRect().width;
+      while (!fits() && w < maxW) { w += 6; talk.style.width = w + 'px'; }
+    });
+  }
+
   var lastPartner = '';
   function refresh(force){
     if (!root) return;
@@ -238,7 +267,7 @@
       if (img) loadPartnerArt(img, p);
       var h4 = root.querySelector('.hv2-talk h4');
       var pp = root.querySelector('.hv2-talk p');
-      if (h4) h4.textContent = p.name || '';
+      if (h4) { h4.textContent = p.name || ''; fitTalkName(h4); }
       lineSet = getLines(p.id);
       lineIdx = Math.floor(Math.random() * lineSet.length);
       if (pp) pp.innerHTML = lineSet[lineIdx];
@@ -263,6 +292,7 @@
     } catch(_){}
   }
 
+  window.addEventListener('resize', function(){ var h = root && root.querySelector('.hv2-talk h4'); if (h) fitTalkName(h); });
   window.HomeV2 = { refresh: function(){ refresh(true); } };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', build, { once:true });
   else build();
