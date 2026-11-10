@@ -106,7 +106,8 @@
     FACELESS_SUPER: 'shooting_event_faceless_super',
     RAID_TEST: 'shooting_raid_test',
     BULLET_HELL_TEST: 'shooting_event_bullet_hell_test',
-    INORI_SPECIAL: 'shooting_special_inori',          // build1819: 特別巡行「境界者 -イノリ-」（欠片9つでイノリ解放）
+    INORI_SPECIAL: 'shooting_special_inori',
+    TOWA_DAWN: 'shooting_towa_dawn',                    // build1877: 隠しステージ「夜明け」（残響の塔20Fクリア後 1/30）          // build1819: 特別巡行「境界者 -イノリ-」（欠片9つでイノリ解放）
     SCORE_ATTACK_NORMAL: 'shooting_score_attack_normal',
     SCORE_ATTACK_HARD: 'shooting_score_attack_hard',
     OVERSEER_AMBUSH: 'shooting_event_overseer_ambush',
@@ -1750,6 +1751,52 @@
     //  周回が進むとHP・鳥居の耐久が上がる（shooting_core.js getInoriSpecialLapConfig）。
     //  チケットの消費・欠片の付与はサーバー（begin_inori_attempt / finish_inori_attempt）。
     // ============================================================
+    // ============================================================
+    // build1877: 隠しステージ「夜明け」— トワ -光の姿-
+    //  残響の塔20Fクリア時にサーバーが1/30で出現を確定。編成は20Fのまま固定、HP・ULTは全回復で開始。
+    //  3ステージ構成：中ボス（カミラ→シエン→テスト）を倒すと光の膜が割れ、トワ（光）が前に出る。
+    //  中ボスの間、トワは奥から光弾で援護。最終ステージのトワは「夜明けの光」（白飛び）を使う。
+    //  制限時間なし。属性結界なし（カミラの火の結界も張らない）。
+    // ============================================================
+    [SHOOTING_STAGE_ID.TOWA_DAWN]: Object.freeze({
+      id: SHOOTING_STAGE_ID.TOWA_DAWN,
+      chapter: 0,
+      stageNo: 1,
+      eventId: 'towa_dawn',
+      eventTitle: '夜明け',
+      stageInfoName: 'トワ -光の姿-',
+      difficultyLabel: 'SPECIAL STAGE',
+      type: 'boss',
+      background: 'images/battle_bg_towa_light.webp',
+      introImage: 'images/towa_light_battle_start.webp',
+      enemyIds: Object.freeze([
+        SHOOTING_ENEMY_ID.DAWN_CAMILLA, SHOOTING_ENEMY_ID.DAWN_TOWA,
+        SHOOTING_ENEMY_ID.DAWN_SHIEN, SHOOTING_ENEMY_ID.DAWN_TEST,
+      ]),
+      bossElement: 'fire',
+      enemyElement: 'fire',
+      bossGaugeHps: Object.freeze([2500, 2500, 2500]),
+      maxPartySize: 3,
+      towaDawn: Object.freeze({
+        segments: Object.freeze([
+          Object.freeze({ act: 1, role: 'mid',  enemyId: SHOOTING_ENEMY_ID.DAWN_CAMILLA, element: 'fire',  gaugeHps: Object.freeze([2500, 2500, 2500]), title: '第一幕', sub: '紅糸の魔女 カミラ' }),
+          Object.freeze({ act: 1, role: 'towa', enemyId: SHOOTING_ENEMY_ID.DAWN_TOWA,    element: 'light', gaugeHps: Object.freeze([4500, 4500]), title: '光の膜が割れた', sub: 'トワ -光の姿-',
+            echo: Object.freeze({ warningCount: 2, warningSpeed: 116, warningRespawnMs: 2600, fireIntervalScale: 1.15 }) }),
+          Object.freeze({ act: 2, role: 'mid',  enemyId: SHOOTING_ENEMY_ID.DAWN_SHIEN,   element: 'dark',  gaugeHps: Object.freeze([2600, 2700, 2700]), title: '第二幕', sub: '月下の剣鬼 シエン' }),
+          Object.freeze({ act: 2, role: 'towa', enemyId: SHOOTING_ENEMY_ID.DAWN_TOWA,    element: 'light', gaugeHps: Object.freeze([5000, 5000]), title: '光の膜が割れた', sub: 'トワ -光の姿-',
+            echo: Object.freeze({ warningCount: 3, warningSpeed: 124, warningRespawnMs: 2200, fireIntervalScale: 1.05 }) }),
+          Object.freeze({ act: 3, role: 'mid',  enemyId: SHOOTING_ENEMY_ID.DAWN_TEST,    element: 'wood',  gaugeHps: Object.freeze([2000, 2500, 3500]), title: '第三幕', sub: '降り立つ機兵 テスト' }),
+          Object.freeze({ act: 3, role: 'towa', enemyId: SHOOTING_ENEMY_ID.DAWN_TOWA,    element: 'light', gaugeHps: Object.freeze([6000, 6000]), title: '夜明け', sub: 'トワ -光の姿-',
+            echo: Object.freeze({ warningCount: 4, warningSpeed: 132, warningRespawnMs: 1900, fireIntervalScale: 0.95,
+              blackout: Object.freeze({ firstAtMs: 6000, 1: Object.freeze({ everyMs: 13000, durationMs: 4200 }), 2: Object.freeze({ everyMs: 10000, durationMs: 5000 }) }) }) }),
+        ]),
+        supportEveryMs: 3600,
+        supportDamage: 150,
+      }),
+      mission: Object.freeze({ type: SHOOTING_MISSION_TYPE.BOSS_CLEAR, text: 'トワ -光の姿- を撃破' }),
+      playable: true,
+    }),
+
     [SHOOTING_STAGE_ID.INORI_SPECIAL]: Object.freeze({
       id: SHOOTING_STAGE_ID.INORI_SPECIAL,
       chapter: 0,

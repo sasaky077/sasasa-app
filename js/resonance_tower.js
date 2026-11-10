@@ -652,7 +652,7 @@
     }catch(err){ console.warn('[tower] abandon attempt not confirmed',err); }
   }
   window.ResonanceTower=Object.freeze({isTowerStageId:id=>/^shooting_(?:despair_)?tower_(?:0[1-9]|1[0-9]|20)$/.test(String(id||'')),
-    getMode:()=>mode,setMode,isReplayFloor,isCharacterAvailable,confirmSealParty,cancelSealConfirmation,prepareBattle,finishRun,refresh,getResumeAttempt,restoreAttempt,abandonAttempt});
+    getMode:()=>mode,getDawnProof:()=>attempt && Number(attempt.floor)===20 && attempt.mode==='normal' ? {party:(attempt.party||[]).slice(),towerToken:attempt.replay?null:String(attempt.token||'')||null} : null,setMode,isReplayFloor,isCharacterAvailable,confirmSealParty,cancelSealConfirmation,prepareBattle,finishRun,refresh,getResumeAttempt,restoreAttempt,abandonAttempt});
   window.openResonanceTower=function(openMode){
     replayFloor=0;attempt=null;finishPromise=null;
     if(openMode && TOWER_MODES[openMode] && openMode!==mode){ mode=openMode; progress=null; }

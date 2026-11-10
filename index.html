@@ -423,7 +423,7 @@
   <link rel="stylesheet" href="css/towa_dark_gacha.css?v=1552">
   <link rel="stylesheet" href="css/towa_notice.css?v=1556">
   <link rel="stylesheet" href="css/towa_preflight.css?v=1548-towa-black-burgundy">
-  <link rel="stylesheet" href="css/shooting_event.css?v=1874-smile-box">
+  <link rel="stylesheet" href="css/shooting_event.css?v=1877-towa-dawn">
   <link rel="stylesheet" href="css/shot_fx.css?v=1557-shot-fx">
   <link rel="stylesheet" href="css/tower15_boss.css?v=1485-tower15">
   <link rel="stylesheet" href="css/daily_stage_select.css?v=1816-daily-left">
@@ -6694,8 +6694,8 @@ window.NOTICE_ITEMS = [
 
 </script>
 <!-- SHOOTING共鳴：Strategy/Battle32には依存しない -->
-<script src="js/shooting_resonance.js?v=1794-jig-laser-l"></script>
-<script src="js/resonance_system.js?v=1559-lb-flow"></script>
+<script src="js/shooting_resonance.js?v=1877-towa-dawn"></script>
+<script src="js/resonance_system.js?v=1877-towa-dawn"></script>
 <link rel="stylesheet" href="css/limitbreak_fx.css?v=1559-lbx">
 <script src="js/resonance_ui.js?v=1559-lb-flow"></script>
 <script src="js/character_levelup.js?v=1479-growth-rich"></script>
@@ -15626,7 +15626,7 @@ function showTenResult(results){
   };
 
   // build686: キャラ一覧をMAINショットタイプでも絞り込めるようにする。
-  var ZUKAN_SHOT_TYPE_ORDER = ['parallel','homing','cluster','bomb','spread','laser','piercing','orbit','charge','lightning','strike','conjure','trap'];
+  var ZUKAN_SHOT_TYPE_ORDER = ['parallel','homing','cluster','bomb','spread','laser','piercing','orbit','charge','lightning','strike','conjure','trap','ray'];
   var ZUKAN_SHOT_TYPE_LABELS = {
     all: 'すべて',
     parallel: 'PARALLEL',
@@ -15641,7 +15641,8 @@ function showTenResult(results){
     charge: 'CHARGE',
     lightning: 'PLASMA',
     strike: 'STRIKE',
-    trap: 'TRAP'
+    trap: 'TRAP',
+    ray: 'RAY' // build1877
   };
 
   function normalizeZukanElement(value){
@@ -17742,7 +17743,7 @@ function buildShootingShotTypeValue(c, shot, isMain){
     shotgun:'piercing', precision:'piercing', melee_slash:'strike',
     charge_release:'charge', orbit_forward:'orbit', wolf_j_homing:'homing' })[rawType] || rawType;
   var supported = ['parallel','spread','laser','cluster','bomb','orbit','charge','piercing',
-    'strike','homing','conjure','plasma'];
+    'strike','homing','conjure','plasma','ray'];
   var hasShotIcon = supported.indexOf(shotType) !== -1;
   var element = getDetailShotElement(c, shot, isMain);
   var elementIcon = getElementIconImage(element || '');
@@ -20584,7 +20585,7 @@ function fadeOutOpeningBgm(){
 
 
 
-<script src="js/shooting_characters.js?v=1875-smile-shield"></script>
+<script src="js/shooting_characters.js?v=1877-towa-dawn"></script>
 <script src="js/story_scenario.js?v=1742-ch08-09-scenes"></script>
 <script src="js/story_novel.js?v=1738-textbox-fit"></script>
 <script src="js/stage_select.js?v=1739-story-reread"></script>
@@ -20821,8 +20822,8 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1876-judgment-freeze"></script>
-<script src="js/shooting_party_filter.js?v=1744-summon"></script>
+<script src="js/shooting_event.js?v=1878-dawn-security"></script>
+<script src="js/shooting_party_filter.js?v=1877-towa-dawn"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1813-tickets"></script>
 <script src="js/skin_system.js?v=1709-towa-skin"></script>
@@ -20851,10 +20852,11 @@ window.returnToTitleScreen = function(){
 </script>
 
 <script src="js/score_attack.js?v=1713-title-rank"></script>
-<script src="js/resonance_tower.js?v=1815-weekly-rewards"></script>
+<script src="js/resonance_tower.js?v=1878-dawn-security"></script>
 <script src="js/phase_odyssey.js?v=1816-reward-list"></script>
 <script src="js/memory_battle.js?v=1866-haze"></script>
 <script src="js/towa_encounter.js?v=1748-towa-flash"></script>
+<script src="js/towa_dawn.js?v=1878-dawn-security"></script>
 <script src="js/towa_notice.js?v=1554"></script>
 <script src="js/towa_dark_gacha.js?v=1560-soul-flame"></script>
 

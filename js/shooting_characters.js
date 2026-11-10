@@ -52,7 +52,7 @@
     LEONA_CROSS: 39,
     KUREHA: 41,
     KYOU: 42, SUZU: 43, MELORIA: 44, KIRIMARU: 45, AIRENA: 46,
-    LINLIN: 47, MUUMUU: 48, MEGMEG: 49, CHACHA: 51, RUIRUI: 53, HAO: 54, SMILE: 56, NIGHTSHADE: 57, TOWA: 101, INORI: 111, // ID52 is reserved for Noah (existing saves/RPC)
+    LINLIN: 47, MUUMUU: 48, MEGMEG: 49, CHACHA: 51, RUIRUI: 53, HAO: 54, SMILE: 56, NIGHTSHADE: 57, TOWA: 101, INORI: 111, TOWA_LIGHT: 112, // ID52 is reserved for Noah (existing saves/RPC)
   });
 
   // ============================================================
@@ -111,7 +111,7 @@
     102: 'sr', // カミラ
     41: 'sr',  // シャオラン
     42: 'r', 43: 'r', 44: 'r', 45: 'r', 46: 'r',
-    47: 'r', 48: 'r', 49: 'r', 51: 'r', 53: 'r', 54: 'sr', 56: 'sr', 57: 'sr', 101: 'sr', 111: 'sr',
+    47: 'r', 48: 'r', 49: 'r', 51: 'r', 53: 'r', 54: 'sr', 56: 'sr', 57: 'sr', 101: 'sr', 111: 'sr', 112: 'sr',
   });
 
   // 現行互換：R はSRに対して基本性能(HP/ATK)を20%落とす。育成/凸の新倍率は別フェーズで統合予定。
@@ -1414,6 +1414,25 @@
     "portraitImage": "images/chara_101.webp",
     "homeImage": "images/chara_101_cut.webp",
     "upImage": "images/chara_101_up.webp",
+    "homeScale": 0.83,
+    "homeOffsetX": 0,
+    "homeOffsetY": -26,
+    "hidden": false
+  },
+  // build1877: SR 光属性・トワ -光の姿-（ID112）。残響の塔20Fクリア後に1/30で出現する「夜明け」のクリア報酬。
+  "112": {
+    "id": 112,
+    "name": "トワ",
+    "element": "light",
+    "hp": 600,
+    "atk": 255,
+    "image": "images/chara_112_battle_back.webp",
+    "panelImage": "images/chara_112_panel.webp",
+    "cutinImage": "images/chara_112_cutin.webp",
+    "uiScale": {"panel": 1, "battleBack": 1.2, "battleUp": 1},
+    "portraitImage": "images/chara_112.webp",
+    "homeImage": "images/chara_112_cut.webp",
+    "upImage": "images/chara_112_up.webp",
     "homeScale": 0.83,
     "homeOffsetX": 0,
     "homeOffsetY": -26,
@@ -3033,6 +3052,29 @@
     burstNeed: 32, burstDamage: 0, ultGainPerHit: 0.50,
   });
 
+  // build1877: トワ -光の姿- (ID112) — 光 SR / RAY / 夜明けの刻。
+  //  SHOT「RAY」：一番近い敵へ一筋の光が一瞬で駆け抜ける（線上の敵と遮蔽壁を貫通）。
+  //   当たった敵に光の刻印が残り、1秒後に爆発して周囲の敵を巻き込む。
+  //  ULT「夜明けの刻」：常闇（ID101）の光版。敵弾を全消去し、5秒間ホワイトアウトして新規敵弾の生成を止める。
+  SHOOTING_CHARACTERS[CHARACTER_ID.TOWA_LIGHT] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE,
+    id: CHARACTER_ID.TOWA_LIGHT,
+    effectKey: 'towa',
+    label: 'RAY / DAWN',
+    description: '光属性RAY。一番近い敵へ一筋の光が駆け抜け（線上の敵と遮蔽壁を貫通）、当たった敵に刻んだ光が1秒後に爆発して周囲を巻き込む。ULT「夜明けの刻」で敵弾を全消去し、5秒間盤面をホワイトアウトさせて敵の新規弾生成を封じる。',
+    shotType: 'ray', shotStyle: 'towa-ray', shotElement: 'light',
+    fireRate: 320, shotCount: 1, shotOffsetY: 44, coreTop: '38%',
+    shotPowerRate: 0.10,          // 閃光：ATK×0.10
+    rayBlastMultiplier: 1.8,      // 爆発：閃光の1.8倍＝ATK×0.18
+    rayBlastDelayMs: 1000, rayBlastRadius: 70, rayHitHalfWidth: 14, rayMaxMarks: 10,
+    ultType: 'towa_dawn_moment', ultBaseType: 'field',
+    ultAddons: ['bullet_clear', 'enemy_bullet_silence'],
+    ultName: '夜明けの刻',
+    ultDescription: '発動時に盤面の敵弾をすべて削除。5秒間、盤面がホワイトアウトして新規敵弾の生成が停止。終了時に光が引いて通常の射撃が再開する。',
+    towaDarkDurationMs: 5000,
+    burstNeed: 32, burstDamage: 0, ultGainPerHit: 0.50,
+  });
+
   // 別マスターではない。SHOOTING_CHARACTER_MASTERから毎回生成する読み取り用配列。
   const CHARACTER_CATALOG = Object.freeze(
     Object.values(SHOOTING_CHARACTER_MASTER)
@@ -3258,6 +3300,8 @@
         return '敵全体を' + sec(c.ultStunMs, 5000) + '間スタン。' + note('ULT自体のダメージなし');
       case 'towa_eternal_darkness':
         return CLEAR + sec(c.towaDarkDurationMs, 5000) + '間、盤面を常闇に包み、敵弾の新規生成を完全停止。効果終了時にフェードインして敵の射撃が再開する。';
+      case 'towa_dawn_moment':
+        return CLEAR + sec(c.towaDarkDurationMs, 5000) + '間、盤面をホワイトアウトさせ、敵弾の新規生成を完全停止。効果終了時に光が引いて敵の射撃が再開する。';
       case 'suzu_bullet_silence':
         return CLEAR + sec(c.suzuBulletSilenceMs, 3500) + '間、敵の射撃を封じる。' + note('敵の移動は止まらない');
       case 'shiina_light_ring':

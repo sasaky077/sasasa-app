@@ -16711,3 +16711,195 @@ html body #shooting-event-root .shooting-combo .shooting-combo-bonus.is-up{anima
 #shooting-event-root .shooting-palette-overlay .pal-btn.is-used:active{transform:none;}
 #shooting-event-root .shooting-palette-overlay .pal-btn.is-denied{animation:pal-deny .32s ease;}
 @keyframes pal-deny{0%,100%{translate:0}20%{translate:-4px}40%{translate:4px}60%{translate:-3px}80%{translate:2px}}
+
+/* build1874 — スマイルのびっくり箱が怪腕・ヘルフレイムを受け止める */
+#shooting-event-root .haze-block-spark{position:absolute;left:0;top:0;width:0;height:0;z-index:32;pointer-events:none;}
+#shooting-event-root .haze-block-spark i{
+  position:absolute;left:-22px;top:-22px;width:44px;height:44px;border-radius:50%;
+  background:radial-gradient(circle,#fff 0 14%,rgba(255,236,150,.95) 26%,rgba(255,170,60,.55) 46%,transparent 68%);
+  animation:hbs-core .34s ease-out both;
+}
+#shooting-event-root .haze-block-spark b{
+  position:absolute;left:-26px;top:-26px;width:52px;height:52px;border-radius:50%;
+  border:2px solid rgba(255,230,140,.95);box-shadow:0 0 8px rgba(255,210,90,.8);
+  animation:hbs-ring .34s ease-out both;
+}
+#shooting-event-root .haze-block-spark u{
+  position:absolute;left:-1.5px;top:-16px;width:3px;height:16px;border-radius:2px;transform-origin:50% 100%;
+  background:linear-gradient(0deg,rgba(255,250,220,1),rgba(255,200,90,0));
+  animation:hbs-ray .3s ease-out both;
+}
+#shooting-event-root .haze-block-spark u:nth-of-type(1){--r:-70deg}
+#shooting-event-root .haze-block-spark u:nth-of-type(2){--r:-35deg}
+#shooting-event-root .haze-block-spark u:nth-of-type(3){--r:0deg}
+#shooting-event-root .haze-block-spark u:nth-of-type(4){--r:35deg}
+#shooting-event-root .haze-block-spark u:nth-of-type(5){--r:70deg}
+#shooting-event-root .haze-block-spark.is-big i{left:-34px;top:-34px;width:68px;height:68px;}
+#shooting-event-root .haze-block-spark.is-big b{animation-duration:.48s;}
+#shooting-event-root .haze-block-spark em{
+  position:absolute;left:0;top:-58px;transform:translateX(-50%);white-space:nowrap;font-style:normal;
+  font:900 15px/1 "Cinzel","Noto Serif JP",serif;letter-spacing:.14em;color:#fff6d2;
+  text-shadow:0 0 2px #b8741c,0 0 8px rgba(255,190,70,.95),0 2px 0 #9a5a12;
+  animation:hbs-text .76s cubic-bezier(.2,1.4,.4,1) both;
+}
+@keyframes hbs-core{0%{transform:scale(.3);opacity:1}100%{transform:scale(1.3);opacity:0}}
+@keyframes hbs-ring{0%{transform:scale(.4);opacity:1}100%{transform:scale(1.7);opacity:0}}
+@keyframes hbs-ray{0%{transform:rotate(var(--r)) translateY(-4px) scaleY(.3);opacity:1}100%{transform:rotate(var(--r)) translateY(-22px) scaleY(1);opacity:0}}
+@keyframes hbs-text{0%{transform:translate(-50%,8px) scale(.6);opacity:0}25%{transform:translate(-50%,0) scale(1.12);opacity:1}70%{opacity:1}100%{transform:translate(-50%,-10px) scale(1);opacity:0}}
+/* 箱に刺さった腕は少し弾かれたように震える */
+#shooting-event-root .haze-arm.is-blocked .ha-body{animation:ha-recoil .18s steps(3,end) 2;}
+@keyframes ha-recoil{0%{translate:0 0}33%{translate:2px -3px}66%{translate:-2px -1px}100%{translate:0 0}}
+/* 遮られたヘルフレイムの先端は火花で潰れる */
+#shooting-event-root .haze-flame.is-blocked .hf-core{background:linear-gradient(90deg,#fff 0,#ffe8ee 40%,#fff6d2 100%);}
+
+/* ============================================================
+   build1877 — トワ（光）RAY / 夜明けの刻
+   ============================================================ */
+/* 閃光：自機から敵へ一瞬で駆け抜ける一筋の光（transform-origin＝発射口） */
+#shooting-event-root .towa-ray{position:absolute;left:0;top:0;height:0;z-index:9;pointer-events:none;transform-origin:0 0;}
+#shooting-event-root .towa-ray i{position:absolute;left:0;width:100%;}
+#shooting-event-root .towa-ray .tr-glow{
+  top:-9px;height:18px;
+  background:linear-gradient(180deg,rgba(255,210,120,0),rgba(255,190,80,.55) 45%,rgba(255,190,80,.55) 55%,rgba(255,210,120,0));
+  -webkit-mask:linear-gradient(90deg,transparent 0,#000 18px,#000 82%,transparent);mask:linear-gradient(90deg,transparent 0,#000 18px,#000 82%,transparent);
+  transform-origin:0 50%;animation:tr-sweep .1s cubic-bezier(.2,.9,.3,1) both,tr-fade .26s ease-out both;
+}
+#shooting-event-root .towa-ray .tr-core{
+  top:-1.5px;height:3px;border-radius:2px;
+  background:linear-gradient(90deg,rgba(255,255,255,.2),#fff 12%,#fffbe8 70%,rgba(255,240,200,.3));
+  box-shadow:0 0 0 1px rgba(214,146,40,.55),0 0 6px #fff,0 0 12px rgba(255,190,80,.95);
+  transform-origin:0 50%;animation:tr-sweep .1s cubic-bezier(.2,.9,.3,1) both,tr-thin .26s ease-out both;
+}
+#shooting-event-root .towa-ray .tr-head{
+  left:auto;right:-10px;top:-10px;width:20px;height:20px;border-radius:50%;
+  background:radial-gradient(circle,#fff 0 22%,rgba(255,230,160,.8) 40%,transparent 70%);
+  animation:tr-head .26s ease-out both;
+}
+@keyframes tr-sweep{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes tr-fade{0%,40%{opacity:1}100%{opacity:0}}
+@keyframes tr-thin{0%,35%{opacity:1;transform:scaleY(1)}100%{opacity:0;transform:scaleY(.2)}}
+@keyframes tr-head{0%{opacity:0;transform:scale(.4)}30%{opacity:1;transform:scale(1.2)}100%{opacity:0;transform:scale(.6)}}
+
+/* 刻印：敵に刻まれた光の紋。1秒かけて輪が締まり、爆ぜる */
+#shooting-event-root .towa-ray-mark{position:absolute;left:0;top:0;width:0;height:0;z-index:12;pointer-events:none;}
+#shooting-event-root .towa-ray-mark i{
+  position:absolute;left:-7px;top:-7px;width:14px;height:14px;
+  background:conic-gradient(from 0deg,#fff 0 25%,transparent 0 50%,#fff 0 75%,transparent 0);
+  -webkit-mask:radial-gradient(circle,#000 0 30%,transparent 32% 46%,#000 48% 58%,transparent 60%);
+          mask:radial-gradient(circle,#000 0 30%,transparent 32% 46%,#000 48% 58%,transparent 60%);
+  filter:drop-shadow(0 0 3px rgba(255,214,120,.95));
+  animation:trm-spin .6s linear infinite,trm-in .16s ease-out both;
+}
+#shooting-event-root .towa-ray-mark b{
+  position:absolute;left:-15px;top:-15px;width:30px;height:30px;border-radius:50%;
+  border:1.5px solid rgba(236,170,60,.95);box-shadow:0 0 6px rgba(255,190,80,.9);
+  animation:trm-close 1s linear both;
+}
+@keyframes trm-spin{to{rotate:360deg}}
+@keyframes trm-in{from{scale:2.2;opacity:0}to{scale:1;opacity:1}}
+@keyframes trm-close{0%{transform:scale(1.6);opacity:.35}85%{transform:scale(.55);opacity:1}100%{transform:scale(.4);opacity:1}}
+
+/* 爆発：白金の閃光が丸く弾ける */
+#shooting-event-root .towa-ray-blast{position:absolute;left:0;top:0;width:0;height:0;z-index:12;pointer-events:none;}
+#shooting-event-root .towa-ray-blast i{
+  position:absolute;left:calc(var(--rb) / -2);top:calc(var(--rb) / -2);width:var(--rb);height:var(--rb);border-radius:50%;
+  background:radial-gradient(circle,#fff 0 18%,rgba(255,236,190,.9) 34%,rgba(255,186,80,.45) 58%,transparent 72%);
+  animation:trb-core .4s cubic-bezier(.2,.9,.3,1) both;
+}
+#shooting-event-root .towa-ray-blast b{
+  position:absolute;left:calc(var(--rb) / -2);top:calc(var(--rb) / -2);width:var(--rb);height:var(--rb);border-radius:50%;
+  border:2.5px solid rgba(240,176,64,.95);box-shadow:0 0 10px rgba(255,190,80,.9),inset 0 0 8px rgba(255,255,255,.7);
+  animation:trb-ring .42s ease-out both;
+}
+#shooting-event-root .towa-ray-blast u{
+  position:absolute;left:-2px;top:calc(var(--rb) / -2);width:4px;height:var(--rb);
+  background:linear-gradient(180deg,transparent,#fff 50%,transparent);
+  box-shadow:0 0 6px #fff;
+  animation:trb-cross .3s ease-out both;
+}
+#shooting-event-root .towa-ray-blast u::after{
+  content:"";position:absolute;left:calc(var(--rb) / -2 + 2px);top:calc(var(--rb) / 2 - 2px);width:var(--rb);height:4px;
+  background:linear-gradient(90deg,transparent,#fff 50%,transparent);
+}
+@keyframes trb-core{0%{transform:scale(.2);opacity:1}100%{transform:scale(1.05);opacity:0}}
+@keyframes trb-ring{0%{transform:scale(.3);opacity:1}100%{transform:scale(1.15);opacity:0}}
+@keyframes trb-cross{0%{transform:scale(.4) rotate(0deg);opacity:1}100%{transform:scale(1.1) rotate(45deg);opacity:0}}
+
+/* 夜明けの刻：常闇の白版。背景レイヤーだけを白く飛ばす（弾・敵・味方・HUDは触らない） */
+html body #shooting-event-root.towa-light-background .shooting-stage{
+  background-color:#fffaf0!important;
+  background-image:radial-gradient(ellipse at 50% 30%,#fff 0%,#fff6e4 55%,#f4e7cf 100%)!important;
+  transition:none!important;
+}
+html body #shooting-event-root.towa-light-background .shooting-bg,
+html body #shooting-event-root.towa-light-background .shooting-wash{
+  opacity:0!important;
+  transition:none!important;
+}
+
+/* ============================================================
+   build1877 — 隠しステージ「夜明け」
+   ============================================================ */
+/* 奥で光の膜に包まれたトワ（中ボスの間だけ） */
+#shooting-event-root .dawn-towa-shade{
+  position:absolute;right:15%;top:98px;width:min(26vw,104px);aspect-ratio:618/640;z-index:7;pointer-events:none;
+  opacity:.78;transition:opacity .6s ease,transform .6s ease;
+  animation:dts-float 3.6s ease-in-out infinite alternate;
+}
+#shooting-event-root .dawn-towa-shade.is-hidden{opacity:0;transform:scale(.8);}
+#shooting-event-root .dawn-towa-shade img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;filter:brightness(1.08) saturate(.85) drop-shadow(0 0 10px rgba(255,236,190,.85));opacity:.8;}
+#shooting-event-root .dawn-towa-shade .dts-veil{
+  position:absolute;inset:-14%;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,252,240,.05) 40%,rgba(255,236,180,.28) 62%,rgba(255,220,140,.5) 70%,rgba(255,220,140,0) 74%);
+  box-shadow:0 0 18px rgba(255,214,120,.45),inset 0 0 18px rgba(255,255,255,.6);
+  animation:dts-veil 2.4s ease-in-out infinite;
+}
+#shooting-event-root .dawn-towa-shade .dts-glint{
+  position:absolute;left:50%;top:44%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;opacity:0;
+  background:radial-gradient(circle,#fff 0 30%,rgba(255,220,140,.7) 50%,transparent 72%);
+}
+#shooting-event-root .dawn-towa-shade.is-casting .dts-glint{animation:dts-cast .55s ease-out;}
+@keyframes dts-float{from{transform:translateY(-4px)}to{transform:translateY(5px)}}
+@keyframes dts-veil{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.04);opacity:1}}
+@keyframes dts-cast{0%{opacity:0;transform:scale(.4)}35%{opacity:1;transform:scale(4)}100%{opacity:0;transform:scale(6)}}
+/* 援護の光弾（白金） */
+#shooting-event-root .shooting-enemy-bullet.dawn-light-bullet{
+  background:radial-gradient(circle,#fff 0 35%,#ffe7a8 60%,#f2b84a 100%)!important;
+  box-shadow:0 0 0 1.5px rgba(214,150,40,.85),0 0 10px rgba(255,210,110,.9)!important;
+}
+/* 区間の切り替え：光の膜が割れる／光の粒になって退く */
+#shooting-event-root .dawn-break{position:absolute;left:0;top:0;width:0;height:0;z-index:30;pointer-events:none;transform:translate(var(--bx),var(--by));}
+#shooting-event-root .dawn-break .db-flash{
+  position:absolute;left:-150px;top:-150px;width:300px;height:300px;border-radius:50%;
+  background:radial-gradient(circle,#fff 0 20%,rgba(255,240,200,.75) 40%,rgba(255,214,120,.25) 60%,transparent 72%);
+  animation:db-flash 1s ease-out both;
+}
+#shooting-event-root .dawn-break .db-ring{
+  position:absolute;left:-60px;top:-60px;width:120px;height:120px;border-radius:50%;
+  border:3px solid rgba(255,226,150,.95);box-shadow:0 0 14px rgba(255,210,110,.9);
+  animation:db-ring 1s cubic-bezier(.2,.9,.3,1) both;
+}
+#shooting-event-root .dawn-break .db-ring.r2{animation-delay:.16s;border-width:1.5px;}
+#shooting-event-root .dawn-break b{
+  position:absolute;left:-3px;top:-3px;width:6px;height:6px;border-radius:50%;
+  background:#fff;box-shadow:0 0 8px rgba(255,220,140,.95);
+  animation:db-mote 1.4s cubic-bezier(.2,.8,.3,1) both;
+}
+#shooting-event-root .dawn-break.is-veil b{width:3px;height:16px;border-radius:2px;left:-1.5px;top:-8px;}
+@keyframes db-flash{0%{transform:scale(.2);opacity:1}100%{transform:scale(1.4);opacity:0}}
+@keyframes db-ring{0%{transform:scale(.2);opacity:1}100%{transform:scale(3.2);opacity:0}}
+@keyframes db-mote{0%{transform:rotate(var(--a)) translateY(0);opacity:1}100%{transform:rotate(var(--a)) translateY(calc(var(--d) * -1.6));opacity:0}}
+/* 新しいボスが光の中から現れる */
+#shooting-event-root .shooting-boss.dawn-boss-enter{animation:dawn-boss-enter 1.1s cubic-bezier(.2,.9,.3,1) both;}
+@keyframes dawn-boss-enter{0%{opacity:0;filter:brightness(3) blur(6px)}60%{opacity:1;filter:brightness(1.6) blur(0)}100%{opacity:1;filter:none}}
+/* 最終幕：夜明けの光（暗転の白版） */
+#shooting-event-root[data-shooting-stage="shooting_towa_dawn"] #shooting-tower15-blackout{
+  background:
+    radial-gradient(ellipse 90% 60% at 50% 115%, rgba(255,214,130,.45), rgba(255,255,255,0) 70%),
+    rgba(255,251,240,.965);
+}
+#shooting-event-root[data-shooting-stage="shooting_towa_dawn"] #shooting-tower15-blackout span{
+  color:rgba(196,140,40,.92);text-shadow:0 0 12px rgba(255,210,110,.75);
+}
+/* 夜明けは一度きり：RETRYなし */
+html body #shooting-event-root[data-shooting-stage="shooting_towa_dawn"] #shooting-result #shooting-result-retry{display:none!important;}

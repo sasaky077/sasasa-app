@@ -347,6 +347,22 @@
       ])
     }),
 
+    // build1877: トワ -光の姿-（ID112）
+    112: Object.freeze({
+      1: bonus('暁の器', 'HP +10%', 'トワ（光）の最大HPが10%上昇する。', [
+        {type:'statRate', hp:0.10, atk:0}
+      ]),
+      2: bonus('白き加護', 'ATK +10%', 'トワ（光）のATKが10%上昇する。', [
+        {type:'statRate', hp:0, atk:0.10}
+      ]),
+      3: bonus('閃光拡散', 'RAY爆発範囲 70px → 95px', '刻印の爆発が届く範囲を70pxから95pxへ広げる。', [
+        {type:'profileSet', field:'rayBlastRadius', value:95}
+      ]),
+      4: bonus('永き夜明け', 'ULT 5秒 → 7秒', '「夜明けの刻」のホワイトアウト・弾生成停止時間を7秒へ延長する。', [
+        {type:'profileSet', field:'towaDarkDurationMs', value:7000}
+      ])
+    }),
+
     101: Object.freeze({
       1: bonus('常闇の器', 'HP +10%', 'トワの最大HPが10%上昇する。', [
         {type:'statRate', hp:0.10, atk:0}

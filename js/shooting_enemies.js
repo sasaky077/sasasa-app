@@ -52,6 +52,9 @@
     CAMILLA_SPIDERLING: 'camilla_spiderling',
     // build1759: 記憶決戦の守護者「カミラ」（子蜘蛛を撒く）
     MEMORY_BLUE_CAMILLA: 'memory_blue_camilla',
+    // build1866: 記憶決戦04「ヘイズ」と陽炎の分身
+    MEMORY_HAZE: 'memory_haze',
+    MEMORY_HAZE_MIRAGE: 'memory_haze_mirage',
     BULLET_HELL_TEST: 'shooting_bullet_hell_test',
     NOAH: 'shooting_noah',
     // build1691: 死線（即死弾のみの弾幕）。build1692から位相回遊の「死線」階専用
@@ -65,6 +68,11 @@
     TOWER18_SHIEN: 'shooting_tower18_shien',
     TOWER19_RHYTHM: 'shooting_tower19_rhythm',
     TOWER20_TOWA_EX: 'shooting_tower20_towa_ex',
+    // build1877: 隠しステージ「夜明け」（20Fクリア後 1/30）
+    DAWN_CAMILLA: 'shooting_dawn_camilla',
+    DAWN_SHIEN: 'shooting_dawn_shien',
+    DAWN_TEST: 'shooting_dawn_test',
+    DAWN_TOWA: 'shooting_dawn_towa',
     // build1630: リズム弾幕（試作）
     RHYTHM_GATE: 'shooting_rhythm_gate',
     RHYTHM_GATE_ADVANCED: 'shooting_rhythm_gate_advanced', // build1637 上級（2PHASE）
@@ -694,6 +702,24 @@
       behavior: 'memory_guardian_v1', uiScale: 1.85, // build1763: リヴィアより少し小さいくらい（約125px）
     }),
 
+    // build1866: 記憶決戦「ヘイズ」。闇の陽炎。怪腕・燃焼・陽炎・ヘルフレイムは shooting_core.js updateHazeMechanics。
+    [SHOOTING_ENEMY_ID.MEMORY_HAZE]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.MEMORY_HAZE, kind: 'boss', implemented: true,
+      name: 'ヘイズ', displayName: 'MEMORY　ヘイズ',
+      image: 'images/haze_battle.webp', element: 'dark',
+      gaugeHp: 8000, gauges: 3,
+      bulletSpeed: 236, fireRate: 900, bulletDamage: 185,
+      behavior: 'barrage_v1', hazeMechanics: true, uiScale: 1.22,
+    }),
+    // 陽炎の分身（本体も同じ見た目）。HP・位置・射撃は updateHazeMechanics が管理。
+    [SHOOTING_ENEMY_ID.MEMORY_HAZE_MIRAGE]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.MEMORY_HAZE_MIRAGE, kind: 'normal', implemented: true,
+      name: 'ヘイズ', displayName: 'MEMORY / HAZE',
+      element: 'dark', attackType: 'none', image: 'images/haze_battle.webp',
+      hp: 1500, contactDamage: 0, moveSpeed: 0, scoreValue: 0,
+      behavior: 'haze_mirage_v1', uiScale: 1.4,
+    }),
+
     // カミラが召喚する子蜘蛛（吸血）。通常敵として撃ち落とせる。
     [SHOOTING_ENEMY_ID.CAMILLA_SPIDERLING]: Object.freeze({
       id: SHOOTING_ENEMY_ID.CAMILLA_SPIDERLING, kind: 'normal', implemented: true,
@@ -936,6 +962,28 @@
       id: SHOOTING_ENEMY_ID.TOWER19_RHYTHM, displayName: 'ECHO TOWER 19F　リズム',
       // build1671: 単騎向けに被弾ダメージを軽減（240→140。リズム共通の20%軽減後は 192→112）
       bulletDamage: 140,
+    }),
+    // build1877: 夜明け — 中ボス3体（塔16〜18Fの調整を流用。3人編成なので弾の威力は少し控えめ）と、トワ（光）
+    [SHOOTING_ENEMY_ID.DAWN_CAMILLA]: towerVariant(SHOOTING_ENEMY_ID.RAID_CAMILLA, {
+      id: SHOOTING_ENEMY_ID.DAWN_CAMILLA, displayName: 'SPECIAL STAGE　カミラ',
+      raidVisualId: SHOOTING_ENEMY_ID.RAID_CAMILLA,
+      bulletSpeed: 210, fireRate: 790, bulletDamage: 205,
+    }),
+    [SHOOTING_ENEMY_ID.DAWN_SHIEN]: towerVariant(SHOOTING_ENEMY_ID.RAID_SHIEN, {
+      id: SHOOTING_ENEMY_ID.DAWN_SHIEN, displayName: 'SPECIAL STAGE　シエン',
+      raidVisualId: SHOOTING_ENEMY_ID.RAID_SHIEN,
+      bulletSpeed: 282, fireRate: 890, bulletDamage: 210, contactDamage: 290, chargeSpeed: 640,
+    }),
+    [SHOOTING_ENEMY_ID.DAWN_TEST]: towerVariant(SHOOTING_ENEMY_ID.RAID_TEST, {
+      id: SHOOTING_ENEMY_ID.DAWN_TEST, displayName: 'SPECIAL STAGE　テスト',
+      raidVisualId: SHOOTING_ENEMY_ID.RAID_TEST,
+      bulletSpeed: 258, fireRate: 760, bulletDamage: 200,
+    }),
+    [SHOOTING_ENEMY_ID.DAWN_TOWA]: towerVariant(SHOOTING_ENEMY_ID.TOWER15_BOSS, {
+      id: SHOOTING_ENEMY_ID.DAWN_TOWA, name: 'トワ', displayName: 'SPECIAL STAGE　トワ -光の姿-',
+      image: 'images/towa_light_battle.webp', element: 'light',
+      gaugeHps: Object.freeze([4500, 4500]), gauges: 2,
+      bulletSpeed: 190, bulletDamage: 230,
     }),
     [SHOOTING_ENEMY_ID.TOWER20_TOWA_EX]: towerVariant(SHOOTING_ENEMY_ID.TOWER15_BOSS, {
       id: SHOOTING_ENEMY_ID.TOWER20_TOWA_EX, name: 'トワ', displayName: 'ECHO TOWER 20F　トワ EX',
