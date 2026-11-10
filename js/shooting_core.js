@@ -23969,6 +23969,21 @@
     requestAnimationFrame(() => el.classList.add('show'));
   }
 
+  // build1865: 全ステージ共通「〇〇 LOST」。控えへ交代するKOのときに出す（全滅時はGAME OVERに任せる）。
+  function showCharacterLostBanner(name) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena || !name) return;
+    arena.querySelectorAll('.shooting-lost-banner').forEach(el => el.remove());
+    const el = document.createElement('div');
+    el.className = 'shooting-lost-banner';
+    el.setAttribute('aria-hidden', 'true');
+    el.innerHTML = '<i class="lb-band"></i><i class="lb-slash"></i>' +
+      '<div class="lb-text"><small>CHARACTER DOWN</small><b><span class="lb-name"></span><em>LOST</em></b></div>';
+    el.querySelector('.lb-name').textContent = name;
+    arena.appendChild(el);
+    setTimeout(() => el.remove(), 1700);
+  }
+
   function beginPlayerDefeat() {
     // お試しは終了ボタンのみで終了。被弾で倒れても同じキャラを即座に復帰させる。
     if (isGachaTrialStage() && state && !state.ended) {
@@ -24014,6 +24029,7 @@
     }
 
     state.koTransition = true;
+    showCharacterLostBanner(String((getCurrentCharacter() || {}).name || '')); // build1865
 
     // KO演出760msの途中でアプリが終了しても、
     // 直前の「HPが残っていた古いsnapshot」へ巻き戻らないよう即保存。
@@ -27008,15 +27024,15 @@
     if (fixed > 0) {
       triggerPlayerHitScreenShake();
       damagePlayer(now, fixed, 'raw', normalizeCombatElement(rule.element || selectedStage.bossElement || selectedStage.element) || 'neutral', 'judgment');
-      if (member.hp <= 0) showMemoryGuardNotice(name ? `${name}、倒れる` : '神罰', false, 'JUDGMENT');
+      // build1865: キャラが倒れた演出は共通の「〇〇 LOST」（beginPlayerDefeat）で出す
       return;
     }
     showDamageNumber(state.player.x, state.player.y, Math.max(1, Math.round(member.hp)), 'player', true, '');
     member.hp = 0;
     triggerPlayerHitScreenShake();
     renderHud();
-    showMemoryGuardNotice(name ? `${name}、倒れる` : '神罰', false, 'JUDGMENT');
-    beginPlayerDefeat();
+    if (!name) showMemoryGuardNotice('神罰', false, 'JUDGMENT');
+    beginPlayerDefeat(); // build1865: 「〇〇 LOST」は共通演出で表示
   }
 
   // ============================================================

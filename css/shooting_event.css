@@ -16337,3 +16337,49 @@ html body #shooting-event-root .shooting-combo .shooting-combo-bonus.is-up{anima
   font:700 8px/1 "Cinzel",serif;letter-spacing:.24em;color:rgba(170,60,70,.85);
   text-shadow:0 0 3px #fff,0 0 2px #fff;
 }
+
+/* ============================================================
+   build1865 — 全ステージ共通「〇〇 LOST」（キャラが倒れて交代するとき）
+   暗い帯が横に走り、斜めの斬線が通り抜け、名前と赤い LOST が出て消える。
+   軽量：transform／opacity のみ。
+   ============================================================ */
+#shooting-event-root .shooting-lost-banner{
+  position:absolute;left:0;right:0;top:42%;height:74px;margin-top:-37px;z-index:60;pointer-events:none;
+  animation:lb-life 1.7s ease both;
+}
+@keyframes lb-life{0%{opacity:0}8%{opacity:1}80%{opacity:1}100%{opacity:0}}
+#shooting-event-root .shooting-lost-banner .lb-band{
+  position:absolute;inset:0;
+  background:linear-gradient(90deg,rgba(18,12,16,0) 0%,rgba(18,12,16,.78) 18%,rgba(24,14,18,.86) 50%,rgba(18,12,16,.78) 82%,rgba(18,12,16,0) 100%);
+  box-shadow:inset 0 1px 0 rgba(200,60,70,.75),inset 0 -1px 0 rgba(200,60,70,.75);
+  transform-origin:50% 50%;
+  animation:lb-band .34s cubic-bezier(.2,.9,.3,1) both;
+}
+@keyframes lb-band{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+#shooting-event-root .shooting-lost-banner .lb-slash{
+  position:absolute;left:-30%;top:50%;width:160%;height:2px;margin-top:-1px;
+  background:linear-gradient(90deg,rgba(255,80,90,0),rgba(255,120,120,.95) 45%,#fff 50%,rgba(255,120,120,.95) 55%,rgba(255,80,90,0));
+  transform:rotate(-8deg) translateX(-60%);
+  animation:lb-slash .42s cubic-bezier(.3,0,.2,1) .08s both;
+}
+@keyframes lb-slash{0%{transform:rotate(-8deg) translateX(-60%);opacity:1}100%{transform:rotate(-8deg) translateX(60%);opacity:0}}
+#shooting-event-root .shooting-lost-banner .lb-text{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+}
+#shooting-event-root .shooting-lost-banner .lb-text small{
+  font:600 8.5px/1 "Cinzel",serif;letter-spacing:.46em;color:rgba(230,150,150,.85);
+  animation:lb-rise .4s ease-out .12s both;
+}
+#shooting-event-root .shooting-lost-banner .lb-text b{
+  display:flex;align-items:baseline;gap:12px;white-space:nowrap;
+  animation:lb-rise .42s cubic-bezier(.2,1.2,.4,1) .16s both;
+}
+#shooting-event-root .shooting-lost-banner .lb-name{
+  font:700 22px/1 "Noto Serif JP",serif;letter-spacing:.14em;color:#f4ece4;
+  text-shadow:0 1px 0 rgba(0,0,0,.6);
+}
+#shooting-event-root .shooting-lost-banner em{
+  font:700 24px/1 "Cinzel",serif;font-style:normal;letter-spacing:.2em;color:#ff5a64;
+  text-shadow:0 0 8px rgba(255,60,70,.65),0 1px 0 rgba(0,0,0,.6);
+}
+@keyframes lb-rise{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
