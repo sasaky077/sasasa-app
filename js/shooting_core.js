@@ -6622,7 +6622,7 @@
     clearNightshadeSpinRings();
     document.querySelectorAll('.shooting-wolf-berserk-aura').forEach(el => el.remove()); // build1860
     document.getElementById(PLAYER_ID)?.classList.remove('is-wolf-berserk', 'is-wolf-berserk-hurry');
-    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-rose-fortress,.shooting-remna-trap-preview,.shooting-conjure-preview,.shooting-conjure-deploy-projectile,.shooting-conjure-turret,.shooting-conjure-ult-turret,.shooting-camilla-web-overlay,.shooting-camilla-web-burst,.shooting-camilla-bound-web-fx,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-wolf-berserk-aura,.shooting-aina-shade,.shooting-aina-decoy,.shooting-sui-time-domain,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning,.shooting-ch07-complete-shield,.shooting-ch07-torii,.eclipse-hand-band,.eclipse-float-num,.eclipse-dash-line,.eclipse-dark-veil,.eclipse-beacon,.eclipse-state-pill,.po-submission-chip,.po-variety-banner,.tb-fx,.shooting-v-laser-wrap').forEach(el => el.remove());
+    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-rose-fortress,.shooting-remna-trap-preview,.shooting-conjure-preview,.shooting-conjure-deploy-projectile,.shooting-conjure-turret,.shooting-conjure-ult-turret,.shooting-camilla-web-overlay,.shooting-camilla-web-burst,.shooting-camilla-bound-web-fx,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-wolf-berserk-aura,.shooting-aina-shade,.shooting-aina-decoy,.haze-arm,.haze-arm-warn,.haze-ember,.haze-flame,.haze-flame-warn,.shooting-sui-time-domain,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning,.shooting-ch07-complete-shield,.shooting-ch07-torii,.eclipse-hand-band,.eclipse-float-num,.eclipse-dash-line,.eclipse-dark-veil,.eclipse-beacon,.eclipse-state-pill,.po-submission-chip,.po-variety-banner,.tb-fx,.shooting-v-laser-wrap').forEach(el => el.remove());
     clearEnemyBulletCanvas();
     clearPlayerBulletCanvas(); // build1811
     if (state) {
@@ -7224,7 +7224,9 @@
       Number(state.gojoPurpleBossFreezeUntil || 0),
       Number(state.noahMovementFreezeUntil || 0), Number(state.angeEnemyFreezeUntil || 0),
       Number(state.fullEnemyStopUntil || 0),
-      Number(state.eltenaBlackHole?.activeUntil || 0)
+      Number(state.eltenaBlackHole?.activeUntil || 0),
+      Number(state.hazeBossHideUntil || 0), // build1866: 陽炎で姿を消している間は動かない・撃たない
+      Number(state.hazeFlameLockUntil || 0) // build1870: ヘルフレイム中は前に出て構える（移動・通常弾なし）
     );
     return isEntireEnemyActionLocked(now) ? Math.max(until, now + 100) : until;
   }
@@ -10080,7 +10082,7 @@
     const itemAtkBuffMultiplier = activeMember && now < (activeMember.atkBuffUntil || 0)
       ? Number(activeMember.atkBuffMultiplier || 1)
       : 1;
-    const wolfFieldAtkMultiplier = getWolfAtkFieldStatus(now).multiplier * getSuiTimeDomainAtkMultiplier(now);
+    const wolfFieldAtkMultiplier = getWolfAtkFieldStatus(now).multiplier * getSuiTimeDomainAtkMultiplier(now) * getHazeBurnAtkMultiplier(now); // build1866: 燃焼でATK-50%
     return Math.max(0,
       Number(c?.atk || 0) *
       Number(c?.shotPowerRate || 0.095) *
@@ -10511,7 +10513,28 @@
     return el && el !== 'neutral' ? el : '';
   }
 
+  // build1871: クロエに塗られて張り替わった結界があるか（剥がされていないもの）
+  function getPaintBarrierElement(t) {
+    if (!t || !t.paintBarrierElement || t.lyuneBarrierRemoved) return '';
+    return normalizeCombatElement(t.paintBarrierElement) || 'neutral';
+  }
+  // 塗られる直前に、その敵が結界を持っていたか
+  function hasAnyWeaknessBarrier(t) {
+    if (!t) return false;
+    if (t.paintBarrierElement) return true;
+    if (t.lyuneBarrierRemoved) return false;
+    const prev = combatElementTarget;
+    const el = getCombatTargetElement(t, state?.boss?.element);
+    const result = isStageWeaknessOnlyTarget(el);
+    combatElementTarget = prev;
+    return result;
+  }
   function isStageWeaknessOnlyTarget(targetElement) {
+    // build1871: 塗りで張り替わった結界は、その色そのものが結界になる（無色＝無属性しか通らない）
+    if (combatElementTarget && combatElementTarget.paintBarrierElement) {
+      const pb = getPaintBarrierElement(combatElementTarget);
+      return !!pb && pb === (normalizeCombatElement(targetElement) || 'neutral');
+    }
     const target = normalizeCombatElement(targetElement);
     if (!target || target === 'neutral') return false;
     if (isChapter403FireWallStage() && state && state.ch403BarrierBroken) return false;
@@ -10543,7 +10566,7 @@
 
     const enemyElement = normalizeCombatElement(state?.boss?.element || BOSS.element || selectedStage.bossElement || selectedStage.enemyElement);
     combatElementTarget = state?.boss || null;
-    return enemyElement !== 'neutral' && isStageWeaknessOnlyTarget(enemyElement);
+    return (enemyElement !== 'neutral' || !!getPaintBarrierElement(state?.boss)) && isStageWeaknessOnlyTarget(enemyElement); // build1871: 無色で塗られた結界も表示
   }
 
   function ensureBossWeaknessBarrier() {
@@ -11806,7 +11829,7 @@
         ? Number(activeMember.atkBuffMultiplier || 1)
         : 1;
     // CHARGEにも既存のATK UPフィールドとアイナの隠密射撃×1.3を個別に適用する。
-    const wolfFieldAtkMultiplier = getWolfAtkFieldStatus(Number(now || performance.now())).multiplier * getSuiTimeDomainAtkMultiplier(Number(now || performance.now()));
+    const wolfFieldAtkMultiplier = getWolfAtkFieldStatus(Number(now || performance.now())).multiplier * getSuiTimeDomainAtkMultiplier(Number(now || performance.now())) * getHazeBurnAtkMultiplier(Number(now || performance.now())); // build1866
 
     const damage =
       Number(c.atk || 0) *
@@ -12067,7 +12090,7 @@
       mitoMember && now < Number(mitoMember.atkBuffUntil || 0)
         ? Number(mitoMember.atkBuffMultiplier || 1)
         : 1;
-    const wolfFieldAtkMultiplier = getWolfAtkFieldStatus(now).multiplier * getSuiTimeDomainAtkMultiplier(now);
+    const wolfFieldAtkMultiplier = getWolfAtkFieldStatus(now).multiplier * getSuiTimeDomainAtkMultiplier(now) * getHazeBurnAtkMultiplier(now); // build1866: 燃焼でATK-50%
     const effectivePower =
       Number(c.atk || 0) *
       Number(c.shotPowerRate || 0.095) *
@@ -13412,7 +13435,7 @@
       activeMember && now < (activeMember.atkBuffUntil || 0)
         ? Number(activeMember.atkBuffMultiplier || 1)
         : 1;
-    const wolfFieldAtkMultiplier = getWolfAtkFieldStatus(now).multiplier * getSuiTimeDomainAtkMultiplier(now);
+    const wolfFieldAtkMultiplier = getWolfAtkFieldStatus(now).multiplier * getSuiTimeDomainAtkMultiplier(now) * getHazeBurnAtkMultiplier(now); // build1866: 燃焼でATK-50%
 
     const effectiveFireRate = Number(c.fireRate || 170) * fireRateMultiplier;
     const effectivePower =
@@ -15542,6 +15565,7 @@
     if (isInoriBattle()) return true;
     if (isEclipseBattle()) return true; // build1681: エクリプスの天秤
     if (getMemoryGuardianRule()) return true; // build1759: 記憶決戦の守護者
+    if (isHazeBattle()) return true; // build1866: 陽炎の分身
     return !!(cfg && Array.isArray(cfg.enemyIds) && cfg.enemyIds.length);
   }
 
@@ -18084,6 +18108,7 @@
       if (!enemy || !enemy.el) return;
       if (enemy.camSpider) { updateCamillaSpider(enemy, dt, now); return; }
       if (enemy.memoryGuardian) { updateMemoryGuardian(enemy, dt, now); return; }
+      if (enemy.hazeClone) return; // build1866: 陽炎の分身は updateHazeMechanics が動かす
       const def = enemy.def || {};
       // build1643: イノリの鳥居は常にイノリの左右・少し後方に付き従う（移動AI・射撃なし。レーザーは本体側で管理）
       if (def.behavior === 'verdant_seed_v1') { // build1663: 成長の実は動かない（熟し具合は updateVerdantSeeds）
@@ -21828,6 +21853,8 @@
 
   function handleBossDangerAttack(now) {
     if (!state || isNormalBattle() || state.phaseTransition || state.koTransition) return false;
+    // build1866: ヘイズは怪腕・陽炎・ヘルフレイムが大技なので、汎用のWARNING攻撃は使わない
+    if (isHazeBattle()) { removeBossDangerWarning(); state.bossDangerExecuteAt = 0; return false; }
 
     // build1237: リヴィアはGAUGE1でWARNING攻撃なし。
     // GAUGE2開始時に通常のWARNINGタイマーを新規スタートさせる。
@@ -22906,6 +22933,8 @@
         state.boss.y = blended.y;
       } else if (BOSS && BOSS.behavior === 'remnant07_v1') {
         updateChapter07BossMovement(now, w, h);
+      } else if (BOSS && BOSS.behavior === 'barrage_v1' && isHazeBattle() && state.haze && (state.haze.flame || state.haze.flameReturn)) {
+        // build1870: ヘイズのヘルフレイム中は updateHazeHellflame が前進/復帰の位置を直接動かす
       } else if (BOSS && BOSS.behavior === 'barrage_v1' && isTestBodyPhase()) {
         // build1750: テスト3段階目の位置は updateTestBodyMechanics が直接動かす
       } else if (BOSS && BOSS.behavior === 'barrage_v1') {
@@ -23838,6 +23867,8 @@
     // シエンの接触は専用の一閃/三巴の軌跡判定のみ。通常移動では接触ダメージなし。
     if (isShienBattle()) return;
     if (isCamillaBattle()) return;
+    // build1870: ヘイズのヘルフレイム中は、頭上へ回り込めるようボス本体の接触ダメージなし
+    if (state.haze && (state.haze.flame || state.haze.flameReturn) && isHazeBattle()) return;
     // CH02-4 イリシュ(violence_v1)専用: 突進の当たり判定は画像の透明余白ぶんを
     // 大きく差し引いて、画面幅の半分以上は必ず回避ゾーンとして残す。
     // 他ボスの当たり判定(14, 18)は一切変更しない。
@@ -26788,6 +26819,7 @@
     return mb.rules.find(r => r && r.type === 'guardians') || null;
   }
   function isMemoryGuardShieldUp() {
+    if (isHazeMirageActive()) return true; // build1866: 陽炎の間はボス本体に攻撃が通らない（すり抜け）
     return !!(state && state.memoryGuard && state.memoryGuard.shieldUp && getMemoryGuardianRule());
   }
   function ensureMemoryGuardStyle() {
@@ -27150,7 +27182,731 @@
     beginPlayerDefeat();
   }
 
+  // ============================================================
+  // build1866: 記憶決戦「ヘイズ」— 怪腕・燃焼・陽炎・ヘルフレイム・残り火
+  //  時刻はすべて state.haze 内の *At / *Until に持つ（ポーズ・時間停止で shiftPausedTimestamps がずらす）。
+  //  全体停止（ノア・エリ等）の間は、経過時間ぶん自前でずらして止める。
+  //  見た目は css/shooting_event.css の build1866 ブロック。
+  // ============================================================
+  function isHazeBattle() {
+    return !!(state && BOSS && BOSS.hazeMechanics && !isNormalBattle() && selectedStage && selectedStage.memoryBattle);
+  }
+  function getHazeRule(type) {
+    return isHazeBattle() ? getMemoryRule(type) : null;
+  }
+  function isHazeMirageActive() {
+    return !!(state && state.haze && state.haze.mirage && !state.haze.mirage.done);
+  }
+  function getHazeBurnAtkMultiplier(now = performance.now()) {
+    if (!state || !state.haze) return 1;
+    const m = getActiveMember();
+    if (!m || now >= Number(m.hazeBurnUntil || 0)) return 1;
+    const rule = getHazeRule('haze_burn');
+    return Math.max(0, Math.min(1, Number(rule && rule.atkRate != null ? rule.atkRate : 0.5)));
+  }
+  function getHazeGaugeRemaining() {
+    if (!state || !state.boss) return 0;
+    const list = Array.isArray(state.boss.gaugeHps) ? state.boss.gaugeHps : [];
+    const phase = Math.max(1, Number(state.boss.phase || 1));
+    const floor = list.slice(phase).reduce((s, v) => s + Math.max(1, Number(v || 1)), 0);
+    return Math.max(0, Number(state.boss.hp || 0) - floor);
+  }
+  function hazeArena() { return document.getElementById('shooting-arena'); }
+
+  // 迫力のある見出し（右から斜めの帯が走り込み、左へ抜ける）
+  function showHazeCallout(jp, en, tone) {
+    const arena = hazeArena();
+    if (!arena) return;
+    arena.querySelectorAll('.haze-callout').forEach(el => el.remove());
+    const el = document.createElement('div');
+    el.className = 'haze-callout' + (tone ? ' is-' + tone : '');
+    el.setAttribute('aria-hidden', 'true');
+    el.innerHTML = '<i class="hc-band"></i><i class="hc-lines"></i><div class="hc-text"><small></small><b></b></div>';
+    el.querySelector('small').textContent = en || '';
+    el.querySelector('b').textContent = jp || '';
+    arena.appendChild(el);
+    setTimeout(() => el.remove(), 1500);
+  }
+
+  function hazeShake(level) {
+    const root = document.getElementById(ROOT_ID);
+    if (!root) return;
+    const cls = level === 'big' ? 'haze-shake-big' : 'haze-shake';
+    root.classList.remove('haze-shake', 'haze-shake-big');
+    void root.offsetWidth;
+    root.classList.add(cls);
+    setTimeout(() => root.classList.remove(cls), level === 'big' ? 460 : 260);
+  }
+
+  // 自機へ当てる（無敵時間・KO中は当たらない）。rate は最大HPに対する割合。
+  function hazeHitPlayer(now, rate, burn) {
+    if (!state || state.ended || state.finishing || state.koTransition) return false;
+    const m = getActiveMember();
+    if (!m || m.hp <= 0) return false;
+    if (now < Number(state.player.invulnUntil || 0)) return false;
+    if (now < Number(m.invincibleUntil || 0)) return false; // 無敵アイテム中は燃焼も付かない
+    damagePlayer(now, Math.max(1, Math.round(Number(m.hpMax || 0) * rate)), 'raw', 'dark', 'haze');
+    hazeShake(rate >= 0.3 ? 'big' : '');
+    if (burn && m.hp > 0) applyHazeBurn(m, now);
+    return true;
+  }
+
+  // ---------------- 燃焼 ----------------
+  function applyHazeBurn(member, now) {
+    const rule = getHazeRule('haze_burn');
+    if (!rule || !member) return;
+    const fresh = now >= Number(member.hazeBurnUntil || 0);
+    member.hazeBurnUntil = now + Math.max(1000, Number(rule.durationMs || 6000));
+    if (fresh) member.hazeBurnNextTickAt = now + 1000;
+    if (fresh) showHazeCallout('燃焼', 'BURN — ATK DOWN', 'burn');
+  }
+  function updateHazeBurn(now) {
+    const player = document.getElementById(PLAYER_ID);
+    const m = getActiveMember();
+    const rule = getHazeRule('haze_burn');
+    const burning = !!(m && rule && now < Number(m.hazeBurnUntil || 0) && m.hp > 0);
+    let aura = player && player.querySelector('.haze-burn-aura');
+    if (burning && player && !aura) {
+      aura = document.createElement('div');
+      aura.className = 'haze-burn-aura';
+      aura.setAttribute('aria-hidden', 'true');
+      aura.innerHTML = '<i class="hb-flame f1"></i><i class="hb-flame f2"></i><i class="hb-flame f3"></i><span class="hb-tag"><b>燃焼</b><em></em></span>';
+      player.appendChild(aura);
+    }
+    if (aura) {
+      aura.classList.toggle('is-off', !burning);
+      if (burning) {
+        const left = Math.max(0, Number(m.hazeBurnUntil) - now) / 1000;
+        const em = aura.querySelector('.hb-tag em');
+        const txt = left.toFixed(1);
+        if (em && em.textContent !== txt) em.textContent = txt;
+      } else if (!aura.dataset.off) {
+        aura.dataset.off = '1';
+        setTimeout(() => { if (aura.classList.contains('is-off')) aura.remove(); }, 260);
+      }
+      if (burning) delete aura.dataset.off;
+    }
+    if (!burning || state.koTransition) return;
+    if (now < Number(m.hazeBurnNextTickAt || 0)) return;
+    m.hazeBurnNextTickAt = Number(m.hazeBurnNextTickAt || now) + 1000;
+    const dmg = Math.max(1, Math.round(Number(m.hpMax || 0) * Math.max(0, Number(rule.dotRate || 0.02))));
+    const applied = Math.min(m.hp, dmg);
+    m.hp = Math.max(0, m.hp - applied);
+    showDamageNumber(state.player.x + (Math.random() - .5) * 16, state.player.y - 18, applied, 'player', false, '');
+    if (player) { player.classList.remove('haze-burn-tick'); void player.offsetWidth; player.classList.add('haze-burn-tick'); }
+    renderHud();
+    if (m.hp <= 0) beginPlayerDefeat();
+  }
+
+  // ---------------- 怪腕 ----------------
+  function hazeRayLength(ox, oy, ang, w, h) {
+    const dx = Math.cos(ang), dy = Math.sin(ang);
+    let t = 4000;
+    if (dx > 1e-4) t = Math.min(t, (w + 40 - ox) / dx);
+    if (dx < -1e-4) t = Math.min(t, (-40 - ox) / dx);
+    if (dy > 1e-4) t = Math.min(t, (h + 40 - oy) / dy);
+    if (dy < -1e-4) t = Math.min(t, (-40 - oy) / dy);
+    return Math.max(120, t);
+  }
+  // 狙い撃ちの腕は「自機の位置を少し越えたところ」で止める（爪が画面内に見えるように）
+  function hazeAimReach(ox, oy, ang, aim, w, hh) {
+    const dist = Math.hypot(aim.x - ox, aim.y - oy);
+    return Math.max(140, Math.min(hazeRayLength(ox, oy, ang, w, hh), dist + 70));
+  }
+  function spawnHazeArm(h, now, ox, oy, ang, len, delayMs, kind) {
+    const rule = getHazeRule('haze_arm') || {};
+    const warnMs = Math.max(250, Number(rule.warnMs || 600));
+    // 6連打は1本ずつ「打って→引く」が見えるよう、保持を短くする
+    const holdMs = kind === 'rain' ? 220 : Math.max(150, Number(rule.holdMs || 400));
+    const arm = {
+      kind, ox, oy, ang, len,
+      warnAt: now + delayMs,
+      fireAt: now + delayMs + warnMs,
+      holdUntil: now + delayMs + warnMs + 110 + holdMs,
+      endAt: now + delayMs + warnMs + 110 + holdMs + 170,
+      hit: false, el: null, warnEl: null, impacted: false,
+    };
+    h.arms.push(arm);
+    return arm;
+  }
+  function buildHazeArmDom(arm, arena) {
+    const deg = arm.ang * 180 / Math.PI;
+    const warn = document.createElement('div');
+    warn.className = 'haze-arm-warn' + (arm.kind === 'rain' ? ' is-rain' : '');
+    warn.setAttribute('aria-hidden', 'true');
+    warn.style.width = `${Math.round(arm.len)}px`;
+    warn.style.transform = `translate3d(${arm.ox}px,${arm.oy}px,0) rotate(${deg}deg)`;
+    warn.innerHTML = '<i class="hw-line"></i><i class="hw-flow"></i><i class="hw-origin"></i>';
+    arena.appendChild(warn);
+    arm.warnEl = warn;
+    const el = document.createElement('div');
+    el.className = 'haze-arm' + (arm.kind === 'rain' ? ' is-rain' : '');
+    el.setAttribute('aria-hidden', 'true');
+    el.style.transform = `translate3d(${arm.ox}px,${arm.oy}px,0) rotate(${deg - 90}deg)`;
+    // アヤネULT方式：腕の素材そのものを根元→先端へ引き伸ばす。
+    // 前腕（素材の上半分）だけ伸縮させ、爪（下半分）は縦横比を保って先端に置く。
+    const W = arm.kind === 'rain' ? 88 : 84;
+    const clawH = Math.round(W * HAZE_ARM_CLAW_RATIO);
+    arm.armW = W; arm.clawH = clawH;
+    const L = Math.max(40, Math.round(arm.len));
+    el.style.setProperty('--haW', `${W}px`);
+    el.style.setProperty('--haL', `${L}px`);
+    el.style.setProperty('--haC', `${clawH}px`);
+    el.innerHTML = '<i class="ha-root"></i>'
+      + '<i class="ha-ghost g1"><i class="ha-shaft"></i><i class="ha-hand"></i></i>'
+      + '<i class="ha-ghost g2"><i class="ha-shaft"></i><i class="ha-hand"></i></i>'
+      + '<i class="ha-body"><i class="ha-shaft"></i><i class="ha-hand"></i></i>';
+    el.style.visibility = 'hidden';
+    arena.appendChild(el);
+    arm.el = el;
+    arm.parts = [...el.querySelectorAll('.ha-ghost,.ha-body')].map(g => ({ shaft: g.firstChild, hand: g.lastChild }));
+  }
+  function removeHazeArm(arm) {
+    if (arm.warnEl) arm.warnEl.remove();
+    if (arm.el) arm.el.remove();
+    arm.warnEl = arm.el = null;
+  }
+  function hazeArmImpact(arm, arena, x, y) {
+    const fx = document.createElement('div');
+    fx.className = 'haze-arm-impact';
+    fx.setAttribute('aria-hidden', 'true');
+    fx.innerHTML = '<i></i><b></b><u></u><u></u><u></u><u></u>';
+    fx.style.transform = `translate3d(${x}px,${y}px,0)`;
+    arena.appendChild(fx);
+    setTimeout(() => fx.remove(), 520);
+  }
+  const HAZE_ARM_CLAW_RATIO = 250 / 291; // 素材(291x500)の下半分＝爪の縦横比
+  function hazeArmReach(arm, now, lagMs) {
+    const t = now - arm.fireAt - lagMs;
+    if (t <= 0) return 0;
+    if (t < 130) { const k = t / 130; return arm.len * (1 - Math.pow(1 - k, 4)); }
+    if (now < arm.holdUntil) return arm.len;
+    return arm.len * Math.max(0, 1 - Math.pow((now - arm.holdUntil) / 170, 1.6));
+  }
+  function updateHazeArms(h, now, arena, w, hh) {
+    for (const arm of h.arms) {
+      if (now < arm.warnAt) continue;
+      if (!arm.built) { arm.built = true; buildHazeArmDom(arm, arena); }
+      if (now < arm.fireAt) continue;
+      if (arm.warnEl) { arm.warnEl.remove(); arm.warnEl = null; }
+      const t = now - arm.fireAt;
+      const d = hazeArmReach(arm, now, 0);
+      if (arm.el) {
+        arm.el.style.visibility = '';
+        arm.el.classList.add('is-fire');
+        arm.el.classList.toggle('is-out', now >= arm.holdUntil);
+        const L = Math.max(40, Math.round(arm.len));
+        const lags = [70, 35, 0];
+        for (let i = 0; i < arm.parts.length; i++) {
+          const dd = i === 2 ? d : (now < arm.holdUntil ? hazeArmReach(arm, now, lags[i]) : 0);
+          const shaft = Math.max(0, dd - arm.clawH);
+          const part = arm.parts[i];
+          // 伸びの途中は横幅を細く→着弾で少し膨らむ（アヤネの scaleX 演出）
+          const sx = t < 130 ? 0.55 + 0.53 * Math.min(1, t / 130) : (t < 230 ? 1.08 - 0.08 * ((t - 130) / 100) : 1);
+          const hs = Math.min(1, dd / arm.clawH);
+          part.shaft.style.transform = `scale(${sx.toFixed(3)},${(shaft / L).toFixed(4)})`;
+          part.hand.style.transform = `translate3d(0,${shaft.toFixed(1)}px,0) scale(${(sx * (0.6 + 0.4 * hs)).toFixed(3)},${hs.toFixed(3)})`;
+        }
+      }
+      if (!arm.impacted && t >= 130) {
+        arm.impacted = true;
+        const tx = arm.ox + Math.cos(arm.ang) * arm.len, ty = arm.oy + Math.sin(arm.ang) * arm.len;
+        if (tx > -10 && tx < w + 10 && ty > -10 && ty < hh + 10) hazeArmImpact(arm, arena, tx, ty);
+        if (arm.kind === 'rain') hazeShake('');
+      }
+      // 当たり判定：腕の軸（線分）からの距離
+      if (!arm.hit && now < arm.holdUntil + 60 && d > 10) {
+        const px = state.player.x - arm.ox, py = state.player.y - arm.oy;
+        const dx = Math.cos(arm.ang), dy = Math.sin(arm.ang);
+        const along = px * dx + py * dy;
+        if (along > 0 && along < d + 10) {
+          const perp = Math.abs(px * dy - py * dx);
+          const halfW = along > d - (arm.clawH || 90) * 0.85 ? (arm.armW || 108) * 0.36 : (arm.armW || 108) * 0.17;
+          if (perp < halfW) {
+            const rule = getHazeRule('haze_arm') || {};
+            if (hazeHitPlayer(now, Math.max(0, Number(rule.damageRate || 0.25)), true)) arm.hit = true;
+          }
+        }
+      }
+    }
+    const keep = [];
+    for (const arm of h.arms) {
+      const gone = (arm.el && !arm.el.isConnected) || (arm.warnEl && !arm.warnEl.isConnected); // KO時の弾消し
+      if (now >= arm.endAt || gone) removeHazeArm(arm); else keep.push(arm);
+    }
+    h.arms = keep;
+  }
+  function hazeEyeFlash(x, y) {
+    const arena = hazeArena();
+    if (!arena) return;
+    const fx = document.createElement('div');
+    fx.className = 'haze-eye-flash';
+    fx.setAttribute('aria-hidden', 'true');
+    fx.innerHTML = '<i></i><i></i>';
+    fx.style.transform = `translate3d(${x}px,${y}px,0)`;
+    arena.appendChild(fx);
+    setTimeout(() => fx.remove(), 620);
+  }
+  function getHazeEyePos(x, y, el) {
+    const bw = el ? el.offsetWidth : 150, bh = el ? el.offsetHeight : 150;
+    return { x: x + (0.535 - 0.5) * bw, y: y + (0.317 - 0.5) * bh };
+  }
+  function queueHazeArmAttack(h, now, w, hh) {
+    const phase = Number(state.boss.phase || 1);
+    const aim = getEnemyAimPosition();
+    const bossEl = document.getElementById(BOSS_ID);
+    const eye = getHazeEyePos(state.boss.x, state.boss.y, bossEl);
+    if (phase >= 3) {
+      // 最終ゲージ：上から6連の雨（最後の1本は自機狙い）
+      let lastX = -999;
+      for (let i = 0; i < 6; i++) {
+        let x;
+        if (i === 5) x = clamp(aim.x, 24, w - 24);
+        else {
+          let tries = 0;
+          do { x = 30 + Math.random() * (w - 60); tries++; } while (Math.abs(x - lastX) < 70 && tries < 8);
+        }
+        lastX = x;
+        spawnHazeArm(h, now, x, -30, Math.PI / 2, hh * 0.92 + 30, i * 500, 'rain');
+      }
+      showHazeCallout('怪腕・驟雨', 'CLAW RAIN', '');
+      h.nextArmAt = now + 9000;
+      return;
+    }
+    hazeEyeFlash(eye.x, eye.y);
+    if (phase === 2) {
+      // 2本が交差：肩の左右から自機の位置へ
+      [-1, 1].forEach(side => {
+        const ox = state.boss.x + side * 62, oy = state.boss.y + 10;
+        const ang = Math.atan2(aim.y - oy, aim.x - ox);
+        spawnHazeArm(h, now, ox, oy, ang, hazeAimReach(ox, oy, ang, aim, w, hh), 0, 'aim');
+      });
+    } else {
+      const ox = state.boss.x, oy = state.boss.y + 8;
+      const ang = Math.atan2(aim.y - oy, aim.x - ox);
+      spawnHazeArm(h, now, ox, oy, ang, hazeAimReach(ox, oy, ang, aim, w, hh), 0, 'aim');
+    }
+    h.nextArmAt = now + 7000;
+  }
+
+  // ---------------- 陽炎 ----------------
+  function hazeDamageBossDirect(amount) {
+    if (!state || !state.boss || state.boss.hp <= 0) return 0;
+    const applied = Math.min(state.boss.hp, Math.max(0, Math.round(amount)));
+    if (applied <= 0) return 0;
+    state.boss.hp = Math.max(0, state.boss.hp - applied);
+    showBossDamageNumber(applied, true, '');
+    flashBossHit(true);
+    if (!addScoreAttackDamageScore(applied)) addLegacyCombatScore(Math.round(applied * 100));
+    updateBossPhase();
+    renderHud();
+    if (state.boss.hp <= 0) beginBossDefeat();
+    return applied;
+  }
+  function removeHazeClone(c, fx) {
+    if (!c) return;
+    const arena = hazeArena();
+    if (fx && arena && c.el) {
+      const ghost = document.createElement('img');
+      ghost.className = 'haze-clone-fade' + (fx === 'shatter' ? ' is-shatter' : '');
+      ghost.src = c.el.getAttribute('src') || 'images/haze_battle.webp';
+      ghost.alt = '';
+      const r = c.el.getBoundingClientRect(), ar = arena.getBoundingClientRect();
+      const sx = ar.width / Math.max(1, arena.clientWidth);
+      ghost.style.width = `${(r.width / sx).toFixed(1)}px`;
+      ghost.style.transform = `translate3d(${c.x}px,${c.y}px,0) translate(-50%,-50%)`;
+      arena.appendChild(ghost);
+      setTimeout(() => ghost.remove(), 700);
+    }
+    [c.el, c.hpEl, c.elementEl, c.weaknessBarrierEl].forEach(n => { try { n && n.remove(); } catch (_) {} });
+    c.hp = 0;
+    state.normalEnemies = state.normalEnemies.filter(e => e !== c);
+  }
+  function startHazeMirage(h, now, w, hh) {
+    const rule = getHazeRule('haze_mirage');
+    const def = getShootingEnemy(window.ShootingEnemies?.SHOOTING_ENEMY_ID?.MEMORY_HAZE_MIRAGE || 'memory_haze_mirage');
+    if (!rule || !def) return;
+    const cloneHp = Math.max(1, Math.floor(Number(rule.cloneHp || 1500)));
+    const phase = Number(state.boss.phase || 1);
+    const bx = Number(state.boss.x), by = Number(state.boss.y);
+    const slots = [w * 0.2, w * 0.5, w * 0.8].map(x => ({ x, y: Math.max(70, hh * 0.19) }));
+    const trueIdx = Math.floor(Math.random() * 3);
+    const clones = [];
+    for (let i = 0; i < 3; i++) {
+      const e = createNormalEnemy(def, now, { noElementIcon: false });
+      if (!e) continue;
+      e.hazeClone = true; e.hazeTrue = i === trueIdx; e.hp = cloneHp; e.hpMax = cloneHp;
+      e.hazeSlot = i; e.x = bx; e.y = by; e.fromX = bx; e.fromY = by; e.toX = slots[i].x; e.toY = slots[i].y;
+      e.hazeSeed = Math.random() * Math.PI * 2;
+      e.el.classList.add('haze-clone');
+      renderMiniEnemyHp(e, false);
+      positionUnit(e.el, e.x, e.y);
+      positionMiniEnemyHp(e);
+      state.normalEnemies.push(e);
+      clones.push(e);
+    }
+    const swaps = phase >= 3 ? 5 : 3;
+    const swapMs = phase >= 3 ? 250 : 320;
+    h.mirage = {
+      clones, slots, done: false,
+      startedAt: now,
+      spreadUntil: now + 380,
+      revealUntil: now + 380 + 1000,
+      shuffleAt: now + 380 + 1000,
+      swapsLeft: swaps, swapMs, swapStartAt: 0, swap: null,
+      endsAt: now + Math.max(5000, Number(rule.timeoutMs || 20000)),
+      nextFireAt: now + 380 + 1000 + 600,
+      fireIndex: 0,
+    };
+    state.hazeBossHideUntil = now + 999999;
+    const bossEl = document.getElementById(BOSS_ID);
+    if (bossEl) bossEl.classList.add('haze-boss-hidden');
+    const arena = hazeArena();
+    if (arena) {
+      const burst = document.createElement('div');
+      burst.className = 'haze-mirage-burst';
+      burst.setAttribute('aria-hidden', 'true');
+      burst.style.transform = `translate3d(${bx}px,${by}px,0)`;
+      burst.innerHTML = '<i></i><b></b>';
+      arena.appendChild(burst);
+      setTimeout(() => burst.remove(), 700);
+    }
+    showHazeCallout('陽炎', 'HEAT HAZE — FIND THE TRUE FORM', 'mirage');
+    hazeShake('');
+  }
+  function endHazeMirage(h, now, reason, trueClone) {
+    const mg = h.mirage;
+    if (!mg || mg.done) return;
+    mg.done = true;
+    const at = trueClone ? { x: trueClone.x, y: trueClone.y } : { x: state.boss.x, y: state.boss.y };
+    mg.clones.forEach(c => { if (c.hp > 0 || state.normalEnemies.includes(c)) removeHazeClone(c, 'fade'); });
+    document.querySelectorAll('.haze-true-eye').forEach(el => el.remove());
+    state.hazeBossHideUntil = 0;
+    if (state.boss) { state.boss.x = at.x; state.boss.y = at.y; }
+    const bossEl = document.getElementById(BOSS_ID);
+    if (bossEl) {
+      bossEl.classList.remove('haze-boss-hidden');
+      bossEl.classList.remove('haze-boss-return'); void bossEl.offsetWidth; bossEl.classList.add('haze-boss-return');
+      setTimeout(() => bossEl.classList.remove('haze-boss-return'), 700);
+    }
+    h.mirage = null;
+    h.nextMirageAt = now + Math.max(8000, Number((getHazeRule('haze_mirage') || {}).intervalMs || 25000));
+    h.nextArmAt = Math.max(h.nextArmAt, now + 2200);
+    if (reason === 'true') {
+      showHazeCallout('看破', 'TRUE FORM BROKEN', 'break');
+      hazeShake('big');
+    } else {
+      showHazeCallout('陽炎、晴れる', 'HAZE CLEARED', '');
+    }
+  }
+  function fireHazeLethalSpread(x, y) {
+    const aim = getEnemyAimPosition();
+    const base = Math.atan2(aim.y - y, aim.x - x);
+    const spread = 40 * Math.PI / 180;
+    const speed = Math.max(140, Number(BOSS.bulletSpeed || 236) * 0.8);
+    for (let i = 0; i < 4; i++) {
+      const a = base - spread / 2 + spread * (i / 3);
+      const b = makeProjectile('shooting-enemy-bullet shooting-danger-bullet haze-lethal', x, y, Math.cos(a) * speed, Math.sin(a) * speed, 999999);
+      if (b) { b.attackElement = 'dark'; state.enemyBullets.push(b); }
+    }
+  }
+  function updateHazeMirage(h, now, w, hh) {
+    const mg = h.mirage;
+    if (!mg || mg.done) return;
+    const arena = hazeArena();
+    // 倒された分身の判定
+    for (const c of mg.clones) {
+      if (c.hazeHandled) continue;
+      if (c.hp > 0 && state.normalEnemies.includes(c)) continue;
+      c.hazeHandled = true;
+      if (c.hazeTrue) {
+        const rule = getHazeRule('haze_mirage') || {};
+        endHazeMirage(h, now, 'true', c);
+        hazeDamageBossDirect(Math.max(1, Number(rule.cloneHp || 1500)));
+        return;
+      }
+      // 偽物：即死弾を4発ばら撒いて消える
+      fireHazeLethalSpread(c.x, c.y);
+      removeHazeClone(c, 'shatter');
+      showHazeCallout('偽り', 'FALSE IMAGE', 'false');
+    }
+    if (now >= mg.endsAt) { endHazeMirage(h, now, 'timeout', mg.clones.find(c => c.hazeTrue && c.hp > 0)); return; }
+
+    const alive = mg.clones.filter(c => c.hp > 0 && c.el);
+    // 位置：散開 → 揺らぎ → 入れ替え
+    const t = now / 1000;
+    if (now < mg.spreadUntil) {
+      const k = 1 - Math.pow(1 - (now - mg.startedAt) / Math.max(1, mg.spreadUntil - mg.startedAt), 3);
+      alive.forEach(c => { c.x = c.fromX + (c.toX - c.fromX) * k; c.y = c.fromY + (c.toY - c.fromY) * k; });
+    } else {
+      if (!mg.revealShown) {
+        mg.revealShown = true;
+        const tc = alive.find(c => c.hazeTrue);
+        if (tc && arena) {
+          const eye = getHazeEyePos(tc.x, tc.y, tc.el);
+          const g = document.createElement('div');
+          g.className = 'haze-true-eye';
+          g.setAttribute('aria-hidden', 'true');
+          g.innerHTML = '<i></i><i></i><b></b>';
+          g.style.transform = `translate3d(${eye.x}px,${eye.y}px,0)`;
+          arena.appendChild(g);
+          setTimeout(() => g.remove(), 1000);
+        }
+      }
+      if (!mg.swap && now >= mg.shuffleAt && mg.swapsLeft > 0 && alive.length >= 2) {
+        const a = alive[Math.floor(Math.random() * alive.length)];
+        let b = a; while (b === a) b = alive[Math.floor(Math.random() * alive.length)];
+        mg.swap = { a, b, ax: a.toX, ay: a.toY, bx: b.toX, by: b.toY, startAt: now };
+        a.el.classList.add('haze-dashing'); b.el.classList.add('haze-dashing');
+      }
+      if (mg.swap) {
+        const sw = mg.swap;
+        const k0 = Math.min(1, (now - sw.startAt) / mg.swapMs);
+        const k = k0 < .5 ? 2 * k0 * k0 : 1 - Math.pow(-2 * k0 + 2, 2) / 2;
+        const lift = Math.sin(k * Math.PI) * 46;
+        sw.a.x = sw.ax + (sw.bx - sw.ax) * k; sw.a.y = sw.ay + (sw.by - sw.ay) * k - lift;
+        sw.b.x = sw.bx + (sw.ax - sw.bx) * k; sw.b.y = sw.by + (sw.ay - sw.by) * k + lift;
+        if (arena && now - Number(mg.lastGhostAt || 0) > 55) {
+          mg.lastGhostAt = now;
+          [sw.a, sw.b].forEach(c => {
+            if (!c.el || c.hp <= 0) return;
+            const g = document.createElement('img');
+            g.className = 'haze-dash-ghost';
+            g.src = c.el.getAttribute('src') || 'images/haze_battle.webp'; g.alt = '';
+            g.style.width = `${c.el.offsetWidth}px`;
+            g.style.transform = `translate3d(${c.x}px,${c.y}px,0) translate(-50%,-50%)`;
+            arena.appendChild(g);
+            setTimeout(() => g.remove(), 260);
+          });
+        }
+        if (k0 >= 1) {
+          [sw.a.toX, sw.b.toX] = [sw.bx, sw.ax]; [sw.a.toY, sw.b.toY] = [sw.by, sw.ay];
+          sw.a.el && sw.a.el.classList.remove('haze-dashing'); sw.b.el && sw.b.el.classList.remove('haze-dashing');
+          mg.swap = null; mg.swapsLeft -= 1; mg.shuffleAt = now + 70;
+        }
+      }
+      alive.forEach(c => {
+        if (mg.swap && (c === mg.swap.a || c === mg.swap.b)) return;
+        c.x += ((c.toX + Math.sin(t * 1.3 + c.hazeSeed) * 14) - c.x) * 0.18;
+        c.y += ((c.toY + Math.sin(t * 2.1 + c.hazeSeed) * 8) - c.y) * 0.18;
+      });
+      // 3体とも同じ弾を撃つ（見分けがつかないように）
+      if (!mg.swap && now >= mg.nextFireAt && mg.swapsLeft <= 0) {
+        mg.nextFireAt = now + 1500;
+        const aim = getEnemyAimPosition();
+        const speed = Number(BOSS.bulletSpeed || 236) * 0.92;
+        alive.forEach(c => {
+          const base = Math.atan2(aim.y - c.y, aim.x - c.x);
+          for (let i = -1; i <= 1; i++) {
+            const a = base + i * 0.22;
+            const b = makeProjectile('shooting-enemy-bullet haze-bullet', c.x, c.y + 18, Math.cos(a) * speed, Math.sin(a) * speed, Number(BOSS.bulletDamage || 185));
+            if (b) { b.attackElement = 'dark'; state.enemyBullets.push(b); }
+          }
+        });
+      }
+    }
+    alive.forEach(c => { positionUnit(c.el, c.x, c.y); positionMiniEnemyHp(c); });
+  }
+
+  // ---------------- ヘルフレイム＋残り火 ----------------
+  // ヘルフレイム：ボスを支点に、右上 → 下 → 左上 へ一度だけ薙ぐ線状レーザー（回避不可）
+  const HAZE_FLAME_A0 = -28 * Math.PI / 180;
+  const HAZE_FLAME_A1 = 208 * Math.PI / 180;
+  function getHazeFlameOrigin() {
+    return { x: state.boss.x, y: state.boss.y + 14 };
+  }
+  function startHazeHellflame(h, now, w, hh) {
+    const arena = hazeArena();
+    if (!arena) return;
+    const o = getHazeFlameOrigin();
+    const len = Math.hypot(w, hh) + 60;
+    const warn = document.createElement('div');
+    warn.className = 'haze-flame-warn';
+    warn.setAttribute('aria-hidden', 'true');
+    warn.style.transform = `translate3d(${o.x}px,${o.y}px,0)`;
+    warn.style.setProperty('--hfL', `${Math.round(len)}px`);
+    warn.style.setProperty('--hfA0', `${(HAZE_FLAME_A0 * 180 / Math.PI).toFixed(1)}deg`);
+    warn.innerHTML = '<i class="hfw-line"></i><i class="hfw-arc"></i><i class="hfw-charge"></i><i class="hfw-ring"></i>';
+    arena.appendChild(warn);
+    const beam = document.createElement('div');
+    beam.className = 'haze-flame';
+    beam.setAttribute('aria-hidden', 'true');
+    beam.style.width = `${Math.round(len)}px`;
+    beam.innerHTML = '<i class="hf-glow"></i><i class="hf-body"></i><i class="hf-sizzle"></i><i class="hf-core"></i><i class="hf-muzzle"></i>';
+    beam.style.visibility = 'hidden';
+    arena.appendChild(beam);
+    // ボスが少し前（下）へ出て、左右と頭上に回り込める隙間を作る。頭上はレーザーが通らない安全地帯
+    const bossEl = document.getElementById(BOSS_ID);
+    const bh = bossEl ? (bossEl.getBoundingClientRect().height || bossEl.offsetHeight) : 150;
+    // 頭上に自機1機ぶん＋余裕（約70px）が空く位置まで出る。出すぎない
+    const toY = Math.max(state.boss.y, Math.min(Math.max(state.boss.y + 50, 110 + bh * 0.5), state.boss.y + 110, hh * 0.38));
+    const toX = clamp(state.boss.x, w * 0.32, w * 0.68);
+    h.flame = {
+      len, warnEl: warn, beamEl: beam,
+      warnUntil: now + 1500,
+      sweepMs: 1900, startAt: 0, prevAng: HAZE_FLAME_A0, hit: false,
+      fromX: state.boss.x, fromY: state.boss.y, toX, toY, moveAt: now,
+    };
+    state.hazeFlameLockUntil = now + 1500 + 1900 + 400;
+    showHazeCallout('ヘルフレイム', 'HELL FLAME', 'flame');
+  }
+  function updateHazeHellflame(h, now, w, hh) {
+    if (h.flameReturn) {
+      const r = h.flameReturn;
+      const k = Math.min(1, (now - r.at) / 450);
+      const e = k * k * (3 - 2 * k);
+      state.boss.x = r.x0 + (r.x1 - r.x0) * e;
+      state.boss.y = r.y0 + (r.y1 - r.y0) * e;
+      if (k >= 1) h.flameReturn = null;
+    }
+    const f = h.flame;
+    if (!f) return;
+    // KO時の弾消しで炎が消えた場合は、その回のヘルフレイムを終える
+    if ((f.warnEl && !f.warnEl.isConnected) || (!f.warnEl && f.beamEl && !f.beamEl.isConnected)) {
+      if (f.warnEl) f.warnEl.remove();
+      if (f.beamEl) f.beamEl.remove();
+      document.getElementById(ROOT_ID)?.classList.remove('haze-flame-active');
+      h.flame = null;
+      h.flameReturn = { x0: state.boss.x, y0: state.boss.y, x1: f.fromX, y1: f.fromY, at: now };
+      state.hazeFlameLockUntil = now + 470;
+      h.nextFlameAt = now + 5000;
+      return;
+    }
+    // 予告の前半0.5秒で前へ出る
+    {
+      const mk = Math.min(1, (now - f.moveAt) / 500);
+      const e = 1 - Math.pow(1 - mk, 3);
+      state.boss.x = f.fromX + (f.toX - f.fromX) * e;
+      state.boss.y = f.fromY + (f.toY - f.fromY) * e;
+      state.hazeFlameLockUntil = Math.max(Number(state.hazeFlameLockUntil || 0), now + 200);
+    }
+    const o = getHazeFlameOrigin();
+    if (now < f.warnUntil) {
+      f.warnEl.style.transform = `translate3d(${o.x.toFixed(1)}px,${o.y.toFixed(1)}px,0)`;
+      return;
+    }
+    if (f.warnEl) {
+      f.warnEl.remove(); f.warnEl = null;
+      f.beamEl.style.visibility = '';
+      f.startAt = now;
+      hazeShake('big');
+      const root = document.getElementById(ROOT_ID);
+      if (root) root.classList.add('haze-flame-active');
+    }
+    const k0 = Math.min(1, (now - f.startAt) / f.sweepMs);
+    // 出だしと終わりだけ少し溜め、あとは一定速度でジリジリ薙ぐ
+    const k = k0 < .12 ? (k0 / .12) * (k0 / .12) * .06 : (k0 > .9 ? .94 + .06 * (1 - Math.pow(1 - (k0 - .9) / .1, 2)) : .06 + (k0 - .12) / .78 * .88);
+    const ang = HAZE_FLAME_A0 + (HAZE_FLAME_A1 - HAZE_FLAME_A0) * k;
+    f.beamEl.style.transform = `translate3d(${o.x.toFixed(1)}px,${o.y.toFixed(1)}px,0) rotate(${(ang * 180 / Math.PI).toFixed(2)}deg)`;
+    // 当たり判定：前フレーム→今フレームの間にレーザーが自機を横切ったか（すり抜け防止）
+    if (!f.hit) {
+      const px = state.player.x - o.x, py = state.player.y - o.y;
+      const dist = Math.hypot(px, py);
+      let pa = Math.atan2(py, px);
+      while (pa < HAZE_FLAME_A0 - Math.PI / 2) pa += Math.PI * 2;
+      while (pa > HAZE_FLAME_A0 + Math.PI * 1.5) pa -= Math.PI * 2;
+      const tol = Math.atan2(16, Math.max(1, dist));
+      if (dist < f.len && pa >= f.prevAng - tol && pa <= ang + tol) {
+        const rule = getHazeRule('haze_hellflame') || {};
+        if (hazeHitPlayer(now, Math.max(0, Number(rule.damageRate || 0.35)), true)) f.hit = true;
+      }
+    }
+    f.prevAng = ang;
+    if (k0 >= 1) {
+      f.beamEl.classList.add('is-ending');
+      const el = f.beamEl; setTimeout(() => el.remove(), 260);
+      const root = document.getElementById(ROOT_ID);
+      if (root) root.classList.remove('haze-flame-active');
+      h.flame = null;
+      // 元の位置へ0.45秒かけて戻る（その間も接触ダメージなし）
+      h.flameReturn = { x0: state.boss.x, y0: state.boss.y, x1: f.fromX, y1: f.fromY, at: now };
+      state.hazeFlameLockUntil = now + 470;
+      h.nextFlameAt = now + Math.max(6000, Number((getHazeRule('haze_hellflame') || {}).intervalMs || 15000));
+      h.nextArmAt = Math.max(h.nextArmAt, now + 1800);
+    }
+  }
+  function updateHazeEmbers(h, now) {
+    if (!h.embers.length) return;
+    const rule = getHazeRule('haze_hellflame') || {};
+    const keep = [];
+    for (const e of h.embers) {
+      if (e.el && !e.el.isConnected) continue; // KO時の弾消しで消えた残り火は判定も消す
+      if (now >= e.until) {
+        if (e.el) { e.el.classList.add('is-ending'); const el = e.el; setTimeout(() => el.remove(), 300); }
+        continue;
+      }
+      const inside = Math.hypot(state.player.x - e.x, state.player.y - e.y) < e.r + 8;
+      if (inside && !e.inside) hazeHitPlayer(now, Math.max(0, Number(rule.emberDamageRate || 0.10)), false); // 乗った瞬間だけ。燃焼なし
+      e.inside = inside;
+      keep.push(e);
+    }
+    h.embers = keep;
+  }
+
+  function clearHazeMechanics() {
+    document.querySelectorAll('.haze-arm,.haze-arm-warn,.haze-arm-impact,.haze-callout,.haze-eye-flash,.haze-true-eye,.haze-mirage-burst,.haze-clone-fade,.haze-dash-ghost,.haze-flame,.haze-flame-warn,.haze-ember,.haze-burn-aura')
+      .forEach(el => el.remove());
+    const root = document.getElementById(ROOT_ID);
+    if (root) root.classList.remove('haze-flame-active', 'haze-shake', 'haze-shake-big');
+    const bossEl = document.getElementById(BOSS_ID);
+    if (bossEl) bossEl.classList.remove('haze-boss-hidden', 'haze-boss-return');
+    if (state) state.hazeBossHideUntil = 0;
+  }
+
+  function updateHazeMechanics(now) {
+    if (!isHazeBattle() || !state.boss) return;
+    let h = state.haze;
+    if (!h) {
+      h = state.haze = {
+        arms: [], embers: [], mirage: null, flame: null,
+        nextArmAt: now + 3500, nextMirageAt: 0, nextFlameAt: 0, lastTs: now,
+      };
+    }
+    const dt = Math.max(0, now - Number(h.lastTs || now));
+    h.lastTs = now;
+    if (state.ended || state.finishing || !(state.boss.hp > 0)) { if (!h.cleared) { h.cleared = true; clearHazeMechanics(); } return; }
+    // 全体停止・登場演出の間は、ヘイズの時計も止める
+    if (isEntireEnemyActionLocked(now) || now < Number(state.bossStunUntil || 0) || state.phaseTransition) {
+      shiftPausedTimestamps(h, dt);
+      state.party.forEach(m => { if (m && Number(m.hazeBurnUntil || 0) > now) { m.hazeBurnUntil += dt; m.hazeBurnNextTickAt = Number(m.hazeBurnNextTickAt || 0) + dt; } });
+      return;
+    }
+    const arena = hazeArena();
+    if (!arena) return;
+    const { w, h: hh } = getArenaSizeFast();
+    const phase = Number(state.boss.phase || 1);
+    if (phase !== h.lastPhase) {
+      h.lastPhase = phase;
+      const mr = getHazeRule('haze_mirage'), fr = getHazeRule('haze_hellflame');
+      if (mr && phase >= Number(mr.fromPhase || 2) && !h.nextMirageAt) h.nextMirageAt = now + 6000;
+      if (fr && phase >= Number(fr.fromPhase || 3) && !h.nextFlameAt) h.nextFlameAt = now + 4500;
+      h.nextArmAt = Math.min(h.nextArmAt, now + 2500);
+    }
+
+    updateHazeBurn(now);
+    updateHazeEmbers(h, now);
+    updateHazeArms(h, now, arena, w, hh);
+    updateHazeHellflame(h, now, w, hh);
+    updateHazeMirage(h, now, w, hh);
+    if (state.koTransition) return;
+
+    const busy = !!(h.mirage || h.flame);
+    const mr = getHazeRule('haze_mirage');
+    if (!busy && mr && phase >= Number(mr.fromPhase || 2) && h.nextMirageAt && now >= h.nextMirageAt && !h.arms.length) {
+      if (getHazeGaugeRemaining() >= Math.max(1, Number(mr.cloneHp || 1500))) startHazeMirage(h, now, w, hh);
+      else h.nextMirageAt = now + 5000;
+      return;
+    }
+    const fr = getHazeRule('haze_hellflame');
+    if (!busy && fr && phase >= Number(fr.fromPhase || 3) && h.nextFlameAt && now >= h.nextFlameAt && !h.arms.length) {
+      startHazeHellflame(h, now, w, hh);
+      return;
+    }
+    if (!busy && getHazeRule('haze_arm') && now >= h.nextArmAt && !h.arms.length) queueHazeArmAttack(h, now, w, hh);
+  }
+
   function updateMemoryMechanics(now) {
+    updateHazeMechanics(now); // build1866
     updateMemoryJudgment(now);
     updateMemorySniper(now);
     updateMemoryArmorVisual(now);
@@ -37410,7 +38166,15 @@
     }
 
     // 生存していれば、命中したペンキの属性へ即時書き換え。
-    if (target.hp > 0) setCombatTargetElement(target, attackElement);
+    if (target.hp > 0) {
+      // build1871: 結界を持つ敵を塗ると、結界は消えずに「塗った色の結界」へ張り替わる。
+      // 例）闇の結界のボスを火で塗る → 火の結界（水か無属性でしか通らない）
+      if (hasAnyWeaknessBarrier(target)) {
+        target.paintBarrierElement = normalizeCombatElement(attackElement) || 'neutral';
+        target.lyuneBarrierRemoved = false;
+      }
+      setCombatTargetElement(target, attackElement);
+    }
     return appliedDamage;
   }
 
@@ -38636,7 +39400,7 @@
   //  時間停止 → 6色パレットから1色タップ（5秒で自動＝おすすめ色）
   //  → build1854: 敵を指でなぞって塗る。触れた敵へダメージ＋属性をその色に塗り替え。
   // ============================================================
-  const PALETTE_ELEMENTS = ['neutral', 'fire', 'aqua', 'wood', 'dark', 'light'];
+  const PALETTE_ELEMENTS = ['fire', 'aqua', 'wood', 'dark', 'light']; // build1873: 無色は選べない
   const PALETTE_LABEL = { neutral:'無', fire:'火', aqua:'水', wood:'木', dark:'闇', light:'光' };
   const PALETTE_EN = { neutral:'NEUTRAL', fire:'FIRE', aqua:'AQUA', wood:'WOOD', dark:'DARK', light:'LIGHT' };
 
@@ -38644,8 +39408,9 @@
   function getPaletteRecommendedElement() {
     const members = (state && Array.isArray(state.party) ? state.party : []).filter(Boolean);
     let best = 'neutral', bestScore = -Infinity;
+    const used = getPaletteUsedSet();
     PALETTE_ELEMENTS.forEach(el => {
-      if (el === 'neutral') return;
+      if (el === 'neutral' || used.has(el)) return;
       let score = 0;
       members.forEach(m => {
         const ch = getBattleCharacter(m.id) || {};
@@ -38654,7 +39419,21 @@
       });
       if (score > bestScore + 1e-6) { bestScore = score; best = el; }
     });
+    if (used.has(best)) best = PALETTE_ELEMENTS.find(el => !used.has(el)) || best;
     return best;
+  }
+  // build1872: クロエのインクは1色につき1ステージ1回（ゲージが変わっても戻らない）。
+  //  5色すべて使い切ったら、パレットを補充（全色リセット）する。
+  function getPaletteUsedSet() {
+    if (!state) return new Set();
+    if (!Array.isArray(state.paletteUsedElements)) state.paletteUsedElements = [];
+    if (PALETTE_ELEMENTS.every(el => state.paletteUsedElements.includes(el))) state.paletteUsedElements = [];
+    return new Set(state.paletteUsedElements);
+  }
+  function markPaletteUsed(el) {
+    if (!state) return;
+    if (!Array.isArray(state.paletteUsedElements)) state.paletteUsedElements = [];
+    if (!state.paletteUsedElements.includes(el)) state.paletteUsedElements.push(el);
   }
 
   function getPalettePaintTargets() {
@@ -38688,6 +39467,7 @@
 
     root.classList.add('arno-slash-time-stop');
     root.querySelectorAll('.shooting-arno-slash-overlay').forEach(el => el.remove());
+    const usedSet = getPaletteUsedSet();
     const recommended = getPaletteRecommendedElement();
     const overlay = document.createElement('div');
     overlay.className = 'shooting-arno-slash-overlay shooting-palette-overlay';
@@ -38700,9 +39480,10 @@
         PALETTE_ELEMENTS.map(el => {
           const v = getBombElementVisual(el);
           const icon = getCombatElementIcon(el);
-          return `<button type="button" class="pal-btn element-${el}" data-el="${el}" style="--pal-rgb:${v.rgb}">` +
-            `<span class="pal-blob">${icon ? `<img src="${icon}" alt="">` : ''}</span>` +
-            `<span class="pal-name">${PALETTE_LABEL[el]}<small>${PALETTE_EN[el]}</small></span>` +
+          const isUsed = usedSet.has(el);
+          return `<button type="button" class="pal-btn element-${el}${isUsed ? ' is-used' : ''}" data-el="${el}" style="--pal-rgb:${v.rgb}"${isUsed ? ' disabled aria-disabled="true"' : ''}>` +
+            `<span class="pal-blob">${(!isUsed && icon) ? `<img src="${icon}" alt="">` : ''}</span>` +
+            `<span class="pal-name">${isUsed ? '空' : PALETTE_LABEL[el]}<small>${isUsed ? 'EMPTY' : PALETTE_EN[el]}</small></span>` +
             '</button>';
         }).join('') +
         '</div>' +
@@ -38726,14 +39507,20 @@
     let chosen = false;
     const choose = el => {
       if (chosen || !state || !state.arnoSlashActive) return;
+      if (usedSet.has(el)) return; // 使用済みの色は選べない
       chosen = true;
+      markPaletteUsed(el);
       clearTimeout(state.arnoSlashTimerId);
       overlay.classList.add('is-chosen');
       overlay.querySelectorAll('.pal-btn').forEach(b => b.classList.toggle('is-picked', b.dataset.el === el));
       setTimeout(() => startPaletteFingerPaint(c, el), 260); // build1854: なぞって塗る
     };
     overlay.querySelectorAll('.pal-btn').forEach(btn => {
-      btn.addEventListener('pointerdown', ev => { ev.preventDefault(); ev.stopPropagation(); choose(btn.dataset.el); }, { passive:false });
+      btn.addEventListener('pointerdown', ev => {
+        ev.preventDefault(); ev.stopPropagation();
+        if (btn.classList.contains('is-used')) { btn.classList.remove('is-denied'); void btn.offsetWidth; btn.classList.add('is-denied'); return; }
+        choose(btn.dataset.el);
+      }, { passive:false });
     });
     overlay.addEventListener('pointerdown', ev => { ev.preventDefault(); ev.stopPropagation(); }, { passive:false });
 

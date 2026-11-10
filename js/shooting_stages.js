@@ -2127,6 +2127,10 @@
     sniper: Object.freeze({ name: '狙撃', desc: '定期的に自機を照準で捉え、即死の狙撃を撃ち込む。' }),
     armor: Object.freeze({ name: '装甲', desc: 'ボスへの1HITのダメージが一定未満なら弾かれる（threshold）。cut 指定時は1HITごとに一定値を差し引く。' }),
     element_barrier: Object.freeze({ name: '属性結界', desc: 'ボスにも取り巻きにも結界。弱点属性の攻撃しか通らない（無属性は等倍で通る）。includeAdds:false で取り巻きは対象外。' }),
+    haze_arm: Object.freeze({ name: '怪腕', desc: '予告線の先へ怪腕が伸びる。触れると燃焼（ATK−50%・毎秒HP2%）' }),
+    haze_burn: Object.freeze({ name: '燃焼', desc: 'ATK−50%、毎秒 最大HPの2%のダメージ（6秒）。燃えたキャラを交代させれば逃れられる。' }),
+    haze_mirage: Object.freeze({ name: '陽炎', desc: '3体に分裂。目が光った本体を倒せ。偽物は即死弾を散らす' }),
+    haze_hellflame: Object.freeze({ name: 'ヘルフレイム', desc: 'ボスから闇のレーザーが盤面を薙ぎ払う。命中でHP35%＋燃焼' }),
   });
   const MEMORY_BATTLE_STAGES = Object.freeze([
     Object.freeze({
@@ -2162,8 +2166,25 @@
       ]),
       extra: Object.freeze({ bossElement: 'wood', enemyElement: 'wood' }),
     }),
+    // build1866: 04 ヘイズ（闇）。画面上は「03」。光しか通らない＋怪腕・燃焼・陽炎・ヘルフレイム。
+    Object.freeze({
+      no: 4, bossKey: 'haze', bossName: 'ヘイズ', title: '揺らめく怪腕の記憶',
+      panelImage: 'images/haze_panel.webp',
+      enemyId: SHOOTING_ENEMY_ID.MEMORY_HAZE, element: 'dark',
+      background: 'images/battle_bg_haze.webp',
+      bossGaugeHps: Object.freeze([7000, 8000, 10000]),
+      timeLimitSeconds: 180,
+      rules: Object.freeze([
+        Object.freeze({ type: 'element_barrier' }),
+        Object.freeze({ type: 'haze_arm', damageRate: 0.25, warnMs: 600, holdMs: 400 }),
+        Object.freeze({ type: 'haze_burn', durationMs: 6000, atkRate: 0.5, dotRate: 0.02 }),
+        Object.freeze({ type: 'haze_mirage', fromPhase: 2, intervalMs: 25000, cloneHp: 1500, timeoutMs: 20000 }),
+        Object.freeze({ type: 'haze_hellflame', fromPhase: 3, intervalMs: 15000, damageRate: 0.35 }),
+      ]),
+      extra: Object.freeze({ bossElement: 'dark', enemyElement: 'dark', introImage: 'images/haze_battle_start.webp', bulletQuantityMultiplier: 0.70 }),
+    }),
   ]);
-  const MEMORY_BATTLE_SLOT_COUNT = 2; // build1824: UIはリヴィア / テストのみ（内部番号 01 / 03 を維持）
+  const MEMORY_BATTLE_SLOT_COUNT = 3; // build1866: UIはリヴィア / テスト / ヘイズ（内部番号 01 / 03 / 04、表示は 01 / 02 / 03）
   const memoryBattleStageCache = new Map();
   function getMemoryBattleStageDef(no) {
     const n = Math.floor(Number(no) || 0);

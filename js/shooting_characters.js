@@ -2556,8 +2556,8 @@
     id: CHARACTER_ID.CHLOE,
     effectKey: 'chloe',
     label: 'BOMB / ELEMENT PAINT',
-    description: '光属性のBOMB M。ULT「虹のかかる世界」は時間を止めてパレットから色を選び、敵を指でなぞってその色に塗り替える。',
-    ultDescription: '時間を停止し、6色（無・火・水・木・闇・光）のパレットから1色を選ぶ（5秒以内に選ばないと、パーティに有利な色を自動選択）。4秒間、敵を指でなぞるとその色に塗られ、ATK×3.0のダメージを与えて属性を塗り替える（1体1回・インクが尽きると終了）。',
+    description: '光属性のBOMB M。ULT「虹のかかる世界」は時間を止めてパレットから色を選び、敵を指でなぞってその色に塗り替える。各色は1ステージ1回まで。',
+    ultDescription: '時間を停止し、5色（火・水・木・闇・光）のパレットから1色を選ぶ（5秒以内に選ばないと、パーティに有利な色を自動選択）。各色の絵の具は1ステージ1回まで。4秒間、敵を指でなぞるとその色に塗られ、ATK×3.0のダメージを与えて属性を塗り替える（1体1回・インクが尽きると終了）。',
     ultName: '虹のかかる世界',
     ultType: 'painter_palette', // build1853: 旧 painter_rainbow_world（6色扇状）
     paletteChooseMs: 5000, palettePaintMs: 4000, paletteInkPx: 1100, paletteBrushRadius: 22, palettePaintAtkMultiplier: 3.0, // build1854: なぞり塗り
@@ -3229,7 +3229,7 @@
         return CLEAR + '前方に紋様を設置。敵が触れると敵全体に落雷のダメージ。威力は' + sec(c.haoTriggerUpgradeMs, 2000) + 'ごとに成長（ATK×' + m.map(v => fmtNum(v)).join('→') + '）。' + note('設置後' + sec(c.haoTriggerSafetyMs, 500) + 'は反応しない');
       }
       case 'painter_palette':
-        return '時間を停止し、6色のパレットから1色を選ぶ（' + sec(c.paletteChooseMs, 5000) + '以内に選ばないと、パーティに有利な色を自動選択）。' + sec(c.palettePaintMs, 4000) + '間、敵を指でなぞるとその色に塗られ、' + atk(c.palettePaintAtkMultiplier, 3.0) + 'のダメージを与えて属性を塗り替える。' + note('1体につき1回・インクが尽きると終了');
+        return '時間を停止し、5色（火・水・木・闇・光）のパレットから1色を選ぶ（' + sec(c.paletteChooseMs, 5000) + '以内に選ばないと、パーティに有利な色を自動選択）。各色の絵の具は1ステージ1回まで。' + sec(c.palettePaintMs, 4000) + '間、敵を指でなぞるとその色に塗られ、' + atk(c.palettePaintAtkMultiplier, 3.0) + 'のダメージを与えて属性を塗り替える。' + note('1体につき1回・インクが尽きると終了');
       case 'painter_rainbow_world':
       case 'painter_element_spread':
         return '6属性の弾を同時に発射。弾は敵を貫通し、命中ごとに' + atk(c.paintSpreadDamageAtkMultiplier, 1.75) + 'のダメージを与え、敵の属性をその弾の属性に変える。';
