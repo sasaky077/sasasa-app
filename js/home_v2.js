@@ -127,6 +127,9 @@
       window.updateMainUI.__hv2 = true;
     }
     setInterval(function(){ if (document.documentElement.classList.contains('hv2-home')) refresh(false); }, 1500);
+    // Update immediately after a saved outfit change and after loading owned outfits.
+    window.addEventListener('zeraphia:skin-changed', function(){ refresh(false); });
+    window.addEventListener('zeraphia:skins-loaded', function(){ refresh(false); });
   }
 
   function forward(sel){
@@ -201,7 +204,12 @@
   var artToken = 0;
   function loadPartnerArt(img, p){
     var token = ++artToken;
-    var homeArt = 'images/chara_' + String(p.id).padStart(2, '0') + '_home.webp';
+    var number = String(p.id).padStart(2, '0');
+    var homeArt = 'images/chara_' + number + '_home.webp';
+    var skins = window.CharacterSkins;
+    var skinId = skins && typeof skins.getEquippedSkinId === 'function' ? skins.getEquippedSkinId(p.id) : 'default';
+    var skin = skinId !== 'default' && skins && typeof skins.getSkin === 'function' ? skins.getSkin(p.id, skinId) : null;
+    var hasSkin = !!(skin && skins && typeof skins.isOwned === 'function' && skins.isOwned(p.id, skinId));
     img.classList.add('is-loading');
     var apply = function(src, isHome){
       if (token !== artToken) return;
@@ -220,9 +228,29 @@
       t.onerror = ng;
       t.src = src;
     };
-    tryLoad(homeArt,
-      function(src){ apply(src, true); },
-      function(){ if (p.homeImage) tryLoad(p.homeImage, function(src){ apply(src, false); }, function(){ apply(p.homeImage, false); }); });
+    // Build 1897: outfit artwork takes precedence, with safe fallbacks for older skin assets.
+    // "_b_home" is the new home-v2 portrait; "_b_cut" is the existing skin asset.
+    var candidates = [];
+    if (hasSkin) {
+      if (skinId === 'limited_01') candidates.push(['images/chara_' + number + '_b_home.webp', true]);
+      if (skin.home) candidates.push([skin.home, false]);
+      if (skin.img) candidates.push([skin.img, false]);
+    }
+    candidates.push([homeArt, true]);
+    if (p.homeImage) candidates.push([p.homeImage, false]);
+    var seen = Object.create(null);
+    function tryNext(){
+      if (token !== artToken) return;
+      while (candidates.length) {
+        var entry = candidates.shift();
+        if (!entry[0] || seen[entry[0]]) continue;
+        seen[entry[0]] = true;
+        tryLoad(entry[0], function(src){ apply(src, entry[1]); }, tryNext);
+        return;
+      }
+      img.classList.remove('is-loading');
+    }
+    tryNext();
   }
 
   // build1895: 吹き出しの名前は枠の上のタブ（枠画像の左〜約52%）に収める。長い名前は字間→文字サイズの順に縮める
@@ -260,7 +288,10 @@
     SIDE.forEach(function(s, i){ var b = root.querySelector('.hv2-sbtn[data-i="' + i + '"]'); if (b) syncButton(b, s); });
     RIGHT.forEach(function(s, i){ var b = root.querySelector('.hv2-rbtn[data-r="' + i + '"]'); if (b) syncButton(b, s); });
     var p = partner();
-    var key = String(p.id) + '|' + (p.homeImage || '');
+    var skins = window.CharacterSkins;
+    var skinId = skins && typeof skins.getEquippedSkinId === 'function' ? skins.getEquippedSkinId(p.id) : 'default';
+    var skinOwned = skinId !== 'default' && skins && typeof skins.isOwned === 'function' && skins.isOwned(p.id, skinId);
+    var key = String(p.id) + '|' + (p.homeImage || '') + '|' + (skinOwned ? skinId : 'default');
     if (force || key !== lastPartner) {
       lastPartner = key;
       var img = root.querySelector('.hv2-chara');
