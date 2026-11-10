@@ -12,6 +12,14 @@
 
 window.HOME_EVENT_BANNERS = [
   {
+    // build1891: 記憶決戦03「ヘイズ」— 記憶決戦の一覧を開いてヘイズのカードを光らせる
+    id: 'event_memory_haze',
+    img: 'images/home_banner_memory_haze.webp',
+    alt: '記憶決戦 新BOSS ヘイズに挑め',
+    actionName: 'openMemoryBattleHaze',
+    hidden: false
+  },
+  {
     id: 'event_faceless',
     img: 'images/home_banner_faceless_v1.webp',
     alt: 'フェイスレス降臨',
