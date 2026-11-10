@@ -275,3 +275,11 @@ html.home-v2 body #bottom-nav-shared.bottom-nav .bottom-nav-item:not(.active) im
   #home-v2 .hv2-right{top:calc(100px + env(safe-area-inset-top,0px))}
   #home-v2 .hv2-talk{top:calc(100px + 3 * 42px + 2 * 5px + 10px + env(safe-area-inset-top,0px))}
 }
+/* build1889: 立ち絵の切り替え中は隠す（前のキャラ・誤った位置を見せない） */
+#home-v2 .hv2-chara{transition:opacity .25s ease}
+#home-v2 .hv2-chara.is-loading{opacity:0;transition:none}
+#home-v2 .hv2-chara:not(.is-home-art):not(.is-cut-art){opacity:0}
+/* build1890: セリフの切り替えは文字だけをじわっと */
+#home-v2 .hv2-talk p{transition:opacity .7s ease,filter .7s ease}
+#home-v2 .hv2-talk p.is-fading{opacity:0;filter:blur(1.5px)}
+#home-v2 .hv2-talk.is-swap{animation:none}

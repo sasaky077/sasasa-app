@@ -120,6 +120,12 @@
     new MutationObserver(syncHome).observe(main, { attributes:true, attributeFilter:['class'] });
     syncHome();
     refresh(true);
+    // お気に入りキャラの変更（updateMainUI）をすぐ反映
+    if (typeof window.updateMainUI === 'function' && !window.updateMainUI.__hv2) {
+      var orig = window.updateMainUI;
+      window.updateMainUI = function(){ var r = orig.apply(this, arguments); try { refresh(false); } catch(_){} return r; };
+      window.updateMainUI.__hv2 = true;
+    }
     setInterval(function(){ if (document.documentElement.classList.contains('hv2-home')) refresh(false); }, 1500);
   }
 
@@ -162,14 +168,61 @@
     var list = all[Number(id)] || all.DEFAULT || LINES;
     return (Array.isArray(list) && list.length) ? list : LINES;
   }
+  // build1890: セリフは文字だけ じわっとフェードアウト → 差し替え → フェードイン。
+  //  ホーム表示中は一定間隔で自動送り。タップした時はその場で送り、自動送りのタイマーを数え直す。
+  var LINE_AUTO_MS = 9000, LINE_FADE_MS = 700;
+  var lineTimer = 0, lineFading = false;
   function nextLine(){
-    if (!root || !lineSet.length) return;
-    lineIdx = (lineIdx + 1) % lineSet.length;
-    var talk = root.querySelector('.hv2-talk');
+    if (!root || !lineSet.length || lineFading) return;
     var pp = root.querySelector('.hv2-talk p');
-    if (!talk || !pp) return;
-    talk.classList.remove('is-swap'); void talk.offsetWidth; talk.classList.add('is-swap');
-    pp.innerHTML = lineSet[lineIdx];
+    if (!pp) return;
+    lineFading = true;
+    pp.classList.add('is-fading');
+    setTimeout(function(){
+      lineIdx = (lineIdx + 1) % lineSet.length;
+      pp.innerHTML = lineSet[lineIdx];
+      pp.classList.remove('is-fading');
+      setTimeout(function(){ lineFading = false; }, LINE_FADE_MS);
+    }, LINE_FADE_MS);
+    scheduleAutoLine();
+  }
+  function scheduleAutoLine(){
+    clearTimeout(lineTimer);
+    lineTimer = setTimeout(function(){
+      if (document.documentElement.classList.contains('hv2-home') && !document.hidden) nextLine();
+      else scheduleAutoLine();
+    }, LINE_AUTO_MS);
+  }
+
+
+  // build1889: 立ち絵は裏で読み込みを終えてから、画像と配置クラスを同時に切り替える。
+  //  以前は src を差し替えた瞬間に配置クラスを外していたため、新しい画像が届くまで
+  //  「前のキャラ」が「中央寄せ」で見えていた。読み込み中は前の絵をフェードアウトして隠す。
+  var artToken = 0;
+  function loadPartnerArt(img, p){
+    var token = ++artToken;
+    var homeArt = 'images/chara_' + String(p.id).padStart(2, '0') + '_home.webp';
+    img.classList.add('is-loading');
+    var apply = function(src, isHome){
+      if (token !== artToken) return;
+      img.classList.toggle('is-home-art', isHome);
+      img.classList.toggle('is-cut-art', !isHome);
+      img.src = src;
+      requestAnimationFrame(function(){ if (token === artToken) img.classList.remove('is-loading'); });
+    };
+    var tryLoad = function(src, ok, ng){
+      var t = new Image();
+      t.decoding = 'async';
+      t.onload = function(){
+        var done = function(){ ok(src); };
+        if (t.decode) t.decode().then(done, done); else done();
+      };
+      t.onerror = ng;
+      t.src = src;
+    };
+    tryLoad(homeArt,
+      function(src){ apply(src, true); },
+      function(){ if (p.homeImage) tryLoad(p.homeImage, function(src){ apply(src, false); }, function(){ apply(p.homeImage, false); }); });
   }
 
   var lastPartner = '';
@@ -182,27 +235,14 @@
     if (force || key !== lastPartner) {
       lastPartner = key;
       var img = root.querySelector('.hv2-chara');
-      if (img) {
-        // build1879: ホーム専用の立ち絵 chara_XX_home.webp を優先。無いキャラは従来の chara_XX_cut.webp
-        var homeArt = 'images/chara_' + String(p.id).padStart(2, '0') + '_home.webp';
-        img.classList.remove('is-home-art', 'is-cut-art');
-        img.onerror = function(){
-          img.onerror = null;
-          img.classList.remove('is-home-art'); img.classList.add('is-cut-art');
-          if (p.homeImage) img.src = p.homeImage;
-        };
-        img.onload = function(){
-          if (img.src.indexOf('_home.webp') < 0) return;
-          img.classList.add('is-home-art');
-        };
-        img.src = homeArt;
-      }
+      if (img) loadPartnerArt(img, p);
       var h4 = root.querySelector('.hv2-talk h4');
       var pp = root.querySelector('.hv2-talk p');
       if (h4) h4.textContent = p.name || '';
       lineSet = getLines(p.id);
       lineIdx = Math.floor(Math.random() * lineSet.length);
       if (pp) pp.innerHTML = lineSet[lineIdx];
+      scheduleAutoLine();
       var fimg = document.querySelector('#global-user-frame .hv2-face img');
       if (fimg && p.panelImage) fimg.src = p.panelImage;
     }
