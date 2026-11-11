@@ -3,7 +3,8 @@
 // remain exclusively owned by shooting_core.js / ResonanceTower.
 (function(){
   'use strict';
-  const state = { query:'', elements:[], rarities:[], shotTypes:[], pierce:'all', sort:'id' }; // build1741: pierce='all'|'yes'|'no'
+  const state = { query:'', elements:[], rarities:[], shotTypes:[], pierce:'all', favOnly:false, sort:'id' }; // build1914: favOnly=お気に入り（★）のみ // build1741: pierce='all'|'yes'|'no'
+  const isFav=id=>!!(window.CharaFavorites&&window.CharaFavorites.has(id)); // build1914
   const pierces=id=>{const SC=window.ShootingCharacters;return !!(SC&&typeof SC.isShootingCharacterPiercing==='function'&&SC.isShootingCharacterPiercing(id));};
   const elementOrder = ['fire','aqua','wood','light','dark'];
   const elementLabels = {fire:'FIRE',aqua:'AQUA',wood:'WOOD',light:'LIGHT',dark:'DARK'};
@@ -23,7 +24,7 @@
   function shot(value){const s=String(value||'').toLowerCase();return shotAliases[s]||s;}
   function getData(id){return window.ShootingCharacters?.SHOOTING_CHARACTERS?.[id]||{};}
   function currentRoster(){return document.querySelector('#shooting-character-select .shooting-party-roster');}
-  function isActive(){return state.query.trim()||state.elements.length||state.rarities.length||state.shotTypes.length||state.pierce!=='all'||state.sort!=='id';}
+  function isActive(){return state.query.trim()||state.elements.length||state.rarities.length||state.shotTypes.length||state.pierce!=='all'||state.favOnly||state.sort!=='id';}
   function ownedLevel(id){
     const data=window.ShootingCharacters?.getOwnedShootingInstance?.(id);
     return Math.max(0,Number(data?.characterLevel??data?.character_level??0)||0);
@@ -44,7 +45,13 @@
         (!state.elements.length||state.elements.includes(elem(c.element)))&&
         (!state.rarities.length||state.rarities.includes(rarity(c.rarity)))&&
         (!state.shotTypes.length||state.shotTypes.includes(shot(c.shotType||c.mainShot?.type)))&&
-        (state.pierce==='all'||(state.pierce==='yes')===pierces(id));
+        (state.pierce==='all'||(state.pierce==='yes')===pierces(id))&&
+        (!state.favOnly||isFav(id));
+      // build1914: お気に入りの★（パネル右上・控えめ）
+      const fav=isFav(id);
+      let star=wrap.querySelector(':scope > .zpf-fav-star');
+      if(fav&&!star){star=document.createElement('span');star.className='zpf-fav-star';star.setAttribute('aria-label','お気に入り');star.textContent='★';wrap.appendChild(star);}
+      else if(!fav&&star)star.remove();
       wrap.classList.toggle('zpf-filtered-out',!ok);
       wrap.setAttribute('aria-hidden',ok?'false':'true');
       if(ok)visible++;
@@ -120,6 +127,7 @@
     const rarities=['all','sr','r'].map(k=>chip('rarities',k,k==='all'?'すべて':k.toUpperCase())).join('');
     const shots=['all',...shotOrder].map(k=>chip('shotTypes',k,k==='all'?'すべて':shotLabels[k],k==='all'?'':'images/shot_'+(k==='lightning'?'plasma':k)+'.webp')).join('');
     const pierceChips=['all','yes','no'].map(k=>`<button type="button" class="zcf-choice${state.pierce===k?' is-selected':''}" data-pierce="${k}" aria-pressed="${state.pierce===k}"><span class="zcf-choice-label">${{all:'すべて',yes:'貫通あり',no:'貫通なし'}[k]}</span></button>`).join('');
+    const favChips=[['all','すべて'],['only','お気に入りのみ']].map(([k,label])=>{const on=k==='only'?state.favOnly:!state.favOnly;return `<button type="button" class="zcf-choice${on?' is-selected':''}${k==='only'?' zcf-fav-only':''}" data-fav="${k}" aria-pressed="${on}">${k==='only'?'<i class="zcf-fav-star" aria-hidden="true">★</i>':''}<span class="zcf-choice-label">${label}</span></button>`;}).join('');
     const sorts=['id','element','rarity','level'].map(k=>{
       const label={id:'ID',element:'属性',rarity:'レアリティ',level:'レベル'}[k];
       return `<button type="button" class="zcf-choice${state.sort===k?' is-selected':''}" data-sort="${k}" aria-pressed="${state.sort===k}"><span class="zcf-choice-label">${label}</span></button>`;
@@ -128,6 +136,7 @@
       <header class="zcf-header"><h2 class="zcf-title">絞り込み</h2><span class="zcf-heading-rule" aria-hidden="true">✦</span>
       <button type="button" class="zcf-close" data-close aria-label="閉じる"><img src="images/button_close.webp" alt=""></button></header>
       <div class="zcf-scroll">
+        <section class="zcf-section"><h3 class="zcf-section-title">お気に入り</h3><div class="zcf-grid zcf-grid-fav">${favChips}</div></section>
         <section class="zcf-section"><h3 class="zcf-section-title">属性</h3><div class="zcf-grid zcf-grid-attr-top">${attrTop}</div><div class="zcf-grid zcf-grid-attr-bottom">${attrBottom}</div></section>
         <section class="zcf-section"><h3 class="zcf-section-title">レアリティ</h3><div class="zcf-grid zcf-grid-rarity">${rarities}</div></section>
         <section class="zcf-section"><h3 class="zcf-section-title">ショットタイプ</h3><div class="zcf-grid zcf-grid-shots">${shots}</div></section>
@@ -140,7 +149,7 @@
       if(event.target===layer||target?.hasAttribute('data-close')){closeDialog();return;}
       if(!target)return;
       if(target.hasAttribute('data-reset')){
-        state.elements=[];state.rarities=[];state.shotTypes=[];state.pierce='all';state.sort='id';state.query='';
+        state.elements=[];state.rarities=[];state.shotTypes=[];state.pierce='all';state.favOnly=false;state.sort='id';state.query='';
         apply();closeDialog();syncToolbar();openDialog();return;
       }
       const group=target.dataset.group,key=target.dataset.key;
@@ -151,12 +160,14 @@
         else state[group]=values.concat(key);
       }else if(target.dataset.sort)state.sort=target.dataset.sort;
       else if(target.dataset.pierce){const v=target.dataset.pierce;state.pierce=(v!=='all'&&state.pierce===v)?'all':v;}
+      else if(target.dataset.fav)state.favOnly=target.dataset.fav==='only';
       else return;
       layer.querySelectorAll('[data-group]').forEach(b=>{
         const active=b.dataset.key==='all'?!state[b.dataset.group].length:state[b.dataset.group].includes(b.dataset.key);
         b.classList.toggle('is-selected',active);b.setAttribute('aria-pressed',String(active));
       });
       layer.querySelectorAll('[data-sort]').forEach(b=>{const active=b.dataset.sort===state.sort;b.classList.toggle('is-selected',active);b.setAttribute('aria-pressed',String(active));});
+      layer.querySelectorAll('[data-fav]').forEach(b=>{const active=(b.dataset.fav==='only')===!!state.favOnly;b.classList.toggle('is-selected',active);b.setAttribute('aria-pressed',String(active));});
       layer.querySelectorAll('[data-pierce]').forEach(b=>{const active=b.dataset.pierce===state.pierce;b.classList.toggle('is-selected',active);b.setAttribute('aria-pressed',String(active));});
       syncToolbar();
     });
@@ -167,7 +178,7 @@
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('shooting-party-filter-layer')){e.stopPropagation();closeDialog();}});
   function reset(){
     closeDialog();
-    state.query='';state.elements=[];state.rarities=[];state.shotTypes=[];state.pierce='all';state.sort='id';
+    state.query='';state.elements=[];state.rarities=[];state.shotTypes=[];state.pierce='all';state.favOnly=false;state.sort='id';
     const input=document.querySelector('#zpf-filter-toolbar input');
     if(input&&document.activeElement===input)input.blur();
     syncToolbar();
