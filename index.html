@@ -15586,6 +15586,7 @@ function showTenResult(results){
     rarities: [],
     shotTypes: [],
     pierce: 'all', // build1741: 'all' | 'yes'（貫通あり） | 'no'（貫通なし）
+    favOnly: false, // build1910: お気に入り（★）のみ
     sort: 'id',
     query: ''
   };
@@ -15600,6 +15601,7 @@ function showTenResult(results){
     zukanIndexFilter.rarities = [];
     zukanIndexFilter.shotTypes = [];
     zukanIndexFilter.pierce = 'all';
+    zukanIndexFilter.favOnly = false;
     zukanIndexFilter.sort = 'id';
     isZukanFilterMenuOpen = false;
     isZukanNameSearchOpen = false;
@@ -15748,6 +15750,7 @@ function showTenResult(results){
       (Array.isArray(zukanIndexFilter.rarities) && zukanIndexFilter.rarities.length > 0) ||
       (Array.isArray(zukanIndexFilter.shotTypes) && zukanIndexFilter.shotTypes.length > 0) ||
       (zukanIndexFilter.pierce === 'yes' || zukanIndexFilter.pierce === 'no') ||
+      !!zukanIndexFilter.favOnly ||
       zukanIndexFilter.sort !== 'id';
   }
 
@@ -15803,6 +15806,7 @@ function showTenResult(results){
     var selectedShotTypes = Array.isArray(zukanIndexFilter.shotTypes) ? zukanIndexFilter.shotTypes : [];
     var list = (chars || []).filter(function(chara){
       if(!chara) return false;
+      if(zukanIndexFilter.favOnly && !(window.CharaFavorites && window.CharaFavorites.has(chara.id))) return false;
       if(selectedElements.length && selectedElements.indexOf(normalizeZukanElement(chara.element)) < 0) return false;
       if(selectedRarities.length && selectedRarities.indexOf(normalizeZukanRarity(chara.rarity)) < 0) return false;
       if(selectedShotTypes.length && selectedShotTypes.indexOf(getZukanCharacterShotType(chara)) < 0) return false;
@@ -15878,6 +15882,11 @@ function showTenResult(results){
       button('貫通あり', pierceNow === 'yes', "setZukanPierceFilter('yes')", 'zcf-pierce-yes'),
       button('貫通なし', pierceNow === 'no', "setZukanPierceFilter('no')", 'zcf-pierce-no')
     ].join('');
+    // build1910: お気に入り（★）
+    var fav = [
+      button('すべて', !zukanIndexFilter.favOnly, "setZukanFavFilter(false)", 'zcf-fav-all'),
+      button('お気に入りのみ', !!zukanIndexFilter.favOnly, "setZukanFavFilter(true)", 'zcf-fav-only', '<i class="zcf-fav-star" aria-hidden="true">★</i>')
+    ].join('');
     var sorts = [
       button('ID', zukanIndexFilter.sort === 'id', "setZukanSort('id')", 'zcf-sort-id'),
       button('属性', zukanIndexFilter.sort === 'element', "setZukanSort('element')", 'zcf-sort-element'),
@@ -15890,6 +15899,8 @@ function showTenResult(results){
           '<span class="zcf-heading-rule" aria-hidden="true">✦</span>' +
           '<button type="button" class="zcf-close" onclick="closeZukanFilterMenu()" aria-label="絞り込みを閉じる"><img src="images/button_close.webp" width="38" height="38" alt="" draggable="false"></button></div>' +
         '<div class="zcf-scroll">' +
+          '<section class="zcf-section"><h3 class="zcf-section-title">お気に入り</h3>' +
+            '<div class="zcf-grid zcf-grid-fav">' + fav + '</div></section>' +
           '<section class="zcf-section"><h3 class="zcf-section-title">属性</h3>' +
             '<div class="zcf-grid zcf-grid-attr-top">' + attrTop + '</div>' +
             '<div class="zcf-grid zcf-grid-attr-bottom">' + attrBottom + '</div></section>' +
@@ -15997,6 +16008,14 @@ function showTenResult(results){
     renderZukanFilterMenu();
   }
 
+  // build1910: お気に入りのみ表示
+  function setZukanFavFilter(on){
+    zukanIndexFilter.favOnly = !!on;
+    renderBox();
+    renderZukanFilterMenu();
+  }
+  window.setZukanFavFilter = setZukanFavFilter;
+
   function setZukanSort(value){
     zukanIndexFilter.sort = ['id','element','rarity','level'].indexOf(value) >= 0 ? value : 'id';
     renderBox();
@@ -16008,6 +16027,7 @@ function showTenResult(results){
     zukanIndexFilter.rarities = [];
     zukanIndexFilter.shotTypes = [];
     zukanIndexFilter.pierce = 'all';
+    zukanIndexFilter.favOnly = false;
     zukanIndexFilter.sort = 'id';
     renderBox();
     renderZukanFilterMenu();
@@ -16433,7 +16453,7 @@ function showTenResult(results){
       : ' disabled aria-disabled="true"';
 
     return '' +
-      '<button class="primoa-index-card zchar-card element-' + elementKey + ' rarity-' + rarityKey + ' ' + (owned ? 'is-owned' : 'is-unowned') + (canLimitBreak ? ' can-limit-break' : '') + (canLevelUp ? ' can-level-up' : '') + (isMaxLimitBreak ? ' is-max-limitbreak' : '') + '" type="button"' + interactionAttr + ' aria-label="' + detailEscapeHTML(name + '・' + rarityLabel + lbAria) + '">' +
+      '<button class="primoa-index-card zchar-card element-' + elementKey + ' rarity-' + rarityKey + ' ' + (owned ? 'is-owned' : 'is-unowned') + (canLimitBreak ? ' can-limit-break' : '') + (canLevelUp ? ' can-level-up' : '') + (isMaxLimitBreak ? ' is-max-limitbreak' : '') + (owned && window.CharaFavorites && window.CharaFavorites.has(chara.id) ? ' is-fav' : '') + '" type="button" data-chara-id="' + Number(chara.id) + '"' + interactionAttr + ' aria-label="' + detailEscapeHTML(name + '・' + rarityLabel + lbAria) + '">' +
         '<span class="zchar-portrait-shell">' +
           '<span class="primoa-index-image-wrap zchar-portrait zimg-placeholder">' +
             '<img class="primoa-index-image zchar-image zimg-lazy zimg-loading" ' +
@@ -16444,6 +16464,7 @@ function showTenResult(results){
           '</span>' +
           getElementCornerIconHTML(chara, 'primoa-index-element-icon zchar-attribute') +
           (canGrow ? '<span class="primoa-index-limitbreak-dot zchar-notice" aria-label="育成可能"></span>' : '') +
+          (owned ? '<span class="zchar-fav-star" aria-label="お気に入り">★</span>' : '') +
         '</span>' +
         '<span class="zchar-meta">' +
           '<span class="primoa-index-name zchar-level">' + (owned ? ('Lv.' + currentLevel) : '未所持') + '</span>' +
@@ -16781,6 +16802,7 @@ function showTenResult(results){
         (owned ? ('onclick="openPrimorImageFullscreen(' + chara.id + ')" role="button" aria-label="キャラ画像を全画面表示"') : '') + '>' +
         '<img class="box-carousel-img ' + (owned ? '' : 'primoa-detail-unowned-img') + '" src="' + panelSrc + '" alt="' + detailEscapeHTML(chara.name || '') + '">' +
         getPrimorRarityBadgeHTML(chara, displayData) +
+        (owned && window.CharaFavorites ? window.CharaFavorites.detailButtonHTML(chara.id) : '') +
         (owned ? '<div class="box-carousel-zoom-hint">キャラクター設定画面</div>' : '<div class="primoa-detail-unowned-label">未所持</div>') +
       '</div>';
 
@@ -20822,7 +20844,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1896-raid-defense40"></script>
+<script src="js/shooting_event.js?v=1911-gauge-heal-cap"></script>
 <script src="js/shooting_party_filter.js?v=1877-towa-dawn"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1813-tickets"></script>
@@ -22393,8 +22415,10 @@ html body #global-user-frame .hud-sweep-line-player::after{
 <!-- build1448: ホーム左右メニュー（アイコン＋文字＋金線） -->
 <script src="js/home_menu_redesign.js?v=1448-home-menu-icons"></script>
 <link rel="stylesheet" href="css/home_v2.css?v=1907-talk-wide">
+<link rel="stylesheet" href="css/chara_favorites.css?v=1910-fav">
 <script src="js/home_lines.js?v=1886-lines"></script>
 <script src="js/home_v2.js?v=1907-talk-wide"></script>
+<script src="js/chara_favorites.js?v=1910-fav"></script>
 <script src="js/notice_dot.js?v=1618-notice-dot"></script>
 
 <script id="sasaphia-root-scroll-guard-build752">

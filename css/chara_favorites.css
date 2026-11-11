@@ -1,0 +1,50 @@
+/* build1910 — キャラのお気に入り（★） */
+
+/* 一覧カード：右上に控えめな金の★（お気に入りの時だけ） */
+#box-grid .primoa-index-card .zchar-portrait-shell{position:relative}
+#box-grid .primoa-index-card .zchar-fav-star{
+  position:absolute;right:5px;top:3px;z-index:6;display:none;pointer-events:none;
+  font-size:15px;line-height:1;color:#e0b45a;
+  text-shadow:0 0 2px #fffaf0,0 0 3px #fffaf0,0 1px 2px rgba(90,60,20,.45);
+}
+#box-grid .primoa-index-card.is-fav .zchar-fav-star{display:block}
+#box-grid .primoa-index-card .zchar-fav-star.is-pop{animation:charaFavPop .38s cubic-bezier(.2,1.6,.4,1)}
+
+/* 長押し：iOS のメニュー・文字選択を出さない／押している間わずかに沈む */
+#box-grid .primoa-index-card{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+#box-grid .primoa-index-card img{-webkit-touch-callout:none;-webkit-user-drag:none}
+#box-grid .primoa-index-card.is-pressing{transform:scale(.97);transition:transform .45s ease}
+
+/* 詳細：立ち絵右上の☆/★ボタン */
+.box-carousel-visual{position:relative}
+.box-carousel-visual .cd-fav-toggle{
+  position:absolute;right:10px;top:10px;z-index:8;
+  width:34px;height:34px;padding:0;margin:0;border:0;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font:400 19px/1 serif;color:#bfa77a;
+  background:rgba(255,251,242,.72)!important;
+  box-shadow:0 0 0 1px rgba(201,154,74,.7),0 2px 5px rgba(80,60,20,.2)!important;
+  -webkit-tap-highlight-color:transparent;cursor:pointer;
+}
+.box-carousel-visual .cd-fav-toggle.is-on{color:#d9a646;background:rgba(255,251,242,.88)!important}
+.box-carousel-visual .cd-fav-toggle.is-pop{animation:charaFavPop .38s cubic-bezier(.2,1.6,.4,1)}
+
+@keyframes charaFavPop{0%{transform:scale(.6)}100%{transform:scale(1)}}
+
+/* 絞り込み：お気に入り */
+#zukan-filter-menu-layer .zcf-grid-fav{grid-template-columns:repeat(2,minmax(0,1fr))}
+#zukan-filter-menu-layer .zcf-fav-star{font-style:normal;color:#c9973f;margin-right:4px}
+
+/* 登録・解除のトースト */
+#chara-fav-toast{
+  position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));z-index:99999;
+  transform:translate(-50%,8px);opacity:0;pointer-events:none;
+  padding:8px 16px;border-radius:999px;white-space:nowrap;
+  font:700 12.5px/1.2 'Noto Serif JP',serif;letter-spacing:.06em;color:#5a3d16;
+  background:rgba(255,250,238,.96);box-shadow:0 0 0 1px rgba(201,154,74,.6),0 4px 12px rgba(80,60,20,.2);
+  transition:opacity .25s ease,transform .25s ease;
+}
+#chara-fav-toast.is-show{opacity:1;transform:translate(-50%,0)}
+
+/* 詳細ボタンの縁（他の box-shadow 打ち消しに負けないよう枠線で描く） */
+#box-grid .box-carousel-visual .cd-fav-toggle{border-radius:50%!important;border:1px solid rgba(201,154,74,.75)!important;box-shadow:0 2px 5px rgba(80,60,20,.2)!important}

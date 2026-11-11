@@ -28833,7 +28833,11 @@
       const memGuardRule = isMemoryBattleStage() ? getMemoryGuardianRule() : null;
       const healPerTick = memGuardRule && Number(memGuardRule.healPerTick) > 0 ? Number(memGuardRule.healPerTick) : CAMILLA_HEAL_PER_TICK;
       const healRatio = Math.max(0, Math.min(1, dmg / baseDrain));
-      const after = Math.min(cap, raidCap, before + healPerTick * healRatio);
+      // build1911: 回復は「今のゲージの上限」まで。総HPまで回復させると前のゲージに戻り、
+      //   次の被弾で PHASE が逆戻りしていた（記憶決戦リヴィアで 3ゲージ目に入れない不具合）。
+      const phaseNow = Math.max(1, Number(state.boss.phase || 1));
+      const gaugeCap = isRaidStage() ? cap : (getBossGaugeFloorForPhase(phaseNow) + getBossGaugeHpForPhase(phaseNow));
+      const after = Math.min(cap, raidCap, gaugeCap, before + healPerTick * healRatio);
       if (after > before) { state.boss.hp = after; healed += Math.round(after - before); }
       spawnCamillaDrainFx(e.x, e.y, arena, 0);
     }
