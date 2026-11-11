@@ -1294,7 +1294,16 @@
     return p;
   }
   function updatePhaseOdysseyLethalDrift(now) {
-    const cfg = isPhaseOdysseyStage() ? selectedStage.odysseyLethalDrift : null;
+    let cfg = isPhaseOdysseyStage() ? selectedStage.odysseyLethalDrift : null;
+    // build1917: 記憶決戦ヘイズも同じ仕組みで即死弾（WARNING）を漂わせる。数は PHASE ごと（countByPhase）
+    if (!cfg && state && isHazeBattle()) {
+      const r = getHazeRule('haze_lethal_drift');
+      if (r) {
+        const ph = Math.max(1, Math.min(3, Number(state.boss?.phase || 1)));
+        const list = Array.isArray(r.countByPhase) ? r.countByPhase : [];
+        cfg = { count: Number(list[ph - 1] ?? r.count ?? 2), speed: r.speed, respawnMs: r.respawnMs, startDelayMs: r.startDelayMs };
+      }
+    }
     if (!cfg || !state) return;
     const running = state.running && !state.countdown && !state.ended && !state.finishing;
     if (!running || state.koTransition || state.phaseTransition) return;
@@ -12758,6 +12767,7 @@
     if (!isSummonReady(c, now)) { queueSummon(c, now); return false; }
     if (c.camillaSpiderAi) state.camillaLastSpiderAt = now;
     state.summonQueued = false;
+    state.conjureLastLaunchAt = now; // build1916
     ensureConjureVisualStyles();
     const arena = document.getElementById('shooting-arena');
     if (!arena) return false;
@@ -13200,8 +13210,15 @@
   function commitConjurePlacement(now) {
     if (!state?.conjurePlacementPreview) {
       // build1700: カミラは4体いる間は予告が出ないため、離指時にここへ来る。タップを予約として受け付ける。
+      // build1916: 予約は「今は出せない（MAX・間隔待ち）」時だけ。
+      //   iPhone では1回の離指で pointerup と touchend の両方がここへ来ることがあり、
+      //   2回目（予告はもう無い）を予約扱いにすると、空き枠がある初手に即2基目が出ていた（オリビア）。
       const cur = state && getCurrentCharacter();
-      if (cur && cur.shotType === 'conjure') queueSummon(cur, now || performance.now());
+      const ts = now || performance.now();
+      if (cur && cur.shotType === 'conjure' && !isSummonReady(cur, ts) &&
+          ts - Number(state.conjureLastLaunchAt || 0) > 350) {
+        queueSummon(cur, ts);
+      }
       return false;
     }
     const preview = state.conjurePlacementPreview;
@@ -27539,6 +27556,18 @@
     return true;
   }
 
+  // build1917: ヘルフレイム即死用。無敵（被弾直後・無敵アイテム）中は当たらない点は通常と同じ。
+  function hazeHitPlayerLethal(now) {
+    if (!state || state.ended || state.finishing || state.koTransition) return false;
+    const m = getActiveMember();
+    if (!m || m.hp <= 0) return false;
+    if (now < Number(state.player.invulnUntil || 0)) return false;
+    if (now < Number(m.invincibleUntil || 0)) return false;
+    damagePlayer(now, 999999, 'raw', 'dark', 'haze');
+    hazeShake('big');
+    return true;
+  }
+
   // ---------------- 燃焼 ----------------
   function applyHazeBurn(member, now) {
     const rule = getHazeRule('haze_burn');
@@ -28088,7 +28117,7 @@
       fromX: state.boss.x, fromY: state.boss.y, toX, toY, moveAt: now,
     };
     state.hazeFlameLockUntil = now + 1500 + 1900 + 400;
-    showHazeCallout('ヘルフレイム', 'HELL FLAME', 'flame');
+    showHazeCallout('ヘルフレイム', (getHazeRule('haze_hellflame') || {}).lethal ? 'HELL FLAME — LETHAL' : 'HELL FLAME', 'flame'); // build1917
   }
   function updateHazeHellflame(h, now, w, hh) {
     if (h.flameReturn) {
@@ -28168,7 +28197,8 @@
       const shield = hazeSmileBoxBlockDist(o.x, o.y, Math.atan2(py, px), dist, 6);
       if (dist < f.len && shield >= dist && pa >= f.prevAng - tol && pa <= ang + tol) {
         const rule = getHazeRule('haze_hellflame') || {};
-        if (hazeHitPlayer(now, Math.max(0, Number(rule.damageRate || 0.35)), true)) f.hit = true;
+        // build1917: lethal:true で即死（WARNING弾と同じ 999999 ダメージ）
+        if (rule.lethal ? hazeHitPlayerLethal(now) : hazeHitPlayer(now, Math.max(0, Number(rule.damageRate || 0.35)), true)) f.hit = true;
       }
     }
     f.prevAng = ang;

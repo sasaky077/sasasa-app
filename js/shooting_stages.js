@@ -2219,16 +2219,19 @@
       panelImage: 'images/haze_panel.webp',
       enemyId: SHOOTING_ENEMY_ID.MEMORY_HAZE, element: 'dark',
       background: 'images/battle_bg_haze.webp',
-      bossGaugeHps: Object.freeze([7000, 8000, 10000]),
+      // build1917: 難化（「簡単」との声）。HP 25000→32000、弾量 70%→90%、ギミック間隔を短縮、
+      //   ヘルフレイム即死、即死弾（WARNING）を常時漂わせる（PHASE1/2/3 = 2/3/4発）。
+      bossGaugeHps: Object.freeze([9000, 10500, 12500]),
       timeLimitSeconds: 180,
       rules: Object.freeze([
         Object.freeze({ type: 'element_barrier' }),
-        Object.freeze({ type: 'haze_arm', damageRate: 0.25, warnMs: 600, holdMs: 400 }),
+        Object.freeze({ type: 'haze_arm', damageRate: 0.25, warnMs: 480, holdMs: 400 }),
         Object.freeze({ type: 'haze_burn', durationMs: 6000, atkRate: 0.5, dotRate: 0.02 }),
-        Object.freeze({ type: 'haze_mirage', fromPhase: 2, intervalMs: 25000, cloneHp: 1500, timeoutMs: 20000 }),
-        Object.freeze({ type: 'haze_hellflame', fromPhase: 3, intervalMs: 15000, damageRate: 0.35 }),
+        Object.freeze({ type: 'haze_mirage', fromPhase: 2, intervalMs: 18000, cloneHp: 1500, timeoutMs: 20000 }),
+        Object.freeze({ type: 'haze_hellflame', fromPhase: 3, intervalMs: 11000, lethal: true, damageRate: 0.35 }),
+        Object.freeze({ type: 'haze_lethal_drift', countByPhase: Object.freeze([2, 3, 4]), speed: 105, respawnMs: 2600, startDelayMs: 2500 }),
       ]),
-      extra: Object.freeze({ bossElement: 'dark', enemyElement: 'dark', introImage: 'images/haze_battle_start.webp', bulletQuantityMultiplier: 0.70 }),
+      extra: Object.freeze({ bossElement: 'dark', enemyElement: 'dark', introImage: 'images/haze_battle_start.webp', bulletQuantityMultiplier: 0.90 }),
     }),
   ]);
   const MEMORY_BATTLE_SLOT_COUNT = 3; // build1866: UIはリヴィア / テスト / ヘイズ（内部番号 01 / 03 / 04、表示は 01 / 02 / 03）
