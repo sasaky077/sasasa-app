@@ -23044,6 +23044,16 @@
       };
     };
 
+    // build1913: 停止明けのずれ（offset）は表示用の上乗せ。移動AIは上乗せ前の位置から計算する
+    //  （前フレーム位置から少しずつ動くタイプのボスで、ずれが二重にかからないように）。
+    {
+      const rb = state.bossMotionResumeBlend;
+      if (rb && rb.inited && rb.appliedOnce && state.boss) {
+        state.boss.x -= Number(rb.ox || 0);
+        state.boss.y -= Number(rb.oy || 0);
+      }
+    }
+
     // ブラックホール吸引中は大型BOSSの通常移動AIも停止。
     // これを止めないとフェイスレス等のAIが毎フレーム座標を上書きして
     // 吸引が見た目上ほぼ無効になっていた。
@@ -25920,14 +25930,39 @@
     if (p >= 1) enemy.motionResumeBlend = null;
   }
 
+  // build1913: 停止（時間停止ULT・スタン等）明けの位置合わせ。
+  //  従来は「止まった位置 → 本来の軌道上の位置」を 260ms で一気に寄せていたため、
+  //  停止中に自機が動いた・PHASEが変わった等で軌道がずれていると、解除の瞬間だけボスが急加速して見えた。
+  //  → 止まった位置から、本来の軌道の「今の速さ」以下で軌道へ戻る（＋ごく僅かな寄せ BOSS_RESUME_EXTRA_PX/秒）。
+  //    見た目の速さは普段と変わらず、軌道が折り返すタイミングで自然に合流する。
+  const BOSS_RESUME_EXTRA_PX = 10;
   function smoothBossMotionResume(now) {
     const blend = state?.bossMotionResumeBlend;
     if (!blend || !state.boss) return;
-    const p = Math.min(1, Math.max(0, (now - blend.startedAt) / 260));
-    const easing = p * p * (3 - 2 * p);
-    state.boss.x = blend.x + (state.boss.x - blend.x) * easing;
-    state.boss.y = blend.y + (state.boss.y - blend.y) * easing;
-    if (p >= 1) state.bossMotionResumeBlend = null;
+    const tx = Number(state.boss.x || 0), ty = Number(state.boss.y || 0); // 今フレームの本来の位置
+    if (!blend.inited) {
+      blend.inited = true;
+      blend.ox = Number(blend.x || 0) - tx;
+      blend.oy = Number(blend.y || 0) - ty;
+      blend.lastAt = now; blend.lastTx = tx; blend.lastTy = ty;
+      if (Math.hypot(blend.ox, blend.oy) < 2) { state.bossMotionResumeBlend = null; return; }
+    }
+    let dt = Math.min(0.05, Math.max(0, (now - Number(blend.lastAt || now)) / 1000));
+    try { if (now < getBossLockUntil(now)) dt = 0; } catch (_) {} // 再び止められている間は動かさない
+    // 表示位置 P（= 前フレームの本来位置 + ずれ）から、本来位置 T へ向かって「軌道の今の移動量＋α」だけ進む
+    const px = Number(blend.lastTx) + blend.ox, py = Number(blend.lastTy) + blend.oy;
+    const trackMove = Math.hypot(tx - Number(blend.lastTx), ty - Number(blend.lastTy));
+    const step = dt > 0 ? trackMove + BOSS_RESUME_EXTRA_PX * dt : 0;
+    const dx = tx - px, dy = ty - py;
+    const d = Math.hypot(dx, dy);
+    const k = d > 0 ? Math.min(1, step / d) : 1;
+    const nx = px + dx * k, ny = py + dy * k;
+    blend.ox = nx - tx; blend.oy = ny - ty;
+    blend.lastAt = now; blend.lastTx = tx; blend.lastTy = ty;
+    blend.appliedOnce = true;
+    state.boss.x = nx;
+    state.boss.y = ny;
+    if (Math.hypot(blend.ox, blend.oy) < 0.5) state.bossMotionResumeBlend = null;
   }
 
   // ============================================================
