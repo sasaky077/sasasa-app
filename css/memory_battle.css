@@ -580,3 +580,7 @@ html body #screen-memory-battle.memory-battle-screen .mb-list{gap:28px !importan
 /* build1909: スタンプをさらに大きく、ドンと押す */
 #screen-memory-battle .mb-seal.is-img{width:128px;height:128px;right:4px;top:6px;animation:mbStampIn .45s cubic-bezier(.2,1.5,.4,1) both}
 @keyframes mbStampIn{0%{opacity:0;transform:rotate(-12deg) scale(2.2)}70%{opacity:1}100%{opacity:1;transform:rotate(-12deg) scale(1)}}
+/* build1915: スタンプが立ち絵枠からはみ出す問題を修正
+   （.mb-portrait img の「枠いっぱいに広げる」指定がスタンプ画像にも効いていた）。枠の幅に合わせた大きさにする */
+html body #screen-memory-battle .mb-portrait .mb-seal.is-img{width:74%!important;height:auto!important;aspect-ratio:1/1;right:4%!important;top:4%!important;left:auto!important;bottom:auto!important}
+html body #screen-memory-battle .mb-portrait .mb-seal.is-img img{position:static!important;inset:auto!important;width:100%!important;height:100%!important;object-fit:contain!important;border-radius:0!important;filter:none!important}
