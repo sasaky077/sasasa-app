@@ -400,3 +400,6 @@ html.hv2-home #global-user-frame .hv2-exp .bar::after{display:none!important;con
 
 /* build1907: セリフウインドウをもう少し横広に（58% → 64%・右寄せのまま左へ伸ばす） */
 #home-v2 .hv2-talk{width:64%!important}
+
+/* build1912: ホームの立ち絵を少し下げる（立ち絵の高さの15%） */
+#home-v2 .hv2-chara.is-home-art{transform:translateY(15%)!important}
