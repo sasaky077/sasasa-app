@@ -33208,6 +33208,10 @@
 
   // build1643: BGMガード（js/bgm_guard.js）が「戦闘BGMを鳴らしてよい状態か」を判定するために公開。
   window.isShootingBattleBgmSessionActive = function () { return !!shootingBattleBgmSessionActive; };
+  // build1918: battle-only, read-only hook for lightweight BGM health checks.
+  window.getActiveShootingBattleBgmElement = function () {
+    return shootingBattleBgmSessionActive ? getShootingBattleBgmTrack() : null;
+  };
 
   window.syncShootingBattleBgm = function () {
     updateShootingBattleBgmMenuUi();
@@ -33225,6 +33229,10 @@
     } else {
       try { localStorage.setItem('zeraphia_bgm_enabled', enabled ? 'false' : 'true'); } catch (_) {}
       window.syncShootingBattleBgm();
+    }
+    // build1918: OFF -> ON is an explicit player gesture; retry the audio resource.
+    if (enabled === false && typeof window.recoverShootingBgmAfterToggle === 'function') {
+      window.recoverShootingBgmAfterToggle();
     }
   };
 
@@ -33419,6 +33427,10 @@
       menu.setAttribute('aria-hidden', 'true');
     }
     resumeShootingFromPause(true);
+    // build1918: execute deferred manual BGM recovery within this click gesture.
+    if (typeof window.resumePendingShootingBgmRecovery === 'function') {
+      window.resumePendingShootingBgmRecovery();
+    }
   };
 
   window.restartShootingStageFromPause = function () {

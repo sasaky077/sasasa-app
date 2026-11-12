@@ -65,6 +65,9 @@
   // キャッシュを避けたURLで1回だけ読み込み直す。再生中（または再生しようとしていた）なら再開する。
   function onAudioError(e){
     const a = e.target;
+    // build1918: battle audio recovery is owned by bgm_battle_recovery.js.
+    // Avoid two independent handlers reloading the same MP3 concurrently.
+    if (a && a.classList.contains('bgm-battle-track')) return;
     if (!a || a.dataset.bgmRetried === '1') return;
     const err = a.error;
     if (err && err.code === 1) return; // MEDIA_ERR_ABORTED（意図的な中断）は対象外
