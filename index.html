@@ -3415,7 +3415,21 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
     letter-spacing:.03em !important; color:inherit !important; opacity:.85 !important;
   }
 </style>
-<style id="friend-growth-build1926">.friend-card-growth{display:block;color:#9d8050;font:600 10px/1.3 Cinzel,serif;letter-spacing:.03em;margin-top:3px}.friend-card-growth small{color:#6d617d;font:600 10px/1.3 "Noto Serif JP",serif;margin-left:6px}.friend-public-growth{margin-top:6px;color:#927142;font:600 12px/1.4 Cinzel,serif}.friend-public-growth span{margin-left:9px;color:#564d70}</style></head>
+<style id="friend-growth-build1926">.friend-card-growth{display:block;color:#9d8050;font:600 10px/1.3 Cinzel,serif;letter-spacing:.03em;margin-top:3px}.friend-card-growth small{color:#6d617d;font:600 10px/1.3 "Noto Serif JP",serif;margin-left:6px}.friend-public-growth{margin-top:6px;color:#927142;font:600 12px/1.4 Cinzel,serif}.friend-public-growth span{margin-left:9px;color:#564d70}</style>
+<!-- build1933: Align home diamond with non-home diamond (11px top margin). -->
+<style id="zeraphia-home-face-offset-build1933">
+html.hv2-home body #global-user-frame .hv2-face { margin-top: 11px !important; }
+</style>
+<!-- build1934: shrink only the common diamond portrait by 8%; preserve home and non-home offset. -->
+<style id="zeraphia-diamond-size-build1934">
+html.hv2-home body #global-user-frame .hv2-face,
+html:not(.hv2-home) body #global-user-frame .hv2-face {
+  width:46px !important;
+  height:46px !important;
+  margin-top:11px !important;
+}
+</style>
+</head>
 <body>
   <div class="global-user-frame" id="global-user-frame">
   <div class="hud-left">
@@ -22607,62 +22621,72 @@ html body #global-user-frame .hud-sweep-line-player::after{
 <script src="js/bgm_battle_recovery.js?v=1918-bgm-recovery"></script>
 <script src="js/wake_lock.js?v=1643-wake-lock"></script>
 
-<!-- build1929: Shared home-standard header for ordinary screens. -->
-<style id="zeraphia-unified-home-hud-build1929">
-/* One HUD DOM node across all normal screens: never restyle based on hud-dark. */
-html body #global-user-frame.global-user-frame:not(.hidden),
-html body #global-user-frame.global-user-frame.hud-dark:not(.hidden) {
-  position:fixed !important;
-  top:0 !important;
-  z-index:60 !important;
-  box-sizing:border-box !important;
-  background:radial-gradient(circle at 18% 0%,rgba(255,255,255,.96),transparent 38%),linear-gradient(180deg,rgba(250,247,239,.98),rgba(237,228,210,.98)) !important;
-  border-bottom:1px solid rgba(153,119,56,.42) !important;
-  box-shadow:inset 0 -1px 0 rgba(255,255,255,.82),0 5px 14px rgba(91,69,31,.13) !important;
-  color:#5f4b2d !important;
-  filter:none !important;
-  opacity:1 !important;
-}
-/* Keep the established HOME grid, typography, ring and currency alignments. */
-html body #global-user-frame.global-user-frame .hud-left {min-width:0 !important;}
-html body #global-user-frame.global-user-frame .hud-name,
-html body #global-user-frame.global-user-frame .hud-res-val,
-html body #global-user-frame.global-user-frame .hud-lv-num {color:#5f4b2d !important;}
-html body #global-user-frame.global-user-frame .hud-right {transform:none !important;}
-/* Standard page headers: align their band directly below the global frame.
-   Individual page title imagery and colors remain untouched. */
-html body .screen.active > .app-page-header {
-  box-sizing:border-box;
-  top:var(--header-h,82px);
-  min-height:var(--page-header-h,54px);
-}
-@media (min-width:500px) {
-  html body #global-user-frame.global-user-frame:not(.hidden) {
-    left:50% !important;right:auto !important;
-    transform:translateX(-50%) !important;
-    width:100% !important;max-width:430px !important;
-  }
+<!-- build1930: Restore home-v2 header design across ordinary screens. NO page header bands. -->
+<style id="zeraphia-home-header-everywhere-build1930">
+html:not(.hv2-home) #global-user-frame{background:none!important;box-shadow:none!important;border:none!important}
+html:not(.hv2-home) #global-user-frame::before,html:not(.hv2-home) #global-user-frame::after{display:none!important}
+html:not(.hv2-home) #global-user-frame .hud-left{display:flex!important;align-items:flex-start!important;gap:6px!important}
+html:not(.hv2-home) #global-user-frame .hv2-face{flex:none;width:50px;height:50px;margin:11px 4px 0 4px;transform:rotate(45deg);overflow:hidden;border:1.5px solid var(--hv2-gold);
+  box-shadow:0 0 0 3px rgba(255,252,244,.9),0 0 0 4px rgba(184,147,74,.5);background:#efe4cd}
+html:not(.hv2-home) #global-user-frame .hv2-face img{width:142%;height:142%;object-fit:cover;transform:rotate(-45deg);margin:-21% 0 0 -21%}
+html:not(.hv2-home) #global-user-frame .hud-lv-circle{background:none!important;border:none!important;box-shadow:none!important;width:auto!important;height:auto!important;min-width:0!important;padding:0!important;margin:0!important}
+html:not(.hv2-home) #global-user-frame .hud-lv-circle::before,html:not(.hv2-home) #global-user-frame .hud-lv-circle::after{display:none!important}
+html:not(.hv2-home) #global-user-frame .hud-lv-core{display:flex!important;flex-direction:row!important;align-items:baseline!important;gap:4px!important;background:none!important;box-shadow:none!important;border:none!important;width:auto!important;height:auto!important;position:static!important;transform:none!important}
+html:not(.hv2-home) #global-user-frame .hud-lv-label{font:600 10px/1 var(--hv2-latin)!important;letter-spacing:.12em!important;color:var(--hv2-ink2)!important}
+html:not(.hv2-home) #global-user-frame .hud-lv-num{font:500 22px/1 var(--hv2-latin)!important;color:var(--hv2-ink)!important;text-shadow:0 1px 0 rgba(255,255,255,.9)!important}
+html:not(.hv2-home) #global-user-frame .hud-left{flex-wrap:nowrap!important}
+html:not(.hv2-home) #global-user-frame .hud-name{font:800 17px/1.1 var(--hv2-head)!important;letter-spacing:.12em!important;color:#3f3226!important;
+  text-shadow:0 1px 0 rgba(255,255,255,.95),0 0 10px rgba(255,248,230,.9)!important}
+html:not(.hv2-home) #global-user-frame .hud-sweep-line{display:none!important}
+html:not(.hv2-home) #global-user-frame .hv2-exp{display:block!important;width:118px;margin-top:5px}
+html:not(.hv2-home) #global-user-frame .hv2-exp .bar{position:relative;display:block;height:4px;background:rgba(255,250,236,.75);box-shadow:0 0 0 1px rgba(184,147,74,.35)}
+html:not(.hv2-home) #global-user-frame .hv2-exp .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#8f6c2e,#c9a35a 70%,#e6cf98)}
+html:not(.hv2-home) #global-user-frame .hv2-exp .bar::after{content:"";position:absolute;right:-9px;top:50%;margin-top:-5px;border-left:9px solid #b8934a;border-top:5px solid transparent;border-bottom:5px solid transparent}
+html:not(.hv2-home) #global-user-frame .hv2-exp .nums{display:flex;justify-content:space-between;margin-top:3px;font:600 8px/1 var(--hv2-latin);letter-spacing:.06em;color:var(--hv2-ink2);text-shadow:0 1px 0 rgba(255,255,255,.9)}
+html:not(.hv2-home) #global-user-frame .hud-right{display:flex!important;flex-direction:column!important;gap:5px!important;align-items:flex-end!important}
+html:not(.hv2-home) #global-user-frame .hud-resource{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:6px!important;min-width:136px!important;height:30px!important;padding:0 7px 0 6px!important;background:none!important;box-shadow:none!important}
+html:not(.hv2-home) #global-user-frame .hud-res-icon{width:20px!important;height:20px!important}
+html:not(.hv2-home) #global-user-frame .hud-res-val{font:600 13px/1 var(--hv2-latin)!important;color:var(--hv2-ink)!important;letter-spacing:.03em!important}
+html:not(.hv2-home) #global-user-frame .hud-gem-plus-btn{width:17px!important;height:17px!important;border-radius:50%!important;border:1px solid var(--hv2-gold)!important;background:none!important;color:var(--hv2-gold3)!important;font-size:12px!important;line-height:15px!important;padding:0!important}
+html:not(.hv2-home) #global-user-frame .hud-left{display:grid!important;grid-template-columns:auto auto!important;grid-template-rows:auto auto!important;column-gap:8px!important;row-gap:0!important;align-items:start!important}
+html:not(.hv2-home) #global-user-frame .hv2-face{grid-row:1 / 3;grid-column:1}
+html:not(.hv2-home) #global-user-frame .hud-lv-circle{grid-row:1;grid-column:2;align-self:end!important}
+html:not(.hv2-home) #global-user-frame .hud-info{grid-row:2;grid-column:2;display:block!important;max-width:none!important;width:auto!important;overflow:visible!important;margin:0!important;padding:0!important}
+html:not(.hv2-home) #global-user-frame .hud-name{max-width:150px!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+html:not(.hv2-home) #global-user-frame .hud-info{display:flex!important;flex-direction:column!important;align-items:flex-start!important}
+html:not(.hv2-home) #global-user-frame .hud-name{order:1;position:static!important;transform:none!important;margin:1px 0 0!important}
+html:not(.hv2-home) #global-user-frame .hv2-exp{order:2}
+html:not(.hv2-home) #global-user-frame .hud-info > *:not(.hud-name):not(.hv2-exp):not(.hud-sweep-line){order:3}
+html:not(.hv2-home) #global-user-frame .hv2-face{display:block}
+html:not(.hv2-home) body #global-user-frame.global-user-frame{align-items:start!important}
+html:not(.hv2-home) body #global-user-frame .hud-left{align-self:start!important}
+html:not(.hv2-home) body #global-user-frame .hud-lv-circle{justify-self:start!important;align-self:end!important}
+html:not(.hv2-home) body #global-user-frame .hud-lv-core{justify-content:flex-start!important;text-align:left!important}
+html:not(.hv2-home) body #global-user-frame .hud-info{justify-self:start!important;align-items:flex-start!important;text-align:left!important}
+html:not(.hv2-home) body #global-user-frame .hud-right{align-self:start!important;margin-top:4px!important}
+html:not(.hv2-home) body #global-user-frame .hud-right{position:absolute!important;top:calc(env(safe-area-inset-top,0px) + 6px)!important;right:10px!important;margin:0!important;transform:none!important}
+html:not(.hv2-home) body #global-user-frame .hud-right .hud-resource{position:relative!important;top:0!important;bottom:auto!important;transform:none!important;margin:0!important}
+html:not(.hv2-home) body #global-user-frame{position:fixed}
+html:not(.hv2-home) body #global-user-frame .hud-resource .hud-res-icon,
+html:not(.hv2-home) body #global-user-frame .hud-resource .hud-res-val,
+html:not(.hv2-home) body #global-user-frame .hud-resource .hud-gem-plus-btn{
+  align-self:center!important;top:0!important;bottom:auto!important;margin:0!important;transform:none!important}
+html:not(.hv2-home) body #global-user-frame .hud-resource .hud-res-val{line-height:1!important}
+html:not(.hv2-home) body #global-user-frame .hud-resource::before,
+html:not(.hv2-home) body #global-user-frame .hud-resource::after{display:none!important}
+html:not(.hv2-home) body #global-user-frame .hud-resource{align-items:center!important}
+html:not(.hv2-home) #global-user-frame .hv2-exp .bar::after{display:none!important;content:none!important}
+/* Never introduce a HUD background strip. Home header is visually transparent. */
+html:not(.hv2-home) body #global-user-frame.global-user-frame{background:transparent!important;background-image:none!important;border:0!important;box-shadow:none!important;}
+html:not(.hv2-home) body #global-user-frame.global-user-frame::before,
+html:not(.hv2-home) body #global-user-frame.global-user-frame::after{display:none!important;content:none!important;}
+/* build1931: Home uses home_frame.webp as the shared gem/coin frame.
+   Restore exactly that asset outside home, without changing positioning or HUD layout. */
+html:not(.hv2-home) body #global-user-frame .hud-resource {
+  border-style:solid!important;
+  border-color:transparent!important;
+  border-image:url("images/home_frame.webp") 64 fill / 14px stretch!important;
 }
 </style>
-<script id="zeraphia-hud-height-sync-build1929">
-(function(){
-  'use strict';
-  var frame=document.getElementById('global-user-frame');
-  if(!frame) return;
-  var last=0;
-  function sync(){
-    if(frame.classList.contains('hidden') || getComputedStyle(frame).display==='none') return;
-    var h=Math.ceil(frame.getBoundingClientRect().height);
-    if(h>0 && h!==last){last=h;document.documentElement.style.setProperty('--header-h',h+'px');}
-  }
-  if(typeof ResizeObserver==='function'){
-    var obs=new ResizeObserver(sync); obs.observe(frame);
-  }
-  window.addEventListener('resize',sync,{passive:true});
-  window.addEventListener('orientationchange',sync,{passive:true});
-  document.addEventListener('visibilitychange',function(){if(!document.hidden)sync();});
-  requestAnimationFrame(sync);
-})();
-</script>
 </body>
 </html>
