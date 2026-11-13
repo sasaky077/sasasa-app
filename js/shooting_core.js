@@ -11873,6 +11873,14 @@
     return applyGenericBombSplashDamage(p, x, y, now, chara, target);
   }
 
+  // build1922: アライン SYNC。本人のULT有効中だけCHARGEを加速する。
+  function getAlignChargeMultiplier(c, now) {
+    const m = getActiveMember();
+    return c && Number(c.id) === 46 && m && Number(m.id) === 46 &&
+      Number(now || performance.now()) < Number(m.alignSyncUntil || 0)
+      ? Math.max(0.1, Number(c.alignSyncChargeMultiplier || 0.5)) : 1;
+  }
+
   function createMiaChargePreview(c, startedAt) {
     if (!state || !c) return null;
     const arena = document.getElementById('shooting-arena');
@@ -11893,7 +11901,7 @@
 
     const minSize = Math.max(18, Number(c.chargeMinSize || 30));
     const maxSize = Math.max(minSize, Number(c.chargeMaxSize || 76));
-    const maxMs = Math.max(1, Number(c.chargeMaxMs || 1000));
+    const maxMs = Math.max(1, Number(c.chargeMaxMs || 1000) * getAlignChargeMultiplier(c, startedAt));
     const offsetY = Number(c.shotOffsetY || (Number(c.id) === Number(CHARACTER_ID.KAINA) ? 40 : 44));
 
     const render = (ts) => {
@@ -11953,7 +11961,7 @@
     // Its size is driven by elapsed charge time every frame, not by a CSS pseudo-element animation.
     createMiaChargePreview(c, startedAt);
 
-    const maxMs = Math.max(1, Number(c.chargeMaxMs || 1000));
+    const maxMs = Math.max(1, Number(c.chargeMaxMs || 1000) * getAlignChargeMultiplier(c, startedAt));
     state.miaChargeMaxTimer = setTimeout(() => {
       if (!state || Number(state.miaChargeStartedAt || 0) !== startedAt) return;
       if (state.ended || state.finishing || state.countdown || !state.running) return;
@@ -11997,8 +12005,9 @@
     const c = getCurrentCharacter();
     if (!c || c.shotType !== 'charge') return false;
 
-    const minMs = Math.max(0, Number(c.chargeMinMs || 120));
-    const maxMs = Math.max(minMs + 1, Number(c.chargeMaxMs || 1000));
+    const chargeMultiplier = getAlignChargeMultiplier(c, startedAt);
+    const minMs = Math.max(0, Number(c.chargeMinMs || 120) * chargeMultiplier);
+    const maxMs = Math.max(minMs + 1, Number(c.chargeMaxMs || 1000) * chargeMultiplier);
     const heldMs = Math.max(0, Number(now || performance.now()) - startedAt);
     if (heldMs < minMs) return false;
 
@@ -24202,7 +24211,12 @@
     const phaseAdjustedDamage = phaseOdyssey && typeof phaseOdyssey.modifyIncomingDamage === 'function'
       ? phaseOdyssey.modifyIncomingDamage(elementAdjustedDamage, member, now)
       : elementAdjustedDamage;
-    const appliedDamage = Math.min(member.hp, Math.max(0, phaseAdjustedDamage));
+    // build1922: アライン本人のSYNC中は敵の通常・属性・固定ダメージを50%軽減。
+    // 即死扱い(lethal)は既存ルールを維持する。
+    const alignSyncFactor = !isLethal && Number(member.id) === 46 &&
+      now < Number(member.alignSyncUntil || 0)
+      ? Math.max(0, Number(activeCharacter?.alignSyncDamageMultiplier || 0.5)) : 1;
+    const appliedDamage = Math.min(member.hp, Math.max(0, phaseAdjustedDamage * alignSyncFactor));
     member.hp = Math.max(0, member.hp - appliedDamage);
     if (phaseOdyssey && typeof phaseOdyssey.onDamageTaken === 'function') phaseOdyssey.onDamageTaken(member, appliedDamage, now);
     showDamageNumber(state.player.x, state.player.y, appliedDamage, 'player', false, elementReaction);
@@ -40565,6 +40579,20 @@
     renderHud();
   }
 
+  // build1922: アライン「SYNC」7秒間の本人限定CHARGE加速・被ダメ半減。
+  function useAlignSyncUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+    const member = getActiveMember();
+    if (!member || Number(member.id) !== 46) return;
+    const now = performance.now();
+    const duration = Math.max(100, Number(c.alignSyncDurationMs || 7000));
+    member.alignSyncUntil = now + duration;
+    showUltCut(c.ultName, c.effectKey, c);
+    ultScreenFlash('ult-flash-mimosa', c);
+    state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), now + 250);
+    renderHud();
+  }
+
   function executeCharacterUlt(c) {
     if (!state || state.ended || state.finishing) return;
 
@@ -40579,6 +40607,7 @@
     else if (c.ultType === 'meloria_stun') useMeloriaStunUlt(c);
     else if (c.ultType === 'nightshade_snipe') useNightshadeSnipeUlt(c); // build1731（旧仕様・現在は未使用）
     else if (c.ultType === 'nightshade_barrage') useNightshadeBarrageUlt(c);
+    else if (c.ultType === 'align_sync') useAlignSyncUlt(c);
     else if (c.ultType === 'airena_atk_item') useAirenaAtkItemUlt(c);
     else if (c.ultType === 'ignis_fire_wheel') useIgnisUlt(c);
     else if (c.ultType === 'clarine_decoy') useClarineUlt(c);
