@@ -22606,5 +22606,63 @@ html body #global-user-frame .hud-sweep-line-player::after{
 <script src="js/bgm_guard.js?v=1918-bgm-recovery-guard"></script>
 <script src="js/bgm_battle_recovery.js?v=1918-bgm-recovery"></script>
 <script src="js/wake_lock.js?v=1643-wake-lock"></script>
+
+<!-- build1929: Shared home-standard header for ordinary screens. -->
+<style id="zeraphia-unified-home-hud-build1929">
+/* One HUD DOM node across all normal screens: never restyle based on hud-dark. */
+html body #global-user-frame.global-user-frame:not(.hidden),
+html body #global-user-frame.global-user-frame.hud-dark:not(.hidden) {
+  position:fixed !important;
+  top:0 !important;
+  z-index:60 !important;
+  box-sizing:border-box !important;
+  background:radial-gradient(circle at 18% 0%,rgba(255,255,255,.96),transparent 38%),linear-gradient(180deg,rgba(250,247,239,.98),rgba(237,228,210,.98)) !important;
+  border-bottom:1px solid rgba(153,119,56,.42) !important;
+  box-shadow:inset 0 -1px 0 rgba(255,255,255,.82),0 5px 14px rgba(91,69,31,.13) !important;
+  color:#5f4b2d !important;
+  filter:none !important;
+  opacity:1 !important;
+}
+/* Keep the established HOME grid, typography, ring and currency alignments. */
+html body #global-user-frame.global-user-frame .hud-left {min-width:0 !important;}
+html body #global-user-frame.global-user-frame .hud-name,
+html body #global-user-frame.global-user-frame .hud-res-val,
+html body #global-user-frame.global-user-frame .hud-lv-num {color:#5f4b2d !important;}
+html body #global-user-frame.global-user-frame .hud-right {transform:none !important;}
+/* Standard page headers: align their band directly below the global frame.
+   Individual page title imagery and colors remain untouched. */
+html body .screen.active > .app-page-header {
+  box-sizing:border-box;
+  top:var(--header-h,82px);
+  min-height:var(--page-header-h,54px);
+}
+@media (min-width:500px) {
+  html body #global-user-frame.global-user-frame:not(.hidden) {
+    left:50% !important;right:auto !important;
+    transform:translateX(-50%) !important;
+    width:100% !important;max-width:430px !important;
+  }
+}
+</style>
+<script id="zeraphia-hud-height-sync-build1929">
+(function(){
+  'use strict';
+  var frame=document.getElementById('global-user-frame');
+  if(!frame) return;
+  var last=0;
+  function sync(){
+    if(frame.classList.contains('hidden') || getComputedStyle(frame).display==='none') return;
+    var h=Math.ceil(frame.getBoundingClientRect().height);
+    if(h>0 && h!==last){last=h;document.documentElement.style.setProperty('--header-h',h+'px');}
+  }
+  if(typeof ResizeObserver==='function'){
+    var obs=new ResizeObserver(sync); obs.observe(frame);
+  }
+  window.addEventListener('resize',sync,{passive:true});
+  window.addEventListener('orientationchange',sync,{passive:true});
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)sync();});
+  requestAnimationFrame(sync);
+})();
+</script>
 </body>
 </html>
