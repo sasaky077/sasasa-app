@@ -10528,19 +10528,17 @@ startTitleBgm();
   async function getFriendFavoriteCharacter(profile){
     var favData = null;
     var chara = null;
-    var favoriteDbId = profile ? (profile.favorite_db_id ?? null) : null;
     var favoriteCharId = profile ? (profile.favorite_char_id ?? null) : null;
-
-    if(favoriteDbId){
+    // build1928: Server-authorized, live snapshot of friend's home character growth.
+    if(favoriteCharId != null && profile && profile.user_id){
       try {
-        var favRes = await sb.from('collected_characters').select('*').eq('id', favoriteDbId).maybeSingle();
-        favData = favRes && favRes.data ? favRes.data : null;
-        if(favData){
-          chara = CHARACTERS.find(function(ch){
-            return Number(ch.id) === Number(favData.character_id);
-          }) || null;
+        var growthRes = await sb.rpc('get_friend_favorite_growth', {p_friend_user_id: profile.user_id});
+        if(growthRes && !growthRes.error && growthRes.data &&
+           Number(growthRes.data.character_id) === Number(favoriteCharId) &&
+           growthRes.data.character_level != null && growthRes.data.limit_break != null){
+          favData = growthRes.data;
         }
-      } catch(_){}
+      } catch(_) {}
     }
 
     if(!chara && favoriteCharId != null){
@@ -20891,7 +20889,7 @@ window.returnToTitleScreen = function(){
 })();
 </script>
 
-<script src="js/score_attack.js?v=1713-title-rank"></script>
+<script src="js/score_attack.js?v=1927-rank-char-detail"></script>
 <script src="js/resonance_tower.js?v=1878-dawn-security"></script>
 <script src="js/phase_odyssey.js?v=1816-reward-list"></script>
 <script src="js/memory_battle.js?v=1908-stamp"></script>

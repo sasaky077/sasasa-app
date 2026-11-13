@@ -215,6 +215,32 @@ function installRankingSwipe(r){
    else if(dx>0&&currentRankingScope==='national')window.setScoreAttackRankingScope('friends');
  },{passive:true});
 }
+function openRankingCharacter(row,idx){
+ const id=Number((row.party_ids||[])[idx]||0);if(!id)return;
+ const details=Array.isArray(row.party_details)?row.party_details:[];
+ const d=details[idx]&&Number(details[idx].id)===id?details[idx]:details.find(v=>v&&Number(v.id)===id);
+ const master=(window.ShootingCharacters&&window.ShootingCharacters.SHOOTING_CHARACTER_MASTER)||{};
+ const char=master[id]||{};
+ const name=char.name||char.displayName||('CHARACTER '+String(id).padStart(2,'0'));
+ const level=d&&Number.isFinite(Number(d.level))&&d.level!==null?'Lv.'+Number(d.level):'Lv. 記録なし';
+ const lb=d&&Number.isFinite(Number(d.limitBreak))&&d.limitBreak!==null?'凸'+Number(d.limitBreak):'限界突破 記録なし';
+ document.getElementById('score-attack-character-overlay')?.remove();
+ const overlay=document.createElement('div');overlay.id='score-attack-character-overlay';
+ overlay.className='score-attack-character-overlay';
+ overlay.innerHTML='<div class="score-attack-character-shade"></div><section class="score-attack-character-sheet" role="dialog" aria-modal="true" aria-label="キャラクター詳細">'+
+ '<button type="button" class="score-attack-character-close" aria-label="閉じる">×</button>'+
+ '<div class="score-attack-character-kicker">BEST RECORD / PARTY</div>'+
+ '<div class="score-attack-character-picture"><img src="'+esc(panelSrc(id))+'" alt=""></div>'+
+ '<div class="score-attack-character-name">'+esc(name)+'</div>'+
+ '<div class="score-attack-character-values"><span>'+esc(level)+'</span><i></i><span>'+esc(lb)+'</span></div>'+
+ '<div class="score-attack-character-score">BEST SCORE <b>'+Number(row.best_score||0).toLocaleString('ja-JP')+'</b></div>'+
+ '<div class="score-attack-character-note">スコア記録時の育成情報</div></section>';
+ const close=()=>overlay.remove();
+ overlay.querySelector('.score-attack-character-shade').addEventListener('click',close);
+ overlay.querySelector('.score-attack-character-close').addEventListener('click',close);
+ document.body.appendChild(overlay);
+ overlay.querySelector('.score-attack-character-close').focus();
+}
 function renderRows(rows,scope){
  const r=ensureRoot(),myId=uid(),list=r.querySelector('#score-attack-list');
  const isNational=scope==='national';
@@ -236,7 +262,7 @@ function renderRows(rows,scope){
        '<b title="'+esc(row.display_name||row.user_id||'Player')+'"><span class="score-attack-player-name">'+esc(playerName7(row.display_name||row.user_id||'Player'))+'</span>'+(me?'<em>自分</em>':'')+'</b>'+
        // build1712: 装備中の称号
        (row.title_id?'<span class="zt-block-title" data-title-id="'+esc(row.title_id)+'" data-title-level="'+esc(row.title_level||1)+'"></span>':(row.user_id?'<span class="zt-block-title" data-title-user="'+esc(row.user_id)+'"></span>':''))+
-       partyHtml(row.party_ids,false)+
+       partyHtml(row.party_ids,false).replace('<div class="score-attack-party"','<div class="score-attack-party" data-score-party="'+i+'"')+
        (Array.isArray(row.party_details)&&row.party_details.length?'<div class="score-attack-party-levels">'+row.party_details.map(d=> d&&d.level!=null&&d.limitBreak!=null?'<span>Lv.'+Number(d.level)+' <em>凸'+Number(d.limitBreak)+'</em></span>':'<span>—</span>').join('')+'</div>':'')+
      '</div>'+
      '<div class="score-attack-score"><small class="score-attack-best-label">'+(me?'自己ベスト':'ベスト')+'</small><strong>'+Number(row.best_score||0).toLocaleString('ja-JP')+'</strong></div>'+
@@ -251,6 +277,19 @@ function renderRows(rows,scope){
    : '';
 
  list.innerHTML=html+toggleHtml;
+ list.querySelectorAll('[data-score-party]').forEach(el=>{
+   const i=Number(el.getAttribute('data-score-party'));
+   const row=rows[i];if(!row)return;
+   el.querySelectorAll('span').forEach((slot,idx)=>{
+     const id=Number((row.party_ids||[])[idx]||0);if(!id)return;
+     slot.classList.add('score-attack-party-clickable');
+     slot.setAttribute('role','button');slot.setAttribute('tabindex','0');
+     slot.setAttribute('aria-label','キャラクター詳細を表示');
+     const open=ev=>{ev.stopPropagation();openRankingCharacter(row,idx);};
+     slot.addEventListener('click',open);
+     slot.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();open(ev);}});
+   });
+ });
  try{ if(window.ZeraphiaTitles) void window.ZeraphiaTitles.decorate(list); }catch(_){}
 }
 async function prefetchRanking(scope){
@@ -462,3 +501,22 @@ window.addEventListener('shooting-stage-result',ev=>{const d=ev&&ev.detail;if(d&
 
 /* build1926 - compact score party level labels */
 (function(){var st=document.createElement('style');st.textContent='.score-attack-party-levels{display:grid;grid-template-columns:repeat(3,32px);gap:4px;margin-top:3px;color:#776b5c;font:500 9px/1.2 Cinzel,serif}.score-attack-party-levels span{text-align:center;white-space:nowrap}.score-attack-party-levels em{font-style:normal;color:#a78958}';document.head.appendChild(st);})();
+
+/* build1927 - score ranking party inspection */
+(function(){let st=document.createElement('style');st.textContent=`
+.score-attack-party-clickable{cursor:pointer;touch-action:manipulation;transition:filter .15s ease,transform .15s ease}
+.score-attack-party-clickable:active{transform:scale(.94)}.score-attack-party-clickable:focus-visible{outline:2px solid #a88951;outline-offset:2px}
+.score-attack-character-overlay{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:22px;box-sizing:border-box}
+.score-attack-character-shade{position:absolute;inset:0;background:rgba(13,15,32,.70);backdrop-filter:blur(5px)}
+.score-attack-character-sheet{position:relative;width:min(100%,330px);padding:29px 22px 24px;background:linear-gradient(165deg,#fffefb,#f6f2e9);border:1px solid #bfa675;color:#28263d;box-shadow:0 18px 52px rgba(0,0,0,.25);text-align:center;font-family:'Noto Serif JP',serif;box-sizing:border-box}
+.score-attack-character-close{position:absolute;right:12px;top:8px;border:0;background:none;font-size:26px;color:#55516a;cursor:pointer;padding:4px 10px}
+.score-attack-character-kicker{font:10px Cinzel,serif;letter-spacing:.22em;color:#918267}
+.score-attack-character-picture{margin:20px auto 12px;width:132px;height:132px;border:1px solid #d8c6a3;background:#eee9e4}
+.score-attack-character-picture img{width:100%;height:100%;object-fit:cover}
+.score-attack-character-name{font-size:19px;font-weight:700;letter-spacing:.07em}
+.score-attack-character-values{display:flex;align-items:center;justify-content:center;gap:18px;margin-top:13px;font-size:13px}
+.score-attack-character-values i{height:14px;width:1px;background:#d0c3a9}
+.score-attack-character-score{margin-top:21px;border-top:1px solid #dfd3bd;padding-top:14px;font:10px Cinzel,serif;letter-spacing:.1em;color:#8a7c62}
+.score-attack-character-score b{display:block;font-size:24px;color:#24243e;letter-spacing:.02em;margin-top:4px}
+.score-attack-character-note{margin-top:9px;font-size:10px;color:#8d8578}
+`;document.head.appendChild(st);})();
