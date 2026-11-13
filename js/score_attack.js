@@ -166,7 +166,15 @@ async function fetchRanking(scope){
    : {p_user_id:userId,p_difficulty:currentDifficulty};
  const res=await sb.rpc(rpcName,args);
  if(res&&res.error)throw res.error;
- return Array.isArray(res&&res.data)?res.data:[];
+ const rows=Array.isArray(res&&res.data)?res.data:[];
+ // Rankings and snapshot access use identical eligibility rules on the server.
+ try{
+   const details=await sb.rpc('get_score_attack_party_details',{p_user_id:userId,p_difficulty:currentDifficulty,p_scope:scope});
+   if(!details.error && details.data){
+     rows.forEach(row=>{const entry=details.data[row.user_id];if(Array.isArray(entry))row.party_details=entry;});
+   }
+ }catch(err){console.warn('[ScoreAttack] party details unavailable',err);}
+ return rows;
 }
 function updateRankingScopeUi(){
  const r=ensureRoot();
@@ -229,6 +237,7 @@ function renderRows(rows,scope){
        // build1712: 装備中の称号
        (row.title_id?'<span class="zt-block-title" data-title-id="'+esc(row.title_id)+'" data-title-level="'+esc(row.title_level||1)+'"></span>':(row.user_id?'<span class="zt-block-title" data-title-user="'+esc(row.user_id)+'"></span>':''))+
        partyHtml(row.party_ids,false)+
+       (Array.isArray(row.party_details)&&row.party_details.length?'<div class="score-attack-party-levels">'+row.party_details.map(d=> d&&d.level!=null&&d.limitBreak!=null?'<span>Lv.'+Number(d.level)+' <em>凸'+Number(d.limitBreak)+'</em></span>':'<span>—</span>').join('')+'</div>':'')+
      '</div>'+
      '<div class="score-attack-score"><small class="score-attack-best-label">'+(me?'自己ベスト':'ベスト')+'</small><strong>'+Number(row.best_score||0).toLocaleString('ja-JP')+'</strong></div>'+
    '</div>';
@@ -450,3 +459,6 @@ window.ScoreAttack={
 };
 window.addEventListener('shooting-stage-result',ev=>{const d=ev&&ev.detail;if(d&&String(d.stageId||'').startsWith('shooting_score_attack_'))void window.ScoreAttack.submitResult(d);});
 })();
+
+/* build1926 - compact score party level labels */
+(function(){var st=document.createElement('style');st.textContent='.score-attack-party-levels{display:grid;grid-template-columns:repeat(3,32px);gap:4px;margin-top:3px;color:#776b5c;font:500 9px/1.2 Cinzel,serif}.score-attack-party-levels span{text-align:center;white-space:nowrap}.score-attack-party-levels em{font-style:normal;color:#a78958}';document.head.appendChild(st);})();

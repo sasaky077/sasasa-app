@@ -7,6 +7,72 @@
   let finishPromise = null;
   let friendNoticeRefreshPromise = null;
   const memberPanelCache = new Map();
+  // build1924: score-linked party snapshots, visible only to members of this room.
+  let bestPartyRoom = '';
+  let bestPartyLoaded = false;
+  const bestParties = new Map();
+  function ensureBestPartyStyle(){
+    if(document.getElementById('raid-bestparty-1924')) return;
+    const st=document.createElement('style'); st.id='raid-bestparty-1924';
+    st.textContent=`
+      #daily-raid-root .dr-bestparty-btn{display:inline-flex;gap:5px;align-items:center;justify-content:center;margin-top:7px;padding:6px 10px;border:1px solid rgba(151,122,78,.46);background:transparent;color:#6e563d;border-radius:3px;font:600 10px/1.2 'Noto Serif JP',serif;letter-spacing:.08em;cursor:pointer;min-height:28px}
+      #daily-raid-root .dr-bestparty-btn:active{background:rgba(180,154,107,.14)}
+      .dr-party-overlay{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(15,17,28,.68);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+      .dr-party-sheet{box-sizing:border-box;width:min(100%,390px);padding:24px 20px 22px;background:#f9f7f2;border:1px solid #bba77f;box-shadow:0 16px 44px rgba(4,6,15,.34);color:#292941;font-family:'Noto Serif JP',serif}
+      .dr-party-top{display:flex;align-items:start;justify-content:space-between;border-bottom:1px solid #d8cfbf;padding-bottom:14px;gap:12px}
+      .dr-party-kicker{font:500 9px/1.4 Cinzel,serif;letter-spacing:.22em;color:#9b8157}
+      .dr-party-owner{font-size:17px;font-weight:700;margin-top:5px;overflow-wrap:anywhere}
+      .dr-party-close{background:transparent;border:0;color:#645942;font-size:23px;line-height:1;cursor:pointer;padding:0 3px}
+      .dr-party-score{margin:18px 0 20px;font:500 35px/1 Cinzel,serif;letter-spacing:.02em;color:#282946;font-variant-numeric:tabular-nums}
+      .dr-party-score small{display:block;margin-bottom:7px;font:500 9px/1.4 Cinzel,serif;letter-spacing:.19em;color:#958367}
+      .dr-party-units{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+      .dr-party-unit{min-width:0;text-align:center}
+      .dr-party-unit img{display:block;width:100%;aspect-ratio:1;object-fit:cover;background:#e9e4da;border:1px solid #d8c7a9}
+      .dr-party-unit .dr-party-stats{display:block;font:600 10px/1.4 Cinzel,serif;color:#9b8157;margin-top:4px;white-space:nowrap}.dr-party-unit span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;margin-top:7px}
+      .dr-party-note{margin-top:20px;color:#8e826d;font-size:10px;line-height:1.6}
+    `;document.head.appendChild(st);
+  }
+  async function fetchBestParties(status){
+    const room=String(status&&status.raid_id||'');if(!room) return;
+    if(room!==bestPartyRoom){bestParties.clear();bestPartyLoaded=false;bestPartyRoom=room;}
+    if(bestPartyLoaded) return;
+    try{
+      const records=await rpc('get_daily_raid_best_parties',{p_user_id:uid(),p_room_id:room});
+      if(bestPartyRoom!==room)return;
+      bestParties.clear();(Array.isArray(records)?records:[]).forEach(r=>bestParties.set(String(r.user_id||'').toLowerCase(),r));
+      bestPartyLoaded=true;
+      const root=document.getElementById('daily-raid-root');
+      if(root&&root.getAttribute('aria-hidden')==='false'&&currentStatus&&String(currentStatus.raid_id)===room)render(currentStatus);
+    }catch(e){console.warn('[raid] party snapshots unavailable',e);}
+  }
+  function showBestParty(memberId){
+    const status=currentStatus;const member=(status&&status.members||[]).find(m=>String(m.user_id||'')===memberId);
+    const saved=bestParties.get(memberId.toLowerCase());
+    ensureBestPartyStyle();
+    const modal=document.createElement('div');modal.className='dr-party-overlay';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');
+    const chars=Array.isArray(window.CHARACTERS)?window.CHARACTERS:[];
+    const cards=(saved&&Array.isArray(saved.party_ids)?saved.party_ids:[]).map((id,index)=>{
+      const ch=chars.find(x=>Number(x.id)===Number(id));
+      const detail=saved&&Array.isArray(saved.party_details)?saved.party_details[index]:null;
+      const stats=detail&&Number(detail.id)===Number(id)&&Number.isFinite(Number(detail.level))&&Number.isFinite(Number(detail.limitBreak))
+        ? `Lv.${Math.max(1,Number(detail.level))} / 凸${Math.max(0,Number(detail.limitBreak))}` : '育成記録なし';
+      return `<div class="dr-party-unit"><img src="${esc(getCharacterPanelById(id))}" alt=""><span>${esc(ch&&ch.name||'ID '+id)}</span><small class="dr-party-stats">${esc(stats)}</small></div>`;
+    }).join('');
+    modal.innerHTML=`<div class="dr-party-sheet"><div class="dr-party-top"><div><div class="dr-party-kicker">DAILY RAID / BEST PARTY</div><div class="dr-party-owner">${esc(member&&member.display_name||memberId)}</div></div><button type="button" class="dr-party-close" aria-label="閉じる">×</button></div><div class="dr-party-score"><small>BEST DAMAGE</small>${fmt(member&&member.best_damage)}</div>${saved&&cards?`<div class="dr-party-units">${cards}</div><p class="dr-party-note">このスコアを記録した時点の編成です。</p>`:`<p class="dr-party-note">編成記録はありません。新機能導入後のBEST更新から表示されます。</p>`}</div>`;
+    const close=()=>modal.remove();modal.addEventListener('click',e=>{if(e.target===modal||e.target.closest('.dr-party-close'))close();});
+    document.body.appendChild(modal);
+  }
+  document.addEventListener('click',e=>{const btn=e.target.closest&&e.target.closest('[data-raid-best-party]');if(btn){e.preventDefault();showBestParty(String(btn.dataset.raidBestParty));}});
+  async function saveBestParty(result,damage,meta){
+    const ids=(meta&&Array.isArray(meta.partyIds)?meta.partyIds:[]).map(Number).filter(x=>Number.isInteger(x)&&x>0).slice(0,3);
+    const room=String(result&&result.raid_id||''); const mine=result&&result.me;
+    if(!room||!ids.length||n(mine&&mine.best_damage)!==n(damage)||n(damage)===0)return;
+    try{
+      const ok=await rpc('save_daily_raid_best_party',{p_user_id:uid(),p_room_id:room,p_damage:n(damage),p_party_ids:ids,p_party_details:(meta&&Array.isArray(meta.partyDetails)?meta.partyDetails:null)});
+      if(ok){bestPartyLoaded=false;await fetchBestParties(result);}
+    }catch(e){console.warn('[raid] best party snapshot not saved',e);}
+  }
+
 
   function sb(){ return window.zsSupabase || null; }
   function uid(){ return String(localStorage.getItem('zukan_user_id') || '').trim().toLowerCase(); }
@@ -1812,6 +1878,7 @@
     if(!userId) throw new Error('ユーザーIDがありません');
     currentStatus=normalizeStatus(await rpc('get_my_daily_raid_room',{p_user_id:userId}));
     if(currentStatus&&currentStatus.raid_id) currentStatus=await flushPendingFinish(currentStatus);
+    if(currentStatus&&currentStatus.raid_id) void fetchBestParties(currentStatus);
     return currentStatus;
   }
 
@@ -2653,7 +2720,7 @@
       const state=done?'BEST LOCKED':active?`${attempts}/3 IN BATTLE`:attempts>0?`${attempts}/3 READY`:'READY';
       const panel=m.panel_src?`<img class="daily-raid-member-panel" src="${esc(m.panel_src)}" alt="">`:'<div class="daily-raid-member-panel daily-raid-member-panel-empty"></div>';
       const host=String(m.user_id||'')===String(status&&status.host_user_id||'');
-      return `<div class="daily-raid-member${mine?' is-me':''}${done?' is-done':''}${active?' is-active':''}"><span class="daily-raid-member-no">${mine?'YOU':host?'HOST':'ALLY'}</span>${panel}<div class="daily-raid-member-copy"><strong>${esc(m.display_name||m.user_id||'PLAYER')}</strong><small class="daily-raid-member-state">${esc(state)}</small><div class="daily-raid-member-damage"><span>BEST</span><b>${best>0?fmt(best):'—'}</b></div></div></div>`;
+      return `<div class="daily-raid-member${mine?' is-me':''}${done?' is-done':''}${active?' is-active':''}"><span class="daily-raid-member-no">${mine?'YOU':host?'HOST':'ALLY'}</span>${panel}<div class="daily-raid-member-copy"><strong>${esc(m.display_name||m.user_id||'PLAYER')}</strong><small class="daily-raid-member-state">${esc(state)}</small><div class="daily-raid-member-damage"><span>BEST</span><b>${best>0?fmt(best):'—'}</b></div>${best>0?`<button type="button" class="dr-bestparty-btn" data-raid-best-party="${esc(String(m.user_id||''))}">編成を見る　›</button>`:''}</div></div>`;
     });
     while(rows.length<4) rows.push('<div class="daily-raid-member is-empty"><span class="daily-raid-member-no">ALLY</span><div class="daily-raid-member-copy"><strong>EMPTY</strong><small>参加枠</small></div><b>OPEN</b></div>');
     list.innerHTML=rows.join('');
@@ -2885,6 +2952,7 @@
       try{
         const result=normalizeStatus(await submitDamage(damage));
         currentStatus=result; refreshFriendHomeNotice();
+        if(result&&meta&&Array.isArray(meta.partyIds)) await saveBestParty(result,damage,meta);
         if(result&&(result.status==='cleared'||n(result.current_hp)<=0)){
           try{ window.dispatchEvent(new CustomEvent('sasaphia-daily-raid-cleared',{detail:result})); }catch(_){ }
           if(typeof window.refreshRaidClearRewardNotice==='function'){ try{ window.refreshRaidClearRewardNotice(); }catch(_){ } }

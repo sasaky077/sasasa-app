@@ -31997,7 +31997,13 @@
       if (retryBtn) retryBtn.style.display = 'none';
       if (!state.raidAttemptFinished && window.RaidEvent && typeof window.RaidEvent.finishAttempt === 'function') {
         state.raidAttemptFinished = true;
-        const finishPromise = window.RaidEvent.finishAttempt(state.raidDamageDealt, { bossDefeated: !!win });
+        const finishPromise = window.RaidEvent.finishAttempt(state.raidDamageDealt, { bossDefeated: !!win,
+          partyIds: Array.isArray(state.party) ? state.party.map(m => Number(m.id)).filter(Boolean) : [],
+          partyDetails: Array.isArray(state.party) ? state.party.map(m => {
+            const id=Number(m.id);
+            const owned=typeof getOwnedShootingInstance==='function' ? getOwnedShootingInstance(id) : null;
+            return {id, level:Math.max(1,Math.floor(Number(owned&&(owned.characterLevel??owned.character_level) || 1))),limitBreak:Math.max(0,Math.floor(Number(owned&&(owned.limitBreak??owned.limit_break) || 0)))};
+          }) : [] });
         Promise.resolve(finishPromise)
           .then(() => clearShootingResumeState())
           .catch(err => {
