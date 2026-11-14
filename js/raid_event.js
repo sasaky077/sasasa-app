@@ -15,8 +15,28 @@
     if(document.getElementById('raid-bestparty-1924')) return;
     const st=document.createElement('style'); st.id='raid-bestparty-1924';
     st.textContent=`
-      #daily-raid-root .dr-bestparty-btn{display:inline-flex;flex:0 0 auto;align-items:center;justify-content:center;box-sizing:border-box;width:auto;min-width:78px;max-width:100%;min-height:25px;margin-top:5px;padding:4px 9px;border:1px solid rgba(179,150,99,.85);background:linear-gradient(180deg,rgba(255,253,248,.97),rgba(240,229,207,.93));color:#4b3a32;border-radius:2px;box-shadow:inset 0 1px rgba(255,255,255,.85);font:600 10px/1.1 'Noto Serif JP',serif;letter-spacing:.035em;white-space:nowrap;word-break:keep-all;cursor:pointer}
-      #daily-raid-root .dr-bestparty-btn:active{background:rgba(180,154,107,.14)}
+      #daily-raid-root .dr-bestparty-btn{display:inline-flex;flex:0 0 auto;align-items:center;justify-content:center;box-sizing:border-box;width:auto;min-width:78px;max-width:100%;min-height:25px;margin-top:5px;padding:4px 9px;border:1px solid rgba(179,150,99,.85);background:transparent;color:#4b3a32;border-radius:2px;box-shadow:inset 0 1px rgba(255,255,255,.85);font:600 10px/1.1 'Noto Serif JP',serif;letter-spacing:.035em;white-space:nowrap;word-break:keep-all;cursor:pointer}
+      #daily-raid-root .daily-raid-member-copy .dr-bestparty-btn{
+        display:inline-flex!important;align-items:center!important;justify-content:center!important;
+        box-sizing:border-box!important;width:auto!important;min-width:80px!important;
+        max-width:100%!important;height:24px!important;min-height:24px!important;
+        padding:0 8px!important;margin:4px 0 0!important;
+        background:transparent!important;background-image:none!important;
+        border:1px solid rgba(185,158,111,.56)!important;border-radius:0!important;
+        color:#53483e!important;-webkit-text-fill-color:#53483e!important;
+        font:500 10px/1 'Noto Serif JP',serif!important;letter-spacing:.025em!important;
+        white-space:nowrap!important;word-break:keep-all!important;overflow:visible!important;
+        box-shadow:none!important;text-shadow:none!important;
+        position:relative!important;z-index:5!important;pointer-events:auto!important;
+        touch-action:manipulation!important;cursor:pointer!important;
+      }
+      #daily-raid-root .daily-raid-member-copy .dr-bestparty-btn::after{
+        content:'›';display:inline-block;margin-left:7px;font:400 14px/1 Georgia,serif;
+        color:#a48c6f;-webkit-text-fill-color:#a48c6f;
+      }
+      #daily-raid-root .daily-raid-member-copy .dr-bestparty-btn:active{
+        background:transparent!important;
+      }
       .dr-party-overlay{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(15,17,28,.68);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
       .dr-party-sheet{box-sizing:border-box;width:min(100%,390px);padding:24px 20px 22px;background:#f9f7f2;border:1px solid #bba77f;box-shadow:0 16px 44px rgba(4,6,15,.34);color:#292941;font-family:'Noto Serif JP',serif}
       .dr-party-top{display:flex;align-items:start;justify-content:space-between;border-bottom:1px solid #d8cfbf;padding-bottom:14px;gap:12px}
@@ -62,7 +82,7 @@
     const close=()=>modal.remove();modal.addEventListener('click',e=>{if(e.target===modal||e.target.closest('.dr-party-close'))close();});
     document.body.appendChild(modal);
   }
-  document.addEventListener('click',e=>{const btn=e.target.closest&&e.target.closest('[data-raid-best-party]');if(btn){e.preventDefault();showBestParty(String(btn.dataset.raidBestParty));}});
+  document.addEventListener('click',e=>{const btn=e.target.closest&&e.target.closest('#daily-raid-root [data-raid-best-party]');if(!btn)return;e.preventDefault();e.stopPropagation();showBestParty(String(btn.dataset.raidBestParty));},true);
   async function saveBestParty(result,damage,meta){
     const ids=(meta&&Array.isArray(meta.partyIds)?meta.partyIds:[]).map(Number).filter(x=>Number.isInteger(x)&&x>0).slice(0,3);
     const room=String(result&&result.raid_id||''); const mine=result&&result.me;
@@ -1418,6 +1438,7 @@
 
   function ensureRoot(){
     ensureEarlyFinalizeStyle();
+    ensureBestPartyStyle();
     let root=document.getElementById('daily-raid-root');
     if(root){ applyRaidCanonicalSurfaces(root); bindRaidSurfaceObserver(root); return root; }
     root=document.createElement('div');
