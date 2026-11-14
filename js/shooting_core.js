@@ -3252,6 +3252,48 @@
     if (isPo) el.dataset.poLen = String(String(value).length); else delete el.dataset.poLen;
   }
 
+  // build1965: server-aggregated stage character usage; no client-supplied ranking data.
+  let popularStageId = '';
+  const popularCache = new Map();
+  window.closeShootingStagePopular = function(){
+    const layer=document.getElementById('zpf-popular-overlay');
+    if(layer){ layer.hidden=true;layer.setAttribute('aria-hidden','true'); }
+  };
+  window.openShootingStagePopular = async function(){
+    const layer=document.getElementById('zpf-popular-overlay');
+    const list=document.getElementById('zpf-popular-results');
+    if(!layer||!list) return;
+    layer.hidden=false;layer.setAttribute('aria-hidden','false');
+    const id=String(selectedStage?.id||'');
+    popularStageId=id;
+    list.textContent='集計しています…';
+    const sb=window.zsSupabase;
+    if(!id||!sb){list.textContent='集計データを取得できません';return;}
+    try {
+      const rows=popularCache.has(id)?popularCache.get(id):(await (async()=>{
+        const result=await sb.rpc('get_stage_character_top5',{p_stage_id:id});
+        if(result.error)throw result.error;
+        const data=Array.isArray(result.data)?result.data:[];popularCache.set(id,data);return data;
+      })());
+      if(popularStageId!==id||layer.hidden)return;
+      list.replaceChildren();
+      if(!rows.length){list.textContent='このステージには、まだ使用記録がありません';return;}
+      rows.forEach((entry,i)=>{
+        const cid=Number(entry.character_id);
+        const c=SHOOTING_CHARACTERS[cid];
+        if(!c)return;
+        const row=document.createElement('div');row.className='zpf-popular-row';
+        const rank=document.createElement('span');rank.className='zpf-popular-rank';rank.textContent=String(i+1).padStart(2,'0');
+        const portrait=document.createElement('img');portrait.src=getCharacterPanelImage(c);portrait.alt='';portrait.loading='lazy';
+        const info=document.createElement('div');info.className='zpf-popular-name';
+        const name=document.createElement('strong');name.textContent=c.name;
+        info.appendChild(name);
+        const percent=document.createElement('span');percent.className='zpf-popular-share';percent.textContent=Number(entry.share_pct||0).toFixed(1)+'%';
+        row.append(rank,portrait,info,percent);list.appendChild(row);
+      });
+    }catch(err){console.warn('[stage top5] failed',err);if(popularStageId===id)list.textContent='集計を取得できませんでした。再度お試しください。';}
+  };
+
   function setShootingStageHeader(inBattle) {
     const title = document.getElementById('shooting-hud-stage-title');
     const difficulty = document.getElementById('shooting-hud-difficulty');
@@ -11402,18 +11444,10 @@
   }
 
 
-  function hideLaserCross() {
-    if (!state) return;
-    (state.vLaserEls || []).forEach((v, i) => {
-      if (i >= 8 && v && v.laser) v.laser.classList.remove('active');
-    });
-    state.laserCrossHideAt = 0;
-  }
   function hideIgnisLaser() {
     if (!state) return;
     if (state.ignisLaserEl) state.ignisLaserEl.classList.remove('active');
     (state.vLaserEls || []).forEach(v => v && v.laser && v.laser.classList.remove('active'));
-    state.laserCrossHideAt = 0;
   }
 
   // build1752: Vレーザー（テスト）— 自機から左右斜めに2本。各ビームは画面外まで伸びて貫通する。
@@ -11618,7 +11652,7 @@
       const v = state.vLaserEls && state.vLaserEls[LASER_CROSS_EL_BASE + i];
       if (v && v.laser) v.laser.classList.remove('active');
     }
-    if (!origins.length) { hideLaserCross(); return 0; }
+    if (!origins.length) return 0;
     const arena = document.getElementById('shooting-arena');
     const aw = Number(arena?.clientWidth || 390);
     const half = Math.max(8, Number(c.laserCrossHitHalfHeight || 22));
@@ -11642,8 +11676,7 @@
         hitEntries.push(t);
       });
     });
-    // 横レーザーは縦レーザーとは独立した短命エフェクト。
-    state.laserCrossHideAt = now + Math.max(50, Number(c.laserVisualHoldMs || 130));
+    state.ignisLaserHideAt = Math.max(Number(state.ignisLaserHideAt || 0), now + Number(c.laserVisualHoldMs || 130));
     if (!hitEntries.length || damage <= 0) return 0;
     return applyLaserDamageToEntries(c, hitEntries, damage, element, now, false);
   }
@@ -11759,10 +11792,7 @@
       state.ignisLaserHideAt = now + Number(c.laserVisualHoldMs || 130);
     }
 
-    if (!targets.length) {
-      if (c && c.laserCross) hideLaserCross();
-      return;
-    }
+    if (!targets.length) return;
 
     const damage = Number(c.atk || 0) * Number(c.laserDamageAtkRate || 0.105);
     const laserAttackElement = normalizeCombatElement(
@@ -11771,9 +11801,8 @@
     if (el) el.dataset.attackElement = laserAttackElement;
 
     let hitCount = applyLaserDamageToEntries(c, targets, damage, laserAttackElement, now, true);
-    // build1961: 命中がなくなったら古い横レーザーを即時消去する。
+    // build1817: LASER(+)（イノリ）— 縦レーザーが当たった敵を起点に、横一線のレーザーも走る
     if (c && c.laserCross) hitCount += fireLaserCross(c, targets, damage, laserAttackElement, now, hitWidth);
-    else hideLaserCross();
     state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
     if (hitCount <= 0) return;
 
@@ -29144,8 +29173,6 @@
     updateRoseFortress(ts);
     updateWolfAtkField(ts);
     updateToyfelBlackHoleField(ts);
-    // build1961: イノリの横レーザーを縦レーザーの更新と独立して消す。
-    if (Number(state.laserCrossHideAt || 0) > 0 && ts >= state.laserCrossHideAt) hideLaserCross();
     if ((state.ignisLaserEl || (state.vLaserEls && state.vLaserEls.length)) && (
       String(getCurrentCharacter()?.shotType || '') !== 'laser' ||
       ts >= Number(state.ignisLaserHideAt || 0)

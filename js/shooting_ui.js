@@ -111,6 +111,17 @@
                   <span class="zpf-intro-english">— PARTY FORMATION —</span>
                 </div>
                 <div class="zpf-rule" id="shooting-party-rule-text">最大3人 · 1人から出撃可能</div>
+                <button type="button" class="zpf-popular-trigger" id="zpf-popular-trigger" onclick="openShootingStagePopular()" aria-label="使用キャラ TOP5を表示"><span>使用キャラ</span><small>TOP 5</small></button>
+              </div>
+              <div class="zpf-popular-overlay" id="zpf-popular-overlay" hidden aria-hidden="true">
+                <div class="zpf-popular-panel" role="dialog" aria-modal="true" aria-label="使用キャラ TOP5" tabindex="-1">
+                  <button type="button" class="zpf-popular-close" onclick="closeShootingStagePopular()" aria-label="閉じる">×</button>
+                  <span class="zpf-popular-kicker">STAGE CHARACTER RANKING</span>
+                  <h2>使用キャラ TOP5</h2>
+                  <p class="zpf-popular-lead">このステージで使用されたキャラクター TOP 5</p>
+                  <div class="zpf-popular-results" id="zpf-popular-results" aria-live="polite">集計しています…</div>
+                  <p class="zpf-popular-foot">使用率は全キャラクターの使用記録に占める割合です。<br>勝率やクリア率ではありません。</p>
+                </div>
               </div>
               <div class="zpf-slots" id="shooting-party-slots" aria-label="編成枠"></div>
               <section class="zpf-lastclear is-empty" id="shooting-last-clear-party" aria-label="前回のクリア編成">
