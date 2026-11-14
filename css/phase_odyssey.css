@@ -1202,7 +1202,7 @@ html body:has(#screen-phase-odyssey.active) #global-user-frame #user-coin{
 /* ranking party inspection — compact mobile dialog */
 .po-rank-party-open{cursor:pointer;touch-action:manipulation;outline-offset:3px}
 .po-rank-party-open:focus-visible{outline:2px solid #b79a64}
-.po-ranking-party-overlay{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box}
+.po-ranking-party-overlay{position:fixed;inset:0;z-index:300101;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box}
 .po-ranking-party-shade{position:absolute;inset:0;background:rgba(15,17,39,.73);backdrop-filter:blur(3px)}
 .po-ranking-party-sheet{position:relative;width:min(100%,390px);max-height:calc(100dvh - 34px);overflow:auto;box-sizing:border-box;padding:23px 15px 19px;text-align:center;background:linear-gradient(160deg,#fffefa,#f1ebdf);border:1px solid #c0a675;box-shadow:0 15px 40px #0006;color:#252849;font-family:'Noto Serif JP',serif}
 .po-ranking-party-kicker{font:10px Cinzel,serif;letter-spacing:.18em;color:#947b54}
