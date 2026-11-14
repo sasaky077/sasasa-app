@@ -638,7 +638,8 @@ html body #bottom-nav-shared .bottom-nav-item.locked-visual > .bottom-nav-label{
   }
 }
 </style>
-  <link rel="stylesheet" href="css/admin_mode.css?v=593-admin-7tap-hidden-v169">
+  
+<link rel="stylesheet" href="css/admin_mode.css?v=593-admin-7tap-hidden-v169">
 <style id="raid-bottom-nav-icon-color-fix-build660">
 /* Raid screen: keep shared bottom-nav icon tone identical to normal screens. */
 html body.raid-shell-active #bottom-nav-shared.bottom-nav .bottom-nav-item img,
@@ -3874,6 +3875,9 @@ html:not(.hv2-home) body #global-user-frame .hv2-face {
 
   <!-- 神樹：アルケミア創世進捗への入口（右側アイコン） -->
   <button class="shinju-home-entry home-type-entry" id="shinju-home-entry" type="button" onclick="openShinjuScreen()" aria-label="神聖樹へ移動" data-home-head="神" data-home-rest="聖樹"></button>
+
+  <!-- 楽曲：YouTube公式プレイリストへの入口 -->
+  <button class="music-home-entry home-type-entry" id="music-home-entry" type="button" onclick="openMusicPlaylist()" aria-label="楽曲プレイリストを開く" data-home-head="楽" data-home-rest="曲"></button>
 
   <!-- アイテム管理：所持素材の確認・売却 -->
   <button class="item-home-entry home-type-entry" id="item-home-entry" type="button" onclick="openItemScreen()" aria-label="アイテム管理へ移動" data-home-head="ア" data-home-rest="イテム"></button>
@@ -20828,7 +20832,7 @@ function fadeOutOpeningBgm(){
 <!-- 32マス共有盤面バトル（新規追加） -->
 <link rel="stylesheet" href="css/battle_32_ui.css?v=593">
   <link rel="stylesheet" href="css/score_attack_redesign.css?v=1577-sa-name">
-  <link rel="stylesheet" href="css/home_menu_redesign.css?v=1841-lock">
+  <link rel="stylesheet" href="css/home_menu_redesign.css?v=1951-music">
   <link rel="stylesheet" href="css/content_lock.css?v=1843-lock-tower">
   <link rel="stylesheet" href="css/notice_redesign.css?v=1453-notice-mock">
   <link rel="stylesheet" href="css/item_redesign.css?v=1648-premium-sr-ticket">
@@ -22526,11 +22530,11 @@ html body #global-user-frame .hud-sweep-line-player::after{
 </script>
 
 <!-- build1448: ホーム左右メニュー（アイコン＋文字＋金線） -->
-<script src="js/home_menu_redesign.js?v=1448-home-menu-icons"></script>
-<link rel="stylesheet" href="css/home_v2.css?v=1912-art-down">
+<script src="js/home_menu_redesign.js?v=1951-music"></script>
+<link rel="stylesheet" href="css/home_v2.css?v=1952-six-sidebar">
 <link rel="stylesheet" href="css/chara_favorites.css?v=1914-fav">
 <script src="js/home_lines.js?v=1886-lines"></script>
-<script src="js/home_v2.js?v=1907-talk-wide"></script>
+<script src="js/home_v2.js?v=1952-six-sidebar"></script>
 <script src="js/chara_favorites.js?v=1910-fav"></script>
 <script src="js/notice_dot.js?v=1618-notice-dot"></script>
 
@@ -22773,5 +22777,13 @@ html:not(.hv2-home) body #global-user-frame .hud-resource {
 </style>
 
 
+
+<script id="music-playlist-build1951">
+window.openMusicPlaylist = function(){
+  var url='https://www.youtube.com/playlist?list=PLAwwXjXZKW1E';
+  var popup=window.open(url,'_blank','noopener,noreferrer');
+  if(!popup) window.location.href=url;
+};
+</script>
 </body>
 </html>

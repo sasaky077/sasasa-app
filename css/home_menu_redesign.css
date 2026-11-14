@@ -303,3 +303,14 @@ html body #screen-main > button.home-type-entry.hm2 > .content-lock-overlay{
   html body #screen-main > button.home-type-entry.hm2 > .hm2-body{ gap:2px; }
   html body #screen-main > button.home-type-entry.hm2--tower .hm2-icon{ width:60px; height:60px; bottom:10px; }
 }
+
+/* build1951: official music menu, visible from first render */
+html body #screen-main > button.home-type-entry.hm2--music.hm2{
+  left:var(--hm2-edge)!important;right:auto!important;
+  top:calc(var(--hm2-top) + var(--hm2-avail) * 1.10)!important;
+}
+html body #screen-main > button.home-type-entry.hm2--music .hm2-icon{
+  background-image:url('../images/home_icon_music.webp')!important;
+  background-size:contain!important;
+  background-position:left bottom!important;
+}

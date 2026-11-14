@@ -11,7 +11,8 @@
     { key:'gift',   label:'ボーナス', src:'#bonus-home-entry',  dots:['#bonus-home-entry-notice'] },
     { key:'friend', label:'フレンド', src:'#friend-home-entry', dots:['.friend-notice-dot'] },
     { key:'chest',  label:'アイテム', src:'#item-home-entry',   dots:[] },
-    { key:'tree',   label:'神聖樹',   src:'#shinju-home-entry', dots:['.shinju-home-entry-badge','[class*="notice"]','[class*="badge"]'] }
+    { key:'tree',   label:'神聖樹',   src:'#shinju-home-entry', dots:['.shinju-home-entry-badge','[class*="notice"]','[class*="badge"]'] },
+    { key:'music',  label:'楽曲',     src:'#music-home-entry', dots:[] }
   ];
   var RIGHT = [
     { key:'tower',  en:'ECHO TOWER',   label:'残響の塔',   src:'#resonance-tower-home-entry', dots:['.towa-memory-notice-dot'], art:'images/home_bg.webp' },

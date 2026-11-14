@@ -16,7 +16,8 @@
     { sel:'#bonus-home-entry',                key:'bonus',   side:'left'  },
     { sel:'#friend-home-entry',               key:'friend',  side:'left'  },
     { sel:'#raid-home-entry',                 key:'raid',    side:'left'  },
-    { sel:'#resonance-tower-home-entry',      key:'tower',   side:'left'  }
+    { sel:'#resonance-tower-home-entry',      key:'tower',   side:'left'  },
+    { sel:'#music-home-entry',                key:'music',   side:'left'  }
   ];
 
   function labelOf(btn){
@@ -71,7 +72,27 @@
     if(!btn.querySelector(':scope > .hm2-body')) build(btn, spec);
   }
 
-  function ensureAll(){ SPECS.forEach(ensure); }
+
+  function positionMusic(){
+    var screen = document.getElementById('screen-main');
+    var music = document.getElementById('music-home-entry');
+    if(!screen || !music) return;
+    var r = screen.getBoundingClientRect();
+    var candidates = Array.from(screen.querySelectorAll('#shinju-home-entry,#item-home-entry,#bonus-home-entry,#friend-home-entry,#raid-home-entry,#resonance-tower-home-entry'));
+    var anchors = candidates.filter(function(el){
+      var b=el.getBoundingClientRect();
+      return b.width>0 && b.left<r.left+r.width*.43 && b.top<r.bottom;
+    });
+    if(!anchors.length)return;
+    var last=anchors.reduce(function(a,b){return a.getBoundingClientRect().top>b.getBoundingClientRect().top?a:b});
+    var b=last.getBoundingClientRect();
+    var targetTop=b.top-r.top+Math.min(61,Math.max(45,b.height*.72));
+    music.style.setProperty('left',Math.max(0,b.left-r.left)+'px','important');
+    music.style.setProperty('top',targetTop+'px','important');
+    music.style.setProperty('right','auto','important');
+  }
+
+  function ensureAll(){ SPECS.forEach(ensure); positionMusic(); }
 
   var scheduled = false;
   function schedule(){
@@ -95,6 +116,7 @@
       });
     }
     window.addEventListener('pageshow', schedule);
+    window.addEventListener('resize', schedule);
     setTimeout(ensureAll, 0);
     setTimeout(ensureAll, 500);
     setTimeout(ensureAll, 1500);

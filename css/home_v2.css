@@ -403,3 +403,25 @@ html.hv2-home #global-user-frame .hv2-exp .bar::after{display:none!important;con
 
 /* build1912: ホームの立ち絵を少し下げる（立ち絵の高さの15%） */
 #home-v2 .hv2-chara.is-home-art{transform:translateY(15%)!important}
+
+/* build1952: HOME v2 real sidebar, six visible items above event banner.
+   Old .home-type-entry is hidden by home-v2; music is rendered by SIDE in home_v2.js. */
+html.home-v2 #home-v2 .hv2-side{
+  top:calc(env(safe-area-inset-top,0px) + 78px)!important;
+  gap:1px!important;
+}
+html.home-v2 #home-v2 .hv2-side .hv2-sbtn{
+  width:60px!important;height:55px!important;flex:none!important;
+}
+html.home-v2 #home-v2 .hv2-side .hv2-hex{
+  width:50px!important;height:54px!important;gap:2px!important;
+}
+html.home-v2 #home-v2 .hv2-side .hv2-hex img{width:21px!important;height:21px!important;}
+html.home-v2 #home-v2 .hv2-side .hv2-hex .t{font-size:9.5px!important;}
+@media(max-height:680px){
+  html.home-v2 #home-v2 .hv2-side{top:calc(env(safe-area-inset-top,0px) + 70px)!important;gap:0!important;}
+  html.home-v2 #home-v2 .hv2-side .hv2-sbtn{height:49px!important;}
+  html.home-v2 #home-v2 .hv2-side .hv2-hex{width:46px!important;height:48px!important;}
+  html.home-v2 #home-v2 .hv2-side .hv2-hex img{width:19px!important;height:19px!important;}
+  html.home-v2 #home-v2 .hv2-side .hv2-hex .t{font-size:9px!important;}
+}
