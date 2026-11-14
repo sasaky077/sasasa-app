@@ -425,3 +425,9 @@ html.home-v2 #home-v2 .hv2-side .hv2-hex .t{font-size:9.5px!important;}
   html.home-v2 #home-v2 .hv2-side .hv2-hex img{width:19px!important;height:19px!important;}
   html.home-v2 #home-v2 .hv2-side .hv2-hex .t{font-size:9px!important;}
 }
+
+/* build1954: 右側の3コンテンツメニューを6px下げる。
+   吹き出し・出撃・バナーは動かさず、周辺余白を守る微調整。 */
+html.home-v2 #home-v2 .hv2-right{
+  bottom:calc(var(--hv2-right-bottom) - 6px)!important;
+}
