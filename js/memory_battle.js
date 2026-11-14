@@ -339,12 +339,20 @@
     list.addEventListener('touchcancel', () => { gesture = null; }, {passive:true});
 
     list.addEventListener('click', e => {
+      const rewardsButton = e.target.closest('[data-mb-rewards]');
+      if (rewardsButton) {
+        e.preventDefault();
+        e.stopPropagation();
+        openRewards(Number(rewardsButton.dataset.mbRewards));
+        return;
+      }
       if (Date.now()-lastBossSwipe < 350) return;
       const card = e.target.closest('.mb-card[data-no]');
       if (!card || card.classList.contains('is-locked')) return;
       startStage(Number(card.dataset.no));
     });
     list.addEventListener('keydown', e => {
+      if (e.target.closest('[data-mb-rewards]')) return;
       if (e.key !== 'Enter' && e.key !== ' ') return;
       const card = e.target.closest('.mb-card[data-no]');
       if (!card || card.classList.contains('is-locked')) return;
@@ -377,6 +385,34 @@
     root.querySelector('[data-mb-prev]').disabled = index === 0;
     root.querySelector('[data-mb-next]').disabled = index === count-1;
   }
+  function openRewards(stageNo){
+    const root = $(SCREEN_ID);
+    if (!root) return;
+    const definitions = {
+      1: { name:'リヴィア', condition:'CHARGEキャラを編成せずにクリア' },
+      3: { name:'テスト', condition:'1体のみで編成してクリア' },
+      4: { name:'ヘイズ', condition:'SRキャラを編成せずにクリア' }
+    };
+    const def = definitions[stageNo];
+    if (!def) return;
+    const rank = rankState[String(stageNo)] || '';
+    const overlay = document.createElement('div');
+    overlay.className = 'mb-rewards-overlay';
+    overlay.setAttribute('role','presentation');
+    overlay.innerHTML = `<div class="mb-rewards-dialog" role="dialog" aria-modal="true" aria-label="${def.name}のクリア報酬">
+      <div class="mb-rewards-top"><div><small>MEMORY BATTLE</small><strong>クリア報酬</strong><span>${def.name}</span></div><button type="button" class="mb-rewards-close" aria-label="閉じる">×</button></div>
+      <div class="mb-rewards-line"><div class="mb-rewards-grade">A</div><div class="mb-rewards-desc"><strong>Aランク：クリア</strong><span>創世pt ×30</span></div>${rank ? '<small class="mb-rewards-status">達成済</small>' : ''}</div>
+      <div class="mb-rewards-line"><div class="mb-rewards-grade is-s">S</div><div class="mb-rewards-desc"><strong>Sランク：${esc(def.condition)}</strong><span>結晶 ×50</span></div>${rank === 'S' ? '<small class="mb-rewards-status">達成済</small>' : ''}</div>
+      <p class="mb-rewards-footnote">各ランクの報酬は初回達成時のみ。S達成時はAも達成扱いになります。</p>
+    </div>`;
+    const dismiss = () => overlay.remove();
+    overlay.addEventListener('click', e => { if (e.target === overlay || e.target.closest('.mb-rewards-close')) dismiss(); });
+    const onKey = e => { if (e.key === 'Escape') { dismiss(); document.removeEventListener('keydown',onKey); } };
+    document.addEventListener('keydown',onKey);
+    root.appendChild(overlay);
+    overlay.querySelector('.mb-rewards-close').focus();
+  }
+
   function moveBoss(direction){
     const root = $(SCREEN_ID);
     const list = root && root.querySelector('[data-mb-list]');
@@ -431,11 +467,8 @@
             <span class="mb-sub"><i></i>${esc(({1:'雨宿りの守護者の記憶',3:'未知との遭遇の記憶',4:'揺らめく陽炎の記憶'})[no] || def.title || '')}<i></i></span>
           </div>
           ${rank ? `<span class="mb-rank-indicator mb-rank-${rank.toLowerCase()}"><small>BEST</small><b>${rank}</b></span>` : `<span class="mb-rank-indicator mb-rank-none"><small>BEST</small><b>—</b></span>`}
-          ${done
-            ? '<div class="mb-reward is-done"><b>ランク取得済</b><span>A / S 獲得済</span></div>'
-            : `<div class="mb-reward"><div class="mb-reward-gem is-shinju"><img src="images/shinju_aura.webp" alt="創世pt" decoding="async"><b>+${REWARD_SHINJU_PT}</b></div><small class="mb-reward-label">創世pt</small><span>A初回</span></div>`}
+          <button type="button" class="mb-rewards-open" data-mb-rewards="${no}" aria-label="${esc(def.bossName)}のクリア報酬を見る">クリア報酬 <span aria-hidden="true">›</span></button>
         </div>
-        <div class="mb-rank-condition"><span>S RANK</span>${esc(condition)}<small>${rank === 'S' ? '達成済' : '初回報酬 結晶50'}</small></div>
         <div class="mb-card-body">
           <figure class="mb-portrait">${img ? `<img src="${esc(img)}" alt="${esc(def.bossName)}" decoding="async"${fallback && fallback !== img ? ` onerror="this.onerror=null;this.src='${esc(fallback)}'"` : ''}>` : ''}${done ? '<span class="mb-seal is-img" aria-label="ランク達成"><img src="images/memory_stamp_cleared.webp" alt="CLEARED" decoding="async"></span>' : ''}</figure>
           <ul class="mb-rules">${rules}</ul>
