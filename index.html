@@ -5090,6 +5090,43 @@ window.NOTICE_ITEMS = [
   const NOTICE_CLAIMED_KEY = 'sasaphia_notice_claimed_ids_v1';
   let noticeFilterMode = 'all';
   let noticeBulkClaimActive = false;
+  // build1949: Only accounts created after rollout see the simplified starter notice list.
+  // Older players retain the original complete notice list, regardless of device.
+  const NOTICE_NEW_USER_CUTOFF = Date.parse('2026-11-14T03:00:00Z');
+  const NOTICE_STARTER_IDS = new Set([
+    'notice_song_align_sync_20261114',
+    'notice_song_mimosa_20261108',
+    'notice_domain_change_20261109',
+    'notice_start_bonus_20260920',
+    'notice_halloween_leona_skin_20261101'
+  ]);
+  let noticeIsNewUser = false;  // safe fallback: do not hide existing notices
+  let noticeCohortUser = '';
+  let noticeCohortInFlight = false;
+  async function refreshNoticeAudience() {
+    if(noticeCohortInFlight) return;
+    noticeCohortInFlight = true;
+    try {
+      const uid = String(localStorage.getItem('zukan_user_id') || '').trim().toLowerCase();
+      if (!uid || uid === noticeCohortUser) return;
+      const currentAuthUser = await window.zsAuthReady;
+      if (!currentAuthUser || !currentAuthUser.id || typeof sb === 'undefined') return;
+      const response = await sb.from('user_profiles')
+        .select('created_at')
+        .eq('user_id', uid)
+        .eq('auth_uid',currentAuthUser.id)
+        .maybeSingle();
+      if (response.error || !response.data || !response.data.created_at) return;
+      const created = Date.parse(response.data.created_at);
+      if (!Number.isFinite(created)) return;
+      noticeCohortUser = uid;
+      noticeIsNewUser = created >= NOTICE_NEW_USER_CUTOFF;
+      if(document.getElementById('notice-list')) renderNoticeList();
+      updateNoticeBadge();
+    } catch(e) { console.warn('[NoticeAudience] Using existing notice list',e); }
+    finally {noticeCohortInFlight=false;}
+  }
+
 
   function ensureNoticeRuntimeStyle() {
     if (document.getElementById('sasaphia-notice-inline-style-v5')) return;
@@ -5520,7 +5557,7 @@ window.NOTICE_ITEMS = [
 
   function getVisibleNotices() {
     return (window.NOTICE_ITEMS || []).filter(function (item) {
-      return item && item.hidden !== true;
+      return item && item.hidden !== true && (!noticeIsNewUser || NOTICE_STARTER_IDS.has(item.id));
     });
   }
 
@@ -6515,7 +6552,7 @@ window.NOTICE_ITEMS = [
     const list = document.getElementById('notice-list');
     if (!list) return;
 
-    const allItems = (window.NOTICE_ITEMS || []).filter(item => item && item.hidden !== true);
+    const allItems = getVisibleNotices();
     const readIds = new Set(getReadNoticeIds());
     const items = allItems.filter(function(item){
       const isUnread = !!(item && item.id && !readIds.has(item.id));
@@ -6749,6 +6786,8 @@ window.NOTICE_ITEMS = [
   function initializeNoticeUi() {
     ensureNoticeRuntimeStyle();
     updateNoticeBadge();
+    refreshNoticeAudience();
+    setTimeout(refreshNoticeAudience, 1800);
   }
 
   if (document.readyState === 'loading') {
@@ -6757,9 +6796,10 @@ window.NOTICE_ITEMS = [
     initializeNoticeUi();
   }
 
-  window.addEventListener('focus', updateNoticeBadge);
+  window.addEventListener('focus', function(){ refreshNoticeAudience(); updateNoticeBadge(); });
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'visible') {
+      refreshNoticeAudience();
       syncNoticeRewardClaimStatus().finally(updateNoticeBadge);
     }
   });
