@@ -423,3 +423,13 @@ html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-
   html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info,
   html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info{width:125px!important}
 }
+
+/* PHASE ODYSSEY: remove the oval behind RANK only.
+   phase_odyssey.css adds a box-shadow to .hud-lv-circle, which is now
+   a horizontal 118px-wide shared HUD region instead of a round badge. */
+html body:not(.ui-immersive):has(#screen-phase-odyssey.active) #global-user-frame.global-user-frame .hud-lv-circle{
+  box-shadow:none!important;
+  border:none!important;
+  outline:none!important;
+  background:none!important;
+}
