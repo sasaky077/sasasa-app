@@ -426,8 +426,13 @@ html.home-v2 #home-v2 .hv2-side .hv2-hex .t{font-size:9.5px!important;}
   html.home-v2 #home-v2 .hv2-side .hv2-hex .t{font-size:9px!important;}
 }
 
-/* build1954: 右側の3コンテンツメニューを6px下げる。
-   吹き出し・出撃・バナーは動かさず、周辺余白を守る微調整。 */
-html.home-v2 #home-v2 .hv2-right{
-  bottom:calc(var(--hv2-right-bottom) - 6px)!important;
+/* build1955: 左側6メニューのみ12px下げる（iPhone SE等は下端を守る）。
+   右側メニューはbuild1954の変更を取り消して元の位置にする。 */
+html.home-v2 #home-v2 .hv2-side{
+  top:calc(env(safe-area-inset-top,0px) + 90px)!important;
+}
+@media (max-height:680px){
+  html.home-v2 #home-v2 .hv2-side{
+    top:calc(env(safe-area-inset-top,0px) + 82px)!important;
+  }
 }
