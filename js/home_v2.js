@@ -28,6 +28,26 @@
   var NAV_ICON = { 'bnav-ninmu':'story', 'bnav-zukan':'chara', 'bnav-main':'home', 'bnav-summon':'gacha', 'bnav-setting':'menu' };
 
   var root = null, built = false, hitCanvas = null;
+  // build1957: 手動更新する新曲通知の版。新曲公開時はこの値を変更する。
+  var MUSIC_NOTICE_VERSION = 'release-2026-11-14-01';
+  var MUSIC_NOTICE_PREFIX = 'zeraphia_music_notice_seen_v1:';
+  function musicNoticeKey(){
+    var id = '';
+    try { id = String(localStorage.getItem('zukan_user_id') || '').trim(); } catch(_){}
+    return MUSIC_NOTICE_PREFIX + (id || 'guest');
+  }
+  function musicIsUnread(){
+    try { return localStorage.getItem(musicNoticeKey()) !== MUSIC_NOTICE_VERSION; }
+    catch(_) { return true; }
+  }
+  function markMusicRead(){
+    try { localStorage.setItem(musicNoticeKey(), MUSIC_NOTICE_VERSION); } catch(_){}
+    if (root) {
+      var btn = root.querySelector('.hv2-sbtn[data-i="5"]');
+      if (btn) { var dot = btn.querySelector('.hv2-dot'); if(dot){dot.hidden = true;dot.textContent = '';} }
+    }
+  }
+
 
   function $(sel, base){ return (base || document).querySelector(sel); }
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
@@ -68,7 +88,7 @@
     main.insertBefore(root, main.firstChild);
 
     root.querySelectorAll('.hv2-sbtn').forEach(function(b){
-      b.addEventListener('click', function(){ forward(SIDE[Number(b.dataset.i)].src); });
+      b.addEventListener('click', function(){ var spec=SIDE[Number(b.dataset.i)]; if(spec.key==='music') markMusicRead(); forward(spec.src); });
     });
     root.querySelectorAll('.hv2-rbtn').forEach(function(b){
       b.addEventListener('click', function(){ forward(RIGHT[Number(b.dataset.r)].src); });
@@ -145,6 +165,7 @@
     return true;
   }
   function dotState(spec){
+    if (spec.key === 'music') return musicIsUnread() ? '!' : null;
     var src = document.querySelector(spec.src);
     if (!src) return null;
     for (var i = 0; i < spec.dots.length; i++) {
