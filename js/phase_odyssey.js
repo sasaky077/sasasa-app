@@ -1342,8 +1342,11 @@
   function renderSkipButton(){
     const root = screen();
     if (!root) return;
-    const party = root.querySelector('.po-party');
-    if (!party) return;
+    // Keep the skip-ticket control in the persistent start dock, not under the
+    // growing party panel. On iPhone SE the party panel can be clipped.
+    const dock = root.querySelector('.po-start-dock');
+    const start = dock && dock.querySelector('[data-po-start]');
+    if (!dock || !start) return;
     let btn = root.querySelector('[data-po-skip]');
     if (!btn) {
       ensureSkipStyle();
@@ -1351,9 +1354,9 @@
       btn.type = 'button';
       btn.dataset.poSkip = '1';
       btn.addEventListener('click', () => offerSkip());
-      const retire = party.querySelector('[data-po-retire]');
-      party.insertBefore(btn, retire || null);
     }
+    // Also migrate a previously created button when rendering a reopened page.
+    if (btn.parentNode !== dock || btn.nextElementSibling !== start) dock.insertBefore(btn, start);
     const rec = load();
     const show = skipOwned > 0 && canSkipNow(rec);
     btn.hidden = !show;
@@ -1593,13 +1596,60 @@
       ? await sb.rpc('get_phase_odyssey_national_ranking', { p_user_id: uid, p_limit: 100 })
       : await sb.rpc('get_phase_odyssey_friend_ranking', { p_user_id: uid });
     if (res && res.error) throw res.error;
-    return Array.isArray(res && res.data) ? res.data : [];
+    const rows = Array.isArray(res && res.data) ? res.data : [];
+    // 既存ランキングとは別の読み取り専用RPC。失敗しても階層ランキングは表示する。
+    try {
+      const detailRes = await sb.rpc('get_phase_odyssey_ranking_party_details', { p_user_id: uid, p_scope: scope });
+      if (!detailRes.error && Array.isArray(detailRes.data)) {
+        const details = new Map(detailRes.data.map(x => [String(x.user_id || '').toLowerCase(), x.party_details]));
+        rows.forEach(r => { r.party_details = details.get(String(r.user_id || '').toLowerCase()) || []; });
+      }
+    } catch (err) { console.warn('[phase odyssey] ranking party details unavailable', err); }
+    return rows;
   }
   function rankPanelSrc(id){
     const c = getChar(id);
     if (c && (c.panelImage || c.image)) return c.panelImage || c.image;
     const n = toInt(id, 0);
     return n > 0 ? 'images/chara_' + String(n).padStart(2, '0') + '_panel.webp' : '';
+  }
+  function showRankingParty(row) {
+    document.querySelector('.po-ranking-party-overlay')?.remove();
+    const overlay = el('div', 'po-ranking-party-overlay');
+    overlay.setAttribute('role', 'dialog'); overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', 'ランキング編成詳細');
+    const shade = el('div', 'po-ranking-party-shade');
+    const sheet = el('div', 'po-ranking-party-sheet');
+    sheet.append(el('div', 'po-ranking-party-kicker', 'PHASE ODYSSEY / PARTY'));
+    sheet.append(el('h3', 'po-ranking-party-title', String(row.display_name || 'Player')));
+    sheet.append(el('div', 'po-ranking-party-floor', 'BEST FLOOR ' + toInt(row.best_floor, 0)));
+    const close = el('button', 'po-ranking-party-close', '×'); close.type = 'button'; close.setAttribute('aria-label','閉じる');
+    const dismiss = () => overlay.remove();
+    close.addEventListener('click', dismiss); shade.addEventListener('click', dismiss);
+    sheet.append(close);
+    const units = el('div', 'po-ranking-party-units');
+    const ids = Array.isArray(row.party_ids) ? row.party_ids.slice(0, PARTY_SIZE) : [];
+    const details = Array.isArray(row.party_details) ? row.party_details : [];
+    ids.forEach((id, i) => {
+      const card = el('div', 'po-ranking-party-unit');
+      const img = el('img'); img.src = rankPanelSrc(id); img.alt = ''; img.loading = 'lazy';
+      img.onerror = () => { img.style.visibility = 'hidden'; };
+      card.append(img);
+      const ch = getChar(id);
+      card.append(el('strong', 'po-ranking-party-unit-name', String((ch && ch.name) || ('ID ' + id))));
+      const d = details[i];
+      const valid = d && Number(d.id) === Number(id) && d.level != null && d.limitBreak != null;
+      card.append(el('span', 'po-ranking-party-unit-stats', valid
+        ? 'Lv.' + Math.max(1, Number(d.level)) + ' / 凸' + Math.max(0, Number(d.limitBreak))
+        : '育成記録なし'));
+      units.append(card);
+    });
+    if (!ids.length) units.append(el('p', 'po-ranking-party-missing', '編成記録がありません'));
+    sheet.append(units);
+    sheet.append(el('p', 'po-ranking-party-disclaimer', 'レベル・凸数は現在の育成状況です。到達当時の記録ではありません。'));
+    overlay.append(shade, sheet); document.body.append(overlay);
+    close.focus({ preventScroll: true });
+    overlay.addEventListener('keydown', e => { if (e.key === 'Escape') dismiss(); });
   }
   function rankRow(row, prevRank){
     const rank = toInt(row.rank_no, 0);
@@ -1634,6 +1684,13 @@
       } else cell.classList.add('is-empty');
       party.append(cell);
     }
+    party.setAttribute('role', 'button');
+    party.setAttribute('tabindex', '0');
+    party.setAttribute('aria-label', '編成と育成状況を確認');
+    party.classList.add('po-rank-party-open');
+    const openParty = () => showRankingParty(row);
+    party.addEventListener('click', openParty);
+    party.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openParty(); } });
     main.append(party);
     item.append(main);
     const floor = el('div', 'po-rank-floor');
