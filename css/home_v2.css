@@ -436,3 +436,114 @@ html.home-v2 #home-v2 .hv2-side{
     top:calc(env(safe-area-inset-top,0px) + 82px)!important;
   }
 }
+
+/* build1959 — Tall portrait UI SCALE, not position-only adjustment.
+   SE (375x667) is excluded. Absolute widths/heights prevent SE-size caps
+   from shrinking the buttons on a 16 Pro-class viewport.
+   Keep banner, sortie and speech panel unchanged to avoid collisions. */
+@media (min-width:390px) and (min-height:800px) and (max-aspect-ratio: 10/19) {
+  /* Six left buttons: 6 * 67 + 5 * 2 = 412px; at y~100 => ~512px. */
+  html.home-v2 #home-v2 .hv2-side {
+    top:calc(env(safe-area-inset-top,0px) + 94px)!important;
+    gap:2px!important;
+  }
+  html.home-v2 #home-v2 .hv2-side .hv2-sbtn {
+    width:68px!important;
+    height:67px!important;
+    flex:none!important;
+  }
+  html.home-v2 #home-v2 .hv2-side .hv2-hex {
+    width:60px!important;
+    height:65px!important;
+    gap:3px!important;
+  }
+  html.home-v2 #home-v2 .hv2-side .hv2-hex img {
+    width:26px!important;
+    height:26px!important;
+  }
+  html.home-v2 #home-v2 .hv2-side .hv2-hex .t {
+    font-size:10.5px!important;
+  }
+
+  /* Right group stays anchored above the unchanged speech panel.
+     Larger cards expand upward; bottom and speaking panel remain fixed. */
+  html.home-v2 #home-v2 .hv2-right {
+    width:53%!important;
+    gap:7px!important;
+    bottom:var(--hv2-right-bottom)!important;
+  }
+  html.home-v2 #home-v2 .hv2-rbtn {
+    height:55px!important;
+    min-height:55px!important;
+    padding:0 11px!important;
+    font-size:14.5px!important;
+    gap:9px!important;
+  }
+  html.home-v2 #home-v2 .hv2-rbtn .ic {
+    width:30px!important;
+    height:30px!important;
+  }
+  html.home-v2 #home-v2 .hv2-rbtn small {
+    font-size:8px!important;
+  }
+
+  /* Navigation is part of the size mismatch too. Frame dimensions unchanged. */
+  html.home-v2 body #bottom-nav-shared.bottom-nav .bottom-nav-item img,
+  html.home-v2 body #bottom-nav-shared.bottom-nav .bottom-nav-item.active img,
+  html.home-v2 body #bottom-nav-shared.bottom-nav .bottom-nav-item:not(.active) img {
+    width:32px!important;
+    height:32px!important;
+  }
+  html.home-v2 #bottom-nav-shared.bottom-nav .bottom-nav-label {
+    font-size:11.5px!important;
+  }
+}
+
+
+/* build1960: Tall-device HOME HUD enlargement only.
+   iPhone SE height / viewport is excluded. Keep left and right clusters separate. */
+@media (min-width:390px) and (min-height:800px) and (max-aspect-ratio:10/19) {
+  html.hv2-home #global-user-frame .hv2-face {
+    width:56px!important;height:56px!important;
+    margin:8px 5px 0 5px!important;
+  }
+  html.hv2-home #global-user-frame .hud-left {
+    column-gap:9px!important;
+  }
+  html.hv2-home #global-user-frame .hud-lv-label {
+    font-size:11px!important;
+  }
+  html.hv2-home #global-user-frame .hud-lv-num {
+    font-size:25px!important;
+  }
+  html.hv2-home #global-user-frame .hud-name {
+    font-size:18.5px!important;
+    max-width:125px!important;
+    letter-spacing:.08em!important;
+  }
+  html.hv2-home #global-user-frame .hv2-exp {
+    width:125px!important;
+    margin-top:6px!important;
+  }
+  html.hv2-home #global-user-frame .hv2-exp .nums {
+    font-size:9px!important;
+  }
+  html.hv2-home #global-user-frame .hud-right {
+    gap:6px!important;
+  }
+  html.hv2-home #global-user-frame .hud-resource {
+    min-width:144px!important;
+    height:35px!important;
+    padding:0 8px!important;
+  }
+  html.hv2-home #global-user-frame .hud-res-icon {
+    width:23px!important;height:23px!important;
+  }
+  html.hv2-home #global-user-frame .hud-res-val {
+    font-size:15px!important;
+  }
+  html.hv2-home #global-user-frame .hud-gem-plus-btn {
+    width:19px!important;height:19px!important;
+    font-size:13px!important;line-height:17px!important;
+  }
+}
