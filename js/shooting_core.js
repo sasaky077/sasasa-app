@@ -11402,10 +11402,18 @@
   }
 
 
+  function hideLaserCross() {
+    if (!state) return;
+    (state.vLaserEls || []).forEach((v, i) => {
+      if (i >= 8 && v && v.laser) v.laser.classList.remove('active');
+    });
+    state.laserCrossHideAt = 0;
+  }
   function hideIgnisLaser() {
     if (!state) return;
     if (state.ignisLaserEl) state.ignisLaserEl.classList.remove('active');
     (state.vLaserEls || []).forEach(v => v && v.laser && v.laser.classList.remove('active'));
+    state.laserCrossHideAt = 0;
   }
 
   // build1752: Vレーザー（テスト）— 自機から左右斜めに2本。各ビームは画面外まで伸びて貫通する。
@@ -11610,7 +11618,7 @@
       const v = state.vLaserEls && state.vLaserEls[LASER_CROSS_EL_BASE + i];
       if (v && v.laser) v.laser.classList.remove('active');
     }
-    if (!origins.length) return 0;
+    if (!origins.length) { hideLaserCross(); return 0; }
     const arena = document.getElementById('shooting-arena');
     const aw = Number(arena?.clientWidth || 390);
     const half = Math.max(8, Number(c.laserCrossHitHalfHeight || 22));
@@ -11634,7 +11642,8 @@
         hitEntries.push(t);
       });
     });
-    state.ignisLaserHideAt = Math.max(Number(state.ignisLaserHideAt || 0), now + Number(c.laserVisualHoldMs || 130));
+    // 横レーザーは縦レーザーとは独立した短命エフェクト。
+    state.laserCrossHideAt = now + Math.max(50, Number(c.laserVisualHoldMs || 130));
     if (!hitEntries.length || damage <= 0) return 0;
     return applyLaserDamageToEntries(c, hitEntries, damage, element, now, false);
   }
@@ -11750,7 +11759,10 @@
       state.ignisLaserHideAt = now + Number(c.laserVisualHoldMs || 130);
     }
 
-    if (!targets.length) return;
+    if (!targets.length) {
+      if (c && c.laserCross) hideLaserCross();
+      return;
+    }
 
     const damage = Number(c.atk || 0) * Number(c.laserDamageAtkRate || 0.105);
     const laserAttackElement = normalizeCombatElement(
@@ -11759,8 +11771,9 @@
     if (el) el.dataset.attackElement = laserAttackElement;
 
     let hitCount = applyLaserDamageToEntries(c, targets, damage, laserAttackElement, now, true);
-    // build1817: LASER(+)（イノリ）— 縦レーザーが当たった敵を起点に、横一線のレーザーも走る
+    // build1961: 命中がなくなったら古い横レーザーを即時消去する。
     if (c && c.laserCross) hitCount += fireLaserCross(c, targets, damage, laserAttackElement, now, hitWidth);
+    else hideLaserCross();
     state.normalEnemies = (state.normalEnemies || []).filter(enemy => enemy && enemy.hp > 0);
     if (hitCount <= 0) return;
 
@@ -29131,6 +29144,8 @@
     updateRoseFortress(ts);
     updateWolfAtkField(ts);
     updateToyfelBlackHoleField(ts);
+    // build1961: イノリの横レーザーを縦レーザーの更新と独立して消す。
+    if (Number(state.laserCrossHideAt || 0) > 0 && ts >= state.laserCrossHideAt) hideLaserCross();
     if ((state.ignisLaserEl || (state.vLaserEls && state.vLaserEls.length)) && (
       String(getCurrentCharacter()?.shotType || '') !== 'laser' ||
       ts >= Number(state.ignisLaserHideAt || 0)
