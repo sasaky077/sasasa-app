@@ -16550,7 +16550,7 @@
         : '<strong>鈍化</strong><span>移動速度50%ダウン ─ キャラ交代で解除</span>';
       arena.appendChild(tag);
     }
-    // 光輪と同じ戦闘ループで更新する。表示は実際の状態の期限と常に同期。
+    // 守護の札と同じ戦闘ループで更新する。表示は実際の状態の期限と常に同期。
     if (isInoriSpecialStage() && tag) {
       const remaining = Math.max(0, (Number(state.inori.slowUntil || 0) - performance.now()) / 1000);
       const label = tag.querySelector('.inori-slow-remaining');
@@ -16562,31 +16562,44 @@
     document.getElementById(PLAYER_ID)?.classList.remove('inori-slowed');
     if (state && state.inori) { state.inori.beams = []; state.inori.slowMemberId = 0; }
   }
-  // TICKETイノリ限定：双鳥居破壊時に1個、ランダム位置へ神罰対策の加護を出現させる。
-  // 入手から3秒なので、神罰の着弾間際に取りに行くタイミングゲームとなる。
+  // TICKETイノリ：守護の札は敵の周辺にのみ出現。操作キャラの近くには出さない。
   function spawnInoriJudgmentCharm(now) {
     if (!isInoriSpecialStage() || !state || !state.inori || state.inori.charmSpawned) return;
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
-    state.inori.charmSpawned = true;
     const w = arena.clientWidth, h = arena.clientHeight;
     if (!w || !h) return;
-    // ボスの下方をゆっくり漂う。プレイヤーが回収できる範囲に留める。
-    const bx = Number(state.boss.x);
-    const by = Number(state.boss.y);
-    const centerX = Math.max(w * 0.30, Math.min(w * 0.70, Number.isFinite(bx) ? bx : w * 0.5));
-    const centerY = Math.max(h * 0.40, Math.min(h * 0.67, (Number.isFinite(by) ? by : h * 0.20) + h * 0.30));
-    const phase = Math.random() * Math.PI * 2;
-    const x = Math.max(34, Math.min(w - 34, centerX + Math.sin(phase) * Math.min(44, w * 0.12)));
-    const y = Math.max(h * 0.34, Math.min(h * 0.78, centerY + Math.cos(phase * 0.7) * Math.min(22, h * 0.03)));
+    const bx = Number(state.boss?.x), by = Number(state.boss?.y);
+    const px = Number(state.player?.x), py = Number(state.player?.y);
+    const bossX = Number.isFinite(bx) ? bx : w * .5;
+    const bossY = Number.isFinite(by) ? by : h * .20;
+    // 札は敵の左右・下方寄り（プレイヤーの通常位置から遠い画面上側）に限定。
+    const minX = Math.min(34, w * .15), maxX = w - minX;
+    const minY = Math.max(45, h * .13), maxY = Math.max(minY, h * .46);
+    const minPlayerDistance = Math.min(175, h * .27);
+    let chosen = null;
+    let best = null;
+    for (let i = 0; i < 36; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const radiusX = w * (.13 + Math.random() * .15);
+      const radiusY = h * (.10 + Math.random() * .08);
+      const x = Math.max(minX, Math.min(maxX, bossX + Math.cos(angle) * radiusX));
+      const y = Math.max(minY, Math.min(maxY, bossY + Math.sin(angle) * radiusY + h * .10));
+      const dist = Number.isFinite(px) && Number.isFinite(py) ? Math.hypot(x - px, y - py) : Infinity;
+      if (!best || dist > best.dist) best = {x,y,dist};
+      if (dist >= minPlayerDistance) { chosen = {x,y}; break; }
+    }
+    // 極端に狭い端末では距離を最優先し、もっとも離れた候補を使用する。
+    const {x,y} = chosen || best || {x:w*.5,y:minY};
     const el = document.createElement('div');
     el.className = 'inori-judgment-charm';
     el.setAttribute('role', 'img');
-    el.setAttribute('aria-label', '光輪・取得すると3秒間無敵');
-    el.innerHTML = '<span class="inori-halo-outer" aria-hidden="true"></span><span class="inori-halo-ring" aria-hidden="true"></span><span class="inori-halo-core" aria-hidden="true"></span>';
+    el.setAttribute('aria-label', '守護の札・取得すると3秒間無敵');
+    el.innerHTML = '<img src="images/inori_shugo_fuda.webp" alt="守護の札" draggable="false">';
     arena.appendChild(el);
     positionUnit(el, x, y);
-    state.inori.charm = {el, x, y, spawnedAt:now, phase, centerX, centerY};
+    state.inori.charmSpawned = true;
+    state.inori.charm = {el, x, y, spawnedAt:now, phase:Math.random()*Math.PI*2, centerX:x, centerY:y};
   }
   function updateInoriJudgmentCharm(now) {
     if (!isInoriSpecialStage() || !state || !state.inori?.charm) return;
@@ -16596,23 +16609,17 @@
     }
     const arena = document.getElementById('shooting-arena');
     if (arena) {
-      const w = arena.clientWidth, h = arena.clientHeight;
       const t = Math.max(0, (now - item.spawnedAt) / 1000);
-      // 軌道はサイン波を重ねた漂流。直線移動、急旋回、テレポートを行わない。
-      // 初期位相は出現ごとにランダム。常に画面内かつボスの下方を漂う。
-      const driftX = Math.sin(t * 0.52 + item.phase) * Math.min(47, w * 0.13)
-        + Math.sin(t * 0.23 + item.phase * 0.62) * Math.min(12, w * 0.03);
-      const driftY = Math.cos(t * 0.41 + item.phase * 0.7) * Math.min(24, h * 0.034)
-        + Math.sin(t * 0.67 + item.phase) * Math.min(9, h * 0.012);
-      item.x = Math.max(34, Math.min(w - 34, item.centerX + driftX));
-      item.y = Math.max(h * 0.34, Math.min(h * 0.78, item.centerY + driftY));
+      // 微細な浮遊のみ。札がプレイヤーへ漂って勝手に取られないよう固定位置に近い軌道を維持。
+      item.x = item.centerX + Math.sin(t * .75 + item.phase) * 5;
+      item.y = item.centerY + Math.cos(t * .82 + item.phase) * 5;
       positionUnit(item.el, item.x, item.y);
     }
     const member = getActiveMember();
     // 取得の可否は実際に操作中の味方が生存しているかで判断する。
     // Phase遷移フラグは演出後にも残ることがあるため、取得判定の遮断には使わない。
     if (!member || member.hp <= 0 || state.koTransition) return;
-    // 光輪と自機の両方を画面上の同じ座標系で比較する。
+    // 守護の札と自機の両方を画面上の同じ座標系で比較する。
     // CSSのscale/transform、PWAの画面倍率などの差を吸収できる。
     const playerEl = document.getElementById(PLAYER_ID);
     const haloRect = item.el.getBoundingClientRect();
@@ -16622,7 +16629,7 @@
         playerRect.width > 0 && playerRect.height > 0) {
       const hx = (haloRect.left + haloRect.right) / 2;
       const hy = (haloRect.top + haloRect.bottom) / 2;
-      // 味方の表示領域から光輪までの距離（見た目で重なったら取得）。
+      // 味方の表示領域から守護の札までの距離（見た目で重なったら取得）。
       const nearestX = Math.max(playerRect.left, Math.min(hx, playerRect.right));
       const nearestY = Math.max(playerRect.top, Math.min(hy, playerRect.bottom));
       const radius = Math.min(haloRect.width, haloRect.height) * 0.44 + 7;
@@ -16638,7 +16645,7 @@
     member.invincibleUntil = Math.max(Number(member.invincibleUntil || 0), now + 3000);
     state.player.invulnUntil = Math.max(Number(state.player.invulnUntil || 0), now + 3000);
     item.el.remove(); state.inori.charm = null;
-    showShootingItemEffectNotice('光輪', '3秒間無敵');
+    showShootingItemEffectNotice('守護の札', '3秒間無敵');
     renderHud();
   }
   // TICKETイノリ：通常・呪場左右の専用背景（呪場終了時は通常背景へ復帰）。
@@ -27677,19 +27684,11 @@
     st.id = 'memory-judgment-style-v1876';
     st.textContent = `
       /* build1777: 神罰の予告は画面の縁だけを染め、文字は上寄りに小さく（弾を見る邪魔をしない） */
-      /* TICKETイノリ「光輪」: 宝石ではなく薄い金白の浮遊リング */
-      .inori-judgment-charm{position:absolute;left:0;top:0;width:56px;height:56px;margin:0;z-index:29;pointer-events:none;
-        display:block;box-sizing:border-box;border:0;background:none;filter:drop-shadow(0 0 9px rgba(255,232,165,.65));}
-      .inori-judgment-charm .inori-halo-outer{position:absolute;inset:3px;border-radius:50%;
-        border:1px solid rgba(255,248,211,.50);box-shadow:0 0 14px 3px rgba(255,239,177,.24),inset 0 0 14px rgba(255,242,177,.24);
-        animation:inoriHaloBreathe 2.5s ease-in-out infinite alternate;}
-      .inori-judgment-charm .inori-halo-ring{position:absolute;inset:11px 4px;border-radius:50%;
-        transform:rotate(-18deg);border:5px solid rgba(255,237,172,.87);border-top-color:#fffdf0;border-bottom-color:rgba(198,162,90,.63);
-        box-shadow:0 0 8px rgba(255,248,201,.85),inset 0 0 8px rgba(255,247,209,.66),0 1px 2px rgba(144,102,38,.3);}
-      .inori-judgment-charm .inori-halo-core{position:absolute;left:50%;top:50%;width:8px;height:8px;border-radius:50%;
-        transform:translate(-50%,-50%);background:rgba(255,255,242,.88);box-shadow:0 0 12px 4px rgba(255,237,172,.55);}
-      @keyframes inoriHaloBreathe{from{opacity:.62;transform:scale(.92)}to{opacity:1;transform:scale(1.07)}}
-      @media (prefers-reduced-motion:reduce){.inori-judgment-charm .inori-halo-outer{animation:none}}
+      /* TICKETイノリ「守護の札」: 添付の透過画像を使用（輪エフェクトなし） */
+      .inori-judgment-charm{position:absolute;left:0;top:0;width:62px;height:76px;margin:0;z-index:29;
+        pointer-events:none;display:block;box-sizing:border-box;border:0;background:none;
+        filter:drop-shadow(0 2px 5px rgba(54,23,35,.55));}
+      .inori-judgment-charm img{display:block;width:100%;height:100%;object-fit:contain;}
       .memory-judgment{position:absolute;inset:0;z-index:38;pointer-events:none;
         background:radial-gradient(ellipse at 50% 50%,rgba(255,236,170,0) 58%,rgba(255,200,90,.14) 85%,rgba(160,90,10,.26) 100%);
         animation:mjPulse .5s ease-in-out infinite alternate}
