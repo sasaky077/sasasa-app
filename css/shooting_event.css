@@ -16780,24 +16780,25 @@ html body #shooting-event-root .shooting-combo .shooting-combo-bonus.is-up{anima
 @keyframes tr-thin{0%,35%{opacity:1;transform:scaleY(1)}100%{opacity:0;transform:scaleY(.2)}}
 @keyframes tr-head{0%{opacity:0;transform:scale(.4)}30%{opacity:1;transform:scale(1.2)}100%{opacity:0;transform:scale(.6)}}
 
-/* 刻印：敵に刻まれた光の紋。1秒かけて輪が締まり、爆ぜる */
-#shooting-event-root .towa-ray-mark{position:absolute;left:0;top:0;width:0;height:0;z-index:12;pointer-events:none;}
+/* RAY刻印：中心30px / 外輪50px。敵の上で白金の紋章が読み取れるサイズ */
+#shooting-event-root .towa-ray-mark{position:absolute;left:0;top:0;width:0;height:0;z-index:35;pointer-events:none;filter:drop-shadow(0 1px 1px rgba(37,24,12,.9));}
 #shooting-event-root .towa-ray-mark i{
-  position:absolute;left:-7px;top:-7px;width:14px;height:14px;
+  position:absolute;left:-15px;top:-15px;width:30px;height:30px;border-radius:50%;
   background:conic-gradient(from 0deg,#fff 0 25%,transparent 0 50%,#fff 0 75%,transparent 0);
   -webkit-mask:radial-gradient(circle,#000 0 30%,transparent 32% 46%,#000 48% 58%,transparent 60%);
           mask:radial-gradient(circle,#000 0 30%,transparent 32% 46%,#000 48% 58%,transparent 60%);
-  filter:drop-shadow(0 0 3px rgba(255,214,120,.95));
-  animation:trm-spin .6s linear infinite,trm-in .16s ease-out both;
+  filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 6px rgba(255,201,80,.95));
+  animation:trm-spin .9s linear infinite,trm-in .16s ease-out both;
 }
 #shooting-event-root .towa-ray-mark b{
-  position:absolute;left:-15px;top:-15px;width:30px;height:30px;border-radius:50%;
-  border:1.5px solid rgba(236,170,60,.95);box-shadow:0 0 6px rgba(255,190,80,.9);
+  position:absolute;left:-25px;top:-25px;width:50px;height:50px;border-radius:50%;
+  border:2px solid rgba(255,235,166,.98);
+  box-shadow:0 0 0 1px rgba(83,46,24,.65),0 0 9px 2px rgba(255,212,105,.92),inset 0 0 8px rgba(255,244,210,.56);
   animation:trm-close 1s linear both;
 }
 @keyframes trm-spin{to{rotate:360deg}}
-@keyframes trm-in{from{scale:2.2;opacity:0}to{scale:1;opacity:1}}
-@keyframes trm-close{0%{transform:scale(1.6);opacity:.35}85%{transform:scale(.55);opacity:1}100%{transform:scale(.4);opacity:1}}
+@keyframes trm-in{from{scale:1.5;opacity:0}to{scale:1;opacity:1}}
+@keyframes trm-close{0%{transform:scale(1.12);opacity:.7}85%{transform:scale(.78);opacity:1}100%{transform:scale(.65);opacity:1}}
 
 /* 爆発：白金の閃光が丸く弾ける */
 #shooting-event-root .towa-ray-blast{position:absolute;left:0;top:0;width:0;height:0;z-index:12;pointer-events:none;}
@@ -16903,19 +16904,3 @@ html body #shooting-event-root.towa-light-background .shooting-wash{
 }
 /* 夜明けは一度きり：RETRYなし */
 html body #shooting-event-root[data-shooting-stage="shooting_towa_dawn"] #shooting-result #shooting-result-retry{display:none!important;}
-
-/* TICKETイノリ：呪詛の効果内容と残り時間を視認しやすく表示 */
-#shooting-event-root .inori-slow-tag:has(.inori-slow-remaining){
-  bottom:calc(14px + env(safe-area-inset-bottom, 0px));
-  padding:7px 11px; gap:7px; border-radius:10px;
-  background:linear-gradient(135deg,rgba(46,24,71,.95),rgba(72,35,90,.94));
-  border:1px solid rgba(206,166,239,.85);
-  box-shadow:0 3px 15px rgba(40,14,65,.48),inset 0 1px 0 rgba(255,255,255,.13);
-  font-variant-numeric:tabular-nums;
-}
-#shooting-event-root .inori-slow-tag .inori-slow-effect{font-size:11px;font-weight:700;color:#fff5ff;}
-#shooting-event-root .inori-slow-tag .inori-slow-remaining{
-  display:inline-block;min-width:44px;text-align:right;padding-left:8px;
-  border-left:1px solid rgba(221,188,247,.46);
-  font:700 12px/1.2 'Noto Serif JP',serif;color:#f3d6ff;
-}

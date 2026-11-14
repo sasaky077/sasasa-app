@@ -27684,11 +27684,14 @@
     st.id = 'memory-judgment-style-v1876';
     st.textContent = `
       /* build1777: 神罰の予告は画面の縁だけを染め、文字は上寄りに小さく（弾を見る邪魔をしない） */
-      /* TICKETイノリ「守護の札」: 添付の透過画像を使用（輪エフェクトなし） */
+      /* TICKETイノリ「守護の札」: 透過素材を保ちつつ柔らかい縁取りと白金色の発光を追加 */
       .inori-judgment-charm{position:absolute;left:0;top:0;width:62px;height:76px;margin:0;z-index:29;
         pointer-events:none;display:block;box-sizing:border-box;border:0;background:none;
-        filter:drop-shadow(0 2px 5px rgba(54,23,35,.55));}
-      .inori-judgment-charm img{display:block;width:100%;height:100%;object-fit:contain;}
+        isolation:isolate;filter:drop-shadow(0 0 2px rgba(65,36,28,.95)) drop-shadow(0 0 7px rgba(255,227,148,.95)) drop-shadow(0 0 12px rgba(255,245,201,.55));
+        animation:inoriFudaGlow 2s ease-in-out infinite alternate;}
+      .inori-judgment-charm img{display:block;width:100%;height:100%;object-fit:contain;
+        filter:drop-shadow(1px 0 0 rgba(255,255,235,.9)) drop-shadow(-1px 0 0 rgba(255,255,235,.9)) drop-shadow(0 1px 0 rgba(255,255,235,.9)) drop-shadow(0 -1px 0 rgba(255,255,235,.9));}
+      @keyframes inoriFudaGlow{from{opacity:.88;filter:drop-shadow(0 0 2px rgba(65,36,28,.9)) drop-shadow(0 0 5px rgba(255,227,148,.8)) drop-shadow(0 0 9px rgba(255,245,201,.45));}to{opacity:1;filter:drop-shadow(0 0 2px rgba(65,36,28,.95)) drop-shadow(0 0 10px rgba(255,220,130,1)) drop-shadow(0 0 18px rgba(255,245,201,.72));}}
       .memory-judgment{position:absolute;inset:0;z-index:38;pointer-events:none;
         background:radial-gradient(ellipse at 50% 50%,rgba(255,236,170,0) 58%,rgba(255,200,90,.14) 85%,rgba(160,90,10,.26) 100%);
         animation:mjPulse .5s ease-in-out infinite alternate}
