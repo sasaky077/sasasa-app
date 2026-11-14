@@ -17109,6 +17109,16 @@ function showTenResult(results){
         zoomHint.style.setProperty('visibility', hintAlpha <= 0.01 ? 'hidden' : 'visible', 'important');
       }
 
+      // build1964: お気に入り★も「キャラクター設定画面」ヒントと同じフェードで隠す。
+      // 縮小中に残って見えるのを防ぎ、再展開時は元どおり操作可能にする。
+      var favToggle = visual.querySelector('.cd-fav-toggle');
+      if(favToggle){
+        var favAlpha = Math.max(0, 1 - progress / 0.45);
+        favToggle.style.setProperty('opacity', favAlpha.toFixed(3), 'important');
+        favToggle.style.setProperty('visibility', favAlpha <= 0.01 ? 'hidden' : 'visible', 'important');
+        favToggle.style.setProperty('pointer-events', favAlpha <= 0.01 ? 'none' : 'auto', 'important');
+      }
+
       if(progress > 0.92){
         view.classList.add('is-sheet-expanded');
       } else if(progress < 0.08){
