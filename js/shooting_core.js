@@ -34071,7 +34071,7 @@
 
     // build1757: 記憶決戦は出撃時に専用の出撃記録（トークン）を発行。報酬の確定は finishRun で。
     if (isMemoryBattleStage() && window.MemoryBattle && typeof window.MemoryBattle.beginRun === 'function') {
-      void window.MemoryBattle.beginRun(Number(selectedStage.stageNo || 0));
+      void window.MemoryBattle.beginRun(Number(selectedStage.stageNo || 0), selectedPartyIds.slice());
     }
 
     // 使用キャラランキング用。編成された各キャラを1出撃として記録。

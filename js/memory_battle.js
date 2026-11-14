@@ -12,7 +12,7 @@
   const RUN_KEY = 'zeraphia_memory_battle_run_v1';
   const CACHE_KEY = 'zeraphia_memory_battle_state_cache_v1';
   // build1834: 月間初回クリア報酬は創世pt 10。サーバーでは聖樹の息吹を付与し自動変換する。
-  const REWARD_SHINJU_PT = 10;
+  const REWARD_SHINJU_PT = 30; // Aランク初回
   const ELEMENT_LABEL = Object.freeze({ fire:'火', aqua:'水', wood:'木', light:'光', dark:'闇', neutral:'無' });
   // その属性のボスに「効果抜群」な属性（水＞火＞木＞水、光⇔闇）
   const WEAK_TO = Object.freeze({ aqua:'wood', fire:'aqua', wood:'fire', light:'dark', dark:'light' });
@@ -21,6 +21,7 @@
   let loading = false;
   let runPromise = null;    // 発行中／発行済みの出撃トークン
   let finishing = null;
+  let rankState = {};
 
   const $ = id => document.getElementById(id);
   function sb(){ return window.zsSupabase || null; }
@@ -85,6 +86,8 @@
       const { data, error } = await client.rpc('get_memory_battle_state', { p_user_id: uid });
       if (error) throw error;
       applyServerState(data);
+      const rankReply = await client.rpc('get_memory_battle_ranks', { p_user_id: uid });
+      if (!rankReply.error) rankState = rankReply.data || {};
     } catch (err) {
       console.warn('[memory battle] state', err && (err.message || err));
     } finally {
@@ -98,7 +101,7 @@
   function loadRun(){ try { return JSON.parse(sessionStorage.getItem(RUN_KEY) || 'null'); } catch (_) { return null; } }
   function clearRun(){ try { sessionStorage.removeItem(RUN_KEY); } catch (_) {} }
 
-  function beginRun(stageNo){
+  function beginRun(stageNo, partyIds){
     const no = Math.floor(Number(stageNo) || 0);
     finishing = null;
     clearRun();
@@ -111,6 +114,9 @@
       const token = String(data && data.run_token || '').trim();
       if (!token) throw new Error('run token was not issued');
       const run = { token, stageNo: no, user: uid };
+      const ids = (Array.isArray(partyIds) ? partyIds : []).map(Number).filter(n => Number.isInteger(n) && n > 0);
+      const registered = await client.rpc('memory_battle_register_rank_party', { p_user_id: uid, p_run_token: token, p_party_ids: ids });
+      run.rankRegistered = !registered.error && registered.data === true;
       saveRun(run);
       return run;
     })().catch(err => {
@@ -133,19 +139,28 @@
       }
       const client = sb();
       const { data, error } = await client.rpc('finish_memory_battle', { p_user_id: run.user, p_run_token: run.token, p_win: !!win });
+      if (error) throw error;
+      let rankResult = null;
+      if (win && data && data.win === true && run.rankRegistered) {
+        const rankReply = await client.rpc('memory_battle_claim_rank', { p_user_id: run.user, p_run_token: run.token });
+        if (rankReply.error) console.warn('[memory battle] rank reward', rankReply.error);
+        else rankResult = rankReply.data;
+      }
       clearRun();
       runPromise = null;
-      if (error) throw error;
       applyServerState({ month_key: data && data.month_key, cleared: data && data.cleared });
-      const claimed = !!(data && data.first_clear_claimed);
-      const amount = Math.max(0, Number(data && (data.shinju_exp ?? data.amount)) || 0);
+      const claimed = !!(rankResult && rankResult.a_reward);
+      const amount = rankResult && rankResult.a_reward ? 30 : 0;
       if (claimed && amount > 0 && window.ShinjuProgress && typeof window.ShinjuProgress.refreshFromServer === 'function') {
         // 受け取り待ちに入った栄養は、神聖樹側が自動で創世ptへ変換する
         try { await window.ShinjuProgress.refreshFromServer(); } catch (_) {}
       }
       if (win && (!data || data.win !== true)) notify('記憶決戦：サーバーで勝利を確認できませんでした。報酬は未確定です。');
+      if (rankResult && rankResult.rank) {
+        notify(`記憶決戦 ${rankResult.rank} RANK！${rankResult.a_reward ? ' 創世pt +30' : ''}${rankResult.s_reward ? ' 結晶 +50' : ''}`);
+      }
       if (win && data && data.win === true) {
-        notify(claimed ? `記憶決戦クリア！ 創世pt +${amount} を獲得しました` : '記憶決戦クリア済み：今月の初回報酬は受取済みです');
+        if (!rankResult?.rank) notify(claimed ? `記憶決戦クリア！ 創世pt +${amount} を獲得しました` : '記憶決戦クリア済み');
         void refresh();
       }
       // 結果画面は shinjuRewardExp（自動変換後の創世pt相当量）を報酬に並べる
@@ -390,10 +405,10 @@
     const reset = daysToReset();
     root.querySelector('[data-mb-month]').textContent = monthLabel(mk) + 'の記憶';
     root.querySelector('[data-mb-reset]').textContent = reset.days > 0 ? `リセットまで あと${reset.days}日` : `リセットまで あと${reset.hours}時間`;
-    root.querySelector('[data-mb-count]').textContent = String(visibleDefs.filter(def => cleared.has(def.no)).length);
+    root.querySelector('[data-mb-count]').textContent = String(visibleDefs.filter(def => !!rankState[String(def.no)]).length);
     root.querySelector('[data-mb-total]').textContent = '/ ' + total;
     const track = [];
-    for (const def of visibleDefs) track.push(`<i class="${cleared.has(def.no) ? 'is-done' : ''}"></i>`);
+    for (const def of visibleDefs) track.push(`<i class="${rankState[String(def.no)] ? 'is-done' : ''}"></i>`);
     root.querySelector('[data-mb-track]').innerHTML = track.join('');
 
     const list = root.querySelector('[data-mb-list]');
@@ -402,7 +417,9 @@
     for (const [index, def] of visibleDefs.entries()) {
       const no = def.no; // サーバー・戦闘用の内部ステージ番号（テストは03のまま）
       const displayNo = index + 1; // 画面上は01 リヴィア / 02 テスト / 03 ヘイズ
-      const done = cleared.has(no);
+      const rank = rankState[String(no)] || '';
+      const done = Boolean(rank);
+      const condition = ({1:'CHARGEキャラなしでクリア',3:'1体編成でクリア',4:'SRキャラなしでクリア'})[no] || '';
       const img = panelImage(def);
       const fallback = bossImage(def);
       const rules = ruleRows(def).map(r => `<li class="mb-rule">${ruleIconHtml(r.icon)}<span class="mb-rule-name">${esc(r.name)}</span><span class="mb-rule-text">${esc(r.text)}</span></li>`).join('');
@@ -413,13 +430,14 @@
             <strong class="mb-boss">${esc(def.bossName)}</strong>
             <span class="mb-sub"><i></i>${esc(({1:'雨宿りの守護者の記憶',3:'未知との遭遇の記憶',4:'揺らめく陽炎の記憶'})[no] || def.title || '')}<i></i></span>
           </div>
+          ${rank ? `<span class="mb-rank-indicator mb-rank-${rank.toLowerCase()}"><small>BEST</small><b>${rank}</b></span>` : `<span class="mb-rank-indicator mb-rank-none"><small>BEST</small><b>—</b></span>`}
           ${done
-            ? '<div class="mb-reward is-done"><b>報酬受取済</b><span>今月クリア済</span></div>'
-            : `<div class="mb-reward"><div class="mb-reward-gem is-shinju"><img src="images/shinju_aura.webp" alt="創世pt" decoding="async"><b>+${REWARD_SHINJU_PT}</b></div><small class="mb-reward-label">創世pt</small><span>今月初回</span></div>`}
+            ? '<div class="mb-reward is-done"><b>ランク取得済</b><span>A / S 獲得済</span></div>'
+            : `<div class="mb-reward"><div class="mb-reward-gem is-shinju"><img src="images/shinju_aura.webp" alt="創世pt" decoding="async"><b>+${REWARD_SHINJU_PT}</b></div><small class="mb-reward-label">創世pt</small><span>A初回</span></div>`}
         </div>
-        ${done ? '<div class="mb-clear-banner">✓ 今月クリア済み　｜　初回報酬受取済み</div>' : ''}
+        <div class="mb-rank-condition"><span>S RANK</span>${esc(condition)}<small>${rank === 'S' ? '達成済' : '初回報酬 結晶50'}</small></div>
         <div class="mb-card-body">
-          <figure class="mb-portrait">${img ? `<img src="${esc(img)}" alt="${esc(def.bossName)}" decoding="async"${fallback && fallback !== img ? ` onerror="this.onerror=null;this.src='${esc(fallback)}'"` : ''}>` : ''}${done ? '<span class="mb-seal is-img" aria-label="今月踏破"><img src="images/memory_stamp_cleared.webp" alt="CLEARED" decoding="async"></span>' : ''}</figure>
+          <figure class="mb-portrait">${img ? `<img src="${esc(img)}" alt="${esc(def.bossName)}" decoding="async"${fallback && fallback !== img ? ` onerror="this.onerror=null;this.src='${esc(fallback)}'"` : ''}>` : ''}${done ? '<span class="mb-seal is-img" aria-label="ランク達成"><img src="images/memory_stamp_cleared.webp" alt="CLEARED" decoding="async"></span>' : ''}</figure>
           <ul class="mb-rules">${rules}</ul>
         </div>
       </li>`);
