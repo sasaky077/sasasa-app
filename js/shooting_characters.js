@@ -1594,8 +1594,8 @@
     // 通常攻撃ダメージは ATK × shotPowerRate。
     // fireRate / shotCount と合わせて理論DPSを調整する。
     label: 'BALANCE',
-    description: '暫定性能。ULTは敵弾を全消去し、敵を約1.4秒停止。約0.84秒後に敵全体へATK×2.8のダメージ。',
-    ultDescription: '発動時に画面内の敵弾をすべて消去し、敵を約1.4秒間停止。約0.84秒後に敵全体へATK×2.8のダメージを与える。',
+    description: '暫定性能。ULTは敵弾を全消去し、敵の行動停止（射出・移動・攻撃）を約1.4秒適用。約0.84秒後に敵全体へATK×2.8のダメージ。',
+    ultDescription: '発動時に画面内の敵弾をすべて消去し、敵の行動停止（射出・移動・攻撃）を約1.4秒間適用。約0.84秒後に敵全体へATK×2.8のダメージを与える。',
     ultName: '駆け巡る閃光',
     ultType: 'balance_flash',
     moveSpeed: 400,
@@ -1684,7 +1684,7 @@
     ...ERI_BASE_PROFILE,
     id: CHARACTER_ID.ERI,
     effectKey: 'eri',
-    description: '扱いやすい2連射の標準型。ULTは敵弾を全消去、約1.4秒間敵を停止。約0.84秒後にATK×2.8の全体ダメージ。',
+    description: '扱いやすい2連射の標準型。ULTは敵弾を全消去し、約1.4秒間、敵の行動停止（射出・移動・攻撃）を適用。約0.84秒後にATK×2.8の全体ダメージ。',
   });
 
   SHOOTING_CHARACTERS[CHARACTER_ID.SUI] = buildShootingCharacter({
@@ -1727,8 +1727,8 @@
     id: CHARACTER_ID.ARNO,
     effectKey: 'arno',
     label: 'ORBIT / SLASH',
-    description: '円環軌道を描きながら前進する特殊射撃。ULTは盤面の敵弾を消去して時間を止め、最も近い敵の目前へ接近。制限時間中、タップするたびに高速斬撃を叩き込む。',
-    ultDescription: '盤面の敵弾を全消去して時間停止。最も近い敵の目前へ接近し、4秒間タップするたびATK×0.35の斬撃（最大13回）。終了時は発動前の位置へ戻って戦闘を再開する。',
+    description: '円環軌道を描きながら前進する特殊射撃。ULTは盤面の敵弾を消去して時間停止（射出・移動・攻撃・効果発動）し、最も近い敵の目前へ接近。制限時間中、タップするたびに高速斬撃を叩き込む。',
+    ultDescription: '盤面の敵弾を全消去して時間停止（射出・移動・攻撃・効果発動）。最も近い敵の目前へ接近し、4秒間タップするたびATK×0.35の斬撃（最大13回）。終了時は発動前の位置へ戻って戦闘を再開する。',
     ultName: '瞬迅・千ノ刻',
     ultType: 'arno_thousand_slash',
     moveSpeed: 400,
@@ -1773,7 +1773,7 @@
     slashRange: 182,
     slashWidth: 120,
     slashVisualMs: 180,
-    ultDescription: '発動時に盤面の敵弾を全消去して時間停止。最も近い敵の目前へ接近し、4秒間、タップするたびにATK×0.25の斬撃を放つ（最大14回）。終了時は発動前の位置へ戻って戦闘を再開する。',
+    ultDescription: '発動時に盤面の敵弾を全消去して時間停止（射出・移動・攻撃・効果発動）。最も近い敵の目前へ接近し、4秒間、タップするたびにATK×0.25の斬撃を放つ（最大14回）。終了時は発動前の位置へ戻って戦闘を再開する。',
     ultName: '環流',
     ultType: 'arno_thousand_slash',
     burstDamage: 36,
@@ -1973,8 +1973,8 @@
     id: CHARACTER_ID.NEM,
     effectKey: 'nem',
     label: 'CONTROL / STUN',
-    description: '高速2ライン射撃で安定して攻撃を継続する。ULTは敵を5秒間完全停止させる。',
-    ultDescription: '敵の行動を5秒間完全停止させる。ULT自体にダメージはなく、停止中も通常射撃で攻撃できる。',
+    description: '高速2ライン射撃で安定して攻撃を継続する。ULTは敵の行動停止（射出・移動・攻撃）を5秒間適用させる。',
+    ultDescription: '敵の行動停止（射出・移動・攻撃）を5秒間適用させる。ULT自体にダメージはなく、停止中も通常射撃で攻撃できる。',
     ultName: 'どりいむたいむ',
     ultType: 'nem_stun',
     moveSpeed: 400,
@@ -2059,8 +2059,8 @@
     id: CHARACTER_ID.AYANE,
     effectKey: 'ayane',
     label: 'TECHNICAL / POWER',
-    description: '狭い射線と遅い連射の高火力型。通常射撃は4発ごとに威力165%。ULTは敵弾を全消去し、射線上の敵を7秒拘束して合計ATKの350%ダメージを与える。',
-    ultDescription: '発動時に画面内の敵弾をすべて消去。前方へ黒手を伸ばし、射線上の敵を同時に約7秒間拘束する。各対象へ合計ATK×3.5のダメージを分割して与え、拘束成立後は通常射撃をすぐ再開できる。',
+    description: '狭い射線と遅い連射の高火力型。通常射撃は4発ごとに威力165%。ULTは敵弾を全消去し、射線上の敵に7秒間、敵の行動停止（射出・移動・攻撃）を適用して合計ATKの350%ダメージを与える。',
+    ultDescription: '発動時に画面内の敵弾をすべて消去。前方へ黒手を伸ばし、射線上の敵に約7秒間、敵の行動停止（射出・移動・攻撃）を適用する。各対象へ合計ATK×3.5のダメージを分割して与え、命中後は通常射撃をすぐ再開できる。',
     ultName: '暴走',
     ultType: 'precision_beam',
     moveSpeed: 400,
@@ -2088,8 +2088,8 @@
     id: CHARACTER_ID.ELTENA,
     effectKey: 'eltena',
     label: 'GRAVITY / CONTROL',
-    description: '0.7秒ごとに巨大な3WAY弾を放つ。ULTは敵陣上端にブラックホールを生成し、8秒間すべての敵を中心へ吸引・拘束する。',
-    ultDescription: '正面にブラックホールを射出し、敵陣で8秒間展開する。範囲内の通常敵・大型敵・ボスを中心へ吸引・拘束する。ULT自体のダメージは0。',
+    description: '0.7秒ごとに巨大な3WAY弾を放つ。ULTは敵陣上端にブラックホールを生成し、8秒間すべての敵を中心へ吸引し、敵の行動停止（射出・移動・攻撃）を適用する。',
+    ultDescription: '正面にブラックホールを射出し、敵陣で8秒間展開する。範囲内の通常敵・大型敵・ボスを中心へ吸引し、敵の行動停止（射出・移動・攻撃）を適用する。ULT自体のダメージは0。',
     ultName: '事象の地平',
     ultType: 'eltena_black_hole',
     moveSpeed: 400,
@@ -2365,7 +2365,7 @@
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id: CHARACTER_ID.SHION, effectKey: 'shion',
     label: 'SHOTGUN / DELAY',
     description: '高威力の単発精密射撃。ULT「黒羽葬鐘」は敵全体へ呪印を刻み、時間差で闇撃を起こした後、敵の攻撃力を弱体化する。',
-    ultDescription: '敵全体へ黒羽の呪印を刻む。1.2秒後にATK×2.8の闇属性ダメージを与え、その後6秒間、敵から受ける非即死ダメージを30%軽減する。敵弾消去・スタン・無敵は発生しない。',
+    ultDescription: '敵全体へ黒羽の呪印を刻む。1.2秒後にATK×2.8の闇属性ダメージを与え、その後6秒間、敵から受ける非即死ダメージを30%軽減する。敵弾消去・敵の行動停止・無敵は発生しない。',
     ultName: '黒羽葬鐘',
     shotType: 'shotgun', shotCount: 1, fireRate: 600, bulletSpeed: 1400, shotPowerRate: 0.44,
     ultGainPerHit: 3.600,
@@ -2394,7 +2394,7 @@
     effectKey: 'iverna',
     label: 'LASER / FIRE',
     description: '太い紅色レーザーを連続照射する限定SRレーザー型。',
-    ultDescription: '正面へ極太レーザーを5秒間連続照射する。0.25秒ごとにATK×35%のダメージ判定が発生し、全段命中時は最大ATK×700%相当。敵弾消去・スタン・無敵などの追加効果はない。',
+    ultDescription: '正面へ極太レーザーを5秒間連続照射する。0.25秒ごとにATK×35%のダメージ判定が発生し、全段命中時は最大ATK×700%相当。敵弾消去・敵の行動停止・無敵などの追加効果はない。',
     ultName: '終端紅閃',
     ultType: 'testchan_black_ship',
     moveSpeed: 400,
@@ -2422,14 +2422,14 @@
 
   // v313: 限定SR AQUA
   // 通常ショットはウルフと同じ「深いJ字2発ホーミング」。
-  // ULTはブラックホールを展開し、吸引・拘束しながら継続ダメージ。
+  // ULTはブラックホールを展開し、吸引・敵の行動停止を適用しながら継続ダメージ。
   SHOOTING_CHARACTERS[CHARACTER_ID.REI] = buildShootingCharacter({
     ...ERI_BASE_PROFILE,
     id: CHARACTER_ID.REI,
     effectKey: 'rei',
     label: 'HOMING / BLACK HOLE',
-    description: '深いJ字軌道を描く2発ホーミング射撃。ULTは敵陣にブラックホールを生成し、敵を吸引・拘束しながら継続ダメージを与える。',
-    ultDescription: '敵陣へブラックホールを射出し、7秒間展開。通常敵・大型敵・ボスを中心へ吸引して拘束し、展開中に合計ATK×3.5相当の継続ダメージを与える。',
+    description: '深いJ字軌道を描く2発ホーミング射撃。ULTは敵陣にブラックホールを生成し、敵を吸引して敵の行動停止（射出・移動・攻撃）を適用しながら継続ダメージを与える。',
+    ultDescription: '敵陣へブラックホールを射出し、7秒間展開。通常敵・大型敵・ボスを中心へ吸引して敵の行動停止（射出・移動・攻撃）を適用し、展開中に合計ATK×3.5相当の継続ダメージを与える。',
     ultName: '深淵水界',
     ultType: 'eltena_black_hole',
     moveSpeed: 400,
@@ -2470,8 +2470,8 @@
     id: CHARACTER_ID.NOAH,
     effectKey: 'noah',
     label: 'LASER / HOMING / TIME STOP',
-    description: '中心へLIGHT属性の連続レーザーを照射し、その周囲からFIRE属性の2発の追尾弾を放つ複合射撃型。ULTは盤面の弾幕を消去し、敵の動きを止めながら無数の灰白波動弾を降り注がせる。',
-    ultDescription: '発動した瞬間に盤面の敵弾をすべて消去し、盤面上の敵全体の移動を停止。8拍子を間を置かず2周、合計16発の落雷をランダムな敵へ叩き込む。各落雷で画面が揺れ、落雷を受けた敵は終了後1.5秒間スタンする。',
+    description: '中心へLIGHT属性の連続レーザーを照射し、その周囲からFIRE属性の2発の追尾弾を放つ複合射撃型。ULTは盤面の弾幕を消去し、敵の行動停止（射出・移動・攻撃）中に無数の灰白波動弾を降り注がせる。',
+    ultDescription: '発動した瞬間に盤面の敵弾をすべて消去し、盤面上の敵の行動停止（射出・移動・攻撃）を適用。8拍子を間を置かず2周、合計16発の落雷をランダムな敵へ叩き込む。各落雷で画面が揺れ、落雷を受けた敵は終了後1.5秒間、敵の行動停止（射出・移動・攻撃）となる。',
     ultName: '理想郷の静止',
     ultType: 'noah_time_homing',
     moveSpeed: 400,
@@ -2575,8 +2575,8 @@
     id: CHARACTER_ID.CHLOE,
     effectKey: 'chloe',
     label: 'BOMB / ELEMENT PAINT',
-    description: '光属性のBOMB M。ULT「虹のかかる世界」は時間を止めてパレットから色を選び、敵を指でなぞってその色に塗り替える。各色は1ステージ1回まで。',
-    ultDescription: '時間を停止し、5色（火・水・木・闇・光）のパレットから1色を選ぶ（5秒以内に選ばないと、パーティに有利な色を自動選択）。各色の絵の具は1ステージ1回まで。4秒間、敵を指でなぞるとその色に塗られ、ATK×3.0のダメージを与えて属性を塗り替える（1体1回・インクが尽きると終了）。',
+    description: '光属性のBOMB M。ULT「虹のかかる世界」は時間停止（射出・移動・攻撃・効果発動）してパレットから色を選び、敵を指でなぞってその色に塗り替える。各色は1ステージ1回まで。',
+    ultDescription: '時間停止（射出・移動・攻撃・効果発動）。5色（火・水・木・闇・光）のパレットから1色を選ぶ（5秒以内に選ばないと、パーティに有利な色を自動選択）。各色の絵の具は1ステージ1回まで。4秒間、敵を指でなぞるとその色に塗られ、ATK×3.0のダメージを与えて属性を塗り替える（1体1回・インクが尽きると終了）。',
     ultName: '虹のかかる世界',
     ultType: 'painter_palette', // build1853: 旧 painter_rainbow_world（6色扇状）
     paletteChooseMs: 5000, palettePaintMs: 4000, paletteInkPx: 1100, paletteBrushRadius: 22, palettePaintAtkMultiplier: 3.0, // build1854: なぞり塗り
@@ -2606,7 +2606,7 @@
     effectKey: 'testchan',
     label: 'TRAP / PHOTON BUSTER',
     description: '闇属性の設置型TRAPで敵を迎撃するテクニカル型。最大3基まで設置可能。ULTは闇属性の極太レーザーを5秒間照射する。',
-    ultDescription: '正面へ極太レーザーを5秒間連続照射する。0.25秒ごとにATK×0.35のダメージを与え、全段命中で最大ATK×7.0。敵弾消去・スタン・無敵は発生しない。',
+    ultDescription: '正面へ極太レーザーを5秒間連続照射する。0.25秒ごとにATK×0.35のダメージを与え、全段命中で最大ATK×7.0。敵弾消去・敵の行動停止・無敵は発生しない。',
     ultName: '対神性滅焼破壊砲 -フォトンバスター 202-',
     ultType: 'testchan_black_ship',
     moveSpeed: 400,
@@ -2645,7 +2645,7 @@
     effectKey: 'kureha',
     label: 'SPREAD / FIRE BLACK HOLE',
     description: 'FIRE属性の5WAY SPREAD。ULTは敵陣に炎のブラックホールを展開し、敵を中心へ集めながら5秒間継続ダメージを与える。ULT中も通常ショットを継続できる。',
-    ultDescription: '敵陣へ炎のブラックホールを展開。5秒間、BOSSを含む敵を中心へ吸引して行動を止め、0.25秒ごとにFIRE属性ダメージを与える（全時間でATK×3.0相当）。発動中も通常ショットを撃ち続けられる。',
+    ultDescription: '敵陣へ炎のブラックホールを展開。5秒間、BOSSを含む敵を中心へ吸引して敵の移動停止を適用し、0.25秒ごとにFIRE属性ダメージを与える（全時間でATK×3.0相当）。発動中も通常ショットを撃ち続けられる。',
     ultName: '紅蓮坩堝',
     ultType: 'kureha_fire_black_hole',
     moveSpeed: 400,
@@ -2683,8 +2683,8 @@
     id: CHARACTER_ID.TESTCHAN,
     effectKey: 'testchan',
     label: 'V-LASER / SKY STRIKE',
-    description: '未来から来たアンドロイド、テスト。斜め2本のVレーザーで敵を貫く木属性SR。ULTは空から緑の稲妻をランダムに落とし、命中した敵を麻痺させる。',
-    ultDescription: '8秒間に最大16回、空から緑の稲妻をランダムに落とす。1発ごとにATK×2.8の木属性ダメージを与え、命中した敵を3秒間麻痺させる。',
+    description: '未来から来たアンドロイド、テスト。斜め2本のVレーザーで敵を貫く木属性SR。ULTは空から緑の稲妻をランダムに落とし、命中した敵に敵の行動停止（射出・移動・攻撃）を適用する。',
+    ultDescription: '8秒間に最大16回、空から緑の稲妻をランダムに落とす。1発ごとにATK×2.8の木属性ダメージを与え、命中した敵に3秒間、敵の行動停止（射出・移動・攻撃）を適用する。',
     ultName: 'ブラックシップ・ストライク',
     ultType: 'forbidden_shock', ultBaseType: 'damage', ultAddons: ['damage', 'stun'],
     ninaUltDurationMs: 8000, ninaUltHitCount: 16, ninaUltHitAtkMultiplier: 2.8,
@@ -2722,7 +2722,7 @@
     effectKey: 'gojo',
     label: 'CRIMSON MOON / FIVE-WAY',
     description: '淡い紅黒の5WAY気弾を放つSR火力型。ULT「彼岸残月」は大鎌を正面へ直線投擲し、最初に命中した敵の位置で停止。周囲の敵を吸引して行動を封じる。',
-    ultDescription: '大鎌を正面へ一直線に投擲する。最初に敵へ命中した位置で鎌が停止し、その一定範囲内の敵を約7秒間吸引。吸引された敵は効果中、移動・攻撃・弾の生成が停止する。すでに盤面に存在する敵弾は消去しない。直線上に敵がいなければMISSで終了する。',
+    ultDescription: '大鎌を正面へ一直線に投擲する。最初に敵へ命中した位置で鎌が停止し、その一定範囲内の敵を約7秒間吸引。吸引された敵は効果中、敵の行動停止（射出・移動・攻撃）となる。すでに盤面に存在する敵弾は消去しない。直線上に敵がいなければMISSで終了する。',
     ultName: '彼岸残月',
     ultType: 'gojo_purple',
     moveSpeed: 400,
@@ -2883,7 +2883,7 @@
   // build1919: スズのULTをリュネと同じ内容へ変更。通常ショット・基礎性能は従来どおり。
   SHOOTING_CHARACTERS[43] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:43, effectKey:'suzu', shotType:'parallel', shotCount:2, shotSpacing:28, fireRate:500, bulletSpeed:640, shotPowerRate:0.14, ultType:'ryune_absolute_lethe', ultBaseType:'beam', ultAddons:['damage','barrier_clear'], ultDamageAtkMultiplier:2.8, ultName:'終幕', ultDescription:'盤面の敵全員の属性バリアを解除し、敵全体へATK×2.8のダメージを与える。' });
   SHOOTING_CHARACTERS[46] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:46, effectKey:'airena', shotType:'charge', chargeSize:'M', shotStyle:'kaina-charge', fireRate:0, bulletSpeed:760, shotCount:1, chargeMinMs:120, ultType:'align_sync', ultName:'SYNC', ultDescription:'7秒間、自身のCHARGE時間を50%短縮し、敵から受けるダメージを50%軽減する。', alignSyncDurationMs:7000, alignSyncChargeMultiplier:0.5, alignSyncDamageMultiplier:0.5 });
-  SHOOTING_CHARACTERS[44] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:44, effectKey:'meloria', shotType:'piercing', shotCount:1, fireRate:530, bulletSpeed:720, shotPowerRate:0.28, ultType:'meloria_stun', ultName:'冥府の宣告', ultDescription:'敵全員を5秒スタン。各敵に20%の確率で最大HP50%のダメージ。', ultStunMs:5000, meloriaPercentChance:0.20, meloriaMaxHpDamageRate:0.50 });
+  SHOOTING_CHARACTERS[44] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:44, effectKey:'meloria', shotType:'piercing', shotCount:1, fireRate:530, bulletSpeed:720, shotPowerRate:0.28, ultType:'meloria_stun', ultName:'冥府の宣告', ultDescription:'敵全員に5秒間、敵の行動停止（射出・移動・攻撃）を適用。各敵に20%の確率で最大HP50%のダメージ。', ultStunMs:5000, meloriaPercentChance:0.20, meloriaMaxHpDamageRate:0.50 });
 
   // build1308 — 恒常R 5体。属性・画像・R倍率は上の共通マスターが正本。
   // ULTは既存の射撃エンジンを再利用。空欄のメグメグSHOTは暫定的にジグのLASER M。
@@ -2930,10 +2930,10 @@
   SHOOTING_CHARACTERS[CHARACTER_ID.CHACHA] = buildShootingCharacter({
     ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON,
     id: CHARACTER_ID.CHACHA, effectKey:'chacha',
-    label:'SPREAD / LIGHT', description:'光属性のSPREAD 5WAY。ULTは敵へ連続落雷を放ち、命中時に麻痺させる。',
+    label:'SPREAD / LIGHT', description:'光属性のSPREAD 5WAY。ULTは敵へ連続落雷を放ち、命中時に敵の行動停止（射出・移動・攻撃）を適用。',
     shotType:'spread', shotCount:5, fireRate:500, bulletSpeed:650, shotPowerRate:0.20,
     ultName:'フォビドゥン・ショック',
-    ultDescription:'8秒間に最大16回の落雷攻撃を行う。1発ごとにATK×2.8のダメージを与え、命中時は敵を3秒間麻痺させる。',
+    ultDescription:'8秒間に最大16回の落雷攻撃を行う。1発ごとにATK×2.8のダメージを与え、命中時は敵に3秒間、敵の行動停止（射出・移動・攻撃）を適用。',
     ultType:'forbidden_shock', ultBaseType:'damage', ultAddons:['damage','stun'],
     ninaUltDurationMs:8000, ninaUltHitCount:16, ninaUltHitAtkMultiplier:2.8,
     ninaUltParalyzeMs:3000,
@@ -3016,18 +3016,18 @@
   // build1731: ナイトシェード (ID57) — 闇 SR / CLUSTER(O)。
   //  SHOT：着弾した敵の周りをエナジーサークルが1周し、輪の内側の敵へ追撃（CLUSTER(O)）。
   //  build1734: 収束弾→回転するエナジーサークルに変更、半径140px。ULTをアルノ「千ノ刻」の銃乱射版に変更。
-  //  ULT：敵弾全消去＋時間停止。タップごとに散弾4発を敵全体へランダムにばら撒く（最大12タップ＝48発）。
+  //  ULT：敵弾全消去＋時間停止（射出・移動・攻撃・効果発動）。タップごとに散弾4発を敵全体へランダムにばら撒く（最大12タップ＝48発）。
   SHOOTING_CHARACTERS[CHARACTER_ID.NIGHTSHADE] = buildShootingCharacter({
     ...ERI_BASE_PROFILE,
     id: CHARACTER_ID.NIGHTSHADE, effectKey: 'nightshade',
     label: 'CLUSTER(O) / BARRAGE',
-    description: '闇属性のCLUSTER(O)。着弾した敵の周りをエナジーサークルが1周し、輪の内側の敵すべてに4回追撃する。ULTは時間を止め、タップするたびに敵全体へ散弾をばら撒く。',
+    description: '闇属性のCLUSTER(O)。着弾した敵の周りをエナジーサークルが1周し、輪の内側の敵すべてに4回追撃する。ULTは時間停止（射出・移動・攻撃・効果発動）し、タップするたびに敵全体へ散弾をばら撒く。',
     shotType: 'cluster', clusterSize: 'L', clusterSplitCount: 8, clusterPattern: 'ring',
     // build1734: 命中した敵の周りを1周するエナジーサークル（半径140px・0.56秒で1周・4回判定×親弾の20%）
     clusterRingRadius: 140, clusterRingSpinMs: 560, clusterRingTicks: 4, clusterRingTickRate: 0.20,
     shotElement: 'dark', shotCount: 1, fireRate: 560, bulletSpeed: 720, shotPowerRate: 0.26,
     ultName: 'ナイトシェード・バラージ',
-    ultDescription: '敵弾を全消去して時間停止。4秒間、タップするたびに散弾4発を敵全体へランダムにばら撒く。1発ATK×0.20（最大12回＝48発）。',
+    ultDescription: '敵弾を全消去して時間停止（射出・移動・攻撃・効果発動）。4秒間、タップするたびに散弾4発を敵全体へランダムにばら撒く。1発ATK×0.20（最大12回＝48発）。',
     ultType: 'nightshade_barrage', ultBaseType: 'damage', ultAddons: ['bullet_clear', 'time_stop', 'damage'],
     nightshadeBarrageDurationMs: 4000, nightshadePelletsPerTap: 4, nightshadePelletAtkRate: 0.20, // build1846: 0.095→0.20（並みのULTより少し強い程度に）
     nightshadeMaxTaps: 12, nightshadeMinTapIntervalMs: 80,
@@ -3048,7 +3048,7 @@
     ultType: 'towa_eternal_darkness', ultBaseType: 'field',
     ultAddons: ['bullet_clear', 'enemy_bullet_silence'],
     ultName: '常闇',
-    ultDescription: '発動時に盤面の敵弾をすべて削除。5秒間、盤面が暗転して新規敵弾の生成が停止。終了時にフェードインして通常の射撃が再開する。',
+    ultDescription: '発動時に盤面の敵弾をすべて削除。5秒間、盤面が暗転して敵弾射出停止を適用。終了時にフェードインして通常の射撃が再開する。',
     towaDarkDurationMs: 5000,
     burstNeed: 32, burstDamage: 0, ultGainPerHit: 0.50,
   });
@@ -3062,7 +3062,7 @@
     id: CHARACTER_ID.TOWA_LIGHT,
     effectKey: 'towa',
     label: 'RAY / DAWN',
-    description: '光属性RAY。一番近い敵へ一筋の光が駆け抜け（線上の敵と遮蔽壁を貫通）、当たった敵に刻んだ光が1秒後に爆発して周囲を巻き込む。ULT「夜明けの刻」で敵弾を全消去し、5秒間盤面をホワイトアウトさせて敵の新規弾生成を封じる。',
+    description: '光属性RAY。一番近い敵へ一筋の光が駆け抜け（線上の敵と遮蔽壁を貫通）、当たった敵に刻んだ光が1秒後に爆発して周囲を巻き込む。ULT「夜明けの刻」で敵弾を全消去し、5秒間盤面をホワイトアウトさせて敵弾射出停止を適用。',
     shotType: 'ray', shotStyle: 'towa-ray', shotElement: 'light',
     fireRate: 320, shotCount: 1, shotOffsetY: 44, coreTop: '38%',
     shotPowerRate: 0.10,          // 閃光：ATK×0.10
@@ -3071,7 +3071,7 @@
     ultType: 'towa_dawn_moment', ultBaseType: 'field',
     ultAddons: ['bullet_clear', 'enemy_bullet_silence'],
     ultName: '夜明けの刻',
-    ultDescription: '発動時に盤面の敵弾をすべて削除。5秒間、盤面がホワイトアウトして新規敵弾の生成が停止。終了時に光が引いて通常の射撃が再開する。',
+    ultDescription: '発動時に盤面の敵弾をすべて削除。5秒間、盤面がホワイトアウトして敵弾射出停止を適用。終了時に光が引いて通常の射撃が再開する。',
     towaDarkDurationMs: 5000,
     burstNeed: 32, burstDamage: 0, ultGainPerHit: 0.50,
   });
@@ -3183,7 +3183,7 @@
     id: CHARACTER_ID.CAMILLA,
     effectKey: 'camilla_web',
     label: 'SUMMON / SPIDER',
-    description: '1.2秒に1体、蜘蛛を召喚（最大4体。足元のリングが溜まると次を出せる／溜まる前のタップは予約され自動で召喚）。蜘蛛はカサカサと走って最も近い敵に張り付き、ダメージを与えて移動を封じると消える（ザコ1.5秒／ボス1秒・解除後1秒は再捕縛なし）。',
+    description: '1.2秒に1体、蜘蛛を召喚（最大4体。足元のリングが溜まると次を出せる／溜まる前のタップは予約され自動で召喚）。蜘蛛はカサカサと走って最も近い敵に張り付き、ダメージを与えて敵の移動停止を適用すると消える（ザコ1.5秒／ボス1秒・解除後1秒は再捕縛なし）。',
     ultName: '血界・緋糸万華',
     shotType: 'conjure', mainShot: {type:'conjure'}, shotCount:1,
     fireRate:1000, shotPowerRate:0.4, bulletSpeed:520,
@@ -3215,7 +3215,7 @@
   }
   // build1482: ULT説明の統一テンプレート。
   // 「同じ効果は同じ書き方」にし、キャラごとの違いは数値（時間・威力・個数）だけ。
-  // 用語：敵弾を全消去／敵全体／スタン（行動停止）／吸い寄せて拘束／n秒間／ATK×n／
+  // 用語：敵弾を全消去／敵全体／敵の行動停止（射出・移動・攻撃）／吸い寄せて敵の行動停止／n秒間／ATK×n／
   //       アイテムをn個出現。拾うと〜／通常ショット。制限事項は末尾に「※」で1行。
   // 属性はULT欄の属性アイコンで示すため、本文には書かない（属性を変える効果のみ例外）。
   // 戦闘処理・数値は変更しない（数値は各キャラのパラメータ／戦闘側の既定値から生成）。
@@ -3227,6 +3227,10 @@
     const pct = (rate, d) => Math.round(num(rate, d) * 100) + '%';
     const mul = (v, d) => String(Number(num(v, d).toFixed(2))) + '倍';
     const CLEAR = '敵弾を全消去し、';
+    const SHOT_STOP = '敵弾射出停止';
+    const MOVE_STOP = '敵の移動停止';
+    const ACTION_STOP = '敵の行動停止（射出・移動・攻撃）';
+    const TIME_STOP = '時間停止（射出・移動・攻撃・効果発動）';
     const note = text => '※' + text;
     const join = parts => parts.filter(Boolean).join('');
 
@@ -3234,7 +3238,7 @@
       // --- 弾消し＋全体スタン＋全体ダメージ（基本型） ---
       case 'balance_flash':
       case 'prototype_generic':
-        return CLEAR + '敵の行動を1.4秒間停止し、0.84秒後に敵全体へ' + atk(c.ultDamageAtkMultiplier, 3.0) + 'のダメージ。';
+        return CLEAR + ACTION_STOP + '：1.4秒間。0.84秒後に敵全体へ' + atk(c.ultDamageAtkMultiplier, 3.0) + 'のダメージ。';
 
       // --- 全体ダメージ ---
       case 'ryune_absolute_lethe':
@@ -3244,19 +3248,19 @@
       case 'sui_time_domain':
         return '自機に追従する半径' + String(num(c.suiDomainRadius, 275)) + 'pxの時空領域を' + sec(c.suiDomainDurationMs, 6000) + '間展開。領域内の敵弾を' + pct(1 - num(c.suiDomainBulletSpeedMultiplier, 0.2), 0.8) + '減速し、領域内の操作キャラのATKを' + mul(c.suiDomainAtkMultiplier, 1.3) + 'にする。' + note('敵弾全消去・回復・全体攻撃なし');
       case 'nightshade_barrage':
-        return CLEAR + '時間を' + sec(c.nightshadeBarrageDurationMs, 4000) + '間停止し、タップするたびに散弾' + String(num(c.nightshadePelletsPerTap, 4)) + '発を敵全体へランダムにばら撒く。1発' + atk(c.nightshadePelletAtkRate, 0.20) + '（最大' + String(num(c.nightshadeMaxTaps, 12)) + '回）。';
+        return CLEAR + TIME_STOP + '：' + sec(c.nightshadeBarrageDurationMs, 4000) + '間。タップするたびに散弾' + String(num(c.nightshadePelletsPerTap, 4)) + '発を敵全体へランダムにばら撒く。1発' + atk(c.nightshadePelletAtkRate, 0.20) + '（最大' + String(num(c.nightshadeMaxTaps, 12)) + '回）。';
       case 'nightshade_snipe':
-        return 'BOSS（いなければ一番近い敵）へ直線の狙撃弾。射線上の敵すべての属性バリアを剥がし、' + sec(c.nightshadeStunMs, 5000) + '間、敵の行動を停止し、命中した敵に' + atk(c.nightshadeDamageAtkMultiplier, 2.5) + 'のダメージ。';
+        return 'BOSS（いなければ一番近い敵）へ直線の狙撃弾。射線上の敵すべての属性バリアを剥がし、' + sec(c.nightshadeStunMs, 5000) + '間、' + ACTION_STOP + '。命中した敵に' + atk(c.nightshadeDamageAtkMultiplier, 2.5) + 'のダメージ。';
       case 'meloria_stun':
-        return '敵の行動を' + sec(c.ultStunMs, 5000) + '間停止し、さらに各敵に' + pct(c.meloriaPercentChance, 0.2) + 'の確率で最大HPの' + pct(c.meloriaMaxHpDamageRate, 0.5) + 'のダメージ。';
+        return ACTION_STOP + '：' + sec(c.ultStunMs, 5000) + '間。さらに各敵に' + pct(c.meloriaPercentChance, 0.2) + 'の確率で最大HPの' + pct(c.meloriaMaxHpDamageRate, 0.5) + 'のダメージ。';
 
       // --- 単体・範囲攻撃 ---
       case 'veronica_brass_punch':
         return '真正面のごく狭い範囲に一撃を放ち、命中した敵に' + atk(c.ultDamageAtkMultiplier, 7) + 'のダメージ。' + note('追尾しない。範囲外ならMISS');
       case 'arno_thousand_slash':
-        return CLEAR + '時間を' + sec(c.arnoSlashDurationMs, 4000) + '間停止し、最も近い敵の目前へ移動。停止中、タップするたびに' + atk(c.arnoSlashDamageAtkRate, 0.35) + 'の斬撃（最大' + String(num(c.arnoSlashMaxHits, 13)) + '回）。終了後は元の位置に戻る。';
+        return CLEAR + TIME_STOP + '：' + sec(c.arnoSlashDurationMs, 4000) + '間。最も近い敵の目前へ移動。停止中、タップするたびに' + atk(c.arnoSlashDamageAtkRate, 0.35) + 'の斬撃（最大' + String(num(c.arnoSlashMaxHits, 13)) + '回）。終了後は元の位置に戻る。';
       case 'precision_beam':
-        return CLEAR + '前方に黒い手を伸ばして射線上の敵を7秒間拘束。拘束中に合計' + atk(c.ultDamageAtkMultiplier, 3.5) + 'のダメージ。';
+        return CLEAR + '前方に黒い手を伸ばし、射線上の敵に7秒間、' + ACTION_STOP + 'を適用。効果中に合計' + atk(c.ultDamageAtkMultiplier, 3.5) + 'のダメージ。';
       case 'jig_scramble_ray':
         return CLEAR + '反射レーザーを' + String(num(c.jigUltBeamCount, 6)) + '本射出。' + sec(c.jigUltDurationMs, 5000) + '間、画面端で反射しながら敵を貫通し、命中ごとに' + atk(c.jigUltDamageAtkRate, 0.12) + 'のダメージ。';
       case 'testchan_black_ship': {
@@ -3264,15 +3268,15 @@
         return '正面に極太レーザーを' + sec(dur) + '間照射し、' + sec(tick) + 'ごとに' + atk(rate) + 'のダメージ（最大' + atk(rate * Math.floor(dur / tick)) + '）。';
       }
       case 'forbidden_shock':
-        return sec(c.ninaUltDurationMs, 8000) + '間に最大' + String(num(c.ninaUltHitCount, 16)) + '回の落雷。1発ごとに' + atk(c.ninaUltHitAtkMultiplier, 2.8) + 'のダメージを与え、命中した敵を' + sec(c.ninaUltParalyzeMs, 3000) + '間、敵の行動を停止する。';
+        return sec(c.ninaUltDurationMs, 8000) + '間に最大' + String(num(c.ninaUltHitCount, 16)) + '回の落雷。1発ごとに' + atk(c.ninaUltHitAtkMultiplier, 2.8) + 'のダメージを与え、命中した敵を' + sec(c.ninaUltParalyzeMs, 3000) + '間、' + ACTION_STOP + '。';
       case 'noah_time_homing':
-        return CLEAR + '敵の移動を停止する。ランダムな敵に' + String(num(c.noahUltHitCount, 16)) + '回の落雷（1発' + atk(c.noahUltHitAtkMultiplier, 0.35) + 'のダメージ）。終了後、落雷を受けた敵を' + sec(c.noahUltParalyzeMs, 1500) + '間、敵の行動を停止する。';
+        return CLEAR + ACTION_STOP + '。ランダムな敵に' + String(num(c.noahUltHitCount, 16)) + '回の落雷（1発' + atk(c.noahUltHitAtkMultiplier, 0.35) + 'のダメージ）。終了後、落雷を受けた敵を' + sec(c.noahUltParalyzeMs, 1500) + '間、' + ACTION_STOP + '。';
       case 'hao_fivefold_trigger': {
         const m = Array.isArray(c.haoTriggerMultipliers) && c.haoTriggerMultipliers.length ? c.haoTriggerMultipliers : [1, 1.8, 3, 4, 5];
         return CLEAR + '前方に紋様を設置。敵が触れると敵全体に落雷のダメージ。威力は' + sec(c.haoTriggerUpgradeMs, 2000) + 'ごとに成長（ATK×' + m.map(v => fmtNum(v)).join('→') + '）。' + note('設置後' + sec(c.haoTriggerSafetyMs, 500) + 'は反応しない');
       }
       case 'painter_palette':
-        return '時間を停止し、5色（火・水・木・闇・光）のパレットから1色を選ぶ（' + sec(c.paletteChooseMs, 5000) + '以内に選ばないと、パーティに有利な色を自動選択）。各色の絵の具は1ステージ1回まで。' + sec(c.palettePaintMs, 4000) + '間、敵を指でなぞるとその色に塗られ、' + atk(c.palettePaintAtkMultiplier, 3.0) + 'のダメージを与えて属性を塗り替える。' + note('1体につき1回・インクが尽きると終了');
+        return TIME_STOP + '。5色（火・水・木・闇・光）のパレットから1色を選ぶ（' + sec(c.paletteChooseMs, 5000) + '以内に選ばないと、パーティに有利な色を自動選択）。各色の絵の具は1ステージ1回まで。' + sec(c.palettePaintMs, 4000) + '間、敵を指でなぞるとその色に塗られ、' + atk(c.palettePaintAtkMultiplier, 3.0) + 'のダメージを与えて属性を塗り替える。' + note('1体につき1回・インクが尽きると終了');
       case 'painter_rainbow_world':
       case 'painter_element_spread':
         return '6属性の弾を同時に発射。弾は敵を貫通し、命中ごとに' + atk(c.paintSpreadDamageAtkMultiplier, 1.75) + 'のダメージを与え、敵の属性をその弾の属性に変える。';
@@ -3286,25 +3290,25 @@
         return '敵陣に燃焼エリアを' + sec(c.burnFieldDurationMs, 6000) + '間展開。エリア内の敵に' + sec(c.burnFieldTickMs, 1000) + 'ごとに' + atk(c.burnFieldAtkMultiplier, 1.5) + 'のダメージ。';
       case 'eltena_black_hole': {
         const total = num(c.blackHoleDamageAtkMultiplier, 0);
-        return '敵陣にブラックホールを' + sec(c.blackHoleDurationMs, 8000) + '間展開し、敵全体（ボスを含む）を吸い寄せて拘束。' +
+        return '敵陣にブラックホールを' + sec(c.blackHoleDurationMs, 8000) + '間展開し、敵全体（ボスを含む）を吸い寄せて敵の行動停止（射出・移動・攻撃）を適用。' +
           (total > 0 ? '効果中に合計' + atk(total) + 'のダメージ。' : note('ULT自体のダメージなし'));
       }
       case 'kureha_fire_black_hole':
         return '敵陣にブラックホールを' + sec(c.blackHoleDurationMs, 5000) + '間展開し、敵を吸い寄せる。効果中に合計' + atk(c.blackHoleDamageAtkMultiplier, 3.0) + 'のダメージ。' + note('ボスは吸い寄せない。効果中も通常ショット可');
       case 'gojo_purple':
-        return '大鎌を正面に投げ、最初に当たった敵の位置で' + sec(c.gojoPurpleDurationMs, 7000) + '間停止。周囲の敵を吸い寄せて拘束（移動・攻撃も停止）。' + note('敵弾は消去しない。正面に敵がいなければMISS');
+        return '大鎌を正面に投げ、最初に当たった敵の位置で' + sec(c.gojoPurpleDurationMs, 7000) + '間停止。周囲の敵を吸い寄せて' + ACTION_STOP + '。' + note('敵弾は消去しない。正面に敵がいなければMISS');
 
       // --- 行動妨害・防御 ---
       case 'camilla_crimson_web':
-        return '盤面全体に紅い蜘蛛の巣を展開し、敵の移動を3〜7秒間停止する（凸段階で変動、射撃は継続）。拘束中の敵への与ダメージの2〜6%をHP吸収。';
+        return '盤面全体に紅い蜘蛛の巣を展開し、' + MOVE_STOP + '：3〜7秒間（凸段階で変動）。射撃は継続。移動停止中の敵への与ダメージの2〜6%をHP吸収。';
       case 'nem_stun':
-        return '敵の行動を' + sec(c.ultStunMs, 5000) + '間停止する。' + note('ULT自体のダメージなし');
+        return ACTION_STOP + '：' + sec(c.ultStunMs, 5000) + '間。' + note('ULT自体のダメージなし');
       case 'towa_eternal_darkness':
-        return CLEAR + sec(c.towaDarkDurationMs, 5000) + '間、盤面を常闇に包み、敵弾の新規生成を完全停止。効果終了時にフェードインして敵の射撃が再開する。';
+        return CLEAR + SHOT_STOP + '：' + sec(c.towaDarkDurationMs, 5000) + '間。盤面を常闇に包み、終了時に射撃再開。';
       case 'towa_dawn_moment':
-        return CLEAR + sec(c.towaDarkDurationMs, 5000) + '間、盤面をホワイトアウトさせ、敵弾の新規生成を完全停止。効果終了時に光が引いて敵の射撃が再開する。';
+        return CLEAR + SHOT_STOP + '：' + sec(c.towaDarkDurationMs, 5000) + '間。盤面をホワイトアウトさせ、終了時に射撃再開。';
       case 'suzu_bullet_silence':
-        return CLEAR + sec(c.suzuBulletSilenceMs, 3500) + '間、敵の射出を停止する。' + note('敵の移動は止まらない');
+        return CLEAR + sec(c.suzuBulletSilenceMs, 3500) + '間、' + SHOT_STOP + '。' + note('敵の移動は止まらない');
       case 'shiina_light_ring':
         return '自身の周りに円環を' + sec(c.lightRingDurationMs, 7000) + '間展開。円環内の敵弾を' + pct(1 - num(c.lightRingBulletSpeedMultiplier, 0.2), 0.8) + '減速。';
       case 'toyfel_double_black_hole':
