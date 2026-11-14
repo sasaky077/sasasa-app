@@ -128,6 +128,7 @@
       next_ult_max: false,
       last_result: null,
       runs_started: 0,
+      run_started_at: '',
       // build1679: 階層の「お題・異常」ルールの版。0＝旧ルール（このbuild以前に始めたrun）。新しく始めたrunだけ1になる。
       variety: 0,
       last_bonus: null,
@@ -174,6 +175,7 @@
       run_seed: Math.max(0, toInt(raw.run_seed, 0)),
       last_result: raw.last_result && typeof raw.last_result === 'object' ? raw.last_result : null,
       runs_started: Math.max(0, toInt(raw.runs_started, 0)),
+      run_started_at: String(raw.run_started_at || ''),
       variety: Math.max(0, toInt(raw.variety, 0)),
       last_bonus: raw.last_bonus && typeof raw.last_bonus === 'object' ? raw.last_bonus : null,
       skip_until: Math.max(0, toInt(raw.skip_until, 0)),
@@ -722,6 +724,7 @@
     }
     battle = null;
     save();
+    if (!win) queueRunReward(rec, Math.max(0, floor - 1));
     return { phaseOdysseyConfirmed:true, phaseOdysseyWin:win, firstClearClaimed:false, firstClearAmount:0, highScore:0 };
   }
 
@@ -770,7 +773,7 @@
     if (lastNote) {
       const last = rec.last_result;
       lastNote.textContent = (rec.run_status === 'ended' && last && !last.win)
-        ? `前回：FLOOR ${last.floor}で敗北（${last.cleared}階層踏破）`
+        ? `前回：${last.retired ? '挑戦終了' : 'FLOOR '+last.floor+'で敗北'}（${last.cleared}階層踏破）${last.cleared >= 30 ? ' ／ 終了報酬 '+(last.cleared >= 50 ? '金×1' : '銀×1') : ''}`
         : (rec.run_status === 'select' ? `FLOOR ${rec.current_floor} 踏破！ 強化を選択してください`
           : (active ? nextFloorPreviewText(rec) : '')); // build1679: 挑戦中は次の階層のお題・異常
       lastNote.hidden = !lastNote.textContent;
@@ -1451,6 +1454,7 @@
     rec.last_result = null;
     rec.run_seed = 1 + Math.floor(Math.random() * 2147483646);
     rec.runs_started += 1;
+    rec.run_started_at = new Date().toISOString();
     rec.variety = VARIETY_VERSION; // build1679: 新しく始めたrunだけ、お題・異常あり
     rec.last_bonus = null;
     save();
@@ -1526,6 +1530,7 @@
       cur.ult_state = {};
       cur.pending_choices = [];
       save();
+      queueRunReward(cur, cur.last_result.cleared);
       render();
       notify('挑戦を終了しました');
     });
@@ -1556,6 +1561,50 @@
   //  記録はサーバーの phase_odyssey_records（submit_phase_odyssey_best）へ送る。
   //  送るのは「最高到達階が上がった時」と「画面を開いた時（既存プレイヤーの記録の取り込み）」。
   // ------------------------------------------------------------
+  // 各挑戦終了ごとに1回。ローカルの送信待ちはサーバーの受領台帳で冪等に処理。
+  const RUN_REWARD_QUEUE = 'zeraphia_po_run_reward_pending_v1:';
+  function queueRunReward(rec, cleared){
+    if (!userId() || cleared < 30) return;
+    const key = RUN_REWARD_QUEUE + userId();
+    const token = [rec.run_seed, rec.runs_started, rec.run_started_at || 'legacy'].join('-');
+    try {
+      const q = JSON.parse(localStorage.getItem(key) || '[]');
+      const list = Array.isArray(q) ? q : [];
+      if (!list.some(x => x.token === token)) list.push({token, cleared});
+      localStorage.setItem(key, JSON.stringify(list));
+    } catch (e) { console.warn('[phase odyssey] run reward queued failed', e); }
+    setTimeout(claimRunRewards, 250);
+  }
+  let claimingRunRewards = null;
+  function claimRunRewards(){
+    if (claimingRunRewards) return claimingRunRewards;
+    const sb = rankClient(), uid = userId();
+    if (!sb || !uid) return Promise.resolve(false);
+    const key = RUN_REWARD_QUEUE + uid;
+    let pending = [];
+    try { pending = JSON.parse(localStorage.getItem(key) || '[]'); } catch (_) {}
+    if (!Array.isArray(pending) || !pending.length) return Promise.resolve(false);
+    claimingRunRewards = (async () => {
+      // 最高階がサーバーに届いてから付与判定を実施する。
+      await submitBestFloor();
+      for (const item of pending) {
+        const {data,error} = await sb.rpc('claim_phase_odyssey_run_reward', {p_run_token:item.token, p_cleared_floor:item.cleared});
+        if (error || !data || !data.ok) throw error || new Error(data?.message || 'reward claim failed');
+        if (data.granted) {
+          notify('位相回遊・終了報酬：スキップ券（' + (item.cleared >= 50 ? '金' : '銀') + '）×1');
+          window.dispatchEvent(new Event('zeraphia:inventory-refresh'));
+          try { await window.ItemTickets?.fetchCounts?.(); } catch (_) {}
+          refreshSkipOwned();
+        }
+        // RPC成功後に送信待ちから削除。再送でもサーバー側で二重付与しない。
+        const latest = JSON.parse(localStorage.getItem(key) || '[]');
+        localStorage.setItem(key, JSON.stringify((Array.isArray(latest) ? latest : []).filter(x => x.token !== item.token)));
+      }
+      return true;
+    })().catch(e => {console.warn('[phase odyssey] run rewards pending',e);return false;})
+      .finally(()=>{claimingRunRewards=null;});
+    return claimingRunRewards;
+  }
   const RANK_SENT_KEY = 'zeraphia_po_rank_sent_v1';
   const RANK_CACHE_MS = 60000;
   const rankCache = Object.create(null);
@@ -1891,6 +1940,7 @@
     requestAnimationFrame(layoutPager); // 画面の表示（active）反映後に、収まるかを判定し直す
     if (rec.run_status === 'select') setTimeout(openBuffSelect, 260);
     refreshSkipOwned(); // build1813: スキップ券の所持数
+    setTimeout(claimRunRewards, 1100); // 終了報酬の未受領分を再試行
     setTimeout(() => { submitBestFloor().then(()=>claimFirstRewards()); }, 600); // build1814: 過去の最高記録も含め初回報酬を照合
   }
   function close(){
