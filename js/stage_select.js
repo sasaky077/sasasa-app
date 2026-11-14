@@ -677,6 +677,37 @@
     return !!(data && String(data.stageType || '').toLowerCase() === 'puzzle');
   }
 
+  // STORY共通：開始後のパズル／ミニゲームから安全に中断する。
+  // 中断時にクリア処理を呼ばず、開始前のチャプター選択へ戻す。
+  function attachStoryAbortControls(overlay, onAbort) {
+    const quitBtn = document.createElement('button');
+    quitBtn.type = 'button';
+    quitBtn.textContent = '戻る';
+    quitBtn.setAttribute('aria-label', '中断してチャプターに戻る');
+    quitBtn.style.cssText = 'position:absolute;z-index:5;top:calc(env(safe-area-inset-top) + 8px);left:calc(env(safe-area-inset-left) + 8px);width:82px;height:35px;padding:0;margin:0;border:0;border-radius:0;box-shadow:none;background:transparent url("images/button_back.webp?v=1395-left-edge-fade") center/100% 100% no-repeat;font-size:0;color:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;';
+    const confirmBox = document.createElement('div');
+    confirmBox.setAttribute('role', 'dialog');
+    confirmBox.setAttribute('aria-modal', 'true');
+    confirmBox.setAttribute('aria-label', '中断確認');
+    confirmBox.style.cssText = 'position:absolute;inset:0;z-index:6;display:none;align-items:center;justify-content:center;background:rgba(30,20,10,.55);touch-action:manipulation;';
+    confirmBox.innerHTML =
+      '<div style="width:min(84%,320px);padding:22px 18px 18px;text-align:center;font-family:&#39;Noto Serif JP&#39;,serif;color:#583c21;background:linear-gradient(180deg,#fffaf0,#f1dcb6);border:1px solid #ae7d39;outline:1px solid rgba(255,247,220,.85);outline-offset:-5px;box-shadow:0 6px 20px rgba(40,22,6,.45);">' +
+      '<p style="margin:0 0 6px;font-size:16px;font-weight:600;letter-spacing:.08em;">中断しますか？</p>' +
+      '<p style="margin:0 0 16px;font-size:12px;line-height:1.6;color:#7a5a36;">現在の進行状況は保存されません。</p>' +
+      '<div style="display:flex;gap:10px;justify-content:center;">' +
+      '<button type="button" data-act="stay" style="flex:1;height:42px;border:1px solid #ac7d36;background:linear-gradient(155deg,#fffaf0,#e8cf9f);color:#62401d;font:600 14px serif;cursor:pointer;">キャンセル</button>' +
+      '<button type="button" data-act="quit" style="flex:1;height:42px;border:1px solid #d6a75b;background:linear-gradient(130deg,#684526,#392414 40%,#6e4725);color:#fff3d8;font:600 14px serif;cursor:pointer;">中断する</button>' +
+      '</div></div>';
+    quitBtn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); confirmBox.style.display='flex'; });
+    confirmBox.addEventListener('click', e => {
+      const act = e.target && e.target.getAttribute && e.target.getAttribute('data-act');
+      if (act === 'quit') onAbort();
+      else if (act === 'stay' || e.target === confirmBox) confirmBox.style.display='none';
+    });
+    overlay.appendChild(quitBtn);
+    overlay.appendChild(confirmBox);
+  }
+
   function playRingPuzzleStage(stage, mode) {
     const stageId = stage.baseStageId || stage.id;
     const chapter = Number(stage.chapter || 5);
@@ -700,6 +731,7 @@
       frame.src = 'ring_puzzle_ch05.html?v=1728&rings=' + (Number(stage.stageNo) === 2 ? '3' : '4');
     }
     overlay.appendChild(frame);
+    attachStoryAbortControls(overlay, () => { if (!done) { done=true; cleanup(); returnToChapter(); } });
     document.body.appendChild(overlay);
     const previousHtmlOverflow = document.documentElement.style.overflow;
     const previousBodyOverflow = document.body.style.overflow;
@@ -781,36 +813,8 @@
     frame.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;display:block;overflow:hidden;';
     frame.src = file + '?v=1336';
     overlay.appendChild(frame);
-    // 隠密ミニゲームには中から抜ける手段がないため、オーバーレイ側に「やめる」導線を置く。
-    // 押すと確認を出し、「やめる」でクリア扱いにせずチャプター画面へ戻る。
-    if (isStealth) {
-      const quitBtn = document.createElement('button');
-      quitBtn.type = 'button';
-      quitBtn.textContent = 'やめる';
-      quitBtn.setAttribute('aria-label', 'ミニゲームをやめてチャプターに戻る');
-      quitBtn.style.cssText = 'position:absolute;z-index:2;top:calc(env(safe-area-inset-top) + 8px);left:calc(env(safe-area-inset-left) + 8px);width:82px;height:35px;padding:0;margin:0;border:0;border-radius:0;box-shadow:none;background:transparent url(\'images/button_back.webp?v=1395-left-edge-fade\') center/100% 100% no-repeat;font-size:0;color:transparent;overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;';
-      const confirmBox = document.createElement('div');
-      confirmBox.setAttribute('role', 'dialog');
-      confirmBox.setAttribute('aria-modal', 'true');
-      confirmBox.style.cssText = 'position:absolute;inset:0;z-index:3;display:none;align-items:center;justify-content:center;background:rgba(30,20,10,.55);touch-action:none;';
-      confirmBox.innerHTML =
-        '<div style="width:min(84%,320px);padding:22px 18px 18px;text-align:center;font-family:\'Noto Serif JP\',serif;color:#583c21;background:linear-gradient(180deg,#fffaf0,#f1dcb6);border:1px solid #ae7d39;outline:1px solid rgba(255,247,220,.85);outline-offset:-5px;box-shadow:0 6px 20px rgba(40,22,6,.45);">' +
-          '<p style="margin:0 0 6px;font-size:16px;font-weight:600;letter-spacing:.08em;">ミニゲームをやめますか？</p>' +
-          '<p style="margin:0 0 16px;font-size:12px;line-height:1.6;color:#7a5a36;">クリアにはならず、チャプター画面に戻ります。</p>' +
-          '<div style="display:flex;gap:10px;justify-content:center;">' +
-            '<button type="button" data-act="stay" style="flex:1;height:42px;border:1px solid #ac7d36;background:linear-gradient(155deg,#fffaf0,#e8cf9f);color:#62401d;font:600 14px \'Noto Serif JP\',serif;letter-spacing:.08em;cursor:pointer;">続ける</button>' +
-            '<button type="button" data-act="quit" style="flex:1;height:42px;border:1px solid #d6a75b;background:linear-gradient(130deg,#684526,#392414 40%,#6e4725);color:#fff3d8;font:600 14px \'Noto Serif JP\',serif;letter-spacing:.08em;cursor:pointer;">やめる</button>' +
-          '</div>' +
-        '</div>';
-      quitBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); confirmBox.style.display = 'flex'; });
-      confirmBox.addEventListener('click', (e) => {
-        const act = e.target && e.target.getAttribute && e.target.getAttribute('data-act');
-        if (act === 'quit') exit();
-        else if (act === 'stay' || e.target === confirmBox) confirmBox.style.display = 'none';
-      });
-      overlay.appendChild(quitBtn);
-      overlay.appendChild(confirmBox);
-    }
+    // 隠密・紙のパズルで同じ中断UIを使う。
+    attachStoryAbortControls(overlay, () => exit());
     document.body.appendChild(overlay);
     const prev = [document.documentElement.style.overflow,document.body.style.overflow,document.body.style.touchAction];
     document.documentElement.style.overflow='hidden';

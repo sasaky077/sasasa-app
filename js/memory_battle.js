@@ -459,7 +459,7 @@
       const img = panelImage(def);
       const fallback = bossImage(def);
       const rules = ruleRows(def).map(r => `<li class="mb-rule">${ruleIconHtml(r.icon)}<span class="mb-rule-name">${esc(r.name)}</span><span class="mb-rule-text">${esc(r.text)}</span></li>`).join('');
-      rows.push(`<li class="mb-card${done ? ' is-cleared' : ''}" data-no="${no}" role="button" tabindex="0" aria-label="${esc(def.bossName)}に挑戦">
+      rows.push(`<li class="mb-card${done ? ' is-cleared mb-clear-rank-' + rank.toLowerCase() : ''}" data-no="${no}" role="button" tabindex="0" aria-label="${esc(def.bossName)}に挑戦">
         <div class="mb-card-head">
           <span class="mb-ribbon"><b>${pad2(displayNo)}</b></span>
           <div class="mb-names">
@@ -470,7 +470,7 @@
           <button type="button" class="mb-rewards-open" data-mb-rewards="${no}" aria-label="${esc(def.bossName)}のクリア報酬を見る">クリア報酬 <span aria-hidden="true">›</span></button>
         </div>
         <div class="mb-card-body">
-          <figure class="mb-portrait">${img ? `<img src="${esc(img)}" alt="${esc(def.bossName)}" decoding="async"${fallback && fallback !== img ? ` onerror="this.onerror=null;this.src='${esc(fallback)}'"` : ''}>` : ''}${done ? '<span class="mb-seal is-img" aria-label="ランク達成"><img src="images/memory_stamp_cleared.webp" alt="CLEARED" decoding="async"></span>' : ''}</figure>
+          <figure class="mb-portrait">${img ? `<img src="${esc(img)}" alt="${esc(def.bossName)}" decoding="async"${fallback && fallback !== img ? ` onerror="this.onerror=null;this.src='${esc(fallback)}'"` : ''}>` : ''}</figure>
           <ul class="mb-rules">${rules}</ul>
         </div>
       </li>`);

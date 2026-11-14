@@ -584,3 +584,40 @@ html body #screen-memory-battle.memory-battle-screen .mb-list{gap:28px !importan
    （.mb-portrait img の「枠いっぱいに広げる」指定がスタンプ画像にも効いていた）。枠の幅に合わせた大きさにする */
 html body #screen-memory-battle .mb-portrait .mb-seal.is-img{width:74%!important;height:auto!important;aspect-ratio:1/1;right:4%!important;top:4%!important;left:auto!important;bottom:auto!important}
 html body #screen-memory-battle .mb-portrait .mb-seal.is-img img{position:static!important;inset:auto!important;width:100%!important;height:100%!important;object-fit:contain!important;border-radius:0!important;filter:none!important}
+
+
+/* build1967: subdued rank materials; no portrait overlay stamp */
+#screen-memory-battle .mb-card.mb-clear-rank-a{
+  border:2px solid #a6adb9!important;
+  background:linear-gradient(180deg,#fcfcfc,#f3f4f5)!important;
+  box-shadow:inset 0 0 0 3px #fff,0 1px 8px rgba(65,74,91,.09)!important;
+}
+#screen-memory-battle .mb-card.mb-clear-rank-a .mb-ribbon{
+  background:linear-gradient(180deg,#d6d9df,#a7adba)!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.7)!important;
+}
+#screen-memory-battle .mb-card.mb-clear-rank-a .mb-ribbon b{color:#454e5c!important;text-shadow:none!important}
+#screen-memory-battle .mb-card.mb-clear-rank-a .mb-ribbon::before{border-color:rgba(255,255,255,.85)!important}
+#screen-memory-battle .mb-card.mb-clear-rank-s{
+  border:2px solid #c6a465!important;
+  background:linear-gradient(180deg,#fffdfa,#f9f4eb)!important;
+  box-shadow:inset 0 0 0 3px #fffcf7,0 1px 9px rgba(113,83,38,.10)!important;
+}
+#screen-memory-battle .mb-card.mb-clear-rank-s .mb-ribbon{
+  background:linear-gradient(180deg,#e1ca97,#b99555)!important;
+  box-shadow:inset 0 0 0 1px rgba(255,250,229,.8)!important;
+}
+#screen-memory-battle .mb-card.mb-clear-rank-s .mb-ribbon b{color:#473319!important;text-shadow:none!important}
+#screen-memory-battle .mb-card.mb-clear-rank-a .mb-rank-indicator b{color:#778391!important}
+#screen-memory-battle .mb-card.mb-clear-rank-s .mb-rank-indicator b{color:#ad8644!important}
+#screen-memory-battle .mb-card.is-cleared .mb-portrait img{filter:none!important}
+#screen-memory-battle .mb-portrait .mb-seal{display:none!important}
+
+/* build1968: 巡行＞記憶決戦 タブ背景を提供画像に変更。位相回遊と同じレイヤー構造。 */
+#screen-ninmu.junkou-rebuilt .junkou-tabs .junkou-tab.memory-battle-tab{
+  background:
+    linear-gradient(140deg,rgba(22,27,65,.51),rgba(29,29,70,.39)),
+    url('../images/phase_memory.webp?v=1968') center 54% / cover no-repeat !important;
+  border-color:rgba(214,189,138,.9) !important;
+  outline-color:rgba(255,246,220,.55) !important;
+}
