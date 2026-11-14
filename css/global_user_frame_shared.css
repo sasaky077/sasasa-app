@@ -1,0 +1,249 @@
+/* ZERAPHIA shared user HUD: single HUD geometry for HOME and non-immersive screens.
+   Page-specific colors remain intact; all sizes and layout positions are shared. */
+html body:not(.ui-immersive) #global-user-frame.global-user-frame{
+  position:fixed!important;top:0!important;left:0!important;right:0!important;
+  display:block!important;height:calc(env(safe-area-inset-top,0px) + 91px)!important;
+  min-height:0!important;padding:0!important;box-sizing:border-box!important;
+}
+html body:not(.ui-immersive) #global-user-frame .hud-left{
+  display:grid!important;grid-template-columns:auto minmax(0,1fr)!important;
+  grid-template-rows:auto auto!important;column-gap:9px!important;row-gap:0!important;
+  align-items:start!important;position:absolute!important;top:calc(env(safe-area-inset-top,0px) + 6px)!important;
+  left:12px!important;right:155px!important;width:auto!important;margin:0!important;padding:0!important;
+}
+html body:not(.ui-immersive) #global-user-frame .hv2-face{
+  display:block!important;grid-column:1!important;grid-row:1/3!important;flex:none!important;
+  width:54px!important;height:54px!important;margin:6px 4px 0!important;
+  transform:rotate(45deg)!important;overflow:hidden!important;
+  border:1.5px solid #b8934a!important;background:#efe4cd!important;
+  box-shadow:0 0 0 3px rgba(255,252,244,.9),0 0 0 4px rgba(184,147,74,.5)!important;
+}
+html body:not(.ui-immersive) #global-user-frame .hv2-face img{
+  display:block!important;width:142%!important;height:142%!important;object-fit:cover!important;
+  transform:rotate(-45deg)!important;margin:-21% 0 0 -21%!important;
+}
+html body:not(.ui-immersive) #global-user-frame .hud-lv-circle{
+  grid-column:2!important;grid-row:1!important;justify-self:start!important;align-self:end!important;
+  display:block!important;width:auto!important;height:auto!important;min-width:0!important;
+  margin:0!important;padding:0!important;background:none!important;border:0!important;box-shadow:none!important;
+}
+html body:not(.ui-immersive) #global-user-frame .hud-lv-circle::before,
+html body:not(.ui-immersive) #global-user-frame .hud-lv-circle::after{content:none!important;display:none!important}
+html body:not(.ui-immersive) #global-user-frame .hud-lv-core{
+  display:flex!important;position:static!important;flex-direction:row!important;
+  align-items:baseline!important;justify-content:flex-start!important;gap:4px!important;
+  width:auto!important;height:auto!important;transform:none!important;background:none!important;border:0!important;box-shadow:none!important;
+}
+html body:not(.ui-immersive) #global-user-frame .hud-lv-label{font-size:10px!important;line-height:1!important}
+html body:not(.ui-immersive) #global-user-frame .hud-lv-num{font-size:22px!important;line-height:1!important}
+html body:not(.ui-immersive) #global-user-frame .hud-info{
+  display:flex!important;flex-direction:column!important;align-items:flex-start!important;
+  grid-column:2!important;grid-row:2!important;min-width:0!important;max-width:100%!important;
+  width:auto!important;margin:0!important;padding:0!important;overflow:visible!important;
+}
+html body:not(.ui-immersive) #global-user-frame .hud-name{
+  position:static!important;order:1!important;transform:none!important;margin:1px 0 0!important;
+  font-size:17px!important;line-height:1.1!important;font-weight:800!important;
+  max-width:100%!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+}
+html body:not(.ui-immersive) #global-user-frame .hud-info .hud-sweep-line{display:none!important}
+html body:not(.ui-immersive) #global-user-frame .hv2-exp{
+  display:block!important;order:2!important;width:min(118px,100%)!important;margin-top:5px!important;
+}
+html body:not(.ui-immersive) #global-user-frame .hv2-exp .bar{
+  display:block!important;position:relative!important;height:4px!important;background:rgba(255,250,236,.75)!important;
+  box-shadow:0 0 0 1px rgba(184,147,74,.35)!important;
+}
+html body:not(.ui-immersive) #global-user-frame .hv2-exp .bar i{
+  display:block!important;height:100%!important;background:linear-gradient(90deg,#8f6c2e,#c9a35a 70%,#e6cf98)!important;
+}
+html body:not(.ui-immersive) #global-user-frame .hv2-exp .nums{
+  display:flex!important;justify-content:space-between!important;margin-top:3px!important;font-size:8px!important;line-height:1!important;
+}
+html body:not(.ui-immersive) #global-user-frame .hud-right{
+  position:absolute!important;top:calc(env(safe-area-inset-top,0px) + 6px)!important;right:10px!important;
+  left:auto!important;bottom:auto!important;margin:0!important;transform:none!important;
+  display:flex!important;flex-direction:column!important;align-items:flex-end!important;gap:5px!important;
+  width:auto!important;min-width:0!important;
+}
+html body:not(.ui-immersive) #global-user-frame .hud-right .hud-resource{
+  position:relative!important;top:0!important;bottom:auto!important;
+  display:flex!important;align-items:center!important;justify-content:space-between!important;
+  gap:6px!important;min-width:136px!important;height:30px!important;
+  padding:0 7px 0 6px!important;margin:0!important;transform:none!important;
+}
+html body:not(.ui-immersive) #global-user-frame .hud-res-icon{
+  width:20px!important;height:20px!important;min-width:20px!important;align-self:center!important;top:0!important;transform:none!important;
+}
+html body:not(.ui-immersive) #global-user-frame .hud-res-val{
+  font-size:13px!important;line-height:1!important;align-self:center!important;top:0!important;transform:none!important;
+}
+html body:not(.ui-immersive) #global-user-frame .hud-gem-plus-btn{
+  width:17px!important;height:17px!important;font-size:12px!important;line-height:15px!important;
+  align-self:center!important;top:0!important;transform:none!important;
+}
+/* The home HUD has a larger tall-iPhone variant: keep the same scale elsewhere. */
+@media (min-width:390px) and (min-height:800px) and (max-aspect-ratio:10/19){
+ html body:not(.ui-immersive) #global-user-frame.global-user-frame{height:calc(env(safe-area-inset-top,0px) + 101px)!important}
+ html body:not(.ui-immersive) #global-user-frame .hv2-face{width:58px!important;height:58px!important;margin:8px 5px 0!important}
+ html body:not(.ui-immersive) #global-user-frame .hud-left{column-gap:9px!important;right:166px!important}
+ html body:not(.ui-immersive) #global-user-frame .hud-lv-label{font-size:11px!important}
+ html body:not(.ui-immersive) #global-user-frame .hud-lv-num{font-size:25px!important}
+ html body:not(.ui-immersive) #global-user-frame .hud-name{font-size:18.5px!important}
+ html body:not(.ui-immersive) #global-user-frame .hv2-exp{width:min(125px,100%)!important;margin-top:6px!important}
+ html body:not(.ui-immersive) #global-user-frame .hv2-exp .nums{font-size:9px!important}
+ html body:not(.ui-immersive) #global-user-frame .hud-right{gap:6px!important}
+ html body:not(.ui-immersive) #global-user-frame .hud-right .hud-resource{min-width:144px!important;height:35px!important;padding:0 8px!important}
+ html body:not(.ui-immersive) #global-user-frame .hud-res-icon{width:23px!important;height:23px!important;min-width:23px!important}
+ html body:not(.ui-immersive) #global-user-frame .hud-res-val{font-size:15px!important}
+}
+
+/* Keep a single spacing rule for HOME and all other non-immersive screens. */
+html body:not(.ui-immersive) #global-user-frame .hud-left{gap:0 9px!important;}
+html body:not(.ui-immersive) #global-user-frame .hud-info{margin-left:0!important;padding-left:0!important;padding-right:0!important;}
+html body:not(.ui-immersive) #global-user-frame .hud-name{max-width:100%!important;}
+
+/* 2026-11-14: HOME / other screens use identical width constraints.
+   home_v2.css still has a specific HOME-only .hud-name max-width and
+   tall-device EXP width. Override both with one geometry policy. */
+html body:not(.ui-immersive) #global-user-frame .hud-info,
+html.hv2-home body:not(.ui-immersive) #global-user-frame .hud-info{
+  box-sizing:border-box!important;
+  width:min(118px,100%)!important;
+  min-width:0!important;
+  max-width:118px!important;
+}
+html body:not(.ui-immersive) #global-user-frame .hud-name,
+html.hv2-home body:not(.ui-immersive) #global-user-frame .hud-name{
+  display:block!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  letter-spacing:.08em!important;
+}
+html body:not(.ui-immersive) #global-user-frame .hv2-exp,
+html.hv2-home body:not(.ui-immersive) #global-user-frame .hv2-exp{
+  box-sizing:border-box!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+}
+@media (min-width:390px) and (min-height:800px) and (max-aspect-ratio:10/19){
+  html body:not(.ui-immersive) #global-user-frame .hud-info,
+  html.hv2-home body:not(.ui-immersive) #global-user-frame .hud-info{
+    width:min(125px,100%)!important;
+    max-width:125px!important;
+  }
+}
+
+/* 2026-11-14 — All screens: center RANK, player name and EXP gauge
+   inside the same shared info column. Do not shift the portrait or currency HUD. */
+html body:not(.ui-immersive) #global-user-frame .hud-left{
+  grid-template-columns:auto minmax(0,1fr)!important;
+}
+html body:not(.ui-immersive) #global-user-frame .hud-lv-circle,
+html.hv2-home body:not(.ui-immersive) #global-user-frame .hud-lv-circle{
+  box-sizing:border-box!important;
+  width:118px!important;
+  max-width:100%!important;
+  justify-self:stretch!important;
+  text-align:center!important;
+}
+html body:not(.ui-immersive) #global-user-frame .hud-lv-core,
+html.hv2-home body:not(.ui-immersive) #global-user-frame .hud-lv-core{
+  width:100%!important;
+  justify-content:center!important;
+}
+html body:not(.ui-immersive) #global-user-frame .hud-info,
+html.hv2-home body:not(.ui-immersive) #global-user-frame .hud-info{
+  align-items:center!important;
+  text-align:center!important;
+}
+html body:not(.ui-immersive) #global-user-frame .hud-name,
+html.hv2-home body:not(.ui-immersive) #global-user-frame .hud-name{
+  text-align:center!important;
+}
+html body:not(.ui-immersive) #global-user-frame .hv2-exp,
+html.hv2-home body:not(.ui-immersive) #global-user-frame .hv2-exp{
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
+@media (min-width:390px) and (min-height:800px) and (max-aspect-ratio:10/19){
+  html body:not(.ui-immersive) #global-user-frame .hud-lv-circle,
+  html.hv2-home body:not(.ui-immersive) #global-user-frame .hud-lv-circle{
+    width:125px!important;
+  }
+}
+
+/* Align the LEFT edges of RANK, username and EXP inside the existing centered
+   information column. Keep column placement, dimensions and other HUD items. */
+html body:not(.ui-immersive) #global-user-frame .hud-lv-circle,
+html.hv2-home body:not(.ui-immersive) #global-user-frame .hud-lv-circle{
+  text-align:left!important;
+}
+html body:not(.ui-immersive) #global-user-frame .hud-lv-core,
+html.hv2-home body:not(.ui-immersive) #global-user-frame .hud-lv-core{
+  justify-content:flex-start!important;
+}
+html body:not(.ui-immersive) #global-user-frame .hud-info,
+html.hv2-home body:not(.ui-immersive) #global-user-frame .hud-info{
+  align-items:flex-start!important;
+  text-align:left!important;
+}
+html body:not(.ui-immersive) #global-user-frame .hud-name,
+html.hv2-home body:not(.ui-immersive) #global-user-frame .hud-name{
+  text-align:left!important;
+}
+html body:not(.ui-immersive) #global-user-frame .hv2-exp,
+html.hv2-home body:not(.ui-immersive) #global-user-frame .hv2-exp{
+  margin-left:0!important;
+  margin-right:0!important;
+}
+
+/* Alignment fix: keep the three-item block centered in the shared HUD grid,
+   but align the contents to a common left edge. Do not move the portrait. */
+html body:not(.ui-immersive) #global-user-frame .hud-lv-circle,
+html.hv2-home body:not(.ui-immersive) #global-user-frame .hud-lv-circle,
+html body:not(.ui-immersive) #global-user-frame .hud-info,
+html.hv2-home body:not(.ui-immersive) #global-user-frame .hud-info{
+  justify-self:center!important;
+  width:118px!important;
+  max-width:100%!important;
+  min-width:0!important;
+}
+html body:not(.ui-immersive) #global-user-frame .hud-lv-core,
+html.hv2-home body:not(.ui-immersive) #global-user-frame .hud-lv-core{
+  justify-content:flex-start!important;
+}
+html body:not(.ui-immersive) #global-user-frame .hud-info,
+html.hv2-home body:not(.ui-immersive) #global-user-frame .hud-info{
+  align-items:flex-start!important;
+}
+@media (min-width:390px) and (min-height:800px) and (max-aspect-ratio:10/19){
+  html body:not(.ui-immersive) #global-user-frame .hud-lv-circle,
+  html.hv2-home body:not(.ui-immersive) #global-user-frame .hud-lv-circle,
+  html body:not(.ui-immersive) #global-user-frame .hud-info,
+  html.hv2-home body:not(.ui-immersive) #global-user-frame .hud-info{
+    width:125px!important;
+  }
+}
+
+/* Shared HUD vertical offset: lower all portrait, player info and currencies by 5px.
+   Preserve the centered three-item block and its common left edge. */
+html body:not(.ui-immersive) #global-user-frame .hud-left,
+html.hv2-home body:not(.ui-immersive) #global-user-frame .hud-left,
+html body:not(.ui-immersive) #global-user-frame .hud-right,
+html.hv2-home body:not(.ui-immersive) #global-user-frame .hud-right{
+  top:calc(env(safe-area-inset-top, 0px) + 11px)!important;
+}
+
+/* Shared HUD: move ONLY the RANK / name / EXP block 6px left.
+   Keep the 5px vertical offset, common left alignment and portrait/currencies unchanged. */
+html body:not(.ui-immersive) #global-user-frame .hud-lv-circle,
+html.hv2-home body:not(.ui-immersive) #global-user-frame .hud-lv-circle,
+html body:not(.ui-immersive) #global-user-frame .hud-info,
+html.hv2-home body:not(.ui-immersive) #global-user-frame .hud-info{
+  position:relative!important;
+  left:-6px!important;
+}
