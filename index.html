@@ -3442,6 +3442,16 @@ html:not(.hv2-home) body #global-user-frame .hv2-face {
 <style id="memory-battle-rank-build1939">
 #screen-memory-battle .mb-rank-indicator{position:relative;top:5px}
 </style>
+<style id="memory-battle-best-contrast-build1940">
+/* BEST label legibility; preserves the build1939 position and surrounding layout. */
+#screen-memory-battle .mb-rank-indicator small{
+  color:#3d3155;
+  opacity:1;
+  font:700 9px/1.4 Georgia,serif;
+  letter-spacing:.12em;
+}
+#screen-memory-battle .mb-rank-none small{opacity:.9}
+</style>
 <style id="memory-battle-reward-popup-build1938">
 #screen-memory-battle .mb-rewards-open{flex:0 0 auto;align-self:center;min-width:79px;padding:8px 7px;border:1px solid rgba(164,133,80,.48);background:rgba(255,253,248,.86);color:#655238;font:600 10px/1.2 'Noto Serif JP',serif;letter-spacing:.045em;white-space:nowrap;cursor:pointer}
 #screen-memory-battle .mb-rewards-open span{padding-left:5px;color:#a58b63;font-size:14px}
@@ -20939,7 +20949,7 @@ window.returnToTitleScreen = function(){
 <script src="js/score_attack.js?v=1927-rank-char-detail"></script>
 <script src="js/resonance_tower.js?v=1878-dawn-security"></script>
 <script src="js/phase_odyssey.js?v=1816-reward-list"></script>
-<script src="js/memory_battle.js?v=1937-ranks"></script>
+<script src="js/memory_battle.js?v=1940-reward-labels"></script>
 <script src="js/towa_encounter.js?v=1748-towa-flash"></script>
 <script src="js/towa_dawn.js?v=1878-dawn-security"></script>
 <script src="js/towa_notice.js?v=1554"></script>

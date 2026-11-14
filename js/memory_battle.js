@@ -389,9 +389,9 @@
     const root = $(SCREEN_ID);
     if (!root) return;
     const definitions = {
-      1: { name:'リヴィア', condition:'CHARGEキャラを編成せずにクリア' },
+      1: { name:'リヴィア', condition:'ショット「CHARGE」を持つキャラを編成せずにクリア' },
       3: { name:'テスト', condition:'1体のみで編成してクリア' },
-      4: { name:'ヘイズ', condition:'SRキャラを編成せずにクリア' }
+      4: { name:'ヘイズ', condition:'レアリティ「SR」のキャラを編成せずにクリア' }
     };
     const def = definitions[stageNo];
     if (!def) return;
