@@ -1317,11 +1317,15 @@
     return r.current_floor === 1 && !r.build_list.length && !r.skip_until && ['ready', 'suspended'].includes(r.run_status);
   }
   let skipOwned = 0;
+  let skipSilverOwned = 0;
+  let skipGoldOwned = 0;
   function refreshSkipOwned(){
     const T = window.ItemTickets;
     if (!T) return;
     T.fetchCounts().then(() => {
-      skipOwned = T.getCount('phase_skip_ticket_silver') + T.getCount('phase_skip_ticket_gold');
+      skipSilverOwned = T.getCount('phase_skip_ticket_silver');
+      skipGoldOwned = T.getCount('phase_skip_ticket_gold');
+      skipOwned = skipSilverOwned + skipGoldOwned;
       renderSkipButton();
     }).catch(() => {});
   }
@@ -1350,28 +1354,48 @@
     const dock = root.querySelector('.po-start-dock');
     const start = dock && dock.querySelector('[data-po-start]');
     if (!dock || !start) return;
-    let btn = root.querySelector('[data-po-skip]');
-    if (!btn) {
+    let row = root.querySelector('[data-po-skip-row]');
+    if (!row) {
       ensureSkipStyle();
-      btn = el('button', 'po-skip-btn');
-      btn.type = 'button';
-      btn.dataset.poSkip = '1';
-      btn.addEventListener('click', () => offerSkip());
+      row = el('div', 'po-skip-row');
+      row.dataset.poSkipRow = '1';
+      const makeBtn = (tier, label, floors) => {
+        const btn = el('button', `po-skip-btn is-${tier}`);
+        btn.type = 'button';
+        btn.dataset.poSkip = tier;
+        btn.innerHTML = `<img src="images/item_phase_skip_ticket_${tier}.webp" alt=""><span><strong>${label}</strong><small>${floors}</small></span><b>×0</b>`;
+        btn.addEventListener('click', () => offerSkip(tier));
+        return btn;
+      };
+      row.append(makeBtn('silver', 'スキップ券（銀）', '10 / 20 / 30 / 40F'));
+      row.append(makeBtn('gold', 'スキップ券（金）', '30 / 40 / 50F'));
     }
-    // Also migrate a previously created button when rendering a reopened page.
-    if (btn.parentNode !== dock || btn.nextElementSibling !== start) dock.insertBefore(btn, start);
+    if (row.parentNode !== dock || row.nextElementSibling !== start) dock.insertBefore(row, start);
     const rec = load();
     const show = skipOwned > 0 && canSkipNow(rec);
-    btn.hidden = !show;
-    if (show) {
-      const T = window.ItemTickets;
-      const gold = T ? T.getCount('phase_skip_ticket_gold') : 0;
-      btn.innerHTML = `<img src="images/item_phase_skip_ticket_${gold > 0 ? 'gold' : 'silver'}.webp" alt=""><span>スキップ券を使う <b>×${skipOwned}</b></span>`;
+    row.hidden = !show;
+    if (!show) return;
+    const silverBtn = row.querySelector('[data-po-skip="silver"]');
+    const goldBtn = row.querySelector('[data-po-skip="gold"]');
+    if (silverBtn) {
+      const n = skipSilverOwned;
+      silverBtn.disabled = n <= 0;
+      silverBtn.classList.toggle('is-empty', n <= 0);
+      const badge = silverBtn.querySelector('b'); if (badge) badge.textContent = `×${n}`;
+    }
+    if (goldBtn) {
+      const n = skipGoldOwned;
+      goldBtn.disabled = n <= 0;
+      goldBtn.classList.toggle('is-empty', n <= 0);
+      const badge = goldBtn.querySelector('b'); if (badge) badge.textContent = `×${n}`;
     }
   }
   async function offerSkip(tier){
     const T = window.ItemTickets;
     if (!T) { notify('スキップ券を使用できません'); return; }
+    if (!tier) tier = skipGoldOwned > 0 ? 'gold' : 'silver';
+    const ownCount = tier === 'gold' ? skipGoldOwned : skipSilverOwned;
+    if (ownCount <= 0) { notify(`スキップ券（${tier === 'gold' ? '金' : '銀'}）を所持していません`); return; }
     const rec = load();
     if (!canSkipNow(rec)) {
       notify(rec.skip_until ? 'スキップの強化選択中です' : 'スキップ券は挑戦の最初（FLOOR 1・強化なし）にだけ使えます。挑戦を終了すると使えるようになります');
@@ -1493,21 +1517,34 @@
         return false;
       }
       const names = party.map(id => (getChar(id) || {}).name || '').filter(Boolean).join('・');
-      // build1813: スキップ券を持っていれば、開始時に使うかを選べる
-      let owned = 0;
-      try { if (window.ItemTickets) { await window.ItemTickets.fetchCounts(); owned = window.ItemTickets.getCount('phase_skip_ticket_silver') + window.ItemTickets.getCount('phase_skip_ticket_gold'); } } catch (_) {}
+      // build1813: スキップ券を持っていれば、開始時に券種を選べる
+      let silverOwned = 0, goldOwned = 0;
+      try {
+        if (window.ItemTickets) {
+          await window.ItemTickets.fetchCounts();
+          silverOwned = window.ItemTickets.getCount('phase_skip_ticket_silver');
+          goldOwned = window.ItemTickets.getCount('phase_skip_ticket_gold');
+        }
+      } catch (_) {}
+      const options = [];
+      if (silverOwned > 0) options.push(['skip_silver', `スキップ券（銀） ×${silverOwned}`]);
+      if (goldOwned > 0) options.push(['skip_gold', `スキップ券（金） ×${goldOwned}`]);
+      options.push(['start', '挑戦する']);
       const choice = await askChoice('PHASE ODYSSEY / START', '挑戦開始',
-        `${names}\nこの3人で FLOOR 1 から挑戦します。\n開始後は敗北するまで編成を変更できません。`,
-        owned > 0 ? [['skip', `スキップ券 ×${owned}`], ['start', '挑戦する']] : [['start', '挑戦する']]);
+        `${names}
+この3人で FLOOR 1 から挑戦します。
+開始後は敗北するまで編成を変更できません。`,
+        options);
       if (!choice) return false;
-      if (choice === 'skip') {
+      if (choice === 'skip_silver' || choice === 'skip_gold') {
+        const chosenTier = choice === 'skip_gold' ? 'gold' : 'silver';
         // 戦闘画面を閉じて位相回遊の画面に戻り、そこでルーレットと強化選択を行う
         rec.draft_members = party.slice();
         save({ cloud:false });
         setTimeout(async () => {
           try { if (typeof window.closeShootingEvent === 'function') await window.closeShootingEvent(); } catch (_) {}
           open();
-          setTimeout(() => { runSkip(party); }, 280);
+          setTimeout(() => { runSkip(party, chosenTier); }, 280);
         }, 0);
         return false;
       }

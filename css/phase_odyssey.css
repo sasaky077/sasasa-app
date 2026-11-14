@@ -1152,18 +1152,57 @@ html body:has(#screen-phase-odyssey.active) #global-user-frame #user-coin{
   align-items:center;
   gap:0;
 }
-#screen-phase-odyssey .po-start-dock .po-skip-btn{
-  flex:0 0 auto;
+#screen-phase-odyssey .po-start-dock .po-skip-row{
+  width:min(100%,340px);
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:6px;
   margin:0 auto 5px;
-  min-height:30px;
-  padding:3px 12px 3px 7px;
+}
+#screen-phase-odyssey .po-start-dock .po-skip-btn{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  width:100%;
+  margin:0;
+  min-height:40px;
+  padding:4px 8px 4px 5px;
   font-size:10px;
-  line-height:1.15;
+  line-height:1.1;
+  border-radius:14px;
 }
 #screen-phase-odyssey .po-start-dock .po-skip-btn img{
-  width:28px;height:28px;
-  margin:-3px 0;
+  flex:0 0 auto;
+  width:24px;height:24px;
+  margin:0;
 }
+#screen-phase-odyssey .po-start-dock .po-skip-btn span{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  text-align:left;
+  gap:1px;
+}
+#screen-phase-odyssey .po-start-dock .po-skip-btn strong{
+  font-size:10px;
+  color:#4a3a5c;
+  font-weight:700;
+}
+#screen-phase-odyssey .po-start-dock .po-skip-btn small{
+  font-size:8px;
+  color:#876f49;
+  letter-spacing:.02em;
+}
+#screen-phase-odyssey .po-start-dock .po-skip-btn b{
+  margin-left:auto;
+  font-size:11px;
+  white-space:nowrap;
+}
+#screen-phase-odyssey .po-start-dock .po-skip-btn.is-gold{background:linear-gradient(180deg,#fffaf0,#f4e5bf);}
+#screen-phase-odyssey .po-start-dock .po-skip-btn.is-silver{background:linear-gradient(180deg,#fbfcff,#ece9f8);}
+#screen-phase-odyssey .po-start-dock .po-skip-btn.is-empty{opacity:.48;filter:saturate(.55);}
+#screen-phase-odyssey .po-start-dock .po-skip-btn:disabled{cursor:default;}
 @media (max-height:740px){
   #screen-phase-odyssey .po-hero{
     height:calc(var(--po-top) + 96px);
@@ -1196,7 +1235,10 @@ html body:has(#screen-phase-odyssey.active) #global-user-frame #user-coin{
   #screen-phase-odyssey .po-section-head p{font-size:9px;}
   #screen-phase-odyssey .po-start-dock{padding:2px 10px 4px;}
   #screen-phase-odyssey .po-start{height:43px;}
-  #screen-phase-odyssey .po-start-dock .po-skip-btn{margin-bottom:3px;min-height:28px;}
+  #screen-phase-odyssey .po-start-dock .po-skip-row{margin-bottom:3px;gap:5px;}
+  #screen-phase-odyssey .po-start-dock .po-skip-btn{min-height:36px;padding:3px 7px 3px 5px;}
+  #screen-phase-odyssey .po-start-dock .po-skip-btn strong{font-size:9.5px;}
+  #screen-phase-odyssey .po-start-dock .po-skip-btn small{font-size:7.5px;}
 }
 
 /* ranking party inspection — compact mobile dialog */

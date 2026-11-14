@@ -25,7 +25,7 @@
     phase_skip_ticket_gold: {
       id:'phase_skip_ticket_gold', tier:'gold', name:'位相回遊スキップ券（金）', img:'images/item_phase_skip_ticket_gold.webp',
       kicker:'PHASE SKIP TICKET', tag:'位相回遊',
-      desc:'位相回遊の挑戦開始時に使用。ルーレットで 30 / 40 階のどちらかまで踏破済みになる。スキップした階層の強化はその場で順番に選ぶ。'
+      desc:'位相回遊の挑戦開始時に使用。ルーレットで 30 / 40 / 50 階のいずれかまで踏破済みになる（30F 35%・40F 45%・50F 20%）。スキップした階層の強化はその場で順番に選ぶ。'
     },
     genesis_roulette_ticket_silver: {
       id:'genesis_roulette_ticket_silver', tier:'silver', name:'創世ptルーレット券（銀）', img:'images/item_genesis_roulette_ticket_silver.webp',
@@ -50,7 +50,7 @@
   const ROULETTE = Object.freeze({
     phase: {
       silver: [{ v:10, w:20 }, { v:20, w:35 }, { v:30, w:35 }, { v:40, w:10 }],
-      gold:   [{ v:10, w:0 },  { v:20, w:0 },  { v:30, w:50 }, { v:40, w:50 }]
+      gold:   [{ v:30, w:35 }, { v:40, w:45 }, { v:50, w:20 }]
     },
     genesis: {
       silver: [{ v:30, w:40 }, { v:50, w:30 }, { v:80, w:20 }, { v:100, w:10 }],
@@ -199,9 +199,18 @@
         background:linear-gradient(145deg,#fff4cf,#d4ab55 35%,#f6dc93 55%,#b8862e);box-shadow:0 6px 18px rgba(120,84,26,.32),inset 0 0 0 1px rgba(255,255,255,.6)}
       .it-rw-wheel{width:100%;height:100%;border-radius:50%;overflow:hidden;will-change:transform;background:#fffaf0}
       .it-rw-wheel svg{display:block;width:100%;height:100%}
+      .it-rw-seg.is-bronze{fill:url(#itRwBronze)}
+      .it-rw-seg.is-silver{fill:url(#itRwSilver)}
       .it-rw-seg.is-gold{fill:url(#itRwGold)}
       .it-rw-seg.is-ivory{fill:url(#itRwIvory)}
       .it-rw-seg{transition:filter .3s ease}
+      .it-sheet.is-phase-gold .it-rw-frame{background:linear-gradient(145deg,#fffaf1,#bfa17a 31%,#f6e9ca 58%,#a17949);}
+      .it-sheet.is-phase-gold .it-rw-num{fill:#362b30}
+      .it-sheet.is-phase-gold .it-rw-rates{gap:6px 10px;font-size:12px;}
+      .it-sheet.is-phase-gold .it-rw-rates span{padding:4px 7px;border:1px solid rgba(147,124,97,.25);border-radius:6px;background:rgba(255,255,255,.48);}
+      .it-sheet.is-phase-gold .it-rw-rates span.is-bronze{color:#936548;border-color:#be9b80}
+      .it-sheet.is-phase-gold .it-rw-rates span.is-silver{color:#777b88;border-color:#bac0ce}
+      .it-sheet.is-phase-gold .it-rw-rates span.is-gold{color:#947039;border-color:#cbb57d}
       .it-rw-seg.is-win{filter:brightness(1.12) drop-shadow(0 0 0 #fff);animation:itRwWin .7s ease-in-out infinite alternate}
       @keyframes itRwWin{from{fill-opacity:1}to{fill-opacity:.7}}
       .it-rw-line{stroke:rgba(196,160,92,.75);stroke-width:1.4}
@@ -324,7 +333,7 @@
       return seg;
     });
   }
-  function rwSvg(segs, unitSmall){
+  function rwSvg(segs, unitSmall, phaseGold){
     const parts = segs.map((g, i) => {
       const [x0, y0] = rwPoint(g.from, RW_R), [x1, y1] = rwPoint(g.to, RW_R);
       const large = g.span > 180 ? 1 : 0;
@@ -336,13 +345,16 @@
       const fs = 34;
       const [lx, ly] = rwPoint(g.mid, RW_R * (g.span < 50 ? 0.72 : 0.56));
       const ny = ly - fs * 0.16, uy = ly + fs * 0.5;
-      return `<path class="it-rw-seg ${g.alt ? 'is-gold' : 'is-ivory'}" data-seg="${i}" d="${d}"/>` +
+      const colorClass = phaseGold ? ({30:'is-bronze',40:'is-silver',50:'is-gold'}[g.v] || 'is-ivory') : (g.alt ? 'is-gold' : 'is-ivory');
+      return `<path class="it-rw-seg ${colorClass}" data-seg="${i}" d="${d}"/>` +
         `<g class="it-rw-label" data-lx="${lx.toFixed(2)}" data-ly="${ly.toFixed(2)}"><text class="it-rw-num" x="${lx.toFixed(1)}" y="${ny.toFixed(1)}" font-size="${fs.toFixed(1)}">${g.v}</text>` +
         `<text class="it-rw-unit" x="${lx.toFixed(1)}" y="${uy.toFixed(1)}" font-size="16">${esc(unitSmall)}</text></g>`;
     }).join('');
     const lines = segs.map(g => { const [x, y] = rwPoint(g.from, RW_R); return `<line class="it-rw-line" x1="${RW_C}" y1="${RW_C}" x2="${x.toFixed(2)}" y2="${y.toFixed(2)}"/>`; }).join('');
     return `<svg viewBox="0 0 ${RW_SIZE} ${RW_SIZE}" aria-hidden="true">` +
-      `<defs><radialGradient id="itRwGold" cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="#f3e2b4"/><stop offset="1" stop-color="#dcbd7a"/></radialGradient>` +
+      `<defs><radialGradient id="itRwBronze" cx="40%" cy="35%" r="75%"><stop offset="0" stop-color="#e3c7b2"/><stop offset="1" stop-color="#b5876e"/></radialGradient>` +
+      `<radialGradient id="itRwSilver" cx="40%" cy="35%" r="75%"><stop offset="0" stop-color="#f7f6f6"/><stop offset="1" stop-color="#bfc4cf"/></radialGradient>` +
+      `<radialGradient id="itRwGold" cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="#f3e2b4"/><stop offset="1" stop-color="#dcbd7a"/></radialGradient>` +
       `<radialGradient id="itRwIvory" cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="#fffdf6"/><stop offset="1" stop-color="#f1e7d2"/></radialGradient></defs>` +
       parts + lines + `<circle class="it-rw-rim" cx="${RW_C}" cy="${RW_C}" r="${RW_R}"/></svg>`;
   }
@@ -352,10 +364,12 @@
     const table = ROULETTE[kind][tier];
     const segs = rwSegments(table);
     const total = table.reduce((n, x) => n + x.w, 0) || 1;
-    const rates = table.filter(x => x.w > 0).map(x => `<span>${x.v}${esc(unitSmall || unit)}<i>：</i>${Math.round(x.w / total * 100)}%</span>`).join('');
+    const isPhaseGold = kind === 'phase' && tier === 'gold';
+    const rates = table.filter(x => x.w > 0).map(x => `<span class="${isPhaseGold ? ({30:'is-bronze',40:'is-silver',50:'is-gold'}[x.v] || '') : ''}">${x.v}${esc(unitSmall || unit)}<i>：</i>${Math.round(x.w / total * 100)}%</span>`).join('');
     return new Promise(resolve => {
       openLayer((sheet, layer) => {
         sheet.classList.add('is-roulette');
+        if (isPhaseGold) sheet.classList.add('is-phase-gold');
         sheet.innerHTML =
           `<button type="button" class="it-rw-close" data-it-no aria-label="閉じる">×</button>` +
           `<div class="it-rw-kicker"><span>${esc(kind === 'phase' ? 'PHASE SKIP ROULETTE' : 'GENESIS ROULETTE')}</span></div>` +
@@ -363,7 +377,7 @@
           `<div class="it-rw-divider"><i></i></div>` +
           `<div class="it-rw-stage">` +
             `<span class="it-rw-spark s1">✦</span><span class="it-rw-spark s2">✦</span><span class="it-rw-spark s3">✦</span>` +
-            `<div class="it-rw-frame"><div class="it-rw-wheel">${rwSvg(segs, unitSmall || unit)}</div><div class="it-rw-hub"></div></div>` +
+            `<div class="it-rw-frame"><div class="it-rw-wheel">${rwSvg(segs, unitSmall || unit, isPhaseGold)}</div><div class="it-rw-hub"></div></div>` +
             `<div class="it-rw-pointer"></div>` +
           `</div>` +
           `<p class="it-rw-lead">${esc(describe || '')}</p>` +
