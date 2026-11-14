@@ -351,3 +351,75 @@ html.hv2-home body:not(.ui-immersive) #global-user-frame .hud-info > .hud-name{
   text-indent:0!important;
   text-align:left!important;
 }
+
+
+/* 2026-11-14 HUD REJOIN: home_v2 used its own specificity and font
+   shorthand. The geometry below deliberately applies to BOTH home and
+   other non-immersive screens; no page-specific horizontal offsets. */
+html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-left,
+html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-left{
+  position:absolute!important;
+  display:grid!important;
+  grid-template-columns:auto minmax(0,1fr)!important;
+  grid-template-rows:26px auto!important;
+  column-gap:9px!important;row-gap:0!important;
+  left:12px!important;right:155px!important;
+  top:calc(env(safe-area-inset-top,0px) + 11px)!important;
+  align-items:start!important;
+  width:auto!important;margin:0!important;padding:0!important;
+  transform:none!important;
+}
+html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-lv-circle,
+html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-lv-circle,
+html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info,
+html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info{
+  grid-column:2!important;
+  position:relative!important;left:-6px!important;
+  box-sizing:border-box!important;width:118px!important;max-width:100%!important;
+  min-width:0!important;justify-self:center!important;
+  align-self:start!important;transform:none!important;
+}
+html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-lv-circle,
+html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-lv-circle{
+  grid-row:1!important;height:26px!important;min-height:26px!important;
+  display:block!important;text-align:left!important;
+}
+html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-lv-core,
+html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-lv-core{
+  display:flex!important;justify-content:flex-start!important;
+  align-items:baseline!important;width:100%!important;gap:4px!important;
+}
+html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-lv-label,
+html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-lv-label{
+  font-size:12px!important;font-weight:800!important;line-height:1.15!important;
+  letter-spacing:.025em!important;
+}
+html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info,
+html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info{
+  grid-row:2!important;display:flex!important;flex-direction:column!important;
+  align-items:flex-start!important;text-align:left!important;
+  margin:0!important;padding:0!important;height:auto!important;
+}
+html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info > .hud-name,
+html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info > .hud-name{
+  position:static!important;display:block!important;order:1!important;
+  width:100%!important;max-width:100%!important;min-width:0!important;
+  height:auto!important;min-height:19px!important;
+  margin:0!important;padding:0!important;text-align:left!important;
+  font-size:16px!important;line-height:1.2!important;letter-spacing:.08em!important;
+  text-indent:0!important;transform:none!important;translate:none!important;
+}
+html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info > .hv2-exp,
+html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info > .hv2-exp{
+  display:block!important;position:relative!important;order:2!important;
+  width:100%!important;max-width:100%!important;min-width:0!important;
+  margin:5px 0 0!important;padding:0!important;transform:none!important;
+}
+@media (min-width:390px) and (min-height:800px) and (max-aspect-ratio:10/19){
+  html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-left,
+  html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-left{right:166px!important}
+  html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-lv-circle,
+  html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-lv-circle,
+  html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info,
+  html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info{width:125px!important}
+}
