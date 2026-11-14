@@ -1125,3 +1125,11 @@ html body #shooting-event-root .shooting-score.is-po-floor[data-po-len="11"] .sh
 #screen-phase-odyssey .po-next-reward b{flex:none;font:700 11px/1 Cinzel,serif;color:#5d4a7a}
 #screen-phase-odyssey .po-next-reward em{flex:1 1 auto;min-width:0;font-style:normal;font-weight:600;color:#4a3a5c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #screen-phase-odyssey .po-next-reward i{flex:none;font-style:normal;color:#9e6c29;font-size:14px;line-height:1}
+
+/* 2026-11-14: 位相回遊の結晶・コイン数値をブラウンに統一 */
+html body:has(#screen-phase-odyssey.active) #global-user-frame #user-gem,
+html body:has(#screen-phase-odyssey.active) #global-user-frame #user-coin{
+  color:#69472d !important;
+  -webkit-text-fill-color:#69472d !important;
+  text-shadow:0 1px 1px rgba(255,250,237,.8) !important;
+}

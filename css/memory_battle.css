@@ -621,3 +621,12 @@ html body #screen-memory-battle .mb-portrait .mb-seal.is-img img{position:static
   border-color:rgba(214,189,138,.9) !important;
   outline-color:rgba(255,246,220,.55) !important;
 }
+
+/* 2026-11-14: 記憶決戦のみ、上部HUDのランクと名前を白文字化 */
+html body:has(#screen-memory-battle.active) #global-user-frame .hud-name,
+html body:has(#screen-memory-battle.active) #global-user-frame .hud-lv-label,
+html body:has(#screen-memory-battle.active) #global-user-frame .hud-lv-num{
+  color:#ffffff !important;
+  -webkit-text-fill-color:#ffffff !important;
+  text-shadow:0 1px 2px rgba(22,17,43,.92),0 0 6px rgba(23,21,49,.7) !important;
+}
