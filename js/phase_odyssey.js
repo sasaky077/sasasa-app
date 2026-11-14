@@ -1199,6 +1199,7 @@
       const skipping = rec.skip_until > 0 && rec.current_floor < rec.skip_until;
       const nextTxt = skipping ? '' : nextFloorPreviewText(rec);
       if (nextTxt) sheet.append(el('p', 'po-variety-note', nextTxt));
+      sheet.append(el('p', 'po-buff-cap-guide', '一部の強化には効果上限があります。上限到達後も選択は可能ですが、効果はそれ以上増えません。'));
       const cards = el('div', 'po-buff-cards');
       rec.pending_choices.forEach((b, index) => {
         const tpl = TEMPLATES[b.t];
@@ -1215,6 +1216,21 @@
         copy.append(meta);
         copy.append(el('strong', 'po-buff-name', tpl.name(b.c)));
         copy.append(el('span', 'po-buff-desc', tpl.desc(b.v, b.c)));
+        // 表示のみ：効果上限に対する現在値と選択後の実効値。
+        // 強化の選択可否・抽選・保存・実際の効果計算は一切変更しない。
+        if (Object.prototype.hasOwnProperty.call(TOTAL_CAP, b.t)) {
+          const cap = TOTAL_CAP[b.t];
+          const existing = Math.max(0, Math.round(sumOf(b.t, rec) * 100));
+          const before = Math.min(cap, existing);
+          const after = Math.min(cap, existing + (Number(b.v) || 0));
+          const reached = after >= cap;
+          const alreadyMax = before >= cap;
+          const limitLine = el('span', 'po-buff-limit' + (alreadyMax ? ' is-maxed' : reached ? ' is-reaching' : ''));
+          limitLine.append(el('span', 'po-buff-limit-values', `現在 ${before}% → ${after}% / 上限 ${cap}%`));
+          if (reached) limitLine.append(el('b', 'po-buff-limit-max', 'MAX'));
+          if (alreadyMax) limitLine.append(el('small', 'po-buff-limit-note', '効果は上限到達済み（選択可能）'));
+          copy.append(limitLine);
+        }
         if (tpl.cond === 'barrier') {
           const ok = partyBreaksBarrier(b.c, rec);
           copy.append(el('span', 'po-buff-target' + (ok ? ' is-miss' : ''), ok ? '編成で突破済みの属性です' : '対象：味方全員（編成では突破できない属性）'));

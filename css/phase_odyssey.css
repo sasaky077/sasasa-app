@@ -1133,3 +1133,12 @@ html body:has(#screen-phase-odyssey.active) #global-user-frame #user-coin{
   -webkit-text-fill-color:#69472d !important;
   text-shadow:0 1px 1px rgba(255,250,237,.8) !important;
 }
+
+/* 26-11-14: display-only enhancement cap guidance */
+.po-buff-cap-guide{margin:7px 5px 10px;color:#79664e;font-size:11px;line-height:1.65;text-align:left;}
+.po-buff-limit{display:flex;flex-wrap:wrap;align-items:center;gap:4px 7px;margin-top:7px;padding:6px 9px;border:1px solid rgba(159,130,77,.32);background:rgba(255,251,239,.67);color:#665335;font-size:11px;line-height:1.35;}
+.po-buff-limit.is-reaching{border-color:rgba(145,112,62,.53);}
+.po-buff-limit.is-maxed{background:rgba(96,85,116,.09);border-color:rgba(96,85,116,.28);}
+.po-buff-limit-values{font-variant-numeric:tabular-nums;}
+.po-buff-limit-max{display:inline-block;padding:2px 6px;background:#514669;color:#fff;font:700 10px/1.2 'Cinzel',serif;letter-spacing:.09em;}
+.po-buff-limit-note{flex-basis:100%;color:#766c75;font-size:10px;}
