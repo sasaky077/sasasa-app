@@ -56,6 +56,67 @@
     return leftIndex <= rightIndex ? left : right;
   }
 
+  // パズル専用成績。射撃の記録キーとは分離して保持する。
+  const STORY_PUZZLE_KEY = 'zeraphia_story_puzzle_records_v1';
+  function getStoryPuzzleRecord(id) {
+    try {
+      const map=JSON.parse(localStorage.getItem(STORY_PUZZLE_KEY)||'{}')||{};
+      const raw=map[String(id)]||{};
+      return raw.bestRank==='S'||raw.bestRank==='A' ? {
+        cleared:true, bestRank:raw.bestRank, highScore:Number(raw.highScore)||0
+      } : null;
+    } catch(_) { return null; }
+  }
+  function recordStoryPuzzleClear(id, usedHint) {
+    if(!id) return;
+    try {
+      const map=JSON.parse(localStorage.getItem(STORY_PUZZLE_KEY)||'{}')||{};
+      const old=map[id]||{};
+      const bestRank=(!usedHint||old.bestRank==='S')?'S':'A';
+      const highScore=bestRank==='S'?24000:20000;
+      map[id]={bestRank,highScore};
+      localStorage.setItem(STORY_PUZZLE_KEY,JSON.stringify(map));
+    } catch(e) { console.warn('[story] puzzle record save failed',e); }
+  }
+  // 旧クリア記録を引き継ぐ。STORYはS、パズルは最低A。
+  function getStoryStageDisplayRecord(stage, kind) {
+    const id = String(stage && stage.id || '');
+    const type = String(kind || '').toUpperCase();
+    const legacy = getStoryShootingRecord(id);
+    if (type === 'STORY') {
+      return { cleared: legacy.cleared, bestRank: legacy.cleared ? 'S' : '', highScore: 0 };
+    }
+    if (type === 'PUZZLE') {
+      const puzzle = getStoryPuzzleRecord(id);
+      const cleared = !!puzzle || legacy.cleared;
+      if (cleared && !puzzle) {
+        try {
+          const map = JSON.parse(localStorage.getItem(STORY_PUZZLE_KEY) || '{}') || {};
+          map[id] = { bestRank: 'A', highScore: 20000 };
+          localStorage.setItem(STORY_PUZZLE_KEY, JSON.stringify(map));
+        } catch (err) { console.warn('[story] puzzle legacy migration failed', err); }
+      }
+      return { cleared, bestRank: puzzle ? puzzle.bestRank : (cleared ? 'A' : ''),
+        highScore: puzzle ? puzzle.highScore : (cleared ? 20000 : 0) };
+    }
+    return legacy;
+  }
+
+  // same-origin iframe: ヒントボタンを実際にタップした場合のみカウントする。
+  // iframe側が明示通知を送る場合にも対応。
+  function watchPuzzleHint(frame, onHint) {
+    try {
+      const doc=frame.contentDocument;
+      if(!doc) return;
+      doc.addEventListener('click', e => {
+        const btn=e.target&&e.target.closest&&e.target.closest('button,[role="button"]');
+        if(!btn || btn.disabled || btn.getAttribute('aria-disabled')==='true') return;
+        const ident=((btn.id||'')+' '+(btn.className||'')+' '+(btn.textContent||'')+' '+(btn.getAttribute('aria-label')||'')).toLowerCase();
+        if(/hint|ヒント/.test(ident)) onHint();
+      },true);
+    } catch(_) {}
+  }
+
   function getStoryShootingRecord(stageId) {
     const id = String(stageId || '');
     if (!id) return { cleared: false, bestRank: '', highScore: 0 };
@@ -153,7 +214,45 @@
     return score > 0 ? String(score).padStart(6, '0') : '------';
   }
 
-  function buildStoryRecordHtml(record) {
+  // RANK GUIDE — ステージカードから開く説明モーダル（記録ロジックは変更しない）
+  function openStoryRankCriteria(kind) {
+    const old = document.getElementById('zss-rank-guide-overlay');
+    if (old) old.remove();
+    const type = String(kind || '').toUpperCase();
+    const puzzle = type === 'PUZZLE';
+    const unranked = type === 'MINI GAME';
+    const rows = puzzle
+      ? [['S', 'ヒントを使わずにクリア'], ['A', 'ヒントを使用してクリア（過去のクリア記録を含む）']]
+      : type === 'STORY' ? [['S', 'ストーリーを最後まで読む']] : unranked ? [] : [
+          ['S', '24,000点以上'], ['A', '20,000点以上'], ['B', '16,000点以上'],
+          ['C', '12,000点以上'], ['D', '8,000点以上'], ['E', '8,000点未満']
+        ];
+    const overlay = document.createElement('div');
+    overlay.id = 'zss-rank-guide-overlay';
+    overlay.setAttribute('role', 'presentation');
+    overlay.innerHTML = `<section class="zss-rank-guide-panel" role="dialog" aria-modal="true" aria-labelledby="zss-rank-guide-title" tabindex="-1">
+      <button type="button" class="zss-rank-guide-close" aria-label="閉じる">×</button>
+      <small class="zss-rank-guide-kicker">RANK CRITERIA</small>
+      <h2 id="zss-rank-guide-title">ランク基準</h2>
+      <div class="zss-rank-guide-rule"></div>
+      ${unranked ? '<p class="zss-rank-guide-empty">このステージはランク評価の対象外です。</p>' :
+        `<div class="zss-rank-guide-rows">${rows.map(([rank, condition]) =>
+          `<div class="zss-rank-guide-row"><b class="zss-rank-guide-letter ${rank==='S'?'top':''}">${rank}</b><span>${condition}</span></div>`
+        ).join('')}</div>`}
+      <p class="zss-rank-guide-note">${puzzle ? '最高ランクを記録します。' : type === 'STORY' ? '読了後、自動的にSランクになります。' : unranked ? 'クリア状況は通常どおり記録されます。' : 'クリア時のスコアでランクが決まります。'}</p>
+      <button type="button" class="zss-rank-guide-done">閉じる</button>
+    </section>`;
+    const close = () => { document.removeEventListener('keydown', onKey); overlay.remove(); };
+    const onKey = e => { if (e.key === 'Escape') close(); };
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+    overlay.querySelector('.zss-rank-guide-close').addEventListener('click', close);
+    overlay.querySelector('.zss-rank-guide-done').addEventListener('click', close);
+    document.addEventListener('keydown', onKey);
+    document.body.appendChild(overlay);
+    overlay.querySelector('.zss-rank-guide-close').focus();
+  }
+
+  function buildStoryRecordHtml(record, kind) {
     const rank = record.bestRank || '—';
     const rankClass = record.bestRank ? ` rank-${record.bestRank.toLowerCase()}` : ' rank-none';
     return `
@@ -161,9 +260,7 @@
         <div class="zss-record-rank${rankClass}">
           <span>RANK</span><b>${rank}</b>
         </div>
-        <div class="zss-record-score">
-          <span>HIGH SCORE</span><b>${formatStoryShootingScore(record.highScore)}</b>
-        </div>
+        <button type="button" class="zss-rank-guide-btn" aria-label="ランク基準を表示">ランク基準</button>
       </div>`;
   }
 
@@ -519,7 +616,10 @@
 
       stages.forEach(stageDef => {
         const unlocked = isShootingStoryStageUnlocked(stageDef, mode);
-        const record = getStoryShootingRecord(stageDef.id);
+        const stageScenarioForRecord = getStoryScenarioData(stageDef);
+        const kindForRecord = getStoryNonBattleKind(stageScenarioForRecord) ||
+          (stageDef.storyPuzzle || String(stageDef.id).endsWith('ch06_04') ? 'PUZZLE' : '');
+        const record = getStoryStageDisplayRecord(stageDef, kindForRecord);
         const cleared = record.cleared;
         const isBoss = stageDef.type === 'boss';
         const missionText = stageDef.mission?.text || (isBoss ? 'BOSSを撃破' : '敵を撃破');
@@ -553,8 +653,8 @@
           <div class="zss-card-body">
             <div class="zss-card-name-row">
               <span class="zss-card-name">${displayStageName}</span>
-              ${cleared ? '<span class="zss-clear-badge" aria-label="クリア済み">✓ CLEAR</span>' : ''}
-              ${canReread ? '<button type="button" class="zss-read-btn" aria-label="このステージのストーリーを読む">📖 読む</button>' : ''}
+              ${cleared ? '<span class="zss-clear-badge" aria-label="クリア済み"></span>' : ''}
+              ${canReread ? '<button type="button" class="zss-read-btn" aria-label="このステージのストーリーを読む"></button>' : ''}
             </div>
             <div class="zss-mission">クリア条件：${escapeStageSelectHtml(displayCondition)}</div>
             <div class="zss-card-row zss-card-row-gimmick">
@@ -563,11 +663,17 @@
             </div>
             ${rewardRowHtml}
           </div>
-          ${buildStoryRecordHtml(record)}
+          ${buildStoryRecordHtml(record, nonBattleKind)}
           ${unlocked ? '<span class="zss-arrow" aria-hidden="true">›</span>' : '<span class="zss-lock" aria-hidden="true">🔒</span>'}
         `;
 
         if (unlocked) card.onclick = () => onShootingStoryStageTap(stageDef, mode);
+        const rankGuideBtn = card.querySelector('.zss-rank-guide-btn');
+        if (rankGuideBtn) rankGuideBtn.addEventListener('click', event => {
+          event.preventDefault();
+          event.stopPropagation();
+          openStoryRankCriteria(nonBattleKind);
+        });
         const readBtn = card.querySelector('.zss-read-btn');
         if (readBtn) readBtn.addEventListener('click', event => {
           event.stopPropagation(); // カード本体（戦闘開始）には伝えない
@@ -740,6 +846,7 @@
     document.body.style.overflow = 'hidden';
     document.body.style.touchAction = 'none';
     let done = false;
+    let usedHint = false;
     let watch = null;
     function cleanup() {
       window.removeEventListener('message', onMessage);
@@ -756,7 +863,7 @@
       if (done) return;
       done = true;
       cleanup();
-      const complete = () => { markNovelStoryStageCleared(stage.id); returnToChapter(); };
+      const complete = () => { recordStoryPuzzleClear(stage.id, usedHint); markNovelStoryStageCleared(stage.id); returnToChapter(); };
       try {
         if (window.StoryNovel && typeof window.StoryNovel.playPost === 'function') {
           const played = window.StoryNovel.playPost(stageId,{onComplete:complete,onExit:complete});
@@ -768,6 +875,7 @@
     function onMessage(event) {
       if (done || event.source !== frame.contentWindow) return;
       if (!event.data || typeof event.data !== 'object') return;
+      if (event.data.type === 'zeraphia-puzzle-hint-used') usedHint = true;
       if (event.data.type === 'zeraphia-ring-exit') { done=true;cleanup();returnToChapter(); }
       if (event.data.type === 'zeraphia-ring-cleared') cleared();
     }
@@ -778,6 +886,7 @@
         if (!child || !child.document || !child.document.getElementById('board')) return;
         // Same-origin direct bridge; postMessage remains supported as a backup.
         child.zeraphiaRingClear = cleared;
+        watchPuzzleHint(frame, () => { usedHint=true; });
         child.zeraphiaRingExit = () => { if (!done) {done=true;cleanup();returnToChapter();} };
         watch = setInterval(() => {
           try { if (!done && child.document.getElementById('board')?.classList.contains('solved')) { clearInterval(watch); watch=null; setTimeout(cleared, 2400); } }
@@ -821,6 +930,7 @@
     document.body.style.overflow='hidden';
     document.body.style.touchAction='none';
     let done = false;
+    let usedHint = false;
     function cleanup() {
       window.removeEventListener('message', onMessage);
       overlay.remove();
@@ -838,6 +948,7 @@
       done=true;
       cleanup();
       const complete=()=>{
+        if(!isStealth) recordStoryPuzzleClear(stage.id, usedHint);
         markNovelStoryStageCleared(stage.id);
         if(typeof window.renderStoryChapterList==='function'){
           window.renderStoryChapterList('normal');
@@ -856,6 +967,7 @@
     function onMessage(event) {
       if(done || event.source!==frame.contentWindow || event.origin!==location.origin)return;
       if(!event.data || typeof event.data!=='object')return;
+      if(event.data.type==='zeraphia-puzzle-hint-used') usedHint=true;
       if(event.data.type==='zeraphia-'+prefix+'-cleared')cleared();
       else if(event.data.type==='zeraphia-'+prefix+'-exit')exit();
     }
@@ -865,6 +977,7 @@
       try {
         const child=frame.contentWindow;
         if(!child || !child.document || !child.document.getElementById('board'))return;
+        if(!isStealth) watchPuzzleHint(frame,()=>{usedHint=true;});
         child['zeraphia'+(isStealth?'Stealth':'Map')+'Clear']=cleared;
         child['zeraphia'+(isStealth?'Stealth':'Map')+'Exit']=exit;
       }catch(_){ /* postMessage fallback */ }
