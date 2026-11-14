@@ -576,6 +576,16 @@
       return;
     }
     if (id.startsWith('phase_skip_ticket_')) {
+      // build1963: 位相回遊の途中データがある場合は画面遷移・消費を行わない。
+      // 進行状態の照会はユーザー別の保存状態を返す PhaseOdyssey API を使用。
+      const phase = window.PhaseOdyssey;
+      if (phase && typeof phase.getState === 'function') {
+        const state = phase.getState();
+        if (state && ['ready', 'battle', 'suspended', 'select'].includes(state.run_status)) {
+          toast('位相回遊をプレイ中には使用できません。一度プレイを終了してから、お試しください。');
+          return;
+        }
+      }
       // スキップは位相回遊の挑戦開始時に使う。画面を開いて案内する。
       if (typeof window.openPhaseOdyssey === 'function') {
         window.openPhaseOdyssey();

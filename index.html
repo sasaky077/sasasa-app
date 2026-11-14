@@ -4901,6 +4901,21 @@ html:not(.hv2-home) body #global-user-frame .hv2-face {
 
 window.NOTICE_ITEMS = [
   {
+    id: 'notice_phase_silver_ticket_20261114',
+    date: '2026.11.14',
+    title: '位相回遊チケット プレゼント',
+    body: 'いつもZERAPHIAをプレイしていただきありがとうございます。\n\n全プレイヤーに「位相回遊スキップ券（銀）」を1枚プレゼントします。\n\n下の「受け取る」ボタンからお受け取りください。',
+    reward: {
+      type: 'phase_silver_ticket',
+      claimId: 'notice_phase_silver_ticket_20261114',
+      rpcName: 'claim_phase_silver_notice_20261114',
+      label: 'プレゼント',
+      amount: 1,
+      image: 'images/item_phase_skip_ticket_silver.webp'
+    },
+    hidden: false
+  },
+  {
     id: 'notice_song_align_sync_20261114',
     date: '2026.11.14',
     title: 'アレイン楽曲「SYNC」リリース',
@@ -5099,6 +5114,7 @@ window.NOTICE_ITEMS = [
   // Older players retain the original complete notice list, regardless of device.
   const NOTICE_NEW_USER_CUTOFF = Date.parse('2026-11-14T03:00:00Z');
   const NOTICE_STARTER_IDS = new Set([
+    'notice_phase_silver_ticket_20261114',
     'notice_song_align_sync_20261114',
     'notice_song_mimosa_20261108',
     'notice_domain_change_20261109',
@@ -5821,7 +5837,8 @@ window.NOTICE_ITEMS = [
          item.reward.type === 'start_bonus_bundle' ||
          item.reward.type === 'test_growth_bundle' ||
          item.reward.type === 'special_stage_ticket' ||
-         item.reward.type === 'skin');
+         item.reward.type === 'skin' ||
+         item.reward.type === 'phase_silver_ticket');
     });
     if (!rewardItems.length) { noticeClaimSynced = true; return; }
 
@@ -5846,6 +5863,8 @@ window.NOTICE_ITEMS = [
           res = await client.rpc('is_test_growth_bundle_claimed');
         } else if (item.reward.type === 'special_stage_ticket') {
           res = await client.rpc(String(item.reward.statusRpcName || 'is_noah_guerrilla_bonus_claimed'));
+        } else if (item.reward.type === 'phase_silver_ticket') {
+          res = await client.rpc('is_notice_reward_claimed', {p_claim_id:item.reward.claimId});
         } else if (item.reward.type === 'skin') {
           // build1706: 衣装プレゼント（受取状況はアカウント別にDBで判定）
           res = await client.rpc(String(item.reward.statusRpcName));
@@ -6063,6 +6082,22 @@ window.NOTICE_ITEMS = [
       `;
     }
 
+    if (reward.type === 'phase_silver_ticket') {
+      return `
+        <div class="notice-reward">
+          <div class="notice-reward-main">
+            <img class="notice-reward-item-icon" src="${escapeHtml(reward.image)}" alt="">
+            <div class="notice-reward-copy">
+              <span class="notice-reward-label">プレゼント</span>
+              <strong>位相回遊スキップ券（銀） ×1</strong>
+            </div>
+          </div>
+          <button type="button" class="notice-reward-btn${claimed ? ' claimed' : ''}"
+            data-notice-claim="${escapeHtml(item.id || '')}" ${claimed ? 'disabled' : ''}>
+            ${claimed ? '受け取り済み' : '受け取る'}</button>
+        </div>`;
+    }
+
     if (reward.type === 'special_stage_ticket') {
       const ticketAmount = Math.max(1, Math.floor(Number(reward.amount || 1)));
       return `
@@ -6184,6 +6219,31 @@ window.NOTICE_ITEMS = [
     const reward = item.reward;
 
     // build1706: 衣装プレゼント。付与はサーバー（rpcName）が行い、成功したら衣装の所持状態を更新する。
+    if (reward.type === 'phase_silver_ticket') {
+      if (button) { button.disabled = true; button.textContent = '受取中...'; }
+      try {
+        const client = window.zsSupabase;
+        if (!client || typeof client.rpc !== 'function') throw new Error('Supabaseへ接続できません');
+        const res = await client.rpc('claim_phase_silver_notice_20261114');
+        if (res.error) throw res.error;
+        const data = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
+        if (!data || data.ok !== true) throw new Error((data && data.message) || '受取に失敗しました');
+        reward.claimed = true;
+        markNoticeRewardClaimedLocally(reward.claimId);
+        writeNoticeDbStatus(reward.claimId, true);
+        try { if (window.ItemTickets && typeof window.ItemTickets.reload === 'function') await window.ItemTickets.reload(); } catch (_) {}
+        try { window.dispatchEvent(new CustomEvent('zeraphia:item-tickets-changed')); } catch (_) {}
+        if (!noticeBulkClaimActive && typeof window.showToast === 'function')
+          window.showToast(data.already_claimed ? '受け取り済みです' : '位相回遊スキップ券（銀） ×1 を受け取りました！');
+        renderNoticeList(); updateNoticeBadge(); return;
+      } catch (err) {
+        console.error('[NoticeReward] phase silver ticket:', err);
+        if (!noticeBulkClaimActive && typeof window.showToast === 'function') window.showToast('受取に失敗しました');
+        if (button) { button.disabled = false; button.textContent = '受け取る'; }
+        return;
+      }
+    }
+
     if (reward.type === 'skin') {
       if (!reward.claimId || !reward.rpcName) return;
       if (button) { button.disabled = true; button.textContent = '受取中...'; }
@@ -20962,13 +21022,13 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1961-inori-cross-cleanup"></script>
+<script src="js/shooting_event.js?v=1924-best-party"></script>
 <script src="js/shooting_party_filter.js?v=1914-fav"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1946-party-button"></script>
 <script src="js/skin_system.js?v=1709-towa-skin"></script>
 <script src="js/title_system.js?v=1815-weekly-and-phase-title"></script>
-<script src="js/item_tickets.js?v=1837-roulette-font"></script>
+<script src="js/item_tickets.js?v=1963-phase-run-guard"></script>
 <script src="js/inori_piece.js?v=1829-ticket-button"></script>
 <script src="js/item_management.js?v=1830-evolution-ticket"></script>
 
