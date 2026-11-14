@@ -1775,20 +1775,13 @@
       ]),
       bossElement: 'fire',
       enemyElement: 'fire',
-      bossGaugeHps: Object.freeze([2500, 2500, 2500]),
+      bossGaugeHps: Object.freeze([5000]),
       maxPartySize: 3,
       towaDawn: Object.freeze({
         segments: Object.freeze([
-          Object.freeze({ act: 1, role: 'mid',  enemyId: SHOOTING_ENEMY_ID.DAWN_CAMILLA, element: 'fire',  gaugeHps: Object.freeze([2500, 2500, 2500]), title: '第一幕', sub: '紅糸の魔女 カミラ' }),
-          Object.freeze({ act: 1, role: 'towa', enemyId: SHOOTING_ENEMY_ID.DAWN_TOWA,    element: 'light', gaugeHps: Object.freeze([4500, 4500]), title: '光の膜が割れた', sub: 'トワ -光の姿-',
-            echo: Object.freeze({ warningCount: 2, warningSpeed: 116, warningRespawnMs: 2600, fireIntervalScale: 1.15 }) }),
-          Object.freeze({ act: 2, role: 'mid',  enemyId: SHOOTING_ENEMY_ID.DAWN_SHIEN,   element: 'dark',  gaugeHps: Object.freeze([2600, 2700, 2700]), title: '第二幕', sub: '月下の剣鬼 シエン' }),
-          Object.freeze({ act: 2, role: 'towa', enemyId: SHOOTING_ENEMY_ID.DAWN_TOWA,    element: 'light', gaugeHps: Object.freeze([5000, 5000]), title: '光の膜が割れた', sub: 'トワ -光の姿-',
-            echo: Object.freeze({ warningCount: 3, warningSpeed: 124, warningRespawnMs: 2200, fireIntervalScale: 1.05 }) }),
-          Object.freeze({ act: 3, role: 'mid',  enemyId: SHOOTING_ENEMY_ID.DAWN_TEST,    element: 'wood',  gaugeHps: Object.freeze([2000, 2500, 3500]), title: '第三幕', sub: '降り立つ機兵 テスト' }),
-          Object.freeze({ act: 3, role: 'towa', enemyId: SHOOTING_ENEMY_ID.DAWN_TOWA,    element: 'light', gaugeHps: Object.freeze([6000, 6000]), title: '夜明け', sub: 'トワ -光の姿-',
-            echo: Object.freeze({ warningCount: 4, warningSpeed: 132, warningRespawnMs: 1900, fireIntervalScale: 0.95,
-              blackout: Object.freeze({ firstAtMs: 6000, 1: Object.freeze({ everyMs: 13000, durationMs: 4200 }), 2: Object.freeze({ everyMs: 10000, durationMs: 5000 }) }) }) }),
+          Object.freeze({act:1,role:'mid',enemyId:SHOOTING_ENEMY_ID.DAWN_CAMILLA,element:'fire',gaugeHps:Object.freeze([5000]),title:'PHASE I',sub:'トワ／カミラ／シエン'}),
+          Object.freeze({act:2,role:'towa',enemyId:SHOOTING_ENEMY_ID.DAWN_TOWA,element:'light',gaugeHps:Object.freeze([8500]),title:'PHASE II',sub:'トワ -光の姿-',
+            echo:Object.freeze({warningCount:4,warningSpeed:160,warningRespawnMs:1300,fireIntervalScale:0.80})}),
         ]),
         supportEveryMs: 3600,
         supportDamage: 150,
@@ -1812,7 +1805,7 @@
       enemyElement: 'light',
       bossGauges: 3,
       // 記憶決戦02と同じ基礎HP。SPECIALの周回倍率は従来どおりcoreで適用。
-      bossGaugeHps: Object.freeze([9900, 11000, 12100]),
+      bossGaugeHps: Object.freeze([9000, 10000, 11000]),
       // 記憶決戦02と同じ属性結界：イノリの光属性には闇攻撃だけが有効。
       weaknessOnlyElement: 'light',
       // 記憶決戦の掟を既存戦闘エンジンのgetMemoryRuleで共用する。

@@ -136,7 +136,7 @@
     launching = true;
     try {
       showSplash();
-      await new Promise(r => setTimeout(r, 3600));
+      await new Promise(r => setTimeout(r, 4400));
       window.__shootingReturnContext = { type: 'resonanceTower' };
       if (typeof window.openShootingEvent !== 'function' || typeof window.startTowaDawnBattle !== 'function') throw new Error('戦闘画面を開けませんでした');
       window.openShootingEvent({ stageId: STAGE_ID });
@@ -145,7 +145,7 @@
       if (!ok) throw new Error('夜明けを開始できませんでした');
       // 白い幕は、戦闘のイントロ（白いステージ情報）が出るまで残す（編成画面を一瞬も見せない）
       const t0 = Date.now();
-      while (Date.now() - t0 < 8000) {
+      while (Date.now() - t0 < 1200) {
         const info = document.getElementById('shooting-stage-info');
         if (info && info.classList.contains('is-visible')) break;
         await new Promise(r => setTimeout(r, 60));
@@ -188,9 +188,25 @@
     if (!hasPending()) return res;
     const dawnId = pending.dawnId;
     try {
-      const d = await rpc('finish_towa_dawn_run', { p_dawn_id: dawnId, p_win: !!win });
+      let d, lastError;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          d = await rpc('finish_towa_dawn_run', { p_dawn_id: dawnId, p_win: !!win });
+          if (d && d.ok === false && d.reason === 'too_fast' && attempt < 2) {
+            await new Promise(r => setTimeout(r, 2200));
+            continue;
+          }
+          lastError = null;
+          break;
+        } catch (e) {
+          lastError = e;
+          if (attempt < 2) await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+        }
+      }
+      if (lastError) throw lastError;
+      if (!d || d.ok !== true) throw new Error('夜明けの確定拒否: ' + (d?.reason || 'unknown'));
       pending = null; savePending();
-      if (win && d && d.ok !== false && d.win) {
+      if (win && d.win) {
         await refreshInventory();
         showReward(d);
       } else if (!win) {
