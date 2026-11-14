@@ -48,7 +48,7 @@ html.home-v2 #bottom-nav-shared.bottom-nav .bottom-nav-item{
 }
 
 /* ---------- 左：六角の板 ---------- */
-#home-v2 .hv2-side{position:absolute;left:10px;top:calc(104px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:4px;z-index:3}
+#home-v2 .hv2-side{position:absolute;left:14px;top:calc(104px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:4px;z-index:3}
 #home-v2 .hv2-sbtn{position:relative;width:62px;border:0;background:none;padding:0;-webkit-tap-highlight-color:transparent}
 #home-v2 .hv2-hex{position:relative;width:54px;height:64px;margin:0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
   background:url(../images/home_frame_hex.webp) center/100% 100% no-repeat;filter:drop-shadow(0 3px 5px rgba(80,55,20,.28))}
@@ -545,5 +545,21 @@ html.home-v2 #home-v2 .hv2-side{
   html.hv2-home #global-user-frame .hud-gem-plus-btn {
     width:19px!important;height:19px!important;
     font-size:13px!important;line-height:17px!important;
+  }
+}
+
+/* build1971: HOME left-side shortcuts moved down to increase clearance below HUD face.
+   Only the left shortcut group is affected; HUD, right cards and navigation unchanged. */
+html.home-v2 #home-v2 .hv2-side{
+  top:calc(env(safe-area-inset-top,0px) + 102px)!important;
+}
+@media (max-height:680px){
+  html.home-v2 #home-v2 .hv2-side{
+    top:calc(env(safe-area-inset-top,0px) + 90px)!important;
+  }
+}
+@media (min-width:390px) and (min-height:800px) and (max-aspect-ratio:10/19){
+  html.home-v2 #home-v2 .hv2-side{
+    top:calc(env(safe-area-inset-top,0px) + 106px)!important;
   }
 }
