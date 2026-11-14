@@ -4901,6 +4901,20 @@ html:not(.hv2-home) body #global-user-frame .hv2-face {
 
 window.NOTICE_ITEMS = [
   {
+    id: 'notice_inori_renewal_20261114',
+    date: '2026.11.14',
+    title: '「境界者：イノリ」リニューアルのお知らせ',
+    body: '「境界者：イノリ」をリニューアルしました。\n\n新たなギミックが追加されたイノリに挑戦してみてください！\n\nリニューアルを記念して、イノリ挑戦TICKETを10枚プレゼントします。',
+    reward: {
+      type: 'inori_challenge_ticket',
+      claimId: 'notice_inori_renewal_20261114',
+      rpcName: 'claim_inori_renewal_ticket_20261114',
+      label: 'プレゼント',
+      amount: 10
+    },
+    hidden: false
+  },
+  {
     id: 'notice_phase_silver_ticket_20261114',
     date: '2026.11.14',
     title: '位相回遊チケット プレゼント',
@@ -5114,6 +5128,7 @@ window.NOTICE_ITEMS = [
   // Older players retain the original complete notice list, regardless of device.
   const NOTICE_NEW_USER_CUTOFF = Date.parse('2026-11-14T03:00:00Z');
   const NOTICE_STARTER_IDS = new Set([
+    'notice_inori_renewal_20261114',
     'notice_phase_silver_ticket_20261114',
     'notice_song_align_sync_20261114',
     'notice_song_mimosa_20261108',
@@ -5838,7 +5853,8 @@ window.NOTICE_ITEMS = [
          item.reward.type === 'test_growth_bundle' ||
          item.reward.type === 'special_stage_ticket' ||
          item.reward.type === 'skin' ||
-         item.reward.type === 'phase_silver_ticket');
+         item.reward.type === 'phase_silver_ticket' ||
+         item.reward.type === 'inori_challenge_ticket');
     });
     if (!rewardItems.length) { noticeClaimSynced = true; return; }
 
@@ -6082,6 +6098,21 @@ window.NOTICE_ITEMS = [
       `;
     }
 
+    if (reward.type === 'inori_challenge_ticket') {
+      return `
+        <div class="notice-reward">
+          <div class="notice-reward-main">
+            <div class="notice-reward-copy">
+              <span class="notice-reward-label">プレゼント</span>
+              <strong>イノリ挑戦TICKET ×10</strong>
+            </div>
+          </div>
+          <button type="button" class="notice-reward-btn${claimed ? ' claimed' : ''}"
+            data-notice-claim="${escapeHtml(item.id || '')}" ${claimed ? 'disabled' : ''}>
+            ${claimed ? '受け取り済み' : '受け取る'}</button>
+        </div>`;
+    }
+
     if (reward.type === 'phase_silver_ticket') {
       return `
         <div class="notice-reward">
@@ -6219,6 +6250,31 @@ window.NOTICE_ITEMS = [
     const reward = item.reward;
 
     // build1706: 衣装プレゼント。付与はサーバー（rpcName）が行い、成功したら衣装の所持状態を更新する。
+    if (reward.type === 'inori_challenge_ticket') {
+      if (button) { button.disabled = true; button.textContent = '受取中...'; }
+      try {
+        const client = window.zsSupabase;
+        if (!client || typeof client.rpc !== 'function') throw new Error('Supabaseへ接続できません');
+        const res = await client.rpc('claim_inori_renewal_ticket_20261114');
+        if (res.error) throw res.error;
+        const data = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
+        if (!data || data.ok !== true) throw new Error('受取に失敗しました');
+        reward.claimed = true;
+        markNoticeRewardClaimedLocally(reward.claimId);
+        writeNoticeDbStatus(reward.claimId, true);
+        try { if (window.ItemTickets && typeof window.ItemTickets.reload === 'function') await window.ItemTickets.reload(); } catch (_) {}
+        try { window.dispatchEvent(new CustomEvent('zeraphia:item-tickets-changed')); } catch (_) {}
+        if (!noticeBulkClaimActive && typeof window.showToast === 'function')
+          window.showToast(data.already_claimed ? '受け取り済みです' : 'イノリ挑戦TICKET ×10 を受け取りました！');
+        renderNoticeList(); updateNoticeBadge(); return;
+      } catch (err) {
+        console.error('[NoticeReward] inori renewal ticket:', err);
+        if (!noticeBulkClaimActive && typeof window.showToast === 'function') window.showToast('受取に失敗しました');
+        if (button) { button.disabled = false; button.textContent = '受け取る'; }
+        return;
+      }
+    }
+
     if (reward.type === 'phase_silver_ticket') {
       if (button) { button.disabled = true; button.textContent = '受取中...'; }
       try {
