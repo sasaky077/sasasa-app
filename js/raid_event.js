@@ -15,7 +15,7 @@
     if(document.getElementById('raid-bestparty-1924')) return;
     const st=document.createElement('style'); st.id='raid-bestparty-1924';
     st.textContent=`
-      #daily-raid-root .dr-bestparty-btn{display:inline-flex;gap:5px;align-items:center;justify-content:center;margin-top:7px;padding:6px 10px;border:1px solid rgba(151,122,78,.46);background:transparent;color:#6e563d;border-radius:3px;font:600 10px/1.2 'Noto Serif JP',serif;letter-spacing:.08em;cursor:pointer;min-height:28px}
+      #daily-raid-root .dr-bestparty-btn{display:inline-flex;flex:0 0 auto;align-items:center;justify-content:center;box-sizing:border-box;width:auto;min-width:78px;max-width:100%;min-height:25px;margin-top:5px;padding:4px 9px;border:1px solid rgba(179,150,99,.85);background:linear-gradient(180deg,rgba(255,253,248,.97),rgba(240,229,207,.93));color:#4b3a32;border-radius:2px;box-shadow:inset 0 1px rgba(255,255,255,.85);font:600 10px/1.1 'Noto Serif JP',serif;letter-spacing:.035em;white-space:nowrap;word-break:keep-all;cursor:pointer}
       #daily-raid-root .dr-bestparty-btn:active{background:rgba(180,154,107,.14)}
       .dr-party-overlay{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(15,17,28,.68);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
       .dr-party-sheet{box-sizing:border-box;width:min(100%,390px);padding:24px 20px 22px;background:#f9f7f2;border:1px solid #bba77f;box-shadow:0 16px 44px rgba(4,6,15,.34);color:#292941;font-family:'Noto Serif JP',serif}
@@ -2720,7 +2720,7 @@
       const state=done?'BEST LOCKED':active?`${attempts}/3 IN BATTLE`:attempts>0?`${attempts}/3 READY`:'READY';
       const panel=m.panel_src?`<img class="daily-raid-member-panel" src="${esc(m.panel_src)}" alt="">`:'<div class="daily-raid-member-panel daily-raid-member-panel-empty"></div>';
       const host=String(m.user_id||'')===String(status&&status.host_user_id||'');
-      return `<div class="daily-raid-member${mine?' is-me':''}${done?' is-done':''}${active?' is-active':''}"><span class="daily-raid-member-no">${mine?'YOU':host?'HOST':'ALLY'}</span>${panel}<div class="daily-raid-member-copy"><strong>${esc(m.display_name||m.user_id||'PLAYER')}</strong><small class="daily-raid-member-state">${esc(state)}</small><div class="daily-raid-member-damage"><span>BEST</span><b>${best>0?fmt(best):'—'}</b></div>${best>0?`<button type="button" class="dr-bestparty-btn" data-raid-best-party="${esc(String(m.user_id||''))}">編成を見る　›</button>`:''}</div></div>`;
+      return `<div class="daily-raid-member${mine?' is-me':''}${done?' is-done':''}${active?' is-active':''}"><span class="daily-raid-member-no">${mine?'YOU':host?'HOST':'ALLY'}</span>${panel}<div class="daily-raid-member-copy"><strong>${esc(m.display_name||m.user_id||'PLAYER')}</strong><small class="daily-raid-member-state">${esc(state)}</small><div class="daily-raid-member-damage"><span>BEST</span><b>${best>0?fmt(best):'—'}</b></div>${best>0?`<button type="button" class="dr-bestparty-btn" data-raid-best-party="${esc(String(m.user_id||''))}" aria-label="編成確認">編成確認</button>`:''}</div></div>`;
     });
     while(rows.length<4) rows.push('<div class="daily-raid-member is-empty"><span class="daily-raid-member-no">ALLY</span><div class="daily-raid-member-copy"><strong>EMPTY</strong><small>参加枠</small></div><b>OPEN</b></div>');
     list.innerHTML=rows.join('');
