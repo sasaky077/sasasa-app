@@ -16903,3 +16903,19 @@ html body #shooting-event-root.towa-light-background .shooting-wash{
 }
 /* 夜明けは一度きり：RETRYなし */
 html body #shooting-event-root[data-shooting-stage="shooting_towa_dawn"] #shooting-result #shooting-result-retry{display:none!important;}
+
+/* TICKETイノリ：呪詛の効果内容と残り時間を視認しやすく表示 */
+#shooting-event-root .inori-slow-tag:has(.inori-slow-remaining){
+  bottom:calc(14px + env(safe-area-inset-bottom, 0px));
+  padding:7px 11px; gap:7px; border-radius:10px;
+  background:linear-gradient(135deg,rgba(46,24,71,.95),rgba(72,35,90,.94));
+  border:1px solid rgba(206,166,239,.85);
+  box-shadow:0 3px 15px rgba(40,14,65,.48),inset 0 1px 0 rgba(255,255,255,.13);
+  font-variant-numeric:tabular-nums;
+}
+#shooting-event-root .inori-slow-tag .inori-slow-effect{font-size:11px;font-weight:700;color:#fff5ff;}
+#shooting-event-root .inori-slow-tag .inori-slow-remaining{
+  display:inline-block;min-width:44px;text-align:right;padding-left:8px;
+  border-left:1px solid rgba(221,188,247,.46);
+  font:700 12px/1.2 'Noto Serif JP',serif;color:#f3d6ff;
+}

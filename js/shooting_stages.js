@@ -1812,7 +1812,7 @@
       enemyElement: 'light',
       bossGauges: 3,
       // 記憶決戦02と同じ基礎HP。SPECIALの周回倍率は従来どおりcoreで適用。
-      bossGaugeHps: Object.freeze([9000, 10000, 11000]),
+      bossGaugeHps: Object.freeze([13500, 15000, 16500]),
       // 記憶決戦02と同じ属性結界：イノリの光属性には闇攻撃だけが有効。
       weaknessOnlyElement: 'light',
       // 記憶決戦の掟を既存戦闘エンジンのgetMemoryRuleで共用する。

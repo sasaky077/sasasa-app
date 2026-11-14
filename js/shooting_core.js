@@ -5731,7 +5731,7 @@
 
     state.activeCharacterId = id;
     selectedCharacterId = id;
-    clearInoriSlow(); // build1643: イノリの鈍化はキャラ交代で解除
+    if (!isInoriSpecialStage()) clearInoriSlow(); // TICKETの必中呪詛は交代では解除されない
     state.switchReadyAt = forced ? now + 800 : now + SWITCH_COOLDOWN_MS;
     state.player.invulnUntil = Math.max(state.player.invulnUntil || 0, now + 260);
     state.lastShotAt = -9999;
@@ -7246,18 +7246,43 @@
     if (!silent) renderHud();
   }
 
-  // build1524: 最終的な「敵行動禁止」判定を発射元ごとに統一する。
-  // 全体停止と個別拘束を分離し、拘束されていない別の敵の攻撃は止めない。
-  function isEntireEnemyActionLocked(now = performance.now()) {
-    if (!state || state.ended || state.finishing) return false;
-    return !!(
-      state.paused || state.arnoSlashActive || state.ultCutinActive || state.ch07EnhanceTransitionActive ||
-      now < Number(state.noahMovementFreezeUntil || 0) ||
-      now < Number(state.angeEnemyFreezeUntil || 0) ||
-      // build1527: エリ/クレハ/ネム等の全体停止はBOSSだけでなく全増援・OBJECTに適用。
+  // ZERAPHIA stop contract: four independent mechanisms.
+  // ① SHOT: newly created enemy projectiles only.
+  // ② MOVE: positional movement only (e.g. Camilla web root).
+  // ③ ACTION: enemy movement, firing and attacks (existing stun/Noah barrage).
+  // ④ TIME: battle time, existing enemy bullets and countdowns (time-stop ULT).
+  // The global predicate deliberately does not merge MOVE into SHOT.
+  function getEnemyStopCapabilities(now = performance.now()) {
+    if (!state || state.ended || state.finishing) {
+      return { shot:false, move:false, action:false, time:false };
+    }
+    const time = !!(state.arnoSlashActive || state.paused);
+    const action = !!(
+      state.ultCutinActive || state.ch07EnhanceTransitionActive ||
       now < Number(state.fullEnemyStopUntil || 0) ||
+      now < Number(state.angeEnemyFreezeUntil || 0) ||
+      // Noah's lightning sequence explicitly stops attacks as well as movement.
+      now < Number(state.noahMovementFreezeUntil || 0) ||
       isEnemyPullFieldActive(now)
     );
+    const move = action || time;
+    const shot = action || time ||
+      now < Number(state.suzuBulletSilenceUntil || 0) ||
+      now < Number(state.towaDarkUntil || 0);
+    return { shot:!!shot, move:!!move, action:!!action, time:!!time };
+  }
+
+  // Enemy-specific immobilization is not global and cannot suppress other enemies' shots.
+  function isBossMovementSuppressed(now = performance.now()) {
+    const stop = getEnemyStopCapabilities(now);
+    return stop.move || now < Number(state?.bossStunUntil || 0) ||
+      now < Number(state?.bossGrabUntil || 0) ||
+      now < Number(state?.gojoPurpleBossFreezeUntil || 0) ||
+      now < Number(state?.boss?.camillaWebRootUntil || 0);
+  }
+  function isEntireEnemyActionLocked(now = performance.now()) {
+    const stop = getEnemyStopCapabilities(now);
+    return stop.action || stop.time;
   }
 
   function getNormalEnemyLockUntil(enemy, now = performance.now()) {
@@ -7287,7 +7312,9 @@
     return isEntireEnemyActionLocked(now) ? Math.max(until, now + 100) : until;
   }
 
-  function getBossLockUntil(now = performance.now()) {
+  // Boss-specific action lock. ②の移動停止（カミラの蜘蛛の巣）は含めない。
+  // 攻撃・射撃の更新にこのロックを使い、移動のロックとは独立して判断する。
+  function getBossAttackLockUntil(now = performance.now()) {
     if (!state || isNormalBattle()) return 0;
     const until = Math.max(
       Number(state.bossStunUntil || 0), Number(state.bossGrabUntil || 0),
@@ -7301,7 +7328,20 @@
     return isEntireEnemyActionLocked(now) ? Math.max(until, now + 100) : until;
   }
 
-  // build565: 敵の「移動停止」と「敵弾生成停止」は常にセットで扱う。
+  // Boss-specific movement lock. ②の蜘蛛の巣は移動だけ止め、射撃時計は進める。
+  // ③/④・個別スタンの移動停止は、攻撃ロックも同時に成立する。
+  function getBossMovementLockUntil(now = performance.now()) {
+    const actionUntil = getBossAttackLockUntil(now);
+    if (!state || !state.boss || isNormalBattle()) return actionUntil;
+    return Math.max(actionUntil, Number(state.boss.camillaWebRootUntil || 0));
+  }
+
+  // 既存のボス特殊AIが参照する互換名。攻撃ロックへ束ねず移動用とする。
+  function getBossLockUntil(now = performance.now()) {
+    return getBossMovementLockUntil(now);
+  }
+
+  // 停止中に失効した射撃予約を解除時にまとめて消化させない。
   // 停止解除時に、停止時間中に期限切れになった射撃/行動予約をまとめて消化しないよう、
   // 再開基準時刻を停止終了後へ送る共通ヘルパー。
   function deferNormalEnemyAttackResume(enemy, resumeAt, index = 0) {
@@ -7367,7 +7407,7 @@
   function isEnemyAttackPaused(now) {
     if (!state) return false;
     if (isEnemyProjectileSpawnSuppressed(now)) return true;
-    try { if (now < getBossLockUntil(now)) return true; } catch (_) {}
+    try { if (now < getBossAttackLockUntil(now)) return true; } catch (_) {}
     return false;
   }
   function trackEnemyAttackPause(now) {
@@ -8068,18 +8108,9 @@
   function isEnemyProjectileSpawnSuppressed(now = performance.now()) {
     if (!state || state.ended || state.finishing) return false;
     const ts = Number(now || 0);
-
-    // ノア落雷中 / エルテナ重力場中は盤面全体の敵行動が停止するため、
-    // gameLoop外の遅延処理から来た弾生成も最終入口で必ず遮断する。
-    // スズULT: 弾の生成だけ封印。敵の移動や攻撃準備は継続。
-    if (ts < Number(state.suzuBulletSilenceUntil || 0)) return true;
-    if (ts < Number(state.towaDarkUntil || 0)) return true;
-    if (ts < Number(state.noahMovementFreezeUntil || 0)) return true;
-    if (isEnemyPullFieldActive(ts)) return true;
-
-    // setTimeout/外部イベント経由でも、敵の全体停止演出中には弾を作らない。
-    if (isEntireEnemyActionLocked(ts)) return true;
-    // ステージ内で敵全体が停止している場合は最終生成口でも遮断。
+    // 射出停止は移動を止めない。移動停止は射出を止めない。
+    // 行動停止と時間停止は双方を止める。
+    if (getEnemyStopCapabilities(ts).shot) return true;
     if (isNormalBattle()) return ts < Number(state.normalEnemyStunUntil || 0);
     return ts < Number(state.bossStunUntil || 0);
   }
@@ -16465,28 +16496,44 @@
     });
     showFacelessBattleCut('鈍化の呪い', 'INORI');
   }
+  // TICKET限定：必中「呪詛」。弾衝突や無敵判定を介さず、8秒間の速度50%低下。
+  function applyInoriBinding(now) {
+    if (!state || !state.inori || !state.player) return;
+    state.inori.slowMemberId = Number(state.activeCharacterId) || -1;
+    state.inori.slowUntil = now + 8000;
+    syncInoriSlowDom();
+    showFacelessBattleCut('呪詛', '移動速度 −50% / 8秒');
+  }
   // 呪い弾が出場中キャラへ当たった：そのキャラの移動速度を下げる（交代で解除）
   function applyInoriSlow(now) {
     if (!state || !state.inori) return;
     const member = getActiveMember();
     if (!member || now < Number(member.invincibleUntil || 0)) return;
     state.inori.slowMemberId = Number(state.activeCharacterId);
+    // TICKET限定：8秒間の呪詛。通常版の旧仕様には影響させない。
+    if (isInoriSpecialStage()) state.inori.slowUntil = now + 8000;
     syncInoriSlowDom();
   }
   function clearInoriSlow() {
     if (!state || !state.inori || !state.inori.slowMemberId) return;
     state.inori.slowMemberId = 0;
+    state.inori.slowUntil = 0;
     syncInoriSlowDom();
   }
   function isInoriSlowActive() {
+    if (isInoriSpecialStage() && state?.inori?.slowMemberId &&
+        performance.now() >= Number(state.inori.slowUntil || 0)) {
+      clearInoriSlow();
+      return false;
+    }
     return !!(state && state.inori && state.inori.slowMemberId &&
-      Number(state.inori.slowMemberId) === Number(state.activeCharacterId));
+      (isInoriSpecialStage() || Number(state.inori.slowMemberId) === Number(state.activeCharacterId)));
   }
   function getPlayerMoveMultiplier() {
     // build1679: 位相回遊の異常「鈍化」は移動75%
     const poSlow = getPhaseOdysseyAnomaly() === 'slow' ? 0.75 : 1;
     if (!isInoriSlowActive()) return poSlow;
-    return poSlow * Math.max(0.1, Math.min(1, Number(getInoriConfig()?.slowMultiplier || 0.5)));
+    return poSlow * (isInoriSpecialStage() ? 0.50 : Math.max(0.1, Math.min(1, Number(getInoriConfig()?.slowMultiplier || 0.5))));
   }
   function syncInoriSlowDom() {
     const on = isInoriSlowActive();
@@ -16498,8 +16545,16 @@
       tag = document.createElement('div');
       tag.id = 'inori-slow-tag';
       tag.className = 'inori-slow-tag';
-      tag.innerHTML = '<strong>鈍化</strong><span>移動速度50%ダウン ─ キャラ交代で解除</span>';
+      tag.innerHTML = isInoriSpecialStage()
+        ? '<strong>呪詛</strong><span class="inori-slow-effect">移動速度 −50%</span><span class="inori-slow-remaining" aria-label="呪詛の残り時間">8.0秒</span>'
+        : '<strong>鈍化</strong><span>移動速度50%ダウン ─ キャラ交代で解除</span>';
       arena.appendChild(tag);
+    }
+    // 光輪と同じ戦闘ループで更新する。表示は実際の状態の期限と常に同期。
+    if (isInoriSpecialStage() && tag) {
+      const remaining = Math.max(0, (Number(state.inori.slowUntil || 0) - performance.now()) / 1000);
+      const label = tag.querySelector('.inori-slow-remaining');
+      if (label) label.textContent = remaining.toFixed(1) + '秒';
     }
   }
   function removeInoriDom() {
@@ -16507,13 +16562,264 @@
     document.getElementById(PLAYER_ID)?.classList.remove('inori-slowed');
     if (state && state.inori) { state.inori.beams = []; state.inori.slowMemberId = 0; }
   }
+  // TICKETイノリ限定：双鳥居破壊時に1個、ランダム位置へ神罰対策の加護を出現させる。
+  // 入手から3秒なので、神罰の着弾間際に取りに行くタイミングゲームとなる。
+  function spawnInoriJudgmentCharm(now) {
+    if (!isInoriSpecialStage() || !state || !state.inori || state.inori.charmSpawned) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    state.inori.charmSpawned = true;
+    const w = arena.clientWidth, h = arena.clientHeight;
+    if (!w || !h) return;
+    // ボスの下方をゆっくり漂う。プレイヤーが回収できる範囲に留める。
+    const bx = Number(state.boss.x);
+    const by = Number(state.boss.y);
+    const centerX = Math.max(w * 0.30, Math.min(w * 0.70, Number.isFinite(bx) ? bx : w * 0.5));
+    const centerY = Math.max(h * 0.40, Math.min(h * 0.67, (Number.isFinite(by) ? by : h * 0.20) + h * 0.30));
+    const phase = Math.random() * Math.PI * 2;
+    const x = Math.max(34, Math.min(w - 34, centerX + Math.sin(phase) * Math.min(44, w * 0.12)));
+    const y = Math.max(h * 0.34, Math.min(h * 0.78, centerY + Math.cos(phase * 0.7) * Math.min(22, h * 0.03)));
+    const el = document.createElement('div');
+    el.className = 'inori-judgment-charm';
+    el.setAttribute('role', 'img');
+    el.setAttribute('aria-label', '光輪・取得すると3秒間無敵');
+    el.innerHTML = '<span class="inori-halo-outer" aria-hidden="true"></span><span class="inori-halo-ring" aria-hidden="true"></span><span class="inori-halo-core" aria-hidden="true"></span>';
+    arena.appendChild(el);
+    positionUnit(el, x, y);
+    state.inori.charm = {el, x, y, spawnedAt:now, phase, centerX, centerY};
+  }
+  function updateInoriJudgmentCharm(now) {
+    if (!isInoriSpecialStage() || !state || !state.inori?.charm) return;
+    const item = state.inori.charm;
+    if (!item.el?.isConnected || state.ended || state.finishing || !state.boss || state.boss.hp <= 0) {
+      item.el?.remove(); state.inori.charm = null; return;
+    }
+    const arena = document.getElementById('shooting-arena');
+    if (arena) {
+      const w = arena.clientWidth, h = arena.clientHeight;
+      const t = Math.max(0, (now - item.spawnedAt) / 1000);
+      // 軌道はサイン波を重ねた漂流。直線移動、急旋回、テレポートを行わない。
+      // 初期位相は出現ごとにランダム。常に画面内かつボスの下方を漂う。
+      const driftX = Math.sin(t * 0.52 + item.phase) * Math.min(47, w * 0.13)
+        + Math.sin(t * 0.23 + item.phase * 0.62) * Math.min(12, w * 0.03);
+      const driftY = Math.cos(t * 0.41 + item.phase * 0.7) * Math.min(24, h * 0.034)
+        + Math.sin(t * 0.67 + item.phase) * Math.min(9, h * 0.012);
+      item.x = Math.max(34, Math.min(w - 34, item.centerX + driftX));
+      item.y = Math.max(h * 0.34, Math.min(h * 0.78, item.centerY + driftY));
+      positionUnit(item.el, item.x, item.y);
+    }
+    const member = getActiveMember();
+    // 取得の可否は実際に操作中の味方が生存しているかで判断する。
+    // Phase遷移フラグは演出後にも残ることがあるため、取得判定の遮断には使わない。
+    if (!member || member.hp <= 0 || state.koTransition) return;
+    // 光輪と自機の両方を画面上の同じ座標系で比較する。
+    // CSSのscale/transform、PWAの画面倍率などの差を吸収できる。
+    const playerEl = document.getElementById(PLAYER_ID);
+    const haloRect = item.el.getBoundingClientRect();
+    const playerRect = playerEl && playerEl.getBoundingClientRect();
+    let isTouching = false;
+    if (playerRect && haloRect.width > 0 && haloRect.height > 0 &&
+        playerRect.width > 0 && playerRect.height > 0) {
+      const hx = (haloRect.left + haloRect.right) / 2;
+      const hy = (haloRect.top + haloRect.bottom) / 2;
+      // 味方の表示領域から光輪までの距離（見た目で重なったら取得）。
+      const nearestX = Math.max(playerRect.left, Math.min(hx, playerRect.right));
+      const nearestY = Math.max(playerRect.top, Math.min(hy, playerRect.bottom));
+      const radius = Math.min(haloRect.width, haloRect.height) * 0.44 + 7;
+      isTouching = Math.hypot(hx - nearestX, hy - nearestY) <= radius;
+    }
+    // 画面表示範囲が取得できない場合のみ、従来のアリーナ内部座標にフォールバック。
+    if ((!playerRect || !haloRect.width || !haloRect.height) && !isTouching) {
+      const px = Number(state.player?.x), py = Number(state.player?.y);
+      isTouching = Number.isFinite(px) && Number.isFinite(py) &&
+        Math.hypot(px - item.x, py - item.y) <= 36;
+    }
+    if (!isTouching) return;
+    member.invincibleUntil = Math.max(Number(member.invincibleUntil || 0), now + 3000);
+    state.player.invulnUntil = Math.max(Number(state.player.invulnUntil || 0), now + 3000);
+    item.el.remove(); state.inori.charm = null;
+    showShootingItemEffectNotice('光輪', '3秒間無敵');
+    renderHud();
+  }
+  // TICKETイノリ：通常・呪場左右の専用背景（呪場終了時は通常背景へ復帰）。
+  function syncInoriExecutionBackground() {
+    const root = document.getElementById('shooting-event-root');
+    if (!root) return;
+    const enabled = isInoriSpecialStage() && !!state && !state.ended;
+    root.classList.toggle('inori-special-background', enabled);
+    const field = enabled ? state.inoriExecutionField : null;
+    const side = field?.mode === 'active' ? field.side : null;
+    root.classList.toggle('inori-curse-background-left', side === 'left');
+    root.classList.toggle('inori-curse-background-right', side === 'right');
+  }
+  function ensureInoriExecutionBackgroundStyle() {
+    if (document.getElementById('inori-execution-background-style')) return;
+    const style = document.createElement('style');
+    style.id = 'inori-execution-background-style';
+    style.textContent = `
+      #shooting-event-root.inori-special-background .shooting-bg {
+        background-image: url('images/inori_stage_bg.webp');
+        background-position: center; background-size: cover; background-repeat: no-repeat;
+        filter: brightness(1) saturate(.96); opacity: .88;
+        transition: opacity .22s ease-out;
+      }
+      #shooting-event-root.inori-special-background.inori-curse-background-left .shooting-bg {
+        background-image: url('images/inori_stage_bg_left.webp');
+      }
+      #shooting-event-root.inori-special-background.inori-curse-background-right .shooting-bg {
+        background-image: url('images/inori_stage_bg_right.webp');
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  // TICKETイノリ Phase3: 呪場刑葬 / 呪核（バリアなし）
+  // warning 3s / active 6s / 18s cycle / maximum HP 10% per second.
+  function removeInoriExecutionField(reset = true) {
+    const f = state && state.inoriExecutionField;
+    if (f) { f.areaEl?.remove(); f.coreEl?.remove(); f.noticeEl?.remove(); }
+    if (reset && state) state.inoriExecutionField = null;
+    syncInoriExecutionBackground();
+  }
+  function damageInoriExecutionCore(amount, now) {
+    const f = state?.inoriExecutionField;
+    if (!f || f.mode !== 'active' || !(f.hp > 0)) return false;
+    const n = Math.max(0, Number(amount || 0));
+    if (!n) return false;
+    f.hp = Math.max(0, f.hp - n); // 呪核は属性相性・イノリ本体バリアの対象外
+    if (f.barEl) f.barEl.style.width = `${100 * f.hp / f.maxHp}%`;
+    if (f.hp <= 0) {
+      removeInoriExecutionField();
+      showMemoryGuardNotice('呪核破壊・呪場解除', true, 'CURSE');
+    } else if (f.coreEl) {
+      f.coreEl.classList.remove('is-hit');
+      void f.coreEl.offsetWidth;
+      f.coreEl.classList.add('is-hit');
+    }
+    return true;
+  }
+  function ensureInoriExecutionFieldStyle() {
+    if (document.getElementById('inori-execution-field-style')) return;
+    const st = document.createElement('style');
+    st.id = 'inori-execution-field-style';
+    st.textContent = `
+      #shooting-arena .inori-execution-area{position:absolute;top:0;bottom:0;width:50%;z-index:7;pointer-events:none;box-sizing:border-box;
+        background:repeating-linear-gradient(142deg,rgba(142,43,78,.08) 0 12px,rgba(45,8,39,.18) 12px 24px),linear-gradient(90deg,rgba(107,21,59,.53),rgba(70,12,52,.48));
+        box-shadow:inset 0 0 36px rgba(211,75,103,.38);}
+      #shooting-arena .inori-execution-area.is-right{right:0;border-left:2px solid rgba(250,132,166,.9)}
+      #shooting-arena .inori-execution-area.is-left{left:0;border-right:2px solid rgba(250,132,166,.9)}
+      #shooting-arena .inori-execution-area.is-warning{background:repeating-linear-gradient(142deg,rgba(142,43,78,.05) 0 12px,rgba(45,8,39,.08) 12px 24px),rgba(126,29,76,.16);box-shadow:none;animation:inoriFieldWarning .6s ease-in-out infinite alternate}
+      @keyframes inoriFieldWarning{from{opacity:.48}to{opacity:1}}
+      #shooting-arena .inori-execution-core{position:absolute;width:88px;height:100px;z-index:20;pointer-events:none;transform:translate(-50%,-50%);filter:drop-shadow(0 0 14px rgba(243,76,121,.8))}
+      #shooting-arena .inori-execution-core img{width:100%;height:84px;object-fit:contain;display:block}
+      #shooting-arena .inori-execution-core b{display:block;height:4px;background:rgba(26,8,24,.92);border:1px solid rgba(255,212,229,.8);border-radius:4px;overflow:hidden}
+      #shooting-arena .inori-execution-core b i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#d95489,#ffe1eb)}
+      #shooting-arena .inori-execution-core.is-hit img{animation:inoriCoreHit .16s ease}
+      @keyframes inoriCoreHit{50%{filter:brightness(2.4)}}
+      #shooting-arena .inori-execution-notice{position:absolute;top:23%;left:50%;transform:translateX(-50%);z-index:31;pointer-events:none;text-align:center;white-space:nowrap;color:#ffe3ed;font:700 17px/1.5 serif;letter-spacing:.1em;text-shadow:0 2px 6px #260414,0 0 12px #e14a7e}
+      #shooting-arena .inori-execution-notice small{display:block;font:500 11px/1.4 sans-serif;letter-spacing:.03em;color:#ffe6ec}
+      @media(prefers-reduced-motion:reduce){#shooting-arena .inori-execution-area.is-warning{animation:none}}
+    `;
+    document.head.appendChild(st);
+  }
+  function updateInoriExecutionField(now) {
+    ensureInoriExecutionBackgroundStyle();
+    syncInoriExecutionBackground();
+    if (!state || !isInoriSpecialStage() || !state.inori || !state.boss || state.ended || state.finishing || state.boss.hp <= 0) {
+      if (state?.inoriExecutionField) removeInoriExecutionField();
+      return;
+    }
+    const phase = Number(state.boss.phase || 1);
+    if (phase !== 3) {
+      if (state.inoriExecutionField) removeInoriExecutionField();
+      return;
+    }
+    if (state.koTransition || state.phaseTransition) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    let f = state.inoriExecutionField;
+    if (!f) {
+      state.inoriExecutionField = {mode:'idle',nextAt:now+5500,lastAt:now};
+      return;
+    }
+    // 時間停止は予告、呪場と発動時計を止める。移動・射出・行動停止は呪場の経過を止めない。
+    const elapsed = Math.max(0, Math.min(250, now - Number(f.lastAt || now)));
+    f.lastAt = now;
+    if (getEnemyStopCapabilities(now).time) {
+      f.nextAt += elapsed;
+      if (f.endsAt) f.endsAt += elapsed;
+      return;
+    }
+    if (f.mode === 'idle' && now >= f.nextAt) {
+      ensureInoriExecutionFieldStyle();
+      f.mode = 'warning'; f.endsAt = now+3000;
+      f.side = Math.random() < .5 ? 'left' : 'right';
+      f.areaEl = document.createElement('div');
+      f.areaEl.className = `inori-execution-area is-warning is-${f.side}`;
+      arena.appendChild(f.areaEl);
+      f.noticeEl = document.createElement('div');
+      f.noticeEl.className = 'inori-execution-notice';
+      f.noticeEl.innerHTML = '呪場刑葬<small>危険領域から退避せよ</small>';
+      arena.appendChild(f.noticeEl);
+      return;
+    }
+    if (f.mode === 'warning' && now >= f.endsAt) {
+      f.mode = 'active'; f.endsAt = now+6000; f.lastDamageAt=now;
+      syncInoriExecutionBackground();
+      f.maxHp=2500; f.hp=2500;
+      f.coreX=arena.clientWidth*(f.side==='left'?.25:.75);
+      f.coreY=arena.clientHeight*.58;
+      f.areaEl.classList.remove('is-warning');
+      f.coreEl=document.createElement('div'); f.coreEl.className='inori-execution-core';
+      f.coreEl.style.left=`${f.coreX}px`; f.coreEl.style.top=`${f.coreY}px`;
+      f.coreEl.innerHTML='<img src="images/inori_jukaku.webp" alt="呪核" draggable="false"><b><i></i></b>';
+      f.barEl=f.coreEl.querySelector('b i');
+      arena.appendChild(f.coreEl);
+      f.noticeEl.innerHTML='呪場刑葬<small>呪核を破壊せよ　最大HP 10%/秒</small>';
+      return;
+    }
+    if (f.mode !== 'active') return;
+    if (now >= f.endsAt) {
+      removeInoriExecutionField();
+      state.inoriExecutionField={mode:'idle',nextAt:now+9000,lastAt:now};
+      return;
+    }
+    const member=getActiveMember();
+    if (!member || member.hp<=0) return;
+    const pw=arena.clientWidth;
+    const inside=(f.side==='left' ? state.player.x < pw*.5 : state.player.x >= pw*.5);
+    const delta=Math.max(0,Math.min(250, now-Number(f.lastDamageAt||now)));
+    f.lastDamageAt=now;
+    if (!inside || now < Number(member.invincibleUntil||0) || now < Number(state.player.invulnUntil||0)) return;
+    const maxHp=Math.max(1,Number(member.hpMax||member.maxHp||member.hp));
+    const dmg=Math.min(member.hp,maxHp*.10*delta/1000);
+    if(dmg<=0)return;
+    member.hp=Math.max(0,member.hp-dmg);
+    renderHud();
+    if(member.hp<=0)beginPlayerDefeat();
+  }
+  function hitInoriExecutionCoreProjectile(p,prevX,prevY,now){
+    const f=state?.inoriExecutionField;
+    if(!f||f.mode!=='active'||f.hp<=0)return false;
+    const x=Number(p.x||0),y=Number(p.y||0);
+    const dx=x-prevX,dy=y-prevY;
+    const t=Math.max(0,Math.min(1, ((f.coreX-prevX)*dx+(f.coreY-prevY)*dy)/Math.max(1,dx*dx+dy*dy)));
+    if(Math.hypot(prevX+dx*t-f.coreX,prevY+dy*t-f.coreY)>38)return false;
+    if(p.pierce){
+      if(!p.piercedTargets)p.piercedTargets=new Set();
+      if(p.piercedTargets.has(f))return false;
+      p.piercedTargets.add(f);
+    }
+    damageInoriExecutionCore(p.damage,now);
+    return !p.pierce;
+  }
+
   function updateInoriMechanics(dt, now, bossHalted) {
     const cfg = getInoriConfig();
     if (!cfg || !state || state.ended || state.finishing || !state.boss) return;
     if (!state.inori) {
       state.inori = {
         barrierUp: true, toriiSpawned: false, reviveAt: 0, waitingForJudgment: false, nextLaserAt: 0,
-        nextCurseAt: now + Math.max(1000, Number(cfg.slowFirstMs || 6500)), beams: [], slowMemberId: 0,
+        nextCurseAt: now + Math.max(1000, Number(cfg.slowFirstMs || 6500)), cursePhase: 1, beams: [], slowMemberId: 0, slowUntil: 0,
       };
       spawnInoriTorii(now);
     }
@@ -16523,8 +16829,20 @@
     // build1832: TICKETイノリは2基破壊で8秒の神罰を開始し、着弾後に鳥居・結界を再生する。
     if (inori.barrierUp && inori.toriiSpawned && !alive.length) {
       inori.barrierUp = false;
-      inori.waitingForJudgment = isInoriSpecialStage();
+      // 神罰は鳥居破壊時に一度だけ予約される。破壊時点で行動停止中なら予約されない。
+      // 予約成立後の行動停止では取消・延期不可。時間停止だけがカウントダウンを凍結する。
+      // 予約直前の③行動停止または④時間停止のみを阻止条件とする。
+      // ①射出停止／②移動停止では、既に予知された神罰を止められない。
+      const stopCaps = getEnemyStopCapabilities(now);
+      const stopBeforeReservation = isInoriSpecialStage() && (
+        stopCaps.action || stopCaps.time ||
+        now < Number(state.bossStunUntil || 0) ||
+        now < Number(state.normalEnemyStunUntil || 0)
+      );
+      inori.waitingForJudgment = isInoriSpecialStage() && !stopBeforeReservation;
       inori.reviveAt = now + (inori.waitingForJudgment ? 8000 : Math.max(1000, Number(cfg.barrierDownMs || 7000)));
+      if (inori.waitingForJudgment) spawnInoriJudgmentCharm(now);
+      else if (stopBeforeReservation) showMemoryGuardNotice('神罰の予約を阻止', true, 'JUDGMENT');
       (inori.beams || []).forEach(b => b.el && b.el.remove());
       inori.beams = [];
       showFacelessBattleCut('BARRIER BREAK', '全属性バリア消失');
@@ -16550,6 +16868,9 @@
     // 神罰の着弾より前に鳥居・結界が復活しないようにする。
     if (!inori.barrierUp && !inori.waitingForJudgment && now >= inori.reviveAt && state.boss.hp > 0) {
       inori.barrierUp = true;
+      inori.charm?.el?.remove();
+      inori.charm = null;
+      inori.charmSpawned = false;
       spawnInoriTorii(now);
       showFacelessBattleCut('TORII REVIVE', '鳥居が再び顕現');
     }
@@ -16566,8 +16887,21 @@
         inori.nextLaserAt = now + Math.max(1000, Number(cfg.laserEveryMs || 3000));
         fireInoriToriiLasers(now);
       }
-      // build1727: 鈍化の呪いは廃止（inoriMechanics.curse === true のときだけ撃つ）
-      if (cfg.curse === true && now >= inori.nextCurseAt && state.boss.hp > 0) {
+      // TICKETイノリ：Phase2/3開幕に必中「呪詛」。以後Phase2=15秒、Phase3=12秒ごと。
+      // Phase切替中は発動させず、操作再開フレームを各Phaseの初回とする。
+      if (isInoriSpecialStage()) {
+        const phase = Math.max(1, Number(state.boss.phase || 1));
+        if (phase === 2 || phase === 3) {
+          if (inori.cursePhase !== phase) {
+            inori.cursePhase = phase;
+            inori.nextCurseAt = now; // 開幕即時
+          }
+          if (now >= inori.nextCurseAt && state.boss.hp > 0) {
+            inori.nextCurseAt = now + (phase === 2 ? 15000 : 12000);
+            applyInoriBinding(now);
+          }
+        }
+      } else if (cfg.curse === true && now >= inori.nextCurseAt && state.boss.hp > 0) {
         inori.nextCurseAt = now + Math.max(3000, Number(cfg.slowEveryMs || 11000));
         fireInoriCurse(now);
       }
@@ -16583,6 +16917,7 @@
     }
     syncInoriBarrierDom();
     syncInoriBreakBadge(now);
+    if (isInoriSpecialStage() && inori.slowMemberId) syncInoriSlowDom();
   }
 
   // ============================================================
@@ -16641,10 +16976,22 @@
   }
   function updateEclipseScale(enemy, dt, now, w, h) {
     const cfg = getEclipseConfig() || {};
-    const frozen = now < getNormalEnemyLockUntil(enemy, now) || state.phaseTransition || state.koTransition;
+    // ③行動停止/④時間停止中は天秤の予告・突進時計も進めない。
+    // ①射出停止は突進を止めず、②移動停止は移動だけを止める。
+    const actionFrozen = now < getNormalEnemyLockUntil(enemy, now) ||
+      state.phaseTransition || state.koTransition || isEntireEnemyActionLocked(now);
+    const moveFrozen = actionFrozen; // 天秤には現時点で個別の②移動拘束を持たない
+    const pauseSample = Number(enemy.eclipsePauseSampleAt || now);
+    const pausedMs = Math.max(0, Math.min(100, now - pauseSample));
+    enemy.eclipsePauseSampleAt = now;
+    if (actionFrozen) {
+      if (Number(enemy.eclipseDashAt || 0) > 0) enemy.eclipseDashAt += pausedMs;
+      if (Number(enemy.eclipseDashUntil || 0) > 0) enemy.eclipseDashUntil += pausedMs;
+      if (Number(enemy.eclipseNextWanderAt || 0) > 0) enemy.eclipseNextWanderAt += pausedMs;
+    }
     const minY = 110, maxY = Math.max(minY + 40, h * .62);
     if (enemy.eclipseState === 'warn') {
-      if (now >= enemy.eclipseDashAt) {
+      if (!actionFrozen && now >= enemy.eclipseDashAt) {
         enemy.eclipseState = 'dash';
         enemy.eclipseDashUntil = now + Number(cfg.dashMs || 760);
         enemy.el?.classList.remove('is-warning');
@@ -16652,7 +16999,7 @@
         enemy.eclipseLine?.remove(); enemy.eclipseLine = null;
       }
     } else if (enemy.eclipseState === 'dash') {
-      if (!frozen) {
+      if (!moveFrozen) {
         const sp = Number(cfg.dashSpeed || 560) * dt;
         enemy.x = clamp(enemy.x + Math.cos(enemy.eclipseDashAngle) * sp, 26, w - 26);
         enemy.y = clamp(enemy.y + Math.sin(enemy.eclipseDashAngle) * sp, 60, h - 40);
@@ -16662,12 +17009,12 @@
             enemy.eclipseScale === 'dark' ? 'dark' : 'light', 'eclipse-dash');
         }
       }
-      if (now >= enemy.eclipseDashUntil) {
+      if (!actionFrozen && now >= enemy.eclipseDashUntil) {
         enemy.eclipseState = 'wander';
         enemy.el?.classList.remove('is-dashing');
         enemy.eclipseNextWanderAt = now;
       }
-    } else if (!frozen) {
+    } else if (!moveFrozen) {
       if (now >= Number(enemy.eclipseNextWanderAt || 0)) {
         enemy.eclipseNextWanderAt = now + 2000 + Math.random() * 1200;
         enemy.eclipseTarget = { x: 40 + Math.random() * Math.max(10, w - 80), y: minY + Math.random() * (maxY - minY) };
@@ -16700,7 +17047,7 @@
       line.className = 'eclipse-dash-line is-' + scale.eclipseScale;
       arena.appendChild(line);
       scale.eclipseLine = line;
-      setTimeout(() => { if (line.isConnected) line.remove(); }, Number(cfg.dashWarnMs || 850) + 80);
+      // 警告線は攻撃が始まるまで保持。停止中にtimeoutだけ先に消さない。
     }
   }
   // 光状態／闇状態の切り替え（最後に壊した天秤で上書き）
@@ -23038,10 +23385,19 @@
     if (pointerActive) {
       if (pointerIsTouch) {
         // build463:
-        // スマホ操作は補間を一切入れない。
-        // 指が1px動けばキャラも同じフレームで1px動く、完全1:1追従。
-        state.player.x = pointerX;
-        state.player.y = pointerY;
+        // 通常時は従来のタッチ完全1:1追従。TICKETイノリの鈍化中だけ
+        // 指の大きな移動でも一瞬で呪いを無視できないよう、実速度を制限する。
+        if (isInoriSpecialStage() && isInoriSlowActive()) {
+          const dx = pointerX - state.player.x, dy = pointerY - state.player.y;
+          const distance = Math.hypot(dx, dy);
+          const maxMove = Math.max(0, Number(c?.moveSpeed || 200)) * getPlayerMoveMultiplier() * dt;
+          const ratio = distance > 0 ? Math.min(1, maxMove / distance) : 0;
+          state.player.x += dx * ratio;
+          state.player.y += dy * ratio;
+        } else {
+          state.player.x = pointerX;
+          state.player.y = pointerY;
+        }
       } else {
         // PCマウスは従来の少し滑らかな追従を維持。
         const followRate = Math.min(1, dt * 18 * getPlayerMoveMultiplier());
@@ -23314,6 +23670,13 @@
         positionGenericBombProjectile(p, now);
       } else {
         positionPlayerBulletFast(p.el, p.x, p.y); // build1810
+      }
+
+      // 呪核はイノリの属性バリアとは独立した攻撃対象。
+      if (p.el.classList.contains('shooting-bullet') && !p.el.classList.contains('shooting-enemy-bullet') &&
+          hitInoriExecutionCoreProjectile(p, projectilePrevX, projectilePrevY, now)) {
+        p.el.remove();
+        return false;
       }
 
       // J字の折り返し中もFACELESS仮面だけは「物理壁」として扱う。
@@ -25949,7 +26312,7 @@
       isEnemyPullFieldActive(now)
     );
 
-    const bossFrozen = sharedFreeze || now < getBossLockUntil(now) || !!(state.boss && !isNormalBattle() && now < Number(state.boss.camillaWebRootUntil || 0)); // build1659: カミラの捕縛中はBOSSの移動時計も止める
+    const bossFrozen = sharedFreeze || now < getBossMovementLockUntil(now) || isBossMovementSuppressed(now); // build1659: カミラの捕縛中はBOSSの移動時計も止める
     const bossLast = Number(state.bossMotionSampleAt || 0);
     const bossWasFrozen = !!state.bossMotionWasFrozen;
     if (bossLast > 0 && bossWasFrozen) {
@@ -27290,8 +27653,8 @@
   }
   function isMemoryJudgmentProtected(now) {
     if (!state) return false;
-    if (state.arnoSlashActive) return true;                       // 時間停止ULT（ナイトシェード・アルノ等）
-    if (now < Number(state.fullEnemyStopUntil || 0)) return true; // 全体停止ULT
+    if (getEnemyStopCapabilities(now).time) return true; // 時間停止だけが予約済み神罰の時計を止める
+    if (now < Number(state.fullEnemyStopUntil || 0)) return true; // 既存の非TICKET記憶決戦互換
     const member = getActiveMember();
     return !!(member && now < Number(member.invincibleUntil || 0)); // 無敵
   }
@@ -27301,6 +27664,19 @@
     st.id = 'memory-judgment-style-v1876';
     st.textContent = `
       /* build1777: 神罰の予告は画面の縁だけを染め、文字は上寄りに小さく（弾を見る邪魔をしない） */
+      /* TICKETイノリ「光輪」: 宝石ではなく薄い金白の浮遊リング */
+      .inori-judgment-charm{position:absolute;left:0;top:0;width:56px;height:56px;margin:0;z-index:29;pointer-events:none;
+        display:block;box-sizing:border-box;border:0;background:none;filter:drop-shadow(0 0 9px rgba(255,232,165,.65));}
+      .inori-judgment-charm .inori-halo-outer{position:absolute;inset:3px;border-radius:50%;
+        border:1px solid rgba(255,248,211,.50);box-shadow:0 0 14px 3px rgba(255,239,177,.24),inset 0 0 14px rgba(255,242,177,.24);
+        animation:inoriHaloBreathe 2.5s ease-in-out infinite alternate;}
+      .inori-judgment-charm .inori-halo-ring{position:absolute;inset:11px 4px;border-radius:50%;
+        transform:rotate(-18deg);border:5px solid rgba(255,237,172,.87);border-top-color:#fffdf0;border-bottom-color:rgba(198,162,90,.63);
+        box-shadow:0 0 8px rgba(255,248,201,.85),inset 0 0 8px rgba(255,247,209,.66),0 1px 2px rgba(144,102,38,.3);}
+      .inori-judgment-charm .inori-halo-core{position:absolute;left:50%;top:50%;width:8px;height:8px;border-radius:50%;
+        transform:translate(-50%,-50%);background:rgba(255,255,242,.88);box-shadow:0 0 12px 4px rgba(255,237,172,.55);}
+      @keyframes inoriHaloBreathe{from{opacity:.62;transform:scale(.92)}to{opacity:1;transform:scale(1.07)}}
+      @media (prefers-reduced-motion:reduce){.inori-judgment-charm .inori-halo-outer{animation:none}}
       .memory-judgment{position:absolute;inset:0;z-index:38;pointer-events:none;
         background:radial-gradient(ellipse at 50% 50%,rgba(255,236,170,0) 58%,rgba(255,200,90,.14) 85%,rgba(160,90,10,.26) 100%);
         animation:mjPulse .5s ease-in-out infinite alternate}
@@ -27345,11 +27721,13 @@
     if (onToriiBreak) {
       const dtJ = Math.max(0, Math.min(250, now - Number(mj.lastTickTs || now)));
       mj.lastTickTs = now;
-      if (state.arnoSlashActive || state.paused) {
+      if (getEnemyStopCapabilities(now).time) {
         if (mj.el) mj.el.classList.add('is-frozen');
         return;
       }
-      const timeStopped = state.koTransition || state.phaseTransition || isEntireEnemyActionLocked(now);
+      // 行動停止・射出停止・移動停止は予約済み神罰の時計に干渉しない。
+      // KO/Phase切替の演出中のみ、戦闘時計停止と同じ扱いにする。
+      const timeStopped = state.koTransition || state.phaseTransition;
       if (timeStopped) {
         if (mj.warnUntil) mj.warnUntil += dtJ;
         if (state.inori && Number(state.inori.reviveAt || 0) > 0) state.inori.reviveAt += dtJ;
@@ -27377,7 +27755,11 @@
       arena.appendChild(mj.el);
     }
     // カウントダウン
-    if (!mj.sealed && (!onToriiBreak || mj.warnUntil - now <= 1000) && isMemoryJudgmentProtected(now)) {
+    // TICKET版の予約済み神罰は行動停止で解除できない。着弾時に無敵だけ判定する。
+    const protectedFromJudgment = onToriiBreak
+      ? (() => { const active = getActiveMember(); return !!(active && now < Number(active.invincibleUntil || 0)) || now < Number(state.player?.invulnUntil || 0); })()
+      : isMemoryJudgmentProtected(now);
+    if (!mj.sealed && (!onToriiBreak || mj.warnUntil - now <= 1000) && protectedFromJudgment) {
       mj.sealed = true;
       if (mj.el) {
         mj.el.classList.add('is-sealed');
@@ -27405,7 +27787,7 @@
     flash.className = 'memory-judgment-flash';
     arena.appendChild(flash);
     setTimeout(() => flash.remove(), 600);
-    if (mj.sealed || isMemoryJudgmentProtected(now)) {
+    if (mj.sealed || protectedFromJudgment) {
       showMemoryGuardNotice('神罰を退けた', true, 'JUDGMENT');
       return;
     }
@@ -28353,6 +28735,7 @@
 
   function updateMemoryMechanics(now) {
     updateHazeMechanics(now); // build1866
+    updateInoriJudgmentCharm(now);
     updateMemoryJudgment(now);
     updateMemorySniper(now);
     updateMemoryArmorVisual(now);
@@ -29232,6 +29615,7 @@
     // build1750: テスト3段階目（降機）
     updateTestBodyMechanics(ts);
     // build1759: 記憶決戦の守護者・子蜘蛛
+    updateInoriExecutionField(ts);
     updateMemoryMechanics(ts);
     // build1801: シオンULTの弱体化中、敵に「呪」の印を付けて追従
     syncShionCurseTags(ts);
@@ -34978,6 +35362,7 @@
       renderHud();
       return;
     }
+    damageInoriExecutionCore(amount, performance.now()); // 全体攻撃ULTは呪核にも命中（バリアなし）
     damageBossAddsByUlt(getBossAddUltTargets(), amount, c, performance.now(), big, maxImpactFx);
     if (!state.boss || state.boss.hp <= 0) { renderHud(); return; }
     const targetElement = getCombatTargetElement(state.boss);

@@ -3234,7 +3234,7 @@
       // --- 弾消し＋全体スタン＋全体ダメージ（基本型） ---
       case 'balance_flash':
       case 'prototype_generic':
-        return CLEAR + '敵全体を1.4秒間スタン。0.84秒後、敵全体に' + atk(c.ultDamageAtkMultiplier, 3.0) + 'のダメージ。';
+        return CLEAR + '敵の行動を1.4秒間停止し、0.84秒後に敵全体へ' + atk(c.ultDamageAtkMultiplier, 3.0) + 'のダメージ。';
 
       // --- 全体ダメージ ---
       case 'ryune_absolute_lethe':
@@ -3244,17 +3244,17 @@
       case 'sui_time_domain':
         return '自機に追従する半径' + String(num(c.suiDomainRadius, 275)) + 'pxの時空領域を' + sec(c.suiDomainDurationMs, 6000) + '間展開。領域内の敵弾を' + pct(1 - num(c.suiDomainBulletSpeedMultiplier, 0.2), 0.8) + '減速し、領域内の操作キャラのATKを' + mul(c.suiDomainAtkMultiplier, 1.3) + 'にする。' + note('敵弾全消去・回復・全体攻撃なし');
       case 'nightshade_barrage':
-        return CLEAR + '時間を停止。' + sec(c.nightshadeBarrageDurationMs, 4000) + '間、タップするたびに散弾' + String(num(c.nightshadePelletsPerTap, 4)) + '発を敵全体へランダムにばら撒く。1発' + atk(c.nightshadePelletAtkRate, 0.20) + '（最大' + String(num(c.nightshadeMaxTaps, 12)) + '回）。';
+        return CLEAR + '時間を' + sec(c.nightshadeBarrageDurationMs, 4000) + '間停止し、タップするたびに散弾' + String(num(c.nightshadePelletsPerTap, 4)) + '発を敵全体へランダムにばら撒く。1発' + atk(c.nightshadePelletAtkRate, 0.20) + '（最大' + String(num(c.nightshadeMaxTaps, 12)) + '回）。';
       case 'nightshade_snipe':
-        return 'BOSS（いなければ一番近い敵）へ直線の狙撃弾。射線上の敵すべての属性バリアを剥がし、' + sec(c.nightshadeStunMs, 5000) + '間スタン。命中した敵に' + atk(c.nightshadeDamageAtkMultiplier, 2.5) + 'のダメージ。';
+        return 'BOSS（いなければ一番近い敵）へ直線の狙撃弾。射線上の敵すべての属性バリアを剥がし、' + sec(c.nightshadeStunMs, 5000) + '間、敵の行動を停止し、命中した敵に' + atk(c.nightshadeDamageAtkMultiplier, 2.5) + 'のダメージ。';
       case 'meloria_stun':
-        return '敵全体を' + sec(c.ultStunMs, 5000) + '間スタン。さらに各敵に' + pct(c.meloriaPercentChance, 0.2) + 'の確率で最大HPの' + pct(c.meloriaMaxHpDamageRate, 0.5) + 'のダメージ。';
+        return '敵の行動を' + sec(c.ultStunMs, 5000) + '間停止し、さらに各敵に' + pct(c.meloriaPercentChance, 0.2) + 'の確率で最大HPの' + pct(c.meloriaMaxHpDamageRate, 0.5) + 'のダメージ。';
 
       // --- 単体・範囲攻撃 ---
       case 'veronica_brass_punch':
         return '真正面のごく狭い範囲に一撃を放ち、命中した敵に' + atk(c.ultDamageAtkMultiplier, 7) + 'のダメージ。' + note('追尾しない。範囲外ならMISS');
       case 'arno_thousand_slash':
-        return CLEAR + '時間を止めて最も近い敵の目前へ移動。' + sec(c.arnoSlashDurationMs, 4000) + '間、タップするたびに' + atk(c.arnoSlashDamageAtkRate, 0.35) + 'の斬撃（最大' + String(num(c.arnoSlashMaxHits, 13)) + '回）。終了後は元の位置に戻る。';
+        return CLEAR + '時間を' + sec(c.arnoSlashDurationMs, 4000) + '間停止し、最も近い敵の目前へ移動。停止中、タップするたびに' + atk(c.arnoSlashDamageAtkRate, 0.35) + 'の斬撃（最大' + String(num(c.arnoSlashMaxHits, 13)) + '回）。終了後は元の位置に戻る。';
       case 'precision_beam':
         return CLEAR + '前方に黒い手を伸ばして射線上の敵を7秒間拘束。拘束中に合計' + atk(c.ultDamageAtkMultiplier, 3.5) + 'のダメージ。';
       case 'jig_scramble_ray':
@@ -3264,9 +3264,9 @@
         return '正面に極太レーザーを' + sec(dur) + '間照射し、' + sec(tick) + 'ごとに' + atk(rate) + 'のダメージ（最大' + atk(rate * Math.floor(dur / tick)) + '）。';
       }
       case 'forbidden_shock':
-        return sec(c.ninaUltDurationMs, 8000) + '間に最大' + String(num(c.ninaUltHitCount, 16)) + '回の落雷。1発ごとに' + atk(c.ninaUltHitAtkMultiplier, 2.8) + 'のダメージを与え、命中した敵を' + sec(c.ninaUltParalyzeMs, 3000) + '間スタン。';
+        return sec(c.ninaUltDurationMs, 8000) + '間に最大' + String(num(c.ninaUltHitCount, 16)) + '回の落雷。1発ごとに' + atk(c.ninaUltHitAtkMultiplier, 2.8) + 'のダメージを与え、命中した敵を' + sec(c.ninaUltParalyzeMs, 3000) + '間、敵の行動を停止する。';
       case 'noah_time_homing':
-        return CLEAR + '敵全体の動きを止める。ランダムな敵に' + String(num(c.noahUltHitCount, 16)) + '回の落雷（1発' + atk(c.noahUltHitAtkMultiplier, 0.35) + 'のダメージ）。終了後、落雷を受けた敵を' + sec(c.noahUltParalyzeMs, 1500) + '間スタン。';
+        return CLEAR + '敵の移動を停止する。ランダムな敵に' + String(num(c.noahUltHitCount, 16)) + '回の落雷（1発' + atk(c.noahUltHitAtkMultiplier, 0.35) + 'のダメージ）。終了後、落雷を受けた敵を' + sec(c.noahUltParalyzeMs, 1500) + '間、敵の行動を停止する。';
       case 'hao_fivefold_trigger': {
         const m = Array.isArray(c.haoTriggerMultipliers) && c.haoTriggerMultipliers.length ? c.haoTriggerMultipliers : [1, 1.8, 3, 4, 5];
         return CLEAR + '前方に紋様を設置。敵が触れると敵全体に落雷のダメージ。威力は' + sec(c.haoTriggerUpgradeMs, 2000) + 'ごとに成長（ATK×' + m.map(v => fmtNum(v)).join('→') + '）。' + note('設置後' + sec(c.haoTriggerSafetyMs, 500) + 'は反応しない');
@@ -3296,15 +3296,15 @@
 
       // --- 行動妨害・防御 ---
       case 'camilla_crimson_web':
-        return '盤面全体に紅い蜘蛛の巣を展開し、敵の移動を3〜7秒間止める（凸段階で変動、射撃は継続）。拘束中の敵への与ダメージの2〜6%をHP吸収。';
+        return '盤面全体に紅い蜘蛛の巣を展開し、敵の移動を3〜7秒間停止する（凸段階で変動、射撃は継続）。拘束中の敵への与ダメージの2〜6%をHP吸収。';
       case 'nem_stun':
-        return '敵全体を' + sec(c.ultStunMs, 5000) + '間スタン。' + note('ULT自体のダメージなし');
+        return '敵の行動を' + sec(c.ultStunMs, 5000) + '間停止する。' + note('ULT自体のダメージなし');
       case 'towa_eternal_darkness':
         return CLEAR + sec(c.towaDarkDurationMs, 5000) + '間、盤面を常闇に包み、敵弾の新規生成を完全停止。効果終了時にフェードインして敵の射撃が再開する。';
       case 'towa_dawn_moment':
         return CLEAR + sec(c.towaDarkDurationMs, 5000) + '間、盤面をホワイトアウトさせ、敵弾の新規生成を完全停止。効果終了時に光が引いて敵の射撃が再開する。';
       case 'suzu_bullet_silence':
-        return CLEAR + sec(c.suzuBulletSilenceMs, 3500) + '間、敵の射撃を封じる。' + note('敵の移動は止まらない');
+        return CLEAR + sec(c.suzuBulletSilenceMs, 3500) + '間、敵の射出を停止する。' + note('敵の移動は止まらない');
       case 'shiina_light_ring':
         return '自身の周りに円環を' + sec(c.lightRingDurationMs, 7000) + '間展開。円環内の敵弾を' + pct(1 - num(c.lightRingBulletSpeedMultiplier, 0.2), 0.8) + '減速。';
       case 'toyfel_double_black_hole':
