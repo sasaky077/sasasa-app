@@ -22779,12 +22779,58 @@ html:not(.hv2-home) body #global-user-frame .hud-resource {
 
 
 
-<script id="music-playlist-build1951">
-window.openMusicPlaylist = function(){
+<!-- build1956: 楽曲・外部サイト確認。既存ホームUIとは独立したダイアログ。 -->
+<style id="music-confirm-style-build1956">
+#zeraphia-music-confirm[hidden]{display:none!important}
+#zeraphia-music-confirm{position:fixed;inset:0;z-index:1000000;display:grid;place-items:center;padding:22px;box-sizing:border-box;background:rgba(24,24,37,.48);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+#zeraphia-music-confirm .zmc-panel{position:relative;box-sizing:border-box;width:min(100%,340px);padding:29px 23px 23px;background:linear-gradient(160deg,#fffefb,#f7f2e9);border:1px solid #c5a56d;box-shadow:0 14px 38px rgba(24,20,34,.25),inset 0 0 0 5px rgba(255,255,255,.7);color:#46382d;font-family:'Noto Serif JP','Shippori Mincho B1',serif;text-align:center}
+#zeraphia-music-confirm .zmc-kicker{font:500 9px/1.5 'Cinzel',serif;letter-spacing:.22em;color:#987e57}
+#zeraphia-music-confirm h2{font-size:20px;letter-spacing:.14em;font-weight:600;line-height:1.6;margin:8px 0 12px;color:#352e36}
+#zeraphia-music-confirm .zmc-rule{width:58px;height:1px;background:#bfa477;margin:0 auto 17px}
+#zeraphia-music-confirm p{font-size:12px;line-height:2;letter-spacing:.025em;margin:0 0 23px}
+#zeraphia-music-confirm .zmc-actions{display:grid;gap:10px}
+#zeraphia-music-confirm button{height:43px;width:100%;border-radius:2px;box-sizing:border-box;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;letter-spacing:.06em;touch-action:manipulation}
+#zeraphia-music-confirm .zmc-open{background:#292e50;border:1px solid #a99672;color:#fffdf9}
+#zeraphia-music-confirm .zmc-cancel{background:transparent;border:1px solid rgba(161,131,86,.55);color:#564837}
+#zeraphia-music-confirm button:focus-visible{outline:2px solid #b48c46;outline-offset:2px}
+#zeraphia-music-confirm .zmc-error{font-size:11px;color:#9b3d43;margin-top:10px}
+</style>
+<div id="zeraphia-music-confirm" role="presentation" hidden>
+ <section class="zmc-panel" role="dialog" aria-modal="true" aria-labelledby="zmc-title" aria-describedby="zmc-description">
+   <div class="zmc-kicker">ZERAPHIA MUSIC</div>
+   <h2 id="zmc-title">楽曲を聴く</h2><div class="zmc-rule" aria-hidden="true"></div>
+   <p id="zmc-description">公式楽曲プレイリストを<br>YouTubeで開きます。<br>ゲーム画面はそのまま残ります。</p>
+   <div class="zmc-actions">
+     <button type="button" class="zmc-open" id="zmc-open">YouTubeで聴く ↗</button>
+     <button type="button" class="zmc-cancel" id="zmc-cancel">キャンセル</button>
+   </div>
+   <p class="zmc-error" id="zmc-error" role="status" hidden>新しいタブを開けませんでした。ブラウザのポップアップ設定をご確認ください。</p>
+ </section>
+</div>
+<script id="music-playlist-build1956">
+(function(){
+  'use strict';
   var url='https://www.youtube.com/playlist?list=PLAwwXjXZKW1E';
-  var popup=window.open(url,'_blank','noopener,noreferrer');
-  if(!popup) window.location.href=url;
-};
+  var modal=document.getElementById('zeraphia-music-confirm');
+  var open=document.getElementById('zmc-open');
+  var cancel=document.getElementById('zmc-cancel');
+  var error=document.getElementById('zmc-error');
+  var priorFocus=null;
+  function close(){modal.hidden=true;error.hidden=true;if(priorFocus&&priorFocus.isConnected)priorFocus.focus();}
+  window.openMusicPlaylist=function(){priorFocus=document.activeElement;error.hidden=true;modal.hidden=false;cancel.focus();};
+  cancel.addEventListener('click',close);
+  modal.addEventListener('click',function(e){if(e.target===modal)close();});
+  document.addEventListener('keydown',function(e){if(modal.hidden)return;if(e.key==='Escape'){e.preventDefault();close();}else if(e.key==='Tab'){var list=[open,cancel];var pos=list.indexOf(document.activeElement);if(e.shiftKey&&pos<=0){e.preventDefault();cancel.focus();}else if(!e.shiftKey&&pos===1){e.preventDefault();open.focus();}}});
+  open.addEventListener('click',function(){
+    // ユーザー操作の中で直接開く。ブロック時もゲームを同じタブで離れない。
+    var tab=null;
+    try{tab=window.open(url,'_blank','noopener,noreferrer');}catch(e){}
+    if(tab){close();return;}
+    // noopener使用時にwindow.openがnullを返すブラウザもあるため、
+    // ブロック判定は確実ではない。ここで自動遷移はしない。
+    close();
+  });
+})();
 </script>
 </body>
 </html>
