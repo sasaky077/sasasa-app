@@ -433,3 +433,48 @@ html body:not(.ui-immersive):has(#screen-phase-odyssey.active) #global-user-fram
   outline:none!important;
   background:none!important;
 }
+
+/* build1971 — currency HUD geometry is owned by this shared stylesheet.
+   Home-specific .hv2-home selectors and legacy coin-only margin used to
+   offset the resource frames by several pixels on different screens. */
+html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-right,
+html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-right {
+  position:absolute!important;
+  top:calc(env(safe-area-inset-top, 0px) + 6px)!important;
+  right:10px!important;
+  left:auto!important;
+  bottom:auto!important;
+  margin:0!important;
+  padding:0!important;
+  transform:none!important;
+  align-self:auto!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-end!important;
+  gap:5px!important;
+  width:auto!important;
+}
+html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-right .hud-resource,
+html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-right .hud-resource,
+html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-right .hud-resource:last-child,
+html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-right .hud-resource:last-child {
+  box-sizing:border-box!important;
+  position:relative!important;
+  top:0!important;right:auto!important;left:auto!important;bottom:auto!important;
+  width:136px!important;min-width:136px!important;max-width:136px!important;
+  height:30px!important;min-height:30px!important;
+  margin:0!important;padding:0 7px 0 6px!important;
+  transform:none!important;
+  align-items:center!important;
+}
+@media (min-width:390px) and (min-height:800px) and (max-aspect-ratio:10/19) {
+  html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-right,
+  html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-right {gap:6px!important}
+  html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-right .hud-resource,
+  html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-right .hud-resource,
+  html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-right .hud-resource:last-child,
+  html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-right .hud-resource:last-child {
+    width:144px!important;min-width:144px!important;max-width:144px!important;
+    height:35px!important;min-height:35px!important;padding:0 8px!important;
+  }
+}

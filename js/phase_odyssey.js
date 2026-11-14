@@ -926,16 +926,11 @@
       slot.type = 'button';
       slot.dataset.slot = String(i);
       const top = el('span', 'po-slot-top');
-      if (c) {
-        const icon = el('img', 'po-slot-element');
-        icon.src = ELEMENT_ICON[primaryElement(c)];
-        icon.alt = '';
-        icon.decoding = 'async';
-        top.append(icon);
-      } else {
+      // 出撃メンバーの属性アイコンは表示しない。空き枠の飾りは残す。
+      if (!c) {
         top.innerHTML = SLOT_ORNAMENTS[i];
+        slot.append(top);
       }
-      slot.append(top);
       const frame = el('span', 'po-slot-frame');
       if (c) {
         const img = el('img', 'po-slot-portrait');

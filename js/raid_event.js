@@ -1529,7 +1529,7 @@
                   <section class="daily-raid-progress raid-surface" id="daily-raid-progress" hidden></section>
 
                   <section class="daily-raid-members raid-surface">
-                    <div class="daily-raid-section-title"><div><small>CO-OP UNIT</small><span>RAID MEMBERS</span></div><b id="daily-raid-member-count">0 / 4</b></div>
+                    <div class="daily-raid-section-title"><div><small>CO-OP UNIT</small><span>RAID MEMBERS</span></div><div class="dr-members-controls"><button type="button" id="daily-raid-members-refresh" class="drp-table-open" aria-label="レイドメンバーとスコアを更新">更新</button><b id="daily-raid-member-count">0 / 4</b></div></div>
                     <div id="daily-raid-member-list" class="daily-raid-member-grid"></div>
                   </section>
 
@@ -1584,6 +1584,28 @@
     root.querySelector('#daily-raid-recruit-btn').addEventListener('click',startRecruiting);
     root.querySelector('#daily-raid-join-btn').addEventListener('click',showJoinList);
     root.querySelector('#daily-raid-refresh').addEventListener('click',showJoinList);
+    root.querySelector('#daily-raid-members-refresh').addEventListener('click', async (event)=>{
+      const btn=event.currentTarget;
+      if(btn.disabled) return;
+      btn.disabled=true;
+      const label=btn.textContent;
+      btn.textContent='更新中';
+      try{
+        const status=await fetchStatus();
+        if(!status || !status.raid_id) throw new Error('レイド情報がありません');
+        await hydrateMemberPanels(status);
+        render(status);
+        // 編成スナップショットも非同期取得する既存処理に任せる。
+        if(typeof window.showToast==='function') window.showToast('レイド情報を更新しました');
+      }catch(err){
+        console.error('[raid] member status refresh failed',err);
+        if(typeof window.showToast==='function') window.showToast('更新できませんでした');
+        else alert('レイド情報を更新できませんでした。通信状態をご確認ください。');
+      }finally{
+        btn.disabled=false;
+        btn.textContent=label;
+      }
+    });
     root.querySelector('#daily-raid-start').addEventListener('click',start);
     root.querySelector('#daily-raid-finalize-best').addEventListener('click',skipRemainingAttempts);
     root.querySelector('#daily-raid-recruit-cancel').addEventListener('click',cancelRecruitment);

@@ -16672,6 +16672,19 @@
     `;
     document.head.appendChild(style);
   }
+  // TICKETイノリ：introが消える瞬間やカウントダウン直前の1フレームで
+  // 通常の戦闘背景が覗かないよう、戦闘準備段階から白い神殿背景を先行適用する。
+  function primeInoriExecutionBackground() {
+    const root = document.getElementById('shooting-event-root');
+    if (!root) return;
+    if (isInoriSpecialStage()) {
+      ensureInoriExecutionBackgroundStyle();
+      root.classList.add('inori-special-background');
+      root.classList.remove('inori-curse-background-left', 'inori-curse-background-right');
+      return;
+    }
+    root.classList.remove('inori-special-background', 'inori-curse-background-left', 'inori-curse-background-right');
+  }
   // TICKETイノリ Phase3: 呪場刑葬 / 呪核（バリアなし）
   // warning 3s / active 6s / 18s cycle / maximum HP 10% per second.
   function removeInoriExecutionField(reset = true) {
@@ -30792,6 +30805,12 @@
 
     state.countdown = true;
     state.running = false;
+    // TICKETイノリ：カウントダウン開始時から通常戦闘と同じ背景を適用する。
+    // introImage（ボス登場演出）は変更しない。
+    if (isInoriSpecialStage()) {
+      primeInoriExecutionBackground();
+      syncInoriExecutionBackground();
+    }
     if (copy) copy.classList.add('hide');
     // build1685: SUB MISSION・異常のバナーは戦闘開始前（カウントダウン中）に出し、開始と同時に消す
     const poVariant = getPhaseOdysseyVariant();
@@ -34539,6 +34558,7 @@
       root.classList.remove('boss-defeat-flash', 'boss-phase-flash', 'boss-phase-pause', 'player-defeat-flash');
       root.setAttribute('data-boss-phase', '1');
     }
+    primeInoriExecutionBackground();
 
     await stageIcatchPromise;
     await showShootingStageInfo();
@@ -34984,6 +35004,7 @@
     if (player) player.classList.remove('defeated');
     root.classList.remove('boss-defeat-flash', 'boss-phase-flash', 'boss-phase-pause', 'player-defeat-flash');
     root.setAttribute('data-boss-phase', '1');
+    primeInoriExecutionBackground();
     await stageIcatchPromise;
     if (!chapter104ArnoRetry) {
       await showShootingStageInfo();

@@ -6242,3 +6242,61 @@ html body.raid-shell-active #bottom-nav-shared.bottom-nav .bottom-nav-item.activ
 
 
 /* build852 runtime JS contains final canonical glass overrides; cache-bust companion. */
+
+
+/* 2026-11-14: レイドメンバー更新 + 人数の上端切れ修正 */
+#daily-raid-root .daily-raid-info-page .daily-raid-section-title{
+  align-items:center !important;
+  overflow:visible !important;
+  min-height:38px !important;
+}
+#daily-raid-root .daily-raid-info-page .dr-members-controls{
+  display:flex !important;
+  align-items:center !important;
+  gap:10px !important;
+  flex:0 0 auto !important;
+  align-self:center !important;
+  overflow:visible !important;
+  padding:3px 0 !important;
+}
+#daily-raid-root .daily-raid-info-page #daily-raid-member-count{
+  display:block !important;
+  position:static !important;
+  top:auto !important;
+  transform:none !important;
+  line-height:1.35 !important;
+  min-height:23px !important;
+  padding:2px 1px !important;
+  overflow:visible !important;
+  white-space:nowrap !important;
+}
+/* 「報酬一覧」と同じ、淡い白背景＋金枠＋濃色文字 */
+#daily-raid-root .daily-raid-info-page #daily-raid-members-refresh{
+  appearance:none !important;
+  box-sizing:border-box !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  flex:0 0 auto !important;
+  width:auto !important;
+  min-width:60px !important;
+  height:auto !important;
+  min-height:26px !important;
+  margin:0 !important;
+  padding:7px 10px !important;
+  border:1px solid rgba(160,124,69,.55) !important;
+  border-radius:0 !important;
+  background:rgba(255,255,255,.6) !important;
+  background-image:none !important;
+  box-shadow:none !important;
+  color:#4c3020 !important;
+  -webkit-text-fill-color:#4c3020 !important;
+  font:700 11px/1 'Noto Serif JP',serif !important;
+  letter-spacing:.12em !important;
+  text-shadow:none !important;
+  cursor:pointer !important;
+  touch-action:manipulation !important;
+}
+#daily-raid-root .daily-raid-info-page #daily-raid-members-refresh:disabled{
+  opacity:.55 !important;cursor:wait !important;
+}
