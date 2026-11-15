@@ -93,8 +93,11 @@
     const n = navigator || {};
     const rel = window.__ZERAPHIA_RELEASE__ || {};
     let mode = 'auto'; try { mode = localStorage.getItem(MODE_KEY) || 'auto'; } catch (_) {}
+    let autoVec = '-';
+    try { const u = Number(localStorage.getItem('zs_auto_vector_until') || 0); if (u > Date.now()) autoVec = new Date(u).toLocaleString() + ' まで'; } catch (_) {}
     return {
-      'ビルド': (rel.build || '-') + ' / 診断 build' + 1989,
+      '図形に自動固定': autoVec,
+      'ビルド': (rel.build || '-') + ' / 診断 build' + 1996,
       'UA': n.userAgent || '-',
       'ホーム画面アプリ': (n.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches)) ? 'はい' : 'いいえ',
       '画素密度': window.devicePixelRatio,
@@ -168,7 +171,7 @@
   // ---------- 起動方法（build1988） ----------
   // 1) 設定画面の見出し「設定」を3秒長押し
   // 2) PC：Ctrl(⌘)+Shift+D
-  const DIAG_BUILD = 1989;
+  const DIAG_BUILD = 1996;
   function safeOpen(from) {
     try { window.ZsDiag && window.ZsDiag.log('diag-open', from); } catch (_) {}
     open().catch(err => { console.error('[zs_diag] open failed', err); try { alert('診断を開けませんでした: ' + (err && err.message || err)); } catch (_) {} });

@@ -6060,6 +6060,8 @@
     if (!canvas) {
       canvas = document.createElement('canvas');
       canvas.id = PLAYER_BULLET_CANVAS_ID;
+      // build1996: GPU側でCanvasが失われたら記録（iOSでの弾消失の調査用）
+      try { canvas.addEventListener('contextlost', () => { zsDiag('canvas-contextlost', canvas.id); spriteCachesDirty = spriteCachesDirty || 'main-contextlost'; }); canvas.addEventListener('contextrestored', () => zsDiag('canvas-contextrestored', canvas.id)); } catch (_) {}
       canvas.setAttribute('aria-hidden', 'true');
       const f = (n, v) => canvas.style.setProperty(n, v, 'important');
       f('position', 'absolute'); f('inset', '0'); f('width', '100%'); f('height', '100%');
@@ -6614,7 +6616,7 @@
     let spec = pbCssSpecCache.get(key);
     if (spec === undefined) {
       spec = buildPlayerBulletCssSpec(el);
-      if (spec && !getPlayerBulletCssSprite(spec, 2)) spec = false;
+      if (spec && canvasSpriteMode !== 'vector' && !getPlayerBulletCssSprite(spec, 2)) spec = false; // build1996: 図形モードでは絵を作らない
       if (pbCssSpecCache.size > 400) releasePlayerBulletCssSprites(); // build1981: 捨てる時に Canvas を即解放
       pbCssSpecCache.set(key, spec);
     }
@@ -6624,6 +6626,7 @@
     p.el = v;
     p.playerCanvasKind = 'css';
     p.pbCssSpec = spec;
+    p.playerCanvasElement = getPlayerBulletElementKey(cls); // build1996: 図形モードの色
     return true;
   }
   // 2発目以降：同じ見た目（インラインstyle無し）が確認済みなら、DOMを作らずにCanvas弾を作る
@@ -6634,7 +6637,7 @@
     const size = unitSizeCache.get(cls + '|' + window.innerWidth + 'x' + window.innerHeight);
     if (!size) return null;
     return { el: createPlayerBulletVirtualElement(cls), x, y, vx, vy, damage: damage || 1, ownerId: ownerId || null,
-      playerCanvasKind: 'css', pbCssSpec: spec, _hw: size[0], _hh: size[1] };
+      playerCanvasKind: 'css', pbCssSpec: spec, playerCanvasElement: getPlayerBulletElementKey(cls), _hw: size[0], _hh: size[1] };
   }
 
   // build1983: 自機弾の図形版（Canvasどうしの貼り付けが効かない端末向け）
@@ -6666,7 +6669,8 @@
       if (!p) continue;
       // build1812: DOMで生まれた弾は、描き写せるならここでCanvas弾へ切り替える（描画前なのでDOMは表示されない）
       // build1983: 図形モードではDOMの弾をCanvasへ移さない（DOMのまま表示する方が正確）
-      if (canvasSpriteMode !== 'vector' && !p.playerCanvasKind && p.el && !p.el.__playerCanvas && !p.pbCssRejected) tryConvertPlayerBulletCss(p, nowTs);
+      // build1996: 図形モードでもCanvasへ移す（DOMのままだと弾が増えた時にカクつく）。描き方だけ図形にする
+      if (!p.playerCanvasKind && p.el && !p.el.__playerCanvas && !p.pbCssRejected) tryConvertPlayerBulletCss(p, nowTs);
       if (p.playerCanvasKind && p.el && p.el.__alive) any = true;
     }
     const existing = document.getElementById(PLAYER_BULLET_CANVAS_ID);
@@ -7676,6 +7680,8 @@
     if (!canvas) {
       canvas = document.createElement('canvas');
       canvas.id = ENEMY_BULLET_CANVAS_ID;
+      // build1996: GPU側でCanvasが失われたら記録（iOSでの弾消失の調査用）
+      try { canvas.addEventListener('contextlost', () => { zsDiag('canvas-contextlost', canvas.id); spriteCachesDirty = spriteCachesDirty || 'main-contextlost'; }); canvas.addEventListener('contextrestored', () => zsDiag('canvas-contextrestored', canvas.id)); } catch (_) {}
       canvas.setAttribute('aria-hidden', 'true');
       const forceStyle = (name, value) => canvas.style.setProperty(name, value, 'important');
       forceStyle('position', 'absolute');
@@ -8118,8 +8124,13 @@
   function decideCanvasSpriteMode() {
     let forced = 'auto';
     try { forced = localStorage.getItem('zs_render_mode') || 'auto'; } catch (_) {}
-    const probe = probeCanvasToCanvas();
+    let probe = probeCanvasToCanvas();
     canvasSpriteMode = forced === 'sprite' || forced === 'vector' ? forced : (probe === 'ok' ? 'sprite' : 'vector');
+    // build1996: 戦闘中に弾の絵が何度も消えた端末は、7日間は最初から図形で描く（毎回数秒見えなくなるのを避ける）
+    if (forced === 'auto' && canvasSpriteMode === 'sprite') {
+      let until = 0; try { until = Number(localStorage.getItem('zs_auto_vector_until') || 0); } catch (_) {}
+      if (until > Date.now()) { canvasSpriteMode = 'vector'; probe += ' (remembered)'; }
+    }
     window.__zsCanvasMode = canvasSpriteMode;
     window.__zsCanvasProbe = probe;
     zsDiag('canvas-probe', `${probe} / mode=${canvasSpriteMode} / forced=${forced}`);
@@ -8135,7 +8146,7 @@
   let spriteCheckAt = 0, spriteBlankHits = 0, liveCheckDone = 0, liveCheckBase = 0, liveBlankHits = 0;
   let spriteCheckCanvas = null, spriteCheckLoggedOk = false, spriteBlankTimes = [], battleRunStartedAt = 0, spriteCheckCursor = 0, liveSide = 0;
   function resetSpriteHealth(now) {
-    spriteCheckAt = 0; spriteBlankHits = 0; liveCheckDone = 0; liveCheckBase = 0; liveBlankHits = 0; spriteCheckLoggedOk = false; spriteBlankTimes = []; battleRunStartedAt = now; spriteCheckCursor = 0; liveSide = 0;
+    spriteCheckAt = 0; spriteBlankHits = 0; liveCheckDone = 0; liveCheckBase = 0; liveBlankHits = 0; spriteCheckLoggedOk = false; spriteBlankTimes = []; battleRunStartedAt = now; spriteCheckCursor = 0; liveSide = 0; spriteCachesDirty = ''; // 戦闘前の前面復帰は数えない
   }
   function spriteHasPixels(src) {
     if (!src || !src.width || !src.height) return null;
@@ -8153,6 +8164,8 @@
     if (canvasSpriteMode === 'vector') return;
     canvasSpriteMode = 'vector';
     window.__zsCanvasMode = 'vector';
+    try { localStorage.setItem('zs_auto_vector_until', String(Date.now() + 7 * 24 * 3600 * 1000)); } catch (_) {}
+    flushSpriteCaches(); // 図形モードでは使わないので手放す（メモリを空ける）
     zsDiag('auto-vector', reason);
   }
   function flushSpriteCaches() {
@@ -8192,7 +8205,7 @@
         while (spriteBlankTimes.length && now - spriteBlankTimes[0] > 30000) spriteBlankTimes.shift();
         zsDiag('sprite-blank', `${blank.join(',').slice(0, 120)} / checked=${picks.length} / hit=${spriteBlankHits} / t=${Math.round((now - battleRunStartedAt) / 1000)}s`);
         flushSpriteCaches();
-        if (spriteBlankTimes.length >= 3 && forced === 'auto') switchToVectorForBattle('sprite-blank x3 in 30s');
+        if (spriteBlankTimes.length >= 2 && forced === 'auto') switchToVectorForBattle('blank x2 in 30s');
       }
     }
     // ② build1995: 画面のCanvasを実際に読む。戦闘中ずっと4秒ごと、敵弾Canvasと自機弾Canvasを交互に（5×5ピクセルだけ）
@@ -8244,7 +8257,7 @@
         while (spriteBlankTimes.length && now - spriteBlankTimes[0] > 30000) spriteBlankTimes.shift();
         zsDiag('live-blank', `a=${a} ${label} n=${liveCheckDone} t=${Math.round((now - battleRunStartedAt) / 1000)}s`);
         flushSpriteCaches(); // 画面に出ていない＝作り置きが怪しいので作り直す
-        if (spriteBlankTimes.length >= 3 && forced === 'auto') switchToVectorForBattle('blank x3 in 30s');
+        if (spriteBlankTimes.length >= 2 && forced === 'auto') switchToVectorForBattle('blank x2 in 30s');
       }
     }
   }
