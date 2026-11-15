@@ -1754,9 +1754,12 @@
     // ============================================================
     // build1877: 隠しステージ「夜明け」— トワ -光の姿-
     //  残響の塔20Fクリア時にサーバーが1/30で出現を確定。編成は20Fのまま固定、HP・ULTは全回復で開始。
-    //  3ステージ構成：中ボス（カミラ→シエン→テスト）を倒すと光の膜が割れ、トワ（光）が前に出る。
-    //  中ボスの間、トワは奥から光弾で援護。最終ステージのトワは「夜明けの光」（白飛び）を使う。
-    //  制限時間なし。属性結界なし（カミラの火の結界も張らない）。
+    //  build1970: 2フェーズ構成。
+    //   PHASE I ：カミラ本体＋トワ（後衛）＋シエン（前衛）。トワとシエンが残っている間、カミラは光の膜でHP1から減らない。
+    //             片方を倒すと、残った方が猛り攻撃間隔が短くなる。
+    //   PHASE II：トワ -光の姿-（2ゲージ）。白飛び「夜明けの刻」は1系統に統一（予兆→白飛び→残り時間バー）。
+    //             白飛び中だけ被ダメージ2倍（即死弾は対象外）。2ゲージ目は白飛びの間隔が短くなり、RAYが3本の扇になる。
+    //  制限時間なし。属性結界なし（カミラの火の結界も張らない）。DAWN_TEST は enemyIds に残るが現在は未使用。
     // ============================================================
     [SHOOTING_STAGE_ID.TOWA_DAWN]: Object.freeze({
       id: SHOOTING_STAGE_ID.TOWA_DAWN,
@@ -1780,9 +1783,22 @@
       towaDawn: Object.freeze({
         segments: Object.freeze([
           Object.freeze({act:1,role:'mid',enemyId:SHOOTING_ENEMY_ID.DAWN_CAMILLA,element:'fire',gaugeHps:Object.freeze([5000]),title:'PHASE I',sub:'トワ／カミラ／シエン'}),
-          Object.freeze({act:2,role:'towa',enemyId:SHOOTING_ENEMY_ID.DAWN_TOWA,element:'light',gaugeHps:Object.freeze([8500]),title:'PHASE II',sub:'トワ -光の姿-',
-            echo:Object.freeze({warningCount:4,warningSpeed:160,warningRespawnMs:1300,fireIntervalScale:0.80})}),
+          // build1970: 合計HPは8500のまま、2ゲージに分けて後半に山場を作る
+          Object.freeze({act:2,role:'towa',enemyId:SHOOTING_ENEMY_ID.DAWN_TOWA,element:'light',gaugeHps:Object.freeze([4250,4250]),title:'PHASE II',sub:'トワ -光の姿-',
+            echo:Object.freeze({warningCount:4,warningSpeed:160,warningRespawnMs:1300,fireIntervalScale:0.80,
+              // 白飛び「夜明けの刻」はここだけで管理する（旧：トワ本体の暗転と専用ヴェールの2系統）
+              blackout:Object.freeze({firstAtMs:8000,
+                1:Object.freeze({everyMs:17000,durationMs:4800}),
+                2:Object.freeze({everyMs:14500,durationMs:4800})}),
+              whiteoutWarnMs:1400})}),
         ]),
+        // build1970: PHASE II の攻撃（ゲージごと）
+        final: Object.freeze({
+          1: Object.freeze({ringEveryMs:2700,ringCount:22,raysPerVolley:1,rayEveryMs:6500,rayTelegraphMs:750}),
+          2: Object.freeze({ringEveryMs:3000,ringCount:22,raysPerVolley:3,raySpread:0.36,rayEveryMs:7600,rayTelegraphMs:950}),
+        }),
+        rayDamage: 280,
+        guardEnrageScale: 0.78, // PHASE I：片方が倒れた後、残った方の攻撃間隔
         supportEveryMs: 3600,
         supportDamage: 150,
       }),

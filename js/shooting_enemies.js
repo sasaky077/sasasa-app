@@ -982,7 +982,8 @@
     [SHOOTING_ENEMY_ID.DAWN_TOWA]: towerVariant(SHOOTING_ENEMY_ID.TOWER15_BOSS, {
       id: SHOOTING_ENEMY_ID.DAWN_TOWA, name: 'トワ', displayName: 'SPECIAL STAGE　トワ -光の姿-',
       image: 'images/towa_light_battle.webp', element: 'light',
-      gaugeHps: Object.freeze([4500, 4500]), gauges: 2,
+      // build1970: 実際のHPはステージ側（towaDawn.segments）が正。表示用にそろえておく
+      gaugeHps: Object.freeze([4250, 4250]), gauges: 2,
       bulletSpeed: 190, bulletDamage: 230,
     }),
     [SHOOTING_ENEMY_ID.TOWER20_TOWA_EX]: towerVariant(SHOOTING_ENEMY_ID.TOWER15_BOSS, {

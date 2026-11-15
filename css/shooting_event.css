@@ -16909,3 +16909,158 @@ html body #shooting-event-root.towa-light-background .shooting-wash{
 }
 /* 夜明けは一度きり：RETRYなし */
 html body #shooting-event-root[data-shooting-stage="shooting_towa_dawn"] #shooting-result #shooting-result-retry{display:none!important;}
+
+/* ============================================================
+   build1970 — 夜明け テコ入れ（演出）
+   ============================================================ */
+/* --- PHASE I：ガードが残っている間、カミラは光の膜に包まれる --- */
+#shooting-event-root[data-dawn-guarded="1"] .shooting-boss{
+  animation:dawn-veil-glow 2.2s ease-in-out infinite;
+}
+@keyframes dawn-veil-glow{
+  0%,100%{filter:drop-shadow(0 0 4px rgba(255,236,170,.95)) drop-shadow(0 0 14px rgba(255,206,110,.55)) brightness(1.04)}
+  50%{filter:drop-shadow(0 0 7px rgba(255,248,214,1)) drop-shadow(0 0 22px rgba(255,214,120,.8)) brightness(1.12)}
+}
+/* 登場演出の間は登場アニメを優先 */
+#shooting-event-root[data-dawn-guarded="1"] .shooting-boss.dawn-boss-enter{animation:dawn-boss-enter 1.1s cubic-bezier(.2,.9,.3,1) both;}
+/* 残ったガードが猛る */
+#shooting-event-root .dawn-trio-unit.dawn-trio-enraged{animation:dawn-guard-rage 1.1s ease-in-out infinite;}
+@keyframes dawn-guard-rage{
+  0%,100%{filter:drop-shadow(0 0 3px rgba(255,120,90,.85)) drop-shadow(0 0 10px rgba(255,190,90,.55))}
+  50%{filter:drop-shadow(0 0 6px rgba(255,90,70,1)) drop-shadow(0 0 18px rgba(255,170,70,.8)) brightness(1.12)}
+}
+/* 盤面の合図（光の膜・猛り） */
+#shooting-event-root .dawn-float-text{
+  position:absolute;z-index:58;pointer-events:none;white-space:nowrap;
+  transform:translate(-50%,-50%);
+  font:700 13px/1 "Noto Serif JP",serif;letter-spacing:.14em;
+  color:#fff8e2;
+  text-shadow:0 0 2px rgba(80,48,16,.95),0 0 8px rgba(255,200,100,.95),0 1px 0 rgba(60,30,10,.9);
+  animation:dawn-float-text 1.7s ease-out both;
+}
+#shooting-event-root .dawn-float-text.is-rage{color:#ffe1d4;text-shadow:0 0 2px rgba(80,16,16,.95),0 0 8px rgba(255,110,80,.95),0 1px 0 rgba(60,10,10,.9);}
+@keyframes dawn-float-text{
+  0%{opacity:0;translate:0 8px;letter-spacing:.3em}
+  18%{opacity:1;translate:0 0;letter-spacing:.14em}
+  75%{opacity:1}
+  100%{opacity:0;translate:0 -14px}
+}
+/* 小さな光の破裂 */
+#shooting-event-root .dawn-break.is-small{scale:.55;}
+
+/* --- PHASE II：RAY（予告線が太りながら収束 → 一閃） --- */
+#shooting-event-root .dawn-ray-warning,
+#shooting-event-root .dawn-ray-beam{
+  position:absolute;width:1200px;height:0;z-index:55;pointer-events:none;
+  transform-origin:0 0;transform:rotate(var(--ang));
+}
+#shooting-event-root .dawn-ray-warning::before{
+  content:"";position:absolute;left:0;top:-7px;width:100%;height:14px;
+  background:linear-gradient(180deg,rgba(255,70,130,0),rgba(255,70,130,.5) 35%,rgba(255,235,245,.95) 50%,rgba(255,70,130,.5) 65%,rgba(255,70,130,0));
+  -webkit-mask:linear-gradient(90deg,#000 0,#000 70%,transparent);mask:linear-gradient(90deg,#000 0,#000 70%,transparent);
+  transform-origin:50% 50%;
+  animation:dawn-ray-tele var(--tele,750ms) cubic-bezier(.5,0,.9,.6) both;
+}
+@keyframes dawn-ray-tele{
+  0%{transform:scaleY(.14);opacity:.55}
+  70%{transform:scaleY(.4);opacity:.9}
+  82%{transform:scaleY(1);opacity:1}
+  88%{opacity:.35}
+  94%{opacity:1}
+  100%{transform:scaleY(.25);opacity:1}
+}
+#shooting-event-root .dawn-ray-beam i{
+  position:absolute;left:0;top:-16px;width:100%;height:32px;
+  background:linear-gradient(180deg,rgba(255,214,140,0),rgba(255,224,170,.65) 28%,#fff 44%,#fff 56%,rgba(255,224,170,.65) 72%,rgba(255,214,140,0));
+  box-shadow:0 0 26px rgba(255,214,120,.9);
+  -webkit-mask:linear-gradient(90deg,#000 0,#000 75%,transparent);mask:linear-gradient(90deg,#000 0,#000 75%,transparent);
+  transform-origin:0 50%;
+  animation:dawn-ray-beam .42s cubic-bezier(.2,.9,.3,1) both;
+}
+@keyframes dawn-ray-beam{
+  0%{transform:scaleX(0) scaleY(1.3);opacity:1}
+  25%{transform:scaleX(1) scaleY(1);opacity:1}
+  100%{transform:scaleX(1) scaleY(.08);opacity:0}
+}
+
+/* --- PHASE II：夜明けの刻（白飛び）— 朝の光が下から満ちる＋被ダメージ表示＋残り時間 --- */
+#shooting-event-root[data-shooting-stage="shooting_towa_dawn"].tower15-blackout #shooting-tower15-blackout{
+  animation:dawn-wo-rise .6s ease-out both;
+}
+@keyframes dawn-wo-rise{
+  0%{background-position:0 0;filter:brightness(1.25)}
+  100%{filter:none}
+}
+#shooting-tower15-blackout .dawn-wo-note{
+  position:absolute;left:50%;top:calc(36% + 30px);transform:translateX(-50%);
+  font:700 12px/1 "Noto Sans JP",sans-serif;letter-spacing:.2em;font-style:normal;white-space:nowrap;
+  color:#b5452a;padding:5px 10px;border-radius:999px;
+  background:rgba(255,236,214,.9);box-shadow:0 0 0 1px rgba(196,96,50,.55);
+  opacity:0;
+}
+#shooting-event-root.tower15-blackout #shooting-tower15-blackout .dawn-wo-note{animation:dawn-wo-note .5s ease-out .25s both;}
+@keyframes dawn-wo-note{from{opacity:0;translate:0 6px}to{opacity:1;translate:0 0}}
+#shooting-tower15-blackout .dawn-wo-meter{
+  position:absolute;left:18%;right:18%;top:calc(36% + 56px);height:4px;border-radius:999px;
+  background:rgba(196,140,40,.22);overflow:hidden;opacity:0;
+}
+#shooting-event-root.tower15-blackout #shooting-tower15-blackout .dawn-wo-meter{opacity:1;transition:opacity .3s ease .3s;}
+#shooting-tower15-blackout .dawn-wo-meter i{
+  position:absolute;inset:0;border-radius:inherit;transform-origin:0 50%;
+  background:linear-gradient(90deg,#f0a43a,#ffd77a);
+  box-shadow:0 0 6px rgba(240,164,58,.8);
+}
+/* 予兆：白飛びの少し前、画面の縁が金色に脈打ち「夜明けが来る」 */
+#shooting-event-root[data-shooting-stage="shooting_towa_dawn"].dawn-whiteout-pending:not(.tower15-blackout) #shooting-tower15-blackout{
+  visibility:visible;opacity:1;transition:none;
+  background:transparent;
+  animation:dawn-wo-pending .7s ease-in-out infinite alternate;
+}
+#shooting-event-root[data-shooting-stage="shooting_towa_dawn"].dawn-whiteout-pending:not(.tower15-blackout) #shooting-tower15-blackout span,
+#shooting-event-root[data-shooting-stage="shooting_towa_dawn"].dawn-whiteout-pending:not(.tower15-blackout) #shooting-tower15-blackout .dawn-wo-meter{opacity:0;animation:none;}
+#shooting-event-root[data-shooting-stage="shooting_towa_dawn"].dawn-whiteout-pending:not(.tower15-blackout) #shooting-tower15-blackout::after{
+  content:"夜明けが来る";position:absolute;left:50%;top:30%;transform:translateX(-50%);
+  font:700 13px/1 "Noto Serif JP",serif;letter-spacing:.4em;text-indent:.4em;white-space:nowrap;
+  color:#fff6dc;text-shadow:0 0 2px rgba(90,56,10,.9),0 0 10px rgba(255,200,90,.95);
+}
+@keyframes dawn-wo-pending{
+  from{box-shadow:inset 0 0 26px 6px rgba(255,214,120,.35),inset 0 -40px 60px -20px rgba(255,220,140,.35)}
+  to{box-shadow:inset 0 0 48px 16px rgba(255,214,120,.7),inset 0 -90px 90px -30px rgba(255,236,180,.6)}
+}
+
+/* --- 決着：夜が明ける --- */
+#shooting-event-root .dawn-finale{position:absolute;inset:0;z-index:60;pointer-events:none;overflow:hidden;}
+#shooting-event-root .dawn-finale i{position:absolute;display:block;}
+#shooting-event-root .dawn-finale .df-sky{
+  inset:0;
+  background:linear-gradient(0deg,rgba(255,206,120,.85) 0%,rgba(255,236,196,.7) 35%,rgba(255,252,242,.0) 75%);
+  animation:df-sky 2.6s ease-out both;
+}
+#shooting-event-root .dawn-finale .df-sun{
+  left:50%;bottom:-180px;width:360px;height:360px;margin-left:-180px;border-radius:50%;
+  background:radial-gradient(circle,#fff 0 28%,rgba(255,240,200,.9) 42%,rgba(255,200,110,.45) 60%,transparent 72%);
+  animation:df-sun 2.6s cubic-bezier(.2,.8,.3,1) both;
+}
+#shooting-event-root .dawn-finale .df-rays{
+  left:50%;bottom:-40px;width:900px;height:900px;margin-left:-450px;margin-bottom:-450px;border-radius:50%;
+  background:repeating-conic-gradient(from 0deg,rgba(255,236,180,.32) 0 4deg,transparent 4deg 15deg);
+  -webkit-mask:radial-gradient(circle,#000 0 20%,transparent 62%);mask:radial-gradient(circle,#000 0 20%,transparent 62%);
+  animation:df-rays 2.6s ease-out both;
+}
+#shooting-event-root .dawn-finale strong{
+  position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);white-space:nowrap;
+  font:700 24px/1 "Noto Serif JP",serif;letter-spacing:.5em;text-indent:.5em;
+  color:#fffaf0;text-shadow:0 0 3px rgba(120,70,10,.9),0 0 18px rgba(255,190,80,.95);
+  animation:df-text 2.6s ease-out both;
+}
+@keyframes df-sky{0%{opacity:0}30%{opacity:1}100%{opacity:.0}}
+@keyframes df-sun{0%{transform:translateY(120px) scale(.6);opacity:0}35%{opacity:1}100%{transform:translateY(-60px) scale(1.25);opacity:0}}
+@keyframes df-rays{0%{opacity:0;rotate:-8deg}35%{opacity:1}100%{opacity:0;rotate:10deg}}
+@keyframes df-text{0%,20%{opacity:0;letter-spacing:.9em}45%{opacity:1;letter-spacing:.5em}80%{opacity:1}100%{opacity:0}}
+
+@media (prefers-reduced-motion:reduce){
+  #shooting-event-root[data-dawn-guarded="1"] .shooting-boss{animation:none;filter:drop-shadow(0 0 5px rgba(255,236,170,.95)) drop-shadow(0 0 16px rgba(255,206,110,.6));}
+  #shooting-event-root .dawn-trio-unit.dawn-trio-enraged{animation:none;filter:drop-shadow(0 0 5px rgba(255,100,80,.95));}
+  #shooting-event-root[data-shooting-stage="shooting_towa_dawn"].dawn-whiteout-pending:not(.tower15-blackout) #shooting-tower15-blackout{animation:none;box-shadow:inset 0 0 40px 12px rgba(255,214,120,.6);}
+  #shooting-event-root .dawn-finale .df-rays{animation:df-sky 2.6s ease-out both;}
+}

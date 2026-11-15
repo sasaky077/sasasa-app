@@ -1080,6 +1080,13 @@
     const segs = selectedStage.towaDawn.segments || [];
     return segs[Math.max(0, Math.min(segs.length - 1, Number(state.towaDawnSeg || 0)))] || null;
   }
+  // build1970: 夜明けの白飛び「夜明けの刻」は塔15F由来の暗転（state.tower15）だけで管理する。
+  //  被ダメージ2倍・残り時間バー・予兆は、すべてこの判定にそろえる。
+  function isTowaDawnWhiteoutActive(now) {
+    if (!isTowaDawnStage() || !state || Number(state.towaDawnSeg || 0) !== 1) return false;
+    const t15 = state.tower15;
+    return !!(t15 && Number(t15.blackoutUntil || 0) > 0 && now < Number(t15.blackoutUntil));
+  }
   function isResonanceTowerStage() {
     return !!(selectedStage && selectedStage.eventId === 'resonance_tower');
   }
@@ -20294,7 +20301,10 @@
       el = document.createElement('div');
       el.id = 'shooting-tower15-blackout';
       el.setAttribute('aria-hidden', 'true');
-      el.innerHTML = isTowaDawnStage() ? '<span>夜　明</span>' : '<span>暗　転</span>'; // build1877: 夜明けは白飛び
+      // build1877: 夜明けは白飛び。build1970: 被ダメージ2倍の表示と残り時間バーを追加
+      el.innerHTML = isTowaDawnStage()
+        ? '<span>夜　明</span><em class="dawn-wo-note">被ダメージ ×2</em><b class="dawn-wo-meter"><i></i></b>'
+        : '<span>暗　転</span>';
       arena.appendChild(el);
     }
     return el;
@@ -24239,8 +24249,8 @@
     member.hitCount = (member.hitCount || 0) + 1;
     state.totalHitsTaken = (state.totalHitsTaken || 0) + 1;
     const rawDamageBase = Number.isFinite(amount) ? Number(amount) : Number(BOSS.bulletDamage || 0);
-    const rawDamage = isTowaDawnStage() && Number(state.towaDawnSeg||0)===1 &&
-      now<Number(state.dawnWhiteoutUntil||0) && attackType!=='lethal' ? rawDamageBase*2 : rawDamageBase;
+    // build1970: 白飛び（夜明けの刻）中は被ダメージ2倍。判定は画面の白飛びと同じ1系統
+    const rawDamage = attackType!=='lethal' && isTowaDawnWhiteoutActive(now) ? rawDamageBase*2 : rawDamageBase;
     const incomingDamage = resolveIncomingDamage(member, rawDamage, attackType || 'raw');
     const activeCharacter = getBattleCharacter(member.id) || getCurrentCharacter();
     const targetElement = normalizeCombatElement(activeCharacter && activeCharacter.element) || 'neutral';
@@ -30604,7 +30614,10 @@
     // 手下（カミラの子蜘蛛など）も片付ける
     (state.normalEnemies || []).forEach(e => { try { e && e.el && e.el.remove(); e && e.hpEl && e.hpEl.remove(); e && e.elementEl && e.elementEl.remove(); e && e.layer && e.layer.remove(); } catch (_) {} });
     state.normalEnemies = [];
-    document.querySelectorAll('.dawn-whiteout-veil,.dawn-ray-warning,.dawn-ray-beam').forEach(el=>el.remove());
+    document.querySelectorAll('.dawn-whiteout-veil,.dawn-ray-warning,.dawn-ray-beam,.dawn-float-text').forEach(el=>el.remove());
+    // build1970: 白飛びの予兆・PHASE Iの光の膜を解除
+    const rootT = document.getElementById(ROOT_ID);
+    if (rootT) { rootT.classList.remove('dawn-whiteout-pending'); rootT.removeAttribute('data-dawn-guarded'); }
   }
   function applyTowaDawnSegment(seg, now) {
     teardownTowaDawnBossMechanics(); // 演出の間に前のボスの処理が状態を作り直していても、ここで確実に片付ける
@@ -30651,7 +30664,8 @@
     const prev = segs[cur];
     const next = segs[cur + 1];
     state.towaDawnSeg = cur + 1;
-    state.dawnTrioCreated=false;state.dawnFinalStartedAt=0;state.dawnWhiteoutAt=0;state.dawnWhiteoutUntil=0;state.dawnRayAt=0;state.dawnBarrageAt=0;
+    state.dawnTrioCreated=false;state.dawnFinalStartedAt=0;state.dawnRayAt=0;state.dawnBarrageAt=0;
+    state.dawnFinalPhase=0;state.dawnGuardRefs=null;state.dawnGuardEnraged='';state.dawnVeilBroken=false;
     state.phaseTransition = true;
     clearProjectiles();
     teardownTowaDawnBossMechanics();
@@ -30748,7 +30762,51 @@
       state.normalSpawned++;
       created.push(guard);
     });
-    if (created.length===2) state.dawnTrioCreated=true;
+    if (created.length===2) {
+      state.dawnTrioCreated=true;
+      state.dawnGuardRefs=created; // build1970: 撃破の検知用（倒れた後も参照を持つ）
+      state.dawnGuardEnraged='';
+      state.dawnVeilBroken=false;
+    }
+  }
+  // build1970: 盤面に短い文字を浮かべる（光の膜・猛り などの合図）
+  function showDawnFloatText(x,y,text,variant){
+    const arena=document.getElementById('shooting-arena');
+    if(!arena)return;
+    if(variant)arena.querySelectorAll('.dawn-float-text.is-'+variant).forEach(n=>n.remove()); // 同じ種類の合図は最新だけ
+    const el=document.createElement('div');
+    el.className='dawn-float-text'+(variant?' is-'+variant:'');
+    el.setAttribute('aria-hidden','true');
+    el.textContent=text;
+    // 画面端・上部HUDに掛からないよう、文字幅に合わせて位置を収める
+    const w=arena.clientWidth||390;
+    arena.appendChild(el);
+    const half=Math.min(w/2,(el.offsetWidth||0)/2+8);
+    el.style.left=`${Math.round(Math.max(half,Math.min(w-half,Number(x)||0)))}px`;
+    el.style.top=`${Math.round(Math.max(150,Number(y)||0))}px`;
+    setTimeout(()=>el.remove(),1700);
+  }
+  // build1970: 小さな光の破裂（ガード撃破・光の膜の消滅）
+  function showDawnBurst(x,y,small){
+    const arena=document.getElementById('shooting-arena');
+    if(!arena)return;
+    const fx=document.createElement('div');
+    fx.className='dawn-break is-fade'+(small?' is-small':'');
+    fx.setAttribute('aria-hidden','true');
+    fx.innerHTML='<i class="db-flash"></i><i class="db-ring"></i>'+
+      Array.from({length:10},(_,i)=>`<b style="--a:${(i*36).toFixed(0)}deg;--d:${(40+(i%3)*20)}px"></b>`).join('');
+    fx.style.setProperty('--bx',`${Number(x)||0}px`);
+    fx.style.setProperty('--by',`${Number(y)||0}px`);
+    arena.appendChild(fx);
+    setTimeout(()=>fx.remove(),1500);
+  }
+  // build1970: ガードが残っているのにカミラのHPが1で止まった時の案内（連打されないよう間引く）
+  function showDawnGuardHint(){
+    if(!state||!state.boss)return;
+    const now=performance.now();
+    if(now<Number(state.dawnGuardHintAt||0))return;
+    state.dawnGuardHintAt=now+4200;
+    showDawnFloatText(state.boss.x,Number(state.boss.y||0)+78,'光の膜 ― トワとシエンを倒せ','veil');
   }
   function fireDawnArc(x,y,now,count,speed,danger=false){
     const aim=getEnemyAimPosition();
@@ -30761,15 +30819,46 @@
     }
   }
   // Phase1のシエン斬撃・トワ4即死弾を、既存敵弾と同じ衝突系に乗せる。
+  // build1970: 片方が倒れると残った方が猛る（攻撃間隔 guardEnrageScale 倍）。両方倒れるとカミラの光の膜が消える。
+  function getDawnGuardIntervalScale(role){
+    const enraged=state&&state.dawnGuardEnraged;
+    if(!enraged||enraged!==role)return 1;
+    return Math.max(.5,Math.min(1,Number(selectedStage?.towaDawn?.guardEnrageScale||.78)));
+  }
+  function updateDawnGuardEvents(){
+    const refs=state.dawnGuardRefs||[];
+    if(!refs.length)return;
+    let fallen=null;
+    refs.forEach(g=>{ if(g&&!g.dawnFallen&&!(g.hp>0)){ g.dawnFallen=true; fallen=g; } });
+    const alive=refs.filter(g=>g&&g.hp>0);
+    const root=document.getElementById(ROOT_ID);
+    if(root)root.setAttribute('data-dawn-guarded',alive.length?'1':'0');
+    if(!fallen)return;
+    showDawnBurst(fallen.x,fallen.y,true);
+    if(alive.length===1&&!state.dawnGuardEnraged){
+      const survivor=alive[0];
+      state.dawnGuardEnraged=survivor.dawnGuard;
+      survivor.el&&survivor.el.classList.add('dawn-trio-enraged');
+      showDawnFloatText(survivor.x,Number(survivor.y||0)+56,survivor.dawnGuard==='towa'?'トワの光が強まる':'シエンが猛る','rage');
+    }
+    if(!alive.length&&!state.dawnVeilBroken){
+      state.dawnVeilBroken=true;
+      if(state.boss){
+        showDawnBurst(state.boss.x,state.boss.y,false);
+        showDawnFloatText(state.boss.x,Number(state.boss.y||0)+78,'光の膜が消えた','veil');
+      }
+    }
+  }
   function updateDawnTrio(now){
     if (!state || Number(state.towaDawnSeg||0)!==0) return;
     ensureDawnTrio(now);
+    updateDawnGuardEvents();
     if(state.phaseTransition||state.ended||state.finishing||isEntireEnemyActionLocked(now))return;
     const alive=(state.normalEnemies||[]).filter(e=>e&&e.dawnGuard&&e.hp>0);
     const shien=alive.find(e=>e.dawnGuard==='shien');
     const towa=alive.find(e=>e.dawnGuard==='towa');
     if(shien&&now>=Number(state.dawnShienAttackAt||0)){
-      state.dawnShienAttackAt=now+3100;
+      state.dawnShienAttackAt=now+3100*getDawnGuardIntervalScale('shien');
       const a=getEnemyAimPosition(),base=Math.atan2(a.y-shien.y,a.x-shien.x);
       for(let k=-1;k<=1;k++){
         const angle=base+k*.25;
@@ -30779,54 +30868,122 @@
       }
     }
     if(towa&&now>=Number(state.dawnLethalAt||0)){
-      state.dawnLethalAt=now+5100;
+      state.dawnLethalAt=now+5100*getDawnGuardIntervalScale('towa');
       fireDawnArc(towa.x,towa.y,now,4,93,true);
     }
   }
-  // Phase2：高密度の全方位弾幕、予告付きRAY、夜明け(白飛び中ダメージ2倍)。
+  // Phase2（build1970で再構成）：
+  //  ・光輪：速さの違う2重のリングを交互にずらして撃つ（旧：1.35秒ごとの単リング。毎秒の弾数は同じ）
+  //  ・RAY：予告線が太りながら収束 → 発射。2ゲージ目は3本の扇
+  //  ・夜明けの刻：白飛びは tower15 の暗転1系統。開始前に予兆、白飛び中は残り時間バー
+  function getDawnFinalConfig(phase){
+    const all=(selectedStage&&selectedStage.towaDawn&&selectedStage.towaDawn.final)||{};
+    return all[phase]||all[1]||{ringEveryMs:2700,ringCount:22,raysPerVolley:1,rayEveryMs:6500,rayTelegraphMs:750};
+  }
+  function fireDawnRings(now,cfg,elapsed){
+    const n=Math.max(8,Number(cfg.ringCount||22));
+    const bx=state.boss.x,by=state.boss.y;
+    const rot=elapsed*.00037;
+    const layers=[{speed:128,off:0},{speed:162,off:Math.PI/n}];
+    layers.forEach(layer=>{
+      for(let i=0;i<n;i++){
+        const a=2*Math.PI*i/n+rot+layer.off;
+        const b=makeProjectile('shooting-enemy-bullet dawn-light-bullet',bx,by,Math.cos(a)*layer.speed,Math.sin(a)*layer.speed,160);
+        if(b){b.attackElement='light';appendEnemyProjectile(b);}
+      }
+    });
+  }
+  function fireDawnRayVolley(now,cfg){
+    const arena=document.getElementById('shooting-arena');
+    if(!arena||!state||!state.boss)return;
+    const aim=getEnemyAimPosition(),sx=state.boss.x,sy=state.boss.y;
+    const base=Math.atan2(aim.y-sy,aim.x-sx);
+    const count=Math.max(1,Math.round(Number(cfg.raysPerVolley||1)));
+    const spread=Number(cfg.raySpread||.36);
+    const angles=Array.from({length:count},(_,i)=>base+(i-(count-1)/2)*spread);
+    const tele=Math.max(450,Number(cfg.rayTelegraphMs||750));
+    const seg=Number(state.towaDawnSeg||0);
+    const warnings=angles.map(angle=>{
+      const line=document.createElement('div');
+      line.className='dawn-ray-warning';
+      line.setAttribute('aria-hidden','true');
+      line.style.left=`${sx}px`;line.style.top=`${sy}px`;
+      line.style.setProperty('--ang',`${angle}rad`);
+      line.style.setProperty('--tele',`${tele}ms`);
+      arena.appendChild(line);
+      return line;
+    });
+    setTimeout(()=>{
+      warnings.forEach(el=>el.remove());
+      if(!state||state.ended||state.finishing||!isTowaDawnStage()||Number(state.towaDawnSeg||0)!==seg)return;
+      const t=performance.now();
+      if(state.phaseTransition||isEnemyProjectileSpawnSuppressed(t))return; // 光トワのULT（弾生成停止）中は撃たない
+      angles.forEach(angle=>{
+        const fx=document.createElement('div');
+        fx.className='dawn-ray-beam';
+        fx.setAttribute('aria-hidden','true');
+        fx.style.left=`${sx}px`;fx.style.top=`${sy}px`;
+        fx.style.setProperty('--ang',`${angle}rad`);
+        fx.innerHTML='<i></i>';
+        arena.appendChild(fx);
+        setTimeout(()=>fx.remove(),420);
+      });
+      const player=state.player;
+      if(!player)return;
+      const dx=player.x-sx,dy=player.y-sy;
+      const hit=angles.some(angle=>{
+        const forward=dx*Math.cos(angle)+dy*Math.sin(angle);
+        const lateral=Math.abs(dx*Math.sin(angle)-dy*Math.cos(angle));
+        return forward>0&&lateral<15;
+      });
+      if(hit)damagePlayer(t,Math.max(1,Number(selectedStage?.towaDawn?.rayDamage||280)),'raw','light','dawn-ray');
+    },tele);
+  }
   function updateDawnFinal(now){
     if(!state||Number(state.towaDawnSeg||0)!==1||state.ended||state.finishing)return;
     const arena=document.getElementById('shooting-arena');if(!arena)return;
+    const root=document.getElementById(ROOT_ID);
     const paused=state.phaseTransition||isEntireEnemyActionLocked(now);
     if(!state.dawnFinalStartedAt)state.dawnFinalStartedAt=now;
     const elapsed=now-state.dawnFinalStartedAt;
-    if(!paused&&now>=Number(state.dawnBarrageAt||0)){
-      state.dawnBarrageAt=now+1350;
-      const n=22;
-      for(let i=0;i<n;i++){
-        const a=2*Math.PI*i/n+elapsed*.00037;
-        const b=makeProjectile('shooting-enemy-bullet dawn-light-bullet',state.boss.x,state.boss.y,
-          Math.cos(a)*145,Math.sin(a)*145,160);
-        if(b){b.attackElement='light';appendEnemyProjectile(b);}
+    const phase=Math.max(1,Math.min(2,Number(state.boss.phase||1)));
+    const cfg=getDawnFinalConfig(phase);
+    const t15=state.tower15;
+    // 2ゲージ目へ：白飛びを一度切り、少し間を置いてから新しい周期で始める
+    if(state.dawnFinalPhase!==phase){
+      const first=!state.dawnFinalPhase;
+      state.dawnFinalPhase=phase;
+      if(!first){
+        if(t15){ if(t15.blackoutUntil){ t15.blackoutUntil=0; setTower15Blackout(false); } t15.nextBlackoutAt=now+6500; }
+        state.dawnRayAt=now+3600;
+        state.dawnBarrageAt=now+2400;
       }
     }
+    if(!paused&&now>=Number(state.dawnBarrageAt||0)){
+      state.dawnBarrageAt=now+Math.max(900,Number(cfg.ringEveryMs||2700));
+      fireDawnRings(now,cfg,elapsed);
+    }
     if(!paused&&now>=Number(state.dawnRayAt||0)){
-      state.dawnRayAt=now+6500;
-      const aim=getEnemyAimPosition(),sx=state.boss.x,sy=state.boss.y;
-      const angle=Math.atan2(aim.y-sy,aim.x-sx);
-      const line=document.createElement('div');line.className='dawn-ray-warning';
-      line.style.cssText=`position:absolute;pointer-events:none;z-index:55;left:${sx}px;top:${sy}px;width:1200px;height:4px;transform-origin:0 50%;transform:rotate(${angle}rad);background:rgba(255,65,125,.68);box-shadow:0 0 12px #f37,0 0 3px white;`;
-      arena.appendChild(line);
-      setTimeout(()=>{
-        line.remove();
-        if(!state||state.ended||state.finishing||Number(state.towaDawnSeg||0)!==1)return;
-        const fx=document.createElement('div');fx.className='dawn-ray-beam';
-        fx.style.cssText=`position:absolute;pointer-events:none;z-index:56;left:${sx}px;top:${sy}px;width:1200px;height:20px;transform-origin:0 50%;transform:translateY(-8px) rotate(${angle}rad);background:linear-gradient(0deg,rgba(255,224,185,.6),white,rgba(255,224,185,.6));box-shadow:0 0 22px #ffdf8e;`;
-        arena.appendChild(fx);setTimeout(()=>fx.remove(),250);
-        const player=state.player;
-        if(player){const dx=player.x-sx,dy=player.y-sy;
-          const forward=dx*Math.cos(angle)+dy*Math.sin(angle);
-          const lateral=Math.abs(dx*Math.sin(angle)-dy*Math.cos(angle));
-          if(forward>0&&lateral<15)damagePlayer(performance.now(),280,'raw','light','dawn-ray');}
-      },750);
+      if(!state.dawnRayAt){ state.dawnRayAt=now+3000; }
+      else {
+        state.dawnRayAt=now+Math.max(2500,Number(cfg.rayEveryMs||6500));
+        if(!isEnemyProjectileSpawnSuppressed(now)) fireDawnRayVolley(now,cfg);
+      }
     }
-    if(!paused&&now>=Number(state.dawnWhiteoutAt||0)){
-      state.dawnWhiteoutAt=now+17000;
-      state.dawnWhiteoutUntil=now+4800;
+    // 夜明けの刻：予兆と残り時間バー
+    const echo=getTower15Config()||{};
+    const warnMs=Math.max(0,Number(echo.whiteoutWarnMs||1400));
+    const active=isTowaDawnWhiteoutActive(now);
+    const pending=!active&&!paused&&t15&&Number(t15.nextBlackoutAt||0)>0&&Number(t15.nextBlackoutAt)-now<=warnMs;
+    if(pending)ensureTower15Blackout(); // 予兆は白飛びの幕を薄く使う（初回はまだ幕がない）
+    if(root)root.classList.toggle('dawn-whiteout-pending',!!pending);
+    if(active){
+      const bo=echo.blackout||{};
+      const dur=Math.max(1,Number((bo[phase]||bo[1]||{}).durationMs||4800));
+      const left=Math.max(0,Math.min(1,(Number(t15.blackoutUntil)-now)/dur));
+      const meter=document.querySelector('#shooting-tower15-blackout .dawn-wo-meter i');
+      if(meter)meter.style.transform=`scaleX(${left.toFixed(3)})`;
     }
-    let veil=arena.querySelector('.dawn-whiteout-veil');
-    if(!veil){veil=document.createElement('div');veil.className='dawn-whiteout-veil';veil.style.cssText='position:absolute;inset:0;z-index:5;pointer-events:none;background:rgba(255,255,255,.72);opacity:0;transition:opacity .4s;';arena.appendChild(veil);}
-    veil.style.opacity=now<Number(state.dawnWhiteoutUntil||0)?'1':'0';
   }
   function updateTowaDawn(now) {
     if (!isTowaDawnStage() || !state || !state.boss) return;
@@ -30845,7 +31002,7 @@
     const cfg = selectedStage.towaDawn || {};
     if (!state.towaDawnSupportAt) state.towaDawnSupportAt = now + 2600;
     if (now < state.towaDawnSupportAt) return;
-    state.towaDawnSupportAt = now + Math.max(1500, Number(cfg.supportEveryMs || 3600));
+    state.towaDawnSupportAt = now + Math.max(1500, Number(cfg.supportEveryMs || 3600)) * getDawnGuardIntervalScale('towa');
     const arena = document.getElementById('shooting-arena');
     const supportTowa=(state.normalEnemies||[]).find(e=>e&&e.dawnGuard==='towa'&&e.hp>0);
     if (!arena || !supportTowa) return;
@@ -30860,6 +31017,26 @@
     }
   }
 
+  // build1970: 夜明けの決着。ゲームループが止まる前に白飛び・予兆を確実に解除し、下から朝の光が昇る
+  function playTowaDawnFinale() {
+    try { setTower15Blackout(false); } catch (_) {}
+    if (state && state.tower15) state.tower15.blackoutUntil = 0;
+    document.querySelectorAll('.dawn-ray-warning,.dawn-ray-beam,.dawn-float-text').forEach(el => el.remove());
+    const root = document.getElementById(ROOT_ID);
+    if (root) root.classList.remove('dawn-whiteout-pending');
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    arena.querySelectorAll('.dawn-finale').forEach(el => el.remove());
+    const fx = document.createElement('div');
+    fx.className = 'dawn-finale';
+    fx.setAttribute('aria-hidden', 'true');
+    fx.innerHTML = '<i class="df-sky"></i><i class="df-sun"></i><i class="df-rays"></i><strong>夜が、明ける</strong>';
+    fx.style.setProperty('--bx', `${Number(state?.boss?.x || 0)}px`);
+    fx.style.setProperty('--by', `${Number(state?.boss?.y || 0)}px`);
+    arena.appendChild(fx);
+    setTimeout(() => fx.remove(), 3200);
+  }
+
   function beginBossDefeat() {
     if (!state || state.ended || state.finishing) return;
     // build1682: エクリプスは光状態の間だけ撃破できる。無敵中に他経路でHPが0になっても戻す。
@@ -30869,12 +31046,13 @@
       return;
     }
 
-    // build1877: 夜明けは6区間（中ボス→トワ×3）。最後のトワを倒すまで次の区間へ進む
+    // build1877: 夜明けは PHASE I（カミラ＋ガード2体）→ PHASE II（トワ -光の姿-）。最後のトワを倒すまで次の区間へ進む
     if (isTowaDawnStage() && Number(state.towaDawnSeg || 0)===0 &&
       (state.normalEnemies || []).some(e => e && e.dawnGuard && e.hp > 0)) {
-      state.boss.hp=1; renderHud(); return;
+      state.boss.hp=1; showDawnGuardHint(); renderHud(); return; // build1970: 光の膜で止まっていることを伝える
     }
     if (isTowaDawnStage() && advanceTowaDawnSegment()) return;
+    const towaDawnFinale = isTowaDawnStage(); // build1970: 最後のトワ撃破＝夜が明ける
 
     // build1662: デイリーレイド周回制。HP0で次の周へ（バトルは時間切れ・全滅まで続く）
     if (isRaidLapMode()) {
@@ -31000,6 +31178,7 @@
     createHit(state.boss.x, state.boss.y, true);
     setTimeout(() => createHit(state.boss.x - 24, state.boss.y + 12, true), 260);
     setTimeout(() => createHit(state.boss.x + 22, state.boss.y - 8, true), 520);
+    if (towaDawnFinale) playTowaDawnFinale();
 
     setTimeout(() => {
       if (!state || state.ended) return;
@@ -31008,7 +31187,7 @@
         state.finishing = false;
         endGame(true);
       });
-    }, 1050);
+    }, towaDawnFinale ? 2300 : 1050);
   }
 
 
