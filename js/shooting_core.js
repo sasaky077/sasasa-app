@@ -30691,7 +30691,7 @@
       setTimeout(() => fx.remove(), 1700);
     }
     const shade = document.querySelector('.dawn-towa-shade');
-    if (shade) shade.classList.toggle('is-hidden', next.role === 'towa');
+    if (shade) shade.remove();
     setTimeout(() => {
       try { showFacelessBattleCut(next.title || '', next.sub || ''); } catch (_) {}
     }, 520);
@@ -30817,7 +30817,7 @@
         if(player){const dx=player.x-sx,dy=player.y-sy;
           const forward=dx*Math.cos(angle)+dy*Math.sin(angle);
           const lateral=Math.abs(dx*Math.sin(angle)-dy*Math.cos(angle));
-          if(forward>0&&lateral<15&&now>=Number(player.invulnUntil||0))damagePlayer(performance.now(),280,'raw','light','dawn-ray');}
+          if(forward>0&&lateral<15)damagePlayer(performance.now(),280,'raw','light','dawn-ray');}
       },750);
     }
     if(!paused&&now>=Number(state.dawnWhiteoutAt||0)){
@@ -30834,11 +30834,12 @@
     if (!seg) return;
     if(Number(state.towaDawnSeg||0)===0) updateDawnTrio(now);
     else updateDawnFinal(now);
-    const shade = ensureTowaDawnShade();
+    // PHASE1の光トワは独立HPの1体のみ。旧装飾用シルエットは生成しない。
+    const shade = document.querySelector('.dawn-towa-shade');
+    if (shade) shade.remove();
     const mid = seg.role === 'mid';
     const rootD = document.getElementById(ROOT_ID);
     if (rootD && rootD.getAttribute('data-dawn-role') !== (seg.role || 'mid')) rootD.setAttribute('data-dawn-role', seg.role || 'mid');
-    if (shade) shade.classList.toggle('is-hidden', true);
     if (!mid || state.ended || state.finishing || state.phaseTransition || state.koTransition) return;
     if (isEntireEnemyActionLocked(now) || now < Number(state.towaDarkUntil || 0)) { state.towaDawnSupportAt = Math.max(Number(state.towaDawnSupportAt || 0), now + 600); return; }
     const cfg = selectedStage.towaDawn || {};
@@ -30846,10 +30847,9 @@
     if (now < state.towaDawnSupportAt) return;
     state.towaDawnSupportAt = now + Math.max(1500, Number(cfg.supportEveryMs || 3600));
     const arena = document.getElementById('shooting-arena');
-    if (!arena || !shade) return;
-    const w = arena.clientWidth || 390;
-    const sx = w * 0.85 - Math.min(w * 0.13, 52), sy = 150;
-    shade.classList.remove('is-casting'); void shade.offsetWidth; shade.classList.add('is-casting');
+    const supportTowa=(state.normalEnemies||[]).find(e=>e&&e.dawnGuard==='towa'&&e.hp>0);
+    if (!arena || !supportTowa) return;
+    const sx = supportTowa.x, sy = supportTowa.y;
     const aim = getEnemyAimPosition();
     const base = Math.atan2(aim.y - sy, aim.x - sx);
     const n = 5, spread = 0.62, speed = 150;
@@ -33205,12 +33205,14 @@
     rhythm:  Object.freeze(['bgm-rhythm-01']),
     // build1643: 和風ボス（レムナント：イノリ）
     japan:   Object.freeze(['bgm-battle-japan-01']),
+    dawn:    Object.freeze(['bgm-battle-dawn-01']), // 夜明け専用BGM
   });
   let shootingBattleBgmSessionActive = false;
   let shootingBattleBgmFadeRaf = 0;
   let shootingBattleBgmPick = { key: '', id: '' };
 
   function getShootingBattleBgmPoolKey() {
+    if (isTowaDawnStage()) return 'dawn';
     // 位相回遊のエクリプス戦では専用曲を優先。
     if (isPhaseOdysseyStage() && BOSS && BOSS.eclipseMechanics) return 'eclipse';
     if (isRhythmStage()) return 'rhythm';
