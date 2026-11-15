@@ -1,5 +1,5 @@
-/* ZERAPHIA build1983 — 隠し診断画面
-   開き方：画面下部の「設定」ナビゲーションボタンを3秒以内に5回タップ。一般のユーザーには見えない。
+/* ZERAPHIA build1989 — 診断画面
+   開き方：設定画面の見出し「設定」を3秒長押し／PCは Ctrl(⌘)+Shift+D。
    表示：端末の情報／Canvas の自己診断（貼り付け・ImageBitmap・画像経由など）／戦闘中の記録（ZsDiag）。
    操作：描画方式の固定（自動／貼り付け／図形）・内容のコピー・記録の消去。
    戦闘中の処理には一切関わらない（開いた時だけ動く）。描画方式の設定だけは次の戦闘から shooting_core.js が読む。 */
@@ -94,7 +94,7 @@
     const rel = window.__ZERAPHIA_RELEASE__ || {};
     let mode = 'auto'; try { mode = localStorage.getItem(MODE_KEY) || 'auto'; } catch (_) {}
     return {
-      'ビルド': rel.build || '-',
+      'ビルド': (rel.build || '-') + ' / 診断 build' + 1989,
       'UA': n.userAgent || '-',
       'ホーム画面アプリ': (n.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches)) ? 'はい' : 'いいえ',
       '画素密度': window.devicePixelRatio,
@@ -113,16 +113,16 @@
     if (document.getElementById('zs-diag-style')) return;
     const st = document.createElement('style'); st.id = 'zs-diag-style';
     st.textContent = `
-      #zs-diag{position:fixed;inset:0;z-index:999990;background:rgba(10,8,6,.86);color:#f1e7d2;display:flex;flex-direction:column;
+      #zs-diag{position:fixed;inset:0;z-index:999990;background:rgba(10,8,6,.86);color:#f1e7d2;display:flex;flex-direction:column;box-sizing:border-box;width:100%;max-width:100vw;overflow:hidden;touch-action:pan-y;
         font:13px/1.55 -apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;padding:calc(env(safe-area-inset-top,0px) + 12px) 12px calc(env(safe-area-inset-bottom,0px) + 12px)}
       #zs-diag h2{margin:0 0 8px;font-size:16px}
-      #zs-diag .zd-body{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;background:#1c1712;border:1px solid #4b3d2c;border-radius:8px;padding:10px}
-      #zs-diag table{width:100%;border-collapse:collapse;margin-bottom:10px}
+      #zs-diag .zd-body{flex:1;min-width:0;overflow-x:hidden;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:#1c1712;border:1px solid #4b3d2c;border-radius:8px;padding:10px}
+      #zs-diag table{width:100%;max-width:100%;table-layout:fixed;border-collapse:collapse;margin-bottom:10px}
       #zs-diag td{border-bottom:1px solid #33291e;padding:4px 6px;vertical-align:top;word-break:break-all}
-      #zs-diag td:first-child{color:#c7b28c;white-space:nowrap;width:40%}
+      #zs-diag td{overflow-wrap:anywhere}#zs-diag td:first-child{color:#c7b28c;width:38%}
       #zs-diag .ok{color:#8fe39b}#zs-diag .ng{color:#ff8f8f;font-weight:700}
       #zs-diag .zd-log{font:11px/1.45 ui-monospace,Menlo,monospace;white-space:pre-wrap;word-break:break-all;color:#d9ccb2}
-      #zs-diag .zd-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+      #zs-diag .zd-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;max-width:100%}#zs-diag select{max-width:100%}
       #zs-diag button,#zs-diag select{font:600 13px/1 inherit;padding:10px 12px;border-radius:6px;border:1px solid #8c6d3c;background:#2a231a;color:#f3e6c8}
       #zs-diag .zd-note{font-size:11px;color:#a8977a;margin-top:6px}`;
     document.head.appendChild(st);
@@ -141,6 +141,7 @@
     try { sel.value = localStorage.getItem(MODE_KEY) || 'auto'; } catch (_) {}
     sel.addEventListener('change', () => { try { localStorage.setItem(MODE_KEY, sel.value); } catch (_) {} render(); });
     el.querySelector('[data-zd-close]').addEventListener('click', () => el.remove());
+
     el.querySelector('[data-zd-clear]').addEventListener('click', () => { window.ZsDiag.clear(); render(); });
     el.querySelector('[data-zd-copy]').addEventListener('click', async e => {
       const btn = e.currentTarget;
@@ -164,15 +165,80 @@
     await render();
   }
 
-  // ---------- 開き方：下段の設定ボタンを3秒以内に5回タップ ----------
-  let taps = [];
-  document.addEventListener('click', e => {
-    const t = e.target && e.target.closest && e.target.closest('#bnav-setting');
-    if (!t) return;
-    const now = Date.now();
-    taps = taps.filter(x => now - x < 3000); taps.push(now);
-    if (taps.length >= 5) { taps = []; void open(); }
+  // ---------- 起動方法（build1988） ----------
+  // 1) 設定画面の見出し「設定」を3秒長押し
+  // 2) PC：Ctrl(⌘)+Shift+D
+  const DIAG_BUILD = 1989;
+  function safeOpen(from) {
+    try { window.ZsDiag && window.ZsDiag.log('diag-open', from); } catch (_) {}
+    open().catch(err => { console.error('[zs_diag] open failed', err); try { alert('診断を開けませんでした: ' + (err && err.message || err)); } catch (_) {} });
+  }
+
+  // build1988: 設定画面のボタンは廃止（レイアウトが崩れるため）。入口は見出しの長押しとPCのショートカットだけ。
+  const ENTRY_KEY = 'zs_diag_entry';
+  try { localStorage.removeItem(ENTRY_KEY); } catch (_) {}
+  try { document.getElementById('zs-diag-entry')?.remove(); } catch (_) {}
+
+  // 隠し入口：設定画面の見出し「設定」を3秒長押し。
+  // （下段「設定」の連打は管理者認証＝7連打と重なるので使わない）
+  const HOLD_MS = 3000;
+  let holdTimer = 0, holdStart = null;
+  // 見出しの上に透明なレイヤーが重なっていても拾えるよう、要素ではなく「座標が見出しの範囲内か」で判定する
+  function titleOf(e) {
+    // 戦闘中など画面のほとんどのタッチは、ここで即終了（スタイル・位置の読み取りをしない）
+    if (pointOf(e).y > 260) return null;
+    if (document.querySelector('#shooting-event-root.open')) return null;
+    const scr = document.getElementById('screen-setting');
+    if (!scr) return null;
+    const cs = getComputedStyle(scr);
+    if (cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) === 0) return null;
+    const t = scr.querySelector('.app-page-title');
+    if (!t) return null;
+    const r = t.getBoundingClientRect();
+    if (r.width < 1 || r.height < 1) return null;
+    const p = pointOf(e);
+    const pad = 24;
+    return (p.x >= r.left - pad && p.x <= r.right + pad && p.y >= r.top - pad && p.y <= r.bottom + pad) ? t : null;
+  }
+  function pointOf(e) {
+    const p = (e.touches && e.touches[0]) || e;
+    return { x: p.clientX || 0, y: p.clientY || 0 };
+  }
+  function cancelHold() { clearTimeout(holdTimer); holdTimer = 0; holdStart = null; }
+  function startHold(e) {
+    if (!titleOf(e) || holdTimer) return;
+    holdStart = pointOf(e);
+    holdTimer = setTimeout(() => {
+      holdTimer = 0; holdStart = null;
+      try { navigator.vibrate && navigator.vibrate(20); } catch (_) {}
+      safeOpen('title-hold');
+    }, HOLD_MS);
+  }
+  function moveHold(e) {
+    if (!holdTimer || !holdStart) return;
+    const p = pointOf(e);
+    if (Math.abs(p.x - holdStart.x) > 14 || Math.abs(p.y - holdStart.y) > 14) cancelHold();
+  }
+  // window の capture で受ける（途中で止められても先に届く）
+  ['touchstart', 'pointerdown', 'mousedown'].forEach(t => window.addEventListener(t, startHold, { capture: true, passive: true }));
+  ['touchmove', 'pointermove', 'mousemove'].forEach(t => window.addEventListener(t, moveHold, { capture: true, passive: true }));
+  ['touchend', 'touchcancel', 'pointerup', 'pointercancel', 'mouseup'].forEach(t => window.addEventListener(t, cancelHold, { capture: true, passive: true }));
+  window.addEventListener('blur', cancelHold);
+  // 長押しで文字選択・メニューが出ないように（見出しだけ）
+  (function guardTitle() {
+    const st = document.createElement('style');
+    st.textContent = '#screen-setting .app-page-title{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}';
+    (document.head || document.documentElement).appendChild(st);
+  })();
+
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'D' || e.key === 'd')) {
+      e.preventDefault();
+      safeOpen('shortcut');
+    }
   }, true);
+
+  console.info('[zs_diag] loaded build' + DIAG_BUILD);
 
   window.ZsDiagPanel = { open, selfTest };
 })();
