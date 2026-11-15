@@ -7695,11 +7695,12 @@
     // ============================================================
     const TAU = Math.PI * 2;
     const ELEMENTS = ['neutral','fire','aqua','wood','light','dark'];
-    const orbs = {}, raidOrbs = {}, trails = {}, lasers = [], dangers = [], curtains = [];
+    const orbs = {}, raidOrbs = {}, trails = {}, lasers = [], dangers = [], curtains = [], magaEyes = [];
     for (const k of ELEMENTS) { orbs[k] = []; raidOrbs[k] = []; trails[k] = []; }
     for (const p of bullets) {
       if (!p || !p.canvasRendered) continue;
       const kind = p.canvasKind;
+      if (kind === 'maga-eye') { magaEyes.push(p); continue; } // build1974
       if (kind === 'danger') { dangers.push(p); continue; }
       if (kind === 'raid-laser') { lasers.push(p); continue; }
       if (kind === 'rhythm-bar') continue;
@@ -7782,6 +7783,9 @@
       ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(0, avgY - 3); ctx.lineTo(cw, avgY - 3); ctx.stroke();
     }
+
+    // --- build1974: 禍眼（即死）。開眼 → 瞳が自機を追う → 照準線 → 突進 ---
+    if (magaEyes.length) drawMagaEyes(ctx, magaEyes, dpr);
 
     // --- WARNING（即死弾） ---
     if (dangers.length) {
@@ -8009,6 +8013,166 @@
     ENEMY_BULLET_SPRITE_CACHE.set(key, c);
     return c;
   }
+  // ============================================================
+  // build1974: 禍眼（まがまなこ）— 即死弾の別種。
+  //  見た目：深紅の虹彩に縦長の瞳孔、外側を8本の棘の輪が囲む。瞳孔は常に自機の方へ寄って「見つめる」。
+  //  動き（build1975）：開眼（openMs）→ 凝視（stareMs）→ chaseMs（既定10秒）の間、自機をゆっくり追いかける。
+  //   ・自機より遅く（speed）、曲がれる角度にも上限（turnRate rad/秒）があるので、大きく回り込めば振り切れる。
+  //   ・棘は残り時間に合わせて1本ずつ消える（8本→0本）。最後の1.2秒は点滅しながら目を閉じて消える。
+  //   ・自機の弾では消えない。敵弾消去（bullet_clear 系のスキル）でのみ消せる。
+  //  当たり判定・即死の扱いは既存のWARNING弾（shooting-danger-bullet）と同じ。
+  //  使い方：敵またはステージに magaEye: { everyMs, count, firstAtMs, speed, chaseMs, turnRate, stareMs, staggerMs, spread } を書くと、BOSSが撃つ。
+  // ============================================================
+  function getMagaEyeIrisSprite(r, dpr) {
+    const key = 'mi|' + r + '|' + dpr;
+    let sprite = ENEMY_BULLET_SPRITE_CACHE.get(key);
+    if (sprite) return sprite;
+    const { c, g } = makeSpriteCanvas(r * 1.8 + 1, dpr);
+    const glow = g.createRadialGradient(0, 0, r * 0.7, 0, 0, r * 1.8);
+    glow.addColorStop(0, 'rgba(210,0,50,.55)'); glow.addColorStop(1, 'rgba(110,0,30,0)');
+    g.fillStyle = glow; g.beginPath(); g.arc(0, 0, r * 1.8, 0, TAU_CONST); g.fill();
+    g.fillStyle = 'rgba(14,0,6,.92)'; g.beginPath(); g.arc(0, 0, r + 1.6, 0, TAU_CONST); g.fill();
+    const body = g.createRadialGradient(0, 0, r * 0.05, 0, 0, r);
+    body.addColorStop(0, '#ff7a95'); body.addColorStop(0.38, '#e0123f'); body.addColorStop(0.78, '#6a0020'); body.addColorStop(1, '#2a000c');
+    g.fillStyle = body; g.beginPath(); g.arc(0, 0, r, 0, TAU_CONST); g.fill();
+    if (r >= 8) {
+      g.strokeStyle = 'rgba(30,0,10,.45)'; g.lineWidth = Math.max(0.6, r * 0.04);
+      for (let i = 0; i < 14; i++) {
+        const a = i / 14 * TAU_CONST;
+        g.beginPath(); g.moveTo(Math.cos(a) * r * 0.3, Math.sin(a) * r * 0.3); g.lineTo(Math.cos(a) * r * 0.86, Math.sin(a) * r * 0.86); g.stroke();
+      }
+    }
+    g.strokeStyle = 'rgba(255,92,128,.95)'; g.lineWidth = Math.max(1, r * 0.08);
+    g.beginPath(); g.arc(0, 0, r * 0.95, 0, TAU_CONST); g.stroke();
+    ENEMY_BULLET_SPRITE_CACHE.set(key, c);
+    return c;
+  }
+  function getMagaEyePupilSprite(r, dpr) {
+    const key = 'mp|' + r + '|' + dpr;
+    let sprite = ENEMY_BULLET_SPRITE_CACHE.get(key);
+    if (sprite) return sprite;
+    const { c, g } = makeSpriteCanvas(r * 0.95, dpr);
+    g.shadowColor = 'rgba(255,170,190,.9)'; g.shadowBlur = r * 0.25;
+    g.fillStyle = '#090003';
+    g.beginPath(); g.ellipse(0, 0, Math.max(1.2, r * 0.17), r * 0.66, 0, 0, TAU_CONST); g.fill();
+    g.shadowBlur = 0; // ハイライトは瞳孔に付いて動かないよう、描画時に虹彩側へ描く
+    ENEMY_BULLET_SPRITE_CACHE.set(key, c);
+    return c;
+  }
+  function drawMagaEyeThorns(ctx, r, visible) {
+    const R0 = r * 1.18, R1 = r * 1.55, n = 8;
+    ctx.strokeStyle = 'rgba(255,60,100,.45)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(0, 0, R0, 0, TAU_CONST); ctx.stroke();
+    if (visible <= 0) return;
+    ctx.beginPath();
+    for (let i = 0; i < Math.min(n, visible); i++) {
+      const a = i / n * TAU_CONST, w = TAU_CONST / n * 0.22;
+      ctx.moveTo(Math.cos(a - w) * R0, Math.sin(a - w) * R0);
+      ctx.lineTo(Math.cos(a) * R1, Math.sin(a) * R1);
+      ctx.lineTo(Math.cos(a + w) * R0, Math.sin(a + w) * R0);
+      ctx.closePath();
+    }
+    ctx.fillStyle = 'rgba(255,70,110,.95)'; ctx.fill();
+    ctx.strokeStyle = 'rgba(30,0,10,.7)'; ctx.lineWidth = 0.8; ctx.stroke();
+  }
+  function drawMagaEyes(ctx, list, dpr) {
+    const nowMs = performance.now();
+    const player = state && state.player;
+    for (const p of list) {
+      const r = Math.round(Number(p.canvasRadius || 15) * 2) / 2;
+      const x = Number(p.x || 0), y = Number(p.y || 0);
+      const age = Number(p.magaAge || 0);
+      const openS = Number(p.magaOpenS || 0.35), stareS = Number(p.magaStareS || 0.6), chaseS = Number(p.magaChaseS || 10);
+      const opening = Math.min(1, age / openS);
+      const chaseAge = Math.max(0, age - openS - stareS);
+      const left = Math.max(0, chaseS - chaseAge);           // 残り時間（秒）
+      const closing = left < 1.2 ? 1 - left / 1.2 : 0;        // 最後の1.2秒：目を閉じる
+      // 開いてから閉じるまでの大きさ・縦のつぶれ
+      const scale = 0.25 + 0.75 * (1 - Math.pow(1 - opening, 3));
+      const lid = 1 - closing * 0.85;
+      const iris = getMagaEyeIrisSprite(r, dpr);
+      const pupil = getMagaEyePupilSprite(r, dpr);
+      p.magaSpin = Number(p.magaSpin || 0) + 0.02;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(scale, scale);
+      // 最後は点滅（だんだん速く）
+      const blink = closing > 0 ? (Math.sin(nowMs / (90 - closing * 50)) > -0.2 ? 1 : 0.35) : 1;
+      ctx.globalAlpha = blink * (0.86 + 0.14 * Math.sin(nowMs / 140));
+      ctx.save();
+      ctx.scale(1, lid);
+      ctx.drawImage(iris, -iris.__half, -iris.__half, iris.__half * 2, iris.__half * 2);
+      // 瞳孔：常に自機の方へ寄る
+      let lx = 0, ly = 0;
+      const d = Math.hypot(Number(player?.x || x) - x, Number(player?.y || y) - y);
+      if (d > 1) { lx = (Number(player.x) - x) / d * r * 0.22; ly = (Number(player.y) - y) / d * r * 0.22; }
+      ctx.globalAlpha = blink;
+      ctx.drawImage(pupil, lx - pupil.__half, ly - pupil.__half, pupil.__half * 2, pupil.__half * 2);
+      if (r >= 8) {
+        ctx.fillStyle = 'rgba(255,255,255,.85)';
+        ctx.beginPath(); ctx.ellipse(-r * 0.38, -r * 0.42, r * 0.16, r * 0.1, -0.6, 0, TAU_CONST); ctx.fill();
+      }
+      ctx.restore();
+      // 棘：残り時間に合わせて1本ずつ消える（追跡前は8本）
+      ctx.rotate(p.magaSpin);
+      ctx.globalAlpha = blink;
+      drawMagaEyeThorns(ctx, r, Math.ceil(8 * left / chaseS));
+      ctx.restore();
+      // 開眼の閃光
+      if (opening < 1) {
+        ctx.save();
+        ctx.globalAlpha = (1 - opening) * 0.85;
+        const fl = ctx.createRadialGradient(x, y, 0, x, y, r * 2.2);
+        fl.addColorStop(0, 'rgba(255,235,240,1)'); fl.addColorStop(0.4, 'rgba(255,60,100,.6)'); fl.addColorStop(1, 'rgba(255,0,60,0)');
+        ctx.fillStyle = fl; ctx.beginPath(); ctx.arc(x, y, r * 2.2, 0, TAU_CONST); ctx.fill();
+        ctx.restore();
+      }
+    }
+  }
+  function spawnMagaEye(x, y, opts = {}) {
+    const p = makeProjectile('shooting-enemy-bullet shooting-danger-bullet shooting-maga-eye', x, y, 0, 0, 999999);
+    if (!p) return null;
+    p.magaEye = true;
+    p.magaAge = 0;
+    p.magaOpenS = Math.max(0.1, Number(opts.openMs || 350) / 1000);
+    p.magaStareS = Math.max(0.1, Number(opts.stareMs || 600) / 1000);
+    p.magaChaseS = Math.max(1, Number(opts.chaseMs || 10000) / 1000);
+    p.magaSpeed = Math.max(20, Number(opts.speed || 78));          // 自機よりずっと遅い
+    p.magaTurnRate = Math.max(0.2, Number(opts.turnRate || 1.6));  // 1秒に曲がれる角度（rad）
+    p.magaHeading = Math.PI / 2;
+    p.attackElement = 'dark';
+    appendEnemyProjectile(p);
+    return p;
+  }
+  // 1回の攻撃：BOSSの周りに count 個の眼を扇状に開き、少しずつ時間差で突進させる
+  function fireMagaEyeVolley(cx, cy, cfg = {}) {
+    const arena = document.getElementById('shooting-arena');
+    const w = arena ? arena.clientWidth : 390;
+    const count = Math.max(1, Math.min(7, Math.round(Number(cfg.count || 2))));
+    const spread = Number(cfg.spread || 0.9);
+    const dist = Math.max(30, Number(cfg.distance || 64));
+    const stagger = Math.max(0, Number(cfg.staggerMs || 400));
+    for (let i = 0; i < count; i++) {
+      const a = Math.PI / 2 + (count === 1 ? 0 : (i - (count - 1) / 2) / (count - 1) * spread * 2);
+      const x = clamp(cx + Math.cos(a) * dist, 22, w - 22);
+      const y = cy + Math.sin(a) * dist * 0.75;
+      spawnMagaEye(x, y, { ...cfg, stareMs: Number(cfg.stareMs || 600) + i * stagger });
+    }
+  }
+  function getMagaEyeConfig() {
+    return (BOSS && BOSS.magaEye) || (selectedStage && selectedStage.magaEye) || null;
+  }
+  function updateMagaEyeAttack(now) {
+    const cfg = getMagaEyeConfig();
+    if (!cfg || !state || !state.boss || state.boss.hp <= 0) return;
+    if (state.ended || state.finishing || state.phaseTransition || state.countdown || !state.running) return;
+    if (isEntireEnemyActionLocked(now)) { state.magaEyeNextAt = Math.max(Number(state.magaEyeNextAt || 0), now + 600); return; }
+    if (!state.magaEyeNextAt) { state.magaEyeNextAt = now + Math.max(800, Number(cfg.firstAtMs || 3500)); return; }
+    if (now < state.magaEyeNextAt) return;
+    state.magaEyeNextAt = now + Math.max(1500, Number(cfg.everyMs || 12000));
+    fireMagaEyeVolley(Number(state.boss.x || 0), Number(state.boss.y || 0) + 20, cfg);
+  }
+
   function getDangerBulletSprite(r, dpr) {
     const key = 'd|' + r + '|' + dpr;
     let sprite = ENEMY_BULLET_SPRITE_CACHE.get(key);
@@ -8122,6 +8286,7 @@
       const virtualEl = createCanvasProjectileElement(despairConvert ? className + ' shooting-danger-bullet' : className);
       // アンブッシュのWARNING弾はDOM時と同じ直径18px（半径9）のまま、危険弾の見た目で描く。
       const isAmbushWarningBullet = className.includes('shooting-ambush-warning-bullet');
+      const isMagaEye = className.includes('shooting-maga-eye'); // build1974: 禍眼（即死・凝視→突進）
       const isAmbushBullet = !isAmbushWarningBullet && className.includes('shooting-ambush-bullet');
       const isDanger = className.includes('shooting-danger-bullet') || isAmbushWarningBullet;
       const isFacelessObjectBullet = className.includes('shooting-faceless-object-bullet');
@@ -8134,7 +8299,9 @@
       const storyChapter = getCanvasStoryChapter() || 3;
       const isCurtainBullet = className.includes('shooting-ch04-curtain-bullet');
       const isHeavyBullet = className.includes('shooting-violence-heavy');
-      const radius = isAmbushWarningBullet
+      const radius = isMagaEye
+        ? 15
+        : isAmbushWarningBullet
         ? 9
         : isAmbushBullet
         ? 4.5
@@ -8145,7 +8312,7 @@
           : (isScoreAttackBullet
             ? 7
             : (isRaidBullet ? 6.2 : (storyChapter === 2 && isHeavyBullet ? 8.4 : (storyChapter === 4 ? 6.2 : 5.8)))));
-      const canvasKind = isRhythmBar ? 'rhythm-bar' : (isDanger || despairConvert)
+      const canvasKind = isMagaEye ? 'maga-eye' : isRhythmBar ? 'rhythm-bar' : (isDanger || despairConvert)
         ? 'danger'
         : (isFacelessObjectBullet
           ? 'faceless-object'
@@ -23852,6 +24019,29 @@
         p.vy = Math.sin(heading) * driftSpeed;
       }
 
+      // build1975: 禍眼。開眼・凝視の間は止まり、そのあと chaseS 秒、曲がる速さに上限を付けて自機をゆっくり追う
+      if (p.magaEye) {
+        p.magaAge = Number(p.magaAge || 0) + moveDt;
+        const startChase = Number(p.magaOpenS || 0.35) + Number(p.magaStareS || 0.6);
+        if (p.magaAge >= startChase + Number(p.magaChaseS || 10)) { p.el.remove(); return false; }
+        if (p.magaAge < startChase) {
+          p.vx = 0; p.vy = 0;
+          if (p.magaAge + moveDt >= startChase) { const aim = getEnemyAimPosition(); p.magaHeading = Math.atan2(aim.y - p.y, aim.x - p.x); }
+        } else {
+          const aim = getEnemyAimPosition();
+          const want = Math.atan2(aim.y - p.y, aim.x - p.x);
+          let diff = want - Number(p.magaHeading || 0);
+          while (diff > Math.PI) diff -= Math.PI * 2;
+          while (diff < -Math.PI) diff += Math.PI * 2;
+          const maxTurn = Number(p.magaTurnRate || 1.6) * moveDt;
+          p.magaHeading = Number(p.magaHeading || 0) + Math.max(-maxTurn, Math.min(maxTurn, diff));
+          // 動き出しは0.6秒かけて加速
+          const sp = Number(p.magaSpeed || 78) * Math.min(1, (p.magaAge - startChase) / 0.6);
+          p.vx = Math.cos(p.magaHeading) * sp;
+          p.vy = Math.sin(p.magaHeading) * sp;
+        }
+      }
+
       // リヴィアの漂流即死弾。8秒で消え、ゆるく蛇行しながら戦場内を漂う。
       if (p.dangerDrift) {
         if (now >= Number(p.dangerExpireAt || 0)) {
@@ -29196,6 +29386,7 @@
     updateSmileBoxes(ts);
     updateTowaRayMarks(ts); // build1877
     updateTowaDawn(ts); // build1877
+    updateMagaEyeAttack(ts); // build1974: 禍眼（magaEye 設定のある敵・ステージだけ）
     updateInoriGuard(ts); // build1817
     updateNightshadeSpinRings(ts);
     updateConjurePlacementPreview(ts);
