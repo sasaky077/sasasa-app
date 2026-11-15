@@ -11112,7 +11112,7 @@ startTitleBgm();
 
   // EXP設定：ここだけ変えればLvアップ条件を変更できる
   var EXP_PER_LEVEL = 1000;
-  var MAX_LEVEL = 500; // build1605: ランク上限 150 → 500
+  var MAX_LEVEL = 1000; // build2010: 必要EXP漸増・累計EXP維持
 
   // 巡行ノードEXP設定
   var EXP_BY_NODE = { easy: 100, normal: 250, hard: 500, boss: 1000 };
@@ -11452,16 +11452,28 @@ startTitleBgm();
     }
   }
 
-  function calcRank(score){
-    return Math.min(MAX_LEVEL, Math.floor(score / EXP_PER_LEVEL) + 1);
+  // build2010: 必要EXPは1ランクごとに50増加。累計EXPは維持する。
+  function expToReachRank(rank){
+    var n = Math.max(0, Math.min(MAX_LEVEL - 1, Math.floor(Number(rank) || 1) - 1));
+    return 1000 * n + 25 * n * (n - 1);
   }
-
+  function calcRank(score){
+    var exp = Math.max(0, Number(score) || 0);
+    var n = Math.max(0, Math.floor((Math.sqrt(975 * 975 + 100 * exp) - 975) / 50));
+    var rank = Math.min(MAX_LEVEL, n + 1);
+    // 境界の浮動小数誤差を補正する。
+    while(rank > 1 && expToReachRank(rank) > exp) rank--;
+    while(rank < MAX_LEVEL && expToReachRank(rank + 1) <= exp) rank++;
+    return rank;
+  }
   function calcExpProgress(score){
-    var lv = calcRank(score);
-    if(lv >= MAX_LEVEL) return { current: EXP_PER_LEVEL, max: EXP_PER_LEVEL, pct: 100 };
-    var base = (lv - 1) * EXP_PER_LEVEL;
-    var current = score - base;
-    return { current: current, max: EXP_PER_LEVEL, pct: Math.min(100, Math.max(0, current / EXP_PER_LEVEL * 100)) };
+    var exp = Math.max(0, Number(score) || 0);
+    var lv = calcRank(exp);
+    if(lv >= MAX_LEVEL) return { current: 0, max: 0, pct: 100 };
+    var base = expToReachRank(lv);
+    var max = expToReachRank(lv + 1) - base;
+    var current = Math.max(0, exp - base);
+    return { current: current, max: max, pct: Math.min(100, Math.max(0, current / max * 100)) };
   }
 
   async function saveProfileToDB(patch){
