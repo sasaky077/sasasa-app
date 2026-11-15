@@ -8126,6 +8126,9 @@
     try { forced = localStorage.getItem('zs_render_mode') || 'auto'; } catch (_) {}
     let probe = probeCanvasToCanvas();
     canvasSpriteMode = forced === 'sprite' || forced === 'vector' ? forced : (probe === 'ok' ? 'sprite' : 'vector');
+    // build2002: 以前の版で付いた「図形に自動固定」の記憶は一度だけ消す
+    //  （iOS 27.2 の <audio> 不具合は build2001 で回避済み／WARNING弾の輪を空と誤判定して付いた端末もあったため）
+    try { if (localStorage.getItem('zs_auto_vector_reset') !== '2002') { localStorage.removeItem('zs_auto_vector_until'); localStorage.setItem('zs_auto_vector_reset', '2002'); } } catch (_) {}
     // build1996: 戦闘中に弾の絵が何度も消えた端末は、7日間は最初から図形で描く（毎回数秒見えなくなるのを避ける）
     if (forced === 'auto' && canvasSpriteMode === 'sprite') {
       let until = 0; try { until = Number(localStorage.getItem('zs_auto_vector_until') || 0); } catch (_) {}
@@ -8148,15 +8151,21 @@
   function resetSpriteHealth(now) {
     spriteCheckAt = 0; spriteBlankHits = 0; liveCheckDone = 0; liveCheckBase = 0; liveBlankHits = 0; spriteCheckLoggedOk = false; spriteBlankTimes = []; battleRunStartedAt = now; spriteCheckCursor = 0; liveSide = 0; spriteCachesDirty = ''; // 戦闘前の前面復帰は数えない
   }
+  // build2002: 縮小して読むと、細い線だけの絵（WARNING弾の点線の輪など）を「空」と誤判定することがあった
+  //  （縮小は一部の画素しか拾わないため）。等倍で写して全画素を見る（作り置きの絵は小さいので軽い）。
   function spriteHasPixels(src) {
     if (!src || !src.width || !src.height) return null;
-    if (!spriteCheckCanvas) { spriteCheckCanvas = document.createElement('canvas'); spriteCheckCanvas.width = 12; spriteCheckCanvas.height = 12; }
+    const w = Math.min(256, src.width), h = Math.min(256, src.height);
+    if (!spriteCheckCanvas) spriteCheckCanvas = document.createElement('canvas');
+    if (spriteCheckCanvas.width < w) spriteCheckCanvas.width = w;
+    if (spriteCheckCanvas.height < h) spriteCheckCanvas.height = h;
     const g = spriteCheckCanvas.getContext('2d', { willReadFrequently: true });
     if (!g) return null;
-    g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
-    g.clearRect(0, 0, 12, 12);
-    g.drawImage(src, 0, 0, 12, 12);
-    const d = g.getImageData(0, 0, 12, 12).data;
+    g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.globalCompositeOperation = 'copy';
+    g.clearRect(0, 0, w, h);
+    g.drawImage(src, 0, 0, w, h, 0, 0, w, h);
+    g.globalCompositeOperation = 'source-over';
+    const d = g.getImageData(0, 0, w, h).data;
     for (let i = 3; i < d.length; i += 4) if (d[i] > 6) return true;
     return false;
   }
@@ -8199,7 +8208,13 @@
       const blank = [];
       for (const [k, c] of picks) { const r = spriteHasPixels(c); if (r === false) blank.push(k); }
       if (!blank.length && picks.length && !spriteCheckLoggedOk) { spriteCheckLoggedOk = true; zsDiag('sprite-check', `ok / checked=${picks.length}`); }
-      if (blank.length) {
+      // build2002: iOS に中身を消される時は全部が一斉に空になる。1枚だけ空は誤判定の可能性が高いので数えない（作り直しだけする）
+      const realPurge = blank.length >= Math.min(2, picks.length);
+      if (blank.length && !realPurge) {
+        zsDiag('sprite-blank-single', `${blank[0].slice(0, 80)} / checked=${picks.length}`);
+        try { const k = blank[0]; if (k.startsWith('e:')) { const c = ENEMY_BULLET_SPRITE_CACHE.get(k.slice(2)); if (c) releaseCanvasNow(c); ENEMY_BULLET_SPRITE_CACHE.delete(k.slice(2)); } } catch (_) {}
+      }
+      if (realPurge && blank.length) {
         spriteBlankHits++;
         spriteBlankTimes.push(now);
         while (spriteBlankTimes.length && now - spriteBlankTimes[0] > 30000) spriteBlankTimes.shift();
@@ -8251,6 +8266,9 @@
       const ok = a > 20;
       if (ok) {
         if (liveCheckDone <= 4) zsDiag('live-check', `a=${a} ${label} n=${liveCheckDone}`); // 正常の記録は最初の数回だけ
+      } else if (side === 1) {
+        // build2002: 自機弾には中が透けた形（輪・十字など）もあり、中心が薄いのは正常なことがある。記録だけして数えない
+        zsDiag('live-low', `a=${a} ${label} n=${liveCheckDone}`);
       } else {
         liveBlankHits++;
         spriteBlankTimes.push(now);
