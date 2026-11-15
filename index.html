@@ -22882,6 +22882,18 @@ html body #global-user-frame .hud-sweep-line-player::after{
 <script src="js/wake_lock.js?v=1643-wake-lock"></script>
 <script src="js/zs_diag.js?v=2001-diag"></script>
 
+<!-- build2008: 上部ユーザー情報のRANK・名前の後ろの楕円ボカシを全画面で消す -->
+<style id="zeraphia-rank-no-ellipse-build2008">
+html body #global-user-frame .hud-lv-circle,
+html body .global-user-frame .hud-lv-circle{
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  background:none!important;box-shadow:none!important;
+}
+html body #global-user-frame .hud-info::before,
+html body .global-user-frame .hud-info::before{
+  content:none!important;display:none!important;background:none!important;filter:none!important;-webkit-filter:none!important;
+}
+</style>
 <!-- build1930: Restore home-v2 header design across ordinary screens. NO page header bands. -->
 <style id="zeraphia-home-header-everywhere-build1930">
 html:not(.hv2-home) #global-user-frame{background:none!important;box-shadow:none!important;border:none!important}
