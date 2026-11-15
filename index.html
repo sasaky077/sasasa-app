@@ -9114,6 +9114,7 @@ function selectChara(now, gacha) {
         ctx.clearRect(0,0,cw,ch);
         ctx.drawImage(img,0,0,cw,ch);
         var data = ctx.getImageData(0,0,cw,ch).data;
+        canvas.width = 0; canvas.height = 0; // build1981: 測り終えた作業用Canvasはすぐ解放（iOSのCanvasメモリ対策）
 
         var minX=cw, minY=ch, maxX=-1, maxY=-1;
         // 極薄い縁取りノイズは無視する。
@@ -21130,7 +21131,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1980-dawn-empower"></script>
+<script src="js/shooting_event.js?v=1981-ios-canvas-guard"></script>
 <script src="js/shooting_party_filter.js?v=1914-fav"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1946-party-button"></script>
@@ -21164,7 +21165,7 @@ window.returnToTitleScreen = function(){
 <script src="js/phase_odyssey.js?v=1816-reward-list"></script>
 <script src="js/memory_battle.js?v=1967-silver-gold"></script>
 <script src="js/towa_encounter.js?v=1748-towa-flash"></script>
-<script src="js/towa_dawn.js?v=1976-safari-fx"></script>
+<script src="js/towa_dawn.js?v=1981-ios-canvas-guard"></script>
 <script src="js/towa_notice.js?v=1554"></script>
 <script src="js/towa_dark_gacha.js?v=1560-soul-flame"></script>
 

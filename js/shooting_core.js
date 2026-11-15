@@ -5956,6 +5956,7 @@
     const cv = document.createElement('canvas');
     cv.width = cw; cv.height = ch;
     const ctx = cv.getContext('2d');
+    if (!ctx) { releaseCanvasNow(cv); noteCanvasAllocFailure(new Error('canvas-alloc-failed(player)')); return null; } // build1981
     ctx.scale(scale, scale);
     ctx.translate(-box.l, -box.t);
     const pal = PB_FX_PALETTE[elKey] || PB_FX_PALETTE.neutral;
@@ -6047,7 +6048,7 @@
   function getPlayerBulletSprite(kind, elKey, charged, moon, scale) {
     const key = kind + '|' + elKey + '|' + (charged ? 1 : 0) + '|' + (moon ? 1 : 0) + '|' + scale;
     let sp = playerBulletSpriteCache.get(key);
-    if (!sp) { sp = buildPlayerBulletSprite(kind, elKey, charged, moon, scale); playerBulletSpriteCache.set(key, sp); }
+    if (!sp) { sp = buildPlayerBulletSprite(kind, elKey, charged, moon, scale); if (sp) playerBulletSpriteCache.set(key, sp); } // build1981: 失敗は覚えない
     return sp;
   }
 
@@ -6092,6 +6093,13 @@
   // ============================================================
   const PB_CSS_DENY_RE = /shooting-(?:remna-trap|mia-charge-shot|charge-wave|camilla-web-projectile|conjure-ult-homing|ult-shot|clarine-decoy|bullet-kaina-charge|bullet-mia-charge)|trap-|is-max|ricochet/;
   const pbCssSpecCache = new Map();   // key -> spec | false（非対応）
+  // build1981: キャッシュを捨てる時は、持っている Canvas を幅0にしてすぐ解放する
+  function releasePlayerBulletCssSprites() {
+    pbCssSpecCache.forEach(spec => {
+      if (spec && spec.sprites) spec.sprites.forEach(sp => { if (sp && sp.canvas) releaseCanvasNow(sp.canvas); });
+    });
+    pbCssSpecCache.clear();
+  }
   let pbCssStateSig = '';
   let pbCssStateSigAt = -1;
 
@@ -6561,9 +6569,10 @@
     const cv = document.createElement('canvas');
     cv.width = cw; cv.height = ch;
     const ctx = cv.getContext('2d');
+    if (!ctx) { releaseCanvasNow(cv); pbLastAllocFailed = true; return null; } // build1981: Canvas メモリ切れ
     // 要素全体へのfilter（彩度など）は、別キャンバスで描いてからまとめて掛ける
     let target = ctx, tmp = null;
-    if (m.filter && 'filter' in ctx) { tmp = document.createElement('canvas'); tmp.width = cw; tmp.height = ch; target = tmp.getContext('2d'); }
+    if (m.filter && 'filter' in ctx) { tmp = document.createElement('canvas'); tmp.width = cw; tmp.height = ch; target = tmp.getContext('2d'); if (!target) { releaseCanvasNow(tmp); releaseCanvasNow(cv); pbLastAllocFailed = true; return null; } }
     target.scale(scale, scale);
     target.translate(-bx0, -by0);
     if (m.opacity < 1) target.globalAlpha = Math.max(0, m.opacity);
@@ -6573,13 +6582,19 @@
     const mainNoClip = { ...m, clip: null, opacity: 1 };
     if (!pbPaintBox(target, mainNoClip)) return null;
     for (const p of spec.pseudos) if (!p.behind && !paintPseudo(p)) return null;
-    if (tmp) { ctx.filter = m.filter; ctx.drawImage(tmp, 0, 0); ctx.filter = 'none'; }
+    if (tmp) { ctx.filter = m.filter; ctx.drawImage(tmp, 0, 0); ctx.filter = 'none'; releaseCanvasNow(tmp); } // build1981
     // 要素の中心（= 弾の座標）がスプライト内のどこか
     return { canvas: cv, ax: (m.w / 2 - bx0), ay: (m.h / 2 - by0) };
   }
+  let pbLastAllocFailed = false; // build1981
   function getPlayerBulletCssSprite(spec, scale) {
     let sp = spec.sprites.get(scale);
-    if (sp === undefined) { sp = buildPlayerBulletCssSprite(spec, scale) || null; spec.sprites.set(scale, sp); }
+    if (sp === undefined) {
+      pbLastAllocFailed = false;
+      sp = buildPlayerBulletCssSprite(spec, scale) || null;
+      if (sp || !pbLastAllocFailed) spec.sprites.set(scale, sp); // メモリ切れの失敗は覚えない（後で作り直す）
+      else noteCanvasAllocFailure(new Error('canvas-alloc-failed(player-css)'));
+    }
     return sp;
   }
   function isPlayerBulletCssCandidateClass(cls) {
@@ -6599,7 +6614,7 @@
     if (spec === undefined) {
       spec = buildPlayerBulletCssSpec(el);
       if (spec && !getPlayerBulletCssSprite(spec, 2)) spec = false;
-      if (pbCssSpecCache.size > 400) pbCssSpecCache.clear();
+      if (pbCssSpecCache.size > 400) releasePlayerBulletCssSprites(); // build1981: 捨てる時に Canvas を即解放
       pbCssSpecCache.set(key, spec);
     }
     if (!spec) { p.pbCssRejected = true; return false; }
@@ -6671,7 +6686,7 @@
       } else {
         ctx.setTransform(k, 0, 0, k, x * dpr, y * dpr);
       }
-      ctx.drawImage(sp.canvas, -sp.ax * scale, -sp.ay * scale);
+      if (sp) ctx.drawImage(sp.canvas, -sp.ax * scale, -sp.ay * scale); // build1981
     }
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     canvas.__pbHadBullets = true;
@@ -7775,11 +7790,12 @@
       for (const p of list) {
         const r = Math.round(Number(p.canvasRadius || 5.5) * 2) / 2;
         if (r !== lastR) {
-          sprite = getEnemyBulletSprite(key, r, dpr);
-          half = sprite.__half;
+          sprite = safeEnemySprite(() => getEnemyBulletSprite(key, r, dpr)); // build1981
+          half = sprite ? sprite.__half : 0;
           lastR = r;
         }
-        ctx.drawImage(sprite, Number(p.x || 0) - half, Number(p.y || 0) - half, half * 2, half * 2);
+        if (sprite) ctx.drawImage(sprite, Number(p.x || 0) - half, Number(p.y || 0) - half, half * 2, half * 2);
+        else drawFallbackEnemyOrb(ctx, Number(p.x || 0), Number(p.y || 0), r, (ENEMY_PROJECTILE_ELEMENT_VISUAL[key] || ENEMY_PROJECTILE_ELEMENT_VISUAL.neutral).main, 'rgba(22,14,30,.75)');
       }
     }
 
@@ -7790,8 +7806,9 @@
       let lastR = -1, sprite = null, half = 0;
       for (const p of list) {
         const r = Math.round(Number(p.canvasRadius || 6.2) * 2) / 2;
-        if (r !== lastR) { sprite = getRaidBulletSprite(key, r, dpr); half = sprite.__half; lastR = r; }
-        ctx.drawImage(sprite, Number(p.x || 0) - half, Number(p.y || 0) - half, half * 2, half * 2);
+        if (r !== lastR) { sprite = safeEnemySprite(() => getRaidBulletSprite(key, r, dpr)); half = sprite ? sprite.__half : 0; lastR = r; } // build1981
+        if (sprite) ctx.drawImage(sprite, Number(p.x || 0) - half, Number(p.y || 0) - half, half * 2, half * 2);
+        else drawFallbackEnemyOrb(ctx, Number(p.x || 0), Number(p.y || 0), r, (ENEMY_PROJECTILE_ELEMENT_VISUAL[key] || ENEMY_PROJECTILE_ELEMENT_VISUAL.neutral).main, 'rgba(22,14,30,.75)');
       }
     }
 
@@ -7810,7 +7827,10 @@
     }
 
     // --- build1974: 禍眼（即死）。開眼 → 瞳が自機を追う → 照準線 → 突進 ---
-    if (magaEyes.length) drawMagaEyes(ctx, magaEyes, dpr);
+    if (magaEyes.length) {
+      try { drawMagaEyes(ctx, magaEyes, dpr); }
+      catch (err) { noteCanvasAllocFailure(err); ctx.restore(); for (const p of magaEyes) drawFallbackEnemyOrb(ctx, Number(p.x || 0), Number(p.y || 0), Number(p.canvasRadius || 15), '#c4083f', 'rgba(14,0,6,.9)'); } // build1981
+    }
 
     // --- WARNING（即死弾） ---
     if (dangers.length) {
@@ -7819,9 +7839,10 @@
       const rot = (nowMs / 1000) * 1.6;
       for (const p of dangers) {
         const r = Math.round(Number(p.canvasRadius || 17) * 2) / 2;
-        const base = getDangerBulletSprite(r, dpr);
-        const ring = getDangerRingSprite(r, dpr);
+        const base = safeEnemySprite(() => getDangerBulletSprite(r, dpr)); // build1981
+        const ring = base && safeEnemySprite(() => getDangerRingSprite(r, dpr));
         const x = Number(p.x || 0), y = Number(p.y || 0);
+        if (!base || !ring) { drawFallbackEnemyOrb(ctx, x, y, r, '#e8248f', 'rgba(30,0,22,.9)'); continue; }
         ctx.globalAlpha = pulse;
         ctx.drawImage(base, x - base.__half, y - base.__half, base.__half * 2, base.__half * 2);
         ctx.globalAlpha = 1;
@@ -7839,8 +7860,14 @@
       const flicker = 0.9 + 0.1 * Math.sin(nowMs / 45);
       for (const p of lasers) {
         const key = getEnemyProjectileElement(p);
-        const lance = getRaidLaserSprite(ENEMY_PROJECTILE_ELEMENT_VISUAL[key] ? key : 'neutral', dpr);
-        const head = getRaidLaserHeadSprite(ENEMY_PROJECTILE_ELEMENT_VISUAL[key] ? key : 'neutral', dpr);
+        const lance = safeEnemySprite(() => getRaidLaserSprite(ENEMY_PROJECTILE_ELEMENT_VISUAL[key] ? key : 'neutral', dpr)); // build1981
+        const head = lance && safeEnemySprite(() => getRaidLaserHeadSprite(ENEMY_PROJECTILE_ELEMENT_VISUAL[key] ? key : 'neutral', dpr));
+        if (!lance || !head) {
+          const ang = Math.atan2(Number(p.vy || 0), Number(p.vx || 0)), x0 = Number(p.x || 0), y0 = Number(p.y || 0);
+          ctx.save(); ctx.strokeStyle = (ENEMY_PROJECTILE_ELEMENT_VISUAL[key] || ENEMY_PROJECTILE_ELEMENT_VISUAL.neutral).main; ctx.lineWidth = 5;
+          ctx.beginPath(); ctx.moveTo(x0 - Math.cos(ang) * 135, y0 - Math.sin(ang) * 135); ctx.lineTo(x0 + Math.cos(ang) * 135, y0 + Math.sin(ang) * 135); ctx.stroke(); ctx.restore();
+          continue;
+        }
         const angle = Math.atan2(Number(p.vy || 0), Number(p.vx || 0));
         const x = Number(p.x || 0), y = Number(p.y || 0);
         ctx.save();
@@ -7995,12 +8022,77 @@
 
   // ---- 敵弾スプライト（属性×半径×DPRごとに1回だけ描画してキャッシュ） ----
   const ENEMY_BULLET_SPRITE_CACHE = new Map();
+
+  // ============================================================
+  // build1981: iOS（特にホーム画面PWAで長時間遊んだ時）の Canvas メモリ切れ対策
+  //  ・スプライトが作れなかった時は、その弾を図形で直接描く（弾が消えない・ゲームが止まらない）
+  //  ・作れなかった時は、作り直せる自機弾スプライトを手放してメモリを空ける
+  //  ・捨てる Canvas は幅0にしてすぐ解放する（iOS は GC まで Canvas メモリを返さないため）
+  //  ・起きたことは localStorage（zs_diag_v1）に記録する。window.ZsDiag.dump() で確認できる
+  // ============================================================
+  function releaseCanvasNow(cv) { try { if (cv && cv.width) { cv.width = 0; cv.height = 0; } } catch (_) {} }
+  function zsDiag(type, detail) {
+    try {
+      const key = 'zs_diag_v1';
+      const list = JSON.parse(localStorage.getItem(key) || '[]');
+      list.push({ t: new Date().toISOString(), type: String(type), detail: String(detail || '').slice(0, 300),
+        stage: String(selectedStage?.id || ''), standalone: !!(window.navigator && window.navigator.standalone) });
+      while (list.length > 40) list.shift();
+      localStorage.setItem(key, JSON.stringify(list));
+    } catch (_) {}
+  }
+  if (!window.ZsDiag) {
+    window.ZsDiag = {
+      log: zsDiag,
+      dump() { try { return JSON.parse(localStorage.getItem('zs_diag_v1') || '[]'); } catch (_) { return []; } },
+      clear() { try { localStorage.removeItem('zs_diag_v1'); } catch (_) {} },
+    };
+  }
+  // build1981: 想定外のエラーも記録する（フリーズの原因追跡用）
+  if (!window.__zsDiagErrHooked) {
+    window.__zsDiagErrHooked = true;
+    window.addEventListener('error', e => { try { zsDiag('error', `${e.message || ''} @${(e.filename || '').split('/').pop()}:${e.lineno || ''}`); } catch (_) {} });
+    window.addEventListener('unhandledrejection', e => { try { zsDiag('rejection', String(e.reason && (e.reason.message || e.reason) || '')); } catch (_) {} });
+    // iOS がメモリ不足でページを捨てた後の再起動を見分ける
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { try { sessionStorage.setItem('zs_diag_alive', String(Date.now())); } catch (_) {} } });
+  }
+  // 戦闘開始ごとに、Canvas数・DOMの要素数・効果音用の要素数を記録（戦闘を重ねて増えていくかを見る）
+  function zsDiagBattleSnapshot(tag) {
+    try {
+      zsDiag(tag, `stage=${selectedStage?.id || ''} canvas=${document.getElementsByTagName('canvas').length} nodes=${document.getElementsByTagName('*').length} audio=${document.getElementsByTagName('audio').length} img=${document.images.length} enemySprites=${ENEMY_BULLET_SPRITE_CACHE.size} pbCss=${typeof pbCssSpecCache !== 'undefined' ? pbCssSpecCache.size : '-'}`);
+    } catch (_) {}
+  }
+  let canvasReliefAt = 0;
+  function noteCanvasAllocFailure(err) {
+    const now = performance.now();
+    if (now - canvasReliefAt < 4000) return;
+    canvasReliefAt = now;
+    let freed = 0;
+    try {
+      // 自機弾のスプライトは必要になればすぐ作り直せるので手放す
+      playerBulletSpriteCache.forEach(sp => { if (sp && sp.canvas) { releaseCanvasNow(sp.canvas); freed++; } });
+      playerBulletSpriteCache.clear();
+      releasePlayerBulletCssSprites();
+    } catch (_) {}
+    zsDiag('canvas-alloc-failed', `${err && err.message || err} / freed=${freed} / enemySprites=${ENEMY_BULLET_SPRITE_CACHE.size}`);
+  }
+  function safeEnemySprite(fn) {
+    try { return fn(); } catch (err) { noteCanvasAllocFailure(err); return null; }
+  }
+  function drawFallbackEnemyOrb(ctx, x, y, r, fill, edge) {
+    ctx.beginPath(); ctx.arc(x, y, r, 0, TAU_CONST);
+    ctx.fillStyle = fill; ctx.fill();
+    ctx.lineWidth = Math.max(1, r * 0.18); ctx.strokeStyle = edge; ctx.stroke();
+  }
   function makeSpriteCanvas(cssHalf, dpr) {
     const c = document.createElement('canvas');
     const px = Math.max(2, Math.ceil(cssHalf * 2 * dpr));
     c.width = px; c.height = px;
     c.__half = px / dpr / 2;
     const g = c.getContext('2d');
+    // build1981: iOS は Canvas メモリの上限を超えると getContext が null を返す。
+    //  以前はここで TypeError になり、描画途中（尾の三角形だけ描いた所）でゲームループごと止まっていた。
+    if (!g || !c.width) { c.width = 0; c.height = 0; throw new Error('canvas-alloc-failed'); }
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.translate(c.__half, c.__half);
     return { c, g };
@@ -29540,7 +29632,8 @@
     updateEnemyContactCollisions(ts, frameLayout);
     updateProjectiles(dt, ts, frameLayout);
     // 同じ更新済み座標を使って、検証ステージの敵弾だけを一枚へ描画する。
-    renderCanvasEnemyBullets();
+    // build1981: 描画で例外が出てもゲームループを止めない（以前はここで止まり「フリーズ」していた）
+    try { renderCanvasEnemyBullets(); } catch (err) { noteCanvasAllocFailure(err); zsDiag('enemy-render-error', err && (err.stack || err.message) || err); }
     // build1811: 自機弾（Canvas対象のもの）を一枚へ描画
     try { renderPlayerBulletCanvas(); } catch (err) { console.warn('[shooting] player bullet canvas skipped:', err); }
 
@@ -31167,6 +31260,7 @@
           const cx = cv.getContext('2d', { willReadFrequently: true });
           cx.drawImage(el, 0, 0, cw, ch);
           const data = cx.getImageData(0, 0, cw, ch).data;
+          releaseCanvasNow(cv); // build1981
           let top = -1, bottom = -1;
           for (let y = 0; y < ch && top < 0; y++) for (let x = 0; x < cw; x++) if (data[(y * cw + x) * 4 + 3] > 40) { top = y; break; }
           for (let y = ch - 1; y >= 0 && bottom < 0; y--) for (let x = 0; x < cw; x++) if (data[(y * cw + x) * 4 + 3] > 40) { bottom = y; break; }
@@ -35553,6 +35647,7 @@
 
     placeInitialUnits();
     renderHud();
+    zsDiagBattleSnapshot('battle-start'); // build1981
 
     if (chapter104ArnoRetry) {
       await endShootingStageTransitionMask();
@@ -35743,6 +35838,10 @@
       root.classList.remove('open');
       root.setAttribute('aria-hidden', 'true');
       root.style.pointerEvents = 'none';
+      // build1981: 戦闘用の全画面 Canvas（敵弾・自機弾・火花など）は幅0にしてすぐ解放する。
+      //  iOS は外した Canvas のメモリを GC まで返さないため、戦闘を重ねるとメモリ上限に近づいていた
+      root.querySelectorAll('canvas').forEach(cv => releaseCanvasNow(cv));
+      try { if (barrierSparkFx) { barrierSparkFx.canvas = null; barrierSparkFx.ctx = null; barrierSparkFx.w = 0; barrierSparkFx.h = 0; } } catch (_) {}
       root.remove();
     }
     // Safety cleanup for stale nodes from an older build/session.

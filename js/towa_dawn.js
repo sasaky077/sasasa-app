@@ -305,6 +305,7 @@
     ov.classList.add('is-white');
     await sleep(950);
     clearInterval(timer);
+    try { canvas.width = 0; canvas.height = 0; } catch (_) {} // build1981: ノイズ用Canvasをすぐ解放
     if (result) { result.style.transform = ''; result.style.filter = ''; result.classList.remove('tdc-frozen'); }
     audio && audio.close();
     // 白のまま残す（スプラッシュが出たら消える）
