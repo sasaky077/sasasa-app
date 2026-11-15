@@ -1,11 +1,11 @@
 /* ============================================================
    build1877 — 隠しステージ「夜明け」（トワ -光の姿-）
-   残響の塔20Fクリア時にのみサーバーが出現抽選を実行する（通常5%、テスト確定枠は別管理）。
+   残響の塔20F（通常モード）のクリア時に、サーバーが1/30で出現を確定する。
      20F開始  : begin_towa_dawn_watch()                → watch_id（本番・練習どちらも）
      20F勝利  : roll_towa_dawn(watch_id, party_ids)    → hit なら dawn_id
      RESULT後 : クラッシュ（フリーズ→ノイズ→ホワイトアウト）→ SPECIAL STAGE / 夜明け → 出撃 → 戦闘（編成は20Fのまま固定・全回復）
      戦闘開始 : begin_towa_dawn_run(dawn_id)           → party_ids（サーバーが正）
-     戦闘終了 : finish_towa_dawn_run(dawn_id, win)      → トワ（光）付与（抽選しない）・5体獲得済みは聖霊花(SR)
+     戦闘終了 : finish_towa_dawn_run(dawn_id, win)      → トワ（光）付与・凸・完凸後は聖霊花(SR)
    抽選・権利・報酬はすべてサーバーで確定する。ここは表示と呼び出しだけ。
    ============================================================ */
 (function () {
@@ -54,8 +54,6 @@
 
   function onTower20Start(stage, partyIds) {
     watchId = '';
-    watchPromise = null;
-    rollPromise = null; // 新しい20Fごとに前回の抽選結果を持ち越さない
     if (!isTower20(stage)) return;
     const proof = window.ResonanceTower?.getDawnProof?.();
     const party = Array.isArray(partyIds) ? partyIds.map(Number) : (proof?.party || []);
@@ -462,6 +460,17 @@
       if (!d || d.ok !== true) throw new Error('夜明けの確定拒否: ' + (d?.reason || 'unknown'));
       pending = null; savePending();
       if (win && d.win) {
+        // 所持キャラのメモリ配列を同期。素材の再取得とは別処理。
+        if (Number(d.character_id) === CHARACTER_ID && d.character_row_id) {
+          try {
+            if (typeof window.refreshTowaDawnOwnedCharacter !== 'function')
+              throw new Error('キャラ同期処理が未読込です。index.htmlも更新してください');
+            await window.refreshTowaDawnOwnedCharacter(d.character_row_id);
+          } catch (syncError) {
+            console.warn('[TowaDawn] character cache refresh failed', syncError);
+            toast('光トワの入手は保存済みです。所持BOXの同期に失敗しました');
+          }
+        }
         await refreshInventory();
         showReward(d);
       } else if (!win) {
@@ -485,8 +494,12 @@
   }
 
   function showReward(d) {
-    // クリア演出は毎回同じテキスト。新規個体の獲得を限界突破と誤表示しない。
-    const msg = 'トワ -光の姿- を入手した';
+    const kind = String(d.granted || 'new');
+    const msg = kind === 'flower'
+      ? 'トワ（光）は完凸済み。聖霊花(SR)×' + Math.max(1, Number(d.flower_sr_qty) || 1) + ' を獲得'
+      : kind === 'limit_break'
+        ? 'トワ（光）を獲得！ 限界突破 +1'
+        : 'トワ -光の姿- を獲得！';
     toast(msg);
     try {
       ensureSplashStyle();

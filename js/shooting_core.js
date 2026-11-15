@@ -1080,10 +1080,20 @@
     const segs = selectedStage.towaDawn.segments || [];
     return segs[Math.max(0, Math.min(segs.length - 1, Number(state.towaDawnSeg || 0)))] || null;
   }
+  // build1980: PHASE II はゲージ1本。HPが半分を下回った瞬間に強化（攻撃の段階 1→2）。一度強化したら戻らない
+  function getTowaDawnPower() {
+    if (!isTowaDawnStage() || !state || Number(state.towaDawnSeg || 0) !== 1) return 1;
+    return state.dawnEmpowered ? 2 : 1;
+  }
+  function getTower15AttackPhase() {
+    if (isTowaDawnStage() && state && Number(state.towaDawnSeg || 0) === 1) return getTowaDawnPower();
+    return Math.max(1, Math.min(2, Number(state?.boss?.phase || 1)));
+  }
   // build1977: PHASE I でシエン・カミラが残っている間、トワは透けていて攻撃が当たらない
   function isTowaDawnPhantom() {
     if (!isTowaDawnStage() || !state) return false;
     if (state.dawnSegSwitching) return true; // PHASE切り替えの演出中も当たらない（残りHP1が削られて撃破扱いになるのを防ぐ）
+    if (state.dawnWarp) return true;         // build1978: ワープで消えている間も当たらない
     if (Number(state.towaDawnSeg || 0) !== 0) return false;
     return !state.dawnTowaMaterialized;
   }
@@ -8177,7 +8187,7 @@
   function getMagaEyeConfig() {
     if (isTowaDawnStage()) { // build1977: 夜明けは PHASE II だけ、ゲージごとの設定
       if (!state || Number(state.towaDawnSeg || 0) !== 1) return null;
-      const phase = Math.max(1, Math.min(2, Number(state.boss?.phase || 1)));
+      const phase = getTowaDawnPower(); // build1980
       const fin = selectedStage.towaDawn?.final || {};
       return (fin[phase] || fin[1] || {}).magaEye || null;
     }
@@ -20563,7 +20573,7 @@
       if (t15.blackoutUntil) { t15.blackoutUntil = 0; setTower15Blackout(false); }
     } else {
     const bo = cfg.blackout || {};
-    const phase = Math.max(1, Math.min(2, Number(state.boss.phase || 1)));
+    const phase = getTower15AttackPhase(); // build1980
     const phaseCfg = bo[phase] || bo[1] || { everyMs: 15000, durationMs: 4000 };
     if (!t15.nextBlackoutAt) t15.nextBlackoutAt = now + Number(bo.firstAtMs || 9000);
     if (t15.blackoutUntil && now >= t15.blackoutUntil) {
@@ -20604,7 +20614,7 @@
   function fireTower15Boss(now) {
     if (!state || !state.boss) return;
     const t15 = state.tower15 || (state.tower15 = { angle: 0, lastSpiralAt: 0, lastAimAt: 0, lastRingAt: 0 });
-    const phase = Math.max(1, Math.min(2, Number(state.boss.phase || 1)));
+    const phase = getTower15AttackPhase(); // build1980
     const speed = Number(BOSS.bulletSpeed || 180);
     const damage = Number(BOSS.bulletDamage || 240);
     const bx = Number(state.boss.x || 0);
@@ -23372,9 +23382,14 @@
         const phase15 = Math.max(1, Number(state.boss.phase || 1));
         const tt = getBossMotionElapsedSeconds(now);
         const sp = phase15 >= 2 ? 0.62 : 0.48;
-        const targetX = w * 0.5 + Math.sin(tt * sp) * w * (phase15 >= 2 ? 0.26 : 0.20);
-        const targetY = Math.max(64, h * 0.17 + Math.sin(tt * sp * 2) * (phase15 >= 2 ? 22 : 14));
-        const blended = applyBossStartBlend(targetX, targetY);
+        const anchor = isTowaDawnStage() && Number(state.towaDawnSeg || 0) === 1 ? state.dawnWarpAnchor : null; // build1978: ワープ先を中心に漂う
+        const targetX = anchor
+          ? clamp(anchor.x + Math.sin(tt * sp) * w * 0.09, 40, w - 40)
+          : w * 0.5 + Math.sin(tt * sp) * w * (phase15 >= 2 ? 0.26 : 0.20);
+        const targetY = anchor
+          ? clamp(anchor.y + Math.sin(tt * sp * 2) * 12, 56, h * 0.42)
+          : Math.max(64, h * 0.17 + Math.sin(tt * sp * 2) * (phase15 >= 2 ? 22 : 14));
+        const blended = anchor ? { x: targetX, y: targetY } : applyBossStartBlend(targetX, targetY);
         state.boss.x = blended.x;
         state.boss.y = blended.y;
       } else if (isNoahPatternStage()) {
@@ -30867,13 +30882,16 @@
     // 手下（カミラの子蜘蛛など）も片付ける
     (state.normalEnemies || []).forEach(e => { try { e && e.el && e.el.remove(); e && e.hpEl && e.hpEl.remove(); e && e.elementEl && e.elementEl.remove(); e && e.layer && e.layer.remove(); } catch (_) {} });
     state.normalEnemies = [];
+    // build1978: 前衛の固有スキルの残り（予告・巣・罠・捕縛）を片付ける
+    try { cleanupDawnShien(); cleanupDawnCamilla(false); } catch (_) {}
+    state.dawnShien = null; state.dawnCam = null;
     // build1977: PHASE I の前衛（倒れた後の残りも含む）を確実に片付ける
     (state.dawnGuardRefs || []).forEach(g => { try { g && g.el && g.el.remove(); g && g.hpEl && g.hpEl.remove(); g && g.elementEl && g.elementEl.remove(); } catch (_) {} });
     document.querySelectorAll('.dawn-trio-unit').forEach(el => el.remove());
     document.querySelectorAll('.dawn-whiteout-veil,.dawn-ray-warning,.dawn-ray-beam,.dawn-float-text').forEach(el=>el.remove());
     // build1970: 白飛びの予兆・PHASE Iの光の膜を解除
     const rootT = document.getElementById(ROOT_ID);
-    if (rootT) { rootT.classList.remove('dawn-whiteout-pending'); rootT.removeAttribute('data-dawn-guarded'); rootT.removeAttribute('data-dawn-phantom'); }
+    if (rootT) { rootT.classList.remove('dawn-whiteout-pending','dawn-warp-out','dawn-warp-hidden','dawn-warp-in'); rootT.removeAttribute('data-dawn-guarded'); rootT.removeAttribute('data-dawn-phantom'); }
   }
   function applyTowaDawnSegment(seg, now) {
     teardownTowaDawnBossMechanics(); // 演出の間に前のボスの処理が状態を作り直していても、ここで確実に片付ける
@@ -30924,6 +30942,7 @@
     state.dawnSegSwitching = true;
     state.dawnTrioCreated=false;state.dawnFinalStartedAt=0;state.dawnRayAt=0;state.dawnBarrageAt=0;
     state.dawnFinalPhase=0;state.dawnGuardRefs=null;state.dawnGuardEnraged='';state.dawnVeilBroken=false;state.dawnTowaMaterialized=true;state.magaEyeNextAt=0;
+    state.dawnWarp=null;state.dawnWarpAnchor=null;state.dawnWarpNextClock=0;state.dawnRestrainedSince=0;state.dawnEmpowered=false;
     state.phaseTransition = true;
     clearProjectiles();
     teardownTowaDawnBossMechanics();
@@ -30936,6 +30955,7 @@
       if (!state || state.ended || state.finishing || !isTowaDawnStage()) return;
       applyTowaDawnSegment(next, performance.now());
       state.dawnSegSwitching = false;
+      state.dawnEmpowered = false; // build1980: 切り替え中（HP1）を「半分以下」と数えない
       renderHud();
     }, 900);
     setTimeout(() => {
@@ -31009,6 +31029,7 @@
       state.normalSpawned++;
       created.push(guard);
     });
+    normalizeDawnGuardSizes(created); // build1978: 見た目の大きさをそろえる
     if (created.length===guards.length && created.length) {
       state.dawnTrioCreated=true;
       state.dawnGuardRefs=created; // 撃破の検知用（倒れた後も参照を持つ）
@@ -31118,47 +31139,245 @@
       renderHud();
     }
   }
+  // ============================================================
+  // build1978: PHASE I 前衛の固有スキルと移動
+  //  既存のシエン（半月斬り・突進）／カミラ（赤い浮遊弾・蜘蛛の巣レーザー・足元の罠・子蜘蛛と吸血）の処理を流用する。
+  //  既存の処理は「BOSSの位置・属性」を読むので、呼ぶ間だけ state.boss の位置と属性を前衛のものに差し替える。
+  //  周期は「敵の時計」（停止系ULTの間は進まない）で数える。
+  // ============================================================
+  function withDawnGuardAsBoss(g, element, fn) {
+    if (!state || !state.boss || !g) return;
+    const bx = state.boss.x, by = state.boss.y, be = state.boss.element;
+    state.boss.x = g.x; state.boss.y = g.y; state.boss.element = element;
+    try { fn(); } finally { state.boss.x = bx; state.boss.y = by; state.boss.element = be; }
+  }
+  // 画像の不透明部分の高さを測り、前衛の見た目の大きさをそろえる（測れない時は設定の scale のまま）
+  function normalizeDawnGuardSizes(list) {
+    const target = Math.max(40, Number(selectedStage?.towaDawn?.guardVisibleHeight || 92));
+    const responsive = Number(getResponsiveCombatScaleProfile()?.normalEnemy || 1);
+    (list || []).forEach(g => {
+      const el = g && g.el;
+      if (!el) return;
+      const apply = () => {
+        try {
+          const nw = el.naturalWidth, nh = el.naturalHeight;
+          if (!nw || !nh) return;
+          const cw = 96, ch = Math.max(1, Math.round(96 * nh / nw));
+          const cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+          const cx = cv.getContext('2d', { willReadFrequently: true });
+          cx.drawImage(el, 0, 0, cw, ch);
+          const data = cx.getImageData(0, 0, cw, ch).data;
+          let top = -1, bottom = -1;
+          for (let y = 0; y < ch && top < 0; y++) for (let x = 0; x < cw; x++) if (data[(y * cw + x) * 4 + 3] > 40) { top = y; break; }
+          for (let y = ch - 1; y >= 0 && bottom < 0; y--) for (let x = 0; x < cw; x++) if (data[(y * cw + x) * 4 + 3] > 40) { bottom = y; break; }
+          if (top < 0 || bottom <= top) return;
+          const box = Math.max(1, el.clientWidth || 66); // 枠（object-fit:contain）
+          const fit = Math.min(box / nw, box / nh);
+          const visible = (bottom - top + 1) / ch * nh * fit; // 拡大率1の時の見た目の高さ
+          if (visible < 8) return;
+          const scale = clamp(target / visible, 0.6, 3.2) * responsive;
+          el.style.setProperty('--enemy-scale', String(scale));
+          g._hw = 0; g._hh = 0;
+          try { measureUnitSize(g); positionMiniEnemyHp(g); } catch (_) {}
+        } catch (_) { /* 画像が読めない環境では設定の scale のまま */ }
+      };
+      if (el.complete && el.naturalWidth) apply(); else el.addEventListener('load', apply, { once: true });
+    });
+  }
+  function getDawnClock(now) { return getBossMotionElapsedSeconds(now) * 1000; }
+
+  // ---- シエン：揺れながら移動し、半月斬りと突進を交互に。合間に3WAY斬撃 ----
+  function cleanupDawnShien() {
+    const sh = state && state.dawnShien;
+    if (!sh) return;
+    [sh.zone, sh.path].forEach(el => el && el.remove());
+    sh.zone = null; sh.path = null; sh.mode = 'gone';
+  }
+  function updateDawnShienAI(now, clock, g, w, h, arena, halted) {
+    const cfg = selectedStage.towaDawn.shienSkills || {};
+    const sh = state.dawnShien || (state.dawnShien = { mode:'idle', next: clock + Number(cfg.firstAtMs || 3000), tech: 0, nextSlash: clock + 1600,
+      homeX: g.x, homeY: g.y, struck:false, hit:false });
+    if (!halted) {
+      if (sh.mode === 'idle') {
+        const t = clock / 1000;
+        g.x = clamp(sh.homeX + Math.sin(t * .7) * w * .08, 40, w * .5 - 20);
+        g.y = sh.homeY + Math.sin(t * 1.3) * 14;
+        // 3WAY斬撃
+        if (clock >= sh.nextSlash) {
+          sh.nextSlash = clock + Number(cfg.slashEveryMs || 3400) * getDawnGuardIntervalScale('shien');
+          const a = getEnemyAimPosition(), base = Math.atan2(a.y - g.y, a.x - g.x);
+          for (let k = -1; k <= 1; k++) {
+            const angle = base + k * .25;
+            const b = makeProjectile('shooting-enemy-bullet shien-slash-bullet', g.x, g.y, Math.cos(angle) * 260, Math.sin(angle) * 260, 220);
+            if (b) { b.attackElement = 'dark'; appendEnemyProjectile(b); }
+          }
+        }
+        if (clock >= sh.next) {
+          sh.tech = (sh.tech + 1) % 2;
+          sh.startAt = clock; sh.struck = false; sh.hit = false;
+          if (sh.tech === 1) {
+            // 半月斬り：自機のいる側の大半を斬る（反対側の端が安全地帯）
+            sh.mode = 'half';
+            sh.idx = Number(state.player.x) >= w * .5 ? 1 : 2;
+            sh.zone = document.createElement('div');
+            sh.zone.className = 'shien-technique-zone ' + (sh.idx === 1 ? 'half-right' : 'half-left');
+            arena.appendChild(sh.zone);
+            layoutShienZone(sh, sh.idx, w, h);
+          } else {
+            // 突進：自機の位置へ予告線 → 一気に駆け抜けて戻る
+            sh.mode = 'dash';
+            const px = Number(state.player.x), py = Number(state.player.y);
+            const dx = px - g.x, dy = py - g.y, d = Math.hypot(dx, dy) || 1;
+            const over = 70;
+            sh.from = { x: g.x, y: g.y };
+            sh.to = { x: clamp(px + dx / d * over, 24, w - 24), y: clamp(py + dy / d * over, 60, h - 24) };
+            sh.path = document.createElement('div');
+            sh.path.className = 'shien-dash-path';
+            sh.path.style.setProperty('--shien-band', `${SHIEN_DASH_HIT_R * 2}px`);
+            positionShienLine(sh.path, sh.from.x, sh.from.y, sh.to.x, sh.to.y);
+            arena.appendChild(sh.path);
+            g.el && g.el.classList.add('shien-dash-warning');
+          }
+        }
+      } else if (sh.mode === 'half') {
+        const local = clock - sh.startAt, warn = Number(cfg.halfWarnMs || 1300);
+        if (local >= warn && !sh.struck) {
+          sh.struck = true;
+          sh.zone && sh.zone.classList.add('cut');
+          spawnShienSlashFx(sh.idx, w, h, arena);
+          shakeShienStrike();
+          withDawnGuardAsBoss(g, 'dark', () => hitShienBlade(now, sh, sh.idx, w, h)); // 命中で出血
+        }
+        if (local >= warn + 530) {
+          sh.zone && sh.zone.remove(); sh.zone = null;
+          sh.mode = 'idle'; sh.next = clock + Number(cfg.everyMs || 4600) * getDawnGuardIntervalScale('shien');
+        }
+      } else if (sh.mode === 'dash') {
+        const local = clock - sh.startAt, warn = Number(cfg.dashWarnMs || 900), dashMs = Number(cfg.dashMs || 420), back = Number(cfg.returnMs || 700);
+        if (local < warn) {
+          g.x = sh.from.x + Math.sin(local / 30) * 1.5; // 溜めで小刻みに震える
+        } else if (local < warn + dashMs) {
+          if (!sh.struck) { sh.struck = true; sh.path && sh.path.classList.add('striking'); shakeShienStrike(); g.el && g.el.classList.remove('shien-dash-warning'); }
+          const p = shienSmooth((local - warn) / dashMs);
+          const prev = { x: g.x, y: g.y };
+          g.x = sh.from.x + (sh.to.x - sh.from.x) * p;
+          g.y = sh.from.y + (sh.to.y - sh.from.y) * p;
+          if (!sh.hit && !state.koTransition && now >= Number(state.player.invulnUntil || 0)) {
+            const member = getActiveMember();
+            if (member && member.hp > 0 && shienSegmentHit({ x:Number(state.player.x), y:Number(state.player.y) }, prev, { x:g.x, y:g.y }, SHIEN_DASH_HIT_R)) {
+              const hp0 = member.hp;
+              damagePlayer(now, SHIEN_DASH_DAMAGE, 'boss-heavy', 'dark', 'boss-charge');
+              if (member.hp < hp0) { sh.hit = true; triggerPlayerHitScreenShake(); flashShienHit(arena); }
+            }
+          }
+        } else if (local < warn + dashMs + back) {
+          if (sh.path) { sh.path.remove(); sh.path = null; }
+          const p = shienSmooth((local - warn - dashMs) / back);
+          g.x = sh.to.x + (sh.from.x - sh.to.x) * p;
+          g.y = sh.to.y + (sh.from.y - sh.to.y) * p;
+        } else {
+          g.x = sh.from.x; g.y = sh.from.y;
+          sh.mode = 'idle'; sh.next = clock + Number(cfg.everyMs || 4600) * getDawnGuardIntervalScale('shien');
+        }
+      }
+    }
+    positionUnit(g.el, g.x, g.y); positionMiniEnemyHp(g);
+  }
+
+  // ---- カミラ：漂いながら赤い浮遊弾・蜘蛛の巣レーザー・足元の罠・子蜘蛛（吸血でカミラが回復） ----
+  function cleanupDawnCamilla(removeSpiders) {
+    const cm = state && state.dawnCam;
+    if (cm) {
+      if (cm.web) { cm.web.els.forEach(el => el.remove()); cm.web = null; }
+      (cm.traps || []).forEach(t => t.el && t.el.remove()); cm.traps = [];
+      cm.spiderQueue = null; cm.gone = true;
+    }
+    if (removeSpiders) (state.normalEnemies || []).forEach(e => { if (e && e.camSpider && e.hp > 0) removeCamillaSpider(e); });
+  }
+  function updateDawnCamillaDrain(now, cm, cam, arena) {
+    const member = getActiveMember();
+    const spiders = state.normalEnemies.filter(e => e && e.camSpider && e.hp > 0 && e.el);
+    if (!spiders.length) { cm.activeId = state.activeCharacterId; return; }
+    if (cm.activeId !== state.activeCharacterId) { // 交代で振り払える
+      cm.activeId = state.activeCharacterId;
+      spiders.forEach(e => {
+        if (e.camState !== 'latched') return;
+        e.camState = 'crawl'; e.camRecoverAt = now + 1200;
+        e.x += e.latchDx * 2.4; e.y += e.latchDy * 2.4 - 20;
+        e.el.classList.remove('camilla-spider-latched');
+      });
+      return;
+    }
+    if (!member || member.hp <= 0 || state.koTransition) return;
+    let drained = 0, healed = 0;
+    for (const e of spiders) {
+      if (e.camState !== 'latched') continue;
+      if (now - Number(e.latchedAt || now) >= CAMILLA_LATCH_MAX_MS) { removeCamillaSpider(e); continue; }
+      if (now < Number(e.nextDrainAt || 0)) continue;
+      e.nextDrainAt = now + 1000;
+      const baseDrain = Math.max(1, Math.floor(Number(member.hpMax || 0) * CAMILLA_DRAIN_RATE));
+      const dmg = Math.min(member.hp, applyStatusResist(member, baseDrain));
+      member.hp = Math.max(0, member.hp - dmg);
+      drained += dmg;
+      const before = cam.hp;
+      cam.hp = Math.min(cam.hpMax, cam.hp + CAMILLA_HEAL_PER_TICK * Math.max(0, Math.min(1, dmg / baseDrain)));
+      healed += Math.round(cam.hp - before);
+      withDawnGuardAsBoss(cam, 'fire', () => spawnCamillaDrainFx(e.x, e.y, arena, 0));
+    }
+    if (drained > 0) {
+      showDamageNumber(state.player.x, state.player.y, drained, 'player', false, '');
+      if (healed > 0) { withDawnGuardAsBoss(cam, 'fire', () => spawnCamillaDrainFx(Number(state.player.x), Number(state.player.y), arena, healed)); try { renderMiniEnemyHp(cam); } catch (_) {} }
+      renderHud();
+      if (member.hp <= 0) beginPlayerDefeat();
+    }
+  }
+  function updateDawnCamillaAI(now, clock, g, w, h, arena, halted) {
+    const cfg = selectedStage.towaDawn.camillaSkills || {};
+    const cm = state.dawnCam || (state.dawnCam = { ringIndex:0, web:null, traps:[], spiderQueue:null, activeId: state.activeCharacterId,
+      nextRing: clock + 1800, nextWeb: clock + Number(cfg.webFirstAtMs || 5200), nextTrap: clock + Number(cfg.trapFirstAtMs || 3600),
+      nextSpider: clock + Number(cfg.spiderFirstAtMs || 8000), homeX: g.x, homeY: g.y });
+    if (!halted) {
+      const t = clock / 1000;
+      g.x = clamp(cm.homeX + Math.sin(t * .45 + 1) * w * .09, w * .5 + 20, w - 40);
+      g.y = cm.homeY + Math.sin(t * .9) * 14;
+      const sc = getDawnGuardIntervalScale('camilla');
+      withDawnGuardAsBoss(g, 'fire', () => {
+        if (clock >= cm.nextRing) { cm.nextRing = clock + Number(cfg.ringEveryMs || 2400) * sc; fireCamillaBloodRing(cm, { ringN: Number(cfg.ringN || 8), ringSpeed: Number(cfg.ringSpeed || 58) }); }
+        if (!cm.web && clock >= cm.nextWeb) { cm.nextWeb = clock + Number(cfg.webEveryMs || 9500) * sc; createCamillaWeb(cm, { webWarn: Number(cfg.webWarnMs || 1100) }, clock, w, h, arena); }
+        if (clock >= cm.nextTrap) { cm.nextTrap = clock + Number(cfg.trapEveryMs || 7500) * sc; placeCamillaTraps(cm, { trapN: Number(cfg.trapN || 2) }, clock, w, h, arena); }
+        if (clock >= cm.nextSpider) {
+          cm.nextSpider = clock + Number(cfg.spiderEveryMs || 13000) * sc;
+          const alive = state.normalEnemies.filter(e => e && e.camSpider && e.hp > 0).length;
+          if (alive < 8) spawnCamillaSpiders(cm, { spiderN: Number(cfg.spiderN || 4) }, now);
+        } else if (cm.spiderQueue) flushCamillaSpiderQueue(cm, now);
+        updateCamillaWeb(now, cm, clock);
+        updateCamillaTraps(now, cm, { bindMs: Number(cfg.bindMs || 1400) }, clock);
+      });
+      updateDawnCamillaDrain(now, cm, g, arena);
+    }
+    positionUnit(g.el, g.x, g.y); positionMiniEnemyHp(g);
+  }
+
   function updateDawnTrio(now){
     if (!state || Number(state.towaDawnSeg||0)!==0) return;
     ensureDawnTrio(now);
     updateDawnGuardEvents(now);
-    if(state.phaseTransition||state.ended||state.finishing||isEntireEnemyActionLocked(now))return;
-    const alive=(state.normalEnemies||[]).filter(e=>e&&e.dawnGuard&&e.hp>0);
-    const shien=alive.find(e=>e.dawnGuard==='shien');
-    const camilla=alive.find(e=>e.dawnGuard==='camilla');
+    const arena=document.getElementById('shooting-arena');
+    if(!arena)return;
+    const w=arena.clientWidth||390,h=arena.clientHeight||700;
+    const halted=state.phaseTransition||state.ended||state.finishing||state.koTransition||isEntireEnemyActionLocked(now)||now<getBossLockUntil(now);
+    const clock=getDawnClock(now);
+    try{ ensureShienStyle(); ensureCamillaStyle(); }catch(_){}
+    const refs=state.dawnGuardRefs||[];
+    const shien=refs.find(e=>e&&e.dawnGuard==='shien');
+    const camilla=refs.find(e=>e&&e.dawnGuard==='camilla');
+    if(shien&&shien.hp>0) updateDawnShienAI(now,clock,shien,w,h,arena,halted);
+    else if(state.dawnShien&&state.dawnShien.mode!=='gone') cleanupDawnShien();
+    if(camilla&&camilla.hp>0) updateDawnCamillaAI(now,clock,camilla,w,h,arena,halted);
+    else if(state.dawnCam&&!state.dawnCam.gone) cleanupDawnCamilla(true); // 主が倒れると子蜘蛛も消える
+    try{ updateShienBleed(now,halted); }catch(_){}
+    if(halted)return;
     const cfg=selectedStage.towaDawn||{};
-    // シエン：自機狙いの3WAY斬撃
-    if(shien&&now>=Number(state.dawnShienAttackAt||0)){
-      state.dawnShienAttackAt=now+3100*getDawnGuardIntervalScale('shien');
-      const a=getEnemyAimPosition(),base=Math.atan2(a.y-shien.y,a.x-shien.x);
-      for(let k=-1;k<=1;k++){
-        const angle=base+k*.25;
-        const b=makeProjectile('shooting-enemy-bullet shien-slash-bullet',shien.x,shien.y,
-          Math.cos(angle)*260,Math.sin(angle)*260,220);
-        if(b){b.attackElement='dark';appendEnemyProjectile(b);}
-      }
-    }
-    // カミラ：自機狙いの火の5WAY。3回に1回は遅い12方向の輪を重ねる
-    if(camilla&&now>=Number(state.dawnCamillaAttackAt||0)){
-      if(!state.dawnCamillaAttackAt){ state.dawnCamillaAttackAt=now+1500; }
-      else{
-        state.dawnCamillaAttackAt=now+2800*getDawnGuardIntervalScale('camilla');
-        state.dawnCamillaVolley=Number(state.dawnCamillaVolley||0)+1;
-        const a=getEnemyAimPosition(),base=Math.atan2(a.y-camilla.y,a.x-camilla.x);
-        for(let k=-2;k<=2;k++){
-          const angle=base+k*.2;
-          const b=makeProjectile('shooting-enemy-bullet',camilla.x,camilla.y,Math.cos(angle)*210,Math.sin(angle)*210,205);
-          if(b){b.attackElement='fire';appendEnemyProjectile(b);}
-        }
-        if(state.dawnCamillaVolley%3===0){
-          for(let i=0;i<12;i++){
-            const angle=i/12*Math.PI*2+Math.random()*.3;
-            const b=makeProjectile('shooting-enemy-bullet',camilla.x,camilla.y,Math.cos(angle)*120,Math.sin(angle)*120,205);
-            if(b){b.attackElement='fire';appendEnemyProjectile(b);}
-          }
-        }
-      }
-    }
     // 透けたトワ：最後方から漂う即死弾（4発）
     if(isTowaDawnPhantom()&&state.boss&&now>=Number(state.dawnLethalAt||0)){
       if(!state.dawnLethalAt){ state.dawnLethalAt=now+3200; }
@@ -31235,6 +31454,96 @@
       if(hit)damagePlayer(t,Math.max(1,Number(selectedStage?.towaDawn?.rayDamage||280)),'raw','light','dawn-ray');
     },tele);
   }
+  // ============================================================
+  // build1978: PHASE II ワープ
+  //  ・敵の時計で一定間隔ごとに、トワが光にほどけて消え、ランダムな場所にふわっと現れる（消えている間は当たらない・撃たない）。
+  //  ・停止系の効果（時間停止・スタン・拘束・吸引など）を受けて breakFreeMs（2秒）たつと、効果を振りほどいてワープで抜け出す。
+  //    ワープ自体は実時間で進む（停止中でも動く）。
+  // ============================================================
+  function isDawnBossRestrained(now){
+    if(!state||state.paused||state.ultCutinActive||state.arnoSlashActive)return false;
+    return getBossLockUntil(now)>now+30 || now<Number(state.boss?.camillaWebRootUntil||0);
+  }
+  function breakDawnRestraint(now){
+    // 停止系の効果をここで打ち切る（トワが振りほどいた）
+    state.bossStunUntil=Math.min(Number(state.bossStunUntil||0),now);
+    state.bossGrabUntil=Math.min(Number(state.bossGrabUntil||0),now);
+    state.gojoPurpleBossFreezeUntil=Math.min(Number(state.gojoPurpleBossFreezeUntil||0),now);
+    state.noahMovementFreezeUntil=Math.min(Number(state.noahMovementFreezeUntil||0),now);
+    state.angeEnemyFreezeUntil=Math.min(Number(state.angeEnemyFreezeUntil||0),now);
+    state.fullEnemyStopUntil=Math.min(Number(state.fullEnemyStopUntil||0),now);
+    if(state.boss) state.boss.camillaWebRootUntil=Math.min(Number(state.boss.camillaWebRootUntil||0),now);
+    if(state.eltenaBlackHole&&state.eltenaBlackHole.phase==='active') state.eltenaBlackHole.activeUntil=Math.min(Number(state.eltenaBlackHole.activeUntil||0),now);
+    showDawnFloatText(state.boss.x,Number(state.boss.y||0)+70,'トワが拘束を振りほどいた','rage');
+  }
+  function setDawnWarpClass(stage){
+    const root=document.getElementById(ROOT_ID);
+    if(!root)return;
+    root.classList.toggle('dawn-warp-out',stage==='out');
+    root.classList.toggle('dawn-warp-hidden',stage==='hidden');
+    root.classList.toggle('dawn-warp-in',stage==='in');
+  }
+  function startDawnWarp(now,reason){
+    const wc=selectedStage.towaDawn.warp||{};
+    state.dawnWarp={stage:'out',at:now,reason};
+    setDawnWarpClass('out');
+    showDawnBurst(state.boss.x,state.boss.y,true);
+  }
+  function updateDawnWarp(now,phase,arena){
+    const wc=selectedStage.towaDawn.warp;
+    if(!wc||!state.boss)return;
+    const w=arena.clientWidth||390,h=arena.clientHeight||700;
+    const clock=getDawnClock(now);
+    // 拘束からの離脱（実時間で2秒）
+    if(!state.dawnWarp&&!state.phaseTransition&&isDawnBossRestrained(now)){
+      if(!state.dawnRestrainedSince) state.dawnRestrainedSince=now;
+      else if(now-state.dawnRestrainedSince>=Number(wc.breakFreeMs||2000)){
+        state.dawnRestrainedSince=0;
+        breakDawnRestraint(now);
+        startDawnWarp(now,'break');
+      }
+    } else if(!isDawnBossRestrained(now)) state.dawnRestrainedSince=0;
+    // 定期ワープ（敵の時計）
+    if(!state.dawnWarp&&!state.phaseTransition&&!isEntireEnemyActionLocked(now)){
+      if(!state.dawnWarpNextClock) state.dawnWarpNextClock=clock+Number(wc.firstAtMs||7000);
+      else if(clock>=state.dawnWarpNextClock){
+        state.dawnWarpNextClock=clock+Number((wc.everyMs||{})[phase]||10000);
+        startDawnWarp(now,'timer');
+      }
+    }
+    const wp=state.dawnWarp;
+    if(!wp)return;
+    const age=now-wp.at;
+    if(wp.stage==='out'&&age>=Number(wc.outMs||450)){
+      wp.stage='hidden';wp.at=now;setDawnWarpClass('hidden');
+      // 次の出現位置：今の位置から離れた、画面上部のどこか
+      let nx=w*.5,ny=h*.2;
+      for(let i=0;i<6;i++){
+        nx=w*(.18+Math.random()*.64); ny=h*(.12+Math.random()*.2);
+        if(Math.hypot(nx-state.boss.x,ny-state.boss.y)>w*.28)break;
+      }
+      state.dawnWarpAnchor={x:nx,y:ny};
+    }else if(wp.stage==='hidden'&&age>=Number(wc.hiddenMs||450)){
+      wp.stage='in';wp.at=now;setDawnWarpClass('in');
+      const a=state.dawnWarpAnchor||{x:state.boss.x,y:state.boss.y};
+      state.boss.x=a.x;state.boss.y=a.y;
+      showDawnBurst(a.x,a.y,false);
+    }else if(wp.stage==='in'&&age>=Number(wc.inMs||500)){
+      state.dawnWarp=null;setDawnWarpClass('');
+      state.lastBossShotAt=now; // 現れてすぐは撃たない
+      if(state.tower15) state.tower15.lastAimAt=now;
+    }
+  }
+  // build1980: 強化の演出（光が弾け、「トワの光が強まる」）。弾は消さない
+  function empowerTowaDawn(now){
+    const root=document.getElementById(ROOT_ID);
+    if(root){ root.classList.remove('boss-phase-flash'); void root.offsetWidth; root.classList.add('boss-phase-flash'); setTimeout(()=>root.classList.remove('boss-phase-flash'),650); }
+    showDawnBurst(state.boss.x,state.boss.y,false);
+    showDawnFloatText(state.boss.x,Number(state.boss.y||0)+70,'トワの光が強まる','rage');
+    const bossEl=document.getElementById(BOSS_ID);
+    if(bossEl&&!state.dawnWarp){ bossEl.classList.remove('dawn-boss-materialize'); void bossEl.offsetWidth; bossEl.classList.add('dawn-boss-materialize'); }
+    try{ shakeShienStrike(); }catch(_){}
+  }
   function updateDawnFinal(now){
     if(!state||Number(state.towaDawnSeg||0)!==1||state.ended||state.finishing)return;
     const arena=document.getElementById('shooting-arena');if(!arena)return;
@@ -31242,10 +31551,17 @@
     const paused=state.phaseTransition||isEntireEnemyActionLocked(now);
     if(!state.dawnFinalStartedAt)state.dawnFinalStartedAt=now;
     const elapsed=now-state.dawnFinalStartedAt;
-    const phase=Math.max(1,Math.min(2,Number(state.boss.phase||1)));
+    // build1980: HPが半分を下回った瞬間に強化
+    if(!state.dawnEmpowered&&!state.dawnSegSwitching&&!state.phaseTransition&&state.boss.hpMax>0&&state.boss.hp>0&&
+       state.boss.hp<=state.boss.hpMax*Number(selectedStage.towaDawn?.empowerAtRatio??.5)){
+      state.dawnEmpowered=true;
+      empowerTowaDawn(now);
+    }
+    const phase=getTowaDawnPower();
     const cfg=getDawnFinalConfig(phase);
     const t15=state.tower15;
-    // 2ゲージ目へ：白飛びを一度切り、少し間を置いてから新しい周期で始める
+    updateDawnWarp(now,phase,arena);
+    // 強化の瞬間：白飛びを一度切り、少し間を置いてから新しい周期で始める
     if(state.dawnFinalPhase!==phase){
       const first=!state.dawnFinalPhase;
       state.dawnFinalPhase=phase;
@@ -31259,7 +31575,7 @@
       state.dawnBarrageAt=now+Math.max(900,Number(cfg.ringEveryMs));
       fireDawnRings(now,cfg,elapsed);
     }
-    if(!paused&&now>=Number(state.dawnRayAt||0)){
+    if(!paused&&!state.dawnWarp&&now>=Number(state.dawnRayAt||0)){
       if(!state.dawnRayAt){ state.dawnRayAt=now+3000; }
       else {
         state.dawnRayAt=now+Math.max(2500,Number(cfg.rayEveryMs||6500));
@@ -31318,7 +31634,8 @@
     if (state && state.tower15) state.tower15.blackoutUntil = 0;
     document.querySelectorAll('.dawn-ray-warning,.dawn-ray-beam,.dawn-float-text').forEach(el => el.remove());
     const root = document.getElementById(ROOT_ID);
-    if (root) root.classList.remove('dawn-whiteout-pending');
+    if (root) root.classList.remove('dawn-whiteout-pending','dawn-warp-out','dawn-warp-hidden','dawn-warp-in');
+    if (state) state.dawnWarp = null;
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
     arena.querySelectorAll('.dawn-finale').forEach(el => el.remove());

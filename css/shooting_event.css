@@ -17124,3 +17124,25 @@ html body #shooting-event-root[data-shooting-stage="shooting_towa_dawn"] #shooti
   #shooting-event-root .shooting-ns-burst b{display:none;}
   #shooting-event-root .shooting-ns-burst .nsb-area{animation:nsb-flash var(--spin-ms,560ms) ease-out both;}
 }
+
+/* ============================================================
+   build1978 — 光トワ PHASE II ワープ：光にほどけて消え、別の場所にふわっと現れる
+   （.shooting-boss の transform は位置に使うので、opacity・filter・scale だけを動かす）
+   ============================================================ */
+#shooting-event-root.dawn-warp-out .shooting-boss{animation:dawn-warp-out .45s ease-in forwards !important;}
+#shooting-event-root.dawn-warp-hidden .shooting-boss{opacity:0 !important;animation:none !important;}
+#shooting-event-root.dawn-warp-in .shooting-boss{animation:dawn-warp-in .5s cubic-bezier(.2,.8,.3,1) both !important;}
+@keyframes dawn-warp-out{
+  0%{opacity:1;scale:1;filter:none}
+  40%{opacity:.9;scale:1.04;filter:brightness(2.2) drop-shadow(0 0 18px rgba(255,236,190,1))}
+  100%{opacity:0;scale:.72;filter:brightness(3) blur(6px)}
+}
+@keyframes dawn-warp-in{
+  0%{opacity:0;scale:.8;filter:brightness(3) blur(6px)}
+  55%{opacity:1;scale:1.03;filter:brightness(1.8) drop-shadow(0 0 22px rgba(255,236,190,1))}
+  100%{opacity:1;scale:1;filter:none}
+}
+@media (prefers-reduced-motion:reduce){
+  #shooting-event-root.dawn-warp-out .shooting-boss{animation:none !important;opacity:0 !important;}
+  #shooting-event-root.dawn-warp-in .shooting-boss{animation:none !important;opacity:1 !important;}
+}

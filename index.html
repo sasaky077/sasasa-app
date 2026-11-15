@@ -423,7 +423,7 @@
   <link rel="stylesheet" href="css/towa_dark_gacha.css?v=1552">
   <link rel="stylesheet" href="css/towa_notice.css?v=1556">
   <link rel="stylesheet" href="css/towa_preflight.css?v=1548-towa-black-burgundy">
-  <link rel="stylesheet" href="css/shooting_event.css?v=1977-dawn-phantom">
+  <link rel="stylesheet" href="css/shooting_event.css?v=1978-dawn-guards">
   <link rel="stylesheet" href="css/shot_fx.css?v=1557-shot-fx">
   <link rel="stylesheet" href="css/tower15_boss.css?v=1485-tower15">
   <link rel="stylesheet" href="css/daily_stage_select.css?v=1816-daily-left">
@@ -16928,6 +16928,47 @@ function showTenResult(results){
   // ・下へ近づいたら8件ずつ追加
   // ・8件ごとにeager load + decode完了後に一括表示
   // ・未表示分はアイドル時間に低並列で先読み
+  // 夜明けクリア後はPWAの再起動を要求せず、サーバー上の光トワ所持行を同期する。
+  // 起動時ロードの box/collected はメモリ内キャッシュなので、アイテム更新だけでは増えない。
+  window.refreshTowaDawnOwnedCharacter = async function(expectedRowId){
+    var uid = String(localStorage.getItem('zukan_user_id') || '').trim();
+    var sb = window.zsSupabase;
+    if(!uid || !sb) throw new Error('所持キャラ同期に必要なユーザー情報がありません');
+    var result = await sb.from('collected_characters').select('*')
+      .ilike('user_id', uid).eq('character_id',112).order('id',{ascending:true});
+    if(result.error) throw result.error;
+    var rows = Array.isArray(result.data) ? result.data : [];
+    if(expectedRowId && !rows.some(function(r){return Number(r.id)===Number(expectedRowId);})){
+      throw new Error('夜明け報酬の反映待ち: '+expectedRowId);
+    }
+    var chara = typeof getCharaById === 'function' ? getCharaById(112) : CHARACTERS.find(function(c){return Number(c.id)===112;});
+    if(!chara || chara.hidden===true) throw new Error('光トワのキャラ定義が読み込まれていません');
+    var fresh=rows.map(function(row){
+      var lb=Math.max(0,Number(row.limit_break||0));
+      var lv=Math.max(1,Number(row.character_level||1));
+      var exp=Math.max(0,Number(row.character_exp||0));
+      var base=row.base_stats||Object.assign({},chara.stats);
+      var boosted=applyLimitBreakStats(base,lb,chara.rarity,chara.id);
+      var stats=(window.CharacterLeveling && typeof window.CharacterLeveling.applyToStats==='function')
+        ?window.CharacterLeveling.applyToStats(boosted,chara.rarity,lb,lv):boosted;
+      var time='';
+      if(row.captured_at){var d=new Date(row.captured_at);if(!isNaN(d.getTime())) time=(d.getMonth()+1)+'/'+d.getDate()+' '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0');}
+      return {id:chara.id,name:chara.name,img:chara.img,cutImg:chara.cutImg,element:chara.element,
+        baseStats:base,stats:stats,limitBreak:lb,rarity:chara.rarity,time:time,
+        capturedAt:row.captured_at,db_id:row.id,characterLevel:lv,characterExp:exp,
+        isFavorite:!!row.is_favorite,isLocked:!!row.is_locked};
+    });
+    // 112だけ入れ替え。他キャラの育成状態や並びには干渉しない。
+    for(var i=box.length-1;i>=0;i--){if(box[i]&&Number(box[i].id)===112)box.splice(i,1);}
+    fresh.forEach(function(e){box.push(e);});
+    if(fresh.length)collected[112]=fresh[0];else delete collected[112];
+    try{renderBox();}catch(e){console.warn('[TowaDawn] box render:',e);}
+    try{if(typeof updateMainUI==='function')updateMainUI();}catch(_){}
+    try{if(typeof updateZukanLimitBreakNotice==='function')updateZukanLimitBreakNotice();}catch(_){}
+    try{if(typeof window.refreshShootingRoster==='function')window.refreshShootingRoster();}catch(_){}
+    return fresh.length;
+  };
+
   function renderBox(){
     var grid = document.getElementById('box-grid');
     if(!grid) return;
@@ -21089,7 +21130,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=1977-dawn-phantom"></script>
+<script src="js/shooting_event.js?v=1980-dawn-empower"></script>
 <script src="js/shooting_party_filter.js?v=1914-fav"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1946-party-button"></script>

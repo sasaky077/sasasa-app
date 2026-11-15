@@ -1755,8 +1755,8 @@
     // build1877: 隠しステージ「夜明け」— トワ -光の姿-
     //  残響の塔20Fクリア時にサーバーが1/30で出現を確定。編成は20Fのまま固定、HP・ULTは全回復で開始。
     //  build1977: 2フェーズ構成（詳細は towaDawn のコメント）。
-    //   PHASE I ：透けたトワ（最後方）＋シエン（左）・カミラ（右）。2体を倒すとトワが実体化 → トワ8000で PHASE II。
-    //   PHASE II：トワ強化（10000）。即死弾浮遊・禍眼・RAY・夜明け（白飛び中は被ダメージ2倍）。
+    //   PHASE I ：透けたトワ（最後方）＋シエン（左）・カミラ（右）各8500。2体を倒すとトワが実体化 → トワ8000で PHASE II。
+    //   PHASE II：トワ強化（12000）。即死弾浮遊・禍眼・RAY・夜明け（白飛び中は被ダメージ2倍）。
     //  制限時間なし。属性結界なし（カミラの火の結界も張らない）。DAWN_TEST は enemyIds に残るが現在は未使用。
     // ============================================================
     [SHOOTING_STAGE_ID.TOWA_DAWN]: Object.freeze({
@@ -1781,26 +1781,37 @@
       maxPartySize: 3,
       towaDawn: Object.freeze({
         // build1977:
-        //  PHASE I ：トワは透けていて攻撃が当たらない（後ろから援護射撃だけ）。シエン・カミラ（各8000）を倒すとトワが実体化し、
+        //  PHASE I ：トワは透けていて攻撃が当たらない（後ろから援護射撃だけ）。シエン・カミラ（各8500）を倒すとトワが実体化し、
         //            トワの8000を削ると PHASE II。実体化後のトワは通常の弾幕のみ（即死弾・白飛びなし）。
-        //  PHASE II：トワ強化（10000＝5000×2ゲージ）。ギミック＝即死弾浮遊・禍眼・RAY・夜明け（白飛び中は被ダメージ2倍）。
+        //  PHASE II：トワ強化（12000・ゲージ1本。HP半分を下回ると攻撃がさらに強化）。ギミック＝即死弾浮遊・禍眼・RAY・夜明け（白飛び中は被ダメージ2倍）。
         segments: Object.freeze([
           Object.freeze({act:1,role:'phantom',enemyId:SHOOTING_ENEMY_ID.DAWN_TOWA,element:'light',gaugeHps:Object.freeze([8000]),title:'PHASE I',sub:'トワ／シエン／カミラ',
             echo:Object.freeze({warningCount:0,fireIntervalScale:1.15,blackout:false})}),
-          Object.freeze({act:2,role:'towa',enemyId:SHOOTING_ENEMY_ID.DAWN_TOWA,element:'light',gaugeHps:Object.freeze([5000,5000]),title:'PHASE II',sub:'トワ -光の姿-',
+          // build1980: PHASE II はゲージ1本（12000）。HPが半分（empowerAtRatio）を下回った瞬間に強化
+          Object.freeze({act:2,role:'towa',enemyId:SHOOTING_ENEMY_ID.DAWN_TOWA,element:'light',gaugeHps:Object.freeze([12000]),title:'PHASE II',sub:'トワ -光の姿-',
             echo:Object.freeze({warningCount:3,warningSpeed:150,warningRespawnMs:1600,fireIntervalScale:0.85,
               // 白飛び「夜明けの刻」はここだけで管理する
-              blackout:Object.freeze({firstAtMs:8000,
+              blackout:Object.freeze({firstAtMs:8000, // 1＝強化前／2＝強化後
                 1:Object.freeze({everyMs:17000,durationMs:4800}),
                 2:Object.freeze({everyMs:14500,durationMs:4800})}),
               whiteoutWarnMs:1400})}),
         ]),
-        // PHASE I の前衛（個別HP）。x・y は盤面に対する割合
+        // PHASE I の前衛（個別HP）。x・y は盤面に対する割合（移動の中心）。
+        // build1978: 見た目の大きさは画像の不透明部分を測って guardVisibleHeight（px）にそろえる。scale は測れなかった時の予備
         guards: Object.freeze([
-          Object.freeze({role:'shien',enemyId:SHOOTING_ENEMY_ID.DAWN_SHIEN,hp:8000,x:.24,y:.30,scale:1.45}),
-          Object.freeze({role:'camilla',enemyId:SHOOTING_ENEMY_ID.DAWN_CAMILLA,hp:8000,x:.76,y:.30,scale:1.12}),
+          Object.freeze({role:'shien',enemyId:SHOOTING_ENEMY_ID.DAWN_SHIEN,hp:8500,x:.26,y:.30,scale:1.45}),
+          Object.freeze({role:'camilla',enemyId:SHOOTING_ENEMY_ID.DAWN_CAMILLA,hp:8500,x:.74,y:.30,scale:1.75}),
         ]),
-        // build1977: PHASE II の攻撃（ゲージごと）。光輪は外し、禍眼を追加
+        guardVisibleHeight: 92,
+        // build1978: 前衛の固有スキル（周期は「敵の時計」なので停止系ULT中は進まない）
+        shienSkills: Object.freeze({firstAtMs:3000,everyMs:4600,halfWarnMs:1300,dashWarnMs:900,dashMs:420,returnMs:700,slashEveryMs:3400}),
+        camillaSkills: Object.freeze({ringEveryMs:2400,ringN:8,ringSpeed:58,webFirstAtMs:5200,webEveryMs:9500,webWarnMs:1100,
+          trapFirstAtMs:3600,trapEveryMs:7500,trapN:2,bindMs:1400,spiderFirstAtMs:8000,spiderEveryMs:13000,spiderN:4}),
+        // build1978: PHASE II のワープ（消えてランダムな場所に現れる）と、停止系の効果からの離脱
+        warp: Object.freeze({firstAtMs:7000, everyMs:Object.freeze({1:11000,2:9000}), // 1＝強化前／2＝強化後 outMs:450, hiddenMs:450, inMs:500,
+          breakFreeMs:2000}),
+        empowerAtRatio: 0.5,
+        // build1977/1980: PHASE II の攻撃。1＝強化前／2＝強化後（HP半分以下）。光輪は外し、禍眼を追加
         final: Object.freeze({
           1: Object.freeze({ringEveryMs:0,raysPerVolley:1,rayEveryMs:6500,rayTelegraphMs:750,
             magaEye:Object.freeze({everyMs:14000,count:1,firstAtMs:5000})}),
