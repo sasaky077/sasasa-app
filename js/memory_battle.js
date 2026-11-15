@@ -164,7 +164,9 @@
         void refresh();
       }
       // 結果画面は shinjuRewardExp（自動変換後の創世pt相当量）を報酬に並べる
-      return { memoryConfirmed:!win || !!(data && data.win === true), firstClearClaimed:false, firstClearAmount:0, shinjuRewardExp: claimed ? amount : 0, highScore:0 };
+      // build2007: RESULTのランク表示用に、サーバーが判定したランク（S／A）も返す
+      return { memoryConfirmed:!win || !!(data && data.win === true), firstClearClaimed:false, firstClearAmount:0, shinjuRewardExp: claimed ? amount : 0, highScore:0,
+        memoryRank: rankResult && rankResult.rank ? String(rankResult.rank).toUpperCase() : '' };
     })().catch(err => {
       console.warn('[memory battle] finish', err && (err.message || err));
       if (win) notify('記憶決戦：報酬の確定に失敗しました。通信状況を確認してください。');

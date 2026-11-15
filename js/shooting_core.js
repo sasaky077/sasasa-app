@@ -32811,6 +32811,31 @@
     const hit = RESULT_RANK_THRESHOLDS.find(t => value >= t.score);
     return hit ? hit.rank : 'E';
   }
+  // build2007: 記憶決戦のRESULTのランクはスコアではなく記憶決戦の判定（A＝クリア／S＝Sランク条件でクリア）。
+  //  勝利時はまず A を出し、サーバーの判定（memory_battle_claim_rank）が S なら S に差し替える。敗北は従来どおり E。
+  //  ※ EXP 計算など他の用途の getResultRank はスコア基準のまま変えない。
+  function getDisplayResultRank(score, win) {
+    if (isMemoryBattleStage()) {
+      if (!win) return 'E';
+      const r = String(state && state.memoryResultRank || '').toUpperCase();
+      return r === 'S' ? 'S' : 'A';
+    }
+    return getResultRank(score, win);
+  }
+  function applyMemoryResultRank(serverRank) {
+    if (!isMemoryBattleStage() || !state || !state.lastResultWin) return;
+    const r = String(serverRank || '').toUpperCase();
+    if (r !== 'S' && r !== 'A') return;
+    state.memoryResultRank = r;
+    const el = document.getElementById('shooting-result-rank');
+    if (el && el.textContent !== r) {
+      el.textContent = r;
+      el.setAttribute('data-rank', r);
+      el.classList.remove('memory-rank-upgrade'); void el.offsetWidth; el.classList.add('memory-rank-upgrade');
+    }
+    try { saveShootingBestRank(state.stageId || (selectedStage && selectedStage.id), r); } catch (_) {}
+  }
+
 
   // ============================================================
   // Clear rewards - STORY / SPECIAL EVENT / DAILY RAID
@@ -33577,7 +33602,7 @@
 
     // build1637: クリア済み表示用に端末へ記録（無貌の天使・律動の難易度選択で使用）
     markShootingStageCleared(state && state.stageId || (selectedStage && selectedStage.id));
-    saveShootingBestRank(state && state.stageId || (selectedStage && selectedStage.id), getResultRank(state && state.score, true));
+    saveShootingBestRank(state && state.stageId || (selectedStage && selectedStage.id), getDisplayResultRank(state && state.score, true));
     const drops = buildAndGrantShootingClearRewards();
     section.style.display = '';
 
@@ -33635,6 +33660,7 @@
       const finalizePromise = state.secureFinalizePromise
         || submitShootingHighScore(state.score, true);
       void Promise.resolve(finalizePromise).then(finalized => {
+        if (isMemoryBattleStage() && finalized && finalized.memoryRank) applyMemoryResultRank(finalized.memoryRank); // build2007
         if (isMemoryBattleStage() && (!finalized || !finalized.memoryConfirmed)) {
           if (list && list.isConnected) {
             const warn = document.createElement('div');
@@ -33926,7 +33952,8 @@
     if (isScoreAttackStage()) {
       state.score = Math.min(SCORE_ATTACK_MAX_SCORE, Math.max(0, Math.floor(Number(state.score || 0))));
     }
-    const rankLetter = getResultRank(state.score, win);
+    if (isMemoryBattleStage()) state.memoryResultRank = ''; // build2007: サーバーの判定が届くまでは A（勝利時）
+    const rankLetter = getDisplayResultRank(state.score, win);
 
     if (dailyQuestAtResult) {
       if (raidRow) raidRow.style.display = 'none';
