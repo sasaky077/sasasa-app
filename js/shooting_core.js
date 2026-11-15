@@ -17323,8 +17323,9 @@
     const el = document.createElement('div');
     el.className = 'inori-judgment-charm';
     el.setAttribute('role', 'img');
-    el.setAttribute('aria-label', '光輪・取得すると3秒間無敵');
-    el.innerHTML = '<span class="inori-halo-outer" aria-hidden="true"></span><span class="inori-halo-ring" aria-hidden="true"></span><span class="inori-halo-core" aria-hidden="true"></span>';
+    el.setAttribute('aria-label', '神除けの札・取得すると3秒間無敵');
+    // TICKETイノリ専用の防御札。既存の出現位置・取得判定・無敵時間は変更しない。
+    el.innerHTML = '<img src="images/inori_shugo_fuda.webp" alt="" draggable="false" decoding="async" style="display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none;-webkit-user-drag:none">';
     arena.appendChild(el);
     positionUnit(el, x, y);
     state.inori.charm = {el, x, y, spawnedAt:now, phase, centerX, centerY};
@@ -17379,7 +17380,7 @@
     member.invincibleUntil = Math.max(Number(member.invincibleUntil || 0), now + 3000);
     state.player.invulnUntil = Math.max(Number(state.player.invulnUntil || 0), now + 3000);
     item.el.remove(); state.inori.charm = null;
-    showShootingItemEffectNotice('光輪', '3秒間無敵');
+    showShootingItemEffectNotice('神除けの札', '3秒間無敵');
     renderHud();
   }
   // ============================================================
