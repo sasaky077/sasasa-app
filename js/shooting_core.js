@@ -34000,6 +34000,12 @@
         if (typeof window.showToast === 'function') window.showToast('デイリー報酬の確定に失敗しました');
       }
     }
+    // build2021: profile combo high-watermark, for every shooting stage (including phase odyssey).
+    try {
+      window.dispatchEvent(new CustomEvent('zeraphia-profile-battle-result', {
+        detail: { stageId: String(state.stageId || (selectedStage && selectedStage.id) || ''), maxCombo: Math.max(0, Math.floor(Number(state.maxCombo) || 0)) }
+      }));
+    } catch (_) {}
     // STORY進捗へシューティング結果を通知。
     // build1643: 位相回遊の階層は無限に増えるため、STORY記録・各種イベントへは通知しない。
     if (!isPhaseOdysseyStage()) try {

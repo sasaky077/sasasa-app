@@ -3473,6 +3473,86 @@ html:not(.hv2-home) body #global-user-frame .hv2-face {
 #screen-memory-battle .mb-rewards-status{flex:0 0 auto;align-self:flex-end;font-size:9px;color:#8d806c}
 #screen-memory-battle .mb-rewards-footnote{margin:14px 0 0;font-size:9px;line-height:1.7;color:#837968}
 </style>
+
+<style id="zs-profile-modal-2011">
+/* build2017: PLAYER PROFILE をモックに合わせて作り直し（白い羊皮紙＋細い金の額縁・四隅の飾り・リボン見出し・アイコン付きの2列） */
+#zs-player-profile{position:fixed;inset:0;z-index:22000;display:none;align-items:center;justify-content:center;padding:18px;box-sizing:border-box;background:rgba(35,27,27,.52);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+#zs-player-profile.is-open{display:flex}
+#zs-player-profile .zpp-card{
+  --zpp-gold:#c9ad73;--zpp-gold-d:#a88a52;--zpp-ink:#593d2a;--zpp-sub:#856a52;
+  position:relative;overflow:auto;max-height:min(88dvh,820px);width:min(100%,348px);
+  padding:20px 20px 14px;box-sizing:border-box;border-radius:14px;color:var(--zpp-ink);font-family:'Noto Serif JP',serif;
+  background:
+    radial-gradient(ellipse 80% 60% at 30% 25%,rgba(255,255,255,.95),rgba(255,255,255,0) 70%),
+    radial-gradient(ellipse 70% 50% at 80% 85%,rgba(236,228,226,.7),rgba(236,228,226,0) 70%),
+    linear-gradient(160deg,#fbfaf8 0%,#f3efed 55%,#efe9e6 100%);
+  border:1.5px solid var(--zpp-gold);
+  box-shadow:0 0 0 1px rgba(255,255,255,.9),0 0 0 3px rgba(201,173,115,.55),0 16px 46px rgba(35,23,13,.42),inset 0 0 0 6px rgba(255,255,255,.55),inset 0 0 0 7px rgba(201,173,115,.45);
+  scrollbar-width:none;
+}
+#zs-player-profile .zpp-card::-webkit-scrollbar{display:none}
+/* 上端中央の星と左右の細線 */
+#zs-player-profile .zpp-card::before{content:'';position:absolute;top:7px;left:50%;width:150px;height:14px;transform:translateX(-50%);pointer-events:none;
+  background:
+    linear-gradient(90deg,rgba(201,173,115,0),var(--zpp-gold)) left 50%/56px 1px no-repeat,
+    linear-gradient(90deg,var(--zpp-gold),rgba(201,173,115,0)) right 50%/56px 1px no-repeat}
+#zs-player-profile .zpp-star{position:absolute!important;left:50%;transform:translate(-50%,-50%);width:14px;height:14px;pointer-events:none;z-index:2}
+#zs-player-profile .zpp-star svg{display:block;width:100%;height:100%}
+#zs-player-profile .zpp-star.is-top{top:14px}
+/* 四隅の小さな金の飾り */
+#zs-player-profile .zpp-corner{position:absolute;width:14px;height:14px;pointer-events:none;
+  background:linear-gradient(135deg,var(--zpp-gold) 0 30%,transparent 30%);opacity:.9}
+#zs-player-profile .zpp-corner::after{content:'';position:absolute;inset:3px auto auto 3px;width:16px;height:16px;border-top:1px solid var(--zpp-gold);border-left:1px solid var(--zpp-gold);opacity:.7}
+#zs-player-profile .zpp-corner.tl{top:8px;left:8px}
+#zs-player-profile .zpp-corner.tr{top:8px;right:8px;transform:scaleX(-1)}
+#zs-player-profile .zpp-corner.bl{bottom:8px;left:8px;transform:scaleY(-1)}
+#zs-player-profile .zpp-corner.br{bottom:8px;right:8px;transform:scale(-1,-1)}
+/* 透かし（右下の羅針盤・右上の弧） */
+#zs-player-profile .zpp-watermark{position:absolute;right:-46px;bottom:-40px;width:200px;height:200px;pointer-events:none;opacity:.13;color:#8d8079}
+#zs-player-profile .zpp-arc{position:absolute;right:-150px;top:60px;width:300px;height:300px;border-radius:50%;border:1px solid rgba(141,128,121,.07);box-shadow:inset 0 0 0 16px rgba(255,255,255,0),inset 0 0 0 17px rgba(141,128,121,.045);pointer-events:none}
+#zs-player-profile .zpp-card>*:not(.zpp-watermark):not(.zpp-arc):not(.zpp-corner){position:relative;z-index:1}
+/* 見出し */
+#zs-player-profile .zpp-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 4px 0}
+#zs-player-profile #zpp-heading{font:700 21px/1.1 'Cinzel','Trajan Pro',Georgia,serif;letter-spacing:.07em;color:#76563c;white-space:nowrap}
+#zs-player-profile .zpp-head-rule{height:1px;margin:8px 70px 0 4px;background:linear-gradient(90deg,rgba(201,173,115,.95),rgba(201,173,115,.5) 85%,rgba(201,173,115,0))}
+#zs-player-profile .zpp-close.zgr-close{position:relative;top:auto;right:auto;flex:0 0 36px;width:36px;height:36px;margin-right:-4px}
+/* プレイヤー */
+#zs-player-profile .zpp-player{display:flex;align-items:center;gap:16px;min-width:0;padding:18px 4px 0}
+#zs-player-profile .zpp-avatar{flex:0 0 72px;width:72px;height:72px;border-radius:17px;object-fit:cover;background:#f2ece6;
+  border:1.5px solid var(--zpp-gold);box-shadow:0 0 0 2px #fffdf9,0 0 0 3px rgba(201,173,115,.55),0 6px 14px rgba(60,40,20,.22)}
+#zs-player-profile .zpp-player>div{min-width:0;flex:1}
+#zs-player-profile .zpp-rank{display:inline-block;margin-left:-4px;padding:3px 26px 3px 14px;font:500 13px/1.3 'Cinzel',Georgia,'Noto Serif JP',serif;letter-spacing:.1em;color:#704f37;
+  background:linear-gradient(90deg,rgba(214,209,206,.85),rgba(228,224,221,.7) 70%,rgba(236,233,231,0));clip-path:polygon(8px 0,100% 0,calc(100% - 10px) 100%,0 100%)}
+#zs-player-profile .zpp-name{margin:7px 0 6px;font:800 25px/1.25 'Noto Serif JP',serif;letter-spacing:.06em;color:#4d3020;overflow-wrap:anywhere}
+#zs-player-profile .zpp-title{font:500 11.5px/1.4 'Noto Serif JP',serif;letter-spacing:.06em;color:#82654e}
+/* 区切り線（中央に星） */
+#zs-player-profile .zpp-rule{position:relative;height:14px;margin:12px -8px 8px}
+#zs-player-profile .zpp-rule::before{content:'';position:absolute;left:0;right:0;top:50%;height:1px;
+  background:linear-gradient(90deg,rgba(201,173,115,0),rgba(201,173,115,.85) 18%,rgba(201,173,115,.85) 44%,rgba(201,173,115,0) 47%,rgba(201,173,115,0) 53%,rgba(201,173,115,.85) 56%,rgba(201,173,115,.85) 82%,rgba(201,173,115,0))}
+#zs-player-profile .zpp-rule .zpp-star{top:50%}
+/* 記録（2列。中央に縦の金線） */
+#zs-player-profile .zpp-grid{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:14px 0;padding:4px 0 6px}
+#zs-player-profile .zpp-grid::before{content:'';position:absolute;left:50%;top:4px;bottom:6px;width:1px;background:linear-gradient(180deg,rgba(201,173,115,0),rgba(201,173,115,.55) 12%,rgba(201,173,115,.55) 88%,rgba(201,173,115,0))}
+#zs-player-profile .zpp-grid>div{min-width:0;padding:0 4px 0 2px}
+#zs-player-profile .zpp-grid>div:nth-child(2n){padding:0 0 0 14px}
+#zs-player-profile .zpp-stat-label{display:flex;align-items:center;gap:5px;font:500 clamp(9.5px,2.85vw,11px)/1 'Noto Serif JP',serif;letter-spacing:.01em;color:#735139;white-space:nowrap}
+#zs-player-profile .zpp-stat-label svg{flex:0 0 17px;width:17px;height:17px;color:#92704e}
+#zs-player-profile .zpp-stat-label span{flex:1;min-width:0;padding:4px 14px 4px 4px;white-space:nowrap;
+  background:linear-gradient(90deg,rgba(214,210,207,.8),rgba(226,222,219,.6) 75%,rgba(236,233,231,0));clip-path:polygon(0 0,100% 0,calc(100% - 9px) 100%,0 100%)}
+#zs-player-profile .zpp-stat-value{margin:8px 0 0 6px;font:800 clamp(19px,5.6vw,22px)/1.2 Georgia,'Noto Serif JP',serif;letter-spacing:.02em;color:#51311e;overflow-wrap:anywhere}
+#zs-player-profile .zpp-note{margin-top:4px;padding:0 6px 6px;font:500 10.5px/1.6 'Noto Serif JP',serif;letter-spacing:.1em;color:#82654e;text-align:center}
+/* build2019: PROFILE stats — single line for labels and values, including narrow screens */
+#zs-player-profile .zpp-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:0}
+#zs-player-profile .zpp-grid>div{min-width:0;padding-left:0;padding-right:3px}
+#zs-player-profile .zpp-grid>div:nth-child(2n){padding-left:8px;padding-right:0}
+#zs-player-profile .zpp-stat-label{gap:3px;min-width:0;font-size:clamp(7.8px,2.15vw,10px);letter-spacing:-.035em;white-space:nowrap}
+#zs-player-profile .zpp-stat-label svg{flex:0 0 13px;width:13px;height:13px}
+#zs-player-profile .zpp-stat-label span{min-width:0;flex:1;padding:4px 3px 4px 1px;white-space:nowrap;overflow:visible}
+#zs-player-profile .zpp-stat-value{white-space:nowrap;overflow-wrap:normal;word-break:normal;font-size:clamp(17px,4.8vw,22px)}
+@media(max-width:360px){#zs-player-profile .zpp-stat-label{font-size:7.8px}#zs-player-profile .zpp-stat-label svg{flex-basis:12px;width:12px;height:12px}#zs-player-profile .zpp-grid>div:nth-child(2n){padding-left:6px}}
+#global-user-frame .hv2-face,#global-user-frame #hud-lv-circle,#global-user-frame #hud-name{cursor:pointer;touch-action:manipulation}
+@media(max-width:360px){#zs-player-profile .zpp-card{padding:26px 16px 18px}#zs-player-profile .zpp-avatar{width:62px;height:62px;flex-basis:62px}#zs-player-profile .zpp-name{font-size:22px}#zs-player-profile #zpp-heading{font-size:18px}}
+</style>
 </head>
 <body>
 <div id="splash" style="cursor:pointer">
@@ -23027,6 +23107,143 @@ html:not(.hv2-home) body #global-user-frame .hud-resource {
     // ブロック判定は確実ではない。ここで自動遷移はしない。
     close();
   });
+})();
+</script>
+
+<div id="zs-player-profile" aria-hidden="true">
+ <div class="zpp-card" role="dialog" aria-modal="true" aria-labelledby="zpp-heading">
+  <i class="zpp-corner tl" aria-hidden="true"></i><i class="zpp-corner tr" aria-hidden="true"></i><i class="zpp-corner bl" aria-hidden="true"></i><i class="zpp-corner br" aria-hidden="true"></i>
+  <span class="zpp-arc" aria-hidden="true"></span><svg class="zpp-watermark" viewBox="0 0 200 200" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="100" cy="100" r="92" stroke-width="1.2"/><circle cx="100" cy="100" r="76" stroke-width=".8"/><circle cx="100" cy="100" r="30" stroke-width=".8"/><path d="M100 4 L110 90 L196 100 L110 110 L100 196 L90 110 L4 100 L90 90Z" stroke-width="1.2"/><path d="M100 30 L106 94 L170 100 L106 106 L100 170 L94 106 L30 100 L94 94Z" stroke-width=".8" transform="rotate(45 100 100)"/></svg>
+  <span class="zpp-star is-top" aria-hidden="true"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 0 L11.6 8.4 L20 10 L11.6 11.6 L10 20 L8.4 11.6 L0 10 L8.4 8.4Z" fill="#c4a462"/></svg></span>
+  <div class="zpp-head"><span id="zpp-heading">PLAYER PROFILE</span><button type="button" class="zpp-close zgr-close" aria-label="閉じる"><img src="images/button_close.webp" alt="" decoding="async"></button></div>
+  <div class="zpp-head-rule" aria-hidden="true"></div>
+  <div class="zpp-player"><img class="zpp-avatar" id="zpp-avatar" alt="プロフィール画像"><div><div class="zpp-rank" id="zpp-rank">RANK —</div><div class="zpp-name" id="zpp-name">—</div><div class="zpp-title" id="zpp-title">称号：—</div></div></div>
+  <div class="zpp-rule" aria-hidden="true"><span class="zpp-star"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 0 L11.6 8.4 L20 10 L11.6 11.6 L10 20 L8.4 11.6 L0 10 L8.4 8.4Z" fill="#c4a462"/></svg></span></div>
+  <div class="zpp-grid">
+   <div><div class="zpp-stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="1.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><path d="M7 13h2M11 13h2M15 13h2M7 16.5h2M11 16.5h2" stroke-width="1.6"/></svg><span>ログイン日数</span></div><div class="zpp-stat-value" id="zpp-logins">—</div></div>
+   <div><div class="zpp-stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-5 5-5 13 0 18M12 3c5 5 5 13 0 18"/></svg><span>世界進捗</span></div><div class="zpp-stat-value" id="zpp-world">—</div></div>
+   <div><div class="zpp-stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M7 7.5h10a4.5 4.5 0 0 1 4.4 5.4l-.8 3.6a2.5 2.5 0 0 1-4.3 1.1L14.5 15.5h-5l-1.8 2.1a2.5 2.5 0 0 1-4.3-1.1l-.8-3.6A4.5 4.5 0 0 1 7 7.5Z"/><path d="M7.5 10.2v3M6 11.7h3"/><circle cx="15.6" cy="10.8" r=".7" fill="currentColor"/><circle cx="17.3" cy="12.6" r=".7" fill="currentColor"/></svg><span>総プレイ回数</span></div><div class="zpp-stat-value" id="zpp-plays">—</div></div>
+   <div><div class="zpp-stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="9" cy="8.5" r="3.3"/><path d="M3 19.5c.6-3.4 3-5.3 6-5.3s5.4 1.9 6 5.3Z"/><path d="M15.2 5.6a3.1 3.1 0 1 1 1.6 5.9M17.3 14.3c2 .5 3.4 2.2 3.8 5.2h-3.4"/></svg><span>所持キャラ</span></div><div class="zpp-stat-value" id="zpp-owned">—</div></div>
+   <div><div class="zpp-stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M4 4l9.5 9.5M4 4h3.2l8.6 8.6M4 4v3.2l8.6 8.6"/><path d="M20 4 10.5 13.5M20 4h-3.2L8.2 12.6M20 4v3.2l-8.6 8.6"/><path d="m6.5 16.5 1 1M17.5 16.5l-1 1M5 18l1 1M19 18l-1 1M3.5 20.5l2-2M20.5 20.5l-2-2"/></svg><span>ハイスコア</span></div><div class="zpp-stat-value" id="zpp-score">—</div></div>
+   <div><div class="zpp-stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M5 18l3-8 4 5 3-9 4 12"/><path d="M4 21h16"/></svg><span>最高コンボ数</span></div><div class="zpp-stat-value" id="zpp-combo">—</div></div>
+   <div><div class="zpp-stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M3 5.5c3-1 6-.8 9 1v13c-3-1.8-6-2-9-1Z"/><path d="M21 5.5c-3-1-6-.8-9 1v13c3-1.8 6-2 9-1Z"/><path d="M5.5 9c1.7-.3 3.3-.1 4.5.5M5.5 12c1.7-.3 3.3-.1 4.5.5M14 9.5c1.2-.6 2.8-.8 4.5-.5M14 12.5c1.2-.6 2.8-.8 4.5-.5"/></svg><span>STORY 進捗</span></div><div class="zpp-stat-value" id="zpp-story">—</div></div>
+   <div><div class="zpp-stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M12 3.5 21 8l-9 4.5L3 8Z"/><path d="m3 12 9 4.5 9-4.5"/><path d="m3 16 9 4.5 9-4.5"/></svg><span>位相回遊 最高到達</span></div><div class="zpp-stat-value" id="zpp-floor">—</div></div>
+  </div>
+  <div class="zpp-rule" aria-hidden="true"><span class="zpp-star"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 0 L11.6 8.4 L20 10 L11.6 11.6 L10 20 L8.4 11.6 L0 10 L8.4 8.4Z" fill="#c4a462"/></svg></span></div>
+ </div>
+</div>
+<script id="zs-profile-login-tracker-2018">
+(function(){'use strict';
+ // A login day is a calendar day (JST) when an authenticated game session was observed.
+ let completed=false, attempt=0;
+ async function record(){
+  if(completed)return;
+  const sb=window.zsSupabase;
+  const uid=String(localStorage.getItem('zukan_user_id')||'').trim();
+  if(!sb||!uid||typeof sb.rpc!=='function')return;
+  try{
+   const {data,error}=await sb.rpc('record_player_login_day',{p_user_id:uid});
+   if(!error&&data?.ok===true){completed=true;return;}
+  }catch(_){/* retry while session initializes */}
+ }
+ window.addEventListener('load',function(){
+  record();const timer=setInterval(function(){
+   if(completed||++attempt>=60){clearInterval(timer);return;}
+   record();
+  },3000);
+ },{once:true});
+ document.addEventListener('visibilitychange',function(){if(!document.hidden)record()});
+})();
+</script>
+<script id="zs-profile-combo-record-2021">
+(function(){'use strict';
+ window.addEventListener('zeraphia-profile-battle-result', async function(e){
+  const d=e.detail||{}; const uid=String(localStorage.getItem('zukan_user_id')||'').trim();
+  const sb=window.zsSupabase;const combo=Number(d.maxCombo);
+  if(!uid||!sb||!d.stageId||!Number.isInteger(combo)||combo<0)return;
+  try {
+   const {error}=await sb.rpc('record_player_stage_combo',{p_user_id:uid,p_stage_id:String(d.stageId),p_combo:combo});
+   if(error)console.warn('[profile] combo save error',error.message);
+  }catch(err){console.warn('[profile] combo save failed',err);}
+ });
+})();
+</script>
+<script id="zs-profile-script-2015">
+(function(){'use strict';
+const modal=document.getElementById('zs-player-profile');if(!modal)return;
+const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+const fmt=v=>Number(v).toLocaleString('ja-JP');
+const close=()=>{modal.classList.remove('is-open');modal.setAttribute('aria-hidden','true')};
+modal.querySelector('.zpp-close').addEventListener('click',close);
+modal.addEventListener('click',e=>{if(e.target===modal)close()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modal.classList.contains('is-open'))close()});
+async function open(){
+ const p=window.userProfile||{};
+ set('zpp-rank','RANK '+(Number(p.rank)||document.getElementById('hud-lv-num')?.textContent||'—'));
+ set('zpp-name',p.display_name||document.getElementById('hud-name')?.textContent||'Player');
+ const titleNode=document.querySelector('#global-user-frame [class*="title"]');
+ set('zpp-title','称号：'+(titleNode?.textContent?.trim()||'未設定'));
+ // Portrait must be the panel artwork of the user's active home character, not a home/cut-in image.
+ const active=document.querySelector('#fav-display .fav-cut-img, #fav-display .fav-img, #fav-display img, #global-user-frame .hv2-face img');
+ const activePath=active?.getAttribute('src')||active?.currentSrc||'';
+ const found=activePath.match(/chara[_-](\d{1,3})(?:[_-]|\.)/i);
+ const panelId=found ? String(Number(found[1])).padStart(2,'0') : '01';
+ const im=document.getElementById('zpp-avatar');
+ if(im){im.onerror=function(){this.onerror=null;this.src='images/chara_01_panel.webp';};im.src='images/chara_'+panelId+'_panel.webp';}
+ ['zpp-logins','zpp-plays','zpp-floor','zpp-score','zpp-combo','zpp-world','zpp-owned','zpp-story'].forEach(id=>set(id,'—'));
+ modal.classList.add('is-open');modal.setAttribute('aria-hidden','false');
+ const sb=window.zsSupabase;const uid=String(localStorage.getItem('zukan_user_id')||'').trim();
+ if(!sb||!uid)return;
+ try {
+  // build2013: single authorized RPC; direct REST reads can fail with RLS 403.
+  const {data,error}=await sb.rpc('get_player_profile_stats',{p_user_id:uid});
+  if(error){console.warn('[profile] stats unavailable',error.message);return;}
+  if(!modal.classList.contains('is-open')||!data)return;
+  if(data.best_floor!=null)set('zpp-floor','第'+fmt(data.best_floor)+'層');
+  if(data.best_score!=null)set('zpp-score',fmt(data.best_score));
+  if(data.best_combo!=null)set('zpp-combo',fmt(data.best_combo));
+  if(data.owned_characters!=null){
+   const total=Number(data.total_playable_characters);
+   set('zpp-owned',fmt(data.owned_characters)+(Number.isFinite(total)&&total>0?' / '+fmt(total):'')+'体');
+  }
+  if(data.login_days!=null)set('zpp-logins',fmt(data.login_days)+'日');
+  if(data.recorded_plays!=null)set('zpp-plays',fmt(data.recorded_plays)+'回');
+  if(data.story_chapter!=null)set('zpp-story','CHAPTER '+String(data.story_chapter).padStart(2,'0'));
+ }catch(err){console.warn('[profile] stats request failed',err);}
+ // STORY progress representation varies between migrations; do not infer highest chapter from unknown JSON.
+}
+// build2012: Diamond artwork may be in a separate overlay or visually exceed .hud-left.
+// Detect pointer coordinates against the visible diamond as well as the header hit area.
+let lastProfileOpen=0;
+function profileHit(e){
+ if(modal.classList.contains('is-open'))return false;
+ const hud=document.getElementById('global-user-frame');
+ if(!hud||hud.getClientRects().length===0)return false;
+ if(e.target.closest?.('#zs-player-profile'))return false;
+ // Only the actual portrait, rank, and player name may open the profile.
+ // Do NOT use .hud-left as a click target: its layout can extend over the whole screen.
+ const selectors=['#global-user-frame .hv2-face','#global-user-frame #hud-lv-circle','#global-user-frame #hud-name'];
+ if(e.target.closest?.(selectors.join(',')))return true;
+ // Decorative overlays sometimes intercept the diamond. Accept only its measured box.
+ const x=Number(e.clientX),y=Number(e.clientY);
+ if(!Number.isFinite(x)||!Number.isFinite(y))return false;
+ const face=document.querySelector('#global-user-frame .hv2-face');
+ if(face&&face.getClientRects().length){
+  const r=face.getBoundingClientRect();
+  if(r.width>0&&r.width<130&&r.height>0&&r.height<130&&x>=r.left-5&&x<=r.right+5&&y>=r.top-5&&y<=r.bottom+5)return true;
+ }
+ return false;
+}
+function handleProfileTap(e){
+ if(!profileHit(e))return;
+ const now=Date.now();if(now-lastProfileOpen<450)return;
+ lastProfileOpen=now;
+ e.preventDefault();
+ e.stopPropagation();
+ open();
+}
+// build2013: open only after click. Opening on pointerdown makes the following click hit the modal backdrop and close it.
+document.addEventListener('click',handleProfileTap,true);
 })();
 </script>
 </body>
