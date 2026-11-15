@@ -605,7 +605,9 @@
   //  そのぶんBOSSのHPは低め：基準 1,200 / 1,400 / 1,600（合計4,200）× 階層のHP倍率
   //  （同じ階層のボス階の合計HPの約4割）。即死弾の常駐（深層）は重ねない。
   // ============================================================
-  const PHASE_ODYSSEY_LETHAL_GAUGES = Object.freeze([1200, 1400, 1600]);
+  // build2029: 弱すぎたので強化。HP 4,200 → 11,000（同じ階層のボス階とほぼ同じ）。
+  //  弾幕も「扇が左右にゆっくり振れる」「PHASE2〜は自機の方だけ空いた包囲リング」で、止まっていられないように。
+  const PHASE_ODYSSEY_LETHAL_GAUGES = Object.freeze([3200, 3600, 4200]);
   function makePhaseOdysseyLethalStage(f, v) {
     const scale = getPhaseOdysseyScaling(f);
     const gaugeHps = PHASE_ODYSSEY_LETHAL_GAUGES.map(hp => Math.max(1, Math.round(hp * scale.hpScale)));
@@ -625,9 +627,15 @@
       bossGaugeHps: Object.freeze(gaugeHps),
       // 弾幕の調整値（shooting_core.js fireLethalBarrage が参照）。深い階ほど少しだけ速く・詰める。
       lethalBarrage: Object.freeze({
-        intervalMs: Object.freeze([560, 470, 400].map(ms => Math.round(ms * (f >= 50 ? 0.92 : 1)))),
-        speedMul: Object.freeze([0.80, 0.86, 0.92].map(m => Math.round(m * scale.bulletSpeedScale * 1000) / 1000)),
+        intervalMs: Object.freeze([440, 380, 330].map(ms => Math.round(ms * (f >= 50 ? 0.92 : 1)))),
+        speedMul: Object.freeze([0.86, 0.92, 1.0].map(m => Math.round(m * scale.bulletSpeedScale * 1000) / 1000)),
         radius: 9,
+        // build2029: 扇全体の振れ幅（rad）と周期（ms）、包囲リング（何ボレーごと／弾数／空き弾数）
+        sway: Object.freeze([0.16, 0.22, 0.28]),
+        swayPeriodMs: Object.freeze([7000, 6000, 5200]),
+        ringEvery: Object.freeze([0, 9, 7]),
+        ringCount: Object.freeze([0, 26, 30]),
+        ringGap: Object.freeze([0, 4, 4]),
       }),
       mission: Object.freeze({ type: SHOOTING_MISSION_TYPE.BOSS_CLEAR, text: '即死弾幕をくぐり抜けて撃破' }),
       phaseOdyssey: Object.freeze({

@@ -20878,7 +20878,12 @@
     const r = Math.max(5, Number(cfg.radius || 9));
     const originX = Number(state.boss.x || 0);
     const originY = Number(state.boss.y || 0) + 40;
-    const centerAxis = Math.PI / 2;
+    // build2029: 扇全体を左右にゆっくり振る（同じ場所に居座れない）。
+    if (!Number.isFinite(state.lethalBarrageT0)) state.lethalBarrageT0 = now;
+    const swayAmp = pick(cfg.sway, 0);
+    const swayPeriod = Math.max(1000, pick(cfg.swayPeriodMs, 6000));
+    const sway = swayAmp ? swayAmp * Math.sin((now - state.lethalBarrageT0) / swayPeriod * Math.PI * 2) : 0;
+    const centerAxis = Math.PI / 2 + sway;
     const shoot = (offset, mul, radius) => {
       const a = centerAxis + offset;
       const p = makeProjectile(
@@ -20945,6 +20950,23 @@
         : (phase === 2 ? [-0.88, -0.42, 0.42, 0.88] : [-0.98, -0.60, -0.24, 0.24, 0.60, 0.98]);
       const haloSpeed = phase === 1 ? 0.70 : (phase === 2 ? 0.76 : 0.82);
       halo.forEach(offset => shoot(offset, haloSpeed));
+    }
+
+    // build2029: 包囲リング（PHASE2〜）。全方位に低速で撃ち、自機の方向だけ数発分あける。
+    const ringEvery = pick(cfg.ringEvery, 0);
+    if (ringEvery > 0 && (state.lethalBarrageStep % ringEvery) === 0) {
+      const n = Math.max(8, Math.round(pick(cfg.ringCount, 24)));
+      const gap = Math.max(2, Math.round(pick(cfg.ringGap, 4)));
+      const px = Number(state.player && state.player.x), py = Number(state.player && state.player.y);
+      const aim = (Number.isFinite(px) && Number.isFinite(py)) ? Math.atan2(py - originY, px - originX) : Math.PI / 2;
+      const stepA = Math.PI * 2 / n;
+      const half = gap * stepA / 2;
+      for (let i = 0; i < n; i += 1) {
+        const a = aim + half + stepA * 0.5 + i * stepA;
+        let d = Math.atan2(Math.sin(a - aim), Math.cos(a - aim));
+        if (Math.abs(d) < half) continue;
+        shoot(a - Math.PI / 2 - sway, 0.62);
+      }
     }
   }
 
