@@ -97,7 +97,7 @@
     try { const u = Number(localStorage.getItem('zs_auto_vector_until') || 0); if (u > Date.now()) autoVec = new Date(u).toLocaleString() + ' まで'; } catch (_) {}
     return {
       '図形に自動固定': autoVec,
-      'ビルド': (rel.build || '-') + ' / 診断 build' + 1997,
+      'ビルド': (rel.build || '-') + ' / 診断 build' + 2001,
       'UA': n.userAgent || '-',
       'ホーム画面アプリ': (n.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches)) ? 'はい' : 'いいえ',
       '画素密度': window.devicePixelRatio,
@@ -108,7 +108,7 @@
       '前回戦闘の描画方式': window.__zsCanvasMode || '(まだ戦闘していない)',
       '前回戦闘の試験': window.__zsCanvasProbe || '-',
       // build1997: BGM の鳴らし方（iOS 27.2 対策）
-      'BGMの鳴らし方': (() => { const e = window.ZsBgmEngine; return e ? `${e.mode === 'webaudio' ? 'Web Audio' : '<audio>'}（設定 ${e.setting}）` : '-'; })(),
+      'BGMの鳴らし方': (() => { const e = window.ZsBgmEngine; return e ? `${e.mode === 'webaudio' ? 'Web Audio' : '<audio>'}（設定 ${e.setting} / Safari ${e.safariMajor || '-'}）` : '-'; })(),
       'BGM音声の状態': (() => { const e = window.ZsBgmEngine; return e && e.mode === 'webaudio' ? e.ctxState : '-'; })(),
       'BGMの再生中': (() => { const e = window.ZsBgmEngine; if (!e || !e.voices) return '-'; const v = e.voices().filter(x => !x.paused); return v.length ? v.map(x => `${x.id} ${x.playing ? x.t + 's' : (x.loading ? '読込中' : '待機')}${x.err ? ' ERR ' + x.err : ''}`).join(' / ') : 'なし'; })(),
       'マナーモード時': (() => { try { return localStorage.getItem('zs_audio_session') === 'playback' ? '鳴らす(playback)' : '鳴らさない(自動)'; } catch (_) { return '-'; } })(),
@@ -183,7 +183,7 @@
   // ---------- 起動方法（build1988） ----------
   // 1) 設定画面の見出し「設定」を3秒長押し
   // 2) PC：Ctrl(⌘)+Shift+D
-  const DIAG_BUILD = 1997;
+  const DIAG_BUILD = 2001;
   function safeOpen(from) {
     try { window.ZsDiag && window.ZsDiag.log('diag-open', from); } catch (_) {}
     open().catch(err => { console.error('[zs_diag] open failed', err); try { alert('診断を開けませんでした: ' + (err && err.message || err)); } catch (_) {} });

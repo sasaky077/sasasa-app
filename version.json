@@ -1,1 +1,1 @@
-{"build":2000,"note":"Web Audio BGM：アプリ切替・バックグラウンド移行時に待たずにその場で音量0＋AudioContext停止（iOSの凍結時に最後の音が伸びる「プーン」対策）。フォーカスが外れた段階でも停止し、戻ったら再開"}
+{"build":2001,"note":"Web Audio BGMは自動ではiOS 27系のみ（古いiOS・PC・Androidは従来の<audio>）。バックグラウンド・アプリ切替時はAudioContextを閉じて「プーン」音を防止、戻ったら作り直し（次のタップで続きから再生）"}

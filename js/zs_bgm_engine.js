@@ -32,7 +32,10 @@
   let setting = 'auto';
   try { setting = localStorage.getItem('zs_audio_engine') || 'auto'; } catch (_) {}
   const AC = window.AudioContext || window.webkitAudioContext;
-  const useWebAudio = !!AC && (setting === 'webaudio' || (setting === 'auto' && isIOS));
+  // build2001: 自動の時は iOS 27 系以降だけ（不具合が確認された 27.2 を含む系統）。それより古い iOS・PC・Android は従来の <audio>
+  const safariMajor = (() => { const m = ua.match(/Version\/(\d+)/); return m ? Number(m[1]) : 0; })();
+  const affectedIOS = isIOS && (safariMajor >= 27 || safariMajor === 0); // バージョン表記の無いiOSブラウザは安全側（Web Audio）
+  const useWebAudio = !!AC && (setting === 'webaudio' || (setting === 'auto' && affectedIOS));
 
   // 診断ログ（zs_diag.js より先に読まれるので、無ければ同じ形式で直接書く）
   const diag = (type, detail) => {
@@ -46,7 +49,7 @@
   };
   const proto = HTMLMediaElement.prototype;
 
-  window.ZsBgmEngine = { mode: useWebAudio ? 'webaudio' : 'element', setting, isIOS };
+  window.ZsBgmEngine = { mode: useWebAudio ? 'webaudio' : 'element', setting, isIOS, safariMajor };
   if (!useWebAudio) return;
 
   // ---------------- AudioContext ----------------
@@ -86,23 +89,25 @@
     if (c.state !== 'running') resumeCtx();
   };
   ['touchend', 'pointerup', 'click', 'keydown', 'pointerdown', 'touchstart'].forEach(t => window.addEventListener(t, unlock, { capture: true, passive: true }));
-  // build1999: バックグラウンドへ移る時は、iOS に止められる前に自分で音の出口を止める。
-  //  止めないまま iOS がページを凍結すると、音声側だけが動き続けて最後の音を繰り返し「プーン…」と鳴る。
-  //  凍結の直前はタイマーが動かない事があるので、待たずにその場で 音量0 → AudioContext 停止 まで済ませる。
-  //  アプリ切替画面を出した時など、裏に回る前の「フォーカスが外れた」段階でも同じことをする（戻ったら再開）。
+  // build2001: バックグラウンドへ移る時・アプリ切替画面を出した時は、音の出口（AudioContext）を完全に閉じる。
+  //  一時停止（suspend）だけでは、iOS がページを凍結した後も音声側が最後の音を繰り返し「プーン…」と鳴る事があった。
+  //  閉じれば iOS 側の音の処理ごと片付く。戻ってきたら作り直す（iOS の規則で、鳴り出すのは次のタップから）。
+  //  曲のデータ（展開済みの AudioBuffer）は閉じても使い回せるので、再読み込みは起きない。
   let quiet = false;
   function quietNow(reason) {
-    if (!ctx) return;
     quiet = true;
+    if (!ctx) return;
     try { if (master) { const t = ctx.currentTime; master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(0, t); } } catch (_) {}
-    try { ctx.suspend(); } catch (_) {}
+    // 位置を覚えてから、鳴っている音をその場で切る（quiet 中の stopNode は即時に止める）
+    voices.forEach(v => { try { v.stopNode(); } catch (_) {} v.gain = null; v.nodeGain = null; });
+    const old = ctx;
+    ctx = null; master = null;
+    try { const p = old.close(); if (p && p.catch) p.catch(() => {}); } catch (_) {}
   }
   function restoreNow() {
     if (document.hidden) return;
     quiet = false;
-    if (!ctx) return;
-    try { if (master) { const t = ctx.currentTime; master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(1, t); } } catch (_) {}
-    if (voices.some(v => !v.paused)) resumeCtx();
+    if (voices.some(v => !v.paused)) resumeCtx(); // 新しい出口を作って再開を試す（タップ前なら、次のタップで鳴る）
   }
   document.addEventListener('visibilitychange', () => { if (document.hidden) quietNow('hidden'); else restoreNow(); });
   window.addEventListener('pagehide', () => quietNow('pagehide'));
