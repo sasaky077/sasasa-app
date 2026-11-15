@@ -17190,6 +17190,19 @@ html body #shooting-event-root[data-shooting-stage="shooting_towa_dawn"] #shooti
 #shooting-event-root.ov-gaze-warn .ov-gaze-caption,#shooting-event-root.ov-gazing .ov-gaze-caption{opacity:1;}
 #shooting-event-root .ov-gaze-caption.is-danger{color:#ffd6de;animation:ov-cap-shake .12s linear infinite;}
 @keyframes ov-cap-shake{0%,100%{translate:0 0}50%{translate:1px -1px}}
+#shooting-event-root .ov-gaze-caption.is-safe{color:#fff6d8;text-shadow:0 0 2px rgba(80,50,0,.95),0 0 10px rgba(255,214,120,.95);}
+/* build1991: 凝視までのカウントダウン */
+#shooting-event-root .ov-gaze-count{position:absolute;left:50%;top:38%;z-index:58;pointer-events:none;transform:translate(-50%,-50%);
+  font:700 64px/1 "Noto Serif JP",serif;color:#fff;letter-spacing:0;
+  text-shadow:0 0 3px rgba(60,0,20,.95),0 0 18px rgba(255,80,120,.9),0 0 40px rgba(255,60,100,.6);opacity:0;}
+#shooting-event-root .ov-gaze-count.is-tick{animation:ov-count-tick .9s cubic-bezier(.2,.8,.3,1) both;}
+#shooting-event-root .ov-gaze-count.is-word{font-size:38px;letter-spacing:.4em;text-indent:.4em;}
+#shooting-event-root .ov-gaze-count.is-word.is-tick{animation:ov-count-word .7s ease-out both;}
+@keyframes ov-count-tick{0%{opacity:0;transform:translate(-50%,-50%) scale(1.8)}18%{opacity:1;transform:translate(-50%,-50%) scale(1)}75%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(.92)}}
+@keyframes ov-count-word{0%{opacity:0;transform:translate(-50%,-50%) scale(1.4)}20%{opacity:1;transform:translate(-50%,-50%) scale(1)}70%{opacity:1}100%{opacity:0}}
+/* build1991: 画面端まで伸びる視界は、先まで色を残す */
+#shooting-event-root .po-watch-cone.is-full{background:radial-gradient(ellipse at 0 50%,rgba(255,236,170,.55) 0%,rgba(255,228,160,.30) 45%,rgba(255,224,150,.18) 100%);}
+#shooting-event-root .po-watch-cone.is-full.is-seeing{background:radial-gradient(ellipse at 0 50%,rgba(255,110,100,.68) 0%,rgba(255,80,80,.40) 45%,rgba(255,70,70,.24) 100%);}
 /* 凝視中のオーバーシアは赤く光る（.shooting-boss の transform は位置用なので filter のみ） */
 #shooting-event-root.ov-gazing .shooting-boss{filter:drop-shadow(0 0 10px rgba(255,60,100,.95)) drop-shadow(0 0 26px rgba(255,40,80,.6));}
 #shooting-event-root.ov-gaze-warn .shooting-boss{filter:drop-shadow(0 0 8px rgba(255,120,150,.8));}
@@ -17198,4 +17211,5 @@ html body #shooting-event-root[data-shooting-stage="shooting_towa_dawn"] #shooti
   #shooting-event-root .ov-safe-spot.is-fading{animation:none;opacity:.45;}
   #shooting-event-root.ov-gaze-warn .ov-gaze-veil{animation:none;}
   #shooting-event-root .ov-gaze-caption.is-danger{animation:none;}
+  #shooting-event-root .ov-gaze-count.is-tick{animation:none;opacity:1;}
 }

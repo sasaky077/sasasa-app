@@ -2287,7 +2287,7 @@
         //  どれかの中にいれば禍眼は止まり、外にいると禍眼は高速（gazeSpeedMul）。安全地帯を渡り歩きながら他の弾を避ける。
         Object.freeze({ type: 'overseer_gaze', spotRadius: 40, spotCount: 3,
           spotLifeMsByPhase: Object.freeze([3000, 2600, 2200]), spotFadeMs: 800,
-          gazeFirstAtMs: 7000, gazeEveryMsByPhase: Object.freeze([13000, 11000, 9000]), gazeWarnMs: 1800,
+          gazeFirstAtMs: 7000, gazeEveryMsByPhase: Object.freeze([13000, 11000, 9000]), gazeWarnMs: 3000, // build1991: 3・2・1 のカウントダウン
           gazeMsByPhase: Object.freeze([6000, 7000, 8000]),
           gazeSpeedMul: 3.4, gazeTurnMul: 2.6 }),
       ]),

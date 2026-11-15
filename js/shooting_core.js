@@ -6760,7 +6760,7 @@
     clearNightshadeSpinRings();
     document.querySelectorAll('.shooting-wolf-berserk-aura').forEach(el => el.remove()); // build1860
     document.getElementById(PLAYER_ID)?.classList.remove('is-wolf-berserk', 'is-wolf-berserk-hurry');
-    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-rose-fortress,.shooting-remna-trap-preview,.shooting-conjure-preview,.shooting-conjure-deploy-projectile,.shooting-conjure-turret,.shooting-conjure-ult-turret,.shooting-camilla-web-overlay,.shooting-camilla-web-burst,.shooting-camilla-bound-web-fx,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-wolf-berserk-aura,.shooting-aina-shade,.shooting-aina-decoy,.haze-arm,.haze-arm-warn,.haze-ember,.haze-flame,.haze-flame-warn,.shooting-sui-time-domain,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning,.shooting-ch07-complete-shield,.shooting-ch07-torii,.eclipse-hand-band,.eclipse-float-num,.eclipse-dash-line,.eclipse-dark-veil,.eclipse-beacon,.eclipse-state-pill,.po-submission-chip,.po-variety-banner,.tb-fx,.shooting-v-laser-wrap,.ov-safe-spot,.ov-gaze-veil,.ov-gaze-caption').forEach(el => el.remove()); // build1982: 凝視の表示も
+    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-rose-fortress,.shooting-remna-trap-preview,.shooting-conjure-preview,.shooting-conjure-deploy-projectile,.shooting-conjure-turret,.shooting-conjure-ult-turret,.shooting-camilla-web-overlay,.shooting-camilla-web-burst,.shooting-camilla-bound-web-fx,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-wolf-berserk-aura,.shooting-aina-shade,.shooting-aina-decoy,.haze-arm,.haze-arm-warn,.haze-ember,.haze-flame,.haze-flame-warn,.shooting-sui-time-domain,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning,.shooting-ch07-complete-shield,.shooting-ch07-torii,.eclipse-hand-band,.eclipse-float-num,.eclipse-dash-line,.eclipse-dark-veil,.eclipse-beacon,.eclipse-state-pill,.po-submission-chip,.po-variety-banner,.tb-fx,.shooting-v-laser-wrap,.ov-safe-spot,.ov-gaze-veil,.ov-gaze-caption,.ov-gaze-count').forEach(el => el.remove()); // build1982: 凝視の表示も
     clearEnemyBulletCanvas();
     clearPlayerBulletCanvas(); // build1811
     if (state) {
@@ -8424,7 +8424,7 @@
     setTimeout(() => el.remove(), 320);
   }
   function clearOverseerGazeDom() {
-    document.querySelectorAll('.ov-safe-spot,.ov-gaze-veil,.ov-gaze-caption').forEach(el => el.remove());
+    document.querySelectorAll('.ov-safe-spot,.ov-gaze-veil,.ov-gaze-caption,.ov-gaze-count').forEach(el => el.remove());
     document.getElementById(ROOT_ID)?.classList.remove('ov-gaze-warn', 'ov-gazing');
     if (state && state.ovGaze) state.ovGaze.spots = [];
   }
@@ -8450,10 +8450,12 @@
       g = state.ovGaze = { spots: [], gazeAt: clock + Number(rule.gazeFirstAtMs || 7000), until: 0, active: false, warn: false, inside: false };
       g.veil = document.createElement('div'); g.veil.className = 'ov-gaze-veil'; g.veil.setAttribute('aria-hidden', 'true');
       g.cap = document.createElement('div'); g.cap.className = 'ov-gaze-caption'; g.cap.setAttribute('aria-hidden', 'true');
-      arena.append(g.veil, g.cap);
+      g.count = document.createElement('div'); g.count.className = 'ov-gaze-count'; g.count.setAttribute('aria-hidden', 'true');
+      arena.append(g.veil, g.cap, g.count);
     }
     if (!Array.isArray(g.spots)) g.spots = [];
-    [g.veil, g.cap].forEach(el => { if (el && !el.isConnected) arena.appendChild(el); });
+    if (!g.count) { g.count = document.createElement('div'); g.count.className = 'ov-gaze-count'; g.count.setAttribute('aria-hidden', 'true'); arena.appendChild(g.count); }
+    [g.veil, g.cap, g.count].forEach(el => { if (el && !el.isConnected) arena.appendChild(el); });
     const spawn = (dieAt) => {
       const p = pickOverseerSpot(w, h, g.spots.filter(sp => !sp.gone), R);
       const sp = { x: p.x, y: p.y, dieAt, fading: false, gone: false, el: makeOverseerSpotEl(arena) };
@@ -8503,9 +8505,22 @@
     });
     g.inside = inside;
     if (root) { root.classList.toggle('ov-gaze-warn', g.warn); root.classList.toggle('ov-gazing', g.active); }
-    const capText = g.active ? (g.inside ? '凝視 ― 光の中で耐えろ' : '凝視 ― 光の中へ') : (g.warn ? '凝視が来る ― 光へ' : '');
+    // build1991: 凝視までのカウントダウン（3・2・1）→「凝視」
+    let countText = '';
+    if (g.warn) countText = String(Math.max(1, Math.ceil((g.gazeAt - clock) / 1000)));
+    else if (g.active && clock < g.until - gazeMs + 700) countText = '凝視';
+    if (g.count.textContent !== countText) {
+      g.count.textContent = countText;
+      g.count.classList.toggle('is-word', countText === '凝視');
+      g.count.classList.remove('is-tick'); void g.count.offsetWidth;
+      if (countText) g.count.classList.add('is-tick');
+    }
+    const capText = g.active
+      ? (g.inside ? '光の中 ― 禍眼は止まる' : '光の外 ― 禍眼が迫る')
+      : (g.warn ? '凝視が来る ― 光の中へ' : '');
     if (g.cap.textContent !== capText) g.cap.textContent = capText;
     g.cap.classList.toggle('is-danger', g.active && !g.inside);
+    g.cap.classList.toggle('is-safe', g.active && g.inside);
   }
 
   function getDangerBulletSprite(r, dpr) {
@@ -17467,9 +17482,18 @@
     document.getElementById(ROOT_ID)?.classList.remove('po-watched');
     if (state) { state.poWatchCones = null; state.poWatched = false; }
   }
+  // build1991: visionFullRange の眼は、視界を画面の端まで伸ばす（途中で切らない）
+  function getWatcherVisionRange(def, h) {
+    if (def && def.visionFullRange) {
+      const arena = document.getElementById('shooting-arena');
+      const w = arena ? arena.clientWidth : 390;
+      return Math.hypot(w, h) + 20;
+    }
+    return h * Number((def && def.visionRangeRate) || .6);
+  }
   function isPointInWatcherSight(enemy, px, py, h, now) {
     const def = enemy.def || {};
-    const range = h * Number(def.visionRangeRate || .6);
+    const range = getWatcherVisionRange(def, h);
     const dx = px - enemy.x, dy = py - enemy.y;
     if (dx * dx + dy * dy > range * range) return false;
     let diff = Math.atan2(dy, dx) - Number(enemy.poFacing || Math.PI / 2);
@@ -17498,7 +17522,7 @@
       const frozen = now < getNormalEnemyLockUntil(enemy, now);
       if (!frozen) enemy.poFacing = Math.PI / 2 + Math.sin(age * Number(def.sweepSpeed || .55) + enemy.phaseSeed) * Number(def.sweepRad || .85);
       if (enemy.poFacing == null) enemy.poFacing = Math.PI / 2;
-      const range = h * Number(def.visionRangeRate || .6);
+      const range = getWatcherVisionRange(def, h);
       const half = Number(def.visionHalfAngleDeg || 19) * Math.PI / 180;
       const coneH = Math.max(20, 2 * range * Math.tan(half));
       let cone = cones.get(enemy.uid);
@@ -17515,6 +17539,7 @@
       cone.style.height = `${coneH}px`;
       cone.style.transform = `translate3d(${enemy.x}px,${enemy.y - coneH / 2}px,0) rotate(${enemy.poFacing}rad)`;
       cone.classList.toggle('is-seeing', inSight);
+      cone.classList.toggle('is-full', !!def.visionFullRange);
       cone.classList.toggle('is-frozen', frozen);
     });
     cones.forEach((el, uid) => { if (!alive.has(uid)) { el.remove(); cones.delete(uid); } });

@@ -723,7 +723,7 @@
       name: 'オーバーシアのしもべ', displayName: 'MEMORY　オーバーシアのしもべ',
       element: 'wood', attackType: 'none', image: 'images/remnant_01_zako.webp',
       hp: 1200, moveSpeed: 26, scoreValue: 400, behavior: 'po_watcher_v1', uiScale: 0.86,
-      visionRangeRate: 0.62, visionHalfAngleDeg: 19, sweepRad: 0.85, sweepSpeed: 0.55,
+      visionRangeRate: 0.62, visionFullRange: true, visionHalfAngleDeg: 19, sweepRad: 0.85, sweepSpeed: 0.55, // build1991: 視界は画面端まで
     }),
     [SHOOTING_ENEMY_ID.MEMORY_HAZE]: Object.freeze({
       id: SHOOTING_ENEMY_ID.MEMORY_HAZE, kind: 'boss', implemented: true,
