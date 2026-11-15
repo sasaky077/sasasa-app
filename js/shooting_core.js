@@ -5948,13 +5948,13 @@
     ctx.lineTo(x + rr, y + h); ctx.arcTo(x, y + h, x, y + h - rr, rr);
     ctx.lineTo(x, y + rr); ctx.arcTo(x, y, x + rr, y, rr); ctx.closePath();
   }
-  function buildPlayerBulletSprite(kind, elKey, charged, moon, scale) {
+  function buildPlayerBulletSprite(kind, elKey, charged, moon, scale) { // build1994: 作った canvas は watchSpriteCanvasLoss で見張る
     // 描画領域（要素の中心を原点にした CSS px）。グローと尾が収まるよう余白を取る
     const box = kind === 'spread' ? { l: -22, t: -24, r: 22, b: 40 }
       : kind === 'homing' ? { l: -30, t: -30, r: 30, b: 50 }
       : { l: -30, t: (charged ? -52 : -44), r: 30, b: (charged ? 110 : 84) }; // pierce
     const cw = Math.ceil((box.r - box.l) * scale), ch = Math.ceil((box.b - box.t) * scale);
-    const cv = document.createElement('canvas');
+    const cv = watchSpriteCanvasLoss(document.createElement('canvas'));
     cv.width = cw; cv.height = ch;
     const ctx = cv.getContext('2d');
     if (!ctx) { releaseCanvasNow(cv); noteCanvasAllocFailure(new Error('canvas-alloc-failed(player)')); return null; } // build1981
@@ -6567,7 +6567,7 @@
     bx0 = Math.floor(bx0 - 2); by0 = Math.floor(by0 - 2); bx1 = Math.ceil(bx1 + 2); by1 = Math.ceil(by1 + 2);
     const cw = Math.max(1, Math.ceil((bx1 - bx0) * scale)), ch = Math.max(1, Math.ceil((by1 - by0) * scale));
     if (cw > 1024 || ch > 1024) return null;
-    const cv = document.createElement('canvas');
+    const cv = watchSpriteCanvasLoss(document.createElement('canvas'));
     cv.width = cw; cv.height = ch;
     const ctx = cv.getContext('2d');
     if (!ctx) { releaseCanvasNow(cv); pbLastAllocFailed = true; return null; } // build1981: Canvas メモリ切れ
@@ -8133,9 +8133,9 @@
   //  どちらかで「空」を2回見たら、その戦闘は図形で直接描く方式に切り替え、記録に残す。
   // ============================================================
   let spriteCheckAt = 0, spriteBlankHits = 0, liveCheckDone = 0, liveCheckBase = 0, liveBlankHits = 0;
-  let spriteCheckCanvas = null, spriteCheckLoggedOk = false;
+  let spriteCheckCanvas = null, spriteCheckLoggedOk = false, spriteBlankTimes = [], battleRunStartedAt = 0, spriteCheckCursor = 0, liveSide = 0;
   function resetSpriteHealth(now) {
-    spriteCheckAt = 0; spriteBlankHits = 0; liveCheckDone = 0; liveCheckBase = 0; liveBlankHits = 0; spriteCheckLoggedOk = false;
+    spriteCheckAt = 0; spriteBlankHits = 0; liveCheckDone = 0; liveCheckBase = 0; liveBlankHits = 0; spriteCheckLoggedOk = false; spriteBlankTimes = []; battleRunStartedAt = now; spriteCheckCursor = 0; liveSide = 0;
   }
   function spriteHasPixels(src) {
     if (!src || !src.width || !src.height) return null;
@@ -8155,59 +8155,97 @@
     window.__zsCanvasMode = 'vector';
     zsDiag('auto-vector', reason);
   }
+  function flushSpriteCaches() {
+    try { ENEMY_BULLET_SPRITE_CACHE.forEach(c => releaseCanvasNow(c)); ENEMY_BULLET_SPRITE_CACHE.clear(); } catch (_) {}
+    try { playerBulletSpriteCache.forEach(sp => sp && sp.canvas && releaseCanvasNow(sp.canvas)); playerBulletSpriteCache.clear(); releasePlayerBulletCssSprites(); } catch (_) {}
+  }
   function checkSpriteHealth(now) {
-    if (canvasSpriteMode !== 'sprite' || !state || !state.running || state.ended) return;
+    if (!state || !state.running || state.ended) return;
+    // contextlost を受けた／アプリが前面に戻った：すぐ作り直す（図形モードでも、戻した時のために捨てておく）
+    if (spriteCachesDirty) {
+      zsDiag('sprite-flush', spriteCachesDirty);
+      spriteCachesDirty = '';
+      flushSpriteCaches();
+    }
+    if (canvasSpriteMode !== 'sprite') return;
     let forced = 'auto';
     try { forced = localStorage.getItem('zs_render_mode') || 'auto'; } catch (_) {}
     // 戦闘が実際に動き出した時点から数える（カウントダウン中は数えない）
-    if (!liveCheckBase) { liveCheckBase = now; spriteCheckAt = now + 2000; return; }
-    // ① 作り置きスプライトの中身
+    if (!liveCheckBase) { liveCheckBase = now; spriteCheckAt = now + 1000; return; }
+    // ① 作り置きスプライトの中身（1秒ごと。空なら全部作り直す。作り直しても短時間に何度も消える端末は図形へ）
     if (now >= spriteCheckAt) {
-      spriteCheckAt = now + 2000;
+      spriteCheckAt = now + 1000;
+      // build1995: 作り置き全部（敵・自機・CSS変換した自機弾）を順番に、1秒に最大6枚ずつ見る
+      const all = [];
+      ENEMY_BULLET_SPRITE_CACHE.forEach((c, k) => all.push(['e:' + k, c]));
+      playerBulletSpriteCache.forEach((sp, k) => { if (sp && sp.canvas) all.push(['p:' + k, sp.canvas]); });
+      pbCssSpecCache.forEach((spec, k) => { if (spec && spec.sprites) spec.sprites.forEach((sp, j) => { if (sp && sp.canvas) all.push(['c:' + String(k).slice(0, 24) + '#' + j, sp.canvas]); }); });
       const picks = [];
-      for (const [k, c] of ENEMY_BULLET_SPRITE_CACHE) { if (picks.length >= 2) break; picks.push(['e:' + k, c]); }
-      for (const [k, sp] of playerBulletSpriteCache) { if (picks.length >= 4) break; if (sp && sp.canvas) picks.push(['p:' + k, sp.canvas]); }
+      for (let i = 0; i < Math.min(6, all.length); i++) picks.push(all[(spriteCheckCursor + i) % all.length]);
+      spriteCheckCursor = all.length ? (spriteCheckCursor + picks.length) % all.length : 0;
       const blank = [];
       for (const [k, c] of picks) { const r = spriteHasPixels(c); if (r === false) blank.push(k); }
       if (!blank.length && picks.length && !spriteCheckLoggedOk) { spriteCheckLoggedOk = true; zsDiag('sprite-check', `ok / checked=${picks.length}`); }
       if (blank.length) {
         spriteBlankHits++;
-        zsDiag('sprite-blank', `${blank.join(',').slice(0, 120)} / checked=${picks.length} / hit=${spriteBlankHits}`);
-        // 1回目：作り直してみる。2回目：図形に切り替え
-        try { ENEMY_BULLET_SPRITE_CACHE.forEach(c => releaseCanvasNow(c)); ENEMY_BULLET_SPRITE_CACHE.clear(); } catch (_) {}
-        try { playerBulletSpriteCache.forEach(sp => sp && sp.canvas && releaseCanvasNow(sp.canvas)); playerBulletSpriteCache.clear(); releasePlayerBulletCssSprites(); } catch (_) {}
-        if (spriteBlankHits >= 2 && forced === 'auto') switchToVectorForBattle('sprite-blank x2');
+        spriteBlankTimes.push(now);
+        while (spriteBlankTimes.length && now - spriteBlankTimes[0] > 30000) spriteBlankTimes.shift();
+        zsDiag('sprite-blank', `${blank.join(',').slice(0, 120)} / checked=${picks.length} / hit=${spriteBlankHits} / t=${Math.round((now - battleRunStartedAt) / 1000)}s`);
+        flushSpriteCaches();
+        if (spriteBlankTimes.length >= 3 && forced === 'auto') switchToVectorForBattle('sprite-blank x3 in 30s');
       }
     }
-    // ② 画面の敵弾Canvasを実際に読む（3回だけ）
-    if (liveCheckDone < 3 && now - liveCheckBase >= 3000) {
-      const canvas = document.getElementById(ENEMY_BULLET_CANVAS_ID);
-      const ctx = canvas && canvas.getContext('2d');
-      const list = (state.enemyBullets || []);
-      let target = null;
-      for (const p of list) {
-        if (!p || !p.canvasRendered) continue;
-        const k = p.canvasKind;
-        if (k === 'maga-eye' || k === 'danger' || k === 'raid-laser' || k === 'rhythm-bar') continue;
-        const r = Number(p.canvasRadius || 5.5);
-        if (r < 4) continue;
-        const x = Number(p.x || 0), y = Number(p.y || 0);
-        if (x < r || y < r || !canvas || x > canvas.clientWidth - r || y > canvas.clientHeight - r) continue;
-        target = p; break;
+    // ② build1995: 画面のCanvasを実際に読む。戦闘中ずっと4秒ごと、敵弾Canvasと自機弾Canvasを交互に（5×5ピクセルだけ）
+    if (now - liveCheckBase >= 4000) {
+      const side = liveSide % 2; // 0=敵弾 1=自機弾
+      let canvas, dpr, sx = 0, sy = 0, label = '';
+      if (side === 0) {
+        canvas = document.getElementById(ENEMY_BULLET_CANVAS_ID);
+        dpr = Number(canvas && canvas.__shootingDpr || 1);
+        for (const p of (state.enemyBullets || [])) {
+          if (!p || !p.canvasRendered) continue;
+          const k = p.canvasKind;
+          if (k === 'maga-eye' || k === 'danger' || k === 'raid-laser' || k === 'rhythm-bar') continue;
+          const r = Number(p.canvasRadius || 5.5);
+          if (r < 4) continue;
+          const x = Number(p.x || 0), y = Number(p.y || 0);
+          if (!canvas || x < r || y < r || x > canvas.clientWidth - r || y > canvas.clientHeight - r) continue;
+          const vx = Number(p.vx || 0), vy = Number(p.vy || 0), spd = Math.hypot(vx, vy) || 1;
+          // 残光（三角）は弾の後ろに伸びるので、進行方向の少し前（本体だけの所）を読む
+          sx = Math.round((x + vx / spd * r * .45) * dpr); sy = Math.round((y + vy / spd * r * .45) * dpr);
+          label = `enemy kind=${k || 'orb'} r=${r}`; break;
+        }
+      } else {
+        canvas = document.getElementById(PLAYER_BULLET_CANVAS_ID);
+        dpr = Number(canvas && canvas.__pbDpr || 1);
+        for (const p of (state.bullets || [])) {
+          if (!p || !p.playerCanvasKind || !p.el || !p.el.__alive) continue;
+          let x = Number(p.x || 0), y = Number(p.y || 0);
+          if (p.playerCanvasKind === 'css' && p.pbCssSpec) { x += Number(p.pbCssSpec.offX || 0); y += Number(p.pbCssSpec.offY || 0); }
+          if (!canvas || x < 6 || y < 6 || x > canvas.clientWidth - 6 || y > canvas.clientHeight - 6) continue;
+          sx = Math.round(x * dpr); sy = Math.round(y * dpr);
+          label = `player kind=${p.playerCanvasKind}`; break;
+        }
       }
-      if (!ctx || !target) return; // 弾が無い時は次のフレームで再挑戦
-      liveCheckDone++; liveCheckBase = now; // 次は3秒後
-      const dpr = Number(canvas.__shootingDpr || 1);
-      const r = Number(target.canvasRadius || 5.5);
-      const vx = Number(target.vx || 0), vy = Number(target.vy || 0), sp = Math.hypot(vx, vy) || 1;
-      // 残光（三角）は弾の後ろ側に伸びるので、進行方向の少し前（本体だけの所）を読む
-      const sx = Math.round((Number(target.x) + vx / sp * r * .45) * dpr), sy = Math.round((Number(target.y) + vy / sp * r * .45) * dpr);
+      const ctx = canvas && canvas.width ? canvas.getContext('2d') : null;
+      if (!ctx || !label) { liveSide++; return; } // その側に弾が無ければ、次のフレームでもう片方を見る
+      liveCheckBase = now; liveSide++; liveCheckDone++;
       let a = -1;
-      try { a = ctx.getImageData(sx, sy, 1, 1).data[3]; } catch (err) { zsDiag('live-check-error', err && err.message || err); return; }
+      try {
+        const d = ctx.getImageData(Math.max(0, sx - 2), Math.max(0, sy - 2), 5, 5).data;
+        for (let i = 3; i < d.length; i += 4) a = Math.max(a, d[i]);
+      } catch (err) { zsDiag('live-check-error', err && err.message || err); return; }
       const ok = a > 20;
-      if (!ok) liveBlankHits++;
-      zsDiag(ok ? 'live-check' : 'live-blank', `a=${a} r=${r} kind=${target.canvasKind || 'orb'} n=${liveCheckDone}`);
-      if (!ok && liveBlankHits >= 2 && forced === 'auto') switchToVectorForBattle('live-blank x2');
+      if (ok) {
+        if (liveCheckDone <= 4) zsDiag('live-check', `a=${a} ${label} n=${liveCheckDone}`); // 正常の記録は最初の数回だけ
+      } else {
+        liveBlankHits++;
+        spriteBlankTimes.push(now);
+        while (spriteBlankTimes.length && now - spriteBlankTimes[0] > 30000) spriteBlankTimes.shift();
+        zsDiag('live-blank', `a=${a} ${label} n=${liveCheckDone} t=${Math.round((now - battleRunStartedAt) / 1000)}s`);
+        flushSpriteCaches(); // 画面に出ていない＝作り置きが怪しいので作り直す
+        if (spriteBlankTimes.length >= 3 && forced === 'auto') switchToVectorForBattle('blank x3 in 30s');
+      }
     }
   }
   let canvasReliefAt = 0;
@@ -8242,8 +8280,25 @@
     ctx.setLineDash([r * 0.32, r * 0.22]); ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(255,86,170,.9)';
     ctx.beginPath(); ctx.arc(0, 0, r * 1.42, 0, TAU_CONST); ctx.stroke(); ctx.setLineDash([]); ctx.restore();
   }
+  // build1994: 作り置きの弾スプライトは、iOS が戦闘中に中身を消すことがある（実機ログで確認：開始15秒後に敵・自機の全スプライトが同時に空）。
+  //  毎フレーム描き直す物（残光の三角・画面Canvas）は戻るが、作り置きは空のまま残る ＝ 報告の症状そのもの。
+  //  ・Canvas が contextlost を出す端末ではその場で作り置きを捨てる
+  //  ・出さない端末向けに、1秒ごとの中身確認（checkSpriteHealth）で見つけて作り直す
+  let spriteCachesDirty = '';
+  try {
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') spriteCachesDirty = spriteCachesDirty || 'visible-again'; });
+    window.addEventListener('pageshow', e => { if (e.persisted) spriteCachesDirty = spriteCachesDirty || 'pageshow'; });
+  } catch (_) {}
+  function watchSpriteCanvasLoss(c) {
+    try {
+      if (!c || c.__zsLossWatch) return c;
+      c.__zsLossWatch = true;
+      c.addEventListener('contextlost', () => { spriteCachesDirty = spriteCachesDirty || 'contextlost'; });
+    } catch (_) {}
+    return c;
+  }
   function makeSpriteCanvas(cssHalf, dpr) {
-    const c = document.createElement('canvas');
+    const c = watchSpriteCanvasLoss(document.createElement('canvas'));
     const px = Math.max(2, Math.ceil(cssHalf * 2 * dpr));
     c.width = px; c.height = px;
     c.__half = px / dpr / 2;
