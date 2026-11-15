@@ -23217,22 +23217,23 @@ async function open(){
 let lastProfileOpen=0;
 function profileHit(e){
  if(modal.classList.contains('is-open'))return false;
+ if(!e || !e.target || !(e.target instanceof Element))return false;
+ // The shared HUD is available on all screens. Only clicks whose actual
+ // frontmost event target belongs to the face, rank or name activate it.
+ // Never use coordinates alone: a Back button overlapping the HUD must win.
  const hud=document.getElementById('global-user-frame');
- if(!hud||hud.getClientRects().length===0)return false;
- if(e.target.closest?.('#zs-player-profile'))return false;
- // Only the actual portrait, rank, and player name may open the profile.
- // Do NOT use .hud-left as a click target: its layout can extend over the whole screen.
- const selectors=['#global-user-frame .hv2-face','#global-user-frame #hud-lv-circle','#global-user-frame #hud-name'];
- if(e.target.closest?.(selectors.join(',')))return true;
- // Decorative overlays sometimes intercept the diamond. Accept only its measured box.
+ if(!hud || !hud.isConnected || hud.getClientRects().length===0)return false;
+ const target=e.target;
+ if(!hud.contains(target))return false;
+ const hit=target.closest('.hv2-face, #hud-lv-circle, #hud-name');
+ if(!hit || !hud.contains(hit))return false;
+ // Shield against overlapping elements and event retargeting.
  const x=Number(e.clientX),y=Number(e.clientY);
- if(!Number.isFinite(x)||!Number.isFinite(y))return false;
- const face=document.querySelector('#global-user-frame .hv2-face');
- if(face&&face.getClientRects().length){
-  const r=face.getBoundingClientRect();
-  if(r.width>0&&r.width<130&&r.height>0&&r.height<130&&x>=r.left-5&&x<=r.right+5&&y>=r.top-5&&y<=r.bottom+5)return true;
+ if(Number.isFinite(x)&&Number.isFinite(y)){
+  const top=document.elementFromPoint(x,y);
+  if(!top || !(hit===top || hit.contains(top)))return false;
  }
- return false;
+ return true;
 }
 function handleProfileTap(e){
  if(!profileHit(e))return;
