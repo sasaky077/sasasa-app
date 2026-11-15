@@ -8382,28 +8382,51 @@
   }
 
   // ============================================================
-  // build1982: 記憶決戦オーバーシア「凝視」と安全地帯
-  //  ・安全地帯：小さな光の円が、一定間隔で次の場所へ移る（移る前に次の場所を薄く予告）
-  //  ・凝視：予告（gazeWarnMs）→ 凝視（gazeMs）。凝視の間、安全地帯の外にいると禍眼が高速で迫り、中にいれば禍眼は止まる
-  //  ・時間は「敵の時計」（停止系ULTの間は進まない）。凝視中・予告中は安全地帯を動かさない
+  // build1990: 記憶決戦オーバーシア「凝視」と安全地帯（作り直し）
+  //  ・ふだんは安全地帯を出さない（凝視以外の時間に「安置っぽい物」が見えると紛らわしいため）
+  //  ・凝視の予告（gazeWarnMs）と同時に、光の安全地帯が spotCount 個（既定3）現れる
+  //  ・凝視の間、安全地帯は1つずつ寿命で消え（点滅で予告）、同時に別の場所へ新しいものが現れる
+  //    → 安全地帯から安全地帯へ渡り歩き、その途中で他の弾を避ける設計
+  //  ・凝視の間、どの安全地帯の外にいても禍眼は高速、どれかの中にいれば禍眼は止まる
+  //  ・時間は「敵の時計」（停止系ULTの間は進まない）
   // ============================================================
   function getOverseerGazeEffect() {
     const g = state && state.ovGaze;
     if (!g || !g.active) return '';
     return g.inside ? 'stop' : 'fast';
   }
-  function pickOverseerSpot(w, h, from) {
-    let best = null;
-    for (let i = 0; i < 10; i++) {
-      const p = { x: w * (.12 + Math.random() * .76), y: h * (.48 + Math.random() * .38) };
-      if (!from || Math.hypot(p.x - from.x, p.y - from.y) > Math.min(w, h) * .3) return p;
-      best = p;
+  function pickOverseerSpot(w, h, others, R) {
+    const minGap = Math.max(R * 2.6, Math.min(w, h) * .26);
+    const bx = Number(state?.boss?.x || w / 2), by = Number(state?.boss?.y || h * .2);
+    let best = null, bestScore = -1;
+    for (let i = 0; i < 24; i++) {
+      const p = { x: w * (.13 + Math.random() * .74), y: h * (.44 + Math.random() * .42) };
+      if (Math.hypot(p.x - bx, p.y - by) < R * 3) continue;
+      let near = Infinity;
+      for (const o of others) near = Math.min(near, Math.hypot(p.x - o.x, p.y - o.y));
+      if (near >= minGap) return p;
+      if (near > bestScore) { bestScore = near; best = p; }
     }
-    return best;
+    return best || { x: w / 2, y: h * .7 };
+  }
+  function makeOverseerSpotEl(arena) {
+    const el = document.createElement('div');
+    el.className = 'ov-safe-spot is-new'; el.setAttribute('aria-hidden', 'true');
+    el.innerHTML = '<s></s><i></i><b></b>';
+    arena.appendChild(el);
+    return el;
+  }
+  function removeOverseerSpot(sp, soft) {
+    if (!sp || !sp.el) return;
+    const el = sp.el; sp.el = null;
+    if (!soft) { el.remove(); return; }
+    el.classList.add('is-gone');
+    setTimeout(() => el.remove(), 320);
   }
   function clearOverseerGazeDom() {
     document.querySelectorAll('.ov-safe-spot,.ov-gaze-veil,.ov-gaze-caption').forEach(el => el.remove());
     document.getElementById(ROOT_ID)?.classList.remove('ov-gaze-warn', 'ov-gazing');
+    if (state && state.ovGaze) state.ovGaze.spots = [];
   }
   function updateOverseerGaze(now) {
     const rule = getMemoryRule('overseer_gaze');
@@ -8417,52 +8440,70 @@
     const ph = Math.max(1, Math.min(3, Number(state.boss.phase || 1)));
     const byPhase = (arr, d) => Array.isArray(arr) ? Number(arr[Math.min(arr.length - 1, ph - 1)] ?? d) : d;
     const R = Math.max(20, Number(rule.spotRadius || 40));
+    const count = Math.max(1, Math.min(5, Number(rule.spotCount || 3)));
+    const warnMs = Number(rule.gazeWarnMs || 1800);
+    const gazeMs = byPhase(rule.gazeMsByPhase, Number(rule.gazeMs || 6000));
+    const life = Math.max(1200, byPhase(rule.spotLifeMsByPhase, 2800));
+    const fadeMs = Math.max(300, Number(rule.spotFadeMs || 800));
     let g = state.ovGaze;
     if (!g) {
-      g = state.ovGaze = { spot: pickOverseerSpot(w, h, null), next: null, hopAt: clock + byPhase(rule.hopEveryMsByPhase, 7000),
-        gazeAt: clock + Number(rule.gazeFirstAtMs || 7000), warnAt: 0, until: 0, active: false, warn: false, inside: false };
-      g.el = document.createElement('div'); g.el.className = 'ov-safe-spot'; g.el.setAttribute('aria-hidden', 'true');
-      g.el.innerHTML = '<i></i><b></b>';
-      g.ghost = document.createElement('div'); g.ghost.className = 'ov-safe-spot is-next'; g.ghost.setAttribute('aria-hidden', 'true');
-      g.ghost.innerHTML = '<i></i>';
+      g = state.ovGaze = { spots: [], gazeAt: clock + Number(rule.gazeFirstAtMs || 7000), until: 0, active: false, warn: false, inside: false };
       g.veil = document.createElement('div'); g.veil.className = 'ov-gaze-veil'; g.veil.setAttribute('aria-hidden', 'true');
       g.cap = document.createElement('div'); g.cap.className = 'ov-gaze-caption'; g.cap.setAttribute('aria-hidden', 'true');
-      arena.append(g.veil, g.ghost, g.el, g.cap);
+      arena.append(g.veil, g.cap);
     }
-    [g.el, g.ghost, g.veil, g.cap].forEach(el => { if (el && !el.isConnected) arena.appendChild(el); });
-    const paused = state.phaseTransition;
-    if (!paused) {
-      // 凝視の予告と本番
-      const warnMs = Number(rule.gazeWarnMs || 1400), gazeMs = Number(rule.gazeMs || 3200);
-      if (!g.warn && !g.active && clock >= g.gazeAt - warnMs) { g.warn = true; g.next = null; } // 凝視の間は次の場所を予告しない
+    if (!Array.isArray(g.spots)) g.spots = [];
+    [g.veil, g.cap].forEach(el => { if (el && !el.isConnected) arena.appendChild(el); });
+    const spawn = (dieAt) => {
+      const p = pickOverseerSpot(w, h, g.spots.filter(sp => !sp.gone), R);
+      const sp = { x: p.x, y: p.y, dieAt, fading: false, gone: false, el: makeOverseerSpotEl(arena) };
+      sp.el.style.setProperty('--sx', `${p.x.toFixed(1)}px`); sp.el.style.setProperty('--sy', `${p.y.toFixed(1)}px`);
+      sp.el.style.setProperty('--sr', `${R}px`);
+      g.spots.push(sp);
+      return sp;
+    };
+    if (!state.phaseTransition) {
+      // 予告開始：安全地帯を一斉に出す（寿命をずらして、凝視中に1つずつ入れ替わるようにする）
+      if (!g.warn && !g.active && clock >= g.gazeAt - warnMs) {
+        g.warn = true;
+        g.spots.forEach(sp => removeOverseerSpot(sp, false)); g.spots = [];
+        for (let i = 0; i < count; i++) spawn(g.gazeAt + life * (0.75 + i * (1 / count)) + fadeMs);
+      }
       if (g.warn && !g.active && clock >= g.gazeAt) { g.warn = false; g.active = true; g.until = clock + gazeMs; }
-      if (g.active && clock >= g.until) {
-        g.active = false;
-        g.gazeAt = clock + byPhase(rule.gazeEveryMsByPhase, 11000);
-        g.hopAt = Math.max(g.hopAt, clock + 1200); // 凝視が明けてすぐは移らない
-      }
-      // 安全地帯の移動（凝視の予告・本番中は動かさない）
-      const preview = Number(rule.hopPreviewMs || 1600);
-      const busy = g.warn || g.active;
-      if (busy) g.hopAt = Math.max(g.hopAt, (g.active ? g.until : g.gazeAt + gazeMs) + 1200);
-      if (!busy && !g.next && clock >= g.hopAt - preview) g.next = pickOverseerSpot(w, h, g.spot);
-      if (!busy && g.next && clock >= g.hopAt) {
-        g.spot = g.next; g.next = null;
-        g.hopAt = clock + byPhase(rule.hopEveryMsByPhase, 7000);
-        g.el.classList.remove('is-moved'); void g.el.offsetWidth; g.el.classList.add('is-moved');
+      if (g.active) {
+        // 寿命：fadeMs 前から点滅 → 消える。点滅が始まった時点で別の場所に新しい安全地帯を出す
+        g.spots.forEach(sp => {
+          if (sp.gone) return;
+          if (!sp.fading && clock >= sp.dieAt - fadeMs) {
+            sp.fading = true; sp.el && sp.el.classList.add('is-fading');
+            if (clock + fadeMs < g.until - 400) spawn(clock + life + fadeMs);
+          }
+          if (clock >= sp.dieAt) { sp.gone = true; removeOverseerSpot(sp, true); }
+        });
+        g.spots = g.spots.filter(sp => !sp.gone);
+        if (clock >= g.until) {
+          g.active = false;
+          g.gazeAt = clock + byPhase(rule.gazeEveryMsByPhase, 11000);
+          g.spots.forEach(sp => removeOverseerSpot(sp, true)); g.spots = [];
+        }
       }
     }
-    g.inside = Math.hypot(Number(state.player.x) - g.spot.x, Number(state.player.y) - g.spot.y) <= R;
-    // 表示
-    const place = (el, p) => { el.style.setProperty('--sx', `${p.x.toFixed(1)}px`); el.style.setProperty('--sy', `${p.y.toFixed(1)}px`); el.style.setProperty('--sr', `${R}px`); };
-    place(g.el, g.spot);
-    g.el.classList.toggle('is-inside', g.inside);
-    g.el.classList.toggle('is-gaze', g.active);
-    g.ghost.style.display = g.next ? '' : 'none';
-    if (g.next) place(g.ghost, g.next);
-    place(g.veil, g.spot);
+    const px = Number(state.player.x), py = Number(state.player.y);
+    let inside = false;
+    g.spots.forEach(sp => {
+      const hit = Math.hypot(px - sp.x, py - sp.y) <= R;
+      if (hit) inside = true;
+      if (sp.el && !sp.el.isConnected) arena.appendChild(sp.el); // 弾の一掃などで外されても戻す
+      if (sp.el) {
+        sp.el.classList.toggle('is-inside', hit);
+        sp.el.classList.toggle('is-gaze', g.active);
+        if (sp.el.classList.contains('is-new') && !sp.newClearAt) sp.newClearAt = clock + 450;
+        if (sp.newClearAt && clock >= sp.newClearAt) { sp.el.classList.remove('is-new'); sp.newClearAt = Infinity; }
+      }
+    });
+    g.inside = inside;
     if (root) { root.classList.toggle('ov-gaze-warn', g.warn); root.classList.toggle('ov-gazing', g.active); }
-    const capText = g.active ? (g.inside ? '凝視 ― 光の中で耐えろ' : '凝視 ― 光の中へ') : (g.warn ? '凝視が来る' : '');
+    const capText = g.active ? (g.inside ? '凝視 ― 光の中で耐えろ' : '凝視 ― 光の中へ') : (g.warn ? '凝視が来る ― 光へ' : '');
     if (g.cap.textContent !== capText) g.cap.textContent = capText;
     g.cap.classList.toggle('is-danger', g.active && !g.inside);
   }
@@ -19116,6 +19157,7 @@
         // build1643: 監視の眼。上空〜中段をゆっくり漂い、視界（扇形）を首振りさせる。
         enemy.x = clamp(enemy.baseX + Math.sin(age * .35 + enemy.phaseSeed) * Math.min(92, w * .22), 40, w - 40);
         enemy.y = clamp(Math.max(96, Math.min(h * .30, enemy.baseY)) + Math.sin(age * .27 + enemy.phaseSeed * 1.3) * h * .06, 84, h * .40);
+        avoidBossOverlap(enemy, w, h, now); // build1990: BOSSの裏に入り込まない
       } else if (def.behavior === 'mini_beautiful_v1') {
         // CH04は発射源まで忙しくしない。ゆったり左右へ漂い、幾何学模様を崩さない。
         enemy.x = clamp(enemy.baseX + Math.sin(age * .58 + enemy.phaseSeed) * Math.min(54, w * .13), 36, w - 36);
@@ -19130,6 +19172,52 @@
       positionMiniEnemyHp(enemy);
       fireNormalEnemy(enemy, now);
     });
+  }
+
+  // build1990: 雑魚がBOSSの絵に重ならないよう、BOSSの範囲（楕円）から押し出す。ずれはなめらかに追従させる。
+  //  大きさだけ要素から測って覚え（0.6秒ごと）、中心は毎フレームの BOSS 座標を使う（動くBOSSに遅れない）
+  let bossAvoidSize = null, bossAvoidSizeAt = 0;
+  function getBossAvoidSize(now) {
+    if (bossAvoidSize && now - bossAvoidSizeAt < 600) return bossAvoidSize;
+    bossAvoidSizeAt = now;
+    const el = document.querySelector('#' + ROOT_ID + ' .shooting-boss');
+    const r = el && el.getBoundingClientRect();
+    bossAvoidSize = (r && r.width > 4 && r.height > 4) ? { rx: r.width * .42, ry: r.height * .42 } : null;
+    return bossAvoidSize;
+  }
+  function avoidBossOverlap(enemy, w, h, now) {
+    let tx = 0, ty = 0;
+    const size = (state && state.boss && state.boss.hp > 0) ? getBossAvoidSize(now) : null;
+    if (size) {
+      const margin = 34; // 雑魚自身の大きさぶん
+      const rx = size.rx + margin, ry = size.ry + margin;
+      const cx = Number(state.boss.x || 0), cy = Number(state.boss.y || 0);
+      const inside = (x, y) => Math.hypot((x - cx) / rx, (y - cy) / ry) < 1;
+      if (inside(enemy.x, enemy.y)) {
+        const minX = 30, maxX = w - 30, minY = 60, maxY = h * .5;
+        // 出口の候補：左・右・下・上。画面に収まるもののうち、いちばん近いものへ
+        const dy = enemy.y - cy;
+        const halfW = rx * Math.sqrt(Math.max(0, 1 - (dy / ry) ** 2));
+        const dx = enemy.x - cx;
+        const halfH = ry * Math.sqrt(Math.max(0, 1 - (dx / rx) ** 2));
+        const cands = [
+          { x: cx - halfW - 2, y: enemy.y },
+          { x: cx + halfW + 2, y: enemy.y },
+          { x: enemy.x, y: cy + halfH + 2 },
+          { x: enemy.x, y: cy - halfH - 2 },
+        ].filter(p => p.x >= minX && p.x <= maxX && p.y >= minY && p.y <= maxY);
+        if (cands.length) {
+          let best = cands[0], bd = Infinity;
+          for (const p of cands) { const d = Math.hypot(p.x - enemy.x, p.y - enemy.y); if (d < bd) { bd = d; best = p; } }
+          tx = best.x - enemy.x; ty = best.y - enemy.y;
+        }
+      }
+    }
+    const k = .2;
+    enemy.bossAvoidX = (enemy.bossAvoidX || 0) + (tx - (enemy.bossAvoidX || 0)) * k;
+    enemy.bossAvoidY = (enemy.bossAvoidY || 0) + (ty - (enemy.bossAvoidY || 0)) * k;
+    enemy.x = clamp(enemy.x + enemy.bossAvoidX, 30, w - 30);
+    enemy.y = clamp(enemy.y + enemy.bossAvoidY, 60, h * .5);
   }
 
   function shouldDropMissionItem(defeatedNo) {

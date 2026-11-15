@@ -17150,26 +17150,37 @@ html body #shooting-event-root[data-shooting-stage="shooting_towa_dawn"] #shooti
 /* ============================================================
    build1982 — 記憶決戦オーバーシア：安全地帯と凝視
    ============================================================ */
+/* build1990: 安全地帯＝「天から差す光だまり」。金白の光の柱＋床の光輪。緑のバリアに見えないよう暖色に */
 #shooting-event-root .ov-safe-spot{position:absolute;left:0;top:0;width:0;height:0;z-index:14;pointer-events:none;
-  transform:translate3d(var(--sx),var(--sy),0);}
+  transform:translate3d(var(--sx),var(--sy),0);transition:opacity .3s ease;}
 #shooting-event-root .ov-safe-spot i,#shooting-event-root .ov-safe-spot b{position:absolute;display:block;border-radius:50%;
   left:calc(var(--sr) * -1);top:calc(var(--sr) * -1);width:calc(var(--sr) * 2);height:calc(var(--sr) * 2);}
+/* 光の柱（上から差し込む） */
+#shooting-event-root .ov-safe-spot s{position:absolute;display:block;left:calc(var(--sr) * -.72);width:calc(var(--sr) * 1.44);
+  bottom:0;height:calc(var(--sr) * 3.4);border-radius:50% 50% 40% 40% / 12% 12% 40% 40%;
+  background:linear-gradient(to top,rgba(255,244,205,.55),rgba(255,236,180,.22) 45%,rgba(255,236,180,0));
+  filter:blur(2px);opacity:.9;}
+/* 床の光輪 */
 #shooting-event-root .ov-safe-spot i{
-  border:2px solid rgba(214,255,226,.95);
-  background:radial-gradient(circle,rgba(255,255,255,.34) 0,rgba(196,255,214,.2) 55%,rgba(150,240,180,.08) 72%,transparent 74%);
-  box-shadow:0 0 0 1px rgba(30,90,50,.45),0 0 14px rgba(160,255,190,.75),inset 0 0 14px rgba(220,255,230,.55);}
-#shooting-event-root .ov-safe-spot b{border:1px solid rgba(255,255,255,.8);animation:ov-spot-pulse 1.6s ease-out infinite;}
-#shooting-event-root .ov-safe-spot.is-inside i{border-color:#fff;box-shadow:0 0 0 1px rgba(30,90,50,.5),0 0 22px rgba(190,255,210,1),inset 0 0 18px rgba(255,255,255,.75);}
+  border:2px solid #ffe7a6;
+  background:radial-gradient(circle,rgba(255,255,248,.62) 0,rgba(255,240,196,.40) 50%,rgba(255,222,150,.18) 74%,rgba(255,222,150,0) 76%);
+  box-shadow:0 0 0 1px rgba(120,80,20,.45),0 0 16px rgba(255,222,140,.9),inset 0 0 14px rgba(255,250,230,.8);}
+#shooting-event-root .ov-safe-spot b{border:1.5px solid rgba(255,246,214,.95);animation:ov-spot-pulse 1.4s ease-out infinite;}
+#shooting-event-root .ov-safe-spot.is-inside i{border-color:#fff;
+  box-shadow:0 0 0 1px rgba(120,80,20,.5),0 0 26px rgba(255,236,170,1),inset 0 0 20px rgba(255,255,255,.95);}
+#shooting-event-root .ov-safe-spot.is-inside s{opacity:1;}
 #shooting-event-root .ov-safe-spot.is-gaze i{border-width:3px;}
-#shooting-event-root .ov-safe-spot.is-moved i{animation:ov-spot-pop .45s cubic-bezier(.2,.9,.3,1) both;}
-#shooting-event-root .ov-safe-spot.is-next{z-index:13;}
-#shooting-event-root .ov-safe-spot.is-next i{border:2px dashed rgba(214,255,226,.75);background:none;box-shadow:none;animation:ov-spot-next .8s ease-in-out infinite alternate;}
-@keyframes ov-spot-pulse{0%{transform:scale(.55);opacity:.9}100%{transform:scale(1.25);opacity:0}}
+#shooting-event-root .ov-safe-spot.is-new i,#shooting-event-root .ov-safe-spot.is-new s{animation:ov-spot-pop .45s cubic-bezier(.2,.9,.3,1) both;}
+/* 寿命：消える前に点滅 */
+#shooting-event-root .ov-safe-spot.is-fading{animation:ov-spot-fade .16s steps(2,end) infinite;}
+#shooting-event-root .ov-safe-spot.is-fading b{animation:none;opacity:0;}
+#shooting-event-root .ov-safe-spot.is-gone{opacity:0;}
+@keyframes ov-spot-pulse{0%{transform:scale(.55);opacity:.9}100%{transform:scale(1.3);opacity:0}}
 @keyframes ov-spot-pop{0%{transform:scale(.2);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1);opacity:1}}
-@keyframes ov-spot-next{from{opacity:.35}to{opacity:.85}}
+@keyframes ov-spot-fade{0%{opacity:1}100%{opacity:.25}}
 /* 凝視：安全地帯の外を暗く沈める（中は明るく抜く） */
 #shooting-event-root .ov-gaze-veil{position:absolute;inset:0;z-index:12;pointer-events:none;opacity:0;transition:opacity .25s ease;
-  background:radial-gradient(circle at var(--sx) var(--sy),rgba(0,0,0,0) calc(var(--sr) + 2px),rgba(60,0,24,.32) calc(var(--sr) + 36px),rgba(40,0,16,.46) 100%);}
+  background:radial-gradient(ellipse at 50% 18%,rgba(90,0,30,.30),rgba(40,0,16,.44) 70%);}
 #shooting-event-root.ov-gaze-warn .ov-gaze-veil{opacity:.45;animation:ov-gaze-warn .35s ease-in-out infinite alternate;}
 #shooting-event-root.ov-gazing .ov-gaze-veil{opacity:1;animation:none;}
 @keyframes ov-gaze-warn{from{opacity:.2}to{opacity:.55}}
@@ -17184,6 +17195,7 @@ html body #shooting-event-root[data-shooting-stage="shooting_towa_dawn"] #shooti
 #shooting-event-root.ov-gaze-warn .shooting-boss{filter:drop-shadow(0 0 8px rgba(255,120,150,.8));}
 @media (prefers-reduced-motion:reduce){
   #shooting-event-root .ov-safe-spot b{animation:none;opacity:.4;}
+  #shooting-event-root .ov-safe-spot.is-fading{animation:none;opacity:.45;}
   #shooting-event-root.ov-gaze-warn .ov-gaze-veil{animation:none;}
   #shooting-event-root .ov-gaze-caption.is-danger{animation:none;}
 }

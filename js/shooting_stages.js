@@ -2212,7 +2212,7 @@
     // build1982: 監視者の記憶：オーバーシア
     overseer_watch: Object.freeze({ name: '監視', desc: 'しもべの視界に入っている間、敵弾がすべて自機を追ってくる' }),
     maga_eye: Object.freeze({ name: '禍眼', desc: '即死の眼が10秒間ゆっくり追ってくる。敵弾を消すスキルでのみ消せる' }),
-    overseer_gaze: Object.freeze({ name: '凝視', desc: '凝視の間、光の安全地帯の外にいると禍眼が高速で迫る。安全地帯の中では禍眼が止まる' }),
+    overseer_gaze: Object.freeze({ name: '凝視', desc: '凝視の間だけ光の安全地帯が現れる。外にいると禍眼が高速で迫り、中では止まる。安全地帯は次々に移る' }),
   });
   const MEMORY_BATTLE_STAGES = Object.freeze([
     Object.freeze({
@@ -2283,10 +2283,12 @@
         // 禍眼：PHASE 1/2/3 で一度に出す数。10秒間ゆっくり追う（凝視の間は速さが変わる）
         Object.freeze({ type: 'maga_eye', countByPhase: Object.freeze([1, 2, 2]), everyMsByPhase: Object.freeze([13000, 12000, 10000]),
           firstAtMs: 5000, speed: 78, turnRate: 1.6, chaseMs: 10000 }),
-        // 凝視：安全地帯（小さな光の円）が点々と移る。凝視の間、外にいる禍眼は高速（gazeSpeedMul）、中にいれば禍眼は止まる
-        Object.freeze({ type: 'overseer_gaze', spotRadius: 40,
-          hopEveryMsByPhase: Object.freeze([7000, 6000, 5000]), hopPreviewMs: 1600,
-          gazeFirstAtMs: 7000, gazeEveryMsByPhase: Object.freeze([13000, 11000, 9000]), gazeWarnMs: 1400, gazeMs: 3200,
+        // build1990 凝視：予告と同時に光の安全地帯が3つ出る（ふだんは出ない）。凝視の間は1つずつ寿命で消え、別の場所に新しく現れる。
+        //  どれかの中にいれば禍眼は止まり、外にいると禍眼は高速（gazeSpeedMul）。安全地帯を渡り歩きながら他の弾を避ける。
+        Object.freeze({ type: 'overseer_gaze', spotRadius: 40, spotCount: 3,
+          spotLifeMsByPhase: Object.freeze([3000, 2600, 2200]), spotFadeMs: 800,
+          gazeFirstAtMs: 7000, gazeEveryMsByPhase: Object.freeze([13000, 11000, 9000]), gazeWarnMs: 1800,
+          gazeMsByPhase: Object.freeze([6000, 7000, 8000]),
           gazeSpeedMul: 3.4, gazeTurnMul: 2.6 }),
       ]),
       extra: Object.freeze({ bossElement: 'wood', enemyElement: 'wood', introImage: 'images/remnant_oversheer_battle_start.webp',
