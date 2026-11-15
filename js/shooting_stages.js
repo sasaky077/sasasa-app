@@ -2293,7 +2293,8 @@
       ]),
       extra: Object.freeze({ bossElement: 'wood', enemyElement: 'wood', introImage: 'images/remnant_oversheer_battle_start.webp',
         bossVisualScale: 0.8,
-        bossAdds: Object.freeze({ enemyIds: Object.freeze([SHOOTING_ENEMY_ID.MEMORY_WATCHER]), totalEnemies: 0, maxActive: 3, startDelayMs: 2600, spawnIntervalMs: 7000 }) }),
+        bulletQuantityMultiplier: 0.80, // build2003: 通常弾の発射頻度を20%削減（禍眼・凝視は変更しない）
+        bossAdds: Object.freeze({ enemyIds: Object.freeze([SHOOTING_ENEMY_ID.MEMORY_WATCHER]), totalEnemies: 0, maxActive: 2, startDelayMs: 2600, spawnIntervalMs: 7000, defeatedRespawnMs: 5000 }) }),
     }),
   ]);
   const MEMORY_BATTLE_SLOT_COUNT = 4; // build1982: UIはリヴィア / テスト / ヘイズ / オーバーシア（内部番号 01 / 03 / 04 / 05、表示は 01〜04）

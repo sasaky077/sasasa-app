@@ -17766,7 +17766,9 @@
     const startDelay = Math.max(0, Number(cfg.startDelayMs || 0));
 
     if (total > 0 && state.normalSpawned >= total) return;
-    if (state.normalEnemies.filter(e => !(e && e.def && e.def.behavior === 'verdant_seed_v1')).length >= maxActive) return; // build1663: 成長の実は配下の数に含めない
+    if (state.normalEnemies.filter(e => e && e.hp > 0 && !(e.def && e.def.behavior === 'verdant_seed_v1')).length >= maxActive) return; // build2003: 生存中だけを同時召喚数として計上
+    // 記憶オーバーシア：撃破から5秒は新たな監視者を補充しない。
+    if (selectedStage?.memoryBattle?.no === 5 && now < Number(state.overseerWatcherReviveAt || 0)) return;
     if (now - state.startedAt < startDelay) return;
     if (now - state.normalLastSpawnAt < interval) return;
 
@@ -19571,6 +19573,12 @@
       if (enemy.el) sustainHitFeedback(enemy.el, big ? 210 : 145);
     }
     if (enemy.hp > 0) return appliedDamage;
+
+    // build2003: 記憶オーバーシアの監視者は倒した瞬間から5秒間、再召喚を禁止。
+    // 同時撃破の場合も最後に倒した時刻から5秒を確保する。
+    if (selectedStage?.memoryBattle?.no === 5 && enemy.def?.behavior === 'po_watcher_v1') {
+      state.overseerWatcherReviveAt = Math.max(Number(state.overseerWatcherReviveAt || 0), Number(now || performance.now()) + 5000);
+    }
 
     // アヤネ拘束中に撃破された場合、残っている拘束演出を即掃除。
     enemy.ayaneGrabUntil = 0;
