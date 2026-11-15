@@ -2825,12 +2825,24 @@
     const arena=document.getElementById('shooting-arena');
     if(!arena) return;
     removeTower10ReverseBanner();
+    // build2025: 始まりはレイドの周回表示などと同じ「戦闘メッセージ」で大きく知らせ、
+    //  効いている間は画面上部に同じ書体の小さな表示（残り秒数つき）を残す。
+    try { showFacelessBattleCut('左右反転', 'REVERSE CONTROL'); } catch (_) {}
     const el=document.createElement('div');
     el.id=TOWER10_REVERSE_BANNER_ID;
+    el.className='zs-battle-status';
     el.setAttribute('role','status');
     el.setAttribute('aria-live','assertive');
-    el.innerHTML='<strong>左右反転</strong><small>5秒間</small>';
+    el.innerHTML='<small>REVERSE</small><strong>左右反転</strong><em></em>';
     arena.appendChild(el);
+    const secEl=el.querySelector('em');
+    const tick=()=>{
+      if(!el.isConnected || state!==battleState) return;
+      const left=Math.max(0,Math.ceil((until-performance.now())/1000));
+      if(secEl.textContent!==String(left)) secEl.textContent=String(left);
+      if(left>0) setTimeout(tick,120);
+    };
+    tick();
     // Each phase owns its own end moment; a second phase can refresh the duration.
     setTimeout(()=>{
       if(state!==battleState || Number(battleState.tower10ReverseUntil||0)!==until) return;

@@ -17237,3 +17237,169 @@ html body #shooting-event-root[data-shooting-stage="shooting_towa_dawn"] #shooti
 #shooting-result-rank.memory-rank-upgrade{animation:memoryRankUpgrade .6s cubic-bezier(.2,.9,.3,1.3) both}
 @keyframes memoryRankUpgrade{0%{transform:scale(1.6);opacity:0;filter:brightness(2)}60%{opacity:1}100%{transform:scale(1);opacity:1;filter:none}}
 @media(prefers-reduced-motion:reduce){#shooting-result-rank.memory-rank-upgrade{animation:none}}
+
+/* ============================================================
+   build2025 — 戦闘中メッセージの統一
+   基準：レイドの周回表示などで使う「戦闘メッセージ」（.shooting-faceless-battle-cut）
+     ・帯や枠は付けず、文字だけ
+     ・白い明朝体＋濃い影（どの背景でも読める）
+     ・上に小さな欧文（Cinzel・字間広め）
+   これに合わせて、左右反転の表示と、開始前の ARE YOU READY / 3・2・1 / START を作り直す
+   ============================================================ */
+#shooting-event-root{
+  --zs-msg-ink:#fff;
+  --zs-msg-shadow:0 2px 3px rgba(0,0,0,.96),0 0 8px rgba(0,0,0,.82),0 0 14px rgba(0,0,0,.55);
+  --zs-msg-shadow-big:0 3px 4px rgba(0,0,0,.96),0 0 12px rgba(0,0,0,.85),0 0 26px rgba(0,0,0,.55);
+}
+
+/* ---- 左右反転：効いている間の小さな表示（画面上部・残り秒数） ---- */
+html body #shooting-event-root #shooting-tower10-reverse-banner.zs-battle-status{
+  position:absolute;left:50%;top:clamp(160px,25%,215px);transform:translateX(-50%);
+  display:flex;align-items:baseline;justify-content:center;gap:8px;
+  min-width:0;max-width:calc(100% - 24px);box-sizing:border-box;padding:0;z-index:55;pointer-events:none;
+  background:none;border:0;box-shadow:none;
+  color:var(--zs-msg-ink);text-shadow:var(--zs-msg-shadow);
+  animation:zsBattleStatusIn .32s ease-out both;
+}
+html body #shooting-event-root #shooting-tower10-reverse-banner.zs-battle-status small{
+  margin:0;font:600 9px/1 "Cinzel",serif;letter-spacing:.28em;color:#fff;opacity:.9;
+}
+html body #shooting-event-root #shooting-tower10-reverse-banner.zs-battle-status strong{
+  font:700 17px/1.2 "Noto Serif JP",serif;letter-spacing:.16em;color:#fff;white-space:nowrap;text-shadow:var(--zs-msg-shadow);
+}
+html body #shooting-event-root #shooting-tower10-reverse-banner.zs-battle-status em{
+  min-width:1.1em;font:700 19px/1 "Cinzel",serif;font-style:normal;color:#fff;text-align:left;
+}
+@keyframes zsBattleStatusIn{from{opacity:0;transform:translateX(-50%) translateY(-6px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* ---- 開始前：ARE YOU READY / 3・2・1 / START ---- */
+/* 明るい背景でも暗い背景でも読めるよう、薄い暗がりを中央に敷き、文字は白＋濃い影 */
+html body #shooting-event-root .shooting-countdown{
+  background:radial-gradient(ellipse 62% 30% at 50% 50%,rgba(10,8,14,.30) 0%,rgba(10,8,14,.14) 45%,rgba(10,8,14,0) 75%);
+}
+html body #shooting-event-root .shooting-countdown::before,
+html body #shooting-event-root .shooting-countdown::after{
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.85),transparent);
+  box-shadow:0 0 6px rgba(0,0,0,.55);
+}
+html body #shooting-event-root .shooting-countdown:not(.chapter4-rule-phase) span{
+  font-family:"Cinzel","Noto Serif JP",serif;
+  color:#fff;
+  text-shadow:var(--zs-msg-shadow-big);
+}
+html body #shooting-event-root .shooting-countdown.ready-phase span{
+  font-size:clamp(20px,6.4vw,28px);font-weight:700;letter-spacing:.24em;text-indent:.24em;
+}
+html body #shooting-event-root .shooting-countdown.number-phase span{
+  font-size:clamp(92px,26vw,140px);font-weight:700;
+}
+html body #shooting-event-root .shooting-countdown.start-phase span{
+  font-size:clamp(34px,10vw,50px);font-weight:700;letter-spacing:.26em;text-indent:.26em;
+  color:#fff;text-shadow:var(--zs-msg-shadow-big),0 0 18px rgba(255,214,140,.55);
+}
+
+/* ============================================================
+   build2026 — 戦闘中メッセージを全部同じ見た目に揃える
+   基準：戦闘メッセージ（.shooting-faceless-battle-cut／レイドの周回表示など）
+     文字だけ（帯・枠・背景なし）／白い明朝体＋濃い影／上の小さな欧文は Cinzel・字間広め
+   大きさは3段：S＝状態表示 15〜17px、M＝通常 19px、L＝GAME OVER・WARNING 32px前後
+   危険なものは影に赤み、うれしいもの（ITEM GET・ULT READY・安全）は影に金色を少しだけ足す（文字は白のまま）
+   位置と出方（アニメーション）は各メッセージのものをそのまま使い、見た目だけを揃える
+   ============================================================ */
+#shooting-event-root{
+  --zs-msg-glow-danger:0 0 12px rgba(255,64,80,.65);
+  --zs-msg-glow-good:0 0 12px rgba(255,214,130,.6);
+}
+/* 共通：帯・枠・背景を消して、白文字＋濃い影 */
+html body #shooting-event-root :is(
+  .memory-guard-notice,.haze-callout,.inori-execution-notice,.ov-gaze-caption,.ov-gaze-count,.po-watch-alert,
+  .shooting-ambush-laser-warning,.shooting-boss-danger-warning,.shooting-ch04-item-alert,.shooting-game-over-notice,
+  .shooting-item-effect-notice,.shooting-lost-banner,.shooting-ult-ready-notice
+){
+  background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  color:#fff!important;text-shadow:var(--zs-msg-shadow)!important;
+  min-width:0!important;
+}
+html body #shooting-event-root :is(.memory-guard-notice,.shooting-boss-danger-warning,.shooting-item-effect-notice,.shooting-ult-ready-notice)::before,
+html body #shooting-event-root :is(.memory-guard-notice,.shooting-boss-danger-warning,.shooting-item-effect-notice,.shooting-ult-ready-notice)::after,
+html body #shooting-event-root .haze-callout :is(.hc-band,.hc-lines),
+html body #shooting-event-root .shooting-lost-banner :is(.lb-band,.lb-slash){
+  content:none!important;display:none!important;
+}
+/* 上の小さな欧文（キッカー） */
+html body #shooting-event-root :is(.memory-guard-notice small,.haze-callout .hc-text small,.shooting-boss-danger-warning span,
+  .shooting-item-effect-notice span,.shooting-ult-ready-notice span,.shooting-lost-banner .lb-text small){
+  display:block!important;font:600 8.5px/1.2 "Cinzel",serif!important;letter-spacing:.28em!important;
+  color:#fff!important;opacity:.92!important;text-shadow:var(--zs-msg-shadow)!important;background:none!important;
+}
+/* 本文（M） */
+html body #shooting-event-root :is(.memory-guard-notice strong,.haze-callout .hc-text b,.shooting-item-effect-notice strong,
+  .shooting-ult-ready-notice strong,.shooting-lost-banner .lb-text b,.shooting-ch04-item-alert strong){
+  display:block!important;margin-top:5px!important;font:700 19px/1.25 "Noto Serif JP",serif!important;letter-spacing:.14em!important;
+  color:#fff!important;text-shadow:var(--zs-msg-shadow)!important;background:none!important;-webkit-text-fill-color:#fff!important;
+}
+/* 補足（本文の下の小さな日本語） */
+html body #shooting-event-root :is(.shooting-boss-danger-warning small,.shooting-item-effect-notice small,.shooting-ult-ready-notice small,
+  .inori-execution-notice small,.shooting-ch04-item-alert small){
+  display:block!important;margin-top:4px!important;font:600 11px/1.4 "Noto Serif JP",serif!important;letter-spacing:.1em!important;
+  color:#fff!important;opacity:.95!important;text-shadow:var(--zs-msg-shadow)!important;
+}
+/* 1行だけのメッセージ（M） */
+html body #shooting-event-root :is(.inori-execution-notice,.po-watch-alert){
+  font:700 19px/1.4 "Noto Serif JP",serif!important;letter-spacing:.14em!important;
+}
+html body #shooting-event-root .shooting-ambush-laser-warning{
+  font:700 13px/1.3 "Noto Serif JP",serif!important;letter-spacing:.12em!important;
+}
+/* 状態表示（S）：凝視の案内 */
+html body #shooting-event-root .ov-gaze-caption{
+  font:700 16px/1.3 "Noto Serif JP",serif!important;letter-spacing:.14em!important;padding:0!important;
+}
+html body #shooting-event-root .ov-gaze-caption.is-danger{text-shadow:var(--zs-msg-shadow),var(--zs-msg-glow-danger)!important}
+html body #shooting-event-root .ov-gaze-caption.is-safe{text-shadow:var(--zs-msg-shadow),var(--zs-msg-glow-good)!important}
+/* 大きな数字・単語：凝視のカウントダウン（開始前の 3・2・1 と同じ） */
+html body #shooting-event-root .ov-gaze-count{
+  font-family:"Cinzel","Noto Serif JP",serif!important;font-weight:700!important;text-shadow:var(--zs-msg-shadow-big)!important;
+}
+/* L：GAME OVER と WARNING */
+html body #shooting-event-root .shooting-game-over-notice{
+  font:700 clamp(30px,9vw,40px)/1.1 "Cinzel","Noto Serif JP",serif!important;letter-spacing:.2em!important;
+  text-shadow:var(--zs-msg-shadow-big)!important;
+}
+html body #shooting-event-root .shooting-boss-danger-warning{padding:0!important}
+html body #shooting-event-root .shooting-boss-danger-warning strong{
+  display:block!important;margin-top:4px!important;font:700 clamp(22px,7vw,30px)/1.1 "Cinzel","Noto Serif JP",serif!important;letter-spacing:.12em!important;white-space:nowrap!important;
+  color:#fff!important;-webkit-text-fill-color:#fff!important;background:none!important;
+  text-shadow:var(--zs-msg-shadow-big),var(--zs-msg-glow-danger)!important;
+}
+html body #shooting-event-root .shooting-boss-danger-warning span{color:#ffd9d9!important;text-shadow:var(--zs-msg-shadow),var(--zs-msg-glow-danger)!important}
+/* 危険系は影に赤み */
+html body #shooting-event-root :is(.inori-execution-notice,.po-watch-alert,.shooting-ambush-laser-warning,.haze-callout.is-flame,.haze-callout.is-burn,.haze-callout.is-false){
+  text-shadow:var(--zs-msg-shadow),var(--zs-msg-glow-danger)!important;
+}
+html body #shooting-event-root :is(.haze-callout.is-flame,.haze-callout.is-burn,.haze-callout.is-false) .hc-text b{text-shadow:var(--zs-msg-shadow),var(--zs-msg-glow-danger)!important}
+/* うれしい系は影に金色 */
+html body #shooting-event-root :is(.shooting-item-effect-notice,.shooting-ult-ready-notice,.memory-guard-notice.is-open) strong{
+  text-shadow:var(--zs-msg-shadow),var(--zs-msg-glow-good)!important;
+}
+/* キャラLOST：名前とLOSTを同じ行に */
+html body #shooting-event-root .shooting-lost-banner .lb-text b em{
+  font:700 0.8em/1 "Cinzel",serif!important;font-style:normal!important;letter-spacing:.18em!important;margin-left:.5em!important;
+  color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:var(--zs-msg-shadow),var(--zs-msg-glow-danger)!important;background:none!important;
+}
+/* 4章：アイテム回収の残り秒数 */
+html body #shooting-event-root .shooting-ch04-item-alert b{
+  display:block!important;margin-top:4px!important;font:700 30px/1 "Cinzel",serif!important;color:#fff!important;text-shadow:var(--zs-msg-shadow-big)!important;background:none!important;
+}
+/* ステージ開始時のギミック説明：白い幕と枠をやめ、暗い幕に白文字 */
+html body #shooting-event-root .shooting-stage-gimmick-notice{
+  background:rgba(10,8,14,.48)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+}
+html body #shooting-event-root .shooting-stage-gimmick-notice-card{
+  background:none!important;border-top:1px solid rgba(255,255,255,.7)!important;border-bottom:1px solid rgba(255,255,255,.7)!important;
+}
+html body #shooting-event-root :is(.shooting-stage-gimmick-notice-kicker,.shooting-stage-gimmick-notice-row,.shooting-stage-gimmick-notice-card *){
+  color:#fff!important;text-shadow:var(--zs-msg-shadow)!important;
+}
+html body #shooting-event-root .shooting-stage-gimmick-notice-kicker{font-family:"Cinzel",serif!important;font-size:8.5px!important;letter-spacing:.28em!important}

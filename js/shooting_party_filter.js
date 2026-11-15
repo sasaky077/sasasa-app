@@ -3,7 +3,7 @@
 // remain exclusively owned by shooting_core.js / ResonanceTower.
 (function(){
   'use strict';
-  const state = { query:'', elements:[], rarities:[], shotTypes:[], pierce:'all', favOnly:false, sort:'id' }; // build1914: favOnly=お気に入り（★）のみ // build1741: pierce='all'|'yes'|'no'
+  const state = { query:'', ult:'', elements:[], rarities:[], shotTypes:[], pierce:'all', favOnly:false, sort:'id' }; // build1914: favOnly=お気に入り（★）のみ // build1741: pierce='all'|'yes'|'no'
   const isFav=id=>!!(window.CharaFavorites&&window.CharaFavorites.has(id)); // build1914
   const pierces=id=>{const SC=window.ShootingCharacters;return !!(SC&&typeof SC.isShootingCharacterPiercing==='function'&&SC.isShootingCharacterPiercing(id));};
   const elementOrder = ['fire','aqua','wood','light','dark'];
@@ -24,12 +24,18 @@
   function shot(value){const s=String(value||'').toLowerCase();return shotAliases[s]||s;}
   function getData(id){return window.ShootingCharacters?.SHOOTING_CHARACTERS?.[id]||{};}
   function currentRoster(){return document.querySelector('#shooting-character-select .shooting-party-roster');}
-  function isActive(){return state.query.trim()||state.elements.length||state.rarities.length||state.shotTypes.length||state.pierce!=='all'||state.favOnly||state.sort!=='id';}
+  function isActive(){return state.query.trim()||state.ult.trim()||state.elements.length||state.rarities.length||state.shotTypes.length||state.pierce!=='all'||state.favOnly||state.sort!=='id';}
   function ownedLevel(id){
     const data=window.ShootingCharacters?.getOwnedShootingInstance?.(id);
     return Math.max(0,Number(data?.characterLevel??data?.character_level??0)||0);
   }
   function rank(id){const c=getData(id);return window.ShootingCharacters?.getShootingBaseOrderRank?.(c.id)??id;}
+  // build2027: ULT検索（ULT名・ULT説明文）。判定は shooting_characters.js の共通関数。
+  function ultOk(id){
+    const q=state.ult.trim();if(!q)return true;
+    const SC=window.ShootingCharacters;
+    return !(SC&&typeof SC.matchesShootingUltQuery==='function')||SC.matchesShootingUltQuery(id,q);
+  }
   function apply(){
     const roster=currentRoster(),tools=document.getElementById('zpf-filter-toolbar');
     if(!roster||!tools)return;
@@ -46,7 +52,8 @@
         (!state.rarities.length||state.rarities.includes(rarity(c.rarity)))&&
         (!state.shotTypes.length||state.shotTypes.includes(shot(c.shotType||c.mainShot?.type)))&&
         (state.pierce==='all'||(state.pierce==='yes')===pierces(id))&&
-        (!state.favOnly||isFav(id));
+        (!state.favOnly||isFav(id))&&
+        ultOk(id);
       // build1914: お気に入りの★（パネル右上・控えめ）
       const fav=isFav(id);
       let star=wrap.querySelector(':scope > .zpf-fav-star');
@@ -80,6 +87,7 @@
     if(!empty){empty=document.createElement('p');empty.className='zpf-filter-empty';empty.textContent='条件に一致する仲間はいません';roster.appendChild(empty);}
     empty.hidden=visible>0;
     const count=tools.querySelector('.zpf-filter-count');if(count)count.textContent=visible+'人';
+    const hit=document.querySelector('#shooting-party-filter-layer .zcf-hit-count');if(hit)hit.textContent=visible+'人';
     const filterButton=tools.querySelector('.zpf-filter-button');
     if(filterButton){filterButton.classList.toggle('is-filtered',!!isActive());filterButton.setAttribute('aria-pressed',isActive()?'true':'false');}
   }
@@ -122,8 +130,7 @@
   function openDialog(){
     closeDialog();
     const layer=document.createElement('div');layer.id='shooting-party-filter-layer';layer.className='zcf-overlay';
-    const attrTop=['all','fire','aqua','wood'].map(k=>chip('elements',k,k==='all'?'すべて':elementLabels[k],k==='all'?'':'images/type_'+k+'.webp')).join('');
-    const attrBottom=['light','dark'].map(k=>chip('elements',k,elementLabels[k],'images/type_'+k+'.webp')).join('');
+    const attrs=['all',...elementOrder].map(k=>chip('elements',k,k==='all'?'すべて':elementLabels[k],k==='all'?'':'images/type_'+k+'.webp')).join('');
     const rarities=['all','sr','r'].map(k=>chip('rarities',k,k==='all'?'すべて':k.toUpperCase())).join('');
     const shots=['all',...shotOrder].map(k=>chip('shotTypes',k,k==='all'?'すべて':shotLabels[k],k==='all'?'':'images/shot_'+(k==='lightning'?'plasma':k)+'.webp')).join('');
     const pierceChips=['all','yes','no'].map(k=>`<button type="button" class="zcf-choice${state.pierce===k?' is-selected':''}" data-pierce="${k}" aria-pressed="${state.pierce===k}"><span class="zcf-choice-label">${{all:'すべて',yes:'貫通あり',no:'貫通なし'}[k]}</span></button>`).join('');
@@ -133,23 +140,31 @@
       return `<button type="button" class="zcf-choice${state.sort===k?' is-selected':''}" data-sort="${k}" aria-pressed="${state.sort===k}"><span class="zcf-choice-label">${label}</span></button>`;
     }).join('');
     layer.innerHTML=`<section class="zcf-dialog" role="dialog" aria-modal="true" aria-label="パーティ編成の絞り込み">
-      <header class="zcf-header"><h2 class="zcf-title">絞り込み</h2><span class="zcf-heading-rule" aria-hidden="true">✦</span>
+      <header class="zcf-header"><h2 class="zcf-title">絞り込み</h2><span class="zcf-hit-count" aria-live="polite"></span>
       <button type="button" class="zcf-close" data-close aria-label="閉じる"><img src="images/button_close.webp" alt=""></button></header>
       <div class="zcf-scroll">
-        <section class="zcf-section"><h3 class="zcf-section-title">お気に入り</h3><div class="zcf-grid zcf-grid-fav">${favChips}</div></section>
-        <section class="zcf-section"><h3 class="zcf-section-title">属性</h3><div class="zcf-grid zcf-grid-attr-top">${attrTop}</div><div class="zcf-grid zcf-grid-attr-bottom">${attrBottom}</div></section>
-        <section class="zcf-section"><h3 class="zcf-section-title">レアリティ</h3><div class="zcf-grid zcf-grid-rarity">${rarities}</div></section>
-        <section class="zcf-section"><h3 class="zcf-section-title">ショットタイプ</h3><div class="zcf-grid zcf-grid-shots">${shots}</div></section>
-        <section class="zcf-section"><h3 class="zcf-section-title">貫通</h3><div class="zcf-grid zcf-grid-pierce">${pierceChips}</div></section>
-        <section class="zcf-section"><h3 class="zcf-section-title">並び順</h3><div class="zcf-grid zcf-grid-sort">${sorts}</div></section>
+        <section class="zcf-section zcf-row"><h3 class="zcf-section-title">お気に入り</h3><div class="zcf-grid zcf-grid-fav">${favChips}</div></section>
+        <section class="zcf-section zcf-section-attr"><h3 class="zcf-section-title">属性</h3><div class="zcf-grid zcf-grid-attr">${attrs}</div></section>
+        <section class="zcf-section zcf-row"><h3 class="zcf-section-title">レアリティ</h3><div class="zcf-grid zcf-grid-rarity">${rarities}</div></section>
+        <section class="zcf-section zcf-row"><h3 class="zcf-section-title">貫通</h3><div class="zcf-grid zcf-grid-pierce">${pierceChips}</div></section>
+        <section class="zcf-section zcf-row"><h3 class="zcf-section-title">並び順</h3><div class="zcf-grid zcf-grid-sort">${sorts}</div></section>
+        <section class="zcf-section zcf-section-shots"><h3 class="zcf-section-title">ショットタイプ</h3><div class="zcf-grid zcf-grid-shots">${shots}</div></section>
+        <section class="zcf-section zcf-row zcf-section-ult"><h3 class="zcf-section-title">ULT検索</h3>
+          <label class="zcf-ult-field${state.ult?' has-value':''}"><span class="zcf-ult-icon" aria-hidden="true">⌕</span>
+          <input type="search" class="zcf-ult-input" value="${esc(state.ult)}" placeholder="ULT説明文を検索（例：停止）" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" aria-label="ULT説明文を検索">
+          <button type="button" class="zcf-ult-clear" data-ult-clear aria-label="ULT検索を消す">×</button></label></section>
       </div><footer class="zcf-footer"><button type="button" class="zcf-footer-button zcf-reset" data-reset>リセット</button><button type="button" class="zcf-footer-button zcf-apply" data-close>決定</button></footer>
     </section>`;
     layer.addEventListener('click',event=>{
       const target=event.target.closest('button');
       if(event.target===layer||target?.hasAttribute('data-close')){closeDialog();return;}
       if(!target)return;
+      if(target.hasAttribute('data-ult-clear')){
+        state.ult='';const inp=layer.querySelector('.zcf-ult-input');if(inp)inp.value='';
+        layer.querySelector('.zcf-ult-field')?.classList.remove('has-value');syncToolbar();return;
+      }
       if(target.hasAttribute('data-reset')){
-        state.elements=[];state.rarities=[];state.shotTypes=[];state.pierce='all';state.favOnly=false;state.sort='id';state.query='';
+        state.ult='';state.elements=[];state.rarities=[];state.shotTypes=[];state.pierce='all';state.favOnly=false;state.sort='id';state.query='';
         apply();closeDialog();syncToolbar();openDialog();return;
       }
       const group=target.dataset.group,key=target.dataset.key;
@@ -171,14 +186,20 @@
       layer.querySelectorAll('[data-pierce]').forEach(b=>{const active=b.dataset.pierce===state.pierce;b.classList.toggle('is-selected',active);b.setAttribute('aria-pressed',String(active));});
       syncToolbar();
     });
+    const ultInput=layer.querySelector('.zcf-ult-input');
+    if(ultInput){
+      ultInput.addEventListener('input',e=>{state.ult=e.target.value;layer.querySelector('.zcf-ult-field')?.classList.toggle('has-value',!!state.ult);syncToolbar();});
+      ultInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();ultInput.blur();}});
+    }
     document.body.appendChild(layer);
+    syncToolbar();
     layer.querySelector('.zcf-close')?.focus({preventScroll:true});
   }
   function closeDialog(){document.getElementById('shooting-party-filter-layer')?.remove();}
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('shooting-party-filter-layer')){e.stopPropagation();closeDialog();}});
   function reset(){
     closeDialog();
-    state.query='';state.elements=[];state.rarities=[];state.shotTypes=[];state.pierce='all';state.favOnly=false;state.sort='id';
+    state.query='';state.ult='';state.elements=[];state.rarities=[];state.shotTypes=[];state.pierce='all';state.favOnly=false;state.sort='id';
     const input=document.querySelector('#zpf-filter-toolbar input');
     if(input&&document.activeElement===input)input.blur();
     syncToolbar();

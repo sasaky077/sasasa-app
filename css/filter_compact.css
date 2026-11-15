@@ -1,0 +1,233 @@
+/* ZERAPHIA build2027 — 絞り込みモーダル（キャラ一覧／パーティ編成）のコンパクト化＋ULT検索。
+   目標：iPhone SE（375×667、ブラウザ枠込みで高さ約550px）でもスクロールなしで全項目が見える。
+   - 見出しを小さく1行に（件数をヘッダーに表示）
+   - 1行で収まる項目は「見出し左・ボタン右」の行レイアウト
+   - 属性6つを1行に、ショットタイプは5列×3行（アイコンの下に名前）
+   - ボタンの高さは画面の高さに合わせて伸び縮み（--zcf-h）
+   既存の character_filter.css / shooting_party_filter.css より後に読み込む。神聖樹（#shinju-filter-layer）には触れない。 */
+
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer){
+  --zcf-h: clamp(28px, 5dvh, 40px);        /* 1行ボタンの高さ */
+  --zcf-shot-h: clamp(34px, 5.6dvh, 46px); /* ショット・属性（アイコン＋名前） */
+  --zcf-gap: clamp(4px, .8dvh, 6px);
+  --zcf-label-w: 66px;
+}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer).zcf-overlay{
+  padding:max(8px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left)) !important;
+}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-dialog{
+  width:min(100%,520px) !important;
+  max-height:calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
+  padding:9px 12px 10px !important;
+}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-dialog::before,
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-dialog::after{font-size:13px !important;}
+
+/* ── ヘッダー：小さい1行 ── */
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-header{
+  display:flex !important;
+  align-items:center !important;
+  gap:8px !important;
+  padding:0 0 6px 6px !important;
+  margin:0 !important;
+  text-align:left !important;
+  border-bottom:1px solid rgba(168,139,96,.32);
+}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-title{
+  font-size:15px !important;
+  line-height:1.2 !important;
+  letter-spacing:.22em !important;
+}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-heading-rule{display:none !important;}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-hit-count{
+  display:inline-flex;
+  align-items:center;
+  height:20px;
+  padding:0 8px;
+  border:1px solid rgba(188,135,52,.45);
+  background:rgba(255,249,234,.85);
+  color:#7a4f27;
+  font:700 11px/1 "Cinzel","Noto Serif JP",serif;
+  letter-spacing:.04em;
+  white-space:nowrap;
+}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-hit-count:empty{display:none;}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-close{
+  position:static !important;
+  margin-left:auto !important;
+  width:30px !important;height:30px !important;
+  min-width:30px !important;min-height:30px !important;
+}
+
+/* ── 本体 ── */
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-scroll{padding:0 1px 2px !important;}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-section{
+  padding:var(--zcf-gap) 0 0 !important;
+  margin:0 !important;
+}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-section + .zcf-section{
+  margin-top:var(--zcf-gap) !important;
+}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-section-title{
+  margin:0 0 4px !important;
+  padding:0 0 0 7px !important;
+  font-size:11.5px !important;
+  line-height:1.2 !important;
+  letter-spacing:.02em !important;
+  white-space:nowrap;
+  border-left:2px solid #b8894c;
+}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-section-title::before{content:none !important;}
+
+/* 見出し左・ボタン右の行 */
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) :is(.zcf-row,.zcf-section-attr){
+  display:grid !important;
+  grid-template-columns:var(--zcf-label-w) minmax(0,1fr);
+  align-items:center;
+  column-gap:6px;
+}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) :is(.zcf-row,.zcf-section-attr) > .zcf-section-title{margin:0 !important;}
+
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-grid{gap:var(--zcf-gap) !important;}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-choice{
+  min-height:var(--zcf-h) !important;
+  height:var(--zcf-h) !important;
+  padding:0 3px !important;
+  font-size:clamp(10px,2.9vw,13px) !important;
+  gap:3px !important;
+}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-choice.is-selected{padding:0 3px !important;}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-grid-fav{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-grid-rarity,
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-grid-pierce{grid-template-columns:repeat(3,minmax(0,1fr)) !important;}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-grid-sort{grid-template-columns:repeat(4,minmax(0,1fr)) !important;}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) :is(.zcf-grid-rarity,.zcf-grid-pierce,.zcf-grid-sort,.zcf-grid-fav) .zcf-choice{
+  min-height:var(--zcf-h) !important;
+  font-size:clamp(10px,2.9vw,13px) !important;
+}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) :is(.zcf-rarity-sr,.zcf-rarity-r) .zcf-choice-label{font-size:15px !important;}
+
+/* 属性：6つを1行、アイコンの下に名前 */
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-grid-attr{
+  grid-template-columns:repeat(6,minmax(0,1fr)) !important;
+}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) :is(.zcf-grid-attr,.zcf-grid-shots) .zcf-choice{
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+  align-items:center !important;
+  gap:1px !important;
+  height:var(--zcf-shot-h) !important;
+  min-height:var(--zcf-shot-h) !important;
+  padding:1px 1px !important;
+  font-size:clamp(8px,2.3vw,11px) !important;
+  letter-spacing:0 !important;
+}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) :is(.zcf-grid-attr,.zcf-grid-shots) .zcf-choice > img,
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) :is(.zcf-grid-attr,.zcf-grid-shots) .zcf-choice :is(.zcf-attribute-icon,.zcf-shot-icon){
+  width:calc(var(--zcf-shot-h) - 16px) !important;
+  height:calc(var(--zcf-shot-h) - 16px) !important;
+  max-width:26px !important;
+  max-height:26px !important;
+  flex:0 0 auto !important;
+  grid-column:auto !important;
+  grid-row:auto !important;
+}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) :is(.zcf-grid-attr,.zcf-grid-shots) .zcf-choice-label{
+  display:block !important;
+  width:100% !important;
+  overflow:hidden;
+  text-overflow:clip;
+  text-align:center !important;
+  white-space:nowrap !important;
+  line-height:1.05 !important;
+}
+
+/* ショットタイプ：5列×3行（見出しは上） */
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-grid-shots{
+  grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+}
+
+/* ── ULT検索（一番下） ── */
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-ult-field{
+  position:relative;
+  display:flex;
+  align-items:center;
+  min-width:0;
+  height:calc(var(--zcf-h) + 2px);
+  border:1px solid rgba(166,128,81,.55);
+  background:rgba(255,255,255,.78);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.6);
+}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-ult-field:focus-within{
+  border-color:#bc8734;
+  box-shadow:0 0 0 2px rgba(214,170,96,.25);
+}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-ult-field.has-value{
+  border-color:#bc8734;
+  background:linear-gradient(145deg,rgba(254,247,226,.98),rgba(250,236,200,.8));
+}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-ult-icon{
+  flex:0 0 auto;
+  width:24px;
+  text-align:center;
+  color:#8c5f34;
+  font-size:15px;
+  line-height:1;
+}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-ult-input{
+  flex:1 1 auto;
+  min-width:0;
+  height:100%;
+  margin:0;
+  padding:0 2px;
+  border:0 !important;
+  outline:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  color:#4e3024;
+  font:600 14px/1.2 "Noto Serif JP","Yu Mincho",serif;
+  -webkit-appearance:none;
+  appearance:none;
+  border-radius:0;
+}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-ult-input::placeholder{color:#a58c74;font-weight:500;font-size:12.5px;}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-ult-input::-webkit-search-cancel-button{display:none;-webkit-appearance:none;}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-ult-clear{
+  display:none;
+  flex:0 0 auto;
+  width:30px;
+  height:100%;
+  margin:0;
+  padding:0;
+  border:0;
+  background:transparent;
+  color:#8c5f34;
+  font:700 16px/1 sans-serif;
+  cursor:pointer;
+}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-ult-field.has-value .zcf-ult-clear{display:block;}
+
+/* ── フッター ── */
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-footer{
+  padding:calc(var(--zcf-gap) + 4px) 4px 0 !important;
+  gap:10px !important;
+  margin-top:var(--zcf-gap);
+  border-top:1px solid rgba(168,139,96,.25);
+}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-footer-button{
+  min-height:clamp(34px,5.4dvh,42px) !important;
+  font-size:14px !important;
+}
+
+/* とても狭い幅（〜340px） */
+@media (max-width:340px){
+  html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer){--zcf-label-w:58px;}
+  html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-dialog{padding:8px 8px 9px !important;}
+  html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-section-title{font-size:10.5px !important;padding-left:5px !important;}
+}
+/* 横に広い画面ではショットタイプを1行7個に */
+@media (min-width:600px) and (max-height:620px){
+  html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-dialog{width:min(100%,640px) !important;}
+  html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-grid-shots{grid-template-columns:repeat(8,minmax(0,1fr)) !important;}
+}

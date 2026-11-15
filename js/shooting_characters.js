@@ -3389,7 +3389,33 @@
     return isShootingMainShotPiercing(c) || isShootingSubShotPiercing(c);
   }
 
+  // build2027: ULT検索（キャラ一覧・パーティ編成の絞り込みで共通）。
+  //  ULT名＋ULT説明文を対象に、全角半角・大小文字・カタカナ/ひらがなの違いを無視して探す。
+  //  空白区切りで複数語を入れると、すべてを含むキャラだけ（AND）。
+  function normalizeUltSearchText(value) {
+    let text = String(value == null ? '' : value);
+    try { text = text.normalize('NFKC'); } catch (_) {}
+    return text.toLowerCase().replace(/[\s　]+/g, '').replace(/[\u30a1-\u30f6]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
+  }
+  const ultSearchCache = new Map();
+  function getShootingUltSearchText(id) {
+    const key = Number(id);
+    if (ultSearchCache.has(key)) return ultSearchCache.get(key);
+    const c = SHOOTING_CHARACTERS[key] || {};
+    const text = normalizeUltSearchText([c.ultName, c.ultLabel, c.ultDescription].filter(Boolean).join(' '));
+    ultSearchCache.set(key, text);
+    return text;
+  }
+  function matchesShootingUltQuery(id, query) {
+    const terms = String(query == null ? '' : query).split(/[\s　、,，]+/).map(normalizeUltSearchText).filter(Boolean);
+    if (!terms.length) return true;
+    const text = getShootingUltSearchText(id);
+    return terms.every(t => text.includes(t));
+  }
+
   window.ShootingCharacters = Object.freeze({
+    getShootingUltSearchText,
+    matchesShootingUltQuery,
     getShootingSkinPanelImage,
     isShootingShotTypePiercing,
     isShootingMainShotPiercing,

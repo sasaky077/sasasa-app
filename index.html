@@ -423,7 +423,7 @@
   <link rel="stylesheet" href="css/towa_dark_gacha.css?v=1552">
   <link rel="stylesheet" href="css/towa_notice.css?v=1556">
   <link rel="stylesheet" href="css/towa_preflight.css?v=1548-towa-black-burgundy">
-  <link rel="stylesheet" href="css/shooting_event.css?v=2007-memory-rank">
+  <link rel="stylesheet" href="css/shooting_event.css?v=2026-battle-msg-all">
   <link rel="stylesheet" href="css/shot_fx.css?v=1557-shot-fx">
   <link rel="stylesheet" href="css/tower15_boss.css?v=1485-tower15">
   <link rel="stylesheet" href="css/daily_stage_select.css?v=1816-daily-left">
@@ -15918,7 +15918,8 @@ function showTenResult(results){
     pierce: 'all', // build1741: 'all' | 'yes'（貫通あり） | 'no'（貫通なし）
     favOnly: false, // build1910: お気に入り（★）のみ
     sort: 'id',
-    query: ''
+    query: '',
+    ultQuery: '' // build2027: ULT検索（ULT名・ULT説明文）
   };
   var isZukanFilterMenuOpen = false;
   var isZukanNameSearchOpen = false;
@@ -15927,6 +15928,7 @@ function showTenResult(results){
   // an individual character detail within the index must NOT clear the search.
   function resetZukanFiltersOnScreenExit(){
     zukanIndexFilter.query = '';
+    zukanIndexFilter.ultQuery = '';
     zukanIndexFilter.elements = [];
     zukanIndexFilter.rarities = [];
     zukanIndexFilter.shotTypes = [];
@@ -16081,6 +16083,7 @@ function showTenResult(results){
       (Array.isArray(zukanIndexFilter.shotTypes) && zukanIndexFilter.shotTypes.length > 0) ||
       (zukanIndexFilter.pierce === 'yes' || zukanIndexFilter.pierce === 'no') ||
       !!zukanIndexFilter.favOnly ||
+      !!String(zukanIndexFilter.ultQuery || '').trim() ||
       zukanIndexFilter.sort !== 'id';
   }
 
@@ -16131,6 +16134,7 @@ function showTenResult(results){
 
   function applyZukanIndexFilterAndSort(chars){
     var query = normalizeZukanSearchText(zukanIndexFilter.query);
+    var ultQuery = String(zukanIndexFilter.ultQuery || '').trim();
     var selectedElements = Array.isArray(zukanIndexFilter.elements) ? zukanIndexFilter.elements : [];
     var selectedRarities = Array.isArray(zukanIndexFilter.rarities) ? zukanIndexFilter.rarities : [];
     var selectedShotTypes = Array.isArray(zukanIndexFilter.shotTypes) ? zukanIndexFilter.shotTypes : [];
@@ -16148,6 +16152,11 @@ function showTenResult(results){
       if(query){
         var nameKey = normalizeZukanSearchText(chara.name || '');
         if(nameKey.indexOf(query) < 0) return false;
+      }
+      // build2027: ULT検索
+      if(ultQuery){
+        var SCu = window.ShootingCharacters;
+        if(SCu && typeof SCu.matchesShootingUltQuery === 'function' && !SCu.matchesShootingUltQuery(chara.id, ultQuery)) return false;
       }
       return true;
     });
@@ -16198,8 +16207,7 @@ function showTenResult(results){
       return button(ZUKAN_SHOT_TYPE_LABELS[key], isZukanShotTypeSelected(key),
         "setZukanShotTypeFilter('"+key+"')", 'zcf-shot-'+iconKey, img);
     }
-    var attrTop = ['all','fire','aqua','wood'].map(attributeBtn).join('');
-    var attrBottom = ['light','dark'].map(attributeBtn).join('');
+    var attrs = ['all','fire','aqua','wood','light','dark'].map(attributeBtn).join('');
     var rarity = [
       button('すべて',isZukanRaritySelected('all'),"setZukanRarityFilter('all')",'zcf-rarity-all'),
       button('SR',isZukanRaritySelected('sr'),"setZukanRarityFilter('sr')",'zcf-rarity-sr'),
@@ -16226,22 +16234,22 @@ function showTenResult(results){
     return '' +
       '<div class="zcf-dialog" role="dialog" aria-modal="true" aria-label="キャラ一覧の絞り込み" onclick="event.stopPropagation()">' +
         '<div class="zcf-header"><h2 class="zcf-title">絞り込み</h2>' +
-          '<span class="zcf-heading-rule" aria-hidden="true">✦</span>' +
+          '<span class="zcf-hit-count" aria-live="polite">' + getZukanFilterHitCount() + '人</span>' +
           '<button type="button" class="zcf-close" onclick="closeZukanFilterMenu()" aria-label="絞り込みを閉じる"><img src="images/button_close.webp" width="38" height="38" alt="" draggable="false"></button></div>' +
         '<div class="zcf-scroll">' +
-          '<section class="zcf-section"><h3 class="zcf-section-title">お気に入り</h3>' +
+          '<section class="zcf-section zcf-row"><h3 class="zcf-section-title">お気に入り</h3>' +
             '<div class="zcf-grid zcf-grid-fav">' + fav + '</div></section>' +
-          '<section class="zcf-section"><h3 class="zcf-section-title">属性</h3>' +
-            '<div class="zcf-grid zcf-grid-attr-top">' + attrTop + '</div>' +
-            '<div class="zcf-grid zcf-grid-attr-bottom">' + attrBottom + '</div></section>' +
-          '<section class="zcf-section"><h3 class="zcf-section-title">レアリティ</h3>' +
+          '<section class="zcf-section zcf-section-attr"><h3 class="zcf-section-title">属性</h3>' +
+            '<div class="zcf-grid zcf-grid-attr">' + attrs + '</div></section>' +
+          '<section class="zcf-section zcf-row"><h3 class="zcf-section-title">レアリティ</h3>' +
             '<div class="zcf-grid zcf-grid-rarity">' + rarity + '</div></section>' +
-          '<section class="zcf-section"><h3 class="zcf-section-title">ショットタイプ</h3>' +
-            '<div class="zcf-grid zcf-grid-shots">' + shots + '</div></section>' +
-          '<section class="zcf-section"><h3 class="zcf-section-title">貫通</h3>' +
+          '<section class="zcf-section zcf-row"><h3 class="zcf-section-title">貫通</h3>' +
             '<div class="zcf-grid zcf-grid-pierce">' + pierce + '</div></section>' +
-          '<section class="zcf-section"><h3 class="zcf-section-title">並び順</h3>' +
+          '<section class="zcf-section zcf-row"><h3 class="zcf-section-title">並び順</h3>' +
             '<div class="zcf-grid zcf-grid-sort">' + sorts + '</div></section>' +
+          '<section class="zcf-section zcf-section-shots"><h3 class="zcf-section-title">ショットタイプ</h3>' +
+            '<div class="zcf-grid zcf-grid-shots">' + shots + '</div></section>' +
+          getZukanUltSectionHTML() +
         '</div>' +
         '<div class="zcf-footer">' +
           '<button type="button" class="zcf-footer-button zcf-reset" onclick="resetZukanFilters()">リセット</button>' +
@@ -16249,6 +16257,50 @@ function showTenResult(results){
         '</div>' +
       '</div>';
   }
+
+  // build2027: ULT検索欄（フリー入力）。入力中はメニューを作り直さない＝フォーカスとキーボードを保つ。
+  function getZukanUltSectionHTML(){
+    var q = String(zukanIndexFilter.ultQuery || '');
+    var safe = q.replace(/[&<>"']/g, function(ch){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]; });
+    return '<section class="zcf-section zcf-row zcf-section-ult"><h3 class="zcf-section-title">ULT検索</h3>' +
+      '<label class="zcf-ult-field' + (q ? ' has-value' : '') + '">' +
+        '<span class="zcf-ult-icon" aria-hidden="true">⌕</span>' +
+        '<input type="search" class="zcf-ult-input" id="zukan-ult-search-input" value="' + safe + '" placeholder="ULT説明文を検索（例：停止）" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" aria-label="ULT説明文を検索" oninput="setZukanUltQuery(this.value)" onkeydown="if(event.key===\'Enter\'){this.blur();}">' +
+        '<button type="button" class="zcf-ult-clear" aria-label="ULT検索を消す" onclick="clearZukanUltQuery()">×</button>' +
+      '</label></section>';
+  }
+
+  function getZukanFilterHitCount(){
+    try {
+      var owned = getAllBoxCharaDefs().filter(function(c){ return getOwnedInstancesByCharaId(c.id).length > 0; });
+      return applyZukanIndexFilterAndSort(owned).length;
+    } catch(_){ return 0; }
+  }
+
+  function syncZukanFilterMenuLive(){
+    var layer = document.getElementById('zukan-filter-menu-layer');
+    if(!layer) return;
+    var count = layer.querySelector('.zcf-hit-count');
+    if(count) count.textContent = getZukanFilterHitCount() + '人';
+    var field = layer.querySelector('.zcf-ult-field');
+    if(field) field.classList.toggle('has-value', !!zukanIndexFilter.ultQuery);
+  }
+
+  function setZukanUltQuery(value){
+    zukanIndexFilter.ultQuery = String(value == null ? '' : value);
+    renderBox();
+    syncZukanFilterMenuLive();
+  }
+
+  function clearZukanUltQuery(){
+    zukanIndexFilter.ultQuery = '';
+    var input = document.getElementById('zukan-ult-search-input');
+    if(input) input.value = '';
+    renderBox();
+    syncZukanFilterMenuLive();
+  }
+  window.setZukanUltQuery = setZukanUltQuery;
+  window.clearZukanUltQuery = clearZukanUltQuery;
 
   function renderZukanFilterMenu(){
     var old = document.getElementById('zukan-filter-menu-layer');
@@ -16359,6 +16411,7 @@ function showTenResult(results){
     zukanIndexFilter.pierce = 'all';
     zukanIndexFilter.favOnly = false;
     zukanIndexFilter.sort = 'id';
+    zukanIndexFilter.ultQuery = '';
     renderBox();
     renderZukanFilterMenu();
   }
@@ -20988,7 +21041,7 @@ function fadeOutOpeningBgm(){
 
 
 
-<script src="js/shooting_characters.js?v=1973-nightshade-burst"></script>
+<script src="js/shooting_characters.js?v=2027-ult-search"></script>
 <script src="js/story_scenario.js?v=1742-ch08-09-scenes"></script>
 <script src="js/story_novel.js?v=1738-textbox-fit"></script>
 <script src="js/stage_select.js?v=1969-story-buttons-ranks"></script>
@@ -21225,8 +21278,8 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=2007-memory-rank"></script>
-<script src="js/shooting_party_filter.js?v=1914-fav"></script>
+<script src="js/shooting_event.js?v=2026-battle-msg-all"></script>
+<script src="js/shooting_party_filter.js?v=2027-ult-search"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1946-party-button"></script>
 <script src="js/skin_system.js?v=1709-towa-skin"></script>
@@ -22798,6 +22851,7 @@ html body #global-user-frame .hud-sweep-line-player::after{
 <link rel="stylesheet" href="css/home_v2.css?v=1960-tall-header-scale">
 <link rel="stylesheet" href="css/global_user_frame_shared.css?v=1970-shared-hud">
 <link rel="stylesheet" href="css/chara_favorites.css?v=1914-fav">
+<link rel="stylesheet" href="css/filter_compact.css?v=2027-ult-search">
 <script src="js/home_lines.js?v=1886-lines"></script>
 <script src="js/home_v2.js?v=1957-music-release-dot"></script>
 <script src="js/chara_favorites.js?v=1910-fav"></script>
