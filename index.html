@@ -3550,6 +3550,10 @@ html:not(.hv2-home) body #global-user-frame .hv2-face {
 #zs-player-profile .zpp-stat-label span{min-width:0;flex:1;padding:4px 3px 4px 1px;white-space:nowrap;overflow:visible}
 #zs-player-profile .zpp-stat-value{white-space:nowrap;overflow-wrap:normal;word-break:normal;font-size:clamp(17px,4.8vw,22px)}
 @media(max-width:360px){#zs-player-profile .zpp-stat-label{font-size:7.8px}#zs-player-profile .zpp-stat-label svg{flex-basis:12px;width:12px;height:12px}#zs-player-profile .zpp-grid>div:nth-child(2n){padding-left:6px}}
+/* build2028: STORY進捗 — CHAPTER を小さめ＋字間、番号を本文サイズで */
+#zs-player-profile #zpp-story{display:flex;align-items:baseline;gap:.42em}
+#zs-player-profile #zpp-story .zpp-chapter-word{font:700 .62em/1 Georgia,'Cinzel',serif;letter-spacing:.16em;color:#6b4a33}
+#zs-player-profile #zpp-story .zpp-chapter-no{letter-spacing:.06em}
 #global-user-frame .hv2-face,#global-user-frame #hud-lv-circle,#global-user-frame #hud-name{cursor:pointer;touch-action:manipulation}
 @media(max-width:360px){#zs-player-profile .zpp-card{padding:26px 16px 18px}#zs-player-profile .zpp-avatar{width:62px;height:62px;flex-basis:62px}#zs-player-profile .zpp-name{font-size:22px}#zs-player-profile #zpp-heading{font-size:18px}}
 </style>
@@ -23262,7 +23266,11 @@ async function open(){
   }
   if(data.login_days!=null)set('zpp-logins',fmt(data.login_days)+'日');
   if(data.recorded_plays!=null)set('zpp-plays',fmt(data.recorded_plays)+'回');
-  if(data.story_chapter!=null)set('zpp-story','CHAPTER '+String(data.story_chapter).padStart(2,'0'));
+  if(data.story_chapter!=null){
+   // build2028: 「CHAPTER」は小さく字間を空け、番号を大きく。詰まり過ぎを解消。
+   const st=document.getElementById('zpp-story');
+   if(st){st.innerHTML='<span class="zpp-chapter-word">CHAPTER</span><span class="zpp-chapter-no">'+String(Number(data.story_chapter)||0).padStart(2,'0')+'</span>';st.setAttribute('aria-label','CHAPTER '+String(data.story_chapter));}
+  }
  }catch(err){console.warn('[profile] stats request failed',err);}
  // STORY progress representation varies between migrations; do not infer highest chapter from unknown JSON.
 }
