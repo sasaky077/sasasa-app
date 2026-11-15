@@ -1,5 +1,5 @@
 /* ZERAPHIA build1983 — 隠し診断画面
-   開き方：設定画面の見出し「設定」を3秒以内に5回タップ。一般のユーザーには見えない。
+   開き方：画面下部の「設定」ナビゲーションボタンを3秒以内に5回タップ。一般のユーザーには見えない。
    表示：端末の情報／Canvas の自己診断（貼り付け・ImageBitmap・画像経由など）／戦闘中の記録（ZsDiag）。
    操作：描画方式の固定（自動／貼り付け／図形）・内容のコピー・記録の消去。
    戦闘中の処理には一切関わらない（開いた時だけ動く）。描画方式の設定だけは次の戦闘から shooting_core.js が読む。 */
@@ -164,10 +164,10 @@
     await render();
   }
 
-  // ---------- 開き方：設定の見出しを3秒以内に5回タップ ----------
+  // ---------- 開き方：下段の設定ボタンを3秒以内に5回タップ ----------
   let taps = [];
   document.addEventListener('click', e => {
-    const t = e.target && e.target.closest && e.target.closest('#screen-setting .app-page-title');
+    const t = e.target && e.target.closest && e.target.closest('#bnav-setting');
     if (!t) return;
     const now = Date.now();
     taps = taps.filter(x => now - x < 3000); taps.push(now);
