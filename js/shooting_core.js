@@ -3421,7 +3421,15 @@
       // build1877: 20Fを勝利したら、夜明けの抽選（サーバー）。RESULTの「戻る」はこの結果を待つ
       if (window.TowaDawn && String(selectedStage?.id || '') === 'shooting_tower_20') {
         const party = Array.isArray(state?.initialPartyIds) ? state.initialPartyIds.slice() : [];
-        return Promise.resolve(towerFinish).then(async res => { await window.TowaDawn.onTower20Result(selectedStage, !!win, party); return res; });
+        return Promise.resolve(towerFinish).then(async res => {
+          if (win && res?.towerConfirmed === false) {
+            console.warn('[TowaDawn] 20F result was not confirmed; skipping the secured roll');
+            window.showToast?.('20階クリアのサーバー確定に失敗したため、夜明けの抽選は保留されました');
+            return res;
+          }
+          await window.TowaDawn.onTower20Result(selectedStage, !!win, party);
+          return res;
+        });
       }
       return towerFinish;
     }

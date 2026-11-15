@@ -67,17 +67,48 @@
     if (!isTower20(stage) || !win) { watchId = ''; return Promise.resolve(false); }
     rollPromise = (async () => {
       try { await watchPromise; } catch (_) {}
-      if (!watchId) return false;
-      const id = watchId; watchId = '';
+      if (!watchId) {
+        console.warn('[TowaDawn] 20F watch is missing; roll cannot run');
+        window.showToast?.('夜明けの抽選を開始できませんでした。観測記録がありません');
+        return false;
+      }
+      const id = watchId;
       const party = (partyIds || []).map(Number).filter(n => n > 0).slice(0, 3);
-      try {
-        const d = await rpc('roll_towa_dawn', { p_watch_id: id, p_party_ids: party });
-        if (d && d.ok !== false && d.hit && d.dawn_id) {
-          pending = { dawnId: String(d.dawn_id), party: (d.party_ids || party).map(Number), expiresAt: d.expires_at || '' };
-          savePending();
-          return true;
+      // Retry only when the server explicitly reports that the minimum 40-second
+      // observation window has not elapsed, or when a transient connection fails.
+      // Do not consume watchId until a confirmed server result is returned.
+      for (let retry = 0; retry < 5; retry++) {
+        try {
+          const d = await rpc('roll_towa_dawn', { p_watch_id: id, p_party_ids: party });
+          if (d && d.ok === false && d.reason === 'too_fast') {
+            await new Promise(resolve => setTimeout(resolve, 2200));
+            continue;
+          }
+          if (d && d.ok === false) {
+            console.warn('[TowaDawn] roll rejected:', d.reason || 'unknown');
+            window.showToast?.('夜明けの抽選を確認できません：' + String(d.reason || 'unknown'));
+            return false;
+          }
+          if (d && d.ok !== false) {
+            watchId = '';
+            if (d.hit && d.dawn_id) {
+              pending = { dawnId: String(d.dawn_id), party: (d.party_ids || party).map(Number), expiresAt: d.expires_at || '' };
+              savePending();
+              return true;
+            }
+            return false;
+          }
+        } catch (err) {
+          console.warn('[TowaDawn] roll attempt failed', retry + 1, err);
+          if (retry === 4) {
+            window.showToast?.('夜明けの抽選を確認できませんでした。通信状態をご確認ください');
+            return false;
+          }
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
-      } catch (err) { console.warn('[TowaDawn] roll failed', err); }
+      }
+      console.warn('[TowaDawn] roll timed out waiting for minimum observation time');
+      window.showToast?.('夜明けの抽選を確認できませんでした（観測時間不足）');
       return false;
     })();
     return rollPromise;
