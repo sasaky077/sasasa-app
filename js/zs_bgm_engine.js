@@ -303,6 +303,17 @@
   adoptAll();
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', adoptAll, { once: true });
 
+  // build1998: タイトルBGMは起動直後（スプラッシュ表示中）に取得・展開しておく。
+  //  展開は音の出口が開く前（タップ前）でもできるので、タイトルで最初にタップした瞬間に遅れなく鳴る。
+  function prefetchTitleBgm() {
+    try { if (localStorage.getItem('zeraphia_bgm_enabled') === 'false') return; } catch (_) {}
+    const el = document.getElementById('bgm-opening');
+    const v = el && el.__zsVoice;
+    if (!v || v.buffer || v.loading) return;
+    v.prepare();
+  }
+  setTimeout(prefetchTitleBgm, 0);
+
   Object.defineProperty(window.ZsBgmEngine, 'ctxState', { configurable: true, get: () => (ctx ? ctx.state : 'none') });
   window.ZsBgmEngine = Object.assign(window.ZsBgmEngine, {
     voices: () => voices.map(v => ({ id: v.el.id, gain: v.gainValue(), paused: v.paused, playing: !!v.node, t: Number(v.currentTime.toFixed(2)), loaded: !!v.buffer, loading: v.loading, err: v.error && v.error.message })),
