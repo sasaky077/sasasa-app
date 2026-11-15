@@ -1,11 +1,11 @@
 /* ============================================================
    build1877 — 隠しステージ「夜明け」（トワ -光の姿-）
-   残響の塔20F（通常モード）のクリア時に、サーバーが1/30で出現を確定する。
+   残響の塔20Fクリア時にのみサーバーが出現抽選を実行する（通常5%、テスト確定枠は別管理）。
      20F開始  : begin_towa_dawn_watch()                → watch_id（本番・練習どちらも）
      20F勝利  : roll_towa_dawn(watch_id, party_ids)    → hit なら dawn_id
      RESULT後 : クラッシュ（フリーズ→ノイズ→ホワイトアウト）→ SPECIAL STAGE / 夜明け → 出撃 → 戦闘（編成は20Fのまま固定・全回復）
      戦闘開始 : begin_towa_dawn_run(dawn_id)           → party_ids（サーバーが正）
-     戦闘終了 : finish_towa_dawn_run(dawn_id, win)      → トワ（光）付与・凸・完凸後は聖霊花(SR)
+     戦闘終了 : finish_towa_dawn_run(dawn_id, win)      → トワ（光）付与（抽選しない）・5体獲得済みは聖霊花(SR)
    抽選・権利・報酬はすべてサーバーで確定する。ここは表示と呼び出しだけ。
    ============================================================ */
 (function () {
@@ -54,6 +54,8 @@
 
   function onTower20Start(stage, partyIds) {
     watchId = '';
+    watchPromise = null;
+    rollPromise = null; // 新しい20Fごとに前回の抽選結果を持ち越さない
     if (!isTower20(stage)) return;
     const proof = window.ResonanceTower?.getDawnProof?.();
     const party = Array.isArray(partyIds) ? partyIds.map(Number) : (proof?.party || []);
@@ -483,12 +485,8 @@
   }
 
   function showReward(d) {
-    const kind = String(d.granted || 'new');
-    const msg = kind === 'flower'
-      ? 'トワ（光）は完凸済み。聖霊花(SR)×' + Math.max(1, Number(d.flower_sr_qty) || 1) + ' を獲得'
-      : kind === 'limit_break'
-        ? 'トワ（光）を獲得！ 限界突破 +1'
-        : 'トワ -光の姿- を獲得！';
+    // クリア演出は毎回同じテキスト。新規個体の獲得を限界突破と誤表示しない。
+    const msg = 'トワ -光の姿- を入手した';
     toast(msg);
     try {
       ensureSplashStyle();
