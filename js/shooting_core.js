@@ -36754,6 +36754,7 @@
     }
     clearUltTimers();
     removeAllGojoScythes(); // build1849
+    removeAyaneUltLeftovers(); // build2030
     clearHaoTrigger();
     if (state) {
       state.running = false;
@@ -37537,6 +37538,16 @@
     requestAnimationFrame(animateTravel);
   }
 
+  // build2030: アヤネULTの残骸（腕・拘束リング・画面シェイク）をまとめて消す。戦闘終了時の保険。
+  function removeAyaneUltLeftovers() {
+    try {
+      document.querySelectorAll('.shooting-ayane-blackhand-ult, .shooting-ayane-multi-grip').forEach(el => el.remove());
+      document.querySelectorAll('.ayane-grabbed, .ayane-multi-grabbed').forEach(el => el.classList.remove('ayane-grabbed', 'ayane-multi-grabbed'));
+      const root = document.getElementById(ROOT_ID);
+      if (root) root.classList.remove('ayane-rampage-shake', 'ayane-rampage-active');
+    } catch (_) {}
+  }
+
   function useAyaneUlt(c) {
     const isGojoPurple = Number(c && c.id) === Number(CHARACTER_ID.SHURI);
     if (!isGojoPurple) {
@@ -37709,7 +37720,15 @@
         renderHud();
       }, STRIKE_DELAY);
 
-      pushUltTimer(() => {
+      // build2030: 後片付けは pushUltTimer に載せない。
+      //  拘束中に別キャラがULTを撃つと clearUltTimers() で片付けタイマーごと消え、
+      //  腕（fx）と画面シェイク（ayane-rampage-shake / -active）が残り続けていた。
+      const ayaneState = state;
+      const ayaneCleanup = (fn, delay) => setTimeout(() => {
+        if (!state || state !== ayaneState) { if (fx.isConnected) fx.remove(); return; }
+        fn();
+      }, delay);
+      ayaneCleanup(() => {
         hitTargets.forEach(enemy => {
           if (!enemy) return;
           enemy.ayaneGrabUntil = 0;
@@ -37728,7 +37747,7 @@
         renderHud();
       }, RELEASE_DELAY);
 
-      pushUltTimer(() => {
+      ayaneCleanup(() => {
         fx.classList.add('fade');
         if (root) {
           root.classList.remove('ayane-rampage-shake');
@@ -37736,8 +37755,9 @@
         }
       }, RELEASE_DELAY + 240);
 
-      pushUltTimer(() => {
+      ayaneCleanup(() => {
         if (fx.isConnected) fx.remove();
+        if (root) root.classList.remove('ayane-rampage-shake', 'ayane-rampage-active');
       }, RELEASE_DELAY + 700);
 
       return;
@@ -37747,6 +37767,7 @@
     clearEnemyBulletsOnly();
 
     const now = performance.now();
+    const ayaneBossState = state; // build2030
     const GRAB_DURATION = 7000;
     const STRIKE_DELAY = 760;
     const RELEASE_DELAY = STRIKE_DELAY + GRAB_DURATION;
@@ -37905,8 +37926,9 @@
         }, i * 250);
       }
 
-      pushUltTimer(() => {
-        if (!state) return;
+      // build2030: 拘束の解除は他キャラのULT（clearUltTimers）で消されないように。
+      setTimeout(() => {
+        if (!state || state !== ayaneBossState || state.ended || state.finishing) return;
         state.bossGrabUntil = 0;
         deferBossAttackResume(performance.now());
         if (bossEl) bossEl.classList.remove('ayane-grabbed');
@@ -37918,15 +37940,14 @@
       }, GRAB_DURATION);
     }, STRIKE_DELAY);
 
-    pushUltTimer(() => {
+    setTimeout(() => {
       fx.classList.add('fade');
       if (root) {
         root.classList.remove('ayane-rampage-shake');
         root.classList.remove('ayane-rampage-active');
       }
       if (bossEl) bossEl.classList.remove('ayane-grabbed');
-      if (state) state.bossGrabUntil = 0;
-      renderHud();
+      if (state && state === ayaneBossState) { state.bossGrabUntil = 0; renderHud(); }
     }, RELEASE_DELAY + 240);
 
     setTimeout(() => {
