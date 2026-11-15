@@ -30717,18 +30717,30 @@
     if (!arena || !state.boss || !BOSS) return;
     const ids=[selectedStage.enemyIds[1],selectedStage.enemyIds[2]];
     const positions=[{x:.77,y:.15},{x:.30,y:.245}];
+    // build1880: 夜明けPHASE1の3体は、元画像サイズではなく
+    // 盤面での見た目サイズをシエン基準でそろえる。
+    // カミラだけ大きく見えていたため、ガード個体ごとに uiScale を分離する。
+    const guardScaleByRole={
+      towa:1.45,
+      shien:1.45,
+      camilla:1.12,
+    };
     const w=arena.clientWidth||390,h=arena.clientHeight||700;
     const created=[];
     ids.forEach((id,i)=>{
       const def=getShootingEnemy(id);
       if (!def) return;
-      const guard=createNormalEnemy({...def,hp:5000,behavior:'dawn_guard_v1',uiScale:1.45,scoreValue:1000},now,{noElementIcon:true});
+      const role=i===0?'towa':'shien';
+      const visualScale=Number(guardScaleByRole[String(def.behavior||'').includes('camilla')?'camilla':role] || guardScaleByRole[role] || 1.45);
+      const guard=createNormalEnemy({...def,hp:5000,behavior:'dawn_guard_v1',uiScale:visualScale,scoreValue:1000},now,{noElementIcon:true});
       if(!guard)return;
-      guard.dawnGuard=i===0?'towa':'shien';
+      guard.dawnGuard=role;
       guard.hp=guard.hpMax=5000;
       guard.x=guard.baseX=w*positions[i].x;
       guard.y=guard.baseY=Math.max(110,h*positions[i].y);
       guard.el.classList.add('dawn-trio-unit');
+      if (String(def.behavior||'').includes('camilla')) guard.el.classList.add('dawn-trio-camilla');
+      if (role==='shien') guard.el.classList.add('dawn-trio-shien');
       positionUnit(guard.el,guard.x,guard.y);
       positionMiniEnemyHp(guard);
       renderMiniEnemyHp(guard);

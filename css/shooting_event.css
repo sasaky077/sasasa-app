@@ -16843,9 +16843,14 @@ html body #shooting-event-root.towa-light-background .shooting-wash{
    ============================================================ */
 /* 奥で光の膜に包まれたトワ（中ボスの間だけ） */
 #shooting-event-root .dawn-towa-shade{
-  position:absolute;right:15%;top:98px;width:min(26vw,104px);aspect-ratio:618/640;z-index:7;pointer-events:none;
+  position:absolute;right:15%;top:98px;
+  /* build1880: PHASE1の後衛トワもシエン基準の見た目サイズへ寄せる */
+  width:min(24vw,96px);aspect-ratio:618/640;z-index:7;pointer-events:none;
   opacity:.78;transition:opacity .6s ease,transform .6s ease;
   animation:dts-float 3.6s ease-in-out infinite alternate;
+}
+@media (min-width:700px){
+  #shooting-event-root .dawn-towa-shade{width:min(21vw,112px)}
 }
 #shooting-event-root .dawn-towa-shade.is-hidden{opacity:0;transform:scale(.8);}
 #shooting-event-root .dawn-towa-shade img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;filter:brightness(1.08) saturate(.85) drop-shadow(0 0 10px rgba(255,236,190,.85));opacity:.8;}
