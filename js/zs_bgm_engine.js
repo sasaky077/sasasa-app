@@ -24,6 +24,7 @@
 (function () {
   'use strict';
   const IDS_SELECTOR = 'audio#bgm-opening, audio#bgm, audio.bgm-battle-track';
+  const FADE_SEC = 0.035;            // build1999: 止める・始める時のなめらかな音量変化
   const MAX_CACHED_BUFFERS = 2;       // デコード済みの曲は最大2曲だけ持つ（1曲で数十MBになるため）
 
   const ua = navigator.userAgent || '';
@@ -63,6 +64,13 @@
     });
     return ctx;
   }
+  // 全曲共通の出口（バックグラウンドへ移る時にまとめて静かにする）
+  let master = null;
+  function getMaster() {
+    const c = getCtx();
+    if (!master) { master = c.createGain(); master.gain.value = document.hidden ? 0 : 1; master.connect(c.destination); }
+    return master;
+  }
   function resumeCtx() {
     const c = getCtx();
     if (c.state !== 'running') { try { return c.resume(); } catch (_) {} }
@@ -77,11 +85,28 @@
     if (c.state !== 'running') resumeCtx();
   };
   ['touchend', 'pointerup', 'click', 'keydown', 'pointerdown', 'touchstart'].forEach(t => window.addEventListener(t, unlock, { capture: true, passive: true }));
-  document.addEventListener('visibilitychange', () => {
-    if (!ctx) return;
-    if (document.hidden) { if (!voices.some(v => !v.paused)) { try { ctx.suspend(); } catch (_) {} } }
-    else if (voices.some(v => !v.paused)) resumeCtx();
-  });
+  // build1999: バックグラウンドへ移る時は、iOS に止められる前に自分で静かに止める。
+  //  何もしないと、音の処理が途中で凍結され、最後の音が一瞬伸びて「プーン」と鳴る。
+  //  ①すぐ全体の音量を数十ミリ秒で0へ下げる ②下げ終わってから AudioContext を止める（曲の一時停止は bgm_guard が行う）
+  let hideTimer = 0;
+  function quietForHide() {
+    if (!ctx || !master) return;
+    try {
+      const t = ctx.currentTime;
+      master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(master.gain.value, t); master.gain.linearRampToValueAtTime(0, t + FADE_SEC);
+    } catch (_) {}
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(() => { if (document.hidden && ctx) { try { ctx.suspend(); } catch (_) {} } }, FADE_SEC * 1000 + 40);
+  }
+  function restoreAfterShow() {
+    clearTimeout(hideTimer);
+    if (!ctx || !master) return;
+    try { const t = ctx.currentTime; master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(1, t); } catch (_) {}
+    if (voices.some(v => !v.paused)) resumeCtx();
+  }
+  document.addEventListener('visibilitychange', () => { if (document.hidden) quietForHide(); else restoreAfterShow(); });
+  window.addEventListener('pagehide', quietForHide);
+  window.addEventListener('pageshow', () => { if (!document.hidden) restoreAfterShow(); });
 
   // ---------------- 曲データ（取得・デコード・キャッシュ） ----------------
   const buffers = new Map(); // key -> { buffer, promise, usedAt }
@@ -172,9 +197,15 @@
       if (!this.node) return;
       // 位置を覚えてから止める
       this.offset = this.currentTime;
-      const n = this.node; this.node = null;
-      try { n.onended = null; n.stop(); } catch (_) {}
-      try { n.disconnect(); } catch (_) {}
+      const n = this.node, fg = this.nodeGain; this.node = null; this.nodeGain = null;
+      try { n.onended = null; } catch (_) {}
+      // build1999: いきなり切ると波形が途切れて「プツッ／プーン」と鳴る。数十ミリ秒で音量を0へ下げてから止める
+      try {
+        const t = ctx.currentTime;
+        if (fg) { fg.gain.cancelScheduledValues(t); fg.gain.setValueAtTime(fg.gain.value, t); fg.gain.linearRampToValueAtTime(0, t + FADE_SEC); }
+        n.stop(t + FADE_SEC + 0.01);
+      } catch (_) { try { n.stop(); } catch (_) {} }
+      setTimeout(() => { try { n.disconnect(); } catch (_) {} try { fg && fg.disconnect(); } catch (_) {} }, (FADE_SEC + 0.1) * 1000);
     }
     // 鳴らすべきなら鳴らす（曲の準備・AudioContext の再開を待ってから）
     kick() {
@@ -183,12 +214,17 @@
       if (!b) { this.prepare(); return; }
       const c = getCtx();
       if (c.state !== 'running') return; // 再開したら statechange から再度呼ばれる
-      if (!this.gain) { this.gain = c.createGain(); this.gain.connect(c.destination); }
+      if (!this.gain) { this.gain = c.createGain(); this.gain.connect(getMaster()); }
       this.applyGain();
       const n = c.createBufferSource();
       n.buffer = b;
       n.loop = !!this.el.loop;
-      n.connect(this.gain);
+      // build1999: 1回の再生ごとに専用の音量（出だし・止める時にだけ短くなめらかに変える）
+      const fg = c.createGain();
+      fg.gain.setValueAtTime(0, c.currentTime);
+      fg.gain.linearRampToValueAtTime(1, c.currentTime + FADE_SEC);
+      n.connect(fg); fg.connect(this.gain);
+      this.nodeGain = fg;
       let off = this.offset;
       if (!(off >= 0) || off >= b.duration) off = n.loop ? (off % b.duration) || 0 : 0;
       n.start(0, off);
