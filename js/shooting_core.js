@@ -1080,6 +1080,13 @@
     const segs = selectedStage.towaDawn.segments || [];
     return segs[Math.max(0, Math.min(segs.length - 1, Number(state.towaDawnSeg || 0)))] || null;
   }
+  // build1977: PHASE I でシエン・カミラが残っている間、トワは透けていて攻撃が当たらない
+  function isTowaDawnPhantom() {
+    if (!isTowaDawnStage() || !state) return false;
+    if (state.dawnSegSwitching) return true; // PHASE切り替えの演出中も当たらない（残りHP1が削られて撃破扱いになるのを防ぐ）
+    if (Number(state.towaDawnSeg || 0) !== 0) return false;
+    return !state.dawnTowaMaterialized;
+  }
   // build1970: 夜明けの白飛び「夜明けの刻」は塔15F由来の暗転（state.tower15）だけで管理する。
   //  被ダメージ2倍・残り時間バー・予兆は、すべてこの判定にそろえる。
   function isTowaDawnWhiteoutActive(now) {
@@ -8168,6 +8175,12 @@
     }
   }
   function getMagaEyeConfig() {
+    if (isTowaDawnStage()) { // build1977: 夜明けは PHASE II だけ、ゲージごとの設定
+      if (!state || Number(state.towaDawnSeg || 0) !== 1) return null;
+      const phase = Math.max(1, Math.min(2, Number(state.boss?.phase || 1)));
+      const fin = selectedStage.towaDawn?.final || {};
+      return (fin[phase] || fin[1] || {}).magaEye || null;
+    }
     return (BOSS && BOSS.magaEye) || (selectedStage && selectedStage.magaEye) || null;
   }
   function updateMagaEyeAttack(now) {
@@ -8949,7 +8962,7 @@
       targets.push({ kind:'object', ref:obj, x:Number(obj.x || 0), y:Number(obj.y || 0) });
     });
 
-    if (!isNormalBattle() && state.boss && state.boss.hp > 0) {
+    if (!isNormalBattle() && state.boss && state.boss.hp > 0 && !isTowaDawnPhantom()) { // build1977
       targets.push({
         kind:'boss',
         ref:state.boss,
@@ -9341,7 +9354,7 @@
     el.style.transform = `translate3d(${ox.toFixed(1)}px,${oy.toFixed(1)}px,0) rotate(${(ang * 180 / Math.PI).toFixed(2)}deg)`;
     let motes = '';
     for (let i = 0; i < 6; i++) {
-      motes += `<b style="left:${(8 + Math.random() * 80).toFixed(0)}%;--d:${(.04 + Math.random() * .12).toFixed(2)}s;--dy:${((Math.random() - .5) * 26).toFixed(0)}px"></b>`;
+      motes += `<b${Math.random() < .5 ? ' class="dn"' : ''} style="left:${(8 + Math.random() * 80).toFixed(0)}%;--d:${(.04 + Math.random() * .12).toFixed(2)}s"></b>`;
     }
     el.innerHTML = '<i class="tr-bloom"></i><i class="tr-trail"></i><i class="tr-core"></i>' + motes;
     arena.appendChild(el);
@@ -9412,7 +9425,7 @@
       fx.style.setProperty('--rb', `${Math.round(m.radius * 2)}px`);
       // build1972: 白い核が弾け、大きな十字の光と破片。範囲はやわらかい光のにじみで示す（円環は使わない）
       let shards = '';
-      for (let i = 0; i < 8; i++) shards += `<b style="--a:${(i * 45 + Math.random() * 20).toFixed(0)}deg"></b>`;
+      for (let i = 0; i < 8; i++) shards += `<b style="transform:rotate(${(i * 45 + Math.random() * 20).toFixed(0)}deg)"><s></s></b>`; // build1976: 回転は要素側（Safari対策）
       fx.innerHTML = '<i class="trb-area"></i><i class="trb-flash"></i><i class="trb-star"></i><i class="trb-star s2"></i>' + shards;
       fx.style.transform = `translate3d(${cx.toFixed(1)}px,${cy.toFixed(1)}px,0)`;
       arena.appendChild(fx);
@@ -10176,7 +10189,7 @@
     el.style.setProperty('--bomb-rgb', visual.rgb);
     el.style.setProperty('--spin-ms', `${Math.round(spinMs)}ms`);
     let shards = '';
-    for (let i = 0; i < 10; i++) shards += `<b style="--a:${(i * 36 + Math.random() * 18).toFixed(0)}deg"></b>`;
+    for (let i = 0; i < 10; i++) shards += `<b style="transform:rotate(${(i * 36 + Math.random() * 18).toFixed(0)}deg)"><s></s></b>`; // build1976
     el.innerHTML = '<i class="nsb-area"></i><i class="nsb-wave"></i><i class="nsb-wave w2"></i>' +
       '<i class="nsb-flash"></i><i class="nsb-star"></i><i class="nsb-star s2"></i>' + shards;
     arena.appendChild(el);
@@ -20472,7 +20485,12 @@
   //  弾はすべてCanvas描画（DOMを増やさない）。
   // ============================================================
   function getTower15Config() {
-    if (isTowaDawnStage()) { const seg = getTowaDawnSegment(); return (seg && seg.role === 'towa' && seg.echo) || null; } // build1877
+    if (isTowaDawnStage()) { // build1877 / build1977: PHASE I は実体化してから通常弾幕だけ
+      const seg = getTowaDawnSegment();
+      if (!seg || !seg.echo) return null;
+      if (seg.role === 'phantom') return state && state.dawnTowaMaterialized ? seg.echo : null;
+      return seg.role === 'towa' ? seg.echo : null;
+    }
     return (selectedStage && selectedStage.tower15Echo) || null;
   }
 
@@ -20540,7 +20558,10 @@
       return;
     }
 
-    // --- 暗転 ---
+    // --- 暗転 ---（build1977: blackout:false なら使わない）
+    if (cfg.blackout === false) {
+      if (t15.blackoutUntil) { t15.blackoutUntil = 0; setTower15Blackout(false); }
+    } else {
     const bo = cfg.blackout || {};
     const phase = Math.max(1, Math.min(2, Number(state.boss.phase || 1)));
     const phaseCfg = bo[phase] || bo[1] || { everyMs: 15000, durationMs: 4000 };
@@ -20553,6 +20574,7 @@
       t15.blackoutUntil = now + Number(phaseCfg.durationMs || 4000);
       setTower15Blackout(true);
     }
+    }
 
     // --- WARNING常駐（3つ） ---
     const bossLockedUntil = getBossLockUntil(now);
@@ -20562,7 +20584,7 @@
     }
     let alive = 0;
     for (const p of state.enemyBullets) if (p && p.tower15Warning) alive++;
-    const want = Math.max(0, Number(cfg.warningCount || 3));
+    const want = Math.max(0, Number(cfg.warningCount ?? 3)); // build1977: 0 を指定できるように
     if (alive < want) {
       // 開幕は即配置。撃破／消去で減った分は少し間を置いて補充する。
       if (!t15.warningsPlaced) {
@@ -22756,6 +22778,7 @@
     if (isRhythmStage()) return;
     // build1485: 塔15F BOSSは専用パターンのみ（汎用WARNING攻撃は使わない）。
     if (BOSS && BOSS.behavior === 'tower15_echo_v1') {
+      if (isTowaDawnPhantom()) return; // build1977: 透けている間は援護射撃（updateTowaDawn）だけ
       fireTower15Boss(now);
       return;
     }
@@ -23484,7 +23507,7 @@
     lastArenaSize.w = arena.clientWidth; lastArenaSize.h = arena.clientHeight; lastArenaSize.at = performance.now(); // build1666
     const playerRect = player.getBoundingClientRect();
     const playerCoreRect = playerCore.getBoundingClientRect();
-    const bossRect = boss && !isNormalBattle() ? boss.getBoundingClientRect() : null;
+    const bossRect = boss && !isNormalBattle() && !isTowaDawnPhantom() ? boss.getBoundingClientRect() : null; // build1977: 透けたトワはすり抜ける
 
     return {
       arena, player, playerCore, boss,
@@ -30844,10 +30867,13 @@
     // 手下（カミラの子蜘蛛など）も片付ける
     (state.normalEnemies || []).forEach(e => { try { e && e.el && e.el.remove(); e && e.hpEl && e.hpEl.remove(); e && e.elementEl && e.elementEl.remove(); e && e.layer && e.layer.remove(); } catch (_) {} });
     state.normalEnemies = [];
+    // build1977: PHASE I の前衛（倒れた後の残りも含む）を確実に片付ける
+    (state.dawnGuardRefs || []).forEach(g => { try { g && g.el && g.el.remove(); g && g.hpEl && g.hpEl.remove(); g && g.elementEl && g.elementEl.remove(); } catch (_) {} });
+    document.querySelectorAll('.dawn-trio-unit').forEach(el => el.remove());
     document.querySelectorAll('.dawn-whiteout-veil,.dawn-ray-warning,.dawn-ray-beam,.dawn-float-text').forEach(el=>el.remove());
     // build1970: 白飛びの予兆・PHASE Iの光の膜を解除
     const rootT = document.getElementById(ROOT_ID);
-    if (rootT) { rootT.classList.remove('dawn-whiteout-pending'); rootT.removeAttribute('data-dawn-guarded'); }
+    if (rootT) { rootT.classList.remove('dawn-whiteout-pending'); rootT.removeAttribute('data-dawn-guarded'); rootT.removeAttribute('data-dawn-phantom'); }
   }
   function applyTowaDawnSegment(seg, now) {
     teardownTowaDawnBossMechanics(); // 演出の間に前のボスの処理が状態を作り直していても、ここで確実に片付ける
@@ -30893,9 +30919,11 @@
     const now = performance.now();
     const prev = segs[cur];
     const next = segs[cur + 1];
+    teardownTowaDawnBossMechanics(); // build1977: 前衛の参照が残っているうちに片付ける
     state.towaDawnSeg = cur + 1;
+    state.dawnSegSwitching = true;
     state.dawnTrioCreated=false;state.dawnFinalStartedAt=0;state.dawnRayAt=0;state.dawnBarrageAt=0;
-    state.dawnFinalPhase=0;state.dawnGuardRefs=null;state.dawnGuardEnraged='';state.dawnVeilBroken=false;
+    state.dawnFinalPhase=0;state.dawnGuardRefs=null;state.dawnGuardEnraged='';state.dawnVeilBroken=false;state.dawnTowaMaterialized=true;state.magaEyeNextAt=0;
     state.phaseTransition = true;
     clearProjectiles();
     teardownTowaDawnBossMechanics();
@@ -30907,6 +30935,7 @@
     setTimeout(() => {
       if (!state || state.ended || state.finishing || !isTowaDawnStage()) return;
       applyTowaDawnSegment(next, performance.now());
+      state.dawnSegSwitching = false;
       renderHud();
     }, 900);
     setTimeout(() => {
@@ -30928,7 +30957,7 @@
       fx.className = 'dawn-break' + (next.role === 'towa' ? ' is-veil' : ' is-fade');
       fx.setAttribute('aria-hidden', 'true');
       fx.innerHTML = '<i class="db-flash"></i><i class="db-ring"></i><i class="db-ring r2"></i>' +
-        Array.from({ length: 14 }, (_, i) => `<b style="--a:${(i * 360 / 14).toFixed(0)}deg;--d:${(60 + (i % 4) * 26)}px"></b>`).join('');
+        Array.from({ length: 14 }, (_, i) => `<b style="transform:rotate(${(i * 360 / 14).toFixed(0)}deg);--d:${(60 + (i % 4) * 26)}px"><s></s></b>`).join('');
       fx.style.setProperty('--bx', `${Number(state.boss.x || 0)}px`);
       fx.style.setProperty('--by', `${Number(state.boss.y || 0)}px`);
       arena.appendChild(fx);
@@ -30954,37 +30983,25 @@
     }
     return el;
   }
-  // 夜明け Phase1: カミラ本体 + トワ(後衛) + シエン(前衛) の独立HP管理。
+  // 夜明け Phase1（build1977）: トワ（ボス・最後方・透過）＋ シエン（左）・カミラ（右）の個別HP。
   function ensureDawnTrio(now) {
     if (state.dawnTrioCreated || Number(state.towaDawnSeg || 0)!==0) return;
     const arena=document.getElementById('shooting-arena');
     if (!arena || !state.boss || !BOSS) return;
-    const ids=[selectedStage.enemyIds[1],selectedStage.enemyIds[2]];
-    const positions=[{x:.77,y:.15},{x:.30,y:.245}];
-    // build1880: 夜明けPHASE1の3体は、元画像サイズではなく
-    // 盤面での見た目サイズをシエン基準でそろえる。
-    // カミラだけ大きく見えていたため、ガード個体ごとに uiScale を分離する。
-    const guardScaleByRole={
-      towa:1.45,
-      shien:1.45,
-      camilla:1.12,
-    };
+    const guards=(selectedStage.towaDawn && selectedStage.towaDawn.guards) || [];
     const w=arena.clientWidth||390,h=arena.clientHeight||700;
     const created=[];
-    ids.forEach((id,i)=>{
-      const def=getShootingEnemy(id);
+    guards.forEach(gd=>{
+      const def=getShootingEnemy(gd.enemyId);
       if (!def) return;
-      const role=i===0?'towa':'shien';
-      const visualScale=Number(guardScaleByRole[String(def.behavior||'').includes('camilla')?'camilla':role] || guardScaleByRole[role] || 1.45);
-      const guard=createNormalEnemy({...def,hp:5000,behavior:'dawn_guard_v1',uiScale:visualScale,scoreValue:1000},now,{noElementIcon:true});
+      const hp=Math.max(1,Number(gd.hp||8000));
+      const guard=createNormalEnemy({...def,hp,behavior:'dawn_guard_v1',uiScale:Number(gd.scale||1.45),scoreValue:1000},now,{noElementIcon:true});
       if(!guard)return;
-      guard.dawnGuard=role;
-      guard.hp=guard.hpMax=5000;
-      guard.x=guard.baseX=w*positions[i].x;
-      guard.y=guard.baseY=Math.max(110,h*positions[i].y);
-      guard.el.classList.add('dawn-trio-unit');
-      if (String(def.behavior||'').includes('camilla')) guard.el.classList.add('dawn-trio-camilla');
-      if (role==='shien') guard.el.classList.add('dawn-trio-shien');
+      guard.dawnGuard=gd.role;
+      guard.hp=guard.hpMax=hp;
+      guard.x=guard.baseX=w*Number(gd.x||.5);
+      guard.y=guard.baseY=Math.max(120,h*Number(gd.y||.3));
+      guard.el.classList.add('dawn-trio-unit','dawn-trio-'+gd.role);
       positionUnit(guard.el,guard.x,guard.y);
       positionMiniEnemyHp(guard);
       renderMiniEnemyHp(guard);
@@ -30992,11 +31009,13 @@
       state.normalSpawned++;
       created.push(guard);
     });
-    if (created.length===2) {
+    if (created.length===guards.length && created.length) {
       state.dawnTrioCreated=true;
-      state.dawnGuardRefs=created; // build1970: 撃破の検知用（倒れた後も参照を持つ）
+      state.dawnGuardRefs=created; // 撃破の検知用（倒れた後も参照を持つ）
       state.dawnGuardEnraged='';
       state.dawnVeilBroken=false;
+      state.dawnTowaMaterialized=false;
+      state.dawnPhantomHintAt=now+2400; // 開幕少ししてから「トワに攻撃は当たらない」と案内
     }
   }
   // build1970: 盤面に短い文字を浮かべる（光の膜・猛り などの合図）
@@ -31024,7 +31043,7 @@
     fx.className='dawn-break is-fade'+(small?' is-small':'');
     fx.setAttribute('aria-hidden','true');
     fx.innerHTML='<i class="db-flash"></i><i class="db-ring"></i>'+
-      Array.from({length:10},(_,i)=>`<b style="--a:${(i*36).toFixed(0)}deg;--d:${(40+(i%3)*20)}px"></b>`).join('');
+      Array.from({length:10},(_,i)=>`<b style="transform:rotate(${(i*36).toFixed(0)}deg);--d:${(40+(i%3)*20)}px"><s></s></b>`).join('');
     fx.style.setProperty('--bx',`${Number(x)||0}px`);
     fx.style.setProperty('--by',`${Number(y)||0}px`);
     arena.appendChild(fx);
@@ -31036,7 +31055,7 @@
     const now=performance.now();
     if(now<Number(state.dawnGuardHintAt||0))return;
     state.dawnGuardHintAt=now+4200;
-    showDawnFloatText(state.boss.x,Number(state.boss.y||0)+78,'光の膜 ― トワとシエンを倒せ','veil');
+    showDawnFloatText(state.boss.x,Number(state.boss.y||0)+70,'トワに攻撃は届かない ― シエンとカミラを倒せ','veil');
   }
   function fireDawnArc(x,y,now,count,speed,danger=false){
     const aim=getEnemyAimPosition();
@@ -31055,38 +31074,60 @@
     if(!enraged||enraged!==role)return 1;
     return Math.max(.5,Math.min(1,Number(selectedStage?.towaDawn?.guardEnrageScale||.78)));
   }
-  function updateDawnGuardEvents(){
+  function updateDawnGuardEvents(now){
     const refs=state.dawnGuardRefs||[];
     if(!refs.length)return;
     let fallen=null;
     refs.forEach(g=>{ if(g&&!g.dawnFallen&&!(g.hp>0)){ g.dawnFallen=true; fallen=g; } });
     const alive=refs.filter(g=>g&&g.hp>0);
     const root=document.getElementById(ROOT_ID);
-    if(root)root.setAttribute('data-dawn-guarded',alive.length?'1':'0');
+    if(root){
+      root.setAttribute('data-dawn-guarded',alive.length?'1':'0');
+      root.setAttribute('data-dawn-phantom',state.dawnTowaMaterialized?'0':'1');
+    }
+    // 透けている間はトワのHPを減らさない（ULTなどの直接ダメージ対策）
+    if(!state.dawnTowaMaterialized&&state.boss&&state.boss.hpMax>0&&state.boss.hp<state.boss.hpMax){
+      state.boss.hp=state.boss.hpMax; state.boss.gaugeHp=Number(state.boss.gaugeHps?.[0]||state.boss.hpMax);
+    }
+    if(!state.dawnTowaMaterialized&&state.dawnPhantomHintAt&&now>=state.dawnPhantomHintAt){
+      state.dawnPhantomHintAt=0;
+      showDawnFloatText(state.boss.x,Number(state.boss.y||0)+70,'トワに攻撃は届かない ― シエンとカミラを倒せ','veil');
+    }
     if(!fallen)return;
     showDawnBurst(fallen.x,fallen.y,true);
     if(alive.length===1&&!state.dawnGuardEnraged){
       const survivor=alive[0];
       state.dawnGuardEnraged=survivor.dawnGuard;
       survivor.el&&survivor.el.classList.add('dawn-trio-enraged');
-      showDawnFloatText(survivor.x,Number(survivor.y||0)+56,survivor.dawnGuard==='towa'?'トワの光が強まる':'シエンが猛る','rage');
+      showDawnFloatText(survivor.x,Number(survivor.y||0)+56,survivor.dawnGuard==='camilla'?'カミラが猛る':'シエンが猛る','rage');
     }
-    if(!alive.length&&!state.dawnVeilBroken){
+    if(!alive.length&&!state.dawnTowaMaterialized){
+      // 2体とも倒した：トワが実体化する
+      state.dawnTowaMaterialized=true;
       state.dawnVeilBroken=true;
+      state.tower15=null; // 実体化してから弾幕を始める
+      state.lastBossShotAt=now+900;
       if(state.boss){
+        state.boss.hp=state.boss.hpMax;
         showDawnBurst(state.boss.x,state.boss.y,false);
-        showDawnFloatText(state.boss.x,Number(state.boss.y||0)+78,'光の膜が消えた','veil');
+        showDawnFloatText(state.boss.x,Number(state.boss.y||0)+70,'トワが実体化した','veil');
+        const bossEl=document.getElementById(BOSS_ID);
+        if(bossEl){ bossEl.classList.remove('dawn-boss-materialize'); void bossEl.offsetWidth; bossEl.classList.add('dawn-boss-materialize'); }
       }
+      if(root)root.setAttribute('data-dawn-phantom','0');
+      renderHud();
     }
   }
   function updateDawnTrio(now){
     if (!state || Number(state.towaDawnSeg||0)!==0) return;
     ensureDawnTrio(now);
-    updateDawnGuardEvents();
+    updateDawnGuardEvents(now);
     if(state.phaseTransition||state.ended||state.finishing||isEntireEnemyActionLocked(now))return;
     const alive=(state.normalEnemies||[]).filter(e=>e&&e.dawnGuard&&e.hp>0);
     const shien=alive.find(e=>e.dawnGuard==='shien');
-    const towa=alive.find(e=>e.dawnGuard==='towa');
+    const camilla=alive.find(e=>e.dawnGuard==='camilla');
+    const cfg=selectedStage.towaDawn||{};
+    // シエン：自機狙いの3WAY斬撃
     if(shien&&now>=Number(state.dawnShienAttackAt||0)){
       state.dawnShienAttackAt=now+3100*getDawnGuardIntervalScale('shien');
       const a=getEnemyAimPosition(),base=Math.atan2(a.y-shien.y,a.x-shien.x);
@@ -31097,9 +31138,34 @@
         if(b){b.attackElement='dark';appendEnemyProjectile(b);}
       }
     }
-    if(towa&&now>=Number(state.dawnLethalAt||0)){
-      state.dawnLethalAt=now+5100*getDawnGuardIntervalScale('towa');
-      fireDawnArc(towa.x,towa.y,now,4,93,true);
+    // カミラ：自機狙いの火の5WAY。3回に1回は遅い12方向の輪を重ねる
+    if(camilla&&now>=Number(state.dawnCamillaAttackAt||0)){
+      if(!state.dawnCamillaAttackAt){ state.dawnCamillaAttackAt=now+1500; }
+      else{
+        state.dawnCamillaAttackAt=now+2800*getDawnGuardIntervalScale('camilla');
+        state.dawnCamillaVolley=Number(state.dawnCamillaVolley||0)+1;
+        const a=getEnemyAimPosition(),base=Math.atan2(a.y-camilla.y,a.x-camilla.x);
+        for(let k=-2;k<=2;k++){
+          const angle=base+k*.2;
+          const b=makeProjectile('shooting-enemy-bullet',camilla.x,camilla.y,Math.cos(angle)*210,Math.sin(angle)*210,205);
+          if(b){b.attackElement='fire';appendEnemyProjectile(b);}
+        }
+        if(state.dawnCamillaVolley%3===0){
+          for(let i=0;i<12;i++){
+            const angle=i/12*Math.PI*2+Math.random()*.3;
+            const b=makeProjectile('shooting-enemy-bullet',camilla.x,camilla.y,Math.cos(angle)*120,Math.sin(angle)*120,205);
+            if(b){b.attackElement='fire';appendEnemyProjectile(b);}
+          }
+        }
+      }
+    }
+    // 透けたトワ：最後方から漂う即死弾（4発）
+    if(isTowaDawnPhantom()&&state.boss&&now>=Number(state.dawnLethalAt||0)){
+      if(!state.dawnLethalAt){ state.dawnLethalAt=now+3200; }
+      else{
+        state.dawnLethalAt=now+Math.max(2500,Number(cfg.phantomLethalEveryMs||5600));
+        fireDawnArc(state.boss.x,Number(state.boss.y||0)+20,now,4,93,true);
+      }
     }
   }
   // Phase2（build1970で再構成）：
@@ -31189,8 +31255,8 @@
         state.dawnBarrageAt=now+2400;
       }
     }
-    if(!paused&&now>=Number(state.dawnBarrageAt||0)){
-      state.dawnBarrageAt=now+Math.max(900,Number(cfg.ringEveryMs||2700));
+    if(!paused&&Number(cfg.ringEveryMs)>0&&now>=Number(state.dawnBarrageAt||0)){ // build1977: ringEveryMs:0 で光輪なし
+      state.dawnBarrageAt=now+Math.max(900,Number(cfg.ringEveryMs));
       fireDawnRings(now,cfg,elapsed);
     }
     if(!paused&&now>=Number(state.dawnRayAt||0)){
@@ -31224,7 +31290,7 @@
     // PHASE1の光トワは独立HPの1体のみ。旧装飾用シルエットは生成しない。
     const shade = document.querySelector('.dawn-towa-shade');
     if (shade) shade.remove();
-    const mid = seg.role === 'mid';
+    const mid = seg.role === 'phantom' && isTowaDawnPhantom(); // build1977: 透けている間だけ援護射撃
     const rootD = document.getElementById(ROOT_ID);
     if (rootD && rootD.getAttribute('data-dawn-role') !== (seg.role || 'mid')) rootD.setAttribute('data-dawn-role', seg.role || 'mid');
     if (!mid || state.ended || state.finishing || state.phaseTransition || state.koTransition) return;
@@ -31232,11 +31298,10 @@
     const cfg = selectedStage.towaDawn || {};
     if (!state.towaDawnSupportAt) state.towaDawnSupportAt = now + 2600;
     if (now < state.towaDawnSupportAt) return;
-    state.towaDawnSupportAt = now + Math.max(1500, Number(cfg.supportEveryMs || 3600)) * getDawnGuardIntervalScale('towa');
+    state.towaDawnSupportAt = now + Math.max(1500, Number(cfg.supportEveryMs || 3600));
     const arena = document.getElementById('shooting-arena');
-    const supportTowa=(state.normalEnemies||[]).find(e=>e&&e.dawnGuard==='towa'&&e.hp>0);
-    if (!arena || !supportTowa) return;
-    const sx = supportTowa.x, sy = supportTowa.y;
+    if (!arena) return;
+    const sx = Number(state.boss.x || 0), sy = Number(state.boss.y || 0) + 20;
     const aim = getEnemyAimPosition();
     const base = Math.atan2(aim.y - sy, aim.x - sx);
     const n = 5, spread = 0.62, speed = 150;
@@ -31282,6 +31347,7 @@
       (state.normalEnemies || []).some(e => e && e.dawnGuard && e.hp > 0)) {
       state.boss.hp=1; showDawnGuardHint(); renderHud(); return; // build1970: 光の膜で止まっていることを伝える
     }
+    if (isTowaDawnStage() && state.dawnSegSwitching) { state.boss.hp = Math.max(1, Number(state.boss.hp || 0)); return; } // build1977
     if (isTowaDawnStage() && advanceTowaDawnSegment()) return;
     const towaDawnFinale = isTowaDawnStage(); // build1970: 最後のトワ撃破＝夜が明ける
 

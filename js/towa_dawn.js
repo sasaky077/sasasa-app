@@ -325,8 +325,8 @@
       #towa-dawn-splash .tds-horizon{position:absolute;left:0;right:0;top:64%;height:1px;
         background:linear-gradient(90deg,transparent,rgba(214,160,70,.85) 30%,#fff 50%,rgba(214,160,70,.85) 70%,transparent);
         box-shadow:0 0 14px rgba(255,200,110,.8);transform:scaleX(0);animation:tdsHorizon 1.2s cubic-bezier(.2,.8,.2,1) .35s forwards}
-      #towa-dawn-splash .tds-mote{position:absolute;bottom:-12px;width:4px;height:4px;border-radius:50%;background:#fff;
-        box-shadow:0 0 8px 2px rgba(255,214,130,.85);opacity:0;animation:tdsMote var(--dur) ease-out var(--dl) forwards}
+      #towa-dawn-splash .tds-mote{position:absolute;bottom:-12px;width:4px;height:var(--rise);transform-origin:50% 100%;opacity:0;animation:tdsMote var(--dur) ease-out var(--dl) forwards}
+      #towa-dawn-splash .tds-mote::after{content:"";position:absolute;left:0;bottom:0;width:4px;height:4px;border-radius:50%;background:#fff;box-shadow:0 0 8px 2px rgba(255,214,130,.85)}
       #towa-dawn-splash .tds-go{position:absolute;left:0;right:0;top:calc(50% + 92px);display:flex;flex-direction:column;align-items:center;gap:10px}
       #towa-dawn-splash .tds-slash{width:100vw;height:2px;background:linear-gradient(90deg,transparent,#fff 40%,#ffe2a0 60%,transparent);
         box-shadow:0 0 16px 3px rgba(255,214,120,.9);transform:scaleX(0);transform-origin:0 50%;animation:tdsSlash .45s cubic-bezier(.7,0,.2,1) 3.5s forwards}
@@ -346,7 +346,7 @@
       @keyframes tdsTitle{to{opacity:1;filter:blur(0)}}
       @keyframes tdsGlow{0%{opacity:0}60%{opacity:1}100%{opacity:.8}}
       @keyframes tdsHorizon{to{transform:scaleX(1)}}
-      @keyframes tdsMote{0%{opacity:0;transform:translateY(0)}20%{opacity:1}100%{opacity:0;transform:translate(var(--dx),calc(-1 * var(--rise)))}}
+      @keyframes tdsMote{0%{opacity:0;transform:translateY(0)}20%{opacity:1}100%{opacity:0;transform:translateY(-100%)}} /* build1976: 変数を使わない */
       @keyframes tdsSlash{to{transform:scaleX(1)}}
       @keyframes tdsGo{0%{opacity:0;letter-spacing:1.6em;filter:blur(4px)}100%{opacity:1;letter-spacing:.9em;filter:none}}
       @media (prefers-reduced-motion:reduce){
@@ -365,7 +365,7 @@
     const motes = Array.from({ length: 16 }, (_, i) => {
       const left = 6 + Math.random() * 88, dl = (.6 + Math.random() * 2.4).toFixed(2), dur = (2 + Math.random() * 1.6).toFixed(2);
       const rise = Math.round(260 + Math.random() * 420), dx = Math.round((Math.random() - .5) * 60);
-      return `<i class="tds-mote" style="left:${left.toFixed(1)}%;--dl:${dl}s;--dur:${dur}s;--rise:${rise}px;--dx:${dx}px"></i>`;
+      return `<i class="tds-mote" style="left:${left.toFixed(1)}%;--dl:${dl}s;--dur:${dur}s;--rise:${rise}px;rotate:${(dx / 20).toFixed(1)}deg"></i>`;
     }).join('');
     el.innerHTML = '<i class="tds-horizon"></i>' + motes + // build1971b: 下から昇る太陽・光条・朝焼けは外した
       '<div class="tds-copy"><div class="tds-kicker">SPECIAL STAGE</div><i class="tds-rule"></i>' +

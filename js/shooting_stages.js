@@ -1754,11 +1754,9 @@
     // ============================================================
     // build1877: 隠しステージ「夜明け」— トワ -光の姿-
     //  残響の塔20Fクリア時にサーバーが1/30で出現を確定。編成は20Fのまま固定、HP・ULTは全回復で開始。
-    //  build1970: 2フェーズ構成。
-    //   PHASE I ：カミラ本体＋トワ（後衛）＋シエン（前衛）。トワとシエンが残っている間、カミラは光の膜でHP1から減らない。
-    //             片方を倒すと、残った方が猛り攻撃間隔が短くなる。
-    //   PHASE II：トワ -光の姿-（2ゲージ）。白飛び「夜明けの刻」は1系統に統一（予兆→白飛び→残り時間バー）。
-    //             白飛び中だけ被ダメージ2倍（即死弾は対象外）。2ゲージ目は白飛びの間隔が短くなり、RAYが3本の扇になる。
+    //  build1977: 2フェーズ構成（詳細は towaDawn のコメント）。
+    //   PHASE I ：透けたトワ（最後方）＋シエン（左）・カミラ（右）。2体を倒すとトワが実体化 → トワ8000で PHASE II。
+    //   PHASE II：トワ強化（10000）。即死弾浮遊・禍眼・RAY・夜明け（白飛び中は被ダメージ2倍）。
     //  制限時間なし。属性結界なし（カミラの火の結界も張らない）。DAWN_TEST は enemyIds に残るが現在は未使用。
     // ============================================================
     [SHOOTING_STAGE_ID.TOWA_DAWN]: Object.freeze({
@@ -1772,35 +1770,48 @@
       type: 'boss',
       background: 'images/battle_bg_towa_light.webp',
       introImage: 'images/towa_light_battle_start.webp',
+      // build1977: ボス役はトワ（最後方）。PHASE I はシエン（左）・カミラ（右）が前に立つ
       enemyIds: Object.freeze([
-        SHOOTING_ENEMY_ID.DAWN_CAMILLA, SHOOTING_ENEMY_ID.DAWN_TOWA,
-        SHOOTING_ENEMY_ID.DAWN_SHIEN, SHOOTING_ENEMY_ID.DAWN_TEST,
+        SHOOTING_ENEMY_ID.DAWN_TOWA, SHOOTING_ENEMY_ID.DAWN_SHIEN,
+        SHOOTING_ENEMY_ID.DAWN_CAMILLA, SHOOTING_ENEMY_ID.DAWN_TEST,
       ]),
-      bossElement: 'fire',
-      enemyElement: 'fire',
-      bossGaugeHps: Object.freeze([5000]),
+      bossElement: 'light',
+      enemyElement: 'light',
+      bossGaugeHps: Object.freeze([8000]),
       maxPartySize: 3,
       towaDawn: Object.freeze({
+        // build1977:
+        //  PHASE I ：トワは透けていて攻撃が当たらない（後ろから援護射撃だけ）。シエン・カミラ（各8000）を倒すとトワが実体化し、
+        //            トワの8000を削ると PHASE II。実体化後のトワは通常の弾幕のみ（即死弾・白飛びなし）。
+        //  PHASE II：トワ強化（10000＝5000×2ゲージ）。ギミック＝即死弾浮遊・禍眼・RAY・夜明け（白飛び中は被ダメージ2倍）。
         segments: Object.freeze([
-          Object.freeze({act:1,role:'mid',enemyId:SHOOTING_ENEMY_ID.DAWN_CAMILLA,element:'fire',gaugeHps:Object.freeze([5000]),title:'PHASE I',sub:'トワ／カミラ／シエン'}),
-          // build1970: 合計HPは8500のまま、2ゲージに分けて後半に山場を作る
-          Object.freeze({act:2,role:'towa',enemyId:SHOOTING_ENEMY_ID.DAWN_TOWA,element:'light',gaugeHps:Object.freeze([4250,4250]),title:'PHASE II',sub:'トワ -光の姿-',
-            echo:Object.freeze({warningCount:4,warningSpeed:160,warningRespawnMs:1300,fireIntervalScale:0.80,
-              // 白飛び「夜明けの刻」はここだけで管理する（旧：トワ本体の暗転と専用ヴェールの2系統）
+          Object.freeze({act:1,role:'phantom',enemyId:SHOOTING_ENEMY_ID.DAWN_TOWA,element:'light',gaugeHps:Object.freeze([8000]),title:'PHASE I',sub:'トワ／シエン／カミラ',
+            echo:Object.freeze({warningCount:0,fireIntervalScale:1.15,blackout:false})}),
+          Object.freeze({act:2,role:'towa',enemyId:SHOOTING_ENEMY_ID.DAWN_TOWA,element:'light',gaugeHps:Object.freeze([5000,5000]),title:'PHASE II',sub:'トワ -光の姿-',
+            echo:Object.freeze({warningCount:3,warningSpeed:150,warningRespawnMs:1600,fireIntervalScale:0.85,
+              // 白飛び「夜明けの刻」はここだけで管理する
               blackout:Object.freeze({firstAtMs:8000,
                 1:Object.freeze({everyMs:17000,durationMs:4800}),
                 2:Object.freeze({everyMs:14500,durationMs:4800})}),
               whiteoutWarnMs:1400})}),
         ]),
-        // build1970: PHASE II の攻撃（ゲージごと）
+        // PHASE I の前衛（個別HP）。x・y は盤面に対する割合
+        guards: Object.freeze([
+          Object.freeze({role:'shien',enemyId:SHOOTING_ENEMY_ID.DAWN_SHIEN,hp:8000,x:.24,y:.30,scale:1.45}),
+          Object.freeze({role:'camilla',enemyId:SHOOTING_ENEMY_ID.DAWN_CAMILLA,hp:8000,x:.76,y:.30,scale:1.12}),
+        ]),
+        // build1977: PHASE II の攻撃（ゲージごと）。光輪は外し、禍眼を追加
         final: Object.freeze({
-          1: Object.freeze({ringEveryMs:2700,ringCount:22,raysPerVolley:1,rayEveryMs:6500,rayTelegraphMs:750}),
-          2: Object.freeze({ringEveryMs:3000,ringCount:22,raysPerVolley:3,raySpread:0.36,rayEveryMs:7600,rayTelegraphMs:950}),
+          1: Object.freeze({ringEveryMs:0,raysPerVolley:1,rayEveryMs:6500,rayTelegraphMs:750,
+            magaEye:Object.freeze({everyMs:14000,count:1,firstAtMs:5000})}),
+          2: Object.freeze({ringEveryMs:0,raysPerVolley:3,raySpread:0.36,rayEveryMs:7600,rayTelegraphMs:950,
+            magaEye:Object.freeze({everyMs:13000,count:2,firstAtMs:4000})}),
         }),
         rayDamage: 280,
         guardEnrageScale: 0.78, // PHASE I：片方が倒れた後、残った方の攻撃間隔
-        supportEveryMs: 3600,
+        supportEveryMs: 3600,   // PHASE I：透けたトワの援護射撃（5WAY）
         supportDamage: 150,
+        phantomLethalEveryMs: 5600, // PHASE I：透けたトワの漂う即死弾（4発）
       }),
       mission: Object.freeze({ type: SHOOTING_MISSION_TYPE.BOSS_CLEAR, text: 'トワ -光の姿- を撃破' }),
       playable: true,
