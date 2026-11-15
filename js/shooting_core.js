@@ -6636,6 +6636,25 @@
       playerCanvasKind: 'css', pbCssSpec: spec, _hw: size[0], _hh: size[1] };
   }
 
+  // build1983: 自機弾の図形版（Canvasどうしの貼り付けが効かない端末向け）
+  function drawPlayerBulletVector(ctx, p, kind, dpr) {
+    const pal = PB_FX_PALETTE[p.playerCanvasElement] || PB_FX_PALETTE.neutral;
+    const x = Number(p.x || 0), y = Number(p.y || 0);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (kind === 'pierce') {
+      const rot = Number(p.el && p.el._shotFxRot || 0);
+      ctx.save(); ctx.translate(x, y); if (rot) ctx.rotate(rot);
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = `rgba(${pal.rgb},.55)`; ctx.lineWidth = 7; ctx.beginPath(); ctx.moveTo(0, -14); ctx.lineTo(0, 16); ctx.stroke();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(0, -14); ctx.lineTo(0, 12); ctx.stroke();
+      ctx.restore();
+      return;
+    }
+    const r = kind === 'homing' ? 6 : 4.5;
+    ctx.beginPath(); ctx.arc(x, y, r + 2.5, 0, Math.PI * 2); ctx.fillStyle = `rgba(${pal.rgb},.35)`; ctx.fill();
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = pal.mid; ctx.fill();
+    ctx.beginPath(); ctx.arc(x, y - r * 0.2, r * 0.45, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
+  }
   function renderPlayerBulletCanvas() {
     if (!PLAYER_BULLET_CANVAS_ENABLED || !state) return;
     const list = state.bullets || [];
@@ -6645,7 +6664,8 @@
       const p = list[i];
       if (!p) continue;
       // build1812: DOMで生まれた弾は、描き写せるならここでCanvas弾へ切り替える（描画前なのでDOMは表示されない）
-      if (!p.playerCanvasKind && p.el && !p.el.__playerCanvas && !p.pbCssRejected) tryConvertPlayerBulletCss(p, nowTs);
+      // build1983: 図形モードではDOMの弾をCanvasへ移さない（DOMのまま表示する方が正確）
+      if (canvasSpriteMode !== 'vector' && !p.playerCanvasKind && p.el && !p.el.__playerCanvas && !p.pbCssRejected) tryConvertPlayerBulletCss(p, nowTs);
       if (p.playerCanvasKind && p.el && p.el.__alive) any = true;
     }
     const existing = document.getElementById(PLAYER_BULLET_CANVAS_ID);
@@ -6666,6 +6686,7 @@
       const p = list[i];
       if (!p || !p.playerCanvasKind || !p.el || !p.el.__alive) continue;
       const kind = p.playerCanvasKind;
+      if (canvasSpriteMode === 'vector') { drawPlayerBulletVector(ctx, p, kind, dpr); continue; } // build1983
       if (kind === 'css') {
         const csp = p.pbCssSpec && getPlayerBulletCssSprite(p.pbCssSpec, scale);
         if (!csp) continue;
@@ -6739,7 +6760,7 @@
     clearNightshadeSpinRings();
     document.querySelectorAll('.shooting-wolf-berserk-aura').forEach(el => el.remove()); // build1860
     document.getElementById(PLAYER_ID)?.classList.remove('is-wolf-berserk', 'is-wolf-berserk-hurry');
-    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-rose-fortress,.shooting-remna-trap-preview,.shooting-conjure-preview,.shooting-conjure-deploy-projectile,.shooting-conjure-turret,.shooting-conjure-ult-turret,.shooting-camilla-web-overlay,.shooting-camilla-web-burst,.shooting-camilla-bound-web-fx,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-wolf-berserk-aura,.shooting-aina-shade,.shooting-aina-decoy,.haze-arm,.haze-arm-warn,.haze-ember,.haze-flame,.haze-flame-warn,.shooting-sui-time-domain,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning,.shooting-ch07-complete-shield,.shooting-ch07-torii,.eclipse-hand-band,.eclipse-float-num,.eclipse-dash-line,.eclipse-dark-veil,.eclipse-beacon,.eclipse-state-pill,.po-submission-chip,.po-variety-banner,.tb-fx,.shooting-v-laser-wrap').forEach(el => el.remove());
+    arena.querySelectorAll('.shooting-bullet,.shooting-enemy-bullet,.shooting-hit,.shooting-eri-ult-mark,.shooting-eri-ult-slash,.shooting-eri-ult-ray,.shooting-arno-aura,.shooting-clarine-decoy,.shooting-clarine-decoy-burst,.shooting-gresha-burn-field,.shooting-ignis-laser,.shooting-ignis-fire-wheel,.shooting-ignis-burn,.shooting-rose-flower,.shooting-rose-fortress,.shooting-remna-trap-preview,.shooting-conjure-preview,.shooting-conjure-deploy-projectile,.shooting-conjure-turret,.shooting-conjure-ult-turret,.shooting-camilla-web-overlay,.shooting-camilla-web-burst,.shooting-camilla-bound-web-fx,.shooting-ult-cutin,.shooting-testchan-blackship-beam,.shooting-jig-scramble-ray,.shooting-veronica-slash,.shooting-wolf-atk-field,.shooting-wolf-berserk-aura,.shooting-aina-shade,.shooting-aina-decoy,.haze-arm,.haze-arm-warn,.haze-ember,.haze-flame,.haze-flame-warn,.shooting-sui-time-domain,.shooting-noah-ult-bullet,.shooting-noah-lightning,.shooting-lightning-chain-effect,.shooting-nina-electric-network,.shooting-nina-ult-zone-warning,.shooting-nina-ult-lightning,.shooting-nina-ult-dust,.shooting-nina-paralyze-vfx,.shooting-toyfel-black-hole,.shooting-faceless-object,.shooting-faceless-object-hp,.shooting-faceless-battle-cut,.shooting-boss-danger-warning,.shooting-ch07-complete-shield,.shooting-ch07-torii,.eclipse-hand-band,.eclipse-float-num,.eclipse-dash-line,.eclipse-dark-veil,.eclipse-beacon,.eclipse-state-pill,.po-submission-chip,.po-variety-banner,.tb-fx,.shooting-v-laser-wrap,.ov-safe-spot,.ov-gaze-veil,.ov-gaze-caption').forEach(el => el.remove()); // build1982: 凝視の表示も
     clearEnemyBulletCanvas();
     clearPlayerBulletCanvas(); // build1811
     if (state) {
@@ -7790,7 +7811,7 @@
       for (const p of list) {
         const r = Math.round(Number(p.canvasRadius || 5.5) * 2) / 2;
         if (r !== lastR) {
-          sprite = safeEnemySprite(() => getEnemyBulletSprite(key, r, dpr)); // build1981
+          sprite = canvasSpriteMode === 'vector' ? null : safeEnemySprite(() => getEnemyBulletSprite(key, r, dpr)); // build1981/1983
           half = sprite ? sprite.__half : 0;
           lastR = r;
         }
@@ -7806,7 +7827,7 @@
       let lastR = -1, sprite = null, half = 0;
       for (const p of list) {
         const r = Math.round(Number(p.canvasRadius || 6.2) * 2) / 2;
-        if (r !== lastR) { sprite = safeEnemySprite(() => getRaidBulletSprite(key, r, dpr)); half = sprite ? sprite.__half : 0; lastR = r; } // build1981
+        if (r !== lastR) { sprite = canvasSpriteMode === 'vector' ? null : safeEnemySprite(() => getRaidBulletSprite(key, r, dpr)); half = sprite ? sprite.__half : 0; lastR = r; } // build1981/1983
         if (sprite) ctx.drawImage(sprite, Number(p.x || 0) - half, Number(p.y || 0) - half, half * 2, half * 2);
         else drawFallbackEnemyOrb(ctx, Number(p.x || 0), Number(p.y || 0), r, (ENEMY_PROJECTILE_ELEMENT_VISUAL[key] || ENEMY_PROJECTILE_ELEMENT_VISUAL.neutral).main, 'rgba(22,14,30,.75)');
       }
@@ -7839,10 +7860,10 @@
       const rot = (nowMs / 1000) * 1.6;
       for (const p of dangers) {
         const r = Math.round(Number(p.canvasRadius || 17) * 2) / 2;
-        const base = safeEnemySprite(() => getDangerBulletSprite(r, dpr)); // build1981
+        const base = canvasSpriteMode === 'vector' ? null : safeEnemySprite(() => getDangerBulletSprite(r, dpr)); // build1981/1983
         const ring = base && safeEnemySprite(() => getDangerRingSprite(r, dpr));
         const x = Number(p.x || 0), y = Number(p.y || 0);
-        if (!base || !ring) { drawFallbackEnemyOrb(ctx, x, y, r, '#e8248f', 'rgba(30,0,22,.9)'); continue; }
+        if (!base || !ring) { drawFallbackDanger(ctx, x, y, r, rot); continue; }
         ctx.globalAlpha = pulse;
         ctx.drawImage(base, x - base.__half, y - base.__half, base.__half * 2, base.__half * 2);
         ctx.globalAlpha = 1;
@@ -7860,7 +7881,7 @@
       const flicker = 0.9 + 0.1 * Math.sin(nowMs / 45);
       for (const p of lasers) {
         const key = getEnemyProjectileElement(p);
-        const lance = safeEnemySprite(() => getRaidLaserSprite(ENEMY_PROJECTILE_ELEMENT_VISUAL[key] ? key : 'neutral', dpr)); // build1981
+        const lance = canvasSpriteMode === 'vector' ? null : safeEnemySprite(() => getRaidLaserSprite(ENEMY_PROJECTILE_ELEMENT_VISUAL[key] ? key : 'neutral', dpr)); // build1981/1983
         const head = lance && safeEnemySprite(() => getRaidLaserHeadSprite(ENEMY_PROJECTILE_ELEMENT_VISUAL[key] ? key : 'neutral', dpr));
         if (!lance || !head) {
           const ang = Math.atan2(Number(p.vy || 0), Number(p.vx || 0)), x0 = Number(p.x || 0), y0 = Number(p.y || 0);
@@ -8031,8 +8052,14 @@
   //  ・起きたことは localStorage（zs_diag_v1）に記録する。window.ZsDiag.dump() で確認できる
   // ============================================================
   function releaseCanvasNow(cv) { try { if (cv && cv.width) { cv.width = 0; cv.height = 0; } } catch (_) {} }
+  let zsDiagLast = { sig: '', at: 0 };
   function zsDiag(type, detail) {
     try {
+      // build1983: 同じ内容は5秒に1回まで（毎フレーム出るエラーで書き込みが続かないように）
+      const sig = String(type) + '|' + String(detail || '').slice(0, 120);
+      const t = Date.now();
+      if (sig === zsDiagLast.sig && t - zsDiagLast.at < 5000) return;
+      zsDiagLast = { sig, at: t };
       const key = 'zs_diag_v1';
       const list = JSON.parse(localStorage.getItem(key) || '[]');
       list.push({ t: new Date().toISOString(), type: String(type), detail: String(detail || '').slice(0, 300),
@@ -8062,6 +8089,40 @@
       zsDiag(tag, `stage=${selectedStage?.id || ''} canvas=${document.getElementsByTagName('canvas').length} nodes=${document.getElementsByTagName('*').length} audio=${document.getElementsByTagName('audio').length} img=${document.images.length} enemySprites=${ENEMY_BULLET_SPRITE_CACHE.size} pbCss=${typeof pbCssSpecCache !== 'undefined' ? pbCssSpecCache.size : '-'}`);
     } catch (_) {}
   }
+  // ============================================================
+  // build1983: Canvas の描画方式
+  //  'sprite' … 弾の絵を小さな Canvas に一度描き、画面の Canvas へ貼る（従来・軽い）
+  //  'vector' … 弾を毎フレーム図形で直接描く（貼り付け＝Canvasどうしの drawImage が効かない端末向け）
+  //  戦闘開始ごとに小さな試験をして決める。診断画面から固定もできる（localStorage: zs_render_mode = auto/sprite/vector）
+  // ============================================================
+  let canvasSpriteMode = 'sprite';
+  function probeCanvasToCanvas() {
+    let src = null, dst = null;
+    try {
+      src = document.createElement('canvas'); src.width = 16; src.height = 16;
+      const g = src.getContext('2d');
+      if (!g) return 'no-context(src)';
+      g.setTransform(1.25, 0, 0, 1.25, 0, 0);
+      g.fillStyle = '#ff2040'; g.beginPath(); g.arc(6.4, 6.4, 6, 0, Math.PI * 2); g.fill();
+      dst = document.createElement('canvas'); dst.width = 16; dst.height = 16;
+      const d = dst.getContext('2d', { willReadFrequently: true });
+      if (!d) return 'no-context(dst)';
+      d.drawImage(src, 0, 0, 16, 16);
+      const px = d.getImageData(8, 8, 1, 1).data;
+      return (px[3] > 150 && px[0] > 150) ? 'ok' : `drawimage-blank(${px[0]},${px[1]},${px[2]},${px[3]})`;
+    } catch (err) {
+      return 'error:' + (err && err.message || err);
+    } finally { releaseCanvasNow(src); releaseCanvasNow(dst); }
+  }
+  function decideCanvasSpriteMode() {
+    let forced = 'auto';
+    try { forced = localStorage.getItem('zs_render_mode') || 'auto'; } catch (_) {}
+    const probe = probeCanvasToCanvas();
+    canvasSpriteMode = forced === 'sprite' || forced === 'vector' ? forced : (probe === 'ok' ? 'sprite' : 'vector');
+    window.__zsCanvasMode = canvasSpriteMode;
+    window.__zsCanvasProbe = probe;
+    zsDiag('canvas-probe', `${probe} / mode=${canvasSpriteMode} / forced=${forced}`);
+  }
   let canvasReliefAt = 0;
   function noteCanvasAllocFailure(err) {
     const now = performance.now();
@@ -8080,9 +8141,19 @@
     try { return fn(); } catch (err) { noteCanvasAllocFailure(err); return null; }
   }
   function drawFallbackEnemyOrb(ctx, x, y, r, fill, edge) {
-    ctx.beginPath(); ctx.arc(x, y, r, 0, TAU_CONST);
-    ctx.fillStyle = fill; ctx.fill();
-    ctx.lineWidth = Math.max(1, r * 0.18); ctx.strokeStyle = edge; ctx.stroke();
+    ctx.beginPath(); ctx.arc(x, y, r + 0.9, 0, TAU_CONST); ctx.fillStyle = edge; ctx.fill();
+    ctx.beginPath(); ctx.arc(x, y, r, 0, TAU_CONST); ctx.fillStyle = fill; ctx.fill();
+    ctx.beginPath(); ctx.arc(x - r * 0.25, y - r * 0.28, Math.max(1, r * 0.34), 0, TAU_CONST); ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fill();
+  }
+  // build1983: 即死弾（WARNING）の図形版。赤紫の玉＋中心の目＋回る点線の輪
+  function drawFallbackDanger(ctx, x, y, r, rot) {
+    ctx.beginPath(); ctx.arc(x, y, r + 1.2, 0, TAU_CONST); ctx.fillStyle = 'rgba(30,0,22,.85)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(x, y, r, 0, TAU_CONST); ctx.fillStyle = '#c4126f'; ctx.fill();
+    ctx.beginPath(); ctx.arc(x, y, r * 0.36, 0, TAU_CONST); ctx.fillStyle = 'rgba(25,0,18,.92)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(x, y, r * 0.16, 0, TAU_CONST); ctx.fillStyle = '#fff1f8'; ctx.fill();
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot || 0);
+    ctx.setLineDash([r * 0.32, r * 0.22]); ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(255,86,170,.9)';
+    ctx.beginPath(); ctx.arc(0, 0, r * 1.42, 0, TAU_CONST); ctx.stroke(); ctx.setLineDash([]); ctx.restore();
   }
   function makeSpriteCanvas(cssHalf, dpr) {
     const c = document.createElement('canvas');
@@ -8207,9 +8278,10 @@
       // 開いてから閉じるまでの大きさ・縦のつぶれ
       const scale = 0.25 + 0.75 * (1 - Math.pow(1 - opening, 3));
       const lid = 1 - closing * 0.85;
-      const iris = getMagaEyeIrisSprite(r, dpr);
-      const pupil = getMagaEyePupilSprite(r, dpr);
-      p.magaSpin = Number(p.magaSpin || 0) + 0.02;
+      const vec = canvasSpriteMode === 'vector'; // build1983: 図形で直接描く端末
+      const iris = vec ? null : getMagaEyeIrisSprite(r, dpr);
+      const pupil = vec ? null : getMagaEyePupilSprite(r, dpr);
+      p.magaSpin = Number(p.magaSpin || 0) + (p.magaGaze === 'fast' ? 0.14 : p.magaGaze === 'stop' ? 0 : 0.02); // build1982: 凝視で速く回る／止まる
       ctx.save();
       ctx.translate(x, y);
       ctx.scale(scale, scale);
@@ -8218,13 +8290,19 @@
       ctx.globalAlpha = blink * (0.86 + 0.14 * Math.sin(nowMs / 140));
       ctx.save();
       ctx.scale(1, lid);
-      ctx.drawImage(iris, -iris.__half, -iris.__half, iris.__half * 2, iris.__half * 2);
+      if (iris) ctx.drawImage(iris, -iris.__half, -iris.__half, iris.__half * 2, iris.__half * 2);
+      else {
+        ctx.beginPath(); ctx.arc(0, 0, r + 1.6, 0, TAU_CONST); ctx.fillStyle = 'rgba(14,0,6,.92)'; ctx.fill();
+        ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU_CONST); ctx.fillStyle = '#c8103a'; ctx.fill();
+        ctx.lineWidth = Math.max(1, r * 0.08); ctx.strokeStyle = 'rgba(255,92,128,.95)'; ctx.beginPath(); ctx.arc(0, 0, r * 0.95, 0, TAU_CONST); ctx.stroke();
+      }
       // 瞳孔：常に自機の方へ寄る
       let lx = 0, ly = 0;
       const d = Math.hypot(Number(player?.x || x) - x, Number(player?.y || y) - y);
       if (d > 1) { lx = (Number(player.x) - x) / d * r * 0.22; ly = (Number(player.y) - y) / d * r * 0.22; }
       ctx.globalAlpha = blink;
-      ctx.drawImage(pupil, lx - pupil.__half, ly - pupil.__half, pupil.__half * 2, pupil.__half * 2);
+      if (pupil) ctx.drawImage(pupil, lx - pupil.__half, ly - pupil.__half, pupil.__half * 2, pupil.__half * 2);
+      else { ctx.fillStyle = '#090003'; ctx.beginPath(); ctx.ellipse(lx, ly, Math.max(1.2, r * 0.17), r * 0.66, 0, 0, TAU_CONST); ctx.fill(); }
       if (r >= 8) {
         ctx.fillStyle = 'rgba(255,255,255,.85)';
         ctx.beginPath(); ctx.ellipse(-r * 0.38, -r * 0.42, r * 0.16, r * 0.1, -0.6, 0, TAU_CONST); ctx.fill();
@@ -8283,6 +8361,13 @@
       const fin = selectedStage.towaDawn?.final || {};
       return (fin[phase] || fin[1] || {}).magaEye || null;
     }
+    // build1982: 記憶決戦（オーバーシア）は掟 maga_eye から。PHASE ごとに数と間隔が変わる
+    const mr = getMemoryRule('maga_eye');
+    if (mr) {
+      const ph = Math.max(1, Math.min(3, Number(state?.boss?.phase || 1)));
+      const pick = (arr, d) => Array.isArray(arr) ? Number(arr[Math.min(arr.length - 1, ph - 1)] ?? d) : d;
+      return { ...mr, count: pick(mr.countByPhase, mr.count || 1), everyMs: pick(mr.everyMsByPhase, mr.everyMs || 12000) };
+    }
     return (BOSS && BOSS.magaEye) || (selectedStage && selectedStage.magaEye) || null;
   }
   function updateMagaEyeAttack(now) {
@@ -8294,6 +8379,92 @@
     if (now < state.magaEyeNextAt) return;
     state.magaEyeNextAt = now + Math.max(1500, Number(cfg.everyMs || 12000));
     fireMagaEyeVolley(Number(state.boss.x || 0), Number(state.boss.y || 0) + 20, cfg);
+  }
+
+  // ============================================================
+  // build1982: 記憶決戦オーバーシア「凝視」と安全地帯
+  //  ・安全地帯：小さな光の円が、一定間隔で次の場所へ移る（移る前に次の場所を薄く予告）
+  //  ・凝視：予告（gazeWarnMs）→ 凝視（gazeMs）。凝視の間、安全地帯の外にいると禍眼が高速で迫り、中にいれば禍眼は止まる
+  //  ・時間は「敵の時計」（停止系ULTの間は進まない）。凝視中・予告中は安全地帯を動かさない
+  // ============================================================
+  function getOverseerGazeEffect() {
+    const g = state && state.ovGaze;
+    if (!g || !g.active) return '';
+    return g.inside ? 'stop' : 'fast';
+  }
+  function pickOverseerSpot(w, h, from) {
+    let best = null;
+    for (let i = 0; i < 10; i++) {
+      const p = { x: w * (.12 + Math.random() * .76), y: h * (.48 + Math.random() * .38) };
+      if (!from || Math.hypot(p.x - from.x, p.y - from.y) > Math.min(w, h) * .3) return p;
+      best = p;
+    }
+    return best;
+  }
+  function clearOverseerGazeDom() {
+    document.querySelectorAll('.ov-safe-spot,.ov-gaze-veil,.ov-gaze-caption').forEach(el => el.remove());
+    document.getElementById(ROOT_ID)?.classList.remove('ov-gaze-warn', 'ov-gazing');
+  }
+  function updateOverseerGaze(now) {
+    const rule = getMemoryRule('overseer_gaze');
+    if (!rule || !state || !state.player || !state.boss) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const root = document.getElementById(ROOT_ID);
+    const w = arena.clientWidth || 390, h = arena.clientHeight || 700;
+    if (state.ended || state.finishing) { clearOverseerGazeDom(); return; }
+    const clock = getBossMotionElapsedSeconds(now) * 1000;
+    const ph = Math.max(1, Math.min(3, Number(state.boss.phase || 1)));
+    const byPhase = (arr, d) => Array.isArray(arr) ? Number(arr[Math.min(arr.length - 1, ph - 1)] ?? d) : d;
+    const R = Math.max(20, Number(rule.spotRadius || 40));
+    let g = state.ovGaze;
+    if (!g) {
+      g = state.ovGaze = { spot: pickOverseerSpot(w, h, null), next: null, hopAt: clock + byPhase(rule.hopEveryMsByPhase, 7000),
+        gazeAt: clock + Number(rule.gazeFirstAtMs || 7000), warnAt: 0, until: 0, active: false, warn: false, inside: false };
+      g.el = document.createElement('div'); g.el.className = 'ov-safe-spot'; g.el.setAttribute('aria-hidden', 'true');
+      g.el.innerHTML = '<i></i><b></b>';
+      g.ghost = document.createElement('div'); g.ghost.className = 'ov-safe-spot is-next'; g.ghost.setAttribute('aria-hidden', 'true');
+      g.ghost.innerHTML = '<i></i>';
+      g.veil = document.createElement('div'); g.veil.className = 'ov-gaze-veil'; g.veil.setAttribute('aria-hidden', 'true');
+      g.cap = document.createElement('div'); g.cap.className = 'ov-gaze-caption'; g.cap.setAttribute('aria-hidden', 'true');
+      arena.append(g.veil, g.ghost, g.el, g.cap);
+    }
+    [g.el, g.ghost, g.veil, g.cap].forEach(el => { if (el && !el.isConnected) arena.appendChild(el); });
+    const paused = state.phaseTransition;
+    if (!paused) {
+      // 凝視の予告と本番
+      const warnMs = Number(rule.gazeWarnMs || 1400), gazeMs = Number(rule.gazeMs || 3200);
+      if (!g.warn && !g.active && clock >= g.gazeAt - warnMs) { g.warn = true; g.next = null; } // 凝視の間は次の場所を予告しない
+      if (g.warn && !g.active && clock >= g.gazeAt) { g.warn = false; g.active = true; g.until = clock + gazeMs; }
+      if (g.active && clock >= g.until) {
+        g.active = false;
+        g.gazeAt = clock + byPhase(rule.gazeEveryMsByPhase, 11000);
+        g.hopAt = Math.max(g.hopAt, clock + 1200); // 凝視が明けてすぐは移らない
+      }
+      // 安全地帯の移動（凝視の予告・本番中は動かさない）
+      const preview = Number(rule.hopPreviewMs || 1600);
+      const busy = g.warn || g.active;
+      if (busy) g.hopAt = Math.max(g.hopAt, (g.active ? g.until : g.gazeAt + gazeMs) + 1200);
+      if (!busy && !g.next && clock >= g.hopAt - preview) g.next = pickOverseerSpot(w, h, g.spot);
+      if (!busy && g.next && clock >= g.hopAt) {
+        g.spot = g.next; g.next = null;
+        g.hopAt = clock + byPhase(rule.hopEveryMsByPhase, 7000);
+        g.el.classList.remove('is-moved'); void g.el.offsetWidth; g.el.classList.add('is-moved');
+      }
+    }
+    g.inside = Math.hypot(Number(state.player.x) - g.spot.x, Number(state.player.y) - g.spot.y) <= R;
+    // 表示
+    const place = (el, p) => { el.style.setProperty('--sx', `${p.x.toFixed(1)}px`); el.style.setProperty('--sy', `${p.y.toFixed(1)}px`); el.style.setProperty('--sr', `${R}px`); };
+    place(g.el, g.spot);
+    g.el.classList.toggle('is-inside', g.inside);
+    g.el.classList.toggle('is-gaze', g.active);
+    g.ghost.style.display = g.next ? '' : 'none';
+    if (g.next) place(g.ghost, g.next);
+    place(g.veil, g.spot);
+    if (root) { root.classList.toggle('ov-gaze-warn', g.warn); root.classList.toggle('ov-gazing', g.active); }
+    const capText = g.active ? (g.inside ? '凝視 ― 光の中で耐えろ' : '凝視 ― 光の中へ') : (g.warn ? '凝視が来る' : '');
+    if (g.cap.textContent !== capText) g.cap.textContent = capText;
+    g.cap.classList.toggle('is-danger', g.active && !g.inside);
   }
 
   function getDangerBulletSprite(r, dpr) {
@@ -24171,10 +24342,14 @@
           let diff = want - Number(p.magaHeading || 0);
           while (diff > Math.PI) diff -= Math.PI * 2;
           while (diff < -Math.PI) diff += Math.PI * 2;
-          const maxTurn = Number(p.magaTurnRate || 1.6) * moveDt;
-          p.magaHeading = Number(p.magaHeading || 0) + Math.max(-maxTurn, Math.min(maxTurn, diff));
+          // build1982: 凝視の間（オーバーシア）：安全地帯の中なら止まる／外なら高速で迫る
+          const gz = getOverseerGazeEffect();
+          const maxTurn = Number(p.magaTurnRate || 1.6) * (gz === 'fast' ? Number(getMemoryRule('overseer_gaze')?.gazeTurnMul || 2.6) : 1) * moveDt;
+          if (gz !== 'stop') p.magaHeading = Number(p.magaHeading || 0) + Math.max(-maxTurn, Math.min(maxTurn, diff));
+          p.magaGaze = gz; // 描画用（止まっている／迫っている）
           // 動き出しは0.6秒かけて加速
-          const sp = Number(p.magaSpeed || 78) * Math.min(1, (p.magaAge - startChase) / 0.6);
+          const sp = gz === 'stop' ? 0
+            : Number(p.magaSpeed || 78) * Math.min(1, (p.magaAge - startChase) / 0.6) * (gz === 'fast' ? Number(getMemoryRule('overseer_gaze')?.gazeSpeedMul || 3.4) : 1);
           p.vx = Math.cos(p.magaHeading) * sp;
           p.vy = Math.sin(p.magaHeading) * sp;
         }
@@ -29525,6 +29700,7 @@
     updateTowaRayMarks(ts); // build1877
     updateTowaDawn(ts); // build1877
     updateMagaEyeAttack(ts); // build1974: 禍眼（magaEye 設定のある敵・ステージだけ）
+    updateOverseerGaze(ts);  // build1982: 記憶決戦オーバーシアの凝視と安全地帯
     updateInoriGuard(ts); // build1817
     updateNightshadeSpinRings(ts);
     updateConjurePlacementPreview(ts);
@@ -29783,9 +29959,9 @@
       meta.sub = 'THE ECLIPSE';
       meta.image = selectedStage.introImage || 'images/eclipse_battle_start.webp';
     } else if (BOSS && BOSS.overseerWatch) {
-      meta.kicker = isPhaseOdysseyStage() ? 'PHASE ODYSSEY' : 'TOWER GUARDIAN';
+      meta.kicker = isMemoryBattleStage() ? 'MEMORY BATTLE' : (isPhaseOdysseyStage() ? 'PHASE ODYSSEY' : 'TOWER GUARDIAN'); // build1982
       meta.title = BOSS.name || 'オーバーシア';
-      meta.sub = 'THE OVERSEER';
+      meta.sub = isMemoryBattleStage() ? '監視者の記憶' : 'THE OVERSEER';
       meta.image = selectedStage.introImage || 'images/phase_odyssey_overseer_intro.webp';
     } else if (isSelectedBaseStage(SHOOTING_STAGE_ID.CH01_04) || lower.includes('remnant_01')) {
       meta.kicker = 'REMNANT 01';
@@ -30776,6 +30952,8 @@
   }
 
   function runStartCountdown() {
+    // build1983: すべての戦闘開始でここを通る（build1981 の記録はリトライ時しか通らない場所にあった）
+    try { zsDiagBattleSnapshot('battle-start'); decideCanvasSpriteMode(); } catch (_) {}
     // 中断復帰など、ボス登場演出を経由しない開始経路でもBGMを必ず同期。
     if (!shootingBattleBgmSessionActive) activateShootingBattleBgm(false);
     else window.syncShootingBattleBgm();
@@ -35647,7 +35825,6 @@
 
     placeInitialUnits();
     renderHud();
-    zsDiagBattleSnapshot('battle-start'); // build1981
 
     if (chapter104ArnoRetry) {
       await endShootingStageTransitionMask();

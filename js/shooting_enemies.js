@@ -54,6 +54,8 @@
     MEMORY_BLUE_CAMILLA: 'memory_blue_camilla',
     // build1866: 記憶決戦04「ヘイズ」と陽炎の分身
     MEMORY_HAZE: 'memory_haze',
+    MEMORY_OVERSEER: 'memory_overseer',   // build1982: 記憶決戦「監視者の記憶：オーバーシア」
+    MEMORY_WATCHER: 'memory_watcher',     // build1982: オーバーシアのしもべ（監視の眼）
     MEMORY_HAZE_MIRAGE: 'memory_haze_mirage',
     BULLET_HELL_TEST: 'shooting_bullet_hell_test',
     NOAH: 'shooting_noah',
@@ -703,6 +705,26 @@
     }),
 
     // build1866: 記憶決戦「ヘイズ」。闇の陽炎。怪腕・燃焼・陽炎・ヘルフレイムは shooting_core.js updateHazeMechanics。
+    // build1982: 記憶決戦「監視者の記憶：オーバーシア」（木属性）。弾幕・監視の眼は既存オーバーシアと同じ。
+    //  掟（禍眼・凝視と安全地帯）は shooting_stages.js の MEMORY_BATTLE_STAGES（no:5）と shooting_core.js。
+    [SHOOTING_ENEMY_ID.MEMORY_OVERSEER]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.MEMORY_OVERSEER,
+      kind: 'boss', implemented: true,
+      name: 'オーバーシア', displayName: 'MEMORY　オーバーシア',
+      image: 'images/remnant_oversheer.webp', element: 'wood',
+      gaugeHps: Object.freeze([9000, 10500, 12500]), gauges: 3,
+      bulletSpeed: 250, fireRate: 920, bulletDamage: 175,
+      behavior: 'barrage_v1', uiScale: 1.0,
+      overseerWatch: Object.freeze({ homingTurnRadPerSec: 2.4 }),
+    }),
+    // オーバーシアのしもべ（監視の眼）。攻撃はしない。首振りしながら扇形の視界で自機を探す
+    [SHOOTING_ENEMY_ID.MEMORY_WATCHER]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.MEMORY_WATCHER, kind: 'normal', implemented: true,
+      name: 'オーバーシアのしもべ', displayName: 'MEMORY　オーバーシアのしもべ',
+      element: 'wood', attackType: 'none', image: 'images/remnant_01_zako.webp',
+      hp: 1200, moveSpeed: 26, scoreValue: 400, behavior: 'po_watcher_v1', uiScale: 0.86,
+      visionRangeRate: 0.62, visionHalfAngleDeg: 19, sweepRad: 0.85, sweepSpeed: 0.55,
+    }),
     [SHOOTING_ENEMY_ID.MEMORY_HAZE]: Object.freeze({
       id: SHOOTING_ENEMY_ID.MEMORY_HAZE, kind: 'boss', implemented: true,
       name: 'ヘイズ', displayName: 'MEMORY　ヘイズ',

@@ -17146,3 +17146,44 @@ html body #shooting-event-root[data-shooting-stage="shooting_towa_dawn"] #shooti
   #shooting-event-root.dawn-warp-out .shooting-boss{animation:none !important;opacity:0 !important;}
   #shooting-event-root.dawn-warp-in .shooting-boss{animation:none !important;opacity:1 !important;}
 }
+
+/* ============================================================
+   build1982 — 記憶決戦オーバーシア：安全地帯と凝視
+   ============================================================ */
+#shooting-event-root .ov-safe-spot{position:absolute;left:0;top:0;width:0;height:0;z-index:14;pointer-events:none;
+  transform:translate3d(var(--sx),var(--sy),0);}
+#shooting-event-root .ov-safe-spot i,#shooting-event-root .ov-safe-spot b{position:absolute;display:block;border-radius:50%;
+  left:calc(var(--sr) * -1);top:calc(var(--sr) * -1);width:calc(var(--sr) * 2);height:calc(var(--sr) * 2);}
+#shooting-event-root .ov-safe-spot i{
+  border:2px solid rgba(214,255,226,.95);
+  background:radial-gradient(circle,rgba(255,255,255,.34) 0,rgba(196,255,214,.2) 55%,rgba(150,240,180,.08) 72%,transparent 74%);
+  box-shadow:0 0 0 1px rgba(30,90,50,.45),0 0 14px rgba(160,255,190,.75),inset 0 0 14px rgba(220,255,230,.55);}
+#shooting-event-root .ov-safe-spot b{border:1px solid rgba(255,255,255,.8);animation:ov-spot-pulse 1.6s ease-out infinite;}
+#shooting-event-root .ov-safe-spot.is-inside i{border-color:#fff;box-shadow:0 0 0 1px rgba(30,90,50,.5),0 0 22px rgba(190,255,210,1),inset 0 0 18px rgba(255,255,255,.75);}
+#shooting-event-root .ov-safe-spot.is-gaze i{border-width:3px;}
+#shooting-event-root .ov-safe-spot.is-moved i{animation:ov-spot-pop .45s cubic-bezier(.2,.9,.3,1) both;}
+#shooting-event-root .ov-safe-spot.is-next{z-index:13;}
+#shooting-event-root .ov-safe-spot.is-next i{border:2px dashed rgba(214,255,226,.75);background:none;box-shadow:none;animation:ov-spot-next .8s ease-in-out infinite alternate;}
+@keyframes ov-spot-pulse{0%{transform:scale(.55);opacity:.9}100%{transform:scale(1.25);opacity:0}}
+@keyframes ov-spot-pop{0%{transform:scale(.2);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1);opacity:1}}
+@keyframes ov-spot-next{from{opacity:.35}to{opacity:.85}}
+/* 凝視：安全地帯の外を暗く沈める（中は明るく抜く） */
+#shooting-event-root .ov-gaze-veil{position:absolute;inset:0;z-index:12;pointer-events:none;opacity:0;transition:opacity .25s ease;
+  background:radial-gradient(circle at var(--sx) var(--sy),rgba(0,0,0,0) calc(var(--sr) + 2px),rgba(60,0,24,.32) calc(var(--sr) + 36px),rgba(40,0,16,.46) 100%);}
+#shooting-event-root.ov-gaze-warn .ov-gaze-veil{opacity:.45;animation:ov-gaze-warn .35s ease-in-out infinite alternate;}
+#shooting-event-root.ov-gazing .ov-gaze-veil{opacity:1;animation:none;}
+@keyframes ov-gaze-warn{from{opacity:.2}to{opacity:.55}}
+#shooting-event-root .ov-gaze-caption{position:absolute;left:50%;top:27%;z-index:58;pointer-events:none;transform:translate(-50%,-50%);white-space:nowrap;
+  font:700 15px/1 "Noto Serif JP",serif;letter-spacing:.3em;text-indent:.3em;color:#fff;
+  text-shadow:0 0 2px rgba(40,0,16,.95),0 0 10px rgba(255,90,120,.9);opacity:0;transition:opacity .2s ease;}
+#shooting-event-root.ov-gaze-warn .ov-gaze-caption,#shooting-event-root.ov-gazing .ov-gaze-caption{opacity:1;}
+#shooting-event-root .ov-gaze-caption.is-danger{color:#ffd6de;animation:ov-cap-shake .12s linear infinite;}
+@keyframes ov-cap-shake{0%,100%{translate:0 0}50%{translate:1px -1px}}
+/* 凝視中のオーバーシアは赤く光る（.shooting-boss の transform は位置用なので filter のみ） */
+#shooting-event-root.ov-gazing .shooting-boss{filter:drop-shadow(0 0 10px rgba(255,60,100,.95)) drop-shadow(0 0 26px rgba(255,40,80,.6));}
+#shooting-event-root.ov-gaze-warn .shooting-boss{filter:drop-shadow(0 0 8px rgba(255,120,150,.8));}
+@media (prefers-reduced-motion:reduce){
+  #shooting-event-root .ov-safe-spot b{animation:none;opacity:.4;}
+  #shooting-event-root.ov-gaze-warn .ov-gaze-veil{animation:none;}
+  #shooting-event-root .ov-gaze-caption.is-danger{animation:none;}
+}

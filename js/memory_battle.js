@@ -176,6 +176,7 @@
   // ---------- 掟の説明 ----------
   // build1765: カード内の1行＝{ icon, name, text }。アイコンは丸い金枠の中に描く。
   const RULE_ICON_SVG = Object.freeze({
+    eye: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5C6.8 5 3 9.4 1.8 12c1.2 2.6 5 7 10.2 7s9-4.4 10.2-7C21 9.4 17.2 5 12 5z" fill="currentColor" opacity=".22"/><path d="M12 5C6.8 5 3 9.4 1.8 12c1.2 2.6 5 7 10.2 7s9-4.4 10.2-7C21 9.4 17.2 5 12 5zm0 11.2a4.2 4.2 0 1 1 0-8.4 4.2 4.2 0 0 1 0 8.4zm0-2.2a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" fill="currentColor"/></svg>', // build1982
     shield: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 4.5 5.3v6c0 4.7 3.2 8.6 7.5 10.2 4.3-1.6 7.5-5.5 7.5-10.2v-6z" fill="currentColor" opacity=".22"/><path d="M12 2.5 4.5 5.3v6c0 4.7 3.2 8.6 7.5 10.2 4.3-1.6 7.5-5.5 7.5-10.2v-6zM12 4.6l5.5 2.1v4.6c0 3.6-2.3 6.7-5.5 8.1z" fill="currentColor"/></svg>',
     hit: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.8l2.2 7.1 7.4.1-6 4.4 2.3 7.1-5.9-4.4-5.9 4.4 2.3-7.1-6-4.4 7.4-.1z" fill="currentColor"/></svg>',
     drop: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5c-3.2 4.6-6.3 8.3-6.3 12a6.3 6.3 0 0 0 12.6 0c0-3.7-3.1-7.4-6.3-12zm-2.6 12.6c.2 1.6 1.2 2.8 2.7 3.1" fill="currentColor"/></svg>',
@@ -223,6 +224,8 @@
         rows.push({ icon: 'shield', name: '守護者', text: `${gName}×${Math.max(1, Number(rule.count || 2))}がいる間はすり抜け、撃破で${sec}秒実体化`
           + (hitHp > 0 ? `。${gName}はHIT数で倒す` : '') });
         if (Number(rule.spiderCount || 0) > 0) rows.push({ icon: 'drop', name: '吸血', text: '子蜘蛛に張り付かれると、ボスが回復する' });
+      } else if (rule.type === 'maga_eye' || rule.type === 'overseer_watch' || rule.type === 'overseer_gaze') { // build1982
+        if (info[rule.type]) rows.push({ icon: rule.type === 'maga_eye' ? 'sniper' : 'eye', name: info[rule.type].name, text: info[rule.type].desc });
       } else if (info[rule.type]) {
         rows.push({ icon: 'rule', name: info[rule.type].name, text: info[rule.type].desc });
       }
@@ -245,7 +248,7 @@
   }
   // カードの立ち絵：ステージ定義の panelImage（images/rivia_panel.webp 等）。無ければ戦闘画像。
   function panelImage(def){
-    const portraits = {1:'images/memory_rivia.webp',3:'images/memory_test.webp',4:'images/memory_haze.webp'};
+    const portraits = {1:'images/memory_rivia.webp',3:'images/memory_test.webp',4:'images/memory_haze.webp',5:'images/memory_oversheer.webp'}; // build1982
     return portraits[Number(def.no)] || String(def.panelImage || '') || bossImage(def);
   }
 
@@ -391,7 +394,8 @@
     const definitions = {
       1: { name:'リヴィア', condition:'ショット「CHARGE」を持つキャラを編成せずにクリア' },
       3: { name:'テスト', condition:'1体のみで編成してクリア' },
-      4: { name:'ヘイズ', condition:'レアリティ「SR」のキャラを編成せずにクリア' }
+      4: { name:'ヘイズ', condition:'レアリティ「SR」のキャラを編成せずにクリア' },
+      5: { name:'オーバーシア', condition:'ショット「HOMING」を持つキャラを編成せずにクリア' } // build1982（判定はサーバー）
     };
     const def = definitions[stageNo];
     if (!def) return;
@@ -433,7 +437,7 @@
     if (!root) return;
     const S = stages();
     const visibleDefs = S && Array.isArray(S.MEMORY_BATTLE_STAGES)
-      ? S.MEMORY_BATTLE_STAGES.filter(def => def && (def.no === 1 || def.no === 3 || def.no === 4))
+      ? S.MEMORY_BATTLE_STAGES.filter(def => def && (def.no === 1 || def.no === 3 || def.no === 4 || def.no === 5)) // build1982: 05 オーバーシア
       : [];
     const total = visibleDefs.length || 3;
     const cleared = clearedSet();
@@ -455,7 +459,7 @@
       const displayNo = index + 1; // 画面上は01 リヴィア / 02 テスト / 03 ヘイズ
       const rank = rankState[String(no)] || '';
       const done = Boolean(rank);
-      const condition = ({1:'CHARGEキャラなしでクリア',3:'1体編成でクリア',4:'SRキャラなしでクリア'})[no] || '';
+      const condition = ({1:'CHARGEキャラなしでクリア',3:'1体編成でクリア',4:'SRキャラなしでクリア',5:'HOMINGキャラなしでクリア'})[no] || '';
       const img = panelImage(def);
       const fallback = bossImage(def);
       const rules = ruleRows(def).map(r => `<li class="mb-rule">${ruleIconHtml(r.icon)}<span class="mb-rule-name">${esc(r.name)}</span><span class="mb-rule-text">${esc(r.text)}</span></li>`).join('');
@@ -464,7 +468,7 @@
           <span class="mb-ribbon"><b>${pad2(displayNo)}</b></span>
           <div class="mb-names">
             <strong class="mb-boss">${esc(def.bossName)}</strong>
-            <span class="mb-sub"><i></i>${esc(({1:'雨宿りの守護者の記憶',3:'未知との遭遇の記憶',4:'揺らめく陽炎の記憶'})[no] || def.title || '')}<i></i></span>
+            <span class="mb-sub"><i></i>${esc(({1:'雨宿りの守護者の記憶',3:'未知との遭遇の記憶',4:'揺らめく陽炎の記憶',5:'監視者の記憶'})[no] || def.title || '')}<i></i></span>
           </div>
           ${rank ? `<span class="mb-rank-indicator mb-rank-${rank.toLowerCase()}"><small>BEST</small><b>${rank}</b></span>` : `<span class="mb-rank-indicator mb-rank-none"><small>BEST</small><b>—</b></span>`}
           <button type="button" class="mb-rewards-open" data-mb-rewards="${no}" aria-label="${esc(def.bossName)}のクリア報酬を見る">クリア報酬 <span aria-hidden="true">›</span></button>

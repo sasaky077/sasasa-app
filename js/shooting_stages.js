@@ -2209,6 +2209,10 @@
     haze_burn: Object.freeze({ name: '燃焼', desc: 'ATK−50%、毎秒 最大HPの2%のダメージ（6秒）。燃えたキャラを交代させれば逃れられる。' }),
     haze_mirage: Object.freeze({ name: '陽炎', desc: '3体に分裂。目が光った本体を倒せ。偽物は即死弾を散らす' }),
     haze_hellflame: Object.freeze({ name: 'ヘルフレイム', desc: 'ボスから闇のレーザーが盤面を薙ぎ払う。命中でHP35%＋燃焼' }),
+    // build1982: 監視者の記憶：オーバーシア
+    overseer_watch: Object.freeze({ name: '監視', desc: 'しもべの視界に入っている間、敵弾がすべて自機を追ってくる' }),
+    maga_eye: Object.freeze({ name: '禍眼', desc: '即死の眼が10秒間ゆっくり追ってくる。敵弾を消すスキルでのみ消せる' }),
+    overseer_gaze: Object.freeze({ name: '凝視', desc: '凝視の間、光の安全地帯の外にいると禍眼が高速で迫る。安全地帯の中では禍眼が止まる' }),
   });
   const MEMORY_BATTLE_STAGES = Object.freeze([
     Object.freeze({
@@ -2264,8 +2268,33 @@
       ]),
       extra: Object.freeze({ bossElement: 'dark', enemyElement: 'dark', introImage: 'images/haze_battle_start.webp', bulletQuantityMultiplier: 0.90 }),
     }),
+    // build1982: 05 オーバーシア（木）。画面上は「04」。火しか通らない＋監視（しもべ）＋禍眼＋凝視と安全地帯。
+    //  HP・制限時間はヘイズと同じ。Sランク：HOMINGのキャラなしでクリア（判定はサーバー）。
+    Object.freeze({
+      no: 5, bossKey: 'overseer', bossName: 'オーバーシア', title: '監視者の記憶',
+      panelImage: 'images/memory_oversheer.webp',
+      enemyId: SHOOTING_ENEMY_ID.MEMORY_OVERSEER, element: 'wood',
+      background: 'images/battle_bg_01.webp',
+      bossGaugeHps: Object.freeze([9000, 10500, 12500]),
+      timeLimitSeconds: 180,
+      rules: Object.freeze([
+        Object.freeze({ type: 'element_barrier' }),
+        Object.freeze({ type: 'overseer_watch' }),
+        // 禍眼：PHASE 1/2/3 で一度に出す数。10秒間ゆっくり追う（凝視の間は速さが変わる）
+        Object.freeze({ type: 'maga_eye', countByPhase: Object.freeze([1, 2, 2]), everyMsByPhase: Object.freeze([13000, 12000, 10000]),
+          firstAtMs: 5000, speed: 78, turnRate: 1.6, chaseMs: 10000 }),
+        // 凝視：安全地帯（小さな光の円）が点々と移る。凝視の間、外にいる禍眼は高速（gazeSpeedMul）、中にいれば禍眼は止まる
+        Object.freeze({ type: 'overseer_gaze', spotRadius: 40,
+          hopEveryMsByPhase: Object.freeze([7000, 6000, 5000]), hopPreviewMs: 1600,
+          gazeFirstAtMs: 7000, gazeEveryMsByPhase: Object.freeze([13000, 11000, 9000]), gazeWarnMs: 1400, gazeMs: 3200,
+          gazeSpeedMul: 3.4, gazeTurnMul: 2.6 }),
+      ]),
+      extra: Object.freeze({ bossElement: 'wood', enemyElement: 'wood', introImage: 'images/remnant_oversheer_battle_start.webp',
+        bossVisualScale: 0.8,
+        bossAdds: Object.freeze({ enemyIds: Object.freeze([SHOOTING_ENEMY_ID.MEMORY_WATCHER]), totalEnemies: 0, maxActive: 3, startDelayMs: 2600, spawnIntervalMs: 7000 }) }),
+    }),
   ]);
-  const MEMORY_BATTLE_SLOT_COUNT = 3; // build1866: UIはリヴィア / テスト / ヘイズ（内部番号 01 / 03 / 04、表示は 01 / 02 / 03）
+  const MEMORY_BATTLE_SLOT_COUNT = 4; // build1982: UIはリヴィア / テスト / ヘイズ / オーバーシア（内部番号 01 / 03 / 04 / 05、表示は 01〜04）
   const memoryBattleStageCache = new Map();
   function getMemoryBattleStageDef(no) {
     const n = Math.floor(Number(no) || 0);
