@@ -17213,3 +17213,22 @@ html body #shooting-event-root[data-shooting-stage="shooting_towa_dawn"] #shooti
   #shooting-event-root .ov-gaze-caption.is-danger{animation:none;}
   #shooting-event-root .ov-gaze-count.is-tick{animation:none;opacity:1;}
 }
+
+/* ============================================================
+   build2006 — TICKETイノリの背景（通常／呪場・左／呪場・右）
+   3枚を重ねておき、#shooting-event-root[data-inori-field] で表示だけを切り替える（切替は即時）
+   共通背景（battle_bg_01）はこのステージでは一切出さない
+   ============================================================ */
+#shooting-event-root[data-shooting-stage="shooting_special_inori"] .shooting-bg{
+  background-image:none!important;filter:none;opacity:.9;transform:none;
+}
+#shooting-event-root .shooting-bg .inori-bg-layer{
+  position:absolute;inset:0;background-position:center;background-size:cover;background-repeat:no-repeat;
+  opacity:0;transition:none!important;pointer-events:none;
+}
+#shooting-event-root .shooting-bg .inori-bg-layer.is-base{background-image:url('../images/inori_stage_bg.webp');}
+#shooting-event-root .shooting-bg .inori-bg-layer.is-left{background-image:url('../images/inori_stage_bg_left.webp');}
+#shooting-event-root .shooting-bg .inori-bg-layer.is-right{background-image:url('../images/inori_stage_bg_right.webp');}
+#shooting-event-root:not([data-inori-field="left"]):not([data-inori-field="right"]) .shooting-bg .inori-bg-layer.is-base,
+#shooting-event-root[data-inori-field="left"] .shooting-bg .inori-bg-layer.is-left,
+#shooting-event-root[data-inori-field="right"] .shooting-bg .inori-bg-layer.is-right{opacity:1;}

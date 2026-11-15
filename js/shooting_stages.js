@@ -1837,7 +1837,7 @@
       stageInfoName: '境界者 -イノリ-',
       difficultyLabel: 'SPECIAL STAGE',
       type: 'boss',
-      background: 'images/battle_bg_01.webp',
+      background: 'images/inori_stage_bg.webp', // build2006: 専用背景（呪場で左右版に切替。shooting_core ensureInoriStageBgLayers）
       enemyIds: Object.freeze([SHOOTING_ENEMY_ID.INORI]),
       bossElement: 'light',
       enemyElement: 'light',
