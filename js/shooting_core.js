@@ -3331,7 +3331,8 @@
     const stageTitle = isSpecialEvent
       ? ((isRaidStage() && BOSS?.name) || selectedStage?.eventTitle || selectedStage?.name || BOSS?.displayName || BOSS?.name || 'STAGE')
       : `ステージ${Number(selectedStage?.stageNo || 1)}`;
-    const difficultyLabel = isSpecialEvent ? (selectedStage?.difficultyLabel || '') : '';
+    // build1992: 戦闘ヘッダーはコンテンツ名だけ（サブタイトルは見切れるので全ステージ共通で出さない）
+    const difficultyLabel = '';
 
     if (kicker) kicker.textContent = isSpecialEvent ? 'SPECIAL EVENT' : `CHAPTER ${String(selectedStage?.chapter || 1).padStart(2, '0')}`;
     if (title) {
