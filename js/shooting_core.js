@@ -9123,6 +9123,7 @@
     if (dy < -1e-4) len = Math.min(len, (-20 - oy) / dy);
     len = Math.max(40, len);
     spawnTowaRayVisual(arena, ox, oy, ang, len);
+    const rayDeg = ang * 180 / Math.PI;
 
     const halfW = Math.max(4, Number(c.rayHitHalfWidth || 14));
     const attackElement = normalizeCombatElement(c.shotElement || c.element) || 'light';
@@ -9135,6 +9136,7 @@
       if (perp > halfW + getRayTargetRadius(t)) continue;
       const applied = damageNinaConductiveTarget(t, effectivePower, now, { element: attackElement }, false);
       hits++;
+      spawnTowaRayPierce(arena, t.x, t.y, rayDeg); // build1972: 貫いた敵の上に切り口の光
       if (applied > 0) connected = true;
       addTowaRayMark(t, c, effectivePower * Math.max(0, Number(c.rayBlastMultiplier || 1.8)), now, attackElement);
     }
@@ -9147,15 +9149,38 @@
       renderHud();
     }
   }
+  // build1972: RAYの演出を刷新。発射口の光の星 → 一瞬で走る閃光 → 太い光が細い一線へ収束 → 金の残光と光の粒
   function spawnTowaRayVisual(arena, ox, oy, ang, len) {
+    const muzzle = document.createElement('div');
+    muzzle.className = 'towa-ray-muzzle';
+    muzzle.setAttribute('aria-hidden', 'true');
+    muzzle.innerHTML = '<b></b><i></i><u></u>';
+    muzzle.style.transform = `translate3d(${ox.toFixed(1)}px,${oy.toFixed(1)}px,0)`;
+    arena.appendChild(muzzle);
+    setTimeout(() => muzzle.remove(), 200);
+
     const el = document.createElement('div');
     el.className = 'towa-ray';
     el.setAttribute('aria-hidden', 'true');
     el.style.width = `${Math.round(len)}px`;
     el.style.transform = `translate3d(${ox.toFixed(1)}px,${oy.toFixed(1)}px,0) rotate(${(ang * 180 / Math.PI).toFixed(2)}deg)`;
-    el.innerHTML = '<i class="tr-glow"></i><i class="tr-core"></i><i class="tr-head"></i>';
+    let motes = '';
+    for (let i = 0; i < 6; i++) {
+      motes += `<b style="left:${(8 + Math.random() * 80).toFixed(0)}%;--d:${(.04 + Math.random() * .12).toFixed(2)}s;--dy:${((Math.random() - .5) * 26).toFixed(0)}px"></b>`;
+    }
+    el.innerHTML = '<i class="tr-bloom"></i><i class="tr-trail"></i><i class="tr-core"></i>' + motes;
     arena.appendChild(el);
-    setTimeout(() => el.remove(), 260);
+    setTimeout(() => el.remove(), 650);
+  }
+  function spawnTowaRayPierce(arena, x, y, deg) {
+    if (!arena) return;
+    const p = document.createElement('div');
+    p.className = 'towa-ray-pierce';
+    p.setAttribute('aria-hidden', 'true');
+    p.innerHTML = '<i></i>';
+    p.style.transform = `translate3d(${Number(x).toFixed(1)}px,${Number(y).toFixed(1)}px,0) rotate(${Number(deg).toFixed(2)}deg)`;
+    arena.appendChild(p);
+    setTimeout(() => p.remove(), 280);
   }
   function addTowaRayMark(t, c, blastDamage, now, element) {
     if (!state) return;
@@ -9172,7 +9197,9 @@
       el = document.createElement('div');
       el.className = 'towa-ray-mark';
       el.setAttribute('aria-hidden', 'true');
-      el.innerHTML = '<i></i><b></b>';
+      // build1972: 光の種が膨らみ、輪が締まる。最後に光が漏れて脈打つ（--delay＝爆発までの時間）
+      el.style.setProperty('--delay', `${Math.max(100, Number(c.rayBlastDelayMs || 1000))}ms`);
+      el.innerHTML = '<i class="trm-ring"></i><i class="trm-leak"></i><i class="trm-leak l2"></i><i class="trm-leak l3"></i><i class="trm-seed"></i>';
       el.style.transform = `translate3d(${t.x.toFixed(1)}px,${t.y.toFixed(1)}px,0)`;
       arena.appendChild(el);
     }
@@ -9208,10 +9235,13 @@
       fx.className = 'towa-ray-blast';
       fx.setAttribute('aria-hidden', 'true');
       fx.style.setProperty('--rb', `${Math.round(m.radius * 2)}px`);
-      fx.innerHTML = '<i></i><b></b><u></u>';
+      // build1972: 白い核が弾け、大きな十字の光と破片。範囲はやわらかい光のにじみで示す（円環は使わない）
+      let shards = '';
+      for (let i = 0; i < 8; i++) shards += `<b style="--a:${(i * 45 + Math.random() * 20).toFixed(0)}deg"></b>`;
+      fx.innerHTML = '<i class="trb-area"></i><i class="trb-flash"></i><i class="trb-star"></i><i class="trb-star s2"></i>' + shards;
       fx.style.transform = `translate3d(${cx.toFixed(1)}px,${cy.toFixed(1)}px,0)`;
       arena.appendChild(fx);
-      setTimeout(() => fx.remove(), 460);
+      setTimeout(() => fx.remove(), 560);
     }
     let connected = false;
     for (const t of getNinaConductiveTargets()) {
@@ -9228,7 +9258,7 @@
   function clearTowaRayMarks() {
     if (state && Array.isArray(state.towaRayMarks)) state.towaRayMarks.forEach(m => m.el && m.el.remove());
     if (state) state.towaRayMarks = [];
-    document.querySelectorAll('.towa-ray,.towa-ray-mark,.towa-ray-blast').forEach(el => el.remove());
+    document.querySelectorAll('.towa-ray,.towa-ray-mark,.towa-ray-blast,.towa-ray-muzzle,.towa-ray-pierce').forEach(el => el.remove());
   }
 
   function fireNinaChainLightning(c, effectivePower, now) {
@@ -9948,8 +9978,8 @@
   }
 
   // ============================================================
-  // build1734: CLUSTER(O)＝エナジーサークル
-  //  命中した敵を中心に、半径Rの光の輪が1周（clusterRingSpinMs）回る。輪は敵に付いて動く。
+  // build1734: CLUSTER(O)＝エナジーサークル（build1973：見た目は着弾点から広がる爆発に変更）
+  //  命中した敵を中心に、半径Rの範囲へ clusterRingSpinMs の間エネルギーが広がる。範囲は敵に付いて動く。
   //  回っている間に clusterRingTicks 回、輪の内側にいる敵すべて（命中した敵を含む）へ
   //  親弾ダメージ×clusterRingTickRate を与える。処理はゲームループ側（一時停止・時間停止中は進まない）。
   // ============================================================
@@ -9962,17 +9992,18 @@
     const ticks = Math.max(1, Math.floor(Number(source.clusterRingTicks || 4)));
     const element = normalizeCombatElement(source.attackElement || source.element) || 'neutral';
     const visual = getBombElementVisual(element);
+    // build1973: 回るエナジーサークルをやめ、着弾点から「ブワン」と外へ広がるエネルギーの爆発に変更。
+    //  白い核 → 衝撃波2本が判定半径ちょうどまで広がる → 十字の光と破片。判定の範囲は残光のにじみで示し、
+    //  追撃の回数（clusterRingTicks）に合わせて脈打つ。判定・ダメージは従来どおり。
     const el = document.createElement('div');
-    el.className = 'shooting-ns-spin-ring';
-    el.style.setProperty('--ring-size', `${Math.round(radius * 2)}px`);
+    el.className = 'shooting-ns-burst';
+    el.style.setProperty('--rb', `${Math.round(radius * 2)}px`);
     el.style.setProperty('--bomb-rgb', visual.rgb);
     el.style.setProperty('--spin-ms', `${Math.round(spinMs)}ms`);
-    el.style.setProperty('--spin-dir', '1'); // build1847: 常に時計回り
-    el.innerHTML = '<i class="ns-ring-wrap">' +
-      '<i class="ns-ring-rune"></i><i class="ns-ring-base"></i>' + // build1848: 靄・内側の帯を削除（軽量化）
-      '<i class="ns-ring-swirl"></i>' +
-      '<i class="ns-ring-spin"><b></b><b></b><b></b></i>' +
-      '</i>';
+    let shards = '';
+    for (let i = 0; i < 10; i++) shards += `<b style="--a:${(i * 36 + Math.random() * 18).toFixed(0)}deg"></b>`;
+    el.innerHTML = '<i class="nsb-area"></i><i class="nsb-wave"></i><i class="nsb-wave w2"></i>' +
+      '<i class="nsb-flash"></i><i class="nsb-star"></i><i class="nsb-star s2"></i>' + shards;
     arena.appendChild(el);
     positionUnit(el, Number(x || 0), Number(y || 0));
     if (!Array.isArray(state.nsSpinRings)) state.nsSpinRings = [];
@@ -10013,7 +10044,7 @@
       }
       if (ring.done >= ring.ticks && elapsed >= ring.spinMs) {
         ring.el.classList.add('is-ending');
-        const el = ring.el; setTimeout(() => el.remove(), 320); // build1847: クルンと回って消える
+        const el = ring.el; setTimeout(() => el.remove(), 240); // build1973: 残光がすっと消える
         return false;
       }
       return true;
@@ -31017,7 +31048,7 @@
     }
   }
 
-  // build1970: 夜明けの決着。ゲームループが止まる前に白飛び・予兆を確実に解除し、下から朝の光が昇る
+  // build1970: 夜明けの決着。ゲームループが止まる前に白飛び・予兆を確実に解除し、光が満ちる
   function playTowaDawnFinale() {
     try { setTower15Blackout(false); } catch (_) {}
     if (state && state.tower15) state.tower15.blackoutUntil = 0;
@@ -31030,7 +31061,8 @@
     const fx = document.createElement('div');
     fx.className = 'dawn-finale';
     fx.setAttribute('aria-hidden', 'true');
-    fx.innerHTML = '<i class="df-sky"></i><i class="df-sun"></i><i class="df-rays"></i><strong>夜が、明ける</strong>';
+    // build1971b: 下から昇る太陽は外し、トワの位置から広がる光＋白い幕＋横一線の光にした
+    fx.innerHTML = '<i class="df-veil"></i><i class="df-burst"></i><i class="df-line"></i><strong>夜が、明ける</strong>';
     fx.style.setProperty('--bx', `${Number(state?.boss?.x || 0)}px`);
     fx.style.setProperty('--by', `${Number(state?.boss?.y || 0)}px`);
     arena.appendChild(fx);
@@ -34996,7 +35028,21 @@
     );
     if (resultWasVisible) {
       if (shootingResultExitFadeRunning) return;
-      await playShootingResultExitFade();
+      // build1971: 20Fで夜明けが当たっていれば、白フェードの代わりにクラッシュ演出（フリーズ→ノイズ→ホワイトアウト）
+      let towaDawnHit = false;
+      if (window.TowaDawn && typeof window.TowaDawn.playCrash === 'function' &&
+        String(selectedStage?.id || '') === 'shooting_tower_20' && window.__shootingReturnContext?.type === 'resonanceTower') {
+        shootingResultExitFadeRunning = true; // 抽選の確定待ちの間に二度押しさせない
+        try { await (state?.secureFinalizePromise || Promise.resolve()); } catch (_) {}
+        try { towaDawnHit = await window.TowaDawn.waitRoll(); } catch (_) { towaDawnHit = false; }
+      }
+      if (towaDawnHit) {
+        try {
+          await window.TowaDawn.playCrash({ resultEl: resultElBeforeClose, cutBgm: () => fadeOutShootingBattleBgm(90, true) });
+        } catch (err) { console.warn('[TowaDawn] crash fx failed', err); await playShootingResultExitFade(); }
+      } else {
+        await playShootingResultExitFade();
+      }
     }
 
     // PAUSEからの途中退出などでも戦闘BGMを残さない。

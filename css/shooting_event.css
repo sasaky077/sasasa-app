@@ -16755,76 +16755,79 @@ html body #shooting-event-root .shooting-combo .shooting-combo-bonus.is-up{anima
 /* ============================================================
    build1877 — トワ（光）RAY / 夜明けの刻
    ============================================================ */
-/* 閃光：自機から敵へ一瞬で駆け抜ける一筋の光（transform-origin＝発射口） */
+/* build1972: RAY 演出刷新（閃光 → 貫通の切り口 → 刻印 → 十字の光爆）。明るい背景でも埋もれないよう光の芯に琥珀色の縁 */
+/* 閃光：発射口の星 → 一瞬で走る → 太い光が細い一線へ収束 → 金の残光と光の粒 */
 #shooting-event-root .towa-ray{position:absolute;left:0;top:0;height:0;z-index:9;pointer-events:none;transform-origin:0 0;}
-#shooting-event-root .towa-ray i{position:absolute;left:0;width:100%;}
-#shooting-event-root .towa-ray .tr-glow{
-  top:-9px;height:18px;
-  background:linear-gradient(180deg,rgba(255,210,120,0),rgba(255,190,80,.55) 45%,rgba(255,190,80,.55) 55%,rgba(255,210,120,0));
-  -webkit-mask:linear-gradient(90deg,transparent 0,#000 18px,#000 82%,transparent);mask:linear-gradient(90deg,transparent 0,#000 18px,#000 82%,transparent);
-  transform-origin:0 50%;animation:tr-sweep .1s cubic-bezier(.2,.9,.3,1) both,tr-fade .26s ease-out both;
-}
-#shooting-event-root .towa-ray .tr-core{
-  top:-1.5px;height:3px;border-radius:2px;
-  background:linear-gradient(90deg,rgba(255,255,255,.2),#fff 12%,#fffbe8 70%,rgba(255,240,200,.3));
-  box-shadow:0 0 0 1px rgba(214,146,40,.55),0 0 6px #fff,0 0 12px rgba(255,190,80,.95);
-  transform-origin:0 50%;animation:tr-sweep .1s cubic-bezier(.2,.9,.3,1) both,tr-thin .26s ease-out both;
-}
-#shooting-event-root .towa-ray .tr-head{
-  left:auto;right:-10px;top:-10px;width:20px;height:20px;border-radius:50%;
-  background:radial-gradient(circle,#fff 0 22%,rgba(255,230,160,.8) 40%,transparent 70%);
-  animation:tr-head .26s ease-out both;
-}
+#shooting-event-root .towa-ray i{position:absolute;left:0;width:100%;display:block;}
+#shooting-event-root .towa-ray .tr-bloom{top:-15px;height:30px;transform-origin:0 50%;
+  background:linear-gradient(180deg,rgba(255,196,90,0),rgba(255,206,110,.55) 38%,rgba(255,246,220,.9) 50%,rgba(255,206,110,.55) 62%,rgba(255,196,90,0));
+  -webkit-mask:linear-gradient(90deg,transparent 0,#000 14px,#000 88%,transparent);mask:linear-gradient(90deg,transparent 0,#000 14px,#000 88%,transparent);
+  animation:tr-sweep .07s cubic-bezier(.2,.9,.3,1) both,tr-collapse .3s cubic-bezier(.5,0,.8,.4) .06s both;}
+#shooting-event-root .towa-ray .tr-core{top:-1.5px;height:3px;border-radius:2px;transform-origin:0 50%;
+  background:linear-gradient(90deg,#fff,#fff 80%,rgba(255,255,255,.2));
+  box-shadow:0 0 0 1px rgba(150,92,20,.55),0 0 6px #fff,0 0 14px rgba(255,190,80,1);
+  animation:tr-sweep .07s cubic-bezier(.2,.9,.3,1) both,tr-thin .34s ease-out .05s both;}
+#shooting-event-root .towa-ray .tr-trail{top:-.5px;height:1px;background:linear-gradient(90deg,rgba(255,214,130,.9),rgba(255,236,190,.6));
+  box-shadow:0 0 4px rgba(255,200,100,.9);animation:tr-trail .55s ease-out .08s both;}
+#shooting-event-root .towa-ray b{position:absolute;top:-2px;width:4px;height:4px;border-radius:50%;background:#fff;
+  box-shadow:0 0 6px 1px rgba(255,200,100,.95);animation:tr-mote .5s ease-out var(--d,.06s) both;}
 @keyframes tr-sweep{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-@keyframes tr-fade{0%,40%{opacity:1}100%{opacity:0}}
-@keyframes tr-thin{0%,35%{opacity:1;transform:scaleY(1)}100%{opacity:0;transform:scaleY(.2)}}
-@keyframes tr-head{0%{opacity:0;transform:scale(.4)}30%{opacity:1;transform:scale(1.2)}100%{opacity:0;transform:scale(.6)}}
+@keyframes tr-collapse{0%{opacity:1;transform:scaleY(1)}100%{opacity:0;transform:scaleY(.08)}}
+@keyframes tr-thin{0%,30%{opacity:1;transform:scaleY(1)}100%{opacity:0;transform:scaleY(.3)}}
+@keyframes tr-trail{0%{opacity:0}15%{opacity:1}100%{opacity:0;clip-path:inset(0 0 0 100%)}}
+@keyframes tr-mote{0%{opacity:0;transform:translateY(0) scale(1)}20%{opacity:1}100%{opacity:0;transform:translateY(var(--dy,-10px)) scale(.4)}}
+/* 発射口：4方向の光の星 */
+#shooting-event-root .towa-ray-muzzle{position:absolute;left:0;top:0;width:0;height:0;z-index:10;pointer-events:none;}
+#shooting-event-root .towa-ray-muzzle > *{display:block;animation:tr-star .16s ease-out both;}
+#shooting-event-root .towa-ray-muzzle i,#shooting-event-root .towa-ray-muzzle u{position:absolute;left:-1.5px;top:-16px;width:3px;height:32px;border-radius:2px;
+  background:linear-gradient(180deg,transparent,#fff 40%,#fff 60%,transparent);box-shadow:0 0 6px rgba(255,200,100,.9);}
+#shooting-event-root .towa-ray-muzzle u{--r:90deg;}
+#shooting-event-root .towa-ray-muzzle b{position:absolute;left:-9px;top:-9px;width:18px;height:18px;border-radius:50%;
+  background:radial-gradient(circle,#fff 0 30%,rgba(255,220,140,.7) 55%,transparent 72%);}
+@keyframes tr-star{0%{transform:rotate(var(--r,0deg)) scale(.3);opacity:1}40%{transform:rotate(calc(var(--r,0deg) + 12deg)) scale(1.15);opacity:1}100%{transform:rotate(calc(var(--r,0deg) + 20deg)) scale(.5);opacity:0}}
+/* 貫通：敵の上に、閃光と直交する一筋の切り口 */
+#shooting-event-root .towa-ray-pierce{position:absolute;left:0;top:0;width:0;height:0;z-index:11;pointer-events:none;}
+#shooting-event-root .towa-ray-pierce i{position:absolute;display:block;left:-2px;top:-22px;width:4px;height:44px;border-radius:2px;
+  background:linear-gradient(180deg,transparent,#fff 35%,#fff 65%,transparent);
+  box-shadow:0 0 0 1px rgba(150,92,20,.45),0 0 10px rgba(255,200,100,1);animation:tr-cut .22s ease-out both;}
+@keyframes tr-cut{0%{transform:scaleY(.2);opacity:1}35%{transform:scaleY(1.2);opacity:1}100%{transform:scaleY(.1) scaleX(.5);opacity:0}}
 
-/* RAY刻印：中心30px / 外輪50px。敵の上で白金の紋章が読み取れるサイズ */
-#shooting-event-root .towa-ray-mark{position:absolute;left:0;top:0;width:0;height:0;z-index:35;pointer-events:none;filter:drop-shadow(0 1px 1px rgba(37,24,12,.9));}
-#shooting-event-root .towa-ray-mark i{
-  position:absolute;left:-15px;top:-15px;width:30px;height:30px;border-radius:50%;
-  background:conic-gradient(from 0deg,#fff 0 25%,transparent 0 50%,#fff 0 75%,transparent 0);
-  -webkit-mask:radial-gradient(circle,#000 0 30%,transparent 32% 46%,#000 48% 58%,transparent 60%);
-          mask:radial-gradient(circle,#000 0 30%,transparent 32% 46%,#000 48% 58%,transparent 60%);
-  filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 6px rgba(255,201,80,.95));
-  animation:trm-spin .9s linear infinite,trm-in .16s ease-out both;
-}
-#shooting-event-root .towa-ray-mark b{
-  position:absolute;left:-25px;top:-25px;width:50px;height:50px;border-radius:50%;
-  border:2px solid rgba(255,235,166,.98);
-  box-shadow:0 0 0 1px rgba(83,46,24,.65),0 0 9px 2px rgba(255,212,105,.92),inset 0 0 8px rgba(255,244,210,.56);
-  animation:trm-close 1s linear both;
-}
-@keyframes trm-spin{to{rotate:360deg}}
-@keyframes trm-in{from{scale:1.5;opacity:0}to{scale:1;opacity:1}}
-@keyframes trm-close{0%{transform:scale(1.12);opacity:.7}85%{transform:scale(.78);opacity:1}100%{transform:scale(.65);opacity:1}}
+/* 刻印：光の種が膨らみ、輪が締まる。最後の約0.25秒で光が漏れ、脈打つ */
+#shooting-event-root .towa-ray-mark{position:absolute;left:0;top:0;width:0;height:0;z-index:35;pointer-events:none;}
+#shooting-event-root .towa-ray-mark i{position:absolute;display:block;}
+#shooting-event-root .towa-ray-mark .trm-seed{left:-5px;top:-5px;width:10px;height:10px;border-radius:50%;background:#fff;
+  box-shadow:0 0 0 1.5px rgba(180,110,20,.8),0 0 8px 2px rgba(255,206,110,.95);animation:trm-seed var(--delay,1s) linear both;}
+#shooting-event-root .towa-ray-mark .trm-ring{left:-22px;top:-22px;width:44px;height:44px;border-radius:50%;
+  border:1.5px solid rgba(255,232,170,.95);box-shadow:0 0 0 1px rgba(110,62,20,.45),0 0 8px rgba(255,206,110,.8);
+  animation:trm-ring var(--delay,1s) cubic-bezier(.5,0,.9,.6) both;}
+#shooting-event-root .towa-ray-mark .trm-leak{left:-1px;top:-18px;width:2px;height:36px;border-radius:1px;
+  background:linear-gradient(180deg,transparent,#fff 50%,transparent);opacity:0;animation:trm-leak var(--delay,1s) linear both;}
+#shooting-event-root .towa-ray-mark .trm-leak.l2{transform:rotate(60deg);}
+#shooting-event-root .towa-ray-mark .trm-leak.l3{transform:rotate(120deg);}
+@keyframes trm-seed{0%{transform:scale(.4)}70%{transform:scale(1)}80%{transform:scale(1.25)}85%{transform:scale(1)}90%{transform:scale(1.45)}95%{transform:scale(1.1)}100%{transform:scale(1.8)}}
+@keyframes trm-ring{0%{transform:scale(1.3);opacity:0}10%{opacity:.9}100%{transform:scale(.35);opacity:1}}
+@keyframes trm-leak{0%,72%{opacity:0;scale:1 .3}100%{opacity:1;scale:1 1.6}}
 
-/* 爆発：白金の閃光が丸く弾ける */
+/* 光爆：白い核が弾け、大きな十字の光と破片。範囲はやわらかい光のにじみで示す（円環は使わない） */
 #shooting-event-root .towa-ray-blast{position:absolute;left:0;top:0;width:0;height:0;z-index:12;pointer-events:none;}
-#shooting-event-root .towa-ray-blast i{
-  position:absolute;left:calc(var(--rb) / -2);top:calc(var(--rb) / -2);width:var(--rb);height:var(--rb);border-radius:50%;
-  background:radial-gradient(circle,#fff 0 18%,rgba(255,236,190,.9) 34%,rgba(255,186,80,.45) 58%,transparent 72%);
-  animation:trb-core .4s cubic-bezier(.2,.9,.3,1) both;
+#shooting-event-root .towa-ray-blast i{position:absolute;display:block;border-radius:50%;}
+#shooting-event-root .towa-ray-blast .trb-area{left:calc(var(--rb) / -2);top:calc(var(--rb) / -2);width:var(--rb);height:var(--rb);
+  background:radial-gradient(circle,rgba(255,236,190,.42) 0,rgba(255,214,130,.16) 50%,rgba(255,200,100,0) 70%);animation:trb-area .5s ease-out both;}
+#shooting-event-root .towa-ray-blast .trb-flash{left:calc(var(--rb) * -.28);top:calc(var(--rb) * -.28);width:calc(var(--rb) * .56);height:calc(var(--rb) * .56);
+  background:radial-gradient(circle,#fff 0 35%,rgba(255,244,214,.9) 55%,transparent 72%);animation:trb-flash .2s ease-out both;}
+#shooting-event-root .towa-ray-blast .trb-star{left:-2px;top:calc(var(--rb) * -.85);width:4px;height:calc(var(--rb) * 1.7);border-radius:2px;
+  background:linear-gradient(180deg,transparent,#fff 42%,#fff 58%,transparent);
+  box-shadow:0 0 0 1px rgba(150,92,20,.35),0 0 10px rgba(255,200,100,.95),0 0 22px rgba(255,214,130,.6);animation:trb-star .36s ease-out both;}
+#shooting-event-root .towa-ray-blast .trb-star.s2{--r:90deg;}
+#shooting-event-root .towa-ray-blast b{position:absolute;left:-1.5px;top:-6px;width:3px;height:12px;border-radius:2px;background:#fff;
+  box-shadow:0 0 6px rgba(255,200,100,1);animation:trb-shard .42s cubic-bezier(.2,.8,.3,1) both;}
+@keyframes trb-area{0%{transform:scale(.3);opacity:0}25%{opacity:1}100%{transform:scale(1);opacity:0}}
+@keyframes trb-flash{0%{transform:scale(.3);opacity:1}100%{transform:scale(1.25);opacity:0}}
+@keyframes trb-star{0%{transform:rotate(var(--r,0deg)) scaleY(0);opacity:1}35%{transform:rotate(calc(var(--r,0deg) + 8deg)) scaleY(1);opacity:1}100%{transform:rotate(calc(var(--r,0deg) + 14deg)) scaleY(.2);opacity:0}}
+@keyframes trb-shard{0%{transform:rotate(var(--a)) translateY(0) scaleY(1.4);opacity:1}100%{transform:rotate(var(--a)) translateY(calc(var(--rb) * -.55)) scaleY(.3);opacity:0}}
+@media (prefers-reduced-motion:reduce){
+  #shooting-event-root .towa-ray b,#shooting-event-root .towa-ray-blast b{display:none;}
 }
-#shooting-event-root .towa-ray-blast b{
-  position:absolute;left:calc(var(--rb) / -2);top:calc(var(--rb) / -2);width:var(--rb);height:var(--rb);border-radius:50%;
-  border:2.5px solid rgba(240,176,64,.95);box-shadow:0 0 10px rgba(255,190,80,.9),inset 0 0 8px rgba(255,255,255,.7);
-  animation:trb-ring .42s ease-out both;
-}
-#shooting-event-root .towa-ray-blast u{
-  position:absolute;left:-2px;top:calc(var(--rb) / -2);width:4px;height:var(--rb);
-  background:linear-gradient(180deg,transparent,#fff 50%,transparent);
-  box-shadow:0 0 6px #fff;
-  animation:trb-cross .3s ease-out both;
-}
-#shooting-event-root .towa-ray-blast u::after{
-  content:"";position:absolute;left:calc(var(--rb) / -2 + 2px);top:calc(var(--rb) / 2 - 2px);width:var(--rb);height:4px;
-  background:linear-gradient(90deg,transparent,#fff 50%,transparent);
-}
-@keyframes trb-core{0%{transform:scale(.2);opacity:1}100%{transform:scale(1.05);opacity:0}}
-@keyframes trb-ring{0%{transform:scale(.3);opacity:1}100%{transform:scale(1.15);opacity:0}}
-@keyframes trb-cross{0%{transform:scale(.4) rotate(0deg);opacity:1}100%{transform:scale(1.1) rotate(45deg);opacity:0}}
 
 /* 夜明けの刻：常闇の白版。背景レイヤーだけを白く飛ばす（弾・敵・味方・HUDは触らない） */
 html body #shooting-event-root.towa-light-background .shooting-stage{
@@ -17028,24 +17031,23 @@ html body #shooting-event-root[data-shooting-stage="shooting_towa_dawn"] #shooti
   to{box-shadow:inset 0 0 48px 16px rgba(255,214,120,.7),inset 0 -90px 90px -30px rgba(255,236,180,.6)}
 }
 
-/* --- 決着：夜が明ける --- */
+/* --- 決着：夜が明ける（build1971b：トワの位置から光が広がり、白い幕と横一線の光） --- */
 #shooting-event-root .dawn-finale{position:absolute;inset:0;z-index:60;pointer-events:none;overflow:hidden;}
 #shooting-event-root .dawn-finale i{position:absolute;display:block;}
-#shooting-event-root .dawn-finale .df-sky{
-  inset:0;
-  background:linear-gradient(0deg,rgba(255,206,120,.85) 0%,rgba(255,236,196,.7) 35%,rgba(255,252,242,.0) 75%);
-  animation:df-sky 2.6s ease-out both;
+#shooting-event-root .dawn-finale .df-veil{
+  inset:0;background:rgba(255,252,244,.9);
+  animation:df-veil 2.6s ease-out both;
 }
-#shooting-event-root .dawn-finale .df-sun{
-  left:50%;bottom:-180px;width:360px;height:360px;margin-left:-180px;border-radius:50%;
-  background:radial-gradient(circle,#fff 0 28%,rgba(255,240,200,.9) 42%,rgba(255,200,110,.45) 60%,transparent 72%);
-  animation:df-sun 2.6s cubic-bezier(.2,.8,.3,1) both;
+#shooting-event-root .dawn-finale .df-burst{
+  left:var(--bx);top:var(--by);width:520px;height:520px;margin:-260px 0 0 -260px;border-radius:50%;
+  background:radial-gradient(circle,#fff 0 16%,rgba(255,244,214,.9) 32%,rgba(255,220,150,.35) 52%,transparent 70%);
+  animation:df-burst 1.6s cubic-bezier(.2,.8,.3,1) both;
 }
-#shooting-event-root .dawn-finale .df-rays{
-  left:50%;bottom:-40px;width:900px;height:900px;margin-left:-450px;margin-bottom:-450px;border-radius:50%;
-  background:repeating-conic-gradient(from 0deg,rgba(255,236,180,.32) 0 4deg,transparent 4deg 15deg);
-  -webkit-mask:radial-gradient(circle,#000 0 20%,transparent 62%);mask:radial-gradient(circle,#000 0 20%,transparent 62%);
-  animation:df-rays 2.6s ease-out both;
+#shooting-event-root .dawn-finale .df-line{
+  left:0;right:0;top:calc(40% + 26px);height:1px;
+  background:linear-gradient(90deg,transparent,rgba(214,160,70,.85) 30%,#fff 50%,rgba(214,160,70,.85) 70%,transparent);
+  box-shadow:0 0 14px rgba(255,200,110,.8);transform:scaleX(0);
+  animation:df-line 2.6s cubic-bezier(.2,.8,.2,1) both;
 }
 #shooting-event-root .dawn-finale strong{
   position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);white-space:nowrap;
@@ -17053,14 +17055,54 @@ html body #shooting-event-root[data-shooting-stage="shooting_towa_dawn"] #shooti
   color:#fffaf0;text-shadow:0 0 3px rgba(120,70,10,.9),0 0 18px rgba(255,190,80,.95);
   animation:df-text 2.6s ease-out both;
 }
-@keyframes df-sky{0%{opacity:0}30%{opacity:1}100%{opacity:.0}}
-@keyframes df-sun{0%{transform:translateY(120px) scale(.6);opacity:0}35%{opacity:1}100%{transform:translateY(-60px) scale(1.25);opacity:0}}
-@keyframes df-rays{0%{opacity:0;rotate:-8deg}35%{opacity:1}100%{opacity:0;rotate:10deg}}
+@keyframes df-veil{0%{opacity:0}30%{opacity:1}80%{opacity:1}100%{opacity:.85}}
+@keyframes df-burst{0%{transform:scale(.1);opacity:1}60%{opacity:1}100%{transform:scale(2.4);opacity:0}}
+@keyframes df-line{0%,25%{transform:scaleX(0);opacity:1}55%{transform:scaleX(1);opacity:1}85%{opacity:1}100%{transform:scaleX(1);opacity:0}}
 @keyframes df-text{0%,20%{opacity:0;letter-spacing:.9em}45%{opacity:1;letter-spacing:.5em}80%{opacity:1}100%{opacity:0}}
 
 @media (prefers-reduced-motion:reduce){
   #shooting-event-root[data-dawn-guarded="1"] .shooting-boss{animation:none;filter:drop-shadow(0 0 5px rgba(255,236,170,.95)) drop-shadow(0 0 16px rgba(255,206,110,.6));}
   #shooting-event-root .dawn-trio-unit.dawn-trio-enraged{animation:none;filter:drop-shadow(0 0 5px rgba(255,100,80,.95));}
   #shooting-event-root[data-shooting-stage="shooting_towa_dawn"].dawn-whiteout-pending:not(.tower15-blackout) #shooting-tower15-blackout{animation:none;box-shadow:inset 0 0 40px 12px rgba(255,214,120,.6);}
-  #shooting-event-root .dawn-finale .df-rays{animation:df-sky 2.6s ease-out both;}
+  #shooting-event-root .dawn-finale .df-burst{animation:df-veil 1.6s ease-out both;}
+}
+
+/* ============================================================
+   build1973 — ナイトシェード CLUSTER(O)：着弾点から「ブワン」と外へ広がるエネルギー
+   （光トワRAYの光爆の円環あり版を闇色で）。親の transform は敵への追従に使う。
+   白い核 → 衝撃波2本が判定半径（--rb＝直径）まで広がる → 十字の光と破片。範囲のにじみは追撃4回に合わせて脈打つ。
+   ============================================================ */
+#shooting-event-root .shooting-ns-burst{position:absolute;left:0;top:0;width:0;height:0;pointer-events:none;z-index:16;
+  transform:translate3d(var(--unit-x,0),var(--unit-y,0),0);}
+#shooting-event-root .shooting-ns-burst i{position:absolute;display:block;border-radius:50%;}
+#shooting-event-root .shooting-ns-burst .nsb-area{left:calc(var(--rb) / -2);top:calc(var(--rb) / -2);width:var(--rb);height:var(--rb);
+  background:radial-gradient(circle,rgba(236,206,255,.5) 0,rgba(var(--bomb-rgb,128,84,174),.3) 45%,rgba(var(--bomb-rgb,128,84,174),.12) 62%,rgba(var(--bomb-rgb,128,84,174),0) 71%);
+  animation:nsb-area var(--spin-ms,560ms) linear both;}
+#shooting-event-root .shooting-ns-burst .nsb-flash{left:calc(var(--rb) * -.2);top:calc(var(--rb) * -.2);width:calc(var(--rb) * .4);height:calc(var(--rb) * .4);
+  background:radial-gradient(circle,#fff 0 30%,rgba(240,214,255,.95) 48%,rgba(var(--bomb-rgb,128,84,174),.5) 62%,transparent 72%);
+  animation:nsb-flash .22s ease-out both;}
+#shooting-event-root .shooting-ns-burst .nsb-wave{left:calc(var(--rb) / -2);top:calc(var(--rb) / -2);width:var(--rb);height:var(--rb);
+  border:3px solid rgba(214,160,255,.98);
+  box-shadow:0 0 0 1px rgba(50,14,80,.45),0 0 14px rgba(var(--bomb-rgb,128,84,174),.95),inset 0 0 14px rgba(230,190,255,.75);
+  animation:nsb-wave .42s cubic-bezier(.15,.8,.3,1) both;}
+#shooting-event-root .shooting-ns-burst .nsb-wave.w2{border-width:1.5px;border-color:rgba(255,255,255,.95);box-shadow:0 0 8px rgba(214,160,255,.9);animation-delay:.08s;}
+#shooting-event-root .shooting-ns-burst .nsb-star{left:-2px;top:calc(var(--rb) * -.6);width:4px;height:calc(var(--rb) * 1.2);border-radius:2px;
+  background:linear-gradient(180deg,transparent,#fff 42%,#fff 58%,transparent);
+  box-shadow:0 0 0 1px rgba(60,20,90,.35),0 0 10px rgba(200,130,255,.95),0 0 22px rgba(var(--bomb-rgb,128,84,174),.7);
+  animation:nsb-star .36s ease-out both;}
+#shooting-event-root .shooting-ns-burst .nsb-star.s2{--r:90deg;}
+#shooting-event-root .shooting-ns-burst b{position:absolute;left:-1.5px;top:-7px;width:3px;height:14px;border-radius:2px;background:#fff;
+  box-shadow:0 0 6px rgba(200,130,255,1),0 0 2px rgba(60,20,90,.6);animation:nsb-shard .45s cubic-bezier(.2,.8,.3,1) both;}
+@keyframes nsb-area{
+  0%{transform:scale(.25);opacity:0} 12%{transform:scale(1);opacity:1}
+  25%{opacity:.55} 31%{opacity:.9} 50%{opacity:.5} 56%{opacity:.8} 75%{opacity:.45} 81%{opacity:.7} 100%{transform:scale(1);opacity:.4}
+}
+@keyframes nsb-flash{0%{transform:scale(.3);opacity:1}100%{transform:scale(1.3);opacity:0}}
+@keyframes nsb-wave{0%{transform:scale(.12);opacity:1}75%{opacity:1}100%{transform:scale(1);opacity:0}}
+@keyframes nsb-star{0%{transform:rotate(var(--r,0deg)) scaleY(0);opacity:1}35%{transform:rotate(calc(var(--r,0deg) + 8deg)) scaleY(1);opacity:1}100%{transform:rotate(calc(var(--r,0deg) + 14deg)) scaleY(.2);opacity:0}}
+@keyframes nsb-shard{0%{transform:rotate(var(--a)) translateY(0) scaleY(1.4);opacity:1}100%{transform:rotate(var(--a)) translateY(calc(var(--rb) * -.5)) scaleY(.3);opacity:0}}
+#shooting-event-root .shooting-ns-burst.is-ending{opacity:0;transition:opacity .22s ease-out;}
+@media (prefers-reduced-motion:reduce){
+  #shooting-event-root .shooting-ns-burst b{display:none;}
+  #shooting-event-root .shooting-ns-burst .nsb-area{animation:nsb-flash var(--spin-ms,560ms) ease-out both;}
 }

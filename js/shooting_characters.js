@@ -3014,14 +3014,14 @@
   });
 
   // build1731: ナイトシェード (ID57) — 闇 SR / CLUSTER(O)。
-  //  SHOT：着弾した敵の周りをエナジーサークルが1周し、輪の内側の敵へ追撃（CLUSTER(O)）。
+  //  SHOT：着弾した敵の周りをエナジーサークルが1周し、輪の内側の敵へ追撃（CLUSTER(O)）。build1973：見た目は着弾点から広がる爆発
   //  build1734: 収束弾→回転するエナジーサークルに変更、半径140px。ULTをアルノ「千ノ刻」の銃乱射版に変更。
   //  ULT：敵弾全消去＋時間停止（射出・移動・攻撃・効果発動）。タップごとに散弾4発を敵全体へランダムにばら撒く（最大12タップ＝48発）。
   SHOOTING_CHARACTERS[CHARACTER_ID.NIGHTSHADE] = buildShootingCharacter({
     ...ERI_BASE_PROFILE,
     id: CHARACTER_ID.NIGHTSHADE, effectKey: 'nightshade',
     label: 'CLUSTER(O) / BARRAGE',
-    description: '闇属性のCLUSTER(O)。着弾した敵の周りをエナジーサークルが1周し、輪の内側の敵すべてに4回追撃する。ULTは時間停止（射出・移動・攻撃・効果発動）し、タップするたびに敵全体へ散弾をばら撒く。',
+    description: '闇属性のCLUSTER(O)。着弾点からエネルギーが外へ広がり、範囲内の敵すべてに4回追撃する。ULTは時間停止（射出・移動・攻撃・効果発動）し、タップするたびに敵全体へ散弾をばら撒く。',
     shotType: 'cluster', clusterSize: 'L', clusterSplitCount: 8, clusterPattern: 'ring',
     // build1734: 命中した敵の周りを1周するエナジーサークル（半径140px・0.56秒で1周・4回判定×親弾の20%）
     clusterRingRadius: 140, clusterRingSpinMs: 560, clusterRingTicks: 4, clusterRingTickRate: 0.20,
