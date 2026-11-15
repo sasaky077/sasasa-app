@@ -8124,6 +8124,92 @@
     window.__zsCanvasProbe = probe;
     zsDiag('canvas-probe', `${probe} / mode=${canvasSpriteMode} / forced=${forced}`);
   }
+  // ============================================================
+  // build1993: 戦闘中の「描けているか」確認
+  //  端末の自己診断（新しく作ったCanvas）はすべてOKでも、実戦で弾の本体だけ見えない報告がある。
+  //  考えられる原因：作り置きの弾スプライトの中身が後から消える（iOSのメモリ回収など）／画面Canvasへの貼り付けだけ効かない。
+  //  ① 2秒ごと：作り置きスプライトを小さなCanvasに貼って中身が残っているか見る（数ピクセル・軽い）
+  //  ② 戦闘開始3・6・9秒後の3回だけ：画面の敵弾Canvasで、実際に弾を描いた位置の1ピクセルを読む
+  //  どちらかで「空」を2回見たら、その戦闘は図形で直接描く方式に切り替え、記録に残す。
+  // ============================================================
+  let spriteCheckAt = 0, spriteBlankHits = 0, liveCheckDone = 0, liveCheckBase = 0, liveBlankHits = 0;
+  let spriteCheckCanvas = null, spriteCheckLoggedOk = false;
+  function resetSpriteHealth(now) {
+    spriteCheckAt = 0; spriteBlankHits = 0; liveCheckDone = 0; liveCheckBase = 0; liveBlankHits = 0; spriteCheckLoggedOk = false;
+  }
+  function spriteHasPixels(src) {
+    if (!src || !src.width || !src.height) return null;
+    if (!spriteCheckCanvas) { spriteCheckCanvas = document.createElement('canvas'); spriteCheckCanvas.width = 12; spriteCheckCanvas.height = 12; }
+    const g = spriteCheckCanvas.getContext('2d', { willReadFrequently: true });
+    if (!g) return null;
+    g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+    g.clearRect(0, 0, 12, 12);
+    g.drawImage(src, 0, 0, 12, 12);
+    const d = g.getImageData(0, 0, 12, 12).data;
+    for (let i = 3; i < d.length; i += 4) if (d[i] > 6) return true;
+    return false;
+  }
+  function switchToVectorForBattle(reason) {
+    if (canvasSpriteMode === 'vector') return;
+    canvasSpriteMode = 'vector';
+    window.__zsCanvasMode = 'vector';
+    zsDiag('auto-vector', reason);
+  }
+  function checkSpriteHealth(now) {
+    if (canvasSpriteMode !== 'sprite' || !state || !state.running || state.ended) return;
+    let forced = 'auto';
+    try { forced = localStorage.getItem('zs_render_mode') || 'auto'; } catch (_) {}
+    // 戦闘が実際に動き出した時点から数える（カウントダウン中は数えない）
+    if (!liveCheckBase) { liveCheckBase = now; spriteCheckAt = now + 2000; return; }
+    // ① 作り置きスプライトの中身
+    if (now >= spriteCheckAt) {
+      spriteCheckAt = now + 2000;
+      const picks = [];
+      for (const [k, c] of ENEMY_BULLET_SPRITE_CACHE) { if (picks.length >= 2) break; picks.push(['e:' + k, c]); }
+      for (const [k, sp] of playerBulletSpriteCache) { if (picks.length >= 4) break; if (sp && sp.canvas) picks.push(['p:' + k, sp.canvas]); }
+      const blank = [];
+      for (const [k, c] of picks) { const r = spriteHasPixels(c); if (r === false) blank.push(k); }
+      if (!blank.length && picks.length && !spriteCheckLoggedOk) { spriteCheckLoggedOk = true; zsDiag('sprite-check', `ok / checked=${picks.length}`); }
+      if (blank.length) {
+        spriteBlankHits++;
+        zsDiag('sprite-blank', `${blank.join(',').slice(0, 120)} / checked=${picks.length} / hit=${spriteBlankHits}`);
+        // 1回目：作り直してみる。2回目：図形に切り替え
+        try { ENEMY_BULLET_SPRITE_CACHE.forEach(c => releaseCanvasNow(c)); ENEMY_BULLET_SPRITE_CACHE.clear(); } catch (_) {}
+        try { playerBulletSpriteCache.forEach(sp => sp && sp.canvas && releaseCanvasNow(sp.canvas)); playerBulletSpriteCache.clear(); releasePlayerBulletCssSprites(); } catch (_) {}
+        if (spriteBlankHits >= 2 && forced === 'auto') switchToVectorForBattle('sprite-blank x2');
+      }
+    }
+    // ② 画面の敵弾Canvasを実際に読む（3回だけ）
+    if (liveCheckDone < 3 && now - liveCheckBase >= 3000) {
+      const canvas = document.getElementById(ENEMY_BULLET_CANVAS_ID);
+      const ctx = canvas && canvas.getContext('2d');
+      const list = (state.enemyBullets || []);
+      let target = null;
+      for (const p of list) {
+        if (!p || !p.canvasRendered) continue;
+        const k = p.canvasKind;
+        if (k === 'maga-eye' || k === 'danger' || k === 'raid-laser' || k === 'rhythm-bar') continue;
+        const r = Number(p.canvasRadius || 5.5);
+        if (r < 4) continue;
+        const x = Number(p.x || 0), y = Number(p.y || 0);
+        if (x < r || y < r || !canvas || x > canvas.clientWidth - r || y > canvas.clientHeight - r) continue;
+        target = p; break;
+      }
+      if (!ctx || !target) return; // 弾が無い時は次のフレームで再挑戦
+      liveCheckDone++; liveCheckBase = now; // 次は3秒後
+      const dpr = Number(canvas.__shootingDpr || 1);
+      const r = Number(target.canvasRadius || 5.5);
+      const vx = Number(target.vx || 0), vy = Number(target.vy || 0), sp = Math.hypot(vx, vy) || 1;
+      // 残光（三角）は弾の後ろ側に伸びるので、進行方向の少し前（本体だけの所）を読む
+      const sx = Math.round((Number(target.x) + vx / sp * r * .45) * dpr), sy = Math.round((Number(target.y) + vy / sp * r * .45) * dpr);
+      let a = -1;
+      try { a = ctx.getImageData(sx, sy, 1, 1).data[3]; } catch (err) { zsDiag('live-check-error', err && err.message || err); return; }
+      const ok = a > 20;
+      if (!ok) liveBlankHits++;
+      zsDiag(ok ? 'live-check' : 'live-blank', `a=${a} r=${r} kind=${target.canvasKind || 'orb'} n=${liveCheckDone}`);
+      if (!ok && liveBlankHits >= 2 && forced === 'auto') switchToVectorForBattle('live-blank x2');
+    }
+  }
   let canvasReliefAt = 0;
   function noteCanvasAllocFailure(err) {
     const now = performance.now();
@@ -29924,6 +30010,7 @@
     // 同じ更新済み座標を使って、検証ステージの敵弾だけを一枚へ描画する。
     // build1981: 描画で例外が出てもゲームループを止めない（以前はここで止まり「フリーズ」していた）
     try { renderCanvasEnemyBullets(); } catch (err) { noteCanvasAllocFailure(err); zsDiag('enemy-render-error', err && (err.stack || err.message) || err); }
+    try { checkSpriteHealth(performance.now()); } catch (_) {} // build1993
     // build1811: 自機弾（Canvas対象のもの）を一枚へ描画
     try { renderPlayerBulletCanvas(); } catch (err) { console.warn('[shooting] player bullet canvas skipped:', err); }
 
@@ -31067,7 +31154,7 @@
 
   function runStartCountdown() {
     // build1983: すべての戦闘開始でここを通る（build1981 の記録はリトライ時しか通らない場所にあった）
-    try { zsDiagBattleSnapshot('battle-start'); decideCanvasSpriteMode(); } catch (_) {}
+    try { zsDiagBattleSnapshot('battle-start'); decideCanvasSpriteMode(); resetSpriteHealth(performance.now()); } catch (_) {}
     // 中断復帰など、ボス登場演出を経由しない開始経路でもBGMを必ず同期。
     if (!shootingBattleBgmSessionActive) activateShootingBattleBgm(false);
     else window.syncShootingBattleBgm();
