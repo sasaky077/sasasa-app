@@ -97,7 +97,7 @@
     try { const u = Number(localStorage.getItem('zs_auto_vector_until') || 0); if (u > Date.now()) autoVec = new Date(u).toLocaleString() + ' まで'; } catch (_) {}
     return {
       '図形に自動固定': autoVec,
-      'ビルド': (rel.build || '-') + ' / 診断 build' + 1996,
+      'ビルド': (rel.build || '-') + ' / 診断 build' + 1997,
       'UA': n.userAgent || '-',
       'ホーム画面アプリ': (n.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches)) ? 'はい' : 'いいえ',
       '画素密度': window.devicePixelRatio,
@@ -107,6 +107,11 @@
       '描画方式の設定': mode,
       '前回戦闘の描画方式': window.__zsCanvasMode || '(まだ戦闘していない)',
       '前回戦闘の試験': window.__zsCanvasProbe || '-',
+      // build1997: BGM の鳴らし方（iOS 27.2 対策）
+      'BGMの鳴らし方': (() => { const e = window.ZsBgmEngine; return e ? `${e.mode === 'webaudio' ? 'Web Audio' : '<audio>'}（設定 ${e.setting}）` : '-'; })(),
+      'BGM音声の状態': (() => { const e = window.ZsBgmEngine; return e && e.mode === 'webaudio' ? e.ctxState : '-'; })(),
+      'BGMの再生中': (() => { const e = window.ZsBgmEngine; if (!e || !e.voices) return '-'; const v = e.voices().filter(x => !x.paused); return v.length ? v.map(x => `${x.id} ${x.playing ? x.t + 's' : (x.loading ? '読込中' : '待機')}${x.err ? ' ERR ' + x.err : ''}`).join(' / ') : 'なし'; })(),
+      'マナーモード時': (() => { try { return localStorage.getItem('zs_audio_session') === 'playback' ? '鳴らす(playback)' : '鳴らさない(自動)'; } catch (_) { return '-'; } })(),
     };
   }
 
@@ -138,11 +143,18 @@
     el.innerHTML = '<h2>診断（開発用）</h2><div class="zd-body">調べています…</div>' +
       '<div class="zd-row"><label>描画方式 <select data-zd-mode><option value="auto">自動</option><option value="sprite">貼り付け</option><option value="vector">図形で直接描く</option></select></label></div>' +
       '<div class="zd-note">描画方式は次の戦闘から反映されます。弾が見えない時は「図形で直接描く」を試してください。</div>' +
+      '<div class="zd-row"><label>BGM <select data-zd-audio><option value="auto">自動（iPhoneはWeb Audio）</option><option value="webaudio">Web Audio</option><option value="element">従来の&lt;audio&gt;</option></select></label>' +
+      '<label>マナーモード時 <select data-zd-session><option value="auto">鳴らさない</option><option value="playback">鳴らす</option></select></label></div>' +
+      '<div class="zd-note">BGMの設定はアプリを開き直すと反映されます。</div>' +
       '<div class="zd-row"><button type="button" data-zd-copy>内容をコピー</button><button type="button" data-zd-clear>記録を消す</button><button type="button" data-zd-close>閉じる</button></div>';
     document.body.appendChild(el);
     const sel = el.querySelector('[data-zd-mode]');
     try { sel.value = localStorage.getItem(MODE_KEY) || 'auto'; } catch (_) {}
     sel.addEventListener('change', () => { try { localStorage.setItem(MODE_KEY, sel.value); } catch (_) {} render(); });
+    const selA = el.querySelector('[data-zd-audio]'), selS = el.querySelector('[data-zd-session]');
+    try { selA.value = localStorage.getItem('zs_audio_engine') || 'auto'; selS.value = localStorage.getItem('zs_audio_session') || 'auto'; } catch (_) {}
+    selA.addEventListener('change', () => { try { localStorage.setItem('zs_audio_engine', selA.value); } catch (_) {} render(); });
+    selS.addEventListener('change', () => { try { localStorage.setItem('zs_audio_session', selS.value); } catch (_) {} render(); });
     el.querySelector('[data-zd-close]').addEventListener('click', () => el.remove());
 
     el.querySelector('[data-zd-clear]').addEventListener('click', () => { window.ZsDiag.clear(); render(); });
@@ -171,7 +183,7 @@
   // ---------- 起動方法（build1988） ----------
   // 1) 設定画面の見出し「設定」を3秒長押し
   // 2) PC：Ctrl(⌘)+Shift+D
-  const DIAG_BUILD = 1996;
+  const DIAG_BUILD = 1997;
   function safeOpen(from) {
     try { window.ZsDiag && window.ZsDiag.log('diag-open', from); } catch (_) {}
     open().catch(err => { console.error('[zs_diag] open failed', err); try { alert('診断を開けませんでした: ' + (err && err.message || err)); } catch (_) {} });

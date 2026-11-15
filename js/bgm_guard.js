@@ -154,7 +154,9 @@
     }
     try { if (typeof window.syncMainBgmToHome === 'function') window.syncMainBgmToHome(); } catch (_) {}
   }
-  if ('mediaSession' in navigator && navigator.mediaSession && typeof navigator.mediaSession.setActionHandler === 'function') {
+  // build1997: Web Audio でBGMを鳴らす端末（iOS）では「再生中」表示の仕組みに触れない（iOS 27.2 の不具合の引き金）
+  const webAudioBgm = !!(window.ZsBgmEngine && window.ZsBgmEngine.mode === 'webaudio');
+  if (!webAudioBgm && 'mediaSession' in navigator && navigator.mediaSession && typeof navigator.mediaSession.setActionHandler === 'function') {
     const set = (action, fn) => { try { navigator.mediaSession.setActionHandler(action, fn); } catch (_) {} };
     set('play', resumeContextBgm);
     set('pause', () => bgmAudios().forEach(a => stop(a, false)));

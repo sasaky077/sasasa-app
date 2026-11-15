@@ -3527,6 +3527,8 @@ html:not(.hv2-home) body #global-user-frame .hv2-face {
 <audio id="bgm-battle-tower-03" class="bgm-battle-track" src="audio/bgm_battle_tower_03.mp3?v=1621" preload="none" loop></audio>
 <audio id="bgm-battle-japan-01" class="bgm-battle-track" src="audio/bgm_battle_japan_01.mp3?v=1643" preload="none" loop></audio>
 <audio id="bgm-battle-dawn-01" class="bgm-battle-track" src="audio/bgm_battle_rare.mp3?v=1880-dawn" preload="none" loop></audio>
+<!-- build1997: iOS 27.2 対策。BGMの<audio>は残したまま、音だけWeb Audioで鳴らす（要素の直後で読み込む） -->
+<script src="js/zs_bgm_engine.js?v=1997-webaudio-bgm-unlock"></script>
 
 <div id="title-screen" onclick="startFromTitle()">
   <img src="images/title.webp" alt="Zeraphia">
@@ -22875,10 +22877,10 @@ html body #global-user-frame .hud-sweep-line-player::after{
 </script>
 
 <script src="js/gacha_trial.js?v=1740-boss-add-ult"></script>
-<script src="js/bgm_guard.js?v=1918-bgm-recovery-guard"></script>
+<script src="js/bgm_guard.js?v=1997-webaudio-bgm"></script>
 <script src="js/bgm_battle_recovery.js?v=1918-bgm-recovery"></script>
 <script src="js/wake_lock.js?v=1643-wake-lock"></script>
-<script src="js/zs_diag.js?v=1996-diag"></script>
+<script src="js/zs_diag.js?v=1997-diag"></script>
 
 <!-- build1930: Restore home-v2 header design across ordinary screens. NO page header bands. -->
 <style id="zeraphia-home-header-everywhere-build1930">

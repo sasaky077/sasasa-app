@@ -63,6 +63,29 @@
       .catch(err => { console.warn('[TowaDawn] watch skipped', err); });
   }
 
+  // Clear-only replay: server records this particular 20F battle outcome before a draw.
+  // No weekly tower reward, seal or progression is issued here.
+  async function confirmReplayResult(win) {
+    try { await watchPromise; } catch (_) {}
+    if (!watchId) return { towerConfirmed:false, replay:true };
+    const id=watchId;
+    try {
+      for (let retry=0; retry<8; retry++) {
+        const d=await rpc('finish_towa_dawn_replay',{p_watch_id:id,p_win:!!win});
+        if(d.ok===false && d.reason==='too_fast') {
+          await new Promise(resolve=>setTimeout(resolve,1500));
+          continue;
+        }
+        if(d.ok===false || d.win!==!!win) {
+          console.warn('[TowaDawn] replay not confirmed',d.reason||'unknown');
+          return { towerConfirmed:false, replay:true };
+        }
+        return { towerConfirmed:true, replay:true };
+      }
+    } catch(err) { console.warn('[TowaDawn] replay result failed',err); }
+    return { towerConfirmed:false, replay:true };
+  }
+
   function onTower20Result(stage, win, partyIds) {
     if (!isTower20(stage) || !win) { watchId = ''; return Promise.resolve(false); }
     rollPromise = (async () => {
@@ -530,7 +553,7 @@
 
   window.TowaDawn = Object.freeze({
     STAGE_ID, CHARACTER_ID,
-    onTower20Start, onTower20Result, hasPending, waitRoll, launch, beginRun, finishRun,
+    onTower20Start, onTower20Result, confirmReplayResult, hasPending, waitRoll, launch, beginRun, finishRun,
     playCrash, // build1971
     getPendingParty: () => (pending && pending.party ? pending.party.slice() : []),
   });

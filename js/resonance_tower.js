@@ -416,7 +416,7 @@
       // textContent内の改行(\n)を画面上にも反映する。
       foot.style.whiteSpace='pre-line';
       foot.textContent=cleared(number)
-        ? 'クリア済み階層の練習です。\n報酬・追加封印・進行更新はありません。'
+        ? 'クリア済みの階層です。\nクリア報酬はもらえません。\n追加封印・階層進行もありません。'
         : '使用した仲間は勝利時に封印されます。\n敗北、中断時は封印されません。';
     }
     start.hidden=kind!=='floor'||!(available(number)||cleared(number))||busy;
@@ -516,7 +516,7 @@
     if(party.length<1||party.length>partyLimit(floor)||new Set(party).size!==party.length||!party.every(isCharacterAvailable)){
       notify(replay?'所持キャラを'+partyRangeText(floor)+'選択してください':'封印されていないキャラを'+partyRangeText(floor)+'選択してください');return false;
     }
-    // 練習はサーバー上の週次挑戦に一切触らない。
+    // クリア済み階層の再挑戦では週次報酬・封印・階層進行は更新しない。20Fのみ別途、夜明け抽選用の勝敗記録を残す。
     if(replay){attempt={replay:true,floor,party,mode};finishPromise=null;return true;}
     busy=true;
     try{
@@ -536,7 +536,12 @@
     if(attempt?.replay){
       attempt=null;
       if(win) notify('再挑戦クリア！ 報酬や封印の追加はありません。');
-      finishPromise=Promise.resolve({towerConfirmed:true,replay:true,firstClearClaimed:false,firstClearAmount:0,highScore:0});
+      finishPromise=(async()=>{
+        const confirmed=(mode==='normal' && Number(replayFloor)===20 && window.TowaDawn?.confirmReplayResult)
+          ? await window.TowaDawn.confirmReplayResult(!!win)
+          : {towerConfirmed:true,replay:true};
+        return {...confirmed,firstClearClaimed:false,firstClearAmount:0,highScore:0};
+      })();
       return finishPromise;
     }
     finishPromise=(async()=>{
