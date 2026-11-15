@@ -385,8 +385,9 @@
     bossIndex = index;
     const position = root.querySelector('[data-mb-position]');
     if (position) position.textContent = pad2(index+1) + ' / ' + pad2(count);
-    root.querySelector('[data-mb-prev]').disabled = index === 0;
-    root.querySelector('[data-mb-next]').disabled = index === count-1;
+    // Circular carousel: both directions remain available at either end.
+    root.querySelector('[data-mb-prev]').disabled = count < 2;
+    root.querySelector('[data-mb-next]').disabled = count < 2;
   }
   function openRewards(stageNo){
     const root = $(SCREEN_ID);
@@ -423,13 +424,13 @@
     if (!list) return;
     const cards = [...list.querySelectorAll('.mb-card')];
     if (!cards.length) return;
-    const next = Math.max(0, Math.min(cards.length-1, bossIndex+direction));
+    const next = (bossIndex + direction + cards.length) % cards.length;
     list.scrollTo({left:cards[next].offsetLeft-cards[0].offsetLeft,behavior:'smooth'});
     bossIndex = next;
     const position = root.querySelector('[data-mb-position]');
     if (position) position.textContent = pad2(next+1) + ' / ' + pad2(cards.length);
-    root.querySelector('[data-mb-prev]').disabled = next === 0;
-    root.querySelector('[data-mb-next]').disabled = next === cards.length - 1;
+    root.querySelector('[data-mb-prev]').disabled = cards.length < 2;
+    root.querySelector('[data-mb-next]').disabled = cards.length < 2;
   }
 
   function render(){
