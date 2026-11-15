@@ -82,31 +82,33 @@
   //  iOS で「操作」と認められるのは指を離した時（touchend / pointerup / click）とキー入力。押した瞬間（touchstart）は認められない。
   const unlock = () => {
     const c = getCtx();
+    if (quiet && !document.hidden) restoreNow(); // フォーカスが戻った通知を取りこぼしても、触れば戻る
     if (c.state !== 'running') resumeCtx();
   };
   ['touchend', 'pointerup', 'click', 'keydown', 'pointerdown', 'touchstart'].forEach(t => window.addEventListener(t, unlock, { capture: true, passive: true }));
-  // build1999: バックグラウンドへ移る時は、iOS に止められる前に自分で静かに止める。
-  //  何もしないと、音の処理が途中で凍結され、最後の音が一瞬伸びて「プーン」と鳴る。
-  //  ①すぐ全体の音量を数十ミリ秒で0へ下げる ②下げ終わってから AudioContext を止める（曲の一時停止は bgm_guard が行う）
-  let hideTimer = 0;
-  function quietForHide() {
-    if (!ctx || !master) return;
-    try {
-      const t = ctx.currentTime;
-      master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(master.gain.value, t); master.gain.linearRampToValueAtTime(0, t + FADE_SEC);
-    } catch (_) {}
-    clearTimeout(hideTimer);
-    hideTimer = setTimeout(() => { if (document.hidden && ctx) { try { ctx.suspend(); } catch (_) {} } }, FADE_SEC * 1000 + 40);
+  // build1999: バックグラウンドへ移る時は、iOS に止められる前に自分で音の出口を止める。
+  //  止めないまま iOS がページを凍結すると、音声側だけが動き続けて最後の音を繰り返し「プーン…」と鳴る。
+  //  凍結の直前はタイマーが動かない事があるので、待たずにその場で 音量0 → AudioContext 停止 まで済ませる。
+  //  アプリ切替画面を出した時など、裏に回る前の「フォーカスが外れた」段階でも同じことをする（戻ったら再開）。
+  let quiet = false;
+  function quietNow(reason) {
+    if (!ctx) return;
+    quiet = true;
+    try { if (master) { const t = ctx.currentTime; master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(0, t); } } catch (_) {}
+    try { ctx.suspend(); } catch (_) {}
   }
-  function restoreAfterShow() {
-    clearTimeout(hideTimer);
-    if (!ctx || !master) return;
-    try { const t = ctx.currentTime; master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(1, t); } catch (_) {}
+  function restoreNow() {
+    if (document.hidden) return;
+    quiet = false;
+    if (!ctx) return;
+    try { if (master) { const t = ctx.currentTime; master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(1, t); } } catch (_) {}
     if (voices.some(v => !v.paused)) resumeCtx();
   }
-  document.addEventListener('visibilitychange', () => { if (document.hidden) quietForHide(); else restoreAfterShow(); });
-  window.addEventListener('pagehide', quietForHide);
-  window.addEventListener('pageshow', () => { if (!document.hidden) restoreAfterShow(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) quietNow('hidden'); else restoreNow(); });
+  window.addEventListener('pagehide', () => quietNow('pagehide'));
+  window.addEventListener('pageshow', () => restoreNow());
+  window.addEventListener('blur', () => { if (!document.hasFocus || !document.hasFocus()) quietNow('blur'); });
+  window.addEventListener('focus', () => restoreNow());
 
   // ---------------- 曲データ（取得・デコード・キャッシュ） ----------------
   const buffers = new Map(); // key -> { buffer, promise, usedAt }
@@ -199,6 +201,12 @@
       this.offset = this.currentTime;
       const n = this.node, fg = this.nodeGain; this.node = null; this.nodeGain = null;
       try { n.onended = null; } catch (_) {}
+      if (quiet || document.hidden || !ctx || ctx.state !== 'running') {
+        // 止まっている最中は音が出ないので、その場で切って片付ける（再開時に古い音が一瞬残らないように）
+        try { n.stop(); } catch (_) {}
+        try { n.disconnect(); } catch (_) {} try { fg && fg.disconnect(); } catch (_) {}
+        return;
+      }
       // build1999: いきなり切ると波形が途切れて「プツッ／プーン」と鳴る。数十ミリ秒で音量を0へ下げてから止める
       try {
         const t = ctx.currentTime;
