@@ -41,7 +41,7 @@ if (map === '庭園') {
     player.x=tileCenter(13); player.y=tileCenter(13);
   }
 }
-function resize(){dpr=Math.min(2,window.devicePixelRatio||1);W=canvas.clientWidth;H=canvas.clientHeight;canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);ctx.imageSmoothingEnabled=true;}window.addEventListener('resize',resize);resize();
+function resize(){dpr=Math.min(2,window.devicePixelRatio||1);W=canvas.clientWidth;H=canvas.clientHeight;canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);ctx.imageSmoothingEnabled=true;if(typeof clampPlayerToScreen==='function')clampPlayerToScreen();}window.addEventListener('resize',resize);resize();
 const rnd=(x,y,s=0)=>{let v=Math.sin((x*127.1+y*311.7+s*43.9)*.079)*43758.5453;return v-Math.floor(v);};
 function solid(x,y){const a=maps[map];const col=Math.floor(x/T),row=Math.floor(y/T);if(col<1||row<1||col>=MW-1||row>=MH-1)return true;return a.walls.some(([cx,cy,w,h])=>col>=cx&&col<cx+w&&row>=cy&&row<cy+h);}
 function collides(x,y){const r=12;return solid(x-r,y-r)||solid(x+r,y-r)||solid(x-r,y+r)||solid(x+r,y+r);}
@@ -69,7 +69,7 @@ function interact(){
  pop('隣のマスから話しかけてください');
 }
 document.getElementById('action').addEventListener('click',interact);
-function portal(){if(map==='庭園'){map='回廊';player.x=tileCenter(5);player.y=tileCenter(11);tileMotion=null;updateAnimation(0,0,0);placeEl.textContent='忘却の回廊';questEl.textContent='目的：残響を探す';speak('SYSTEM',['新たな場所に到着した。','第十章の探索は、ここから始まる。']);}else{map='庭園';player.x=tileCenter(20);player.y=tileCenter(11);tileMotion=null;updateAnimation(0,0,0);placeEl.textContent='灰色の庭園';questEl.textContent='目的：光の門を探す';}target=null;saveNow();}
+function portal(){if(map==='庭園'){map='回廊';player.x=tileCenter(5);player.y=tileCenter(11);tileMotion=null;updateAnimation(0,0,0);placeEl.textContent='忘却の回廊';questEl.textContent='目的：残響を探す';speak('SYSTEM',['新たな場所に到着した。','第十章の探索は、ここから始まる。']);}else{map='庭園';player.x=tileCenter(20);player.y=tileCenter(11);tileMotion=null;updateAnimation(0,0,0);placeEl.textContent='灰色の庭園';questEl.textContent='目的：光の門を探す';}target=null;clampPlayerToScreen();saveNow();}
 function drawGround(cameraX,cameraY){const a=maps[map];ctx.fillStyle=a.ground;ctx.fillRect(0,0,W,H);const fromX=Math.max(0,Math.floor(cameraX/T)-1),fromY=Math.max(0,Math.floor(cameraY/T)-1),toX=Math.min(MW-1,Math.ceil((cameraX+W)/T)+1),toY=Math.min(MH-1,Math.ceil((cameraY+H)/T)+1);
 for(let y=fromY;y<=toY;y++)for(let x=fromX;x<=toX;x++){const px=x*T-cameraX,py=y*T-cameraY,r=rnd(x,y),stone=((x+y)&1)===0;ctx.fillStyle=map==='庭園'?(stone?(r<.5?'#e9e2d7':'#ddd5c8'):(r<.5?'#e3dacc':'#d7cec1')):(r<.45?'#b8b4ac':'#c2b9b1');ctx.globalAlpha=1;ctx.fillRect(px,py,T+.5,T+.5);ctx.strokeStyle=map==='庭園'?'rgba(141,135,126,.24)':'#777b7440';ctx.strokeRect(px+.5,py+.5,T,T);if(map==='庭園'&&r>.87){ctx.fillStyle='rgba(255,255,255,.18)';ctx.beginPath();ctx.arc(px+T*.24,py+T*.22,3,0,7);ctx.fill();ctx.beginPath();ctx.arc(px+T*.31,py+T*.3,1.4,0,7);ctx.fill();ctx.beginPath();ctx.arc(px+T*.17,py+T*.31,1.4,0,7);ctx.fill();ctx.beginPath();ctx.arc(px+T*.24,py+T*.39,1.4,0,7);ctx.fill();}}
 if(map==='庭園'){
@@ -111,6 +111,37 @@ const fieldArt=new Image();fieldArt.src='images/field_ui.webp';
 function fieldLayout(){
   const step=Math.min(W*.095,H*.035);
   return {step, originX:W*.504, originY:H*.475};
+}
+// 画面に表示されるキャラの全身が見切れない範囲を、端末サイズから算出。
+// field_ui.webp は固定背景なのでカメラを追従させず、表示可能マス内で停止させる。
+function visibleTileBounds(){
+  const f=fieldLayout(), sprite=f.step*2.65;
+  const side=Math.max(12,sprite*.46); // 立ち絵の左右の余白
+  const top=Math.max(H*.215,sprite*.15); // 上部の章タイトルを避ける
+  const bottom=H*.93; // 画面最下端に立ち絵が隠れないようにする
+  const colMin=Math.ceil(13+(side-f.originX)/f.step);
+  const colMax=Math.floor(13+(W-side-f.originX)/f.step);
+  const rowMin=Math.ceil(13+(top+sprite*.85-f.originY)/f.step);
+  const rowMax=Math.floor(13+(bottom-sprite*.15-f.originY)/f.step);
+  return {
+    minX:Math.max(1,colMin),maxX:Math.min(MW-2,colMax),
+    minY:Math.max(1,rowMin),maxY:Math.min(MH-2,rowMax)
+  };
+}
+function insideVisibleTiles(x,y){
+  if(map!=='庭園')return x>=1&&x<MW-1&&y>=1&&y<MH-1;
+  const b=visibleTileBounds();
+  return x>=b.minX&&x<=b.maxX&&y>=b.minY&&y<=b.maxY;
+}
+function clampPlayerToScreen(){
+  if(map!=='庭園'||tileMotion)return;
+  const b=visibleTileBounds();
+  const x=Math.max(b.minX,Math.min(b.maxX,tileIndex(player.x)));
+  const y=Math.max(b.minY,Math.min(b.maxY,tileIndex(player.y)));
+  // NPCの居るマスは避ける。
+  if(x===maps[map].npc.x&&y===maps[map].npc.y){
+    player.x=tileCenter(x);player.y=tileCenter(Math.min(b.maxY,y+1));
+  }else{player.x=tileCenter(x);player.y=tileCenter(y);}
 }
 function screenForTile(worldX,worldY){
   const f=fieldLayout();
@@ -223,7 +254,7 @@ function inputDirection(){
 }
 function beginTileStep(dir){
   const tx=tileIndex(player.x)+dir.dx,ty=tileIndex(player.y)+dir.dy;
-  if((map==='庭園' ? (tx<3||tx>23||ty<5||ty>18) : solid(tileCenter(tx),tileCenter(ty))) ||
+  if((map==='庭園' ? !insideVisibleTiles(tx,ty) : solid(tileCenter(tx),tileCenter(ty))) ||
       (maps[map].npc.x===tx&&maps[map].npc.y===ty)){
     target=null;
     player.dir=dir.dx ? (dir.dx>0?'right':'left') : (dir.dy>0?'down':'up');
@@ -261,7 +292,7 @@ function move(dt){
 }
 function loop(ts){const dt=Math.min(.05,Math.max(0,(ts-last)/1000||0));last=ts;clock+=dt;move(dt);updateNovel(dt);render();if(toastUntil&&ts>toastUntil){document.getElementById('toast').classList.remove('show');toastUntil=0;}requestAnimationFrame(loop);}requestAnimationFrame(loop);
 const stick=document.getElementById('stick'),knob=document.getElementById('stick-knob');let stickPid=null;function setStick(e){let b=stick.getBoundingClientRect(),cx=b.left+b.width/2,cy=b.top+b.height/2,dx=e.clientX-cx,dy=e.clientY-cy,r=b.width*.29,len=Math.max(r,Math.hypot(dx,dy));joystick.x=dx/len;joystick.y=dy/len;knob.style.transform=`translate(${joystick.x*r}px,${joystick.y*r}px)`;target=null;}function resetStick(){stickPid=null;joystick.x=joystick.y=0;knob.style.transform='translate(0,0)';}stick.addEventListener('pointerdown',e=>{e.preventDefault();stickPid=e.pointerId;stick.setPointerCapture(e.pointerId);setStick(e);});stick.addEventListener('pointermove',e=>{if(e.pointerId===stickPid)setStick(e);});stick.addEventListener('pointerup',resetStick);stick.addEventListener('pointercancel',resetStick);
-canvas.addEventListener('pointerup',e=>{if(!enabled||!overlay.hidden||!dialog.hidden||novel.active)return;const r=canvas.getBoundingClientRect(),camX=Math.max(0,Math.min(MW*T-W,player.x-W/2)),camY=Math.max(0,Math.min(MH*T-H,player.y-H/2));const f=fieldLayout(),sx=e.clientX-r.left,sy=e.clientY-r.top;const wx=tileCenter(13)+(sx-f.originX)/f.step*T,wy=tileCenter(13)+(sy-f.originY)/f.step*T;const n=maps[map].npc;if(Math.hypot(wx-tileCenter(n.x),wy-tileCenter(n.y))<T*1.1&&nearby()){interact();return;}target={x:Math.max(3,Math.min(23,tileIndex(wx))),y:Math.max(5,Math.min(18,tileIndex(wy)))};});
+canvas.addEventListener('pointerup',e=>{if(!enabled||!overlay.hidden||!dialog.hidden||novel.active)return;const r=canvas.getBoundingClientRect(),camX=Math.max(0,Math.min(MW*T-W,player.x-W/2)),camY=Math.max(0,Math.min(MH*T-H,player.y-H/2));const f=fieldLayout(),sx=e.clientX-r.left,sy=e.clientY-r.top;const wx=tileCenter(13)+(sx-f.originX)/f.step*T,wy=tileCenter(13)+(sy-f.originY)/f.step*T;const n=maps[map].npc;if(Math.hypot(wx-tileCenter(n.x),wy-tileCenter(n.y))<T*1.1&&nearby()){interact();return;}const b=visibleTileBounds();target={x:Math.max(b.minX,Math.min(b.maxX,tileIndex(wx))),y:Math.max(b.minY,Math.min(b.maxY,tileIndex(wy)))};});
 document.getElementById('back-to-story').addEventListener('click',()=>{try{window.parent.closeZeraphiaCh10RPG();}catch(_){}if(window.parent===window){window.history.back();}});
 document.getElementById('start').addEventListener('click',()=>{enabled=true;overlay.hidden=true;pop('上下左右、1マスずつ移動します');});document.getElementById('menu').addEventListener('click',()=>{saveNow();overlay.hidden=false;});document.getElementById('reset').addEventListener('click',()=>{try{localStorage.removeItem('zeraphia_ch10_rpg_demo_v1');}catch(_){}map='庭園';player.x=tileCenter(13);player.y=tileCenter(13);tileMotion=null;player.dir='down';player.animTimer=0;player.animStepIndex=0;player.move=false;save={x:player.x,y:player.y,met:false,gate:false,map};placeEl.textContent='灰色の庭園';questEl.textContent='目的：光の門を探す';target=null;enabled=true;overlay.hidden=true;});
 const returnBtn=document.getElementById('returnToStory');if(returnBtn) returnBtn.addEventListener('click',()=>{saveNow();try{if(window.parent&&window.parent!==window&&typeof window.parent.closeZeraphiaCh10RPG==='function'){window.parent.closeZeraphiaCh10RPG();return;}}catch(_){}history.back();});
