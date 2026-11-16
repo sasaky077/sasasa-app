@@ -3557,6 +3557,9 @@ html:not(.hv2-home) body #global-user-frame .hv2-face {
 #global-user-frame .hv2-face,#global-user-frame #hud-lv-circle,#global-user-frame #hud-name{cursor:pointer;touch-action:manipulation}
 @media(max-width:360px){#zs-player-profile .zpp-card{padding:26px 16px 18px}#zs-player-profile .zpp-avatar{width:62px;height:62px;flex-basis:62px}#zs-player-profile .zpp-name{font-size:22px}#zs-player-profile #zpp-heading{font-size:18px}}
 </style>
+
+<link rel="stylesheet" href="css/ch10_rpg_bridge.css?v=2032">
+<script src="js/ch10_rpg_bridge.js?v=2032" defer></script>
 </head>
 <body>
 <div id="splash" style="cursor:pointer">
@@ -21093,13 +21096,13 @@ function fadeOutOpeningBgm(){
     const list = document.getElementById('story-chapter-list');
     if (!list) return;
     const min = 1;
-    const max = 9; // build1697: CHAPTER 09「はじまり」を表示（stage_select.js の STORY_CHAPTER_MAX と揃える）
+    const max = 10; // build1697: CHAPTER 09「はじまり」を表示（stage_select.js の STORY_CHAPTER_MAX と揃える）
     list.innerHTML = '';
     list.classList.add('junkou-story-list');
 
     for (let chapter = min; chapter <= max; chapter++) {
-      const unlocked = isUnlockedChapter(chapter, mode || 'normal');
-      const title = unlocked ? getStoryTitle(chapter) : '???';
+      const unlocked = chapter === 10 ? true : isUnlockedChapter(chapter, mode || 'normal');
+      const title = chapter === 10 ? '開発中(仮)' : (unlocked ? getStoryTitle(chapter) : '???');
       const sixOrLess = Array.from(String(title)).length <= 6;
       const button = document.createElement('button');
       button.type = 'button';
@@ -21126,7 +21129,7 @@ function fadeOutOpeningBgm(){
           if (illustration.getAttribute('src') !== fallback) illustration.src = fallback;
         }, { once: true });
       }
-      button.addEventListener('click', function(){ openChapter(chapter, mode || 'normal'); });
+      button.addEventListener('click', function(){ if (chapter === 10) { window.openZeraphiaCh10RPG(); return; } openChapter(chapter, mode || 'normal'); });
       list.appendChild(button);
     }
   }

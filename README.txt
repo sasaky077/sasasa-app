@@ -1,4 +1,4 @@
-build1690 エクリプス戦専用BGM
-変更: index.html, js/shooting_event.js, js/shooting_core.js, version.json
-別途 audio/bgm_battle_boss_04.mp3 を配置してください（音源自体は同梱していません）。
-位相回遊エクリプス戦のみ固定再生。通常ボス・塔トワ戦等は変更しません。
+ZERAPHIA STORY 10 見出し画像更新 (build 2033)
+既存のbuild2032統合版が必要です。
+このZIPのindex.html, version.json, images/icon_story_10.webpをリポジトリの同じパスへ配置・上書きしてください。
+ジグの台詞: rpg/ch10/rpg.js の novel.entries 配列
