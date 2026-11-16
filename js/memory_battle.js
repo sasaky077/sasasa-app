@@ -107,7 +107,11 @@
     clearRun();
     const client = sb();
     const uid = userId();
-    if (!client || typeof client.rpc !== 'function' || !uid) { runPromise = Promise.resolve(null); return runPromise; }
+    if (!client || typeof client.rpc !== 'function' || !uid) {
+      runPromise = Promise.resolve(null);
+      notify('記憶決戦の出撃記録を開始できません。ログイン状態と通信を確認して再度お試しください。');
+      return runPromise;
+    }
     runPromise = (async () => {
       const { data, error } = await client.rpc('begin_memory_battle', { p_user_id: uid, p_stage_no: no });
       if (error) throw error;
@@ -121,7 +125,7 @@
       return run;
     })().catch(err => {
       console.warn('[memory battle] begin', err && (err.message || err));
-      notify('記憶決戦の出撃記録を作れませんでした。クリアしても報酬は受け取れません。');
+      notify('記憶決戦の出撃記録を作成できませんでした。戦闘は開始されていません。通信状態を確認して再度お試しください。');
       return null;
     });
     return runPromise;

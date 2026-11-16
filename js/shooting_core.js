@@ -33975,13 +33975,13 @@
     // build1081: RESULTを閉じるまで勝敗を保持し、STORY後半ノベル判定に使う。
     state.lastResultWin = !!win;
     // 敗北/中断では上書きしない。実際に出撃したメンバー順を保持する。
-    if (win && !isResonanceTowerReplay() && !isPhaseOdysseyStage()) {
-      saveShootingLastClearParty(
-        state.stageId || selectedStage?.id,
-        Array.isArray(state.initialPartyIds) && state.initialPartyIds.length
-          ? state.initialPartyIds
-          : (Array.isArray(state.party) ? state.party.map(member => Number(member.id)) : [])
-      );
+    // 記憶決戦だけはサーバーが勝利を確定してから「クリア編成」を保存する。
+    const lastClearStageId = state.stageId || selectedStage?.id;
+    const lastClearPartyIds = Array.isArray(state.initialPartyIds) && state.initialPartyIds.length
+      ? state.initialPartyIds.slice()
+      : (Array.isArray(state.party) ? state.party.map(member => Number(member.id)) : []);
+    if (win && !isResonanceTowerReplay() && !isPhaseOdysseyStage() && !isMemoryBattleStage()) {
+      saveShootingLastClearParty(lastClearStageId, lastClearPartyIds);
     }
     finalizeStoryClearScore(!!win);
     if (isScoreAttackStage()) {
@@ -34027,6 +34027,14 @@
     // ステージ別最高スコアをローカルへ即時反映し、Supabaseへ非同期保存。
     // v172: score/result is accepted only against this battle's server run token.
     state.secureFinalizePromise = dailyQuestAtResult ? finalizeDailyQuestRun(state.score, !!win) : submitShootingHighScore(state.score, !!win);
+    if (win && isMemoryBattleStage()) {
+      const memoryFinalizePromise = state.secureFinalizePromise;
+      void Promise.resolve(memoryFinalizePromise).then(finalized => {
+        if (finalized && finalized.memoryConfirmed === true) {
+          saveShootingLastClearParty(lastClearStageId, lastClearPartyIds);
+        }
+      }).catch(err => console.warn('[memory battle] confirmed clear party save failed', err));
+    }
     if (dailyQuestAtResult) {
       try {
         await state.secureFinalizePromise;
@@ -35317,6 +35325,10 @@
     return isShootingBattleUnresolved();
   }
   function rejectShootingBattleAbandon() {
+    if (memoryBattleStartPending) {
+      if (typeof window.showToast === 'function') window.showToast('記憶決戦の出撃記録を確認中です。少し待ってから操作してください。');
+      return true;
+    }
     if (!phaseOdysseyExitLocked()) return false;
     const message = '位相回遊では、途中終了ができません。';
     if (typeof window.showToast === 'function') window.showToast(message);
@@ -35987,6 +35999,7 @@
   }
 
   let towerBattleStartPending=false;
+  let memoryBattleStartPending=false;
   window.startSelectedShootingCharacter = async function (options = {}) {
     if (isGachaTrialStage()) return; // 試遊の開始は下記の専用経路からのみ
     if (isNoahStage() && !options.noahTicketConfirmed) {
@@ -36004,8 +36017,11 @@
     if (isStoryShootingStage()) ensureStoryEriLeader();
     if (!isShootingPartyReady()) return;
     const towerBattleStart=isResonanceTowerStage() || isPhaseOdysseyStage(); // 二重タップ防止（位相回遊も確認ダイアログを挟む）
+    const memoryBattleStart=isMemoryBattleStage();
     if (towerBattleStart && towerBattleStartPending) return;
+    if (memoryBattleStart && memoryBattleStartPending) return;
     if (towerBattleStart) towerBattleStartPending=true;
+    if (memoryBattleStart) memoryBattleStartPending=true;
     try {
 
     // build1418: 塔は編成確定後・出撃トークン発行前に封印対象を必ず表示する。
@@ -36083,9 +36099,22 @@
       phaseOdysseyBattleCommitted = true;
     }
 
-    // build1757: 記憶決戦は出撃時に専用の出撃記録（トークン）を発行。報酬の確定は finishRun で。
-    if (isMemoryBattleStage() && window.MemoryBattle && typeof window.MemoryBattle.beginRun === 'function') {
-      void window.MemoryBattle.beginRun(Number(selectedStage.stageNo || 0), selectedPartyIds.slice());
+    // build2031: 記憶決戦はサーバーの出撃トークンと編成登録が完了するまで戦闘を開始しない。
+    if (memoryBattleStart) {
+      const memoryBattleApi = window.MemoryBattle;
+      const memoryStageNo = Number(selectedStage.stageNo || 0);
+      if (!memoryBattleApi || typeof memoryBattleApi.beginRun !== 'function') {
+        if (typeof window.showToast === 'function') window.showToast('記憶決戦の出撃記録を開始できません。通信状態を確認してください。');
+        return;
+      }
+      const memoryRun = await memoryBattleApi.beginRun(memoryStageNo, selectedPartyIds.slice());
+      if (!memoryRun || !memoryRun.token) return;
+      if (memoryRun.rankRegistered !== true) {
+        // トークンだけ発行され編成登録に失敗した出撃を未完了のまま残さない。
+        try { await memoryBattleApi.finishRun(false, memoryStageNo); } catch (_) {}
+        if (typeof window.showToast === 'function') window.showToast('編成の出撃記録を確認できませんでした。戦闘は開始されていません。再度お試しください。');
+        return;
+      }
     }
 
     // 使用キャラランキング用。編成された各キャラを1出撃として記録。
@@ -36142,6 +36171,7 @@
     });
     } finally {
       if (towerBattleStart) towerBattleStartPending=false;
+      if (memoryBattleStart) memoryBattleStartPending=false;
     }
   };
 
