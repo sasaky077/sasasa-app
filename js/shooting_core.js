@@ -3598,6 +3598,7 @@
     panel.classList.toggle('is-empty', !record);
     panel.classList.toggle('is-unavailable', !!record && !status.ok);
     if (!record) {
+      detail.hidden = false;
       members.textContent = 'まだ記録がありません';
       detail.textContent = raidMode ? 'このレイドに出撃すると編成が記録されます' : 'このステージで勝利すると記録されます';
       return;
@@ -3609,9 +3610,9 @@
         <small>${c.name}</small>
       </span>`;
     }).join('');
-    detail.textContent = status.ok
-      ? (record.clearedAt ? `${new Date(record.clearedAt).toLocaleDateString('ja-JP')} ${raidMode ? 'SORTIE' : 'CLEAR'}` : (raidMode ? 'LAST SORTIE' : 'LAST CLEAR'))
-      : status.reason;
+    // build2085: 前回クリアの日付は出さない。使えない時の理由（未所持・人数超過など）だけ表示する
+    detail.textContent = status.ok ? '' : status.reason;
+    detail.hidden = !!status.ok;
   }
 
   window.restoreLastClearedShootingParty = function () {
