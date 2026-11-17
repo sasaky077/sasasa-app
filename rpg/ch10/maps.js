@@ -4,9 +4,24 @@
 //  flip:true で左右反転 / gate:'行き先マップ名' でその部品の門が移動ポイントになる
 //  ?debug=1 で開くとドラッグで配置でき、「配置をコピー」でこの形式のまま書き出せます
 // =====================================================================
+// =====================================================================
+//  ミッション（目的）— 上から順に進む。ヘッダーの「目的：」と、画面端の矢印・★がこれに従う
+//    talk : npc（maps の npcs の id）に話しかけ、会話が終わったら次へ
+//    gate : to のマップへの門をくぐったら次へ（それまで門は通れない）
+//    end  : 最後（ここで止まる）
+// =====================================================================
+window.ZERAPHIA_QUESTS = [
+  { type: 'talk', npc: 'zig',    map: '庭園', text: 'ジグに話しかける' },
+  { type: 'talk', npc: 'aura',   map: '庭園', text: 'アウラに話しかける' },
+  { type: 'talk', npc: 'mimosa', map: '庭園', text: 'ミモザに話しかける' },
+  { type: 'gate', to: '回廊',    map: '庭園', text: '光の門へ行く' },
+  { type: 'talk', npc: 'hao',    map: '回廊', text: 'ハオに話を聞く' },
+  { type: 'end',                              text: '次なるアップデートを待つ' },
+];
+
 window.ZERAPHIA_MAPS = {
   '庭園': {
-    place: '灰色の庭園', quest: '目的：光の門を探す', questAfter: '目的：北の光の門へ',
+    place: 'はじまりの箱庭 1層', quest: '目的：光の門を探す',   // place = 画面に出るエリア名
     size: [2000, 3650],            // マップの広さ（幅, 高さ）
     horizonY: 840,                  // 地平線の高さ（これより上は空）
     walk: { top: 1000, bottom: 3050 }, // 歩ける範囲の上端・下端
@@ -29,22 +44,22 @@ window.ZERAPHIA_MAPS = {
       { id: 'zig', name: 'ジグ', x: 1025, y: 2625, sprite: 'images/chara_05_down_idle.webp',
         talk: [
           { speaker: 'エリ', text: 'ジグ、この先には行けないの？' },
-          { speaker: 'ジグ', text: 'まだ…開発中だってよ。早くしてほしいもんだぜ。' },
+          { speaker: 'ジグ', text: 'まだ…開発中だってよ。アウラはどこだ？' },
         ] },
       { id: 'aura', name: 'アウラ', x: 1325, y: 2375, sprite: 'images/chara_03_down_idle.webp',
         talk: [
-          { speaker: 'エリ', text: '不思議な場所だね。' },
-          { speaker: 'アウラ', text: 'うん、でもこの庭、なんだか落ち着くね。' },
+          { speaker: 'エリ', text: 'なんだか…不思議な場所だね。' },
+          { speaker: 'アウラ', text: 'お花が咲いてたよ！<br>ミモザに見せてあげよう！' },
         ] },
       { id: 'mimosa', name: 'ミモザ', x: 725, y: 2125, sprite: 'images/chara_28_down_idle.webp',
         talk: [
-          { speaker: 'エリ', text: 'ミモザ、何かわかった？' },
-          { speaker: 'ミモザ', text: 'いえ…。レオナはどこに行ったか分かる？' },
+          { speaker: 'エリ', text: '（ミモザ…難しい顔をしてる…）' },
+          { speaker: 'ミモザ', text: '…あの光の門の先、私は入れないみたいなの。' },
         ] },
       { id: 'arno', name: 'アルノ', x: 1325, y: 1475, sprite: 'images/chara_20_down_idle.webp',
         talk: [
-          { speaker: 'エリ', text: 'アルノ、あの門の向こうには何があるの？' },
-          { speaker: 'アルノ', text: '……分からない。私は入れなかった。' },
+          { speaker: 'エリ', text: 'アルノ、あの光の向こうには何があるの？' },
+          { speaker: 'アルノ', text: '……分からない。残念ながら私は向こうへ行けなかった。' },
         ] },
     ],
     sigils: [[1007, 3000, 74], [1010, 2330, 44]],
@@ -78,7 +93,7 @@ window.ZERAPHIA_MAPS = {
   },
 
   '回廊': {
-    place: '忘却の回廊', quest: '目的：残響を探す',
+    place: 'はじまりの箱庭 2層', quest: '目的：残響を探す',
     size: [2000, 2400], horizonY: 700, walk: { top: 860, bottom: 2200 },
     castle: { x: 1070, w: 760 },
     tint: 'rgba(110,122,170,.13)',   // 回廊の色味（薄い青）。数値を上げるほど暗くなる
@@ -93,12 +108,12 @@ window.ZERAPHIA_MAPS = {
       { id: 'echo', name: '残響', x: 1025, y: 1825,
         talk: [
           { speaker: '残響', text: '世界は終わったのではない。' },
-          { speaker: '残響', text: '……ここから先が、あなたたちの新しい旅になる。' },
+          { speaker: '残響', text: '……すべては、輪廻の中にあるのだ。' },
         ] },
       { id: 'hao', name: 'ハオ', x: 375, y: 1825, sprite: 'images/chara_54_down_idle.webp',
         talk: [
           { speaker: 'エリ', text: 'あなたは、ここで何をしているの？' },
-          { speaker: 'ハオ', text: '門が開く…その時を待っているんだよ。' },
+          { speaker: 'ハオ', text: 'なんと…天はこのときを……待っていたのだ…' },
         ] },
       { id: 'aina', name: 'アイナ', x: 1725, y: 1775, sprite: 'images/chara_17_down_idle.webp',
         talk: [
@@ -108,12 +123,12 @@ window.ZERAPHIA_MAPS = {
       { id: 'smile', name: 'スマイル', x: 1225, y: 1525, sprite: 'images/chara_56_down_idle.webp',
         talk: [
           { speaker: 'エリ', text: '……ずっと笑ってるね。' },
-          { speaker: 'スマイル', text: '悲しい顔よりいいじゃない！' },
+          { speaker: 'スマイル', text: '泣いているよりいいじゃない！' },
         ] },
     ],
     sigils: [[1025, 1825, 90]],
     objects: [
-      { type: 'arch_small', x: 1025, y: 1060, gate: '庭園', gateLabel: '庭園への門' },
+      { type: 'arch_small', x: 1025, y: 1060, gate: '庭園', gateLabel: '1層への門' },
       { type: 'arch_column', x: 500, y: 1650 },
       { type: 'arch_column', x: 1550, y: 1700, flip: true },
       { type: 'pillar', x: 700, y: 2150 },

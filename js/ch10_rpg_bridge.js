@@ -2,6 +2,7 @@
  // ZERAPHIA CH10 RPG bridge — build2040
  // RPG(iframe) を開閉し、RPG内の会話を本編ノベルエンジン(window.StoryNovel)で、
  // ランダムエンカウントを本編のシューティング戦闘(openShootingEvent)で再生する。
+ const RPG_BUILD='2052';
  let root=null, returnFocus=null, frame=null, novelOpen=false, battleOpen=false, battleDone=null;
  function close(){
    if(!root||novelOpen||battleOpen)return;
@@ -18,7 +19,8 @@
    root.setAttribute('aria-modal','true');
    root.setAttribute('aria-label','第10章 RPGモード 開発中');
    frame=document.createElement('iframe');
-   frame.src='rpg/ch10/index.html';
+   // RPG本体も更新のたびに必ず新しいものを読む（古い index.html がキャッシュに残ると旧データのまま動くため）
+   frame.src='rpg/ch10/index.html?v='+RPG_BUILD;
    frame.title='ZERAPHIA 第10章 RPG試作';
    frame.setAttribute('allow','fullscreen');
    root.append(frame);

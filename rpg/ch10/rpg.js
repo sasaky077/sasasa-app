@@ -6,6 +6,7 @@
    ===================================================================== */
 const T=50, VIEW_W=950, VIEW_H=1655;            // 1マス / 画面に収める基準サイズ(モック)
 const TYPES=window.ZERAPHIA_OBJECT_TYPES, MAPS=window.ZERAPHIA_MAPS;
+const QUESTS=window.ZERAPHIA_QUESTS||[];   // ミッション（maps.js）
 const SPRITE={ player:{size:218, foot:.93}, zig:{size:250, foot:.886},
   npc:{size:272, foot:480/512} };   // npc = 変換スクリプト規格(512x512・足元y=480)の立ち絵
 const SAVE_KEY='zeraphia_ch10_rpg_v3', EDIT_KEY='zeraphia_ch10_editor_v1';
@@ -105,22 +106,40 @@ const tileCenter=n=>(n+.5)*T, tileIndex=v=>Math.floor(v/T);
 const npcList=()=>M.npcs||(M.npc?[M.npc]:[]);
 const npcTile=n=>({x:tileIndex(n.x),y:tileIndex(n.y)});
 const npcAt=(tx,ty)=>npcList().find(n=>{ const t=npcTile(n); return t.x===tx&&t.y===ty; });
-function walkableTile(tx,ty){ if(npcAt(tx,ty)) return false; if(noclip) return tx>=0&&ty>=0&&tx<COLS&&ty<ROWS; return cell(tx,ty)!=='#'; }
+function walkableTile(tx,ty){ if(npcAt(tx,ty)) return false; if(cell(tx,ty)==='G'){ const g=gates.find(g=>g.tx===tx&&g.ty===ty); if(g&&gateLocked(g)) return false; } if(noclip) return tx>=0&&ty>=0&&tx<COLS&&ty<ROWS; return cell(tx,ty)!=='#'; }
 function nearestWalkable(tx,ty){ for(let r=0;r<8;r++) for(let dy=-r;dy<=r;dy++) for(let dx=-r;dx<=r;dx++){ if(Math.max(Math.abs(dx),Math.abs(dy))!==r) continue; if(walkableTile(tx+dx,ty+dy)&&cell(tx+dx,ty+dy)!=='G') return {x:tx+dx,y:ty+dy}; } return {x:tx,y:ty}; }
 
 /* ---------- player / save ---------- */
-let save={map:'庭園',tx:null,ty:null,met:false};
+let save={map:'庭園',tx:null,ty:null,met:false,quest:0};
 try{ const s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); if(s&&MAPS[s.map]) save={...save,...s}; }catch(_){}
 const player={tx:0,ty:0,x:0,y:0,dir:'down',move:false,animTimer:0,animStepIndex:0};
 let tileMotion=null;
 function placePlayer(tx,ty){ player.tx=tx; player.ty=ty; player.x=tileCenter(tx); player.y=tileCenter(ty); tileMotion=null; }
+/* エリア名の表示：ステージ開始・エリア移動・全滅からの復帰で共通。
+   起動カバーや戦闘の演出・メニュー・会話が終わってから、中央にじわっと出して消す */
+let areaTitlePending=null;
+function queueAreaTitle(name){ areaTitlePending=name||null; }
+function updateAreaTitle(){
+  if(!areaTitlePending) return;
+  if(document.getElementById('boot-cover')||(typeof enc!=='undefined'&&enc.phase)||!overlay.hidden||!dialog.hidden||novel.active) return;
+  const el=$('area-title'); $('area-title-name').textContent=areaTitlePending; areaTitlePending=null;
+  el.classList.remove('play'); void el.offsetWidth; el.classList.add('play');
+}
+// エリア名がヘッダーの飾り線（モック基準 幅約400）に収まるよう、文字を自動で小さくする
+function fitPlace(){
+  const u=shell.clientWidth/VIEW_W, max=400*u; let fs=53;
+  placeEl.style.fontSize=''; placeEl.style.letterSpacing='';
+  while(placeEl.scrollWidth>max&&fs>30){ fs-=1; placeEl.style.fontSize=(fs*u)+'px'; if(fs<46) placeEl.style.letterSpacing='.1em'; }
+}
+window.addEventListener('resize',()=>{ try{ fitPlace(); }catch(_){} });
 function loadMap(name,arriveFrom){
   mapName=name; M=mapData(name); buildGrid();
   let p;
   if(arriveFrom){ const g=gates.find(g=>g.target===arriveFrom)||gates[0]; p=g?nearestWalkable(g.tx,g.ty+2):null; }
   if(!p) p=nearestWalkable(tileIndex(M.start[0]),tileIndex(M.start[1]));
   placePlayer(p.x,p.y);
-  placeEl.textContent=M.place; questEl.textContent=(save.met&&M.questAfter)||M.quest; cam.ready=false; route=null;
+  placeEl.textContent=M.place; fitPlace(); showQuest(false); cam.ready=false; route=null;
+  queueAreaTitle(M.place);
 }
 const cam={x:0,y:0,s:1,ready:false};
 loadMap(save.map);
@@ -175,25 +194,43 @@ function nearby(){ // 隣のNPC（向いている方を優先）
   return npcList().find(n=>manhattan(here(),npcTile(n))===1)||null;
 }
 function face(t){ const dx=t.x-player.tx, dy=t.y-player.ty; if(Math.abs(dx)>Math.abs(dy)) player.dir=dx>0?'right':'left'; else if(dy) player.dir=dy>0?'down':'up'; }
+/* =====================================================================
+   ミッション（maps.js の ZERAPHIA_QUESTS を順に進める）
+   ===================================================================== */
+function questNow(){ return QUESTS[Math.min(Number(save.quest)||0,QUESTS.length-1)]||null; }
+function showQuest(fresh){
+  const q=questNow(); questEl.textContent=q?'目的：'+q.text:(M.quest||'');
+  if(fresh){ questEl.classList.remove('quest-new'); void questEl.offsetWidth; questEl.classList.add('quest-new'); }
+}
+function advanceQuest(){
+  if((Number(save.quest)||0)>=QUESTS.length-1) return;
+  save.quest=(Number(save.quest)||0)+1; saveNow(); showQuest(true); pop('目的が更新された',2200);
+}
+// 今の目的に関係するキャラか
+function isQuestNpc(npc){ const q=questNow(); return !!(q&&q.type==='talk'&&q.npc===npc.id&&q.map===mapName); }
+// 門：目的が「その門へ行く」に来るまでは通れない（戻る方向の門は常に通れる）
+function gateLocked(g){
+  const i=QUESTS.findIndex(q=>q.type==='gate'&&q.to===g.target&&q.map===mapName);
+  return i>=0&&(Number(save.quest)||0)<i;
+}
 function talkToNpc(npc){
   npc=npc||nearby(); if(!npc) return; face(npcTile(npc));
-  if(npc.id==='zig'&&!save.met){ save.met=true; questEl.textContent=M.questAfter||M.quest; saveNow(); }
-  playTalk(npc);
+  playTalk(npc, isQuestNpc(npc)?advanceQuest:null);
 }
 /* 会話は本編のノベル画面(StoryNovel)で再生。単体起動時(親ページなし)のみRPG内の簡易版を使う */
 function parentNovel(){ try{ if(window.parent!==window&&typeof window.parent.playZeraphiaCh10Novel==='function') return window.parent.playZeraphiaCh10Novel; }catch(_){} return null; }
-function playTalk(npc){
+function playTalk(npc,onEnd){
   const entries=(npc.talk||[]).map(e=>({location:M.scene||'scene_ch10_garden.webp',...e}));
   if(!entries.length) return;
   route=null; joystick.x=joystick.y=0; setKnob(0,0); updateAnimation(0,0,0);
   const play=parentNovel();
   if(play){
     novel.active=true; novel.external=true;
-    const ok=play(npc.id||'talk',{chapter:10,chapterTitle:'開発中(仮)',stageNo:M.stageNo||1,stageTitle:M.place,entries},()=>{ novel.active=false; novel.external=false; updateAnimation(0,0,0); saveNow(); });
+    const ok=play(npc.id||'talk',{chapter:10,chapterTitle:'開発中(仮)',stageNo:M.stageNo||1,stageTitle:M.place,entries},()=>{ novel.active=false; novel.external=false; updateAnimation(0,0,0); saveNow(); if(onEnd) onEnd(); });
     if(ok) return;
     novel.active=false; novel.external=false;
   }
-  novel.entries=entries; startLocalNovel();
+  novel.entries=entries; novel.onEnd=onEnd||null; startLocalNovel();
 }
 function interact(){
   if(enc.phase) return;
@@ -201,15 +238,19 @@ function interact(){
   if(novel.active){ advanceNovel(); return; }
   if(!enabled||!overlay.hidden||tileMotion) return;
   const nb=nearby(); if(nb){ talkToNpc(nb); return; }
-  const g=gates.find(g=>manhattan(here(),{x:g.tx,y:g.ty})<=1); if(g){ portal(g); return; }
+  const g=gates.find(g=>manhattan(here(),{x:g.tx,y:g.ty})<=1); if(g){ if(gateLocked(g)){ pop('今は まだ 進めないようだ……'); return; } portal(g); return; }
   pop(npcList().some(n=>manhattan(here(),npcTile(n))<=3)?'隣のマスから話しかけてください':'ここには何もないようだ');
 }
 $('action').addEventListener('click',interact);
+let holdAfterPortal=false; // 門をくぐった直後は、キー/スティックを一度離すまで動かない（戻りの門へ連続で入らないように）
 function portal(g){
+  if(gateLocked(g)) return;
+  holdAfterPortal=true; route=null;
   enc.steps=0;
+  const q=questNow(); const passQuest=!!(q&&q.type==='gate'&&q.to===g.target&&q.map===mapName);
   const from=mapName; loadMap(g.target,from); player.dir='down'; updateAnimation(0,0,0);
-  if(g.target==='回廊') speak('SYSTEM',['新たな場所に到着した。','第十章の探索は、ここから始まる。']);
   saveNow();
+  if(passQuest) advanceQuest();
 }
 
 /* ---------- drawing (world座標で描く) ---------- */
@@ -264,7 +305,7 @@ function drawPlayer(){
 const gateCenter=g=>{ const og=geom(g.obj.type,g.obj.flip); return {x:g.obj.x+og.gate[0], y:g.obj.y+og.gate[1]-70}; };
 const gateLabel=g=>g.obj.gateLabel||(g.target+'への門');
 function drawGateGlow(g){ // 門の光：遠くからでも分かるよう、光の柱と舞い上がる粒を出す
-  const {x,y}=gateCenter(g), pulse=.6+.25*Math.sin(clock*2.2);
+  const {x,y}=gateCenter(g), pulse=(.6+.25*Math.sin(clock*2.2))*(gateLocked(g)?.35:1); // 通れない間は弱く光る
   ctx.save(); ctx.globalCompositeOperation='lighter';
   const beam=ctx.createLinearGradient(0,y-520,0,y+60); beam.addColorStop(0,'rgba(255,244,210,0)'); beam.addColorStop(.75,`rgba(255,244,210,${.30*pulse})`); beam.addColorStop(1,'rgba(255,244,210,0)');
   ctx.fillStyle=beam; ctx.fillRect(x-34,y-520,68,580);
@@ -282,10 +323,33 @@ function drawGateLabels(){ // 門の名前（近くにいる時）
     ctx.fillStyle='rgba(30,40,64,.85)'; ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(x-w/2,ly-25,w,50,14); else ctx.rect(x-w/2,ly-25,w,50); ctx.fill();
     ctx.strokeStyle='rgba(242,223,182,.9)'; ctx.lineWidth=2; ctx.stroke(); ctx.fillStyle='#fff1cf'; ctx.fillText(t,x,ly+1); ctx.globalAlpha=1; ctx.textBaseline='alphabetic'; }
 }
-function drawGateArrows(){ // 門が画面の外にある時、画面の端に方向と名前を出す（スクリーン座標で描く）
+// 今の目的の場所（ワールド座標）。別マップにいる相手なら、そのマップへの門を指す
+function questTarget(){
+  const q=questNow(); if(!q||q.type==='end') return null;
+  const gateTo=map=>gates.find(g=>g.target===map);
+  if(q.type==='talk'){
+    if(q.map===mapName){ const n=npcList().find(n=>n.id===q.npc); if(!n) return null; const t=npcTile(n);
+      return { x:tileCenter(t.x), y:tileCenter(t.y)-120, label:n.name, npc:n }; }
+    const g=gateTo(q.map); return g?{ ...gateCenter(g), label:gateLabel(g) }:null;
+  }
+  if(q.type==='gate'){ const g=q.map===mapName?gateTo(q.to):gateTo(q.map); return g?{ ...gateCenter(g), label:gateLabel(g) }:null; }
+  return null;
+}
+function drawQuestMark(){ // 目的のキャラの頭上に浮かぶ★
+  if(!overlay.hidden||!dialog.hidden||novel.active||enc.phase) return;
+  const t=questTarget(); if(!t||!t.npc) return;
+  const tile=npcTile(t.npc), x=tileCenter(tile.x), y=tileCenter(tile.y)-SPRITE.npc.size*.86-(nearby()===t.npc?92:50)+Math.sin(clock*3)*6;
+  ctx.save(); ctx.translate(x,y);
+  const glow=ctx.createRadialGradient(0,0,0,0,0,40); glow.addColorStop(0,'rgba(255,236,180,.75)'); glow.addColorStop(1,'rgba(255,236,180,0)');
+  ctx.fillStyle=glow; ctx.beginPath(); ctx.arc(0,0,40,0,7); ctx.fill();
+  ctx.beginPath(); for(let i=0;i<8;i++){ const a=-Math.PI/2+i*Math.PI/4, r=i%2?7:24; ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r); } ctx.closePath();
+  ctx.fillStyle='#f3d98f'; ctx.strokeStyle='#8a6a30'; ctx.lineWidth=2.5; ctx.fill(); ctx.stroke(); ctx.restore();
+}
+function drawGateArrows(){ // 目的の場所が画面の外にある時、画面の端に方向と名前を出す（スクリーン座標で描く）
   if(!enabled||!overlay.hidden||!dialog.hidden||novel.active) return;
   const u=shell.clientWidth/VIEW_W, top=u*344+56, bottom=H-u*380-30, left=46, right=W-46;
-  for(const g of gates){ const c=gateCenter(g), sx=(c.x-cam.x)*cam.s, sy=(c.y-cam.y)*cam.s;
+  const tg=questTarget(); if(!tg) return;
+  for(const c of [tg]){ const sx=(c.x-cam.x)*cam.s, sy=(c.y-cam.y)*cam.s;
     if(sx>left&&sx<right&&sy>top&&sy<bottom) continue;
     const cx=W/2, cy=(top+bottom)/2, dx=sx-cx, dy=sy-cy;
     const k=Math.min(dx>0?(right-cx)/dx:dx<0?(left-cx)/dx:1e9, dy>0?(bottom-cy)/dy:dy<0?(top-cy)/dy:1e9);
@@ -294,7 +358,7 @@ function drawGateArrows(){ // 門が画面の外にある時、画面の端に�
     ctx.fillStyle='rgba(30,40,64,.88)'; ctx.strokeStyle='rgba(242,223,182,.95)'; ctx.lineWidth=1.5;
     ctx.beginPath(); ctx.arc(0,0,20,0,7); ctx.fill(); ctx.stroke();
     ctx.save(); ctx.rotate(ang); ctx.fillStyle='#f2dfb6'; ctx.beginPath(); ctx.moveTo(11,0); ctx.lineTo(-5,-8); ctx.lineTo(-2,0); ctx.lineTo(-5,8); ctx.closePath(); ctx.fill(); ctx.restore();
-    const t=gateLabel(g); ctx.font='700 13px "Noto Serif JP","Yu Mincho",serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    const t=c.label; ctx.font='700 13px "Noto Serif JP","Yu Mincho",serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
     const tw=ctx.measureText(t).width+16, ty=ay<cy?32:-32; let tx=0; if(ax-tw/2<6) tx=6-(ax-tw/2); if(ax+tw/2>W-6) tx=(W-6)-(ax+tw/2);
     ctx.fillStyle='rgba(30,40,64,.88)'; ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(tx-tw/2,ty-11,tw,22,8); else ctx.rect(tx-tw/2,ty-11,tw,22); ctx.fill();
     ctx.fillStyle='#fff1cf'; ctx.fillText(t,tx,ty+1); ctx.restore(); ctx.textBaseline='alphabetic';
@@ -342,6 +406,7 @@ function render(){
   for(const g of gates) items.push({y:g.obj.y+1,d:()=>drawGateGlow(g)});
   items.sort((a,b)=>a.y-b.y); for(const it of items) it.d();
   drawNpcNames();
+  drawQuestMark();
   drawGateLabels();
   drawNpcMark();
   if(enc.phase==='alert'||enc.phase==='flash') drawAlertBubble();
@@ -357,7 +422,7 @@ const novel={active:false,external:false,index:0,typed:0,timer:0,ready:false,ent
 function startLocalNovel(){ novel.active=true; novel.index=0; novelRoot.hidden=false; showNovelEntry(); }
 function showNovelEntry(){ const e=novel.entries[novel.index]; if(!e){ endNovel(); return; } novelName.textContent=e.speaker; novelText.textContent=''; novel.typed=0; novel.timer=0; novel.ready=false; novelScene.textContent=`10-${M.stageNo||1}  ${M.place}`; $('ch10-novel-next').textContent='TAP TO CONTINUE'; }
 function advanceNovel(){ if(!novel.active||novel.external) return; const e=novel.entries[novel.index]; if(!novel.ready){ novelText.textContent=e.text; novel.typed=Array.from(e.text).length; novel.ready=true; return; } novel.index++; if(novel.index>=novel.entries.length){ endNovel(); return; } showNovelEntry(); }
-function endNovel(){ novel.active=false; novelRoot.hidden=true; updateAnimation(0,0,0); saveNow(); }
+function endNovel(){ novel.active=false; novelRoot.hidden=true; updateAnimation(0,0,0); saveNow(); const cb=novel.onEnd; novel.onEnd=null; if(cb) cb(); }
 function updateNovel(dt){ if(!novel.active||novel.external||novel.ready) return; novel.timer+=dt; const chars=Array.from(novel.entries[novel.index].text); while(novel.timer>=.032&&novel.typed<chars.length){ novel.timer-=.032; novel.typed++; } novelText.textContent=chars.slice(0,novel.typed).join(''); if(novel.typed>=chars.length) novel.ready=true; }
 novelRoot.addEventListener('click',advanceNovel);
 
@@ -377,6 +442,7 @@ function inputDirection(){
   let vx=joystick.x, vy=joystick.y;
   if(keys.has('arrowleft')||keys.has('a')) vx-=1; if(keys.has('arrowright')||keys.has('d')) vx+=1;
   if(keys.has('arrowup')||keys.has('w')) vy-=1; if(keys.has('arrowdown')||keys.has('s')) vy+=1;
+  if(holdAfterPortal){ if(Math.hypot(vx,vy)<=.25) holdAfterPortal=false; return null; }
   if(Math.hypot(vx,vy)>.25){ route=null; return Math.abs(vx)>Math.abs(vy)?{dx:Math.sign(vx),dy:0}:{dx:0,dy:Math.sign(vy)}; }
   if(route){ const nxt=route.path[0]; if(!nxt){ const cb=route.onArrive; route=null; if(cb) cb(); return null; } return {dx:nxt.x-player.tx,dy:nxt.y-player.ty}; }
   return null;
@@ -503,7 +569,7 @@ function drawEncounterOverlay(){ // スクリーン座標
 function loop(ts){ const raw=Math.max(0,(ts-last)/1000||0), dt=Math.min(.05,raw); last=ts;
   // 自動画質調整：重い状態（平均24ms超＝約40fps未満）が続いたら描画解像度を1段下げる
   if(raw>0&&raw<.5&&!novel.active&&document.visibilityState==='visible'){ perfAcc+=raw; if(++perfN>=90){ const avg=perfAcc/perfN; perfAcc=0; perfN=0;
-    if(avg>.024&&dprCap>1){ dprCap=[1.5,1.25,1].find(v=>v<dprCap-.01)||1; resize(); } } } clock+=dt; updateEncounter(dt); move(dt); updateNovel(dt); updateCamera(dt); render(); if(toastUntil&&ts>toastUntil){ $('toast').classList.remove('show'); toastUntil=0; } requestAnimationFrame(loop); }
+    if(avg>.024&&dprCap>1){ dprCap=[1.5,1.25,1].find(v=>v<dprCap-.01)||1; resize(); } } } clock+=dt; updateEncounter(dt); updateAreaTitle(); move(dt); updateNovel(dt); updateCamera(dt); render(); if(toastUntil&&ts>toastUntil){ $('toast').classList.remove('show'); toastUntil=0; } requestAnimationFrame(loop); }
 requestAnimationFrame(loop);
 
 /* stick */
@@ -680,6 +746,10 @@ function getRoster(){
 }
 let draft=[], roster=[];
 function openParty(){
+  // 本編から開いている時は、本編のパーティ編成画面と同じ見た目の編成画面（bridge）を使う
+  try{ const pw=window.parent!==window?window.parent:null;
+    if(pw&&typeof pw.openZeraphiaCh10Party==='function'&&pw.openZeraphiaCh10Party({ place:M.place, onClose:saved=>{ if(saved) pop('編成を保存しました'); } })) return;
+  }catch(_){}
   roster=getRoster();
   const owned=new Set(roster.filter(r=>r.owned).map(r=>r.id));
   draft=readParty().filter(id=>owned.has(id));
@@ -703,6 +773,6 @@ $('party-slots').addEventListener('click',e=>{ const b=e.target.closest('.slot.f
 $('party-save').addEventListener('click',()=>{ if(!draft.length) return; writeParty(draft); pop('編成を保存しました'); partySheet.hidden=true; menuSheet.hidden=false; });
 $('reset').addEventListener('click',()=>{
   try{ localStorage.removeItem(SAVE_KEY); }catch(_){}
-  save={map:'庭園',tx:null,ty:null,met:false}; loadMap('庭園'); player.dir='down'; updateAnimation(0,0,0); enabled=true; overlay.hidden=true;
+  save={map:'庭園',tx:null,ty:null,met:false,quest:0}; loadMap('庭園'); player.dir='down'; updateAnimation(0,0,0); enabled=true; overlay.hidden=true;
 });
 })();

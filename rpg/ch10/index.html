@@ -9,18 +9,18 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;700&display=swap">
-  <link rel="stylesheet" href="style.css?v=2045">
+  <link rel="stylesheet" href="style.css?v=2052">
 </head>
 <body>
 <main id="shell">
   <div id="boot-cover" aria-hidden="true"></div>
-  <canvas id="world" aria-label="灰色の庭園"></canvas>
+  <canvas id="world" aria-label="はじまりの箱庭 1層"></canvas>
   <div id="frame" aria-hidden="true"></div>
 
   <header id="top">
     <img class="hdr-img" src="images/ui2_header.webp" alt="" draggable="false">
     <span class="sr-only">STORY 10 開発中(仮) ZERAPHIA CHAPTER 10</span>
-    <div class="place" id="place">灰色の庭園</div>
+    <div class="place" id="place">はじまりの箱庭 1層</div>
     <div class="quest" id="quest">目的：光の門を探す</div>
     <button id="returnToStory" class="return-hit" type="button" aria-label="戻る"></button>
   </header>
@@ -70,7 +70,7 @@
     <div class="ch10-novel-shade"></div>
     <div class="ch10-novel-head">
       <button id="back-to-story" type="button">〈 戻る</button>
-      <div class="ch10-novel-head-center"><span>CHAPTER 10  開発中(仮)</span><small id="ch10-novel-scene">灰色の庭園 — 第十章</small></div>
+      <div class="ch10-novel-head-center"><span>CHAPTER 10  開発中(仮)</span><small id="ch10-novel-scene">はじまりの箱庭 1層 — 第十章</small></div>
       <button id="novel-skip" type="button">SKIP ✦</button>
     </div>
     <img class="ch10-zig-portrait" id="ch10-novel-portrait" src="images/chara_05_cut.webp" alt="ジグ">
@@ -80,11 +80,12 @@
       <div id="ch10-novel-next">TAP TO CONTINUE</div>
 </div>
   </section>
+  <div id="area-title" aria-live="polite"><span class="at-line"></span><b id="area-title-name"></b><span class="at-line"></span></div>
   <canvas id="fx" aria-hidden="true"></canvas>
 </main>
-<script src="objects.js?v=2045"></script>
-<script src="maps.js?v=2045"></script>
-<script src="rpg.js?v=2045"></script>
+<script src="objects.js?v=2052"></script>
+<script src="maps.js?v=2052"></script>
+<script src="rpg.js?v=2052"></script>
 <script>
 (function(){
   const name=document.getElementById('ch10-novel-name');
