@@ -3295,13 +3295,14 @@
 
   // ============================================================
   // build2068: お助けフレンド（js/friend_support.js）
-  //  STORY（RPGエンカウント含む）・スコアアタック・ガチャ試遊・チュートリアル以外の戦闘で使える。
+  //  STORY（RPGエンカウント含む）・スコアアタック・位相回遊・ガチャ試遊・チュートリアル以外の戦闘で使える。
   //  フレンドのお気に入りキャラは盤面に出ず、フレンドスキルだけを使う。
   //   ACTIVE … 下部バーのボタンで1回だけ。PASSIVE … 戦闘中、常時。
   // ============================================================
   function isFriendSupportEligibleStage() {
     if (!selectedStage) return false;
     if (isStoryShootingStage() || isScoreAttackStage() || isRpgEncounterStage() || isGachaTrialStage()) return false;
+    if (isPhaseOdysseyStage()) return false; // build2087: 位相回遊は連れていけない
     if (typeof getSelectedStoryFixedPartyIds === 'function' && getSelectedStoryFixedPartyIds()) return false;
     return true;
   }
