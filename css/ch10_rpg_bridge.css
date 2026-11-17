@@ -2,6 +2,13 @@
 /* build2034: RPG内の会話は本編ノベル(#story-novel-root, z-index:260500)で表示。再生中だけRPGをその下へ */
 .ch10-rpg-novel-open .ch10-rpg-modal{z-index:260000!important}
 /* build2037: RPG表示中は背面の本編画面を描画しない（見えないのに描き続けて重くなるのを防ぐ） */
-body.ch10-rpg-modal-open:not(.ch10-rpg-battle-open) > *:not(.ch10-rpg-modal):not(#story-novel-root):not(script):not(style):not(link){visibility:hidden!important}
+body.ch10-rpg-modal-open:not(.ch10-rpg-battle-open) > *:not(.ch10-rpg-modal):not(#story-novel-root):not(#ch10-party-root):not(#shooting-party-filter-layer):not(script):not(style):not(link){visibility:hidden!important}
 /* build2040: エンカウント戦闘中は RPG を戦闘画面(#shooting-event-root, z-index:240000)の後ろへ隠す */
 .ch10-rpg-battle-open .ch10-rpg-modal{z-index:200000!important;visibility:hidden!important;pointer-events:none!important}
+/* build2046: RPGの編成画面（本編のパーティ編成と同じ見た目。詳細は css/ch10_rpg_party.css） */
+#ch10-party-root{position:fixed;inset:0;z-index:510000;display:block;background:#f2eee4;color:#4b3f2d;font-family:"Noto Serif JP",serif;overflow:hidden;-webkit-user-select:none;user-select:none}
+#ch10-party-root > .shooting-stage{position:absolute;inset:0;max-width:560px;margin:0 auto}
+#ch10-party-root .zpf-header-spacer{min-width:89px}
+#ch10-party-root .zpf-search input::-webkit-search-cancel-button,#ch10-party-root .zpf-search input::-webkit-search-decoration{-webkit-appearance:none;appearance:none;display:none}
+/* build2048: RPG編成から開いた絞り込みダイアログは編成画面より前に */
+body.ch10-party-open #shooting-party-filter-layer{z-index:520000!important}

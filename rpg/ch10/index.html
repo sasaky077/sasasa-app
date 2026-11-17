@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;700&display=swap">
-  <link rel="stylesheet" href="style.css?v=2044">
+  <link rel="stylesheet" href="style.css?v=2045">
 </head>
 <body>
 <main id="shell">
@@ -33,18 +33,30 @@
       <img id="stick-knob" src="images/ui2_stick_knob.png" alt="" draggable="false">
     </div>
     <button id="action" class="img-btn" type="button" aria-label="調べる"><img src="images/ui2_btn_search.png" alt="" draggable="false"></button>
-    <button id="menu" class="img-btn" type="button" aria-label="記録"><img src="images/ui2_btn_record.png" alt="" draggable="false"></button>
+    <button id="menu" class="img-btn label-btn" type="button" aria-label="メニュー"><img src="images/ui2_btn_blank.png" alt="" draggable="false"><span class="btn-label"><i class="btn-ico"></i>メニュー</span></button>
   </div>
 
   <div id="overlay" hidden>
-    <div class="panel">
-      <div class="micro">STORY 10</div>
-      <h1>開発中(仮) — RPGモード試作</h1>
-      <p>背景・UI・キャラクターをレイヤー分離した試作版です。上下左右に1マスずつ移動し、ジグに話しかけられます。</p>
-      <p class="light">移動：左下スティック / 矢印キー / WASD / 行きたい場所をタップ<br>会話：右下の「調べる」 / Enter / Space / ジグをタップ</p>
-      <button id="start" type="button">探索を始める</button>
-      <button id="reset" type="button" class="ghost">最初から試す</button>
-    </div>
+    <!-- メニュー -->
+    <section class="sheet" id="menu-sheet" aria-label="メニュー">
+      <header class="sheet-head"><div><small>MENU</small><h2>メニュー</h2></div><button class="sheet-close" type="button" data-close aria-label="閉じる">×</button></header>
+      <nav class="menu-list">
+        <button type="button" class="menu-item" data-open="party"><i class="mi mi-party"></i><span><b>編成</b><em>出撃するメンバーを選ぶ</em></span><u>›</u></button>
+        <button type="button" class="menu-item is-dummy" data-dummy><i class="mi mi-bag"></i><span><b>持ち物</b><em>準備中</em></span><u>›</u></button>
+        <button type="button" class="menu-item is-dummy" data-dummy><i class="mi mi-mission"></i><span><b>ミッション</b><em>準備中</em></span><u>›</u></button>
+        <button type="button" class="menu-item is-dummy" data-dummy><i class="mi mi-gear"></i><span><b>設定</b><em>準備中</em></span><u>›</u></button>
+      </nav>
+      <button id="reset" type="button" class="menu-reset">最初からやり直す（開発用）</button>
+    </section>
+    <!-- 編成 -->
+    <section class="sheet" id="party-sheet" aria-label="編成" hidden>
+      <header class="sheet-head"><div><small>PARTY</small><h2>編成</h2></div><button class="sheet-close" type="button" data-back aria-label="もどる">‹</button></header>
+      <p class="party-note">エンカウント戦に出撃するメンバー（最大3人）。先頭がリーダーです。</p>
+      <div class="party-slots" id="party-slots"></div>
+      <div class="roster-head"><b>手持ち（ストーリー）</b><span id="roster-count"></span></div>
+      <div class="roster" id="roster"></div>
+      <footer class="party-foot"><button type="button" class="ghost" data-back>もどる</button><button type="button" id="party-save">決定</button></footer>
+    </section>
   </div>
 
   <div id="dialog" hidden>
@@ -70,9 +82,9 @@
   </section>
   <canvas id="fx" aria-hidden="true"></canvas>
 </main>
-<script src="objects.js?v=2044"></script>
-<script src="maps.js?v=2044"></script>
-<script src="rpg.js?v=2044"></script>
+<script src="objects.js?v=2045"></script>
+<script src="maps.js?v=2045"></script>
+<script src="rpg.js?v=2045"></script>
 <script>
 (function(){
   const name=document.getElementById('ch10-novel-name');

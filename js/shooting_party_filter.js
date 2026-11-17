@@ -12,6 +12,8 @@
   const shotLabels = {parallel:'PARALLEL',homing:'HOMING',cluster:'CLUSTER',bomb:'BOMB',spread:'SPREAD',laser:'LASER',piercing:'PIERCING',orbit:'ORBIT',charge:'CHARGE',lightning:'PLASMA',strike:'STRIKE',conjure:'SUMMON',trap:'TRAP',ray:'RAY'};
   const shotAliases = {plasma:'lightning',orbit_forward:'orbit',charge_release:'charge',precision:'piercing',shotgun:'piercing',splash:'bomb',melee_slash:'strike',wolf_j_homing:'homing',rose_seed_splash:'spread',noah_hybrid:'laser'};
   let currentRoot = null;
+  // build2047: 取り付け先（既定は戦闘前の編成画面。STORY10 RPGの編成画面は openFor('#ch10-party-select')）
+  let rootSelector = '#shooting-character-select';
 
   function esc(str){return String(str).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
   function normalize(s){
@@ -23,7 +25,7 @@
   function rarity(value){return String(value||'r').toLowerCase()==='sr'?'sr':'r';}
   function shot(value){const s=String(value||'').toLowerCase();return shotAliases[s]||s;}
   function getData(id){return window.ShootingCharacters?.SHOOTING_CHARACTERS?.[id]||{};}
-  function currentRoster(){return document.querySelector('#shooting-character-select .shooting-party-roster');}
+  function currentRoster(){return document.querySelector(rootSelector+' .shooting-party-roster');}
   function isActive(){return state.query.trim()||state.ult.trim()||state.elements.length||state.rarities.length||state.shotTypes.length||state.pierce!=='all'||state.favOnly||state.sort!=='id';}
   function ownedLevel(id){
     const data=window.ShootingCharacters?.getOwnedShootingInstance?.(id);
@@ -98,7 +100,7 @@
     apply();
   }
   function mount(){
-    const root=document.getElementById('shooting-character-select');
+    const root=document.querySelector(rootSelector);
     if(!root)return;
     currentRoot=root;
     if(root.querySelector('#zpf-filter-toolbar')){syncToolbar();return;}
@@ -205,8 +207,14 @@
     syncToolbar();
   }
   function open(){
+    rootSelector='#shooting-character-select';
     reset();
     mount();syncToolbar();
   }
-  window.ShootingPartyFilter=Object.freeze({open,refresh:apply,close:closeDialog,reset,getState:()=>({...state})});
+  function openFor(selector){
+    rootSelector=String(selector||'#shooting-character-select');
+    reset();
+    mount();syncToolbar();
+  }
+  window.ShootingPartyFilter=Object.freeze({open,openFor,refresh:apply,close:closeDialog,reset,getState:()=>({...state})});
 })();

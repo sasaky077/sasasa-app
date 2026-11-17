@@ -369,7 +369,7 @@ window.addEventListener('keydown',e=>{
   if(e.key==='Enter'||e.key===' ') interact();
   if(e.key==='g'||e.key==='G'){ setDebug(!debug); }
   if(debug) editorKey(e);
-  if(e.key==='Escape'&&!novel.active){ overlay.hidden=false; dialog.hidden=true; }
+  if(e.key==='Escape'&&!novel.active&&!enc.phase){ if(overlay.hidden) openMenu(); else closeMenu(); dialog.hidden=true; }
 });
 window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
 window.addEventListener('blur',()=>{ keys.clear(); joystick.x=joystick.y=0; route=null; setKnob(0,0); });
@@ -647,8 +647,60 @@ function goBack(){ saveNow(); try{ if(window.parent&&window.parent!==window&&typ
 $('back-to-story').addEventListener('click',e=>{ e.stopPropagation(); goBack(); });
 $('returnToStory').addEventListener('click',goBack);
 $('novel-skip').addEventListener('click',e=>{ e.stopPropagation(); if(!novel.external) endNovel(); });
-$('start').addEventListener('click',()=>{ enabled=true; overlay.hidden=true; pop('上下左右、1マスずつ移動します'); });
-$('menu').addEventListener('click',()=>{ saveNow(); overlay.hidden=false; });
+/* =====================================================================
+   メニュー（編成・持ち物・ミッション・設定）
+   編成は本編のストーリー加入キャラ（所持のみ）から最大3人。保存先はエンカウント戦と共通のキー
+   ===================================================================== */
+const PARTY_KEY='zeraphia_rpg_encounter_party_v1', PARTY_MAX=3;
+function readParty(){ try{ const v=JSON.parse(localStorage.getItem(PARTY_KEY)||'[]'); return Array.isArray(v)?v.map(Number).filter(Number.isFinite).slice(0,PARTY_MAX):[]; }catch(_){ return []; } }
+function writeParty(ids){ try{ localStorage.setItem(PARTY_KEY,JSON.stringify(ids)); }catch(_){} }
+const menuSheet=$('menu-sheet'), partySheet=$('party-sheet');
+function openMenu(){ if(enc.phase||novel.active) return; saveNow(); route=null; joystick.x=joystick.y=0; setKnob(0,0); keys.clear();
+  menuSheet.hidden=false; partySheet.hidden=true; overlay.hidden=false; }
+function closeMenu(){ overlay.hidden=true; menuSheet.hidden=false; partySheet.hidden=true; }
+$('menu').addEventListener('click',openMenu);
+overlay.addEventListener('click',e=>{
+  if(e.target===overlay||e.target.closest('[data-close]')){ closeMenu(); return; }
+  if(e.target.closest('[data-back]')){ partySheet.hidden=true; menuSheet.hidden=false; return; }
+  if(e.target.closest('[data-dummy]')){ pop('準備中です'); return; }
+  if(e.target.closest('[data-open="party"]')) openParty();
+});
+
+// 本編の所持キャラ（ストーリー加入キャラのみ）を親ページから取得
+function parentWin(){ try{ return window.parent!==window&&window.parent.ShootingCharacters?window.parent:null; }catch(_){ return null; } }
+const STORY_FALLBACK=[[1,'エリ'],[5,'ジグ'],[3,'アウラ'],[28,'ミモザ'],[39,'レオナクロス'],[20,'アルノ'],[24,'ノエル'],[30,'リズ'],[25,'リュネ']];
+function getRoster(){
+  const pw=parentWin();
+  if(!pw){ return STORY_FALLBACK.map(([id,name])=>({id,name,owned:true,panel:'',elementIcon:''})); } // 単体起動（確認用）
+  const M=pw.ShootingCharacters, abs=u=>u?new URL(u,pw.location.href).href:'';
+  return (M.SHOOTING_STORY_FIRST_ORDER||[]).map(id=>{ const c=M.SHOOTING_CHARACTERS[id]; if(!c) return null;
+    const el=Array.isArray(c.element)?c.element[0]:c.element;
+    return { id, name:c.name, owned:!!M.isShootingCharacterOwned(id), panel:abs(c.panelImage||c.image), elementIcon:el?abs(`images/type_${el}.webp`):'' };
+  }).filter(Boolean);
+}
+let draft=[], roster=[];
+function openParty(){
+  roster=getRoster();
+  const owned=new Set(roster.filter(r=>r.owned).map(r=>r.id));
+  draft=readParty().filter(id=>owned.has(id));
+  if(!draft.length&&owned.size) draft=[...owned].slice(0,PARTY_MAX);
+  menuSheet.hidden=true; partySheet.hidden=false; renderParty();
+}
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function renderParty(){
+  const byId=new Map(roster.map(r=>[r.id,r]));
+  $('party-slots').innerHTML=Array.from({length:PARTY_MAX},(_,i)=>{ const r=byId.get(draft[i]);
+    return r?`<button type="button" class="slot filled" data-slot="${i}"><span class="no">${i+1}</span>${i===0?'<span class="lead">LEADER</span>':''}${r.panel?`<img src="${esc(r.panel)}" alt="">`:''}<span class="nm">${esc(r.name)}</span></button>`
+            :`<button type="button" class="slot" data-slot="${i}" aria-label="空き">＋</button>`; }).join('');
+  $('roster').innerHTML=roster.map(r=>{ const o=draft.indexOf(r.id);
+    return `<button type="button" class="ch${r.owned?'':' locked'}${o>=0?' sel':''}" data-id="${r.id}"${o>=0?` data-order="${o+1}"`:''}${r.owned?'':' disabled'}>${r.panel?`<img class="pn" src="${esc(r.panel)}" alt="">`:'<span class="noimg">'+esc(r.name)+'</span>'}${r.elementIcon?`<img class="el" src="${esc(r.elementIcon)}" alt="">`:''}<span class="nm">${esc(r.name)}</span></button>`; }).join('');
+  $('roster-count').textContent=`${roster.filter(r=>r.owned).length} / ${roster.length}人 加入`;
+  $('party-save').disabled=draft.length<1;
+}
+$('roster').addEventListener('click',e=>{ const b=e.target.closest('.ch'); if(!b||b.disabled) return; const id=Number(b.dataset.id), i=draft.indexOf(id);
+  if(i>=0) draft.splice(i,1); else if(draft.length<PARTY_MAX) draft.push(id); else { pop('編成は3人までです'); return; } renderParty(); });
+$('party-slots').addEventListener('click',e=>{ const b=e.target.closest('.slot.filled'); if(!b) return; draft.splice(Number(b.dataset.slot),1); renderParty(); });
+$('party-save').addEventListener('click',()=>{ if(!draft.length) return; writeParty(draft); pop('編成を保存しました'); partySheet.hidden=true; menuSheet.hidden=false; });
 $('reset').addEventListener('click',()=>{
   try{ localStorage.removeItem(SAVE_KEY); }catch(_){}
   save={map:'庭園',tx:null,ty:null,met:false}; loadMap('庭園'); player.dir='down'; updateAnimation(0,0,0); enabled=true; overlay.hidden=true;

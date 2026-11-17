@@ -92,6 +92,99 @@
    if(typeof cb==='function'){ try{ cb(info||{}); }catch(_){ } }
  };
 
+ // ---------------------------------------------------------------
+ // build2046: RPGメニューの「編成」。本編のパーティ編成画面と同じ見た目（css/ch10_rpg_party.css）
+ //   キャラカードは本編の getShootingRosterHtml() をそのまま使い、ストーリー加入キャラだけに絞る
+ //   保存先はエンカウント戦と共通の localStorage キー
+ // ---------------------------------------------------------------
+ const PARTY_KEY='zeraphia_rpg_encounter_party_v1', PARTY_MAX=3;
+ let partyRoot=null;
+ function readParty(){ try{ const v=JSON.parse(localStorage.getItem(PARTY_KEY)||'[]'); return Array.isArray(v)?v.map(Number).filter(Number.isFinite):[]; }catch(_){ return []; } }
+ function openParty(opts){
+   opts=opts||{};
+   const M=window.ShootingCharacters;
+   if(!M||typeof M.getShootingRosterHtml!=='function') return false;
+   if(partyRoot) return true;
+   const storyIds=(M.SHOOTING_STORY_FIRST_ORDER||[]).map(Number);
+   const owned=id=>!!M.isShootingCharacterOwned(id);
+   let draft=readParty().filter(id=>storyIds.includes(id)&&owned(id)).slice(0,PARTY_MAX);
+   if(!draft.length) draft=storyIds.filter(owned).slice(0,PARTY_MAX);
+   const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+   const elIcon=c=>{ const e=Array.isArray(c.element)?c.element[0]:c.element; return e?`images/type_${e}.webp`:''; };
+
+   partyRoot=document.createElement('div');
+   partyRoot.id='ch10-party-root';
+   partyRoot.className='open ui-type-1';
+   partyRoot.setAttribute('role','dialog'); partyRoot.setAttribute('aria-modal','true'); partyRoot.setAttribute('aria-label','パーティ編成');
+   partyRoot.innerHTML=`
+     <div class="shooting-stage">
+       <div id="ch10-party-select" class="zpf-screen show">
+        <div class="zpf-shell" role="region" aria-label="パーティ編成">
+         <header class="zpf-header" aria-label="編成">
+           <button class="zpf-header-back" type="button" data-act="cancel" aria-label="戻る"><span aria-hidden="true">‹</span> 戻る</button>
+           <div class="zpf-header-center">
+             <span class="zpf-header-chapter">CHAPTER 10</span>
+             <strong class="zpf-header-stage">編成</strong>
+             <small class="zpf-header-subtitle">${esc(opts.place||'')}</small>
+           </div>
+           <div class="zpf-header-spacer" aria-hidden="true"></div>
+         </header>
+         <div class="zpf-intro">
+           <div class="zpf-intro-heading">
+             <span class="zpf-intro-mark" aria-hidden="true">✧</span>
+             <strong>パーティ編成</strong>
+             <span class="zpf-intro-english">— PARTY FORMATION —</span>
+           </div>
+           <div class="zpf-rule">STORY加入キャラから最大3人 · 1番がリーダー</div>
+         </div>
+         <div class="zpf-slots" aria-label="編成枠"></div>
+         <div class="shooting-party-roster zpf-roster" role="list" aria-label="所持キャラクター"></div>
+         <div class="zpf-actions">
+           <button type="button" class="shooting-party-cancel zpf-btn-cancel" data-act="cancel">キャンセル</button>
+           <button type="button" class="shooting-character-start zpf-btn-start" data-act="save">決定</button>
+         </div>
+        </div>
+       </div>
+     </div>`;
+   // 本編のカードを流用（ストーリー加入キャラだけ・本編の選択処理は外す）
+   const roster=partyRoot.querySelector('.zpf-roster');
+   const tmp=document.createElement('div'); tmp.innerHTML=M.getShootingRosterHtml();
+   storyIds.forEach(id=>{ const w=tmp.querySelector(`[data-character-wrap-id="${id}"]`); if(!w) return;
+     w.querySelectorAll('[onclick]').forEach(el=>el.removeAttribute('onclick')); roster.appendChild(w); });
+   const slots=partyRoot.querySelector('.zpf-slots');
+   const saveBtn=partyRoot.querySelector('[data-act="save"]');
+   const render=()=>{
+     slots.innerHTML=Array.from({length:PARTY_MAX},(_,i)=>{ const id=draft[i], c=id!=null&&M.SHOOTING_CHARACTERS[id];
+       if(!c) return `<button type="button" class="shooting-party-slot empty" aria-label="編成枠${i+1}・空き"><span class="zpf-slot-number">${i+1}</span><b aria-hidden="true">＋</b></button>`;
+       const panel=roster.querySelector(`[data-character-id="${id}"] .shooting-character-portrait img:not(.shooting-character-element-icon)`);
+       return `<button type="button" class="shooting-party-slot filled" data-character-id="${id}" aria-label="${esc(c.name)}を外す"><span class="zpf-slot-number">${i+1}</span>`+
+         (elIcon(c)?`<img class="shooting-party-slot-element-icon" src="${elIcon(c)}" alt="" aria-hidden="true" draggable="false">`:'')+
+         `<img src="${esc(panel?panel.getAttribute('src'):(c.panelImage||c.image||''))}" alt="${esc(c.name)}" draggable="false"><small>${esc(c.name)}</small><i>×</i></button>`; }).join('');
+     roster.querySelectorAll('.shooting-character-option').forEach(b=>b.classList.toggle('selected',draft.includes(Number(b.dataset.characterId))));
+     saveBtn.disabled=!draft.length;
+   };
+   const close=saved=>{ if(!partyRoot) return; try{ window.ShootingPartyFilter&&window.ShootingPartyFilter.close(); }catch(_){} document.body.classList.remove('ch10-party-open'); partyRoot.remove(); partyRoot=null; document.removeEventListener('keydown',onKey,true);
+     if(frame) frame.focus(); if(typeof opts.onClose==='function'){ try{ opts.onClose(!!saved); }catch(_){} } };
+   const onKey=e=>{ if(e.key==='Escape'&&!document.getElementById('shooting-party-filter-layer')){ e.preventDefault(); e.stopPropagation(); close(false); } };
+   partyRoot.addEventListener('click',e=>{
+     const act=e.target.closest('[data-act]'); if(act){ if(act.dataset.act==='save'){ if(!draft.length) return; try{ localStorage.setItem(PARTY_KEY,JSON.stringify(draft)); }catch(_){} close(true); } else close(false); return; }
+     const slot=e.target.closest('.shooting-party-slot.filled'); if(slot){ draft=draft.filter(id=>id!==Number(slot.dataset.characterId)); render(); return; }
+     const opt=e.target.closest('.shooting-character-option'); if(!opt||opt.disabled) return;
+     const id=Number(opt.dataset.characterId);
+     if(draft.includes(id)) draft=draft.filter(x=>x!==id); else if(draft.length<PARTY_MAX) draft.push(id);
+     else if(typeof window.showToast==='function') window.showToast('編成は3人までです');
+     render();
+   });
+   document.addEventListener('keydown',onKey,true);
+   document.body.appendChild(partyRoot);
+   render();
+   // 検索・絞り込みは本編の ShootingPartyFilter をそのまま使う（並び順・お気に入り★・ULT検索も本編と同じ）
+   document.body.classList.add('ch10-party-open');
+   try{ if(window.ShootingPartyFilter&&typeof window.ShootingPartyFilter.openFor==='function') window.ShootingPartyFilter.openFor('#ch10-party-select'); }catch(err){ console.warn('[ch10 party] filter failed',err); }
+   return true;
+ }
+ window.openZeraphiaCh10Party=openParty;
+
  window.openZeraphiaCh10RPG=open;
  window.closeZeraphiaCh10RPG=close;
  window.playZeraphiaCh10Novel=playNovel;
