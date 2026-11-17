@@ -12,11 +12,11 @@
 
 window.HOME_EVENT_BANNERS = [
   {
-    // build1891: 記憶決戦03「ヘイズ」— 記憶決戦を開いてヘイズのページへスライドし、光らせる
-    id: 'event_memory_haze',
-    img: 'images/home_banner_memory_haze.webp',
-    alt: '記憶決戦 新BOSS ヘイズに挑め',
-    actionName: 'openMemoryBattleHaze',
+    // build2062: ヘイズのホームバナーを降ろし、特別巡行「最恐 -デイノヴァ-」へ差し替え
+    id: 'event_deinova_special',
+    img: 'images/home_banner_deinova.webp',
+    alt: '特別巡行 最恐 -デイノヴァ- Sランククリアで「SR デイノヴァ」を入手しよう！',
+    actionName: 'openDeinovaSpecialFromHome',
     hidden: false
   },
   {

@@ -33819,8 +33819,8 @@
     // サーバー claim_deinova_special_drop と S/A の閾値を一致させる。
     if (isDeinovaStage()) {
       if (!win) return 'E';
-      if (value >= 200000) return 'S';
-      if (value >= 100000) return 'A';
+      if (value >= 3000000) return 'S';
+      if (value >= 2000000) return 'A';
       if (value >= 16000) return 'B';
       if (value >= 12000) return 'C';
       return 'D';

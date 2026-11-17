@@ -4994,7 +4994,7 @@ html:not(.hv2-home) body #global-user-frame .hv2-face {
   <img id="chara-image-viewer-img" src="" alt="">
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/home_banners.js?v=1893-mb-swipe"></script>
+<script src="js/home_banners.js?v=2065-deinova-home-banner"></script>
 <script id="sasaphia-notices-inline-v9">
 // =========================================================
 // Zeraphia Notices
@@ -19631,6 +19631,22 @@ function initHomeBannerSwipe(){
 }
 
 
+// build2065: ホームバナーからデイノヴァ特別巡行へ直接移動する
+function openDeinovaSpecialFromHome(){
+  if(typeof window.openShootingEvent !== 'function'){
+    if(typeof showToast === 'function') showToast('戦闘エンジンの準備が完了していません');
+    return false;
+  }
+  try{
+    window.openShootingEvent({ stageId: 'shooting_special_deinova' });
+    return true;
+  }catch(error){
+    console.error('[HomeBanner] Deinova open failed:', error);
+    if(typeof showToast === 'function') showToast('特別巡行を開けませんでした');
+    return false;
+  }
+}
+
 // build478: old home mode helper removed.
 // ホームイベントバナー3「ウルフ実装」から、特別邂逅へ直接遷移
 function openWolfGachaFromHome(){
@@ -21300,7 +21316,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=2061-memory-reliability"></script>
+<script src="js/shooting_event.js?v=2066-deinova-rank-3m2m"></script>
 <script src="js/shooting_party_filter.js?v=2048-openfor"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1946-party-button"></script>
