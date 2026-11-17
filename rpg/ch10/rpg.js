@@ -693,19 +693,39 @@ canvas.addEventListener('pointerup',e=>{
 });
 if(debug) setDebug(true);
 // build2042: 開始画面は出さず、ノータイムでマップへ（「記録」ボタンのメニューは従来どおり）
-enabled=true; overlay.hidden=true;
-// build2043 起動カバー：床・遠景・遺跡・キャラ・ヘッダー/ボタン画像とフォントが揃い、描画してから外す（最大3秒）
+overlay.hidden=true;
+// build2067 起動カバー：このRPGで使う画像を「全部」読み込み＋デコードしてから外す。
+//  ・主人公の全向き・全コマ、全マップのNPC、床・遠景・遺跡、ヘッダー/ボタン/枠（CSS）、会話の立ち絵まで待つ
+//  ・待っている間は操作・エンカウントを止める（enabled=false）。0.4秒以上かかる時だけ読み込みバーを出す
+//  ・回線が極端に遅い時の保険として最大20秒で開く（従来は3秒で開いてしまい、画像が後から出ていた）
 (function bootReveal(){
-  const cover=$('boot-cover'); if(!cover) return;
-  const imgs=[floorImg,horizonImg,castleImg,zigImage,assets.down_idle,...Object.values(TYPES).map(t=>t.image),
-    ...npcList().filter(n=>n.sprite).map(n=>npcImg(n.sprite)),...document.querySelectorAll('#shell img')];
-  const wait=im=>new Promise(r=>{ if(!im||im.complete) return r(); im.addEventListener('load',r,{once:true}); im.addEventListener('error',r,{once:true}); });
-  const fontsReady=document.fonts&&document.fonts.ready?document.fonts.ready.catch(()=>{}):Promise.resolve();
+  const cover=$('boot-cover');
+  if(!cover){ enabled=true; return; }
+  enabled=false;
+  const extra=src=>{ const im=new Image(); im.src=src; return im; };
+  const allNpcSprites=[...new Set(Object.values(MAPS).flatMap(m=>(m.npcs||(m.npc?[m.npc]:[]))).map(n=>n&&n.sprite).filter(s=>s&&s!=='zig'))];
+  const imgs=[floorImg,horizonImg,castleImg,zigImage,...Object.values(assets),...Object.values(TYPES).map(t=>t.image),
+    ...allNpcSprites.map(npcImg),...document.querySelectorAll('img'),
+    extra('images/ui2_frame.png'),extra('images/chara_01_cut.webp'),extra('images/chara_05_cut.webp')].filter(Boolean);
+  const total=imgs.length+1; let done=0;
+  const bar=document.createElement('div'); bar.className='boot-load'; bar.innerHTML='<i></i><span>LOADING</span>';
+  const fill=bar.querySelector('i');
+  const tick=()=>{ done++; fill.style.width=Math.round(done/total*100)+'%'; };
+  const showBarTimer=setTimeout(()=>cover.appendChild(bar),400);
+  const decodeIt=im=>(im.decode?im.decode().catch(()=>{}):Promise.resolve());
+  const wait=im=>new Promise(r=>{
+    const fin=()=>{ tick(); r(); };
+    if(im.complete&&im.naturalWidth>0){ decodeIt(im).then(fin); return; }
+    if(im.complete&&im.src&&!im.naturalWidth&&im.currentSrc){ fin(); return; } // 読み込み失敗済み
+    im.addEventListener('load',()=>decodeIt(im).then(fin),{once:true});
+    im.addEventListener('error',fin,{once:true});
+  });
+  const fontsReady=(document.fonts&&document.fonts.ready?document.fonts.ready.catch(()=>{}):Promise.resolve()).then(tick);
   let shown=false;
-  const show=()=>{ if(shown) return; shown=true; cam.ready=false;
+  const show=()=>{ if(shown) return; shown=true; clearTimeout(showBarTimer); cam.ready=false; enabled=true;
     requestAnimationFrame(()=>requestAnimationFrame(()=>{ cover.classList.add('done'); setTimeout(()=>cover.remove(),450); })); };
   Promise.all([...imgs.map(wait),fontsReady]).then(show);
-  setTimeout(show,3000);
+  setTimeout(show,20000);
 })();
 
 /* buttons */

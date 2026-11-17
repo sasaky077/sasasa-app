@@ -1053,6 +1053,38 @@
     } catch (_) {}
   }
 
+  // build2067: 開戦前に「最初の画面に出る画像」の読み込み＋デコードを待つ。
+  //  キャッシュが無い初回だと、敵・ボス・背景・自キャラが描かれないまま戦闘が始まり、後から順に出ていたため。
+  //  対象：ボス画像（ステージ差し替え含む）・背景・ステージの敵／召喚される配下・雑魚画像の差し替え・出撃キャラの戦闘画像。
+  //  回線が極端に遅い時の保険として timeoutMs で打ち切って開始する。
+  function collectShootingBattleVisualSources() {
+    const set = new Set();
+    const add = src => { const v = String(src || '').trim(); if (v && !/^data:/.test(v)) set.add(v); };
+    const addEnemy = id => {
+      const def = typeof getShootingEnemy === 'function' ? getShootingEnemy(id) : null;
+      if (!def) return;
+      add(def.image); add(def.ch404Image);
+    };
+    try { if (selectedStage && selectedStage.type === 'boss') add(getSelectedBossImage()); } catch (_) {}
+    add(selectedStage && selectedStage.background);
+    add(selectedStage && selectedStage.normalBattle && selectedStage.normalBattle.enemyImage);
+    (Array.isArray(selectedStage && selectedStage.enemyIds) ? selectedStage.enemyIds : []).forEach(addEnemy);
+    (Array.isArray(selectedStage && selectedStage.bossAdds && selectedStage.bossAdds.enemyIds) ? selectedStage.bossAdds.enemyIds : []).forEach(addEnemy);
+    try {
+      (Array.isArray(selectedPartyIds) ? selectedPartyIds : []).slice(0, PARTY_SIZE).forEach(id => {
+        const c = SHOOTING_CHARACTERS[Number(id)];
+        if (c) add(getCharacterBattleImage(c));
+      });
+    } catch (_) {}
+    return Array.from(set);
+  }
+  function waitShootingBattleVisuals(timeoutMs = 10000) {
+    const sources = collectShootingBattleVisualSources();
+    if (!sources.length) return Promise.resolve();
+    const all = Promise.allSettled(sources.map(src => preloadShootingImage(src, timeoutMs, false)));
+    return Promise.race([all, new Promise(resolve => setTimeout(resolve, timeoutMs))]).then(() => undefined);
+  }
+
   function getCurrentShootingEnemy() {
     const enemy = getShootingEnemy(selectedEnemyId);
     if (!enemy || !enemy.implemented) {
@@ -37144,6 +37176,8 @@
     // ステージIN演出。実ロードの有無とは切り離したアイキャッチ演出として扱う。
     const stageIcatchPromise = rpgEncounterStart ? Promise.resolve() : showShootingStageIcatch();
     if (!rpgEncounterStart) warmBossStageIntroImage();
+    // build2067: 敵・ボス・背景・自キャラの画像が揃うのを、アイキャッチ（RPGは白い暗転）の裏で待つ
+    const battleVisualsPromise = waitShootingBattleVisuals(10000);
 
     selectedCharacterId = selectedPartyIds[0];
     clearEltenaBlackHole();
@@ -37174,6 +37208,7 @@
     }
 
     await stageIcatchPromise;
+    await battleVisualsPromise;
     if (!rpgEncounterStart) await showShootingStageInfo();
 
     // タイトル演出が終わった白画面の裏で初期配置を完成させる。

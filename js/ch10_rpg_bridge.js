@@ -2,7 +2,7 @@
  // ZERAPHIA CH10 RPG bridge — build2040
  // RPG(iframe) を開閉し、RPG内の会話を本編ノベルエンジン(window.StoryNovel)で、
  // ランダムエンカウントを本編のシューティング戦闘(openShootingEvent)で再生する。
- const RPG_BUILD='2052';
+ const RPG_BUILD='2067';
  let root=null, returnFocus=null, frame=null, novelOpen=false, battleOpen=false, battleDone=null;
  function close(){
    if(!root||novelOpen||battleOpen)return;

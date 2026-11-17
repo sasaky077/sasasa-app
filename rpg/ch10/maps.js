@@ -44,22 +44,22 @@ window.ZERAPHIA_MAPS = {
       { id: 'zig', name: 'ジグ', x: 1025, y: 2625, sprite: 'images/chara_05_down_idle.webp',
         talk: [
           { speaker: 'エリ', text: 'ジグ、アウラと一緒じゃないの？' },
-          { speaker: 'ジグ', text: 'ああ、花があるって走っていった。' },
+          { speaker: 'ジグ', text: 'いや…花を見つけた、って走っていった。' },
         ] },
       { id: 'aura', name: 'アウラ', x: 1325, y: 2375, sprite: 'images/chara_03_down_idle.webp',
         talk: [
           { speaker: 'エリ', text: 'なんだか…不思議な場所だね。' },
-          { speaker: 'アウラ', text: 'エリ、お花が咲いてたよ！<br>ミモザに見せてあげよう！' },
+          { speaker: 'アウラ', text: 'エリ、お花が咲いてたよ！\nミモザに見せてあげよう！' },
         ] },
       { id: 'mimosa', name: 'ミモザ', x: 725, y: 2125, sprite: 'images/chara_28_down_idle.webp',
         talk: [
           { speaker: 'エリ', text: '（ミモザ…難しい顔をしてる…）' },
-          { speaker: 'ミモザ', text: 'なんだか…<br>この場所に見覚えがあるの。' },
+          { speaker: 'ミモザ', text: 'なんだか…\nこの場所に見覚えがあるの。' },
         ] },
       { id: 'arno', name: 'アルノ', x: 1325, y: 1475, sprite: 'images/chara_20_down_idle.webp',
         talk: [
           { speaker: 'エリ', text: 'アルノ、あの光の向こうには何があるの？' },
-          { speaker: 'アルノ', text: '……分からない。<br>残念ながら私は向こうへ行けなかった。' },
+          { speaker: 'アルノ', text: '……分からない。\n残念ながら私は向こうへ行けなかった。' },
         ] },
     ],
     sigils: [[1007, 3000, 74], [1010, 2330, 44]],
@@ -113,16 +113,16 @@ window.ZERAPHIA_MAPS = {
       { id: 'hao', name: 'ハオ', x: 375, y: 1825, sprite: 'images/chara_54_down_idle.webp',
         talk: [
           { speaker: 'エリ', text: 'あなたは、ここで何をしているの？' },
-          { speaker: 'ハオ', text: 'なんと…天はこのときを……待っていたのだ…' },
+          { speaker: 'ハオ', text: 'なんと…天はこのときを……\n待っていたのだ…' },
         ] },
       { id: 'aina', name: 'アイナ', x: 1725, y: 1775, sprite: 'images/chara_17_down_idle.webp',
         talk: [
-          { speaker: 'エリ', text: 'わっ、アイナ！門、通れたんだね！' },
+          { speaker: 'エリ', text: 'わっ、アイナ！アイナはこっちに来れたんだね！' },
           { speaker: 'アイナ', text: '……' },
         ] },
       { id: 'smile', name: 'スマイル', x: 1225, y: 1525, sprite: 'images/chara_56_down_idle.webp',
         talk: [
-          { speaker: 'エリ', text: '……ずっと笑ってるね。' },
+          { speaker: 'エリ', text: 'あなたは……ずっと笑ってるね。' },
           { speaker: 'スマイル', text: 'アハハ！泣いているよりいいじゃない！' },
         ] },
     ],
