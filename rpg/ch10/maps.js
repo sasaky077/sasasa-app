@@ -43,23 +43,23 @@ window.ZERAPHIA_MAPS = {
     npcs: [
       { id: 'zig', name: 'ジグ', x: 1025, y: 2625, sprite: 'images/chara_05_down_idle.webp',
         talk: [
-          { speaker: 'エリ', text: 'ジグ、この先には行けないの？' },
-          { speaker: 'ジグ', text: 'まだ…開発中だってよ。アウラはどこだ？' },
+          { speaker: 'エリ', text: 'ジグ、アウラと一緒じゃないの？' },
+          { speaker: 'ジグ', text: 'ああ、花があるって走っていった。' },
         ] },
       { id: 'aura', name: 'アウラ', x: 1325, y: 2375, sprite: 'images/chara_03_down_idle.webp',
         talk: [
           { speaker: 'エリ', text: 'なんだか…不思議な場所だね。' },
-          { speaker: 'アウラ', text: 'お花が咲いてたよ！<br>ミモザに見せてあげよう！' },
+          { speaker: 'アウラ', text: 'エリ、お花が咲いてたよ！<br>ミモザに見せてあげよう！' },
         ] },
       { id: 'mimosa', name: 'ミモザ', x: 725, y: 2125, sprite: 'images/chara_28_down_idle.webp',
         talk: [
           { speaker: 'エリ', text: '（ミモザ…難しい顔をしてる…）' },
-          { speaker: 'ミモザ', text: '…あの光の門の先、私は入れないみたいなの。' },
+          { speaker: 'ミモザ', text: 'なんだか…<br>この場所に見覚えがあるの。' },
         ] },
       { id: 'arno', name: 'アルノ', x: 1325, y: 1475, sprite: 'images/chara_20_down_idle.webp',
         talk: [
           { speaker: 'エリ', text: 'アルノ、あの光の向こうには何があるの？' },
-          { speaker: 'アルノ', text: '……分からない。残念ながら私は向こうへ行けなかった。' },
+          { speaker: 'アルノ', text: '……分からない。<br>残念ながら私は向こうへ行けなかった。' },
         ] },
     ],
     sigils: [[1007, 3000, 74], [1010, 2330, 44]],
