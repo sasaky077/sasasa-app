@@ -33815,6 +33815,17 @@
       return hit ? hit.rank : 'E';
     }
 
+    // build2063: 特別巡行「最恐 -デイノヴァ-」専用ランク判定。
+    // サーバー claim_deinova_special_drop と S/A の閾値を一致させる。
+    if (isDeinovaStage()) {
+      if (!win) return 'E';
+      if (value >= 200000) return 'S';
+      if (value >= 100000) return 'A';
+      if (value >= 16000) return 'B';
+      if (value >= 12000) return 'C';
+      return 'D';
+    }
+
     // 通常シューティングは従来仕様を維持。
     if (!win) return 'E';
     const hit = RESULT_RANK_THRESHOLDS.find(t => value >= t.score);
