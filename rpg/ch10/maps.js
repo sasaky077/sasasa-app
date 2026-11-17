@@ -87,8 +87,8 @@ window.ZERAPHIA_MAPS = {
         ] },
       { id: 'aina', name: 'アイナ', x: 1725, y: 1775, sprite: 'images/chara_17_down_idle.webp',
         talk: [
-          { speaker: 'エリ', text: 'わっ、アイナ！いたのね。' },
-          { speaker: 'アイナ', text: '……今は隠密使ってないですよ。' },
+          { speaker: 'エリ', text: 'わっ、アイナ！門、通れたんだね！' },
+          { speaker: 'アイナ', text: '……' },
         ] },
       { id: 'smile', name: 'スマイル', x: 1225, y: 1525, sprite: 'images/chara_56_down_idle.webp',
         talk: [
