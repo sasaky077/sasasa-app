@@ -3174,9 +3174,36 @@
     return { partyIds: ids, clearedAt: Number(record.clearedAt) || 0 };
   }
 
+  // Daily Raid scores even when the boss survives. Keep its previous sortie
+  // separate from genuine stage clears, scoped to the same player and stage.
+  const SHOOTING_RAID_LAST_SORTIE_KEY = 'zeraphia_shooting_raid_last_sortie_v1';
+  function getRaidLastSortieStorageKey() {
+    return `${SHOOTING_RAID_LAST_SORTIE_KEY}:${getShootingUserId() || 'guest'}`;
+  }
+  function getRaidLastSortie(stageId = selectedStage?.id) {
+    const key = String(stageId || '');
+    if (!key) return null;
+    try {
+      const all = JSON.parse(localStorage.getItem(getRaidLastSortieStorageKey()) || '{}');
+      return normalizeShootingLastClearParty(all && all[key]);
+    } catch (_) { return null; }
+  }
+  function saveRaidLastSortie(stageId, party) {
+    const key = String(stageId || '');
+    const record = normalizeShootingLastClearParty({ partyIds: party, clearedAt: Date.now() });
+    if (!key || !record) return;
+    try {
+      const all = JSON.parse(localStorage.getItem(getRaidLastSortieStorageKey()) || '{}');
+      const value = all && typeof all === 'object' && !Array.isArray(all) ? all : {};
+      value[key] = record;
+      localStorage.setItem(getRaidLastSortieStorageKey(), JSON.stringify(value));
+    } catch (err) { console.warn('[raid] last sortie could not be saved', err); }
+  }
   function getShootingLastClearParty(stageId = selectedStage?.id) {
     const key = String(stageId || '');
     if (!key) return null;
+    // Raid uses the last confirmed sortie (not a victory requirement).
+    if (isRaidStage()) return getRaidLastSortie(key) || normalizeShootingLastClearParty(readShootingLastClearParties()[key]);
     return normalizeShootingLastClearParty(readShootingLastClearParties()[key]);
   }
 
@@ -3220,13 +3247,18 @@
     if (!panel || !members || !button || !detail) return;
     const record = getShootingLastClearParty();
     const status = getShootingLastClearRestoreStatus(record);
+    const raidMode = isRaidStage();
+    const title = panel.querySelector('.zpf-lastclear-heading strong');
+    const kicker = panel.querySelector('.zpf-lastclear-heading span');
+    if (title) title.textContent = raidMode ? '前回の出撃編成' : '前回のクリア編成';
+    if (kicker) kicker.textContent = raidMode ? 'LAST SORTIE' : 'LAST CLEAR';
     button.disabled = !status.ok;
     button.title = status.reason || '前回クリアした編成に切り替える';
     panel.classList.toggle('is-empty', !record);
     panel.classList.toggle('is-unavailable', !!record && !status.ok);
     if (!record) {
       members.textContent = 'まだ記録がありません';
-      detail.textContent = 'このステージで勝利すると記録されます';
+      detail.textContent = raidMode ? 'このレイドに出撃すると編成が記録されます' : 'このステージで勝利すると記録されます';
       return;
     }
     members.innerHTML = record.partyIds.map(id => {
@@ -3237,7 +3269,7 @@
       </span>`;
     }).join('');
     detail.textContent = status.ok
-      ? (record.clearedAt ? `${new Date(record.clearedAt).toLocaleDateString('ja-JP')} CLEAR` : 'LAST CLEAR')
+      ? (record.clearedAt ? `${new Date(record.clearedAt).toLocaleDateString('ja-JP')} ${raidMode ? 'SORTIE' : 'CLEAR'}` : (raidMode ? 'LAST SORTIE' : 'LAST CLEAR'))
       : status.reason;
   }
 
@@ -34018,7 +34050,7 @@
     const lastClearPartyIds = Array.isArray(state.initialPartyIds) && state.initialPartyIds.length
       ? state.initialPartyIds.slice()
       : (Array.isArray(state.party) ? state.party.map(member => Number(member.id)) : []);
-    if (win && !isResonanceTowerReplay() && !isPhaseOdysseyStage() && !isMemoryBattleStage()) {
+    if (win && !isRaidStage() && !isResonanceTowerReplay() && !isPhaseOdysseyStage() && !isMemoryBattleStage()) {
       saveShootingLastClearParty(lastClearStageId, lastClearPartyIds);
     }
     finalizeStoryClearScore(!!win);
@@ -36155,6 +36187,10 @@
         return;
       }
     }
+
+    // Raid: record the accepted sortie, even if the boss is not defeated.
+    // This executes only after the raid attempt token was successfully obtained.
+    if (isRaidStage()) saveRaidLastSortie(selectedStage?.id, selectedPartyIds.slice());
 
     // 使用キャラランキング用。編成された各キャラを1出撃として記録。
     // 集計保存はゲーム開始をブロックしない。

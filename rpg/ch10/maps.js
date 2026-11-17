@@ -123,7 +123,7 @@ window.ZERAPHIA_MAPS = {
       { id: 'smile', name: 'スマイル', x: 1225, y: 1525, sprite: 'images/chara_56_down_idle.webp',
         talk: [
           { speaker: 'エリ', text: '……ずっと笑ってるね。' },
-          { speaker: 'スマイル', text: '泣いているよりいいじゃない！' },
+          { speaker: 'スマイル', text: 'アハハ！泣いているよりいいじゃない！' },
         ] },
     ],
     sigils: [[1025, 1825, 90]],
