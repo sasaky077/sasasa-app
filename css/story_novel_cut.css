@@ -133,3 +133,16 @@ html body #story-novel-root .story-novel-dialogue{
     max-height:calc(56dvh - env(safe-area-inset-bottom)) !important;
   }
 }
+
+/* ============================================================
+   build2035: キャラごとの立ち絵サイズ補正
+   全身絵の描かれ方（枠に対する大きさ）がキャラで違うため、画像ごとに調整する。
+     --sn-scale : 大きさ（1 = 標準。0.9 = 90%）
+     --sn-shift : 下にずらす量（立ち絵の高さに対する割合。0.06 = 6%下げる）
+   追加するときは img[alt="キャラ名"] の行を足すだけ。
+   ============================================================ */
+html body #story-novel-root .story-novel-character.is-cut img{
+  height:calc(var(--sn-img) * var(--sn-scale, 1)) !important;
+  top:calc(var(--sn-img) * var(--sn-shift, 0)) !important;
+}
+html body #story-novel-root .story-novel-character.is-cut img[alt="エリ"]{--sn-scale:.9;--sn-shift:.06;}

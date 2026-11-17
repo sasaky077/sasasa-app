@@ -17,7 +17,9 @@
     'レオナクロス':39,
     'トイフェル':37,
     'アイナ':17,
-    'ベロニカ':22
+    'ベロニカ':22,
+    'ハオ':54,      // build2036: RPG(CH10)のNPC
+    'スマイル':56   // build2036: RPG(CH10)のNPC
   });
 
   let session = null;
@@ -125,7 +127,7 @@
     const link=document.createElement('link');
     link.id='story-novel-cut-style';
     link.rel='stylesheet';
-    link.href='css/story_novel_cut.css?v=1738-textbox-fit';
+    link.href='css/story_novel_cut.css?v=2036';
     document.head.appendChild(link);
   }
 

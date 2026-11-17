@@ -1,1 +1,5 @@
 .ch10-rpg-modal{position:fixed!important;inset:0!important;z-index:500000!important;display:flex!important;background:#151922!important;padding:0!important}.ch10-rpg-modal iframe{width:100%;height:100%;border:0;flex:1;min-height:0;background:#e5e1e9}.ch10-rpg-modal-open{overflow:hidden!important}
+/* build2034: RPG内の会話は本編ノベル(#story-novel-root, z-index:260500)で表示。再生中だけRPGをその下へ */
+.ch10-rpg-novel-open .ch10-rpg-modal{z-index:260000!important}
+/* build2037: RPG表示中は背面の本編画面を描画しない（見えないのに描き続けて重くなるのを防ぐ） */
+body.ch10-rpg-modal-open > *:not(.ch10-rpg-modal):not(#story-novel-root):not(script):not(style):not(link){visibility:hidden!important}

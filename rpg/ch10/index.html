@@ -2,61 +2,88 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="theme-color" content="#e3dbcb">
-  <title>ZERAPHIA — CHAPTER 10 RPG PROTOTYPE</title>
+  <meta name="theme-color" content="#121826">
+  <title>ZERAPHIA CHAPTER 10</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Noto+Serif+JP:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="style.css?v=2039">
 </head>
 <body>
-  <main id="shell">
-    <section id="game">
-      <canvas id="world" aria-label="2D RPGフィールド"></canvas>
+<main id="shell">
+  <canvas id="world" aria-label="灰色の庭園"></canvas>
+  <div id="frame" aria-hidden="true"></div>
 
-      <header id="top" aria-label="STORY 10 開発中(仮)"><div class="chapter">ZERAPHIA <span>CHAPTER 10</span></div><div class="place" id="place">灰色の庭園</div><div class="hint" id="quest">目的：光の門を探す</div></header>
-<button id="back-to-story" type="button" aria-label="STORYへ戻る">戻る</button>
-<div id="toast"></div>
+  <header id="top">
+    <img class="hdr-img" src="images/ui2_header.webp" alt="" draggable="false">
+    <span class="sr-only">STORY 10 開発中(仮) ZERAPHIA CHAPTER 10</span>
+    <div class="place" id="place">灰色の庭園</div>
+    <div class="quest" id="quest">目的：光の門を探す</div>
+    <button id="returnToStory" class="return-hit" type="button" aria-label="戻る"></button>
+  </header>
 
-      <div id="ch10-novel" hidden aria-label="ストーリー会話">
-        <div class="ch10-novel-bg"></div><div class="ch10-novel-shade"></div>
-        <div class="ch10-novel-head"><span>CHAPTER 01 白の終棘</span><small id="ch10-novel-scene">1-2 とある聖堂にて</small><button id="novel-skip" type="button">SKIP</button></div>
-        <img class="ch10-zig-portrait" id="ch10-novel-portrait" src="images/chara_05_cut.webp" alt="ジグ">
-        <div class="ch10-novel-dialog"><div id="ch10-novel-name"></div><div id="ch10-novel-text"></div><div id="ch10-novel-next">TAP TO CONTINUE</div></div>
-      </div>
+  <div id="toast"></div>
 
-      <div id="dialog" hidden><div class="speaker" id="speaker"></div><div class="line" id="line"></div><div class="next">タップして続ける ▸</div></div>
+  <div id="controls">
+    <div id="stick" role="button" aria-label="移動スティック">
+      <img class="stick-base" src="images/ui2_stick_base.png" alt="" draggable="false">
+      <img id="stick-knob" src="images/ui2_stick_knob.png" alt="" draggable="false">
+    </div>
+    <button id="action" class="img-btn" type="button" aria-label="調べる"><img src="images/ui2_btn_search.png" alt="" draggable="false"></button>
+    <button id="menu" class="img-btn" type="button" aria-label="記録"><img src="images/ui2_btn_record.png" alt="" draggable="false"></button>
+  </div>
 
-      <div id="controls">
-        <div id="stick" role="button" aria-label="移動スティック"><div id="stick-knob"></div></div>
-        <div id="buttons">
-          <button id="action" type="button" class="ornate-btn"><span class="btn-icon">⌕</span><span class="btn-label">調べる</span></button>
-          <button id="menu" type="button" class="ornate-btn secondary"><span class="btn-icon">▤</span><span class="btn-label">記録</span></button>
-        </div>
-      </div>
+  <div id="overlay">
+    <div class="panel">
+      <div class="micro">STORY 10</div>
+      <h1>開発中(仮) — RPGモード試作</h1>
+      <p>背景・UI・キャラクターをレイヤー分離した試作版です。上下左右に1マスずつ移動し、ジグに話しかけられます。</p>
+      <p class="light">移動：左下スティック / 矢印キー / WASD / 行きたい場所をタップ<br>会話：右下の「調べる」 / Enter / Space / ジグをタップ</p>
+      <button id="start" type="button">探索を始める</button>
+      <button id="reset" type="button" class="ghost">最初から試す</button>
+    </div>
+  </div>
 
-      <div id="overlay">
-        <div class="panel">
-          <div class="micro">STORY 10 / RPG PROTOTYPE</div>
-          <h1>開発中(仮)</h1>
-          <p>第10章をRPGモードで試作中です。上下左右に1マスずつ移動し、ジグに話しかけて会話イベントを確認できます。</p>
-          <p class="light">移動：スティック／マップをタップ／矢印キー・WASD<br>会話：右下の「調べる」／NPCをタップ／Enterキー</p>
-          <button id="start" type="button">探索を始める</button>
-          <button id="reset" type="button" class="ghost">最初から試す</button>
-        </div>
-      </div>
-    </section>
-  </main>
-  <script src="rpg.js"></script>
-  <script>
-  (function(){
-    const name=document.getElementById('ch10-novel-name'),pic=document.getElementById('ch10-novel-portrait');
-    if(!name||!pic)return;
-    function sync(){const eri=name.textContent.includes('エリ');pic.src=eri?'images/chara_01_cut.webp':'images/chara_05_cut.webp';pic.alt=eri?'エリ':'ジグ';}
-    new MutationObserver(sync).observe(name,{childList:true,characterData:true,subtree:true});sync();
-  })();
-  </script>
+  <div id="dialog" hidden>
+    <div class="speaker" id="speaker"></div>
+    <div class="line" id="line"></div>
+    <div class="next">タップして続ける ▸</div>
+  </div>
+
+  <section id="ch10-novel" hidden aria-label="ノベルパート">
+    <div class="ch10-novel-bg"></div>
+    <div class="ch10-novel-shade"></div>
+    <div class="ch10-novel-head">
+      <button id="back-to-story" type="button">〈 戻る</button>
+      <div class="ch10-novel-head-center"><span>CHAPTER 10  開発中(仮)</span><small id="ch10-novel-scene">灰色の庭園 — 第十章</small></div>
+      <button id="novel-skip" type="button">SKIP ✦</button>
+    </div>
+    <img class="ch10-zig-portrait" id="ch10-novel-portrait" src="images/chara_05_cut.webp" alt="ジグ">
+    <div class="ch10-novel-dialog">
+      <div id="ch10-novel-name"></div>
+      <div id="ch10-novel-text"></div>
+      <div id="ch10-novel-next">TAP TO CONTINUE</div>
+    </div>
+  </section>
+</main>
+<script src="objects.js?v=2039"></script>
+<script src="maps.js?v=2039"></script>
+<script src="rpg.js?v=2039"></script>
+<script>
+(function(){
+  const name=document.getElementById('ch10-novel-name');
+  const pic=document.getElementById('ch10-novel-portrait');
+  if(!name||!pic) return;
+  function sync(){
+    const isEri = (name.textContent||'').includes('エリ');
+    pic.src = isEri ? 'images/chara_01_cut.webp' : 'images/chara_05_cut.webp';
+    pic.alt = isEri ? 'エリ' : 'ジグ';
+  }
+  new MutationObserver(sync).observe(name,{childList:true,characterData:true,subtree:true});
+  sync();
+})();
+</script>
 </body>
 </html>
