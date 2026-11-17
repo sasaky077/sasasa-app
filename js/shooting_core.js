@@ -3293,6 +3293,293 @@
     return { ok: true, reason: '' };
   }
 
+  // ============================================================
+  // build2068: お助けフレンド（js/friend_support.js）
+  //  STORY（RPGエンカウント含む）・スコアアタック・ガチャ試遊・チュートリアル以外の戦闘で使える。
+  //  フレンドのお気に入りキャラは盤面に出ず、フレンドスキルだけを使う。
+  //   ACTIVE … 下部バーのボタンで1回だけ。PASSIVE … 戦闘中、常時。
+  // ============================================================
+  function isFriendSupportEligibleStage() {
+    if (!selectedStage) return false;
+    if (isStoryShootingStage() || isScoreAttackStage() || isRpgEncounterStage() || isGachaTrialStage()) return false;
+    if (typeof getSelectedStoryFixedPartyIds === 'function' && getSelectedStoryFixedPartyIds()) return false;
+    return true;
+  }
+  function getFriendSupportSkill() {
+    const fs = state && state.friendSupport;
+    return fs && fs.skill ? fs.skill : null;
+  }
+  // build2075: パッシブは属性限定（s.element と操作中キャラの属性が同じ時だけ効く）。build2076: 全属性バフは無し
+  function getFriendSupportPassive(kind) {
+    const s = getFriendSupportSkill();
+    if (!(s && s.type === 'passive' && s.kind === kind)) return null;
+    if (!s.element) return null;
+    const c = getCurrentCharacter();
+    const els = Array.isArray(c && c.element) ? c.element : [c && c.element];
+    return els.map(e => normalizeCombatElement(e)).includes(normalizeCombatElement(s.element)) ? s : null;
+  }
+  // 与ダメージ倍率（applyElementDamage から）
+  function getFriendSupportAtkMultiplier(now = performance.now()) {
+    const fs = state && state.friendSupport;
+    if (!fs) return 1;
+    let m = 1;
+    const p = getFriendSupportPassive('p_atk');
+    if (p) m *= Math.max(0, Number(p.mul || 1));
+    if (now < Number(fs.atkUntil || 0)) m *= Math.max(0, Number(fs.atkMul || 1));
+    return m;
+  }
+  function getFriendSupportDamageTakenMultiplier() {
+    const p = getFriendSupportPassive('p_cut');
+    return p ? Math.max(0, Math.min(1, Number(p.mul || 1))) : 1;
+  }
+  function getFriendSupportUltGainMultiplier() {
+    const p = getFriendSupportPassive('p_ult');
+    return p ? Math.max(0, Number(p.mul || 1)) : 1;
+  }
+  // 1回被弾無効（damagePlayer から）。防いだら true
+  function consumeFriendSupportShield(now) {
+    const fs = state && state.friendSupport;
+    if (!fs || !(Number(fs.shieldHits || 0) > 0)) return false;
+    fs.shieldHits -= 1;
+    state.player.invulnUntil = Math.max(Number(state.player.invulnUntil || 0), now + 600);
+    showFriendSupportBarrierBreak();
+    syncFriendSupportBarrier();
+    syncFriendSupportButton();
+    return true;
+  }
+
+  // build2069: 被弾無効の薄いバリア。張っている間は自キャラの周りに淡い金色の膜（残り2回以上なら二重）。
+  function syncFriendSupportBarrier() {
+    const player = document.getElementById(PLAYER_ID);
+    if (!player) return;
+    const hits = Math.max(0, Number(state && state.friendSupport && state.friendSupport.shieldHits || 0));
+    let el = player.querySelector('.zfs-barrier');
+    if (!hits) { if (el) el.remove(); return; }
+    if (!el) {
+      ensureFriendSupportBattleStyle();
+      el = document.createElement('span');
+      el.className = 'zfs-barrier';
+      el.setAttribute('aria-hidden', 'true');
+      el.innerHTML = '<i></i><i></i>';
+      player.appendChild(el);
+    }
+    el.classList.toggle('is-double', hits >= 2);
+  }
+  // 防いだ瞬間：膜が割れて破片が散り、頭上に「GUARD」
+  function showFriendSupportBarrierBreak() {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena || !state || !state.player) return;
+    ensureFriendSupportBattleStyle();
+    const x = Number(state.player.x || 0), y = Number(state.player.y || 0);
+    const wrap = document.createElement('div');
+    wrap.className = 'zfs-barrier-break';
+    wrap.style.transform = `translate3d(${x}px,${y}px,0)`;
+    let html = '<b class="zfs-bb-flash"></b>';
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2 + Math.random() * .4;
+      const d = 34 + Math.random() * 26;
+      html += `<i style="--dx:${Math.cos(a) * d}px;--dy:${Math.sin(a) * d}px;--r:${Math.round(Math.random() * 360)}deg"></i>`;
+    }
+    html += '<em>GUARD</em>';
+    wrap.innerHTML = html;
+    arena.appendChild(wrap);
+    setTimeout(() => wrap.remove(), 900);
+  }
+
+  function ensureFriendSupportBattleStyle() {
+    if (document.getElementById('friend-support-battle-style-v2068')) return;
+    const st = document.createElement('style');
+    st.id = 'friend-support-battle-style-v2068';
+    st.textContent = `
+      #shooting-event-root .zfs-battle{position:absolute;left:10px;bottom:calc(var(--zfs-bottom,16px));z-index:60;width:58px;height:58px;padding:0;border:none;background:none;
+        touch-action:none;-webkit-tap-highlight-color:transparent;cursor:pointer}
+      /* build2070: UI切替（ui-type-2）では交代ボタンが左へ移るので、フレンドボタンは右下へ */
+      #shooting-event-root.ui-type-2 .zfs-battle{left:auto;right:10px}
+      /* 控えの交代ボタン（レールが上に24pxはみ出す）と同じ高さにそろえる */
+      #shooting-event-root .shooting-footer .zfs-battle.in-footer{position:relative;left:auto;right:auto;bottom:auto;top:-22px;align-self:center;margin:0 4px 0 8px}
+      #shooting-event-root .zfs-battle.in-footer .zfs-b-glow{position:absolute;inset:-3px;border-radius:50%;pointer-events:none;z-index:2;
+        box-shadow:0 0 0 2px rgba(214,170,84,.95),0 0 10px rgba(255,206,110,.75)}
+      #shooting-event-root .zfs-battle.in-footer.is-ready .zfs-b-glow{animation:zfsGlow 1.2s ease-in-out infinite}
+      @keyframes zfsGlow{50%{box-shadow:0 0 0 2px rgba(240,200,110,1),0 0 18px rgba(255,214,120,1)}}
+      #shooting-event-root .zfs-battle.in-footer.is-passive .zfs-b-glow{box-shadow:0 0 0 2px rgba(150,190,220,.9),0 0 8px rgba(150,190,220,.6)}
+      #shooting-event-root .zfs-battle.in-footer.is-used .zfs-b-glow{box-shadow:none}
+      #shooting-event-root .zfs-battle.in-footer.is-used img{filter:grayscale(1) brightness(.62)}
+      #shooting-event-root .zfs-battle.in-footer.is-used .shooting-switch-status{opacity:.55}
+      #shooting-event-root .zfs-battle .zfs-b-face{position:absolute;inset:0;border-radius:50%;overflow:hidden;border:2px solid #e9c77d;background:#2b2118;
+        box-shadow:0 0 0 2px rgba(60,40,20,.35),0 0 14px rgba(255,214,120,.65)}
+      #shooting-event-root .zfs-battle img{width:100%;height:100%;object-fit:cover;object-position:50% 18%}
+      #shooting-event-root .zfs-battle .zfs-b-tag{position:absolute;left:50%;bottom:-8px;transform:translateX(-50%);padding:2px 6px;border-radius:3px;white-space:nowrap;
+        font:700 8px/1.2 'Cinzel',serif;letter-spacing:.08em;color:#fff;background:#b0743d;box-shadow:0 1px 3px rgba(0,0,0,.35)}
+      #shooting-event-root .zfs-battle.is-passive .zfs-b-tag{background:#5d7f9a}
+      #shooting-event-root .zfs-battle.is-ready .zfs-b-face{animation:zfsReady 1.1s ease-in-out infinite}
+      @keyframes zfsReady{50%{box-shadow:0 0 0 2px rgba(60,40,20,.35),0 0 22px rgba(255,220,130,1)}}
+      #shooting-event-root .zfs-battle.is-used .zfs-b-face{filter:grayscale(1) brightness(.6);box-shadow:none;border-color:#7d7466}
+      #shooting-event-root .zfs-battle.is-passive{cursor:default}
+      #shooting-event-root .zfs-battle.is-passive .zfs-b-face{box-shadow:0 0 0 2px rgba(60,40,20,.35),0 0 10px rgba(140,190,230,.6);border-color:#a9c7de}
+      #shooting-event-root .zfs-battle .zfs-b-count{position:absolute;right:-4px;top:-4px;min-width:16px;height:16px;border-radius:8px;background:#fff;color:#7a4d1d;
+        font:700 10px/16px sans-serif;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.35)}
+      #shooting-event-root .zfs-battle-cut{position:absolute;left:0;right:0;top:38%;z-index:61;pointer-events:none;text-align:center;padding:8px 0 9px;
+        background:linear-gradient(90deg,transparent,rgba(46,30,14,.72) 18%,rgba(46,30,14,.72) 82%,transparent);animation:zfsCut 1.3s ease-out forwards}
+      #shooting-event-root .zfs-battle-cut small{display:block;font:700 9px/1.2 'Cinzel',serif;letter-spacing:.3em;color:#ffe2a3;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+      #shooting-event-root .zfs-battle-cut strong{display:block;margin-top:2px;font:700 20px/1.25 'Noto Serif JP',serif;color:#fff;text-shadow:0 0 10px rgba(255,190,90,.9),0 2px 4px rgba(0,0,0,.5)}
+      #shooting-event-root .zfs-battle-cut span{display:block;font:600 11px/1.4 'Noto Sans JP',sans-serif;color:#fff3d6;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+      #shooting-event-root .zfs-barrier{position:absolute;left:50%;top:var(--core-top,38%);width:84px;height:84px;margin:-42px 0 0 -42px;pointer-events:none;z-index:3}
+      #shooting-event-root .zfs-barrier i{position:absolute;inset:0;border-radius:50%;
+        background:radial-gradient(circle,rgba(255,244,210,0) 54%,rgba(255,222,140,.18) 72%,rgba(240,196,96,.42) 90%,rgba(255,236,190,.6) 97%,rgba(255,214,120,0) 100%);
+        border:1px solid rgba(214,166,70,.5);box-shadow:0 0 12px rgba(240,190,90,.45);animation:zfsBarrier 2.4s ease-in-out infinite}
+      #shooting-event-root .zfs-barrier i + i{display:none}
+      #shooting-event-root .zfs-barrier.is-double i + i{display:block;inset:-9px;opacity:.7;animation-delay:-1.2s}
+      @keyframes zfsBarrier{0%,100%{transform:scale(.97);opacity:.75}50%{transform:scale(1.03);opacity:1}}
+      #shooting-event-root .zfs-barrier-break{position:absolute;left:0;top:0;width:0;height:0;z-index:40;pointer-events:none}
+      #shooting-event-root .zfs-barrier-break .zfs-bb-flash{position:absolute;left:-46px;top:-46px;width:92px;height:92px;border-radius:50%;
+        background:radial-gradient(circle,rgba(255,255,255,0) 50%,rgba(255,236,180,.9) 80%,rgba(255,214,120,0) 100%);animation:zfsBbFlash .45s ease-out forwards}
+      #shooting-event-root .zfs-barrier-break i{position:absolute;left:-5px;top:-3px;width:10px;height:6px;background:linear-gradient(90deg,#fff6da,#ffd27a);
+        clip-path:polygon(0 0,100% 30%,70% 100%,10% 70%);box-shadow:0 0 6px rgba(255,214,120,.9);animation:zfsShard .65s cubic-bezier(.2,.7,.3,1) forwards}
+      #shooting-event-root .zfs-barrier-break em{position:absolute;left:0;top:-64px;transform:translateX(-50%);font:700 13px/1 'Cinzel',serif;letter-spacing:.18em;font-style:normal;
+        color:#fff;text-shadow:0 0 8px rgba(255,200,90,1),0 1px 3px rgba(0,0,0,.6);animation:zfsGuard .85s ease-out forwards}
+      @keyframes zfsBbFlash{from{transform:scale(.9);opacity:1}to{transform:scale(1.45);opacity:0}}
+      @keyframes zfsShard{from{transform:translate(0,0) rotate(0);opacity:1}to{transform:translate(var(--dx),var(--dy)) rotate(var(--r));opacity:0}}
+      @keyframes zfsGuard{0%{opacity:0;transform:translate(-50%,6px)}20%{opacity:1;transform:translate(-50%,0)}75%{opacity:1}100%{opacity:0;transform:translate(-50%,-8px)}}
+      @keyframes zfsCut{0%{opacity:0;transform:translateY(8px)}15%{opacity:1;transform:none}75%{opacity:1}100%{opacity:0;transform:translateY(-6px)}}
+    `;
+    document.head.appendChild(st);
+  }
+
+  // 戦闘開始時：選択中のフレンドを state に積み、HUDボタンを置く
+  function setupFriendSupport() {
+    const root = document.getElementById(ROOT_ID);
+    if (root) root.querySelectorAll('.zfs-battle, .zfs-battle-cut, .zfs-barrier, .zfs-barrier-break').forEach(el => el.remove());
+    if (!state) return;
+    state.friendSupport = null;
+    if (!isFriendSupportEligibleStage()) return;
+    const api = window.FriendSupport;
+    const sel = api && typeof api.getSelection === 'function' ? api.getSelection() : null;
+    if (!sel || !sel.skill) return;
+    state.friendSupport = {
+      userId: sel.userId, name: sel.name, charId: sel.charId, charName: sel.charName, panel: sel.panel,
+      skill: sel.skill, used: false, atkUntil: 0, atkMul: 1, shieldHits: 0,
+    };
+    if (!root) return;
+    ensureFriendSupportBattleStyle();
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    // build2072: 控えの交代ボタンと同じ枠（丸い顔＋下の札）。札は「FRIEND」
+    btn.className = 'shooting-switch-btn zfs-battle' + (sel.skill.type === 'passive' ? ' is-passive' : ' is-ready');
+    btn.setAttribute('aria-label', `フレンドスキル ${sel.skill.name}`);
+    const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    btn.innerHTML = `<span class="zfs-b-glow" aria-hidden="true"></span><img src="${esc(sel.panel)}" alt="" draggable="false"><small class="shooting-switch-status">FRIEND</small>`;
+    const stop = e => { e.stopPropagation(); };
+    ['pointerdown', 'pointerup', 'touchstart', 'touchend', 'mousedown', 'mouseup'].forEach(t => btn.addEventListener(t, stop, { passive: true }));
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      if (sel.skill.type === 'passive') { showFriendSupportCut('PASSIVE', true); return; }
+      useFriendSupportSkill();
+    });
+    // build2071: 盤面には置かず、下部バー（メニュー・UI切替の並び）にしまう。
+    //  盤面に置くとボタンの裏に自キャラが入り込んで操作しづらいため。UI切替では並びごと左右反転する。
+    const controls = root.querySelector('.shooting-footer .shooting-battle-controls');
+    if (controls) { btn.classList.add('in-footer'); controls.appendChild(btn); }
+    else (document.getElementById('shooting-arena') || root).appendChild(btn);
+    syncFriendSupportButton();
+    // パッシブは開始時に一度だけ知らせる
+    if (sel.skill.type === 'passive') setTimeout(() => { if (state && state.friendSupport && !state.ended) showFriendSupportCut('PASSIVE', true); }, 1200);
+  }
+
+  function syncFriendSupportButton() {
+    const fs = state && state.friendSupport;
+    const btn = document.querySelector('#' + ROOT_ID + ' .zfs-battle');
+    if (!btn || !fs) return;
+    if (fs.skill.type === 'passive') return;
+    btn.classList.toggle('is-used', !!fs.used && !(fs.shieldHits > 0));
+    btn.classList.toggle('is-ready', !fs.used);
+    let badge = btn.querySelector('.zfs-b-count');
+    if (fs.shieldHits > 0) {
+      if (!badge) { badge = document.createElement('span'); badge.className = 'zfs-b-count'; btn.appendChild(badge); }
+      badge.textContent = String(fs.shieldHits);
+    } else if (badge) badge.remove();
+  }
+
+  function showFriendSupportCut(kicker, passive) {
+    const fs = state && state.friendSupport;
+    const arena = document.getElementById('shooting-arena');
+    if (!fs || !arena) return;
+    arena.querySelectorAll('.zfs-battle-cut').forEach(el => el.remove());
+    const api = window.FriendSupport;
+    const desc = api && typeof api.describeSkill === 'function' ? api.describeSkill(fs.skill) : '';
+    const el = document.createElement('div');
+    el.className = 'zfs-battle-cut';
+    const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    el.innerHTML = `<small>${passive ? 'FRIEND PASSIVE' : 'FRIEND SKILL'} · ${esc(fs.name)}</small><strong>${esc(fs.skill.name)}</strong><span>${esc(desc)}</span>`;
+    arena.appendChild(el);
+    setTimeout(() => el.remove(), 1350);
+  }
+
+  function useFriendSupportSkill() {
+    const fs = state && state.friendSupport;
+    if (!fs || fs.used || !state.running || state.ended || state.finishing || state.koTransition || state.countdown || state.paused) return;
+    if (state.arnoSlashActive || state.ultCutinActive) return;
+    const s = fs.skill;
+    if (!s || s.type !== 'active') return;
+    const now = performance.now();
+    const member = getActiveMember();
+    const c = getCurrentCharacter();
+    fs.used = true;
+    if (s.kind === 'ult') {
+      if (member && c) {
+        const need = Math.max(0, Number(c.burstNeed || 0));
+        const wasReady = member.burst >= need;
+        member.burst = Math.min(need, Number(member.burst || 0) + need * Math.max(0, Number(s.rate || 0.5)));
+        if (!wasReady && member.burst >= need && !member.ultReadyNotified) { member.ultReadyNotified = true; showShootingUltFullChargeNotice(); }
+      }
+    } else if (s.kind === 'atk') {
+      fs.atkMul = Math.max(1, Number(s.mul || 1.5));
+      fs.atkUntil = now + Math.max(500, Number(s.ms || 5000));
+    } else if (s.kind === 'inv') {
+      if (member) member.invincibleUntil = Math.max(Number(member.invincibleUntil || 0), now + Math.min(3000, Math.max(500, Number(s.ms || 3000)))); // build2076: 最長3秒
+    } else if (s.kind === 'shield') {
+      fs.shieldHits = Math.max(1, Math.floor(Number(s.hits || 1)));
+      syncFriendSupportBarrier();
+    } else if (s.kind === 'heal') {
+      if (member) {
+        const before = Number(member.hp || 0);
+        member.hp = Math.min(member.hpMax, before + Math.round(Number(member.hpMax || 0) * Math.max(0, Number(s.rate || 0.3))));
+        showHealNumber(member.hp - before, member);
+      }
+    } else if (s.kind === 'stop') {
+      applyBossStun(Math.min(2000, Math.max(500, Number(s.ms || 2000))), 'ult'); // build2076: 最長2秒
+    } else if (s.kind === 'smilebox') {
+      // build2074: スマイルのびっくり箱を自機の少し前に設置（範囲はスマイルの定義）
+      const smile = SHOOTING_CHARACTERS[CHARACTER_ID.SMILE] || SHOOTING_CHARACTERS[56] || {};
+      // build2075: 威力は固定（base×mul。既定 300×3）。操作中キャラのATKには依存しない
+      const owner = Object.assign({}, smile, {
+        atk: Math.max(1, Number(s.base || 300)),
+        smileBoxDurationMs: Math.max(100, Number(s.ms || smile.smileBoxDurationMs || 3000)),
+        smileBoxDamageMultiplier: Math.max(0, Number(s.mul || smile.smileBoxDamageMultiplier || 3)),
+      });
+      placeSmileSurpriseBox(owner);
+    } else if (s.kind === 'stealth') {
+      // build2082: アイナのフレンドスキル「隠密」。ULT「気配遮断」と同じ仕組み（敵は発動した位置を狙い続ける）。
+      //  弾の威力アップはアイナ本人のULTだけ（getAinaStealthShotMultiplier はID判定）。すでに長い隠密中なら短くしない
+      //  操作中キャラに関係なく効く（state.friendStealthUntil）。交代しても続く
+      const ms = Math.min(5000, Math.max(500, Number(s.ms || 5000)));
+      const aim = isAinaStealthActive(now)
+        ? { x: Number(state.ainaStealthAimX), y: Number(state.ainaStealthAimY) }
+        : { x: Number(state.player.x), y: Number(state.player.y) };
+      state.friendStealthAimX = aim.x; state.friendStealthAimY = aim.y;
+      state.friendStealthUntil = now + ms;
+      state.friendStealthTotalMs = ms;
+      document.getElementById(PLAYER_ID)?.classList.add('aina-stealth-active');
+      if (!isAinaStealthActive(now)) spawnAinaStealthVisuals(aim.x, aim.y);
+    } else if (s.kind === 'clear') {
+      clearEnemyBulletsOnly();
+      if (member) member.invincibleUntil = Math.max(Number(member.invincibleUntil || 0), now + Math.max(0, Number(s.ms || 1000)));
+    }
+    showFriendSupportCut('FRIEND SKILL', false);
+    syncFriendSupportButton();
+    renderHud();
+  }
+  window.useFriendSupportSkill = useFriendSupportSkill;
+
   function renderShootingLastClearParty() {
     const panel = document.getElementById('shooting-last-clear-party');
     const members = document.getElementById('shooting-last-clear-members');
@@ -3843,7 +4130,62 @@
     const nextType = shootingUiLayoutType === 1 ? 2 : 1;
     applyShootingUiLayout(nextType);
     saveShootingUiLayoutType(nextType);
+    previewShootingUiLayoutFromMenu();
   };
+
+  // build2072: 一時停止メニューからUI反転した時、メニューを一瞬引っ込めて新しい並びを見せる。
+  //  ・メニューの板と暗幕が1.6秒ほど消え、下部バーと左右のゲージが光って「どこが入れ替わったか」が分かる
+  //  ・画面のどこかをタップすればすぐメニューに戻る。戦闘は止まったまま
+  let uiPreviewTimer = 0;
+  function previewShootingUiLayoutFromMenu() {
+    const root = document.getElementById(ROOT_ID);
+    const menu = document.getElementById('shooting-pause-menu');
+    if (!root || !menu || !menu.classList.contains('show')) return;
+    if (!document.getElementById('shooting-ui-preview-style-v2072')) {
+      const st = document.createElement('style');
+      st.id = 'shooting-ui-preview-style-v2072';
+      st.textContent = `
+        #shooting-event-root .shooting-pause-menu.is-ui-preview .shooting-pause-card,
+        #shooting-event-root .shooting-pause-menu.is-ui-preview .shooting-pause-backdrop{opacity:0 !important;transition:opacity .22s ease !important}
+        #shooting-event-root .shooting-pause-menu.is-ui-preview .shooting-pause-card{pointer-events:none !important}
+        #shooting-event-root .shooting-pause-menu .shooting-pause-card,
+        #shooting-event-root .shooting-pause-menu .shooting-pause-backdrop{transition:opacity .22s ease}
+        #shooting-event-root .shooting-ui-preview-cap{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);z-index:100000;pointer-events:none;
+          padding:10px 18px 11px;text-align:center;background:rgba(40,28,14,.78);border:1px solid rgba(214,170,84,.7);color:#fff6e2;
+          font:700 14px/1.3 'Noto Serif JP',serif;letter-spacing:.08em;animation:uiPrevCap 1.7s ease forwards}
+        #shooting-event-root .shooting-ui-preview-cap small{display:block;margin-top:3px;font:500 10px/1.3 'Noto Sans JP',sans-serif;color:#e9d7b4;letter-spacing:.04em}
+        @keyframes uiPrevCap{0%{opacity:0}12%{opacity:1}82%{opacity:1}100%{opacity:0}}
+        #shooting-event-root.is-ui-previewing .shooting-footer,
+        #shooting-event-root.is-ui-previewing .shooting-ult-side,
+        #shooting-event-root.is-ui-previewing .shooting-hp-side{animation:uiPrevPulse .8s ease-in-out 2}
+        @keyframes uiPrevPulse{50%{filter:drop-shadow(0 0 8px rgba(255,206,110,.95)) brightness(1.08)}}
+      `;
+      document.head.appendChild(st);
+    }
+    clearTimeout(uiPreviewTimer);
+    root.querySelectorAll('.shooting-ui-preview-cap').forEach(el => el.remove());
+    const cap = document.createElement('div');
+    cap.className = 'shooting-ui-preview-cap';
+    cap.innerHTML = `UI反転：${shootingUiLayoutType === 2 ? '反転' : '標準'}<small>タップでメニューに戻る</small>`;
+    root.appendChild(cap);
+    menu.classList.add('is-ui-preview');
+    root.classList.remove('is-ui-previewing'); void root.offsetWidth; root.classList.add('is-ui-previewing');
+    const end = () => {
+      clearTimeout(uiPreviewTimer);
+      menu.classList.remove('is-ui-preview');
+      root.classList.remove('is-ui-previewing');
+      cap.remove();
+      menu.removeEventListener('click', onTap, true);
+    };
+    const onTap = e => {
+      // プレビュー中のタップはメニューの操作に使わず、戻るだけにする
+      if (!menu.classList.contains('is-ui-preview')) return;
+      e.preventDefault(); e.stopPropagation(); end();
+    };
+    // 板は押せない状態にしてあるので、タップは暗幕側の click として届く（下のボタンを誤って押さない）
+    setTimeout(() => menu.addEventListener('click', onTap, true), 0);
+    uiPreviewTimer = setTimeout(end, 1700);
+  }
 
   shootingUiLayoutType = loadShootingUiLayoutType();
 
@@ -3965,9 +4307,18 @@
       Number(now == null ? performance.now() : now) < Number(state.ainaStealthUntil || 0));
   }
 
+  // build2082: お助けフレンド（アイナ）の「隠密」。操作中キャラに関係なく、期限まで敵は発動位置を狙う
+  function isFriendStealthActive(now) {
+    return !!(state && !state.ended && !state.finishing &&
+      Number(now == null ? performance.now() : now) < Number(state.friendStealthUntil || 0));
+  }
+
   function getEnemyAimPosition() {
     if (isAinaStealthActive()) {
       return { x: state.ainaStealthAimX, y: state.ainaStealthAimY };
+    }
+    if (isFriendStealthActive()) {
+      return { x: state.friendStealthAimX, y: state.friendStealthAimY };
     }
     return state?.player || { x: 0, y: 0 };
   }
@@ -3980,6 +4331,7 @@
   function endAinaStealth() {
     if (!state) return;
     state.ainaStealthUntil = 0;
+    if (isFriendStealthActive()) return; // build2082: フレンドの隠密が続いている間は影・残像を残す
     const player = document.getElementById(PLAYER_ID);
     if (player) player.classList.remove('aina-stealth-active', 'aina-stealth-hurry');
     // build1863: 影・残像・タイマー輪を片付ける（影から抜け出る演出つき）
@@ -3992,6 +4344,23 @@
   }
 
   function updateAinaStealth(now) {
+    // build2082: フレンドの隠密（アイナ本人の気配遮断と見た目を共用）
+    if (state && Number(state.friendStealthUntil || 0) > 0) {
+      if (!isFriendStealthActive(now)) {
+        state.friendStealthUntil = 0;
+        if (!isAinaStealthActive(now)) endAinaStealth();
+      } else if (!isAinaStealthActive(now)) {
+        const left = Math.max(0, Number(state.friendStealthUntil || 0) - now);
+        const total = Math.max(1, Number(state.friendStealthTotalMs || 5000));
+        const shade = document.querySelector('#' + PLAYER_ID + ' .shooting-aina-shade');
+        if (shade) {
+          const p = (Math.round(left / total * 100) / 100).toFixed(2);
+          if (shade.dataset.p !== p) { shade.dataset.p = p; shade.style.setProperty('--aina-left', p); }
+        }
+        document.getElementById(PLAYER_ID)?.classList.toggle('aina-stealth-hurry', left <= 2000);
+        return;
+      }
+    }
     if (state && Number(state.ainaStealthUntil || 0) > 0 && !isAinaStealthActive(now)) {
       endAinaStealth();
       return;
@@ -4009,7 +4378,7 @@
     }
   }
 
-  function spawnAinaStealthVisuals() {
+  function spawnAinaStealthVisuals(aimX, aimY) {
     const player = document.getElementById(PLAYER_ID);
     const arena = document.getElementById('shooting-arena');
     document.querySelectorAll('.shooting-aina-shade,.shooting-aina-decoy').forEach(el => el.remove());
@@ -4029,7 +4398,7 @@
       decoy.setAttribute('aria-hidden', 'true');
       decoy.innerHTML = (img && img.src ? `<img src="${img.src}" alt="" draggable="false">` : '') + '<i class="ad-reticle"></i><span>DECOY</span>';
       arena.appendChild(decoy);
-      decoy.style.transform = `translate3d(${Number(state.ainaStealthAimX || 0)}px,${Number(state.ainaStealthAimY || 0)}px,0)`;
+      decoy.style.transform = `translate3d(${Number(aimX ?? state.ainaStealthAimX ?? 0)}px,${Number(aimY ?? state.ainaStealthAimY ?? 0)}px,0)`;
     }
   }
 
@@ -5026,7 +5395,7 @@
     const safeGainMultiplier = Math.max(0, Number.isFinite(Number(gainMultiplier)) ? Number(gainMultiplier) : 1);
     // build1643: 位相回遊の「ULT回収量上昇」。通常ステージでは常に1。
     const phaseOdysseyUltRate = Math.max(0, Number(getPhaseOdysseyApi()?.getUltGainMultiplier?.() || 1));
-    const gain = getUltGainAmountPerHit(c) * Math.max(1, Number(hitCount || 1)) * safeGainMultiplier * phaseOdysseyUltRate;
+    const gain = getUltGainAmountPerHit(c) * Math.max(1, Number(hitCount || 1)) * safeGainMultiplier * phaseOdysseyUltRate * getFriendSupportUltGainMultiplier(); // build2068
     const wasReady = member.burst >= c.burstNeed;
     member.burst = Math.min(c.burstNeed, member.burst + gain);
     if (!wasReady && member.burst >= c.burstNeed && !member.ultReadyNotified) {
@@ -5455,6 +5824,7 @@
     });
     renderShootingPartySlots();
     renderShootingLastClearParty();
+    try { if (window.FriendSupport) window.FriendSupport.syncPartyRow(isFriendSupportEligibleStage()); } catch (_) {} // build2068
     renderShootingBlessingPicker();
 
     const fixedStoryParty = getSelectedStoryFixedPartyIds();
@@ -7047,6 +7417,10 @@
       {
         left: isSuiTimeDomainActive(now) ? Math.max(0, Number(state.suiTimeDomainUntil || 0) - now) : -Infinity,
         multiplier: getSuiTimeDomainAtkMultiplier(now),
+      },
+      { // build2068: お助けフレンドのATK UP（アクティブ）
+        left: state && state.friendSupport ? Number(state.friendSupport.atkUntil || 0) - now : -Infinity,
+        multiplier: Number(state && state.friendSupport && state.friendSupport.atkMul || 1),
       },
     ].filter(entry => entry.left > 0);
 
@@ -11825,10 +12199,11 @@
       // build1643: 位相回遊の強化「破魔の刻印」「○属性バリア破り」：バリア越しに一部（または等倍）が通る
       const pierce = incoming ? 0 : getPhaseOdysseyBarrierPierce(targetElement);
       if (pierce <= 0) return 0;
-      return applyHitComboDamage(base * pierce * getRaidBreakDamageMultiplier() * getRaidBossDefenseMultiplier());
+      return applyHitComboDamage(base * pierce * getRaidBreakDamageMultiplier() * getRaidBossDefenseMultiplier() * getFriendSupportAtkMultiplier());
     }
 
-    const elemental = base * rate * (incoming ? 1 : getRaidBreakDamageMultiplier() * getRaidBossDefenseMultiplier());
+    // build2068: お助けフレンドのATK（パッシブ・アクティブ）は与ダメージ全体に掛ける
+    const elemental = base * rate * (incoming ? 1 : getRaidBreakDamageMultiplier() * getRaidBossDefenseMultiplier() * getFriendSupportAtkMultiplier());
     if (incoming) return elemental;
     return applyMemoryArmor(applyHitComboDamage(elemental));
   }
@@ -23437,6 +23812,7 @@
     if (state && performance.now() < Number(state.shionEnemyDebuffUntil || 0)) {
       damage *= Math.max(0.05, Math.min(1, Number(state.shionEnemyDamageMultiplier || 0.70)));
     }
+    damage *= getFriendSupportDamageTakenMultiplier(); // build2068: お助けフレンドの被ダメージ軽減（即死は上でreturn済み）
     return Math.round(damage);
   }
 
@@ -25680,6 +26056,8 @@
     // (コンボも被弾回数もダメージも一切発生させない)。
     // 効果は取得したmemberにのみ紐づくため、交代先には影響しない。
     if (now < (member.invincibleUntil || 0)) return;
+    // build2068: お助けフレンドの「1回被弾無効」
+    if (consumeFriendSupportShield(now)) return;
     // 敵弾が実際に味方へ通った時だけ画面を短く揺らす。
     // 接触ダメージ・無敵中の弾・デコイ/召喚物への命中では発火しない。
     if (hitSource === 'enemy-bullet') triggerPlayerHitScreenShake();
@@ -37182,6 +37560,7 @@
     selectedCharacterId = selectedPartyIds[0];
     clearEltenaBlackHole();
     resetState();
+    setupFriendSupport(); // build2068: お助けフレンド
     applyPhaseOdysseyCarryover();
     // v163: issue/restore a server-side run token before battle can produce a first-clear reward.
     void beginSecureShootingRun();
@@ -42542,8 +42921,25 @@
       const bossSize = document.getElementById(BOSS_ID)?.getBoundingClientRect();
       const bossPadding = Math.min(75, Math.max(28, Number(bossSize?.width || 0) * .3));
       if (Math.hypot(Number(boss.x || 0) - box.x, Number(boss.y || 0) - box.y) <= radius + bossPadding) {
-        applyUltDamage(damage, true, box.owner);
+        // build2081: ボス本体にだけ1回。applyUltDamage は全体攻撃用（配下全員・呪核にも当たる）なので使わない。
+        //  配下は上のループで「爆風の範囲内だけ1回」当てている。
+        const targetElement = getCombatTargetElement(boss);
+        const finalDamage = applyElementDamage(damage, element, targetElement);
+        const appliedDamage = Math.min(boss.hp, Math.max(0, Number(finalDamage || 0)));
+        boss.hp = Math.max(0, boss.hp - appliedDamage);
+        updateBossPhase();
+        createHit(boss.x, boss.y, true);
+        showBossDamageNumber(appliedDamage, true, getElementDamageReaction(element, targetElement));
+        flashBossHit(true);
+        if (!addScoreAttackDamageScore(appliedDamage)) addLegacyCombatScore(Math.round(appliedDamage * 100));
+        if (boss.hp <= 0) beginBossDefeat();
       }
+    }
+    // build2081: イノリの呪核も、爆風の範囲内にある時だけ1回
+    const execField = state.inoriExecutionField;
+    if (execField && execField.mode === 'active' && execField.hp > 0 &&
+        Math.hypot(Number(execField.coreX || 0) - box.x, Number(execField.coreY || 0) - box.y) <= radius + 38) {
+      damageInoriExecutionCore(damage, now);
     }
     spawnSmileRandomItem(box, now);
     if (isNormalBattle()) evaluateNormalMission(now);
@@ -42568,6 +42964,13 @@
     if (!state || state.ended || state.finishing) return;
     showUltCut(c.ultName || 'びっくり箱', c.effectKey, c);
     ultScreenFlash('ult-flash-eri', c);
+    placeSmileSurpriseBox(c);
+    state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), performance.now() + 250);
+  }
+
+  // build2074: びっくり箱の設置だけ（ULTとお助けフレンドの「びっくり箱」で共用）
+  function placeSmileSurpriseBox(c) {
+    if (!state || state.ended || state.finishing) return;
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
     const width = Math.max(120, Number(arena.clientWidth || 0));
@@ -42592,7 +42995,6 @@
       damageMultiplier:Math.max(0, Number(c.smileBoxDamageMultiplier ?? 3)),
       lastHitFxAt:0,
     });
-    state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), now + 250);
   }
 
 

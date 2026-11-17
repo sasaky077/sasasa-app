@@ -10949,7 +10949,9 @@ startTitleBgm();
         '</span>' +
       '</span>' +
       '<span class="friend-card-rankbox"><small>RANK</small><b>' + Number(rank || 1) + '</b></span>' +
-      '<button type="button" class="friend-remove-btn" onclick="event.stopPropagation();confirmRemoveFriend(\'' + detailEscapeHTML(fid) + '\')">解除</button>';
+      '<button type="button" class="friend-remove-btn" onclick="event.stopPropagation();confirmRemoveFriend(\'' + detailEscapeHTML(fid) + '\')">解除</button>' +
+      // build2077: お助けフレンドで借りられるスキル（カードの下に全幅で1行。js/friend_support.js）
+      (window.FriendSupport && chara && typeof window.FriendSupport.cardSkillHtml === 'function' ? window.FriendSupport.cardSkillHtml(chara.id) : '');
 
     try{ if(window.ZeraphiaTitles) void window.ZeraphiaTitles.decorate(div); }catch(_){}
     return div;
@@ -18492,7 +18494,9 @@ function buildCharacterDetailHTML(data, options){
         '</div>' +
         '<div class="detail-shooting-desc">' + detailEscapeHTML(buildShootingUltDescription(c)) + '</div>' +
       '</div>' +
-    '</div>';
+    '</div>' +
+    // build2083: お助けフレンドで使われるフレンドスキル（js/friend_support.js）
+    (window.FriendSupport && typeof window.FriendSupport.detailSectionHtml === 'function' ? window.FriendSupport.detailSectionHtml(c.id) : '');
 
   if(!options.skipResonanceSection && typeof buildResonanceBonusHTML === 'function'){
     html += '<div class="detail-shooting-section detail-shooting-resonance">' +
@@ -21316,7 +21320,7 @@ window.returnToTitleScreen = function(){
   window.location.reload();
 };
 </script>
-<script src="js/shooting_event.js?v=2067-asset-ready"></script>
+<script src="js/shooting_event.js?v=2082-friend-stealth"></script>
 <script src="js/shooting_party_filter.js?v=2048-openfor"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1946-party-button"></script>
@@ -22893,6 +22897,7 @@ html body #global-user-frame .hud-sweep-line-player::after{
 <script src="js/home_lines.js?v=1886-lines"></script>
 <script src="js/home_v2.js?v=1957-music-release-dot"></script>
 <script src="js/chara_favorites.js?v=1910-fav"></script>
+<script src="js/friend_support.js?v=2083"></script>
 <script src="js/notice_dot.js?v=1618-notice-dot"></script>
 
 <script id="sasaphia-root-scroll-guard-build752">

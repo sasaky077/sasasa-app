@@ -162,9 +162,7 @@
             <button class="shooting-battle-menu-btn" id="shooting-battle-menu-btn" type="button" onclick="openShootingPauseMenu()" aria-label="一時停止メニュー">
               <span class="sasaphia-menu-glyph" aria-hidden="true">☰</span>
             </button>
-            <button class="shooting-ui-layout-btn" id="shooting-ui-layout-btn" type="button" onclick="toggleShootingUiLayout()" aria-label="UI左右反転">
-              <span id="shooting-ui-layout-label">UI切替</span>
-            </button>
+            <!-- build2072: UI切替ボタンは一時停止メニューの「UI反転」だけに。空いた所にお助けフレンドのボタンが入る -->
           </div>
         </footer>
 
