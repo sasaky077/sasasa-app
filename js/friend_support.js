@@ -275,28 +275,81 @@
       .detail-friend-skill .detail-shooting-ult-head{display:flex;align-items:center;gap:8px}
       .detail-friend-skill .detail-shooting-ult-head b{font-weight:700}
       .detail-friend-skill .zfs-detail-note{margin-top:6px;font-size:10px;line-height:1.5;color:#8b7354}
-      .zfs-overlay{position:fixed;inset:0;z-index:2147483600;background:rgba(30,22,14,.55);display:flex;align-items:flex-end;justify-content:center}
-      .zfs-sheet{width:min(100%,520px);max-height:78vh;display:flex;flex-direction:column;background:#fbf7ee;border-radius:14px 14px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.25);
-        font-family:'Noto Sans JP',sans-serif;color:#3f2f20}
-      .zfs-sheet header{padding:14px 16px 8px;text-align:center;border-bottom:1px solid rgba(178,141,79,.3)}
-      .zfs-sheet header small{display:block;font:700 9px/1.2 'Cinzel',serif;letter-spacing:.2em;color:#b28d4f}
-      .zfs-sheet header strong{display:block;margin-top:3px;font:600 15px/1.3 'Noto Serif JP',serif}
-      .zfs-sheet header p{margin:4px 0 0;font-size:10px;color:#8b7354}
-      .zfs-list{overflow:auto;padding:8px 10px 4px;display:flex;flex-direction:column;gap:6px}
-      .zfs-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid rgba(178,141,79,.35);border-radius:8px;background:#fff;text-align:left;width:100%;cursor:pointer}
-      .zfs-item.is-selected{border-color:#b0743d;box-shadow:0 0 0 2px rgba(176,116,61,.25) inset;background:#fff8ec}
-      .zfs-item .zfs-face{flex:0 0 46px;width:46px;height:46px;border-radius:50%;overflow:hidden;border:1px solid rgba(178,141,79,.6);background:#efe5d0}
-      .zfs-item .zfs-face img{width:100%;height:100%;object-fit:cover;object-position:50% 18%}
-      .zfs-item .zfs-face.is-empty{display:flex;align-items:center;justify-content:center;color:#b28d4f;font:600 18px/1 serif}
-      .zfs-item .zfs-text{flex:1;min-width:0}
-      .zfs-item b{display:block;font:600 12px/1.3 'Noto Serif JP',serif}
-      .zfs-item b em{font-style:normal;font-weight:500;color:#8b7354;font-size:10px;margin-left:6px}
-      .zfs-item .zfs-sk{display:block;margin-top:2px;font-size:11px;font-weight:700;color:#5b3f22}
-      .zfs-item .zfs-sk .zfs-tag{margin-right:6px}
-      .zfs-item .zfs-ds{display:block;margin-top:1px;font-size:10px;color:#7d6748}
-      .zfs-empty{padding:26px 12px;text-align:center;font-size:12px;color:#8b7354;line-height:1.7}
-      .zfs-sheet footer{padding:10px 12px calc(12px + env(safe-area-inset-bottom));border-top:1px solid rgba(178,141,79,.3)}
-      .zfs-sheet footer button{width:100%;padding:11px;border-radius:8px;border:1px solid rgba(178,141,79,.6);background:#fffaf0;font:600 13px/1 'Noto Serif JP',serif;color:#6b4d2c}
+      /* build2086: お助けフレンド選択シート（モック準拠：生成りの紙＋金の二重枠、月桂樹の見出し、カード型の行、六角の閉じるボタン） */
+      .zfs-overlay{position:fixed;inset:0;z-index:2147483600;background:rgba(74,64,52,.48);display:flex;align-items:flex-end;justify-content:center;
+        animation:zfsOvIn .18s ease-out}
+      @keyframes zfsOvIn{from{opacity:0}to{opacity:1}}
+      .zfs-sheet{position:relative;width:min(100%,520px);max-height:82vh;display:flex;flex-direction:column;box-sizing:border-box;margin:0 6px;
+        background:linear-gradient(180deg,#fffdf8 0%,#f8f2e6 100%);border:1px solid rgba(190,156,98,.85);border-bottom:0;border-radius:16px 16px 0 0;
+        box-shadow:inset 0 0 0 3px #fffaf0,inset 0 0 0 4px rgba(200,168,112,.55),0 -10px 30px rgba(40,28,14,.28);
+        font-family:'Noto Serif JP',serif;color:#3f2d1b;animation:zfsSheetIn .26s cubic-bezier(.2,.8,.25,1)}
+      @keyframes zfsSheetIn{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+      .zfs-sheet .zfs-corner{position:absolute;width:22px;height:22px;pointer-events:none;border-color:rgba(184,146,82,.85);border-style:solid}
+      .zfs-sheet .zfs-corner.tl{left:8px;top:8px;border-width:1.5px 0 0 1.5px;border-top-left-radius:10px}
+      .zfs-sheet .zfs-corner.tr{right:8px;top:8px;border-width:1.5px 1.5px 0 0;border-top-right-radius:10px}
+      .zfs-sheet header{padding:18px 18px 10px;text-align:center}
+      .zfs-sheet .zfs-kick{display:flex;align-items:center;justify-content:center;gap:12px;font:600 10px/1 'Cinzel',serif;letter-spacing:.32em;color:#a88553}
+      .zfs-sheet .zfs-kick i{flex:0 0 46px;height:1px;background:rgba(176,138,74,.6)}
+      .zfs-sheet .zfs-dia{display:block;width:6px;height:6px;margin:6px auto 0;background:#b08a4f;transform:rotate(45deg)}
+      .zfs-sheet .zfs-title{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:6px}
+      .zfs-sheet .zfs-title strong{font:700 21px/1.25 'Noto Serif JP',serif;letter-spacing:.1em;color:#3f2d1b}
+      .zfs-sheet .zfs-laurel{flex:0 0 auto;width:20px;height:30px;color:#c4a56c}
+      .zfs-sheet .zfs-laurel.r{transform:scaleX(-1)}
+      .zfs-sheet header p{margin:8px 0 0;font:500 10px/1.5 'Noto Serif JP',serif;color:#6f5a3e;letter-spacing:0}
+      .zfs-sheet .zfs-rule{position:relative;height:1px;margin:2px 18px 0;background:rgba(190,160,110,.45)}
+      .zfs-sheet .zfs-rule::after{content:"";position:absolute;left:50%;top:-3px;width:5px;height:5px;margin-left:-3px;background:#fbf7ee;border:1px solid rgba(176,138,74,.7);transform:rotate(45deg)}
+      .zfs-list{overflow:auto;padding:12px 16px 6px;display:flex;flex-direction:column;gap:10px;-webkit-overflow-scrolling:touch}
+      .zfs-item{position:relative;display:flex;align-items:center;gap:0;width:100%;min-height:76px;padding:10px 14px 10px 12px;box-sizing:border-box;text-align:left;cursor:pointer;
+        background:linear-gradient(180deg,#fffefb,#faf6ee);border:1px solid rgba(196,170,128,.6);border-radius:4px;
+        box-shadow:inset 0 0 0 2px #fffdf8,inset 0 0 0 3px rgba(206,184,146,.38),0 1px 2px rgba(110,80,40,.06);
+        font-family:'Noto Serif JP',serif;color:#3f2d1b;-webkit-tap-highlight-color:transparent;transition:transform .08s}
+      .zfs-item:active{transform:translateY(1px)}
+      .zfs-item .zfs-spark{position:absolute;right:9px;width:9px;height:9px;pointer-events:none;color:rgba(196,166,112,.7)}
+      .zfs-item .zfs-spark.t{top:7px}.zfs-item .zfs-spark.b{bottom:7px}
+      .zfs-item.is-selected{background:linear-gradient(180deg,#fffaf0,#f6ead2);border:1.5px solid #c9a35d;
+        box-shadow:inset 0 0 0 2px #fff8e9,inset 0 0 0 3px rgba(201,163,93,.55),0 0 0 1px rgba(232,206,150,.6),0 2px 8px rgba(176,130,60,.22)}
+      .zfs-item.is-selected .zfs-spark{display:none}
+      .zfs-item .zfs-face{position:relative;flex:0 0 56px;width:56px;height:56px;border-radius:50%;overflow:visible;background:none;border:0;box-shadow:none}
+      .zfs-item .zfs-face .zfs-ring{position:absolute;inset:0;border-radius:50%;overflow:hidden;background:#ece2cf;
+        border:2px solid #c6a161;box-shadow:0 0 0 1px #fffaf0,0 0 0 2px rgba(176,138,74,.6),0 2px 5px rgba(80,56,24,.22)}
+      .zfs-item .zfs-face img{width:100%;height:100%;object-fit:cover;object-position:50% 16%;display:block}
+      .zfs-item .zfs-face::before,.zfs-item .zfs-face::after{content:"";position:absolute;left:50%;width:5px;height:5px;margin-left:-3px;background:#c6a161;transform:rotate(45deg);z-index:1}
+      .zfs-item .zfs-face::before{top:-3px}.zfs-item .zfs-face::after{bottom:-3px}
+      .zfs-item .zfs-face.is-empty .zfs-ring{display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#fbf6ea,#efe5d1);border:1px solid rgba(186,152,96,.75);box-shadow:inset 0 0 0 2px #fffaf0}
+      .zfs-item .zfs-face.is-empty::before,.zfs-item .zfs-face.is-empty::after{display:none}
+      .zfs-item .zfs-face.is-empty .zfs-ring i{width:18px;height:1.5px;background:#9d7c4c}
+      .zfs-item .zfs-vsep{flex:0 0 1px;align-self:stretch;margin:6px 14px 6px 14px;background:rgba(190,160,110,.5)}
+      .zfs-item .zfs-text{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:3px}
+      .zfs-item b{display:block;font:700 14px/1.3 'Noto Serif JP',serif;letter-spacing:.04em;color:#2f2216}
+      .zfs-item b em{font-style:normal;font-weight:500;color:#6f5a3e;font-size:11px;margin-left:8px;letter-spacing:.06em}
+      .zfs-item .zfs-pill{display:inline-block;padding:2px 14px 2px;font:700 9px/1.25 'Cinzel',serif;letter-spacing:.16em;color:#fff8e6;
+        background:linear-gradient(180deg,#a98552,#7f5f33);clip-path:polygon(8px 0,calc(100% - 8px) 0,100% 50%,calc(100% - 8px) 100%,8px 100%,0 50%)}
+      .zfs-item .zfs-pill.is-passive{background:linear-gradient(180deg,#98948e,#6e6a64)}
+      .zfs-item .zfs-skname{display:block;font:700 13px/1.3 'Noto Serif JP',serif;color:#2f2216;letter-spacing:.03em}
+      .zfs-item .zfs-ds{display:block;font:500 10.5px/1.45 'Noto Serif JP',serif;color:#4d3b27;letter-spacing:.02em}
+      .zfs-item .zfs-check{flex:0 0 auto;display:none;width:22px;height:22px;margin-left:8px;transform:rotate(45deg);
+        background:linear-gradient(135deg,#d8b874,#a9823f);border:1px solid #8c6a34;box-shadow:inset 0 0 0 1px rgba(255,240,200,.6)}
+      .zfs-item .zfs-check::after{content:"";position:absolute;left:7px;top:4px;width:5px;height:9px;border:solid #fffaf0;border-width:0 2px 2px 0;transform:rotate(0deg)}
+      .zfs-item .zfs-check{position:relative}
+      .zfs-item.is-selected .zfs-check{display:block}
+      .zfs-empty{padding:20px 12px;text-align:center;font:500 12px/1.7 'Noto Serif JP',serif;color:#8b7354}
+      .zfs-sheet footer{padding:8px 16px calc(14px + env(safe-area-inset-bottom))}
+      .zfs-sheet footer button{position:relative;display:flex;align-items:center;justify-content:center;width:100%;height:48px;padding:0;border:0;cursor:pointer;
+        font:700 16px/1 'Noto Serif JP',serif;letter-spacing:.3em;color:#3f2d1b;background:#b5925a;
+        clip-path:polygon(22px 0,calc(100% - 22px) 0,100% 50%,calc(100% - 22px) 100%,22px 100%,0 50%)}
+      .zfs-sheet footer button::before{content:"";position:absolute;inset:1.5px;background:linear-gradient(180deg,#fffcf3,#efe3cb);
+        clip-path:polygon(21px 0,calc(100% - 21px) 0,100% 50%,calc(100% - 21px) 100%,21px 100%,0 50%)}
+      .zfs-sheet footer button span{position:relative}
+      .zfs-sheet footer button i{position:absolute;top:50%;width:6px;height:6px;margin-top:-3px;background:#b08a4f;transform:rotate(45deg)}
+      .zfs-sheet footer button i.l{left:30px}.zfs-sheet footer button i.r{right:30px}
+      .zfs-sheet footer button:active{transform:translateY(1px)}
+      @media(max-width:360px){
+        .zfs-list{padding:10px 10px 6px}
+        .zfs-item{padding:9px 10px 9px 9px}
+        .zfs-item .zfs-face{flex-basis:48px;width:48px;height:48px}
+        .zfs-item .zfs-vsep{margin:6px 10px}
+        .zfs-sheet .zfs-title strong{font-size:18px}
+      }
     `;
     document.head.appendChild(st);
   }
@@ -351,10 +404,18 @@
     ensureStyle();
     const ov = document.createElement('div');
     ov.className = 'zfs-overlay';
+    const laurel = side => `<svg class="zfs-laurel ${side}" viewBox="0 0 20 30" aria-hidden="true"><path d="M15 29C9 24 6 17 7 8" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M7 10c-3-1-4-4-3-7 3 1 4 4 3 7zM7.3 15c-3.2-.4-5-3-4.6-6.2 3 .6 4.8 3.2 4.6 6.2zM8.6 20c-3 .3-5.6-1.8-6-4.9 3.1-.2 5.6 1.9 6 4.9zM11 24.5c-2.8.9-5.8-.6-6.8-3.5 2.9-.8 5.8.7 6.8 3.5zM9.4 9.3c2.4-1.9 2.8-5 1-7.5-2.3 1.9-2.8 5-1 7.5zM9.8 14.2c2.7-1.3 3.8-4.3 2.6-7.1-2.6 1.3-3.8 4.3-2.6 7.1zM11.2 19c2.9-.8 4.5-3.5 3.8-6.5-2.9.8-4.5 3.6-3.8 6.5z" fill="currentColor" opacity=".85"/></svg>`;
     ov.innerHTML = `<section class="zfs-sheet" role="dialog" aria-modal="true" aria-label="お助けフレンド">
-      <header><small>FRIEND SUPPORT</small><strong>お助けフレンドを選ぶ</strong><p>フレンドのお気に入りキャラの「フレンドスキル」を、戦闘中に使えます</p></header>
+      <i class="zfs-corner tl"></i><i class="zfs-corner tr"></i>
+      <header>
+        <div class="zfs-kick"><i></i>FRIEND SUPPORT<i></i></div>
+        <span class="zfs-dia"></span>
+        <div class="zfs-title">${laurel('')}<strong>お助けフレンドを選ぶ</strong>${laurel('r')}</div>
+        <p>フレンドのお気に入りキャラの「フレンドスキル」を、戦闘中に使えます</p>
+      </header>
+      <div class="zfs-rule"></div>
       <div class="zfs-list"><div class="zfs-empty">読み込んでいます…</div></div>
-      <footer><button type="button" data-close>閉じる</button></footer></section>`;
+      <footer><button type="button" data-close><i class="l"></i><span>閉じる</span><i class="r"></i></button></footer></section>`;
     document.body.appendChild(ov);
     const close = () => { ov.remove(); renderRow(); };
     ov.addEventListener('click', e => { if(e.target === ov || e.target.closest('[data-close]')) close(); });
@@ -362,17 +423,20 @@
     const list = await loadFriends(true);
     if(!ov.isConnected) return;
     const sel = readSelection();
-    const noneItem = `<button type="button" class="zfs-item${!sel ? ' is-selected' : ''}" data-uid=""><span class="zfs-face is-empty">—</span>
-      <span class="zfs-text"><b>連れていかない</b><span class="zfs-ds">フレンドスキルを使わずに出撃します</span></span></button>`;
+    const spark = '<svg class="zfs-spark t" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 0l1 4 4 1-4 1-1 4-1-4-4-1 4-1z" fill="currentColor"/></svg><svg class="zfs-spark b" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 0l1 4 4 1-4 1-1 4-1-4-4-1 4-1z" fill="currentColor"/></svg>';
+    const pill = s => `<span class="zfs-pill${s.type === 'passive' ? ' is-passive' : ''}">${typeLabel(s)}</span>`;
+    const noneItem = `<button type="button" class="zfs-item${!sel ? ' is-selected' : ''}" data-uid="">${spark}
+      <span class="zfs-face is-empty"><span class="zfs-ring"><i></i></span></span><i class="zfs-vsep"></i>
+      <span class="zfs-text"><b>連れていかない</b><span class="zfs-ds">フレンドスキルを使わずに出撃します</span></span><span class="zfs-check" aria-hidden="true"></span></button>`;
     if(!list.length){
       listEl.innerHTML = noneItem + '<div class="zfs-empty">フレンドがいません。<br>フレンド画面から申請してみましょう。</div>';
     } else {
       listEl.innerHTML = noneItem + list.map(f => {
         const s = getSkill(f.charId);
-        return `<button type="button" class="zfs-item${sel && sel.userId === f.userId ? ' is-selected' : ''}" data-uid="${esc(f.userId)}">
-          <span class="zfs-face"><img src="${esc(f.panel)}" alt=""></span>
-          <span class="zfs-text"><b>${esc(f.name)}<em>${esc(f.charName)}</em></b>
-          <span class="zfs-sk">${skillLine(s)}</span><span class="zfs-ds">${esc(describeSkill(s))}</span></span></button>`;
+        return `<button type="button" class="zfs-item${sel && sel.userId === f.userId ? ' is-selected' : ''}" data-uid="${esc(f.userId)}">${spark}
+          <span class="zfs-face"><span class="zfs-ring"><img src="${esc(f.panel)}" alt=""></span></span><i class="zfs-vsep"></i>
+          <span class="zfs-text"><b>${esc(f.name)}<em>${esc(f.charName)}</em></b>${pill(s)}
+          <span class="zfs-skname">${esc(s.name)}</span><span class="zfs-ds">${esc(describeSkill(s))}</span></span><span class="zfs-check" aria-hidden="true"></span></button>`;
       }).join('');
     }
     listEl.addEventListener('click', e => {
