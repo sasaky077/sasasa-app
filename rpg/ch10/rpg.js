@@ -13,7 +13,8 @@ const TILE_DURATION=.24, ANIM_INTERVAL=.13, STEP_BOUNCE=5;
 const WALK_SEQUENCE=['idle','walk1','idle','walk2'];
 
 const $=id=>document.getElementById(id);
-const shell=$('shell'), canvas=$('world'), ctx=canvas.getContext('2d',{alpha:false});
+const shell=$('shell'), canvas=$('world'), fx=$('fx'), fctx=fx.getContext('2d');
+let ctx=canvas.getContext('2d',{alpha:false});
 const placeEl=$('place'), questEl=$('quest'), dialog=$('dialog'), speaker=$('speaker'), line=$('line'), overlay=$('overlay');
 
 let W=360,H=640,dpr=1,clock=0,last=0,enabled=false,dialogQueue=[],dialogEnd=null,toastUntil=0;
@@ -137,7 +138,7 @@ function bfs(sx,sy,goal){
 let dprCap=Math.min(2,window.devicePixelRatio||1), perfAcc=0, perfN=0;
 function resize(){
   dpr=Math.min(dprCap,window.devicePixelRatio||1); perfAcc=0; perfN=-30; W=canvas.clientWidth; H=canvas.clientHeight;
-  canvas.width=Math.round(W*dpr); canvas.height=Math.round(H*dpr);
+  canvas.width=Math.round(W*dpr); canvas.height=Math.round(H*dpr); fx.width=canvas.width; fx.height=canvas.height;
   shell.style.setProperty('--u',(shell.clientWidth/VIEW_W)+'px'); cam.ready=false;
 }
 window.addEventListener('resize',resize); if(window.ResizeObserver) new ResizeObserver(resize).observe(shell); resize();
@@ -150,7 +151,7 @@ function updateCamera(dt){
   const k=Math.min(1,dt*7); cam.x+=(tx-cam.x)*k; cam.y+=(ty-cam.y)*k;
 }
 const screenToWorld=(px,py)=>({x:px/cam.s+cam.x, y:py/cam.s+cam.y});
-const worldTransform=()=>ctx.setTransform(K,0,0,K,Math.round(-cam.x*K),Math.round(-cam.y*K));
+const worldTransform=()=>{ const sh=(typeof enc!=='undefined'&&enc.shake)?enc.shake*K:0, sx=sh?(Math.random()*2-1)*sh:0, sy=sh?(Math.random()*2-1)*sh:0; ctx.setTransform(K,0,0,K,Math.round(-cam.x*K+sx),Math.round(-cam.y*K+sy)); };
 const view=()=>({x:cam.x,y:cam.y,w:W/cam.s,h:H/cam.s});
 const inView=(x,y,w,h,m=60)=>{ const v=view(); return x+w>v.x-m&&x<v.x+v.w+m&&y+h>v.y-m&&y<v.y+v.h+m; };
 const screenTransform=()=>ctx.setTransform(dpr,0,0,dpr,0,0);
@@ -195,6 +196,7 @@ function playTalk(npc){
   novel.entries=entries; startLocalNovel();
 }
 function interact(){
+  if(enc.phase) return;
   if(!dialog.hidden){ nextLine(); return; }
   if(novel.active){ advanceNovel(); return; }
   if(!enabled||!overlay.hidden||tileMotion) return;
@@ -204,6 +206,7 @@ function interact(){
 }
 $('action').addEventListener('click',interact);
 function portal(g){
+  enc.steps=0;
   const from=mapName; loadMap(g.target,from); player.dir='down'; updateAnimation(0,0,0);
   if(g.target==='回廊') speak('SYSTEM',['新たな場所に到着した。','第十章の探索は、ここから始まる。']);
   saveNow();
@@ -322,6 +325,8 @@ function drawNpcMark(){
   ctx.font='700 40px Georgia,serif'; ctx.textAlign='center'; ctx.lineWidth=4; ctx.strokeStyle='rgba(255,250,236,.9)'; ctx.strokeText('!',x,y); ctx.fillStyle='#a8873f'; ctx.fillText('!',x,y);
 }
 function render(){
+  renderFx();
+  if(enc.phase==='battle'||enc.phase==='title') return; // 暗転中・戦闘中はフィールドを描かない（軽く）
   screenTransform(); ctx.fillStyle='#ebe8ee'; ctx.fillRect(0,0,W,H);
   worldTransform();
   drawGround();
@@ -339,6 +344,7 @@ function render(){
   drawNpcNames();
   drawGateLabels();
   drawNpcMark();
+  if(enc.phase==='alert'||enc.phase==='flash') drawAlertBubble();
   if(debug) drawDebug();
   screenTransform();
   if(M.tint){ ctx.fillStyle=M.tint; ctx.fillRect(0,0,W,H); }
@@ -383,7 +389,7 @@ function beginTileStep(dir){
   tileMotion={fromX:player.x,fromY:player.y,toX:tileCenter(tx),toY:tileCenter(ty),tx,ty,elapsed:0,dx:dir.dx,dy:dir.dy}; return true;
 }
 function move(dt){
-  if(!enabled||!overlay.hidden||!dialog.hidden||novel.active){ if(!tileMotion) updateAnimation(0,0,dt); return; }
+  if(!enabled||!overlay.hidden||!dialog.hidden||novel.active||enc.phase){ if(!tileMotion) updateAnimation(0,0,dt); return; }
   if(!tileMotion){ const dir=inputDirection(); if(!dir||!beginTileStep(dir)){ updateAnimation(0,0,dt); return; } }
   const m=tileMotion; m.elapsed=Math.min(TILE_DURATION,m.elapsed+dt); const t=m.elapsed/TILE_DURATION;
   player.x=m.fromX+(m.toX-m.fromX)*t; player.y=m.fromY+(m.toY-m.fromY)*t; updateAnimation(m.dx,m.dy,dt);
@@ -391,14 +397,113 @@ function move(dt){
     player.tx=m.tx; player.ty=m.ty; player.x=m.toX; player.y=m.toY; tileMotion=null;
     const g=gates.find(g=>g.tx===player.tx&&g.ty===player.ty); if(g&&!noclip){ portal(g); return; }
     saveNow();
+    if(checkEncounter()) return;
     if(route&&!route.path.length){ const cb=route.onArrive; route=null; if(cb) cb(); }
     if(!route&&!inputDirection()) updateAnimation(0,0,0);
+  }
+}
+/* =====================================================================
+   ランダムエンカウント（maps.js の encounter）
+   歩数で判定 → 「！」→ 白フラッシュ×2 → 縞ワイプで暗転 → 「〇〇が あらわれた！」
+   → 本編のシューティング戦闘（bridge: startZeraphiaCh10Encounter）→ 戻ったら白/黒から復帰
+   ===================================================================== */
+const ENC_T={ alert:.6, flash:.6, wipe:.75, title:1.25, ret:.7, down:2.0 };
+const enc={ phase:null, t:0, steps:0, info:null, shake:0, result:null, from:'#fff' };
+const encEnabled=()=>!!(M&&M.encounter&&M.encounter.table&&M.encounter.table.length)&&!(debug&&!/[?&]enc=1/.test(location.search));
+function inSafeZone(){
+  const r=(M.encounter&&M.encounter.safe)||0; if(!r) return false;
+  const h=here();
+  return npcList().some(n=>manhattan(h,npcTile(n))<=r)||gates.some(g=>manhattan(h,{x:g.tx,y:g.ty})<=r);
+}
+function checkEncounter(){ // 1歩進むごとに呼ぶ。遭遇したら true
+  if(!encEnabled()||noclip||enc.phase) return false;
+  const e=M.encounter; enc.steps++;
+  if(enc.steps<(e.minSteps||0)||inSafeZone()) return false;
+  if(Math.random()>=(e.rate||0)) return false;
+  const total=e.table.reduce((a,t)=>a+(t.weight||1),0); let r=Math.random()*total, pick=e.table[0];
+  for(const t of e.table){ r-=(t.weight||1); if(r<0){ pick=t; break; } }
+  startEncounter(pick); return true;
+}
+function startEncounter(info){
+  route=null; joystick.x=joystick.y=0; setKnob(0,0); keys.clear(); updateAnimation(0,0,0);
+  enc.phase='alert'; enc.t=0; enc.info=info; enc.steps=0;
+}
+function parentEncounter(){ try{ if(window.parent!==window&&typeof window.parent.startZeraphiaCh10Encounter==='function') return window.parent.startZeraphiaCh10Encounter; }catch(_){} return null; }
+function launchBattle(){
+  enc.phase='battle'; enc.t=0;
+  const start=parentEncounter(), info=enc.info;
+  // res.outcome: 'win' 勝利 / 'escape' 逃走（PAUSEから退出・編成キャンセル） / 'lose' 全滅
+  const done=res=>{ enc.result=res||{}; enc.from='#f7f4ee'; enc.steps=0; last=0;
+    if(Array.isArray(enc.result.party)){ save.partyHp=enc.result.party; saveNow(); } // 次の段階（HP持ち越し）で使う
+    enc.phase=enc.result.outcome==='lose'?'down':'return'; enc.t=0; };
+  if(start&&start(info.stage,{partyScreen:!!(M.encounter&&M.encounter.partyScreen)},done)) return;
+  // 単体起動（本編なし）の時は戦闘を省略して戻る
+  setTimeout(()=>done({outcome:'win',skipped:true}),900);
+}
+function updateEncounter(dt){
+  if(!enc.phase) return;
+  enc.t+=dt;
+  if(enc.phase==='alert'){ enc.shake=enc.t<.35?6*(1-enc.t/.35):0; if(enc.t>=ENC_T.alert){ enc.phase='flash'; enc.t=0; enc.shake=0; } }
+  else if(enc.phase==='flash'){ if(enc.t>=ENC_T.flash){ enc.phase='wipe'; enc.t=0; } }
+  else if(enc.phase==='wipe'){ if(enc.t>=ENC_T.wipe) launchBattle(); } // 白に覆われたらそのままバトルイン
+  else if(enc.phase==='title'){ if(enc.t>=ENC_T.title) launchBattle(); }
+  else if(enc.phase==='down'){ if(enc.t>=ENC_T.down){ // 全滅：光の門の前で目を覚ます
+    loadMap('庭園','回廊'); player.dir='up'; updateAnimation(0,0,0); saveNow(); cam.ready=false;
+    enc.phase='return'; enc.t=0;
+  } }
+  else if(enc.phase==='return'){ if(enc.t>=ENC_T.ret){
+    const r=enc.result||{}; enc.phase=null; enc.info=null;
+    const msg=(r.skipped?'（単体起動のため戦闘は省略しました）':r.outcome==='win'?'':r.outcome==='lose'?'光の門の前で目を覚ました……':'うまく逃げきれた……'); if(msg) pop(msg,2400);
+  } }
+}
+function drawAlertBubble(){ // エリの頭上の「！」（ポケモン風）
+  const pop=Math.min(1,enc.t/.12), x=player.x, y=player.y-SPRITE.player.size*.86-30-(1-pop)*20;
+  ctx.save(); ctx.translate(x,y); ctx.scale(pop,pop);
+  ctx.fillStyle='#fff'; ctx.strokeStyle='#2a2f45'; ctx.lineWidth=4;
+  ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(-30,-40,60,64,14); else ctx.rect(-30,-40,60,64); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-8,22); ctx.lineTo(0,38); ctx.lineTo(8,22); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle='#fff'; ctx.fillRect(-7,18,14,7);
+  ctx.fillStyle='#c8323c'; ctx.font='900 48px Georgia,serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('!',0,-6);
+  ctx.restore(); ctx.textBaseline='alphabetic';
+}
+let fxDirty=false;
+function renderFx(){ // UIより上のキャンバスに演出を描く
+  if(!enc.phase){ if(fxDirty){ fctx.setTransform(1,0,0,1,0,0); fctx.clearRect(0,0,fx.width,fx.height); fxDirty=false; } return; }
+  const main=ctx; ctx=fctx; ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H); drawEncounterOverlay(); ctx=main; fxDirty=true;
+}
+function drawEncounterOverlay(){ // スクリーン座標
+  const p=enc.phase, t=enc.t, dark='#f7f4ee'; // ZERAPHIAらしく白で包む（戦闘画面の紙色に合わせる）
+  if(p==='flash'){ // 白フラッシュ2回
+    const k=(t/ENC_T.flash)*2, f=k%1, a=f<.5?f*2:(1-f)*2; ctx.fillStyle=`rgba(255,255,255,${Math.min(1,a*1.1)})`; ctx.fillRect(0,0,W,H);
+  } else if(p==='wipe'){ // 横縞が左右交互に伸びて暗転
+    const n=12, bh=Math.ceil(H/n); ctx.fillStyle=dark;
+    for(let i=0;i<n;i++){ const d=i*.03, q=Math.max(0,Math.min(1,(t-d)/(ENC_T.wipe-.36))), e=1-Math.pow(1-q,3), w=W*e;
+      if(i%2) ctx.fillRect(W-w,i*bh,w,bh+1); else ctx.fillRect(0,i*bh,w,bh+1); }
+  } else if(p==='title'||p==='battle'){ // 戦闘中は白で覆ったまま
+    ctx.fillStyle=dark; ctx.fillRect(0,0,W,H);
+    if(false){
+      const msg=`${enc.info.name}が あらわれた！`, chars=Array.from(msg), shown=chars.slice(0,Math.floor(Math.max(0,t-.1)/.045)).join('');
+      const bw=Math.min(W-28,400), bh=76, bx=(W-bw)/2, by=H*.5-bh/2;
+      let fs=20; ctx.font=`700 ${fs}px "Noto Serif JP","Yu Mincho",serif`; const full=ctx.measureText(msg).width; if(full>bw-48) fs=Math.max(12,Math.floor(fs*(bw-48)/full));
+      ctx.globalAlpha=Math.min(1,t/.15);
+      ctx.fillStyle='rgba(12,14,24,.95)'; ctx.fillRect(bx,by,bw,bh);
+      ctx.strokeStyle='#f3ead6'; ctx.lineWidth=3; ctx.strokeRect(bx+4,by+4,bw-8,bh-8);
+      ctx.fillStyle='#fff6e4'; ctx.font=`700 ${fs}px "Noto Serif JP","Yu Mincho",serif`; ctx.textAlign='left'; ctx.textBaseline='middle';
+      ctx.fillText(shown,bx+24,by+bh/2+1); ctx.globalAlpha=1; ctx.textBaseline='alphabetic';
+    }
+  } else if(p==='down'){ // 全滅：白の中で一言
+    ctx.fillStyle=dark; ctx.fillRect(0,0,W,H);
+    const a=Math.min(1,Math.max(0,(t-.25)/.4))*Math.min(1,Math.max(0,(ENC_T.down-t)/.35));
+    ctx.globalAlpha=a; ctx.fillStyle='#6b5a43'; ctx.font='700 18px "Noto Serif JP","Yu Mincho",serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('目の前が 真っ白に なった……',W/2,H*.48); ctx.globalAlpha=1; ctx.textBaseline='alphabetic';
+  } else if(p==='return'){ // 戦闘から戻る：暗転から開ける
+    const a=1-Math.min(1,t/ENC_T.ret); ctx.globalAlpha=a; ctx.fillStyle=enc.from; ctx.fillRect(0,0,W,H); ctx.globalAlpha=1;
   }
 }
 function loop(ts){ const raw=Math.max(0,(ts-last)/1000||0), dt=Math.min(.05,raw); last=ts;
   // 自動画質調整：重い状態（平均24ms超＝約40fps未満）が続いたら描画解像度を1段下げる
   if(raw>0&&raw<.5&&!novel.active&&document.visibilityState==='visible'){ perfAcc+=raw; if(++perfN>=90){ const avg=perfAcc/perfN; perfAcc=0; perfN=0;
-    if(avg>.024&&dprCap>1){ dprCap=[1.5,1.25,1].find(v=>v<dprCap-.01)||1; resize(); } } } clock+=dt; move(dt); updateNovel(dt); updateCamera(dt); render(); if(toastUntil&&ts>toastUntil){ $('toast').classList.remove('show'); toastUntil=0; } requestAnimationFrame(loop); }
+    if(avg>.024&&dprCap>1){ dprCap=[1.5,1.25,1].find(v=>v<dprCap-.01)||1; resize(); } } } clock+=dt; updateEncounter(dt); move(dt); updateNovel(dt); updateCamera(dt); render(); if(toastUntil&&ts>toastUntil){ $('toast').classList.remove('show'); toastUntil=0; } requestAnimationFrame(loop); }
 requestAnimationFrame(loop);
 
 /* stick */
@@ -412,7 +517,7 @@ stick.addEventListener('pointerup',resetStick); stick.addEventListener('pointerc
 
 /* tap to move */
 function tapMove(w){
-  if(!enabled||!overlay.hidden||!dialog.hidden||novel.active) return;
+  if(!enabled||!overlay.hidden||!dialog.hidden||novel.active||enc.phase) return;
   const tx=tileIndex(w.x), ty=tileIndex(w.y);
   const hit=npcList().find(n=>{ const t=npcTile(n); return tx===t.x&&ty<=t.y&&ty>=t.y-3; });
   if(hit){
@@ -521,6 +626,21 @@ canvas.addEventListener('pointerup',e=>{
   buildGrid(); persistEdit(); pop(`${key} → ${cell(tx,ty)==='#'?'通れない':'通れる'}`);
 });
 if(debug) setDebug(true);
+// build2042: 開始画面は出さず、ノータイムでマップへ（「記録」ボタンのメニューは従来どおり）
+enabled=true; overlay.hidden=true;
+// build2043 起動カバー：床・遠景・遺跡・キャラ・ヘッダー/ボタン画像とフォントが揃い、描画してから外す（最大3秒）
+(function bootReveal(){
+  const cover=$('boot-cover'); if(!cover) return;
+  const imgs=[floorImg,horizonImg,castleImg,zigImage,assets.down_idle,...Object.values(TYPES).map(t=>t.image),
+    ...npcList().filter(n=>n.sprite).map(n=>npcImg(n.sprite)),...document.querySelectorAll('#shell img')];
+  const wait=im=>new Promise(r=>{ if(!im||im.complete) return r(); im.addEventListener('load',r,{once:true}); im.addEventListener('error',r,{once:true}); });
+  const fontsReady=document.fonts&&document.fonts.ready?document.fonts.ready.catch(()=>{}):Promise.resolve();
+  let shown=false;
+  const show=()=>{ if(shown) return; shown=true; cam.ready=false;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ cover.classList.add('done'); setTimeout(()=>cover.remove(),450); })); };
+  Promise.all([...imgs.map(wait),fontsReady]).then(show);
+  setTimeout(show,3000);
+})();
 
 /* buttons */
 function goBack(){ saveNow(); try{ if(window.parent&&window.parent!==window&&typeof window.parent.closeZeraphiaCh10RPG==='function'){ window.parent.closeZeraphiaCh10RPG(); return; } }catch(_){} history.back(); }

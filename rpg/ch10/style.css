@@ -54,3 +54,11 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0f1623;col
 #editor-panel button{font:11px system-ui,sans-serif;padding:5px 7px;border-radius:5px;border:1px solid rgba(235,217,181,.5);background:#2a3a57;color:#fff2d7;cursor:pointer}
 #editor-panel .fold{float:right;padding:2px 8px}
 #editor-panel.folded span,#editor-panel.folded .row{display:none}
+
+/* build2040: エンカウント演出（UIより上に重ねる） */
+#fx{position:absolute;inset:0;width:100%;height:100%;z-index:60;pointer-events:none}
+
+/* build2043: 起動時は紙色で全面を覆い、マップ・ヘッダー・UI画像が揃ってからフェードで見せる */
+html,body{background:#f7f4ee}
+#boot-cover{position:absolute;inset:0;z-index:100;background:#f7f4ee;pointer-events:none;transition:opacity .35s ease}
+#boot-cover.done{opacity:0}

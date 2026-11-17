@@ -13,13 +13,23 @@ window.ZERAPHIA_MAPS = {
     castle: { x: 1025, w: 820 },     // 遠景の城（パララックス）
     start: [1025, 2875],
     scene: 'scene_ch10_garden.webp',  // 会話時のノベル背景（本編 images/ 内のファイル名）
+    // ランダムエンカウント：歩くと一定確率で本編のシューティング戦闘へ
+    //   rate     : 1歩ごとの遭遇率（0.06 ≒ 平均17歩に1回）
+    //   minSteps : 前の戦闘・マップ移動のあと、最低この歩数は遭遇しない
+    //   safe     : キャラ・門からこのマス数以内では遭遇しない
+    //   table    : 出現する敵（stage = 本編 shooting_stages.js の RPG_ENCOUNTER_DEFS、weight = 出やすさ）
+    encounter: { rate: 0.06, minSteps: 12, safe: 3,
+      table: [
+        { stage: 'shooting_rpg_ch10_01', name: '観測眼のレムナント', weight: 3 },
+        { stage: 'shooting_rpg_ch10_02', name: '星護のレムナント', weight: 2 },
+      ] },
     // NPC：x,y はマス中央（50の倍数+25）。sprite は変換スクリプト規格の立ち絵
     // talk は本編シナリオと同じ書式。今は「エリが聞く → 相手が答える」の一問一答（セリフは仮）
     npcs: [
       { id: 'zig', name: 'ジグ', x: 1025, y: 2625, sprite: 'images/chara_05_down_idle.webp',
         talk: [
           { speaker: 'エリ', text: 'ジグ、この先には行けないの？' },
-          { speaker: 'ジグ', text: 'まだ開発中だ。この先は遊べねぇぞ。' },
+          { speaker: 'ジグ', text: 'まだ…開発中だってよ。早くしてほしいもんだぜ。' },
         ] },
       { id: 'aura', name: 'アウラ', x: 1325, y: 2375, sprite: 'images/chara_03_down_idle.webp',
         talk: [
@@ -74,6 +84,11 @@ window.ZERAPHIA_MAPS = {
     tint: 'rgba(110,122,170,.13)',   // 回廊の色味（薄い青）。数値を上げるほど暗くなる
     start: [1025, 1275],
     scene: 'scene_ch10_garden.webp', stageNo: 2,
+    encounter: { rate: 0.07, minSteps: 10, safe: 3,
+      table: [
+        { stage: 'shooting_rpg_ch10_02', name: '星護のレムナント', weight: 2 },
+        { stage: 'shooting_rpg_ch10_03', name: 'ミラージュの残影', weight: 2 },
+      ] },
     npcs: [
       { id: 'echo', name: '残響', x: 1025, y: 1825,
         talk: [

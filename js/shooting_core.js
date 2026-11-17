@@ -1574,6 +1574,38 @@
   function isAmbushStage() {
     return !!(selectedStage && selectedStage.eventId === 'random_ambush' && selectedStage.ambush);
   }
+  // build2040: STORY10 RPGのランダムエンカウント（報酬・記録・中断復帰なし）
+  function isRpgEncounterStage() {
+    return !!(selectedStage && selectedStage.eventId === 'rpg_encounter' && selectedStage.rpgEncounter);
+  }
+  // build2041: RPGへ返す結果（closeShootingEvent内でstateが破棄される前に退避しておく）
+  let rpgEncounterReturnInfo = null;
+  function captureRpgEncounterInfo(outcome) {
+    const party = (state && Array.isArray(state.party) ? state.party : []).filter(Boolean).map(m => ({
+      id: Number(m.id), hp: Math.max(0, Math.round(Number(m.hp || 0))), hpMax: Math.max(1, Math.round(Number(m.hpMax || m.hp || 1)))
+    }));
+    rpgEncounterReturnInfo = { outcome, win: outcome === 'win', party: party.length ? party : null, stageId: selectedStage && selectedStage.id };
+  }
+  // build2041: エンカウント戦の終了。RESULT・報酬・記録には入らず、残りHPを持ってRPGへ戻る
+  function finishRpgEncounterBattle(win) {
+    if (!state || state.ended) return;
+    state.ended = true;
+    state.running = false;
+    state.lastResultWin = !!win;
+    captureRpgEncounterInfo(win ? 'win' : 'lose');
+    try { cancelAnimationFrame(rafId); } catch (_) {}
+    try { clearProjectiles(); clearNormalBattleObjects(); } catch (_) {}
+    if (typeof window.closeShootingEvent === 'function') void window.closeShootingEvent();
+  }
+  // RPGエンカウントは「前回エンカウントで出撃した編成」を覚えて、次回は編成画面なしで即出撃させる
+  const RPG_ENCOUNTER_PARTY_KEY = 'zeraphia_rpg_encounter_party_v1';
+  function readRpgEncounterParty() {
+    try { const v = JSON.parse(localStorage.getItem(RPG_ENCOUNTER_PARTY_KEY) || '[]'); return Array.isArray(v) ? v.map(Number).filter(Number.isFinite) : []; }
+    catch (_) { return []; }
+  }
+  function saveRpgEncounterParty(ids) {
+    try { localStorage.setItem(RPG_ENCOUNTER_PARTY_KEY, JSON.stringify((ids || []).map(Number))); } catch (_) {}
+  }
 
   // ============================================================
   // build924: 端末サイズ連動の戦闘ユニット表示倍率
@@ -3445,6 +3477,7 @@
     const stageId = selectedStage?.id || state?.stageId || '';
     const scoreValue = Math.max(0, Math.floor(Number(value || 0)));
     if (!stageId) return null;
+    if (isRpgEncounterStage()) return null; // build2040: エンカウント戦はスコア送信なし
     if (isTowaDawnStage()) return window.TowaDawn ? window.TowaDawn.finishRun(!!win) : null; // build1877
     if (isResonanceTowerStage()) {
       const towerFinish = window.ResonanceTower.finishRun(!!win);
@@ -4021,7 +4054,7 @@
 
   function saveShootingResumeState(reason) {
     // Unintentional interruptions keep a checkpoint in all modes including Phase Odyssey.
-    if (isGachaTrialStage() || suppressShootingResumeSave) return false;
+    if (isGachaTrialStage() || isRpgEncounterStage() || suppressShootingResumeSave) return false;
     try {
       const noLivingParty = !!(
         state &&
@@ -20100,7 +20133,9 @@
     root.appendChild(overlay);
 
     const copy = overlay.querySelector('strong');
-    const steps = [
+    const steps = isRpgEncounterStage()
+      ? [{ text: 'WIN', phase: 'stage-clear-phase', hold: 820 }] // build2041: エンカウント戦は短く
+      : [
       { text: 'クリア条件達成', phase: 'condition-phase', hold: 1320 },
       { text: 'STAGE CLEAR', phase: 'stage-clear-phase', hold: 1480 }
     ];
@@ -25603,7 +25638,7 @@
         if (!state || state.ended) return;
         state.finishing = false;
         endGame(false);
-      }, 2600);
+      }, isRpgEncounterStage() ? 1700 : 2600); // build2041: エンカウント戦は余韻を短く
       return;
     }
 
@@ -31741,6 +31776,8 @@
       { text:'1',             phase:'number-phase', hold:850 },
       { text:'START',         phase:'start-phase',  hold:1050 }
     ];
+    // build2041: エンカウント戦は「START」だけ（ARE YOU READY・3・2・1なし）
+    if (isRpgEncounterStage()) sequence.splice(0, sequence.length, { text:'START', phase:'start-phase', hold:650 });
 
     // 「ARE YOU READY」表示前からキャラを掴めるよう、
     // 戦闘ロジックとは独立した移動専用RAFを先に開始する。
@@ -33300,7 +33337,7 @@
   // v163: first-clear gem reward must be tied to a server-issued shooting run.
   // A stage_id alone is no longer enough to claim gems from the console.
   async function beginSecureShootingRun() {
-    if (!state || !state.stageId || isDailyQuestStage() || isResonanceTowerStage() || isPhaseOdysseyStage() || isMemoryBattleStage() || isTowaDawnStage()) return null;
+    if (!state || !state.stageId || isDailyQuestStage() || isResonanceTowerStage() || isPhaseOdysseyStage() || isMemoryBattleStage() || isTowaDawnStage() || isRpgEncounterStage()) return null;
     if (state.secureRunToken) return state.secureRunToken;
     if (state.secureRunPromise) return state.secureRunPromise;
 
@@ -33626,7 +33663,7 @@
     const list = document.getElementById('shooting-result-reward-list');
     const note = document.getElementById('shooting-result-reward-note');
     if (!section || !list) return;
-    if (isResonanceTowerStage() || isPhaseOdysseyStage() || isTowaDawnStage()) {section.style.display='none';list.innerHTML='';return;}
+    if (isResonanceTowerStage() || isPhaseOdysseyStage() || isTowaDawnStage() || isRpgEncounterStage()) {section.style.display='none';list.innerHTML='';return;} // build2040: エンカウント戦は報酬なし
 
     if (!win) {
       section.style.display = 'none';
@@ -33894,6 +33931,7 @@
   async function endGame(win) {
     if (isGachaTrialStage()) return; // 試遊ではRESULT・報酬・履歴処理に絶対に入らない
     if (!state || state.ended) return;
+    if (isRpgEncounterStage()) { finishRpgEncounterBattle(!!win); return; } // build2041: RESULTなしでRPGへ
 
     // build812: RESULT処理中にstage参照が変化してもDAILY判定を揺らさない。
     const dailyQuestAtResult = isDailyQuestStage();
@@ -36016,6 +36054,7 @@
     }
     if (isStoryShootingStage()) ensureStoryEriLeader();
     if (!isShootingPartyReady()) return;
+    if (isRpgEncounterStage()) saveRpgEncounterParty(selectedPartyIds); // build2040
     const towerBattleStart=isResonanceTowerStage() || isPhaseOdysseyStage(); // 二重タップ防止（位相回遊も確認ダイアログを挟む）
     const memoryBattleStart=isMemoryBattleStage();
     if (towerBattleStart && towerBattleStartPending) return;
@@ -36123,11 +36162,13 @@
 
     // build772: アイキャッチ読み込み前から白い遮蔽を出し、
     // ステージタイトル演出が完了するまでバトル画面を一切見せない。
-    beginShootingStageTransitionMask();
+    // build2041: STORY10 RPGのエンカウント戦は、RPG側の「あらわれた！」が導入。アイキャッチ・ステージ情報は出さない
+    const rpgEncounterStart = isRpgEncounterStage();
+    if (!rpgEncounterStart) beginShootingStageTransitionMask();
 
     // ステージIN演出。実ロードの有無とは切り離したアイキャッチ演出として扱う。
-    const stageIcatchPromise = showShootingStageIcatch();
-    warmBossStageIntroImage();
+    const stageIcatchPromise = rpgEncounterStart ? Promise.resolve() : showShootingStageIcatch();
+    if (!rpgEncounterStart) warmBossStageIntroImage();
 
     selectedCharacterId = selectedPartyIds[0];
     clearEltenaBlackHole();
@@ -36158,17 +36199,22 @@
     }
 
     await stageIcatchPromise;
-    await showShootingStageInfo();
+    if (!rpgEncounterStart) await showShootingStageInfo();
 
     // タイトル演出が終わった白画面の裏で初期配置を完成させる。
     placeInitialUnits();
     renderHud();
     // build1559: BOSSイントロがある場合はマスクの裏でイントロを用意してから抜く。
     // 画面が戦闘（またはイントロ）へ切り替わった瞬間からBGM開始。
-    await playBossStageIntro(runStartCountdown, {
-      revealMask: true,
-      onReveal: () => activateShootingBattleBgm(true),
-    });
+    if (rpgEncounterStart) {
+      activateShootingBattleBgm(true);
+      requestAnimationFrame(() => runStartCountdown());
+    } else {
+      await playBossStageIntro(runStartCountdown, {
+        revealMask: true,
+        onReveal: () => activateShootingBattleBgm(true),
+      });
+    }
     } finally {
       if (towerBattleStart) towerBattleStartPending=false;
       if (memoryBattleStart) memoryBattleStartPending=false;
@@ -36459,6 +36505,12 @@
         .filter(id => isShootingCharacterAvailableForCurrentParty(id))
         .slice(0, PARTY_SIZE);
       selectedCharacterId = selectedPartyIds[0] || firstOwned || CHARACTER_ID.ERI;
+    } else if (isRpgEncounterStage()) {
+      // build2040: STORY10 RPGエンカウントは前回の出撃編成を初期配置（初回は空＝編成画面で選ぶ）
+      selectedPartyIds = readRpgEncounterParty()
+        .filter(id => isShootingCharacterAvailableForCurrentParty(id))
+        .slice(0, PARTY_SIZE);
+      selectedCharacterId = selectedPartyIds[0] || firstOwned || CHARACTER_ID.ERI;
     } else {
       selectedCharacterId = firstOwned || CHARACTER_ID.ERI;
     }
@@ -36669,6 +36721,8 @@
     // 塔の確認中にゲーム画面を閉じても、出撃に進まない。
     if (window.ResonanceTower?.cancelSealConfirmation) window.ResonanceTower.cancelSealConfirmation();
     const leavingGachaTrial = isGachaTrialStage();
+    // build2041: エンカウント戦をPAUSEから抜けた／編成をキャンセルした＝逃走（その時点のHPを持ち帰る）
+    if (isRpgEncounterStage() && !rpgEncounterReturnInfo) captureRpgEncounterInfo('escape');
     // 試遊のウィンドウ捕捉リスナーは退出時に必ず破棄する。
     if (removeGachaTrialInputContinuity) removeGachaTrialInputContinuity();
     // RESULT画面から戻る時だけ、1秒かけて白へフェードしてから前画面へ戻す。
@@ -36858,6 +36912,17 @@
     }
 
     selectedRaidContext = null;
+    // build2040: STORY10 RPGのエンカウント戦 → RPGのフィールドへ戻す（RESULTの白フェードの上でRPGが白から戻る）
+    if (returnContext && returnContext.type === 'ch10Rpg') {
+      // outcome: 'win' / 'lose'（全滅） / 'escape'（PAUSEから退出・編成キャンセル）
+      const rpgInfo = rpgEncounterReturnInfo || { outcome: 'escape', win: false, party: null };
+      rpgEncounterReturnInfo = null;
+      if (typeof window.__ch10RpgBattleFinished === 'function') {
+        try { window.__ch10RpgBattleFinished(rpgInfo); } catch (err) { console.warn('[ch10 rpg] return failed', err); }
+      }
+      clearShootingResultExitFade();
+      return;
+    }
     if (returnContext && returnContext.type === 'towaEncounter') {
       if (typeof window.openResonanceTower === 'function') window.openResonanceTower();
       if (typeof window.openTowaEncounter === 'function') window.openTowaEncounter();

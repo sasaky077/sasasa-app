@@ -2351,8 +2351,56 @@
     return stage;
   }
 
+  // ============================================================
+  // build2040: STORY10 RPGモードのランダムエンカウント専用ステージ
+  //   ID: shooting_rpg_ch10_NN（SHOOTING_STAGES一覧には登録しない・動的生成）
+  //   報酬・ランキング・クリア記録・中断復帰の対象外（shooting_core側で除外）
+  //   バランス調整はこの表の数値だけで完結します。
+  // ============================================================
+  const RPG_ENCOUNTER_DEFS = Object.freeze({
+    1: Object.freeze({ name: '観測眼のレムナント', element: 'neutral',
+      enemyIds: [SHOOTING_ENEMY_ID.MINI_01],
+      battle: { totalEnemies: 3, maxActive: 2, spawnIntervalMs: 1200, enemyHp: 1400, enemyBulletDamage: 110, enemyBulletSpeed: 200, enemyFireRate: 1300, barrageLevel: 2 },
+      text: '観測眼のレムナントを3体撃破' }),
+    2: Object.freeze({ name: '星護のレムナント', element: 'aqua',
+      enemyIds: [SHOOTING_ENEMY_ID.MINI_03, SHOOTING_ENEMY_ID.ZAKO_AQUA_SHOT],
+      battle: { totalEnemies: 4, maxActive: 2, spawnIntervalMs: 1300, enemyHp: 1500, enemyBulletDamage: 115, enemyBulletSpeed: 215, enemyFireRate: 1250, barrageLevel: 2 },
+      text: '星護のレムナントを4体撃破' }),
+    3: Object.freeze({ name: 'ミラージュの残影', element: 'neutral',
+      enemyIds: [SHOOTING_ENEMY_ID.MINI_05, SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT],
+      battle: { totalEnemies: 4, maxActive: 3, spawnIntervalMs: 1500, enemyHp: 1800, enemyBulletDamage: 120, enemyBulletSpeed: 230, enemyFireRate: 1100, barrageLevel: 3 },
+      text: 'ミラージュの残影を4体撃破' }),
+  });
+  const rpgEncounterStageCache = new Map();
+  function rpgEncounterStageId(no) { return 'shooting_rpg_ch10_' + String(no).padStart(2, '0'); }
+  function makeRpgEncounterStage(no) {
+    const def = RPG_ENCOUNTER_DEFS[no];
+    if (!def) return null;
+    if (rpgEncounterStageCache.has(no)) return rpgEncounterStageCache.get(no);
+    const stage = Object.freeze({
+      id: rpgEncounterStageId(no),
+      chapter: 0,
+      stageNo: no,
+      type: 'normal',
+      eventId: 'rpg_encounter',
+      eventTitle: 'ENCOUNTER',
+      name: def.name,
+      element: def.element,
+      background: 'images/battle_bg_01.webp',
+      enemyIds: Object.freeze(def.enemyIds.slice()),
+      normalBattle: Object.freeze({ itemDropRate: 0, ...def.battle }),
+      mission: Object.freeze({ type: SHOOTING_MISSION_TYPE.DEFEAT_ALL, text: def.text }),
+      rpgEncounter: Object.freeze({ no, name: def.name }),
+      playable: true,
+    });
+    rpgEncounterStageCache.set(no, stage);
+    return stage;
+  }
+
   function getShootingStage(stageId) {
     const id = String(stageId || '');
+    const rpgEncounterMatch = id.match(/^shooting_rpg_ch10_(\d{2})$/);
+    if (rpgEncounterMatch) return makeRpgEncounterStage(Number(rpgEncounterMatch[1]));
     const memoryMatch = id.match(/^shooting_memory_(\d{2})$/);
     if (memoryMatch) return makeMemoryBattleStage(Number(memoryMatch[1]));
     // build1643: 位相回遊は階層番号から動的に生成（SHOOTING_STAGES一覧には登録しない）。
@@ -2407,5 +2455,8 @@
     MEMORY_BATTLE_SLOT_COUNT,
     getMemoryBattleStageDef,
     memoryBattleStageId,
+    // build2040: STORY10 RPGエンカウント
+    RPG_ENCOUNTER_DEFS,
+    rpgEncounterStageId,
   });
 })();

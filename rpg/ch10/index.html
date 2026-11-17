@@ -9,10 +9,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;700&display=swap">
-  <link rel="stylesheet" href="style.css?v=2039">
+  <link rel="stylesheet" href="style.css?v=2044">
 </head>
 <body>
 <main id="shell">
+  <div id="boot-cover" aria-hidden="true"></div>
   <canvas id="world" aria-label="灰色の庭園"></canvas>
   <div id="frame" aria-hidden="true"></div>
 
@@ -35,7 +36,7 @@
     <button id="menu" class="img-btn" type="button" aria-label="記録"><img src="images/ui2_btn_record.png" alt="" draggable="false"></button>
   </div>
 
-  <div id="overlay">
+  <div id="overlay" hidden>
     <div class="panel">
       <div class="micro">STORY 10</div>
       <h1>開発中(仮) — RPGモード試作</h1>
@@ -65,12 +66,13 @@
       <div id="ch10-novel-name"></div>
       <div id="ch10-novel-text"></div>
       <div id="ch10-novel-next">TAP TO CONTINUE</div>
-    </div>
+</div>
   </section>
+  <canvas id="fx" aria-hidden="true"></canvas>
 </main>
-<script src="objects.js?v=2039"></script>
-<script src="maps.js?v=2039"></script>
-<script src="rpg.js?v=2039"></script>
+<script src="objects.js?v=2044"></script>
+<script src="maps.js?v=2044"></script>
+<script src="rpg.js?v=2044"></script>
 <script>
 (function(){
   const name=document.getElementById('ch10-novel-name');

@@ -248,8 +248,8 @@
       kind: 'normal',
       miniNo: 1,
       implemented: true,
-      name: '観測眼の残穢',
-      displayName: '観測眼の残穢',
+      name: '観測眼のレムナント',
+      displayName: '観測眼のレムナント',
       image: 'images/enemy_mini_01_battle.webp',
       element: 'neutral',
       hp: 1000,
@@ -267,8 +267,8 @@
       kind: 'normal',
       miniNo: 2,
       implemented: true,
-      name: '暴威の残穢',
-      displayName: '暴威の残穢',
+      name: '暴威のレムナント',
+      displayName: '暴威のレムナント',
       image: 'images/enemy_mini_02_battle.webp',
 
       // CHAPTER 02: 数ではなく「個の暴力」で押す強敵。
@@ -295,8 +295,8 @@
       kind: 'normal',
       miniNo: 3,
       implemented: true,
-      name: '星護の残穢',
-      displayName: '星護の残穢',
+      name: '星護のレムナント',
+      displayName: '星護のレムナント',
       image: 'images/enemy_mini_03_battle.webp',
       element: 'aqua',
       // CH03通常敵。弾幕は濃いが、撃破テンポは軽めにする。
@@ -315,8 +315,8 @@
       kind: 'normal',
       miniNo: 4,
       implemented: true,
-      name: '流麗の残穢',
-      displayName: '流麗の残穢',
+      name: '流麗のレムナント',
+      displayName: '流麗のレムナント',
       image: 'images/remnant_04_zako_up.webp',
       // CH04通常敵。密度よりも軌道の美しさを優先する。
       hp: 1500,
