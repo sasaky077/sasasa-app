@@ -476,7 +476,11 @@
     root.querySelector('[data-mb-count]').textContent = String(visibleDefs.filter(def => !!rankState[String(def.no)]).length);
     root.querySelector('[data-mb-total]').textContent = '/ ' + total;
     const track = [];
-    for (const def of visibleDefs) track.push(`<i class="${rankState[String(def.no)] ? 'is-done' : ''}"></i>`);
+    // build2084: 踏破のひし形はランクで色分け（A＝銀／S＝金）
+    for (const def of visibleDefs) {
+      const r = String(rankState[String(def.no)] || '').toUpperCase();
+      track.push(`<i class="${r ? 'is-done is-rank-' + (r === 'S' ? 's' : 'a') : ''}" title="${r ? esc(def.bossName) + '：' + r + 'ランク' : ''}"></i>`);
+    }
     root.querySelector('[data-mb-track]').innerHTML = track.join('');
 
     const list = root.querySelector('[data-mb-list]');

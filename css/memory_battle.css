@@ -156,6 +156,11 @@ html body #screen-memory-battle .mb-back:active{transform:translateY(1px);filter
   background:#c7c2d0;border:1px solid rgba(255,255,255,.8);box-shadow:0 0 0 1px rgba(150,140,170,.35);
 }
 #screen-memory-battle .mb-progress-track i.is-done{background:linear-gradient(135deg,#f3dc9c,#b88a3c);box-shadow:0 0 0 1px rgba(154,116,50,.6),0 0 6px rgba(232,200,120,.8);}
+/* build2084: ランクで色分け。A＝銀、S＝金（少し大きく、光を強めに） */
+/* 未踏破は中抜き（白）にして、銀と見分けやすくする */
+#screen-memory-battle .mb-progress-track i:not(.is-done){background:#fbfaf7;border:1px solid rgba(160,150,180,.75);box-shadow:none;}
+#screen-memory-battle .mb-progress-track i.is-done.is-rank-a{background:linear-gradient(135deg,#ffffff,#c9cfd9 45%,#8d96a6);box-shadow:0 0 0 1px rgba(110,120,140,.65),0 0 5px rgba(190,200,220,.9);}
+#screen-memory-battle .mb-progress-track i.is-done.is-rank-s{width:11px;height:11px;background:linear-gradient(135deg,#fff3c4,#f0cf72 40%,#b4842f);box-shadow:0 0 0 1px rgba(154,116,50,.75),0 0 8px rgba(240,200,100,.95);}
 
 /* ---------- ステージカード ---------- */
 #screen-memory-battle .mb-list{list-style:none;margin:14px 0 0;padding:0 12px;display:flex;flex-direction:column;gap:12px;}
