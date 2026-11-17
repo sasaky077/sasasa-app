@@ -107,6 +107,7 @@
     RAID_TEST: 'shooting_raid_test',
     BULLET_HELL_TEST: 'shooting_event_bullet_hell_test',
     INORI_SPECIAL: 'shooting_special_inori',
+    DEINOVA_SPECIAL: 'shooting_special_deinova', // build2057: 特別巡行「最恐 -デイノヴァ-」（挑戦無制限・S確定/A50%でディノヴァ）
     TOWA_DAWN: 'shooting_towa_dawn',                    // build1877: 隠しステージ「夜明け」（残響の塔20Fクリア後 1/30）          // build1819: 特別巡行「境界者 -イノリ-」（欠片9つでイノリ解放）
     SCORE_ATTACK_NORMAL: 'shooting_score_attack_normal',
     SCORE_ATTACK_HARD: 'shooting_score_attack_hard',
@@ -1870,6 +1871,74 @@
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
         text: '境界者、イノリを撃破',
+      }),
+      playable: true,
+    }),
+
+    // ============================================================
+    // build2057: SPECIAL STAGE 最恐 -デイノヴァ-
+    //  挑戦回数無制限（TICKETなし）。ランクは通常のスコアランク。
+    //  ドロップはサーバー（claim_deinova_special_drop）：Sランク確定／Aランク50%でディノヴァ1体。
+    //  ギミック：
+    //   ・plasmaレール … 盤面の左右に回廊を作る。触れると500ダメージ＋1.2秒無敵＋回廊中央へ押し戻し。
+    //                    形は時間で変わる（直線→S字→ジグザグ→横レール）。切替の1秒前に点線で予告。自機弾は素通り。
+    //   ・超放電 … ディノヴァに与えたダメージで放電GAUGEが溜まる（行動停止・時間停止中は溜まらない）。
+    //              満タンで放電コアが2つ出現し、6秒のカウント開始。コアを全部壊すと放電中止＋ディノヴァ3秒ダウン。
+    //              壊せなければ操作中キャラ即死。カウント中は時間停止でも止まる。放電の瞬間に無敵なら防げる。
+    // ============================================================
+    [SHOOTING_STAGE_ID.DEINOVA_SPECIAL]: Object.freeze({
+      id: SHOOTING_STAGE_ID.DEINOVA_SPECIAL,
+      chapter: 0,
+      stageNo: 5,
+      eventId: 'deinova_special',
+      eventTitle: '最恐 -デイノヴァ-',
+      stageInfoName: '最恐 -デイノヴァ-',
+      difficultyLabel: 'SPECIAL STAGE',
+      type: 'boss',
+      background: 'images/battle_bg_01.webp',
+      introImage: 'images/deinova_battle_start.webp',
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.DEINOVA]),
+      bossElement: 'fire',
+      enemyElement: 'fire',
+      bossGauges: 3,
+      bossGaugeHps: Object.freeze([9000, 10000, 11000]),
+      // 雑魚：紅雷のレムナント（突進型）。常に最大2体、撃破後は補充。
+      bossAdds: Object.freeze({
+        enemyIds: Object.freeze([SHOOTING_ENEMY_ID.DEINOVA_RAPTOR]),
+        totalEnemies: 0, maxActive: 2, startDelayMs: 2500, spawnIntervalMs: 6000,
+      }),
+      deinova: Object.freeze({
+        // ---- plasmaレール ----
+        railDamage: 500,
+        railInvulnMs: 1200,
+        railWarnMs: 1000,          // 形が変わる前の点線予告
+        railPatternMs: 16000,      // 1パターンの長さ
+        railPatterns: Object.freeze(['wide', 'scurve', 'zigzag', 'bars']),
+        // ---- 突進 ----
+        chargeFirstAtMs: 4500,
+        chargeEveryMs: Object.freeze({ 1: 8000, 2: 7000, 3: 6000 }), // ゲージ段階ごと
+        chargeTelegraphMs: 850,
+        chargeDashMs: 520,
+        chargeReturnMs: 800,
+        chargeDamage: 420,
+        // ---- PLASMA ----
+        plasmaEveryMs: Object.freeze({ 1: 1500, 2: 1300, 3: 1150 }),
+        plasmaWays: Object.freeze({ 1: 3, 2: 5, 3: 5 }),
+        plasmaDamage: 190,
+        // ---- 超放電 ----
+        dischargeDamageToFill: 6500, // この量のダメージを与えると満タン
+        dischargeCountdownMs: 6000,  // build2058: 放電コアを壊す猶予
+        // ---- 放電コア（build2058）----
+        coreCount: 2,                // 満タンと同時に出現する数。全部壊すと放電中止
+        coreHp: 900,                 // 1つあたりのHP
+        coreBreakStunMs: 3000,       // 全部壊した時、ディノヴァが行動不能になる時間
+        coreShockRadius: 72,         // build2059: この距離（px）まで近づくと感電
+        coreShockDamage: 300,        // 感電ダメージ（属性相性なし）
+      }),
+      timeLimitSeconds: 180,
+      mission: Object.freeze({
+        type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
+        text: '最恐、デイノヴァを撃破',
       }),
       playable: true,
     }),

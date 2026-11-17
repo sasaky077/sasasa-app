@@ -89,6 +89,11 @@
     VERDANT_BEAST: 'shooting_verdant_beast',   // build1659 樹獣の森：突進する樹獣
     VERDANT_SPROUT: 'shooting_verdant_sprout', // build1659 樹獣の森：歩き回る芽吹き
     VERDANT_QUEEN: 'shooting_verdant_queen',
+    // build2057: 特別巡行「最恐 -デイノヴァ-」
+    DEINOVA: 'shooting_special_deinova_boss',
+    DEINOVA_RAPTOR: 'shooting_deinova_raptor',
+    DEINOVA_CORE: 'shooting_deinova_core',
+    DEINOVA_ULT_CORE: 'shooting_deinova_ult_core', // build2060: ディノヴァULTの放電コア（味方の設置物）   // build2058: 超放電の放電コア（壊すと放電中止）
     VERDANT_SEED: 'shooting_verdant_seed', // build1663: 成長の実   // build1659 樹獣の森：ボス「樹獣の女王」（仮名）
   });
 
@@ -516,6 +521,51 @@
         slowEveryMs: 11000,     // 鈍化の呪い弾：周期
         slowMultiplier: 0.5,    // 鈍化中の移動速度
       }),
+    }),
+    // ------------------------------------------------------------
+    // build2057 SPECIAL STAGE「最恐 -デイノヴァ-」
+    //  突進＋PLASMA。与えたダメージに比例して放電GAUGEが溜まり、満タンで3秒後に超放電（操作中キャラ即死）。
+    //  行動停止・時間停止中はGAUGEが溜まらない。放電の瞬間に無敵なら防げる（shooting_core updateDeinovaMechanics）。
+    // ------------------------------------------------------------
+    [SHOOTING_ENEMY_ID.DEINOVA]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.DEINOVA,
+      kind: 'boss', implemented: true,
+      name: 'ディノヴァ', displayName: 'SPECIAL STAGE　ディノヴァ',
+      image: 'images/deinova_battle.webp', element: 'fire',
+      gaugeHps: Object.freeze([9000, 10000, 11000]), gauges: 3,
+      bulletSpeed: 230, fireRate: 1100, bulletDamage: 190,
+      behavior: 'deinova_v1', uiScale: 1.0,
+      unitSize: 'player',
+    }),
+    [SHOOTING_ENEMY_ID.DEINOVA_RAPTOR]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.DEINOVA_RAPTOR, kind: 'normal', implemented: true,
+      name: '紅雷のレムナント', displayName: 'REMNANT　紅雷のレムナント',
+      element: 'fire', attackType: 'charge', image: 'images/enemy_deinova_raptor.webp',
+      hp: 1600,
+      contactDamage: 200,
+      chargeSpeed: 520,
+      chargeDurationMs: 600,
+      telegraphMs: 780,
+      fireRate: 1900,
+      moveSpeed: 30,
+      scoreValue: 900,
+      behavior: 'generic_element_charge_v1',
+      uiScale: 1.2,
+    }),
+    // build2058: 放電コア。超放電の予約と同時に2つ出現し、全部壊すと放電が止まる（HPはステージ側 deinova.coreHp）。
+    [SHOOTING_ENEMY_ID.DEINOVA_CORE]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.DEINOVA_CORE, kind: 'normal', implemented: true,
+      name: '放電コア', displayName: 'CORE　放電コア',
+      element: 'neutral', attackType: 'none', image: 'images/deinova_discharge_core.webp',
+      hp: 900, moveSpeed: 0, scoreValue: 500, behavior: 'deinova_core_v1', uiScale: 1.15,
+    }),
+    // build2060: ディノヴァ（ID113）ULTが敵の左右に置く放電コア。こちらの攻撃で壊すと、その敵にダメージ＋麻痺。
+    //  HPはキャラ側（deinovaUltCoreHpAtkRate）。撃破数・スコアには数えない（shooting_core damageDeinovaUltCore）。
+    [SHOOTING_ENEMY_ID.DEINOVA_ULT_CORE]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.DEINOVA_ULT_CORE, kind: 'normal', implemented: true,
+      name: '放電コア', displayName: 'CORE　放電コア',
+      element: 'neutral', attackType: 'none', image: 'images/deinova_discharge_core.webp',
+      hp: 800, moveSpeed: 0, scoreValue: 0, behavior: 'deinova_ult_core_v1', uiScale: 0.85,
     }),
     [SHOOTING_ENEMY_ID.INORI_TORII]: Object.freeze({
       id: SHOOTING_ENEMY_ID.INORI_TORII, kind: 'normal', implemented: true,

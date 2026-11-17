@@ -152,6 +152,28 @@
       .shooting-nina-electric-network.is-output-max .shooting-nina-electric-hit{
         stroke-width:3;
       }
+      /* build2055: ID113 ディノヴァ通常PLASMA。screen合成だと明るい戦闘背景で赤がピンクに飛ぶため、
+         通常合成＋暗い深紅の縁取りで「赤い電撃」として見せる（白い芯は細く残してプラズマ感を維持） */
+      .shooting-nina-electric-network.is-deinova{
+        mix-blend-mode:normal;
+        filter:drop-shadow(0 0 2px rgba(120,0,14,.55)) drop-shadow(0 0 6px rgba(255,24,44,.55));
+      }
+      .shooting-nina-electric-network.is-deinova .shooting-nina-electric-glow{
+        stroke:rgba(214,0,26,.42); stroke-width:9; filter:blur(2.6px);
+      }
+      .shooting-nina-electric-network.is-deinova .shooting-nina-electric-color{
+        stroke:#e8001f; stroke-width:3.4;
+      }
+      .shooting-nina-electric-network.is-deinova .shooting-nina-electric-core{
+        stroke:rgba(255,236,236,.95); stroke-width:1;
+      }
+      .shooting-nina-electric-network.is-deinova .shooting-nina-electric-branch{
+        stroke:#d4001c; stroke-width:1.5;
+      }
+      .shooting-nina-electric-network.is-deinova .shooting-nina-electric-hit{
+        fill:#fff0f0; stroke:#d4001c; stroke-width:2.4;
+        filter:drop-shadow(0 0 5px rgba(240,0,30,.85));
+      }
       @keyframes ninaElectricNetworkFlicker{
         0%{opacity:.28}
         18%{opacity:1}
@@ -3635,16 +3657,71 @@
         }
       }
 
+      // build2057: 特別巡行ディノヴァのドロップ。ランク判定・抽選・付与はすべてサーバー（同じrun tokenで確定済みのスコアを使う）。
+      let deinovaDrop = null;
+      if (win && isDeinovaStage()) deinovaDrop = await claimDeinovaSpecialDrop(sb, runToken);
+
       return {
         highScore: cloudScore,
         firstClearClaimed: !!row?.first_clear_claimed,
         firstClearAmount: Math.max(0, Number(row?.first_clear_amount || 0)),
         gem: Number.isFinite(gem) ? Math.max(0, gem) : null,
-        shinjuRewardExp
+        shinjuRewardExp,
+        deinovaDrop
       };
     } catch (err) {
       console.warn('[shooting] secure result save skipped:', err?.message || err);
       return null;
+    }
+  }
+
+  // build2057: 特別巡行「最恐 -デイノヴァ-」のドロップ確定（サーバーRPC）
+  //  返り値: { rank:'S'|'A'|..., dropped:boolean, character_row_id:number|null, owned_count:number }
+  async function claimDeinovaSpecialDrop(sb, runToken) {
+    try {
+      const res = await sb.rpc('claim_deinova_special_drop', { p_run_token: runToken });
+      if (res?.error) throw res.error;
+      let data = res ? res.data : null;
+      if (typeof data === 'string') { try { data = JSON.parse(data); } catch (_) {} }
+      if (Array.isArray(data)) data = data[0] || null;
+      if (!data) return null;
+      const drop = {
+        rank: String(data.rank || ''),
+        dropped: !!data.dropped,
+        characterRowId: Number(data.character_row_id || 0) || null,
+        ownedCount: Math.max(0, Number(data.owned_count || 0)),
+      };
+      if (drop.dropped && drop.characterRowId) void syncDroppedDeinovaToLocal(sb, drop.characterRowId);
+      return drop;
+    } catch (err) {
+      console.warn('[deinova] drop claim failed:', err?.message || err);
+      return { error: true };
+    }
+  }
+
+  // 獲得したディノヴァをローカルの所持一覧へ反映（ノアの解放と同じ手順）。
+  async function syncDroppedDeinovaToLocal(sb, characterRowId) {
+    try {
+      const rowRes = await sb.from('collected_characters').select('*').eq('id', Number(characterRowId)).maybeSingle();
+      if (rowRes && rowRes.error) throw rowRes.error;
+      const row = rowRes && rowRes.data;
+      if (!row) return;
+      // index.html の大域（let/function）を参照する。ノアの解放処理（noah_piece.js）と同じ書き方。
+      const chara = typeof getCharaById === 'function' ? getCharaById(113) : null;
+      if (!chara) return;
+      const entry = typeof buildOwnedEntryFromChara === 'function'
+        ? buildOwnedEntryFromChara(chara, row)
+        : (typeof createCharaSummonData === 'function' ? createCharaSummonData(chara, new Date(row.captured_at || Date.now())) : null);
+      if (!entry) return;
+      entry.db_id = row.id;
+      if (typeof box !== 'undefined' && Array.isArray(box) && !box.some(x => x && Number(x.db_id) === Number(entry.db_id))) box.push(entry);
+      if (typeof collected !== 'undefined' && collected) collected[113] = collected[113] || entry;
+      try { if (typeof renderBox === 'function') renderBox(); } catch (_) {}
+      try { if (typeof updateMainUI === 'function') updateMainUI(); } catch (_) {}
+      try { if (typeof updateZukanLimitBreakNotice === 'function') updateZukanLimitBreakNotice(); } catch (_) {}
+      try { if (typeof window.refreshShootingRoster === 'function') window.refreshShootingRoster(); } catch (_) {}
+    } catch (err) {
+      console.warn('[deinova] local sync failed:', err?.message || err);
     }
   }
 
@@ -9683,12 +9760,15 @@
 
     const width = Math.max(1, Number(arena.clientWidth || 0));
     const height = Math.max(1, Number(arena.clientHeight || 0));
-    const visual = ULT_ELEMENT_VISUAL[normalizeCombatElement(element) || 'neutral'] || ULT_ELEMENT_VISUAL.neutral;
+    const visual = Number(getCurrentCharacter()?.id) === 113
+      ? { rgb:'240,12,32', color:'#f00c20' } // ID113: vivid crimson PLASMA, other characters unchanged
+      : (ULT_ELEMENT_VISUAL[normalizeCombatElement(element) || 'neutral'] || ULT_ELEMENT_VISUAL.neutral);
     const svgNs = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(svgNs, 'svg');
     svg.setAttribute(
       'class',
       'shooting-nina-electric-network' + (isNinaOutputMaxActive(performance.now()) ? ' is-output-max' : '')
+        + (Number(getCurrentCharacter()?.id) === 113 ? ' is-deinova' : '')
     );
     svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
     svg.setAttribute('preserveAspectRatio', 'none');
@@ -9755,12 +9835,15 @@
 
     const width = Math.max(1, Number(arena.clientWidth || 0));
     const height = Math.max(1, Number(arena.clientHeight || 0));
-    const visual = ULT_ELEMENT_VISUAL[normalizeCombatElement(element) || 'neutral'] || ULT_ELEMENT_VISUAL.neutral;
+    const visual = Number(getCurrentCharacter()?.id) === 113
+      ? { rgb:'240,12,32', color:'#f00c20' } // ID113: vivid crimson PLASMA, other characters unchanged
+      : (ULT_ELEMENT_VISUAL[normalizeCombatElement(element) || 'neutral'] || ULT_ELEMENT_VISUAL.neutral);
     const svgNs = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(svgNs, 'svg');
     svg.setAttribute(
       'class',
       'shooting-nina-electric-network' + (isNinaOutputMaxActive(performance.now()) ? ' is-output-max' : '')
+        + (Number(getCurrentCharacter()?.id) === 113 ? ' is-deinova' : '')
     );
     svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
     svg.setAttribute('preserveAspectRatio', 'none');
@@ -16998,7 +17081,7 @@
     const interval = Number(cfg.spawnIntervalMs || 900);
 
     // 無限湧き、または未達成の収集ミッションでは撃破数でスポーンを止めない。
-    if ((!infiniteEnemies && state.normalSpawned >= total) || state.normalEnemies.length >= maxActive) return;
+    if ((!infiniteEnemies && state.normalSpawned >= total) || state.normalEnemies.filter(e => !(e && e.deinovaUltCore)).length >= maxActive) return; // build2060: ULTのコアは数えない
     if (now - state.normalLastSpawnAt < interval) return;
     const enemyIds = (
       selectedStage &&
@@ -18213,7 +18296,7 @@
     const startDelay = Math.max(0, Number(cfg.startDelayMs || 0));
 
     if (total > 0 && state.normalSpawned >= total) return;
-    if (state.normalEnemies.filter(e => e && e.hp > 0 && !(e.def && e.def.behavior === 'verdant_seed_v1')).length >= maxActive) return; // build2003: 生存中だけを同時召喚数として計上
+    if (state.normalEnemies.filter(e => e && e.hp > 0 && !e.deinovaUltCore && !(e.def && (e.def.behavior === 'verdant_seed_v1' || e.def.behavior === 'deinova_core_v1'))).length >= maxActive) return; // build2003: 生存中だけを同時召喚数として計上
     // 記憶オーバーシア：撃破から5秒は新たな監視者を補充しない。
     if (selectedStage?.memoryBattle?.no === 5 && now < Number(state.overseerWatcherReviveAt || 0)) return;
     if (now - state.startedAt < startDelay) return;
@@ -18762,6 +18845,7 @@
     if (def.behavior === 'inori_torii_v1') return; // 鳥居の攻撃（レーザー）は updateInoriMechanics
     if (def.behavior === 'eclipse_scale_v1') return; // build1681: 天秤は弾を撃たない（突進は updateEclipseScale）
     if (def.behavior === 'verdant_seed_v1') return; // build1663: 成長の実は攻撃しない
+    if (def.behavior === 'deinova_core_v1' || def.behavior === 'deinova_ult_core_v1') return; // build2058: 放電コアは攻撃しない／build2060: ULTのコアも
 
     // v212 generic elemental angels
     if (def.behavior === 'generic_element_shot_v1') {
@@ -19565,7 +19649,7 @@
       if (enemy.hazeClone) return; // build1866: 陽炎の分身は updateHazeMechanics が動かす
       const def = enemy.def || {};
       // build1643: イノリの鳥居は常にイノリの左右・少し後方に付き従う（移動AI・射撃なし。レーザーは本体側で管理）
-      if (def.behavior === 'verdant_seed_v1') { // build1663: 成長の実は動かない（熟し具合は updateVerdantSeeds）
+      if (def.behavior === 'verdant_seed_v1' || def.behavior === 'deinova_core_v1' || def.behavior === 'deinova_ult_core_v1') { // build1663: 成長の実は動かない（熟し具合は updateVerdantSeeds）／build2058: 放電コアも固定
         enemy.x = enemy.baseX; enemy.y = enemy.baseY;
         positionUnit(enemy.el, enemy.x, enemy.y);
         positionMiniEnemyHp(enemy);
@@ -19966,6 +20050,8 @@
 
   function damageNormalEnemy(enemy, amount, now, big, elementReaction = '', suppressVisual = false) {
     if (!enemy || enemy.hp <= 0) return 0;
+    // build2060: ディノヴァULTの放電コア（味方の設置物）は撃破数・スコアに数えない
+    if (enemy.deinovaUltCore) return damageDeinovaUltCore(enemy, amount, Number(now || performance.now()), big, elementReaction, suppressVisual);
     // build1761: HIT数で倒す敵（記憶決戦の守護者）。威力に関係なく、通った攻撃1回＝1ダメージ。
     // 属性結界などで0になった攻撃は数えない。連射の速いショットや多段ULTが有利。
     if (enemy.memoryHitHp && Number(amount) > 0) amount = 1;
@@ -23836,6 +23922,8 @@
     if (isShienBattle()) return;
     // build1592: カミラも専用の攻撃のみ（updateCamillaMechanics）。共通WARNING・通常弾は撃たない。
     if (isCamillaBattle()) return;
+    // build2057: ディノヴァはPLASMA（扇状＋狙い撃ち）のみ。突進中は撃たない。
+    if (BOSS && BOSS.behavior === 'deinova_v1') { fireDeinovaBoss(now); return; }
     // WARNING攻撃は必ず先に処理する。レイド軽量化で危険攻撃を消さない。
     if (handleBossDangerAttack(now)) return;
 
@@ -24444,6 +24532,8 @@
         updateShienBossMovement(now, dt, w, h, boss);
       } else if (isCamillaBattle()) {
         updateCamillaBossMovement(now, dt, w, h);
+      } else if (BOSS && BOSS.behavior === 'deinova_v1') {
+        updateDeinovaBossMovement(now, dt, w, h, boss, applyBossStartBlend); // build2057: 突進
       } else if (BOSS && BOSS.behavior === 'violence_v1') {
         // build1214 CH02-04 イリシュ:
         // 「唐突に突っ込む」のをやめ、必ず約1秒の溜めを見せてから突進する。
@@ -25414,6 +25504,7 @@
       const hitEnemy = state.normalEnemies.find(enemy => {
         if (!enemy || !enemy.el || enemy.hp <= 0) return false;
         if (enemy.def?.behavior === 'verdant_seed_v1') return false; // build1663
+        if (enemy.deinovaUltCore) return false; // build2060: ディノヴァULTの放電コア
         // Dedicated CHARGE zako only deals contact damage while actually dashing.
         if (
           enemy.def?.behavior === 'generic_element_charge_v1' &&
@@ -25460,9 +25551,10 @@
     }
 
     // build1663: 樹獣の森（ボス戦）は配下の接触も有効（樹獣は突進中のみ）。従来はボス戦で配下の接触判定がなく、突進が素通りしていた。
-    if (selectedStage && selectedStage.verdant && hasBossAdds()) {
+    // build2058: ディノヴァ戦の紅雷のレムナント（突進中）も同じ扱い。放電コアは接触なし
+    if (selectedStage && (selectedStage.verdant || selectedStage.deinova) && hasBossAdds()) {
       const hitAdd = (state.normalEnemies || []).find(enemy => enemy && enemy.el && enemy.hp > 0 &&
-        enemy.def?.behavior !== 'verdant_seed_v1' &&
+        enemy.def?.behavior !== 'verdant_seed_v1' && enemy.def?.behavior !== 'deinova_core_v1' && !enemy.deinovaUltCore &&
         !(enemy.def?.behavior === 'generic_element_charge_v1' && enemy.attackState !== 'dash') &&
         rectsHit(playerRect, getUnitRect(enemy, arenaRectForContact), 14, 9));
       if (hitAdd) {
@@ -28607,6 +28699,811 @@
   }
 
   // ============================================================
+  // ============================================================
+  // build2060: ディノヴァ（ID113）ULT「ラプトプラズム」
+  //  アルノ型の時間停止＋連打斬撃のあと、斬った敵（いちばん多く斬った相手）の左右に放電コアを2つ設置する。
+  //  コアは敵に付いて動く「味方の設置物」。通常敵の枠（state.normalEnemies）に入れるので、
+  //  弾・PLASMA・レーザー・ULTなど、こちらのどの攻撃でも壊せる。撃破数・スポーン数には数えない。
+  //  HP＝ATK×deinovaUltCoreHpAtkRate。1つ壊すごとに、その敵へ ATK×deinovaUltCoreDamageAtkRate のダメージ＋麻痺（行動不能）。
+  //  deinovaUltCoreDurationMs で消える。時刻は *Until なので PAUSE・時間停止明けに自動でずれる。
+  // ============================================================
+  function ensureDeinovaUltCoreStyle() {
+    if (document.getElementById('deinova-ult-core-style-v2060')) return;
+    const st = document.createElement('style');
+    st.id = 'deinova-ult-core-style-v2060';
+    st.textContent = `
+      #shooting-event-root .shooting-mini-enemy.deinova-ult-core{filter:drop-shadow(0 0 5px rgba(255,220,140,.95)) drop-shadow(0 0 10px rgba(255,50,70,.8));
+        animation:deinovaUltCorePulse .45s ease-in-out infinite alternate}
+      #shooting-event-root .shooting-mini-enemy.deinova-ult-core.is-fading{opacity:.45}
+      @keyframes deinovaUltCorePulse{to{filter:drop-shadow(0 0 9px rgba(255,240,180,1)) drop-shadow(0 0 16px rgba(255,50,70,1)) brightness(1.12)}}
+      .deinova-ult-core-burst{position:absolute;left:0;top:0;width:120px;height:120px;margin:-60px 0 0 -60px;z-index:22;pointer-events:none;border-radius:50%;
+        background:radial-gradient(circle,rgba(255,255,255,.95),rgba(255,70,90,.65) 40%,transparent 70%);animation:deinovaUltCoreBurst .45s ease-out forwards}
+      @keyframes deinovaUltCoreBurst{from{transform:var(--p) scale(.3);opacity:1}to{transform:var(--p) scale(1.35);opacity:0}}
+      .deinova-ult-core-link{position:absolute;left:0;top:0;height:3px;margin-top:-1.5px;transform-origin:0 50%;z-index:8;pointer-events:none;
+        background:linear-gradient(90deg,rgba(255,225,150,.95),rgba(255,70,90,.9));box-shadow:0 0 8px rgba(255,40,60,.8);animation:deinovaUltLink .2s steps(2) infinite}
+      @keyframes deinovaUltLink{50%{opacity:.45}}
+    `;
+    document.head.appendChild(st);
+  }
+
+  function getDeinovaUltCoreConfigFromCharacter(c) {
+    const count = Math.max(0, Math.floor(Number(c && c.deinovaUltCoreCount || 0)));
+    if (!count) return null;
+    const atkValue = Math.max(1, Number(c.atk || 0));
+    return {
+      count,
+      hp: Math.max(1, Math.round(atkValue * Number(c.deinovaUltCoreHpAtkRate || 3))),
+      durationMs: Math.max(1000, Number(c.deinovaUltCoreDurationMs || 10000)),
+      damage: Math.max(0, atkValue * Number(c.deinovaUltCoreDamageAtkRate || 2)),
+      paralyzeMs: Math.max(0, Number(c.deinovaUltCoreParalyzeMs || 3000)),
+      offsetX: Math.max(30, Number(c.deinovaUltCoreOffsetX || 72)),
+      element: normalizeCombatElement(c.element) || 'fire',
+    };
+  }
+
+  function isDeinovaUltCore(e) { return !!(e && e.deinovaUltCore); }
+
+  function isDeinovaUltTargetAlive(t) {
+    if (!t || !state) return false;
+    if (t.kind === 'boss') return !!(state.boss && state.boss.hp > 0 && !isNormalBattle());
+    return !!(t.ref && t.ref.el && t.ref.hp > 0);
+  }
+  function getDeinovaUltTargetPos(t) {
+    if (t.kind === 'boss') return { x: Number(state.boss.x || 0), y: Number(state.boss.y || 0) };
+    return { x: Number(t.ref.x || 0), y: Number(t.ref.y || 0) };
+  }
+
+  function pickDeinovaUltTarget() {
+    const hits = (state.arnoSlashHitTargets || []).filter(t => isDeinovaUltTargetAlive(t) && !isDeinovaUltCore(t.ref));
+    if (hits.length) return hits.slice().sort((a, b) => Number(b.hits || 1) - Number(a.hits || 1))[0];
+    if (!isNormalBattle() && state.boss && state.boss.hp > 0) return { kind: 'boss', ref: state.boss, key: 'boss' };
+    const px = Number(state.player?.x || 0), py = Number(state.player?.y || 0);
+    const enemies = (state.normalEnemies || []).filter(e => e && e.el && e.hp > 0 && !isDeinovaUltCore(e) &&
+      !(e.def && (e.def.behavior === 'deinova_core_v1' || e.def.behavior === 'verdant_seed_v1')));
+    if (!enemies.length) return null;
+    enemies.sort((a, b) => Math.hypot(a.x - px, a.y - py) - Math.hypot(b.x - px, b.y - py));
+    return { kind: 'normal', ref: enemies[0], key: enemies[0].uid || 'normal' };
+  }
+
+  function removeDeinovaUltCore(core) {
+    if (!core) return;
+    [core.el, core.hpEl, core.elementEl, core.weaknessBarrierEl, core.deinovaUltCore && core.deinovaUltCore.linkEl]
+      .forEach(n => { try { n && n.remove(); } catch (_) {} });
+    core.hp = 0;
+    if (state) state.normalEnemies = (state.normalEnemies || []).filter(e => e !== core);
+  }
+
+  function placeDeinovaUltCores(now, startAt) {
+    const cfg = state && state.deinovaUltCoreCfg;
+    const arena = document.getElementById('shooting-arena');
+    const def = getShootingEnemy(window.ShootingEnemies?.SHOOTING_ENEMY_ID?.DEINOVA_ULT_CORE || 'shooting_deinova_ult_core');
+    if (!cfg || !arena || !def) return;
+    const target = pickDeinovaUltTarget();
+    if (!target) return;
+    ensureDeinovaUltCoreStyle();
+    // 前回のULTのコアは置き換える
+    (state.normalEnemies || []).filter(isDeinovaUltCore).forEach(removeDeinovaUltCore);
+    for (let i = 0; i < cfg.count; i++) {
+      const core = createNormalEnemy(def, now, { noElementIcon: true });
+      if (!core) continue;
+      state.deinovaUltCoreSerial = Number(state.deinovaUltCoreSerial || 0) + 1;
+      core.uid = 'deinova_ult_core_' + state.deinovaUltCoreSerial;
+      core.hp = core.hpMax = cfg.hp;
+      core.el.classList.add('deinova-ult-core');
+      const linkEl = document.createElement('div');
+      linkEl.className = 'deinova-ult-core-link';
+      arena.appendChild(linkEl);
+      core.deinovaUltCore = {
+        target, cfg, linkEl,
+        side: cfg.count === 1 ? 0 : (i / (cfg.count - 1)) * 2 - 1,
+        offsetY: cfg.count > 2 ? (i % 2) * 40 - 20 : 0,
+        expireUntil: Math.max(now, Number(startAt || now)) + cfg.durationMs,
+      };
+      renderMiniEnemyHp(core);
+      state.normalEnemies.push(core);
+    }
+    updateDeinovaUltCores(now);
+  }
+
+  // 毎フレーム：敵に付いて動かす／期限・対象の撃破で消す
+  function updateDeinovaUltCores(now) {
+    if (!state || !state.normalEnemies) return;
+    const cores = state.normalEnemies.filter(isDeinovaUltCore);
+    if (!cores.length) return;
+    const rect = getArenaInputRect();
+    const w = Number(rect?.width || 0), h = Number(rect?.height || 0);
+    cores.forEach(core => {
+      const u = core.deinovaUltCore;
+      if (core.hp <= 0 || !isDeinovaUltTargetAlive(u.target) || now >= u.expireUntil) { removeDeinovaUltCore(core); return; }
+      const pos = getDeinovaUltTargetPos(u.target);
+      let x = pos.x + u.side * u.cfg.offsetX, y = pos.y + u.offsetY + 8;
+      if (w > 0) x = clamp(x, 24, w - 24);
+      if (h > 0) y = clamp(y, 30, h - 30);
+      core.x = core.baseX = x; core.y = core.baseY = y;
+      positionUnit(core.el, x, y);
+      positionMiniEnemyHp(core);
+      core.el.classList.toggle('is-fading', u.expireUntil - now < 1500);
+      const dx = pos.x - x, dy = pos.y - y;
+      u.linkEl.style.width = `${Math.hypot(dx, dy)}px`;
+      u.linkEl.style.transform = `translate3d(${x}px,${y}px,0) rotate(${Math.atan2(dy, dx)}rad)`;
+    });
+  }
+
+  // damageNormalEnemy から呼ぶ：コアは撃破数に数えず、壊れたら効果を発動して消える
+  function damageDeinovaUltCore(core, amount, now, big, elementReaction, suppressVisual) {
+    const applied = Math.min(core.hp, Math.max(0, Number(amount || 0)));
+    if (!(applied > 0)) return 0;
+    core.hp = Math.max(0, core.hp - applied);
+    renderMiniEnemyHp(core);
+    if (!suppressVisual && now >= Number(core._dnHitFxNextAt || 0)) {
+      core._dnHitFxNextAt = now + 110;
+      createHit(core.x, core.y, !!big);
+      if (core.el) sustainHitFeedback(core.el, big ? 210 : 145);
+    }
+    if (core.hp <= 0) breakDeinovaUltCore(core, now);
+    return applied;
+  }
+
+  function breakDeinovaUltCore(core, now) {
+    const u = core.deinovaUltCore;
+    const arena = document.getElementById('shooting-arena');
+    if (arena) {
+      const burst = document.createElement('div');
+      burst.className = 'deinova-ult-core-burst';
+      burst.style.setProperty('--p', `translate3d(${core.x}px,${core.y}px,0)`);
+      burst.style.transform = `translate3d(${core.x}px,${core.y}px,0)`;
+      arena.appendChild(burst);
+      setTimeout(() => burst.remove(), 480);
+    }
+    removeDeinovaUltCore(core);
+    if (!u) return;
+    const t = u.target, cfg = u.cfg;
+    if (!isDeinovaUltTargetAlive(t)) return;
+    const until = now + cfg.paralyzeMs;
+    if (t.kind === 'boss') {
+      const targetElement = getCombatTargetElement(state.boss);
+      const finalDamage = applyElementDamage(cfg.damage, cfg.element, targetElement);
+      const applied = Math.min(state.boss.hp, Math.max(0, Number(finalDamage || 0)));
+      state.boss.hp = Math.max(0, state.boss.hp - applied);
+      showBossDamageNumber(applied, true, getElementDamageReaction(cfg.element, targetElement));
+      if (!addScoreAttackDamageScore(applied)) addLegacyCombatScore(Math.round(applied * 100));
+      createHit(state.boss.x, state.boss.y, true);
+      flashBossHit(true);
+      updateBossPhase();
+      if (state.boss.hp <= 0) { beginBossDefeat(); return; }
+      if (cfg.paralyzeMs > 0) {
+        state.bossStunUntil = Math.max(Number(state.bossStunUntil || 0), until);
+        deferBossAttackResume(until);
+        createParalysisFx(state.boss, until, true);
+      }
+    } else {
+      const enemy = t.ref;
+      const targetElement = getCombatTargetElement(enemy);
+      const finalDamage = applyElementDamage(cfg.damage, cfg.element, targetElement);
+      damageNormalEnemy(enemy, finalDamage, now, true, getElementDamageReaction(cfg.element, targetElement));
+      if (enemy.hp > 0 && cfg.paralyzeMs > 0) {
+        freezeNormalEnemyAction(enemy, until, Math.max(0, (state.normalEnemies || []).indexOf(enemy)));
+        createParalysisFx(enemy, until);
+      }
+    }
+  }
+
+  // ============================================================
+  // build2057: 特別巡行「最恐 -デイノヴァ-」
+  //  ・plasmaレール … 盤面に回廊を作る。触れると500ダメージ＋1.2秒無敵＋回廊の内側へ押し戻し。自機弾は素通り。
+  //                   形は railPatternMs ごとに変わる（直線→S字→ジグザグ→横レール）。切替の1秒前に点線で予告。
+  //  ・突進＋PLASMA … ボスの基本攻撃（updateDeinovaBossMovement / fireDeinovaBoss）。
+  //  ・超放電 … ディノヴァに与えたダメージで放電GAUGEが溜まる。行動停止・時間停止・スタン・捕縛中は溜まらない。
+  //             満タンで 3・2・1 → 操作中キャラ即死。カウント中は時間停止（アルノ型ULT・PAUSE）だけが止められる。
+  //             放電の瞬間、操作中キャラが無敵（invincibleUntil）なら防げる。被弾後の短い無敵は対象外。
+  //  時刻は *At / *Until の名前で持つので、PAUSE・アルノ型ULTの時間停止明けに自動でずれる（shiftPausedTimestamps）。
+  // ============================================================
+  function isDeinovaStage() {
+    return !!(selectedStage && SHOOTING_STAGE_ID.DEINOVA_SPECIAL && selectedStage.id === SHOOTING_STAGE_ID.DEINOVA_SPECIAL);
+  }
+  function getDeinovaConfig() {
+    return (isDeinovaStage() && selectedStage.deinova) || null;
+  }
+  function isDeinovaBattle() {
+    return !!(state && state.boss && BOSS && BOSS.behavior === 'deinova_v1' && getDeinovaConfig());
+  }
+  function ensureDeinovaStyle() {
+    if (document.getElementById('deinova-stage-style-v2057')) return;
+    const st = document.createElement('style');
+    st.id = 'deinova-stage-style-v2057';
+    st.textContent = `
+      .deinova-rail-canvas{position:absolute;left:0;top:0;width:100%;height:100%;z-index:6;pointer-events:none}
+      .deinova-discharge{position:absolute;left:50%;top:calc(var(--deinova-gauge-top,74px));transform:translateX(-50%);z-index:38;pointer-events:none;
+        width:min(62%,250px);display:flex;align-items:center;gap:7px;font:800 10px/1 "Zen Kaku Gothic New",sans-serif;letter-spacing:.14em;color:#ffd9d9;
+        text-shadow:0 1px 2px rgba(40,0,0,.8)}
+      .deinova-discharge b{flex:0 0 auto;font-size:10px}
+      .deinova-discharge-bar{position:relative;flex:1;height:8px;border-radius:5px;background:rgba(30,6,10,.72);border:1px solid rgba(255,120,120,.55);overflow:hidden;
+        box-shadow:0 0 8px rgba(255,40,60,.35)}
+      .deinova-discharge-fill{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#8d0a1c,#ff2a3d 70%,#ffd0d0);
+        box-shadow:0 0 10px #ff3346;transition:width .12s linear}
+      .deinova-discharge-lock{flex:0 0 auto;font-size:9px;letter-spacing:.1em;color:#bfe9ff;opacity:0;transition:opacity .15s}
+      .deinova-discharge.is-locked .deinova-discharge-lock{opacity:1}
+      .deinova-discharge.is-locked .deinova-discharge-fill{filter:saturate(.35) brightness(.85)}
+      .deinova-discharge.is-full .deinova-discharge-fill{animation:deinovaGaugeBlink .22s steps(2) infinite}
+      @keyframes deinovaGaugeBlink{50%{filter:brightness(1.8)}}
+      .deinova-countdown{position:absolute;inset:0;z-index:37;pointer-events:none;box-shadow:inset 0 0 70px rgba(255,20,40,.55);
+        animation:deinovaEdge .5s ease-in-out infinite alternate}
+      .deinova-countdown.is-frozen{animation:none;box-shadow:inset 0 0 60px rgba(120,190,255,.45)}
+      .deinova-countdown.is-sealed{box-shadow:inset 0 0 60px rgba(255,235,160,.6)}
+      @keyframes deinovaEdge{from{box-shadow:inset 0 0 46px rgba(255,20,40,.4)}to{box-shadow:inset 0 0 96px rgba(255,20,40,.75)}}
+      .deinova-countdown-box{position:absolute;left:50%;top:30%;transform:translate(-50%,-50%);text-align:center;color:#fff;
+        text-shadow:0 0 10px #ff1f35,0 0 22px #ff1f35}
+      .deinova-countdown-box small{display:block;font:800 11px/1 "Zen Kaku Gothic New",sans-serif;letter-spacing:.3em;color:#ffd0d0;margin-bottom:4px}
+      .deinova-countdown-box strong{display:block;font:900 64px/1 "Cinzel","Times New Roman",serif}
+      .deinova-countdown-box span{display:block;margin-top:2px;font:700 10px/1.4 "Zen Kaku Gothic New",sans-serif;letter-spacing:.12em;color:#ffe3a6;min-height:14px}
+      .deinova-discharge-flash{position:absolute;inset:0;z-index:39;pointer-events:none;
+        background:radial-gradient(circle at 50% 30%,rgba(255,255,255,.95),rgba(255,60,80,.75) 45%,rgba(120,0,20,.5));
+        animation:deinovaFlash .7s ease-out forwards}
+      .deinova-discharge-flash.is-sealed{background:radial-gradient(circle at 50% 30%,rgba(255,255,255,.85),rgba(255,200,120,.45) 50%,rgba(80,20,0,.2))}
+      @keyframes deinovaFlash{0%{opacity:0}8%{opacity:1}100%{opacity:0}}
+      .deinova-charge-line{position:absolute;left:0;top:0;height:10px;margin-top:-5px;transform-origin:0 50%;z-index:7;pointer-events:none;
+        background:repeating-linear-gradient(90deg,rgba(255,40,60,.85) 0 14px,transparent 14px 22px);
+        box-shadow:0 0 12px rgba(255,30,50,.7);animation:deinovaChargeLine .18s steps(2) infinite}
+      @keyframes deinovaChargeLine{50%{opacity:.45}}
+      .deinova-dash-warning{filter:drop-shadow(0 0 10px #ff2438) brightness(1.15)}
+      .deinova-core-aura{position:absolute;z-index:8;pointer-events:none;border-radius:50%;
+        border:2px dashed rgba(255,60,80,.75);background:radial-gradient(circle,rgba(255,40,60,.05) 55%,rgba(255,40,60,.22));
+        animation:deinovaAuraSpin 2.4s linear infinite}
+      .deinova-core-aura.is-zap{animation:deinovaAuraSpin 2.4s linear infinite,deinovaAuraZap .35s ease-out}
+      @keyframes deinovaAuraSpin{to{transform:rotate(360deg)}}
+      @keyframes deinovaAuraZap{0%{background:radial-gradient(circle,rgba(255,255,255,.85),rgba(255,40,60,.6));border-color:#fff}100%{}}
+      #shooting-event-root .shooting-mini-enemy.deinova-core{animation:deinovaCorePulse .5s ease-in-out infinite alternate}
+      @keyframes deinovaCorePulse{from{filter:drop-shadow(0 0 6px rgba(255,40,60,.7))}to{filter:drop-shadow(0 0 16px rgba(255,40,60,1)) brightness(1.15)}}
+    `;
+    document.head.appendChild(st);
+  }
+
+  function ensureDeinovaState(now) {
+    if (!state || !isDeinovaBattle()) return null;
+    if (state.deinova) return state.deinova;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return null;
+    ensureDeinovaStyle();
+    arena.querySelectorAll('.deinova-layer').forEach(e => e.remove());
+    const canvas = document.createElement('canvas');
+    canvas.className = 'deinova-rail-canvas deinova-layer';
+    // 戦闘画面には「アリーナ直下のcanvasを隠す」既存ルールがあるため、表示はインラインで強制する
+    canvas.style.setProperty('display', 'block', 'important');
+    arena.appendChild(canvas);
+    const gauge = document.createElement('div');
+    gauge.className = 'deinova-discharge deinova-layer';
+    gauge.innerHTML = '<b>放電</b><div class="deinova-discharge-bar"><div class="deinova-discharge-fill"></div></div><span class="deinova-discharge-lock">停止中</span>';
+    arena.appendChild(gauge);
+    placeDeinovaGauge(arena, gauge);
+    state.deinova = {
+      railMs: 0,            // レールの時計（盤面が動いている間だけ進む）
+      bars: [],
+      nextBarMs: 0,
+      lastHp: null,
+      dischargeAt: 0,       // 超放電の発動時刻（0＝未予約）
+      motionMs: 0,          // 突進の時計（ボスが止まっている間は進まない）
+      lastMotionMs: null,
+      chargeMode: 'idle',
+      chargeStartMs: 0,
+      nextChargeMs: Number(getDeinovaConfig().chargeFirstAtMs || 4500),
+      chargeFrom: null, chargeTo: null, chargeHit: false,
+      lastPlasmaAt: now,
+      plasmaVolley: 0,
+      knock: null,
+      canvas, gauge,
+      gaugeFill: gauge.querySelector('.deinova-discharge-fill'),
+      countEl: null, lineEl: null,
+    };
+    return state.deinova;
+  }
+
+  // 放電GAUGEはボスHP（PHASE表示）のすぐ下に置く。HUDが無い時は既定位置のまま。
+  function placeDeinovaGauge(arena, gauge) {
+    try {
+      const hud = document.querySelector('#shooting-event-root .shooting-boss-hud');
+      if (!hud || !arena || !gauge) return;
+      const a = arena.getBoundingClientRect(), r = hud.getBoundingClientRect();
+      if (!(r.height > 0)) return;
+      gauge.style.setProperty('--deinova-gauge-top', `${Math.round(r.bottom - a.top + 6)}px`);
+    } catch (_) {}
+  }
+
+  function isDeinovaGaugeLocked(now) {
+    if (!state) return true;
+    const stop = getEnemyStopCapabilities(now);
+    return !!(stop.action || stop.time ||
+      now < Number(state.bossStunUntil || 0) ||
+      now < Number(state.bossGrabUntil || 0) ||
+      now < Number(state.gojoPurpleBossFreezeUntil || 0) ||
+      now < Number(state.angeEnemyFreezeUntil || 0));
+  }
+
+  // 毎フレーム（PAUSE・時間停止中も）呼ぶ。ボスHPの減少量を放電GAUGEへ変換する。
+  // どの攻撃経路でHPが減っても拾えるよう、HPの差分で判定する。
+  function syncDeinovaDischargeGauge(now) {
+    if (!isDeinovaBattle()) return;
+    const dn = ensureDeinovaState(now);
+    if (!dn) return;
+    const hp = Number(state.boss.hp || 0);
+    if (dn.lastHp === null) { dn.lastHp = hp; return; }
+    const delta = dn.lastHp - hp;
+    dn.lastHp = hp;
+    const locked = isDeinovaGaugeLocked(now);
+    if (dn.gauge && dn.gauge.classList) dn.gauge.classList.toggle('is-locked', locked && !dn.dischargeAt);
+    if (!(delta > 0) || dn.dischargeAt > 0 || locked || state.koTransition) return;
+    const cfg = getDeinovaConfig();
+    dn.gaugeValue = Math.min(1, Number(dn.gaugeValue || 0) + delta / Math.max(500, Number(cfg.dischargeDamageToFill || 6500)));
+    if (dn.gaugeValue >= 1) startDeinovaDischarge(now);
+    syncDeinovaGaugeDom();
+  }
+
+  function syncDeinovaGaugeDom() {
+    const dn = state && state.deinova;
+    if (!dn || !dn.gaugeFill) return;
+    const v = dn.dischargeAt > 0 ? 1 : Math.max(0, Math.min(1, Number(dn.gaugeValue || 0)));
+    dn.gaugeFill.style.width = `${Math.round(v * 1000) / 10}%`;
+    dn.gauge.classList.toggle('is-full', dn.dischargeAt > 0);
+  }
+
+  function startDeinovaDischarge(now) {
+    const dn = state.deinova;
+    const arena = document.getElementById('shooting-arena');
+    if (!dn || !arena) return;
+    const cfg = getDeinovaConfig();
+    dn.gaugeValue = 1;
+    dn.dischargeAt = now + Math.max(1000, Number(cfg.dischargeCountdownMs || 3000));
+    if (dn.countEl) dn.countEl.remove();
+    dn.countEl = document.createElement('div');
+    dn.countEl.className = 'deinova-countdown deinova-layer';
+    dn.countEl.innerHTML = '<div class="deinova-countdown-box"><small>超放電</small><strong></strong><span></span></div>';
+    arena.appendChild(dn.countEl);
+    spawnDeinovaCores(now, cfg);
+    syncDeinovaGaugeDom();
+  }
+
+  // build2058: 放電コア。回廊の内側寄り（盤面中央の高さ）に左右対称で出す。全部壊すと放電中止。
+  function getDeinovaCores() {
+    return (state && state.normalEnemies || []).filter(e => e && e.el && e.hp > 0 && e.def && e.def.behavior === 'deinova_core_v1');
+  }
+  function removeDeinovaCore(core) {
+    if (!core) return;
+    [core.el, core.hpEl, core.elementEl, core.weaknessBarrierEl, core.deinovaAura].forEach(n => { try { n && n.remove(); } catch (_) {} });
+    core.hp = 0;
+    state.normalEnemies = state.normalEnemies.filter(e => e !== core);
+  }
+  function spawnDeinovaCores(now, cfg) {
+    const dn = state.deinova;
+    const arena = document.getElementById('shooting-arena');
+    const def = getShootingEnemy(window.ShootingEnemies?.SHOOTING_ENEMY_ID?.DEINOVA_CORE || 'shooting_deinova_core');
+    if (!dn || !arena || !def) return;
+    getDeinovaCores().forEach(removeDeinovaCore);
+    const rect = getArenaInputRect();
+    const w = Number(rect?.width || arena.clientWidth || 0), h = Number(rect?.height || arena.clientHeight || 0);
+    const n = Math.max(1, Math.floor(Number(cfg.coreCount || 2)));
+    const hp = Math.max(1, Number(cfg.coreHp || 900));
+    const cur = getDeinovaRailPattern(dn, cfg);
+    const y = h * 0.47;
+    const corr = getDeinovaCorridor(cur.name, y, dn.railMs / 1000, w, h);
+    for (let i = 0; i < n; i++) {
+      const core = createNormalEnemy(def, now, { noElementIcon: true });
+      if (!core) continue;
+      dn.coreSerial = Number(dn.coreSerial || 0) + 1;
+      core.uid = 'deinova_core_' + dn.coreSerial;
+      const side = n === 1 ? 0 : (i / (n - 1)) * 2 - 1; // -1 … 1
+      const x = clamp(corr.c + side * corr.half * 0.55, 40, w - 40);
+      const yy = y + (n > 2 ? (i % 2) * 60 - 30 : 0);
+      core.x = core.baseX = x; core.y = core.baseY = yy;
+      core.hp = core.hpMax = hp;
+      core.el.classList.add('deinova-core');
+      // 近づくと感電する範囲（見た目の輪）
+      const shockR = Math.max(20, Number(cfg.coreShockRadius || 72));
+      const aura = document.createElement('div');
+      aura.className = 'deinova-core-aura deinova-layer';
+      aura.style.width = aura.style.height = `${shockR * 2}px`;
+      aura.style.left = `${core.x - shockR}px`; aura.style.top = `${core.y - shockR}px`;
+      arena.appendChild(aura);
+      core.deinovaAura = aura;
+      positionUnit(core.el, core.x, core.y);
+      positionMiniEnemyHp(core);
+      renderMiniEnemyHp(core);
+      state.normalEnemies.push(core);
+    }
+    dn.coresSpawned = true;
+  }
+
+  // 放電コアを全部壊した：放電中止＋ディノヴァがダウン
+  function breakDeinovaDischarge(now, cfg) {
+    const dn = state.deinova;
+    dn.dischargeAt = 0;
+    dn.gaugeValue = 0;
+    dn.coresSpawned = false;
+    // 倒れた演出中のコアが残っていれば片付ける
+    (state.normalEnemies || []).filter(e => e && e.def && e.def.behavior === 'deinova_core_v1').forEach(removeDeinovaCore);
+    if (dn.countEl) { dn.countEl.remove(); dn.countEl = null; }
+    syncDeinovaGaugeDom();
+    const stunMs = Math.max(0, Number(cfg.coreBreakStunMs || 3000));
+    if (stunMs > 0 && state.boss) {
+      const until = now + stunMs;
+      state.bossStunUntil = Math.max(Number(state.bossStunUntil || 0), until);
+      deferBossAttackResume(until);
+      try { createParalysisFx(state.boss, until, true); } catch (_) {}
+    }
+    const arena = document.getElementById('shooting-arena');
+    if (arena) {
+      const flash = document.createElement('div');
+      flash.className = 'deinova-discharge-flash deinova-layer is-sealed';
+      arena.appendChild(flash);
+      setTimeout(() => flash.remove(), 760);
+    }
+    showMemoryGuardNotice('放電コア破壊', true, 'DISCHARGE BREAK');
+  }
+
+  function isDeinovaDischargeProtected(now) {
+    const member = getActiveMember();
+    return !!(member && now < Number(member.invincibleUntil || 0));
+  }
+
+  function updateDeinovaDischarge(dt, now) {
+    const dn = state && state.deinova;
+    if (!dn || !(dn.dischargeAt > 0)) return;
+    // KO演出・PHASE切替中は戦闘時計と同じく止める（神罰と同じ扱い）
+    if (state.koTransition || state.phaseTransition) {
+      dn.dischargeAt += Math.max(0, Math.min(250, dt * 1000));
+      if (dn.countEl) dn.countEl.classList.add('is-frozen');
+      return;
+    }
+    if (dn.countEl) dn.countEl.classList.remove('is-frozen');
+    const cfg = getDeinovaConfig();
+    const coresLeft = getDeinovaCores().length;
+    if (dn.coresSpawned && coresLeft === 0) { breakDeinovaDischarge(now, cfg); return; }
+    const left = Math.max(0, dn.dischargeAt - now);
+    const sealedNow = isDeinovaDischargeProtected(now);
+    if (dn.countEl) {
+      const strong = dn.countEl.querySelector('strong');
+      if (strong) strong.textContent = String(Math.max(1, Math.ceil(left / 1000)));
+      dn.countEl.classList.toggle('is-sealed', sealedNow);
+      const hint = dn.countEl.querySelector('span');
+      if (hint) hint.textContent = (coresLeft ? `放電コアを壊せ　残り${coresLeft}` : '') + (sealedNow ? (coresLeft ? '／' : '') + '無敵で耐えられる' : '');
+    }
+    if (left > 0) return;
+
+    // 発動（壊しきれなかったコアは消える）
+    getDeinovaCores().forEach(removeDeinovaCore);
+    dn.coresSpawned = false;
+    dn.dischargeAt = 0;
+    dn.gaugeValue = 0;
+    if (dn.countEl) { dn.countEl.remove(); dn.countEl = null; }
+    syncDeinovaGaugeDom();
+    const arena = document.getElementById('shooting-arena');
+    if (arena) {
+      const flash = document.createElement('div');
+      flash.className = 'deinova-discharge-flash deinova-layer' + (sealedNow ? ' is-sealed' : '');
+      arena.appendChild(flash);
+      setTimeout(() => flash.remove(), 760);
+    }
+    if (sealedNow) {
+      showMemoryGuardNotice('超放電を防いだ', true, 'DISCHARGE');
+      return;
+    }
+    const member = getActiveMember();
+    if (!member || member.hp <= 0) return;
+    showDamageNumber(state.player.x, state.player.y, Math.max(1, Math.round(member.hp)), 'player', true, '');
+    member.hp = 0;
+    triggerPlayerHitScreenShake();
+    renderHud();
+    beginPlayerDefeat();
+  }
+
+  // ---- plasmaレール ----
+  function getDeinovaCorridor(pattern, y, tSec, w, h) {
+    let c = w * 0.5, half = w * 0.38;
+    if (pattern === 'scurve') {
+      c = w * 0.5 + Math.sin((y / Math.max(1, h)) * Math.PI * 2 - tSec * 0.9) * w * 0.15;
+      half = w * 0.30;
+    } else if (pattern === 'zigzag') {
+      const u = (((y + tSec * 55) / Math.max(1, h * 0.42)) % 1 + 1) % 1;
+      const tri = u < 0.5 ? (4 * u - 1) : (3 - 4 * u);
+      c = w * 0.5 + tri * w * 0.17;
+      half = w * 0.27;
+    } else if (pattern === 'bars') {
+      half = w * 0.42;
+    }
+    half = Math.max(92, half);
+    return { c, half };
+  }
+
+  function getDeinovaRailPattern(dn, cfg, offset = 0) {
+    const list = cfg.railPatterns && cfg.railPatterns.length ? cfg.railPatterns : ['wide'];
+    const len = Math.max(4000, Number(cfg.railPatternMs || 16000));
+    const idx = Math.floor((dn.railMs + offset) / len);
+    return { name: list[((idx % list.length) + list.length) % list.length], idx, local: (dn.railMs + offset) - idx * len, len };
+  }
+
+  function updateDeinovaRails(dt, now) {
+    if (!isDeinovaBattle()) return;
+    const dn = ensureDeinovaState(now);
+    if (!dn) return;
+    const cfg = getDeinovaConfig();
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const rect = getArenaInputRect();
+    const w = Number(rect?.width || arena.clientWidth || 0);
+    const h = Number(rect?.height || arena.clientHeight || 0);
+    if (!(w > 0 && h > 0)) return;
+    const frozen = !!(state.koTransition || state.phaseTransition);
+    if (!frozen) dn.railMs += Math.max(0, Math.min(100, dt * 1000));
+    const tSec = dn.railMs / 1000;
+    const cur = getDeinovaRailPattern(dn, cfg);
+    const warnMs = Math.max(0, Number(cfg.railWarnMs || 1000));
+    const next = cur.local >= cur.len - warnMs ? getDeinovaRailPattern(dn, cfg, cur.len - cur.local + 1) : null;
+
+    // 横レール（bars のときだけ上から降りてくる。1か所だけ隙間がある）
+    if (cur.name === 'bars' && !frozen) {
+      if (dn.railMs >= dn.nextBarMs && cur.local < cur.len - 2600) {
+        const corr = getDeinovaCorridor('bars', 0, tSec, w, h);
+        const gapHalf = 58;
+        const gx = corr.c - corr.half + gapHalf + 8 + Math.random() * Math.max(1, corr.half * 2 - gapHalf * 2 - 16);
+        dn.bars.push({ y: -6, gx, gapHalf, hit: false });
+        dn.nextBarMs = dn.railMs + 2300;
+      }
+      dn.bars.forEach(b => { b.y += 78 * Math.min(0.1, dt); });
+    }
+    if (cur.name !== 'bars' && dn.bars.length && !frozen) dn.bars.forEach(b => { b.y += 78 * Math.min(0.1, dt); });
+    dn.bars = dn.bars.filter(b => b.y < h + 10);
+
+    drawDeinovaRails(dn, cur.name, next && next.name !== cur.name ? next.name : '', tSec, w, h);
+
+    // 押し戻し
+    if (dn.knock) {
+      const k = dn.knock;
+      const step = Math.min(1, dt * 14);
+      const dx = (k.x - state.player.x) * step, dy = (k.y - state.player.y) * step;
+      state.player.x += dx; state.player.y += dy;
+      if (pointerActive) { pointerX += dx; pointerY += dy; }
+      if (now >= k.until) dn.knock = null;
+    }
+
+    // 接触判定
+    if (frozen || state.countdown || now < Number(state.player.invulnUntil || 0)) return;
+    const member = getActiveMember();
+    if (!member || member.hp <= 0) return;
+    const px = Number(state.player.x), py = Number(state.player.y);
+    const pr = 9;
+    const corr = getDeinovaCorridor(cur.name, py, tSec, w, h);
+    let hit = null;
+    if (px < corr.c - corr.half + pr || px > corr.c + corr.half - pr) {
+      hit = { x: clamp(px, corr.c - corr.half + 34, corr.c + corr.half - 34), y: py };
+    }
+    if (!hit) {
+      for (const b of dn.bars) {
+        if (Math.abs(py - b.y) > 7 + pr) continue;
+        if (Math.abs(px - b.gx) <= b.gapHalf - pr) continue;
+        hit = { x: b.gx, y: Math.min(h - 40, b.y + 46) };
+        break;
+      }
+    }
+    if (!hit) return;
+    hitPlayerByDeinovaRail(now, hit, cfg);
+  }
+
+  function hitPlayerByDeinovaRail(now, target, cfg) {
+    const dn = state.deinova;
+    const member = getActiveMember();
+    const invincible = !!(member && now < Number(member.invincibleUntil || 0));
+    dn.knock = { x: target.x, y: target.y, until: now + 220 };
+    createHit(state.player.x, state.player.y, true);
+    if (!invincible) {
+      triggerPlayerHitScreenShake();
+      damagePlayer(now, Math.max(1, Number(cfg.railDamage || 500)), 'raw', 'neutral', 'deinova-rail'); // 属性相性なしで一律500
+    }
+    state.player.invulnUntil = Math.max(Number(state.player.invulnUntil || 0), now + Math.max(300, Number(cfg.railInvulnMs || 1200)));
+  }
+
+  function drawDeinovaRails(dn, curName, nextName, tSec, w, h) {
+    const cv = dn.canvas;
+    if (!cv) return;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const cw = Math.round(w * dpr), ch = Math.round(h * dpr);
+    if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
+    const ctx = cv.getContext('2d');
+    if (!ctx) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    const step = 14;
+    const drawWalls = (name, dashed) => {
+      for (const side of [-1, 1]) {
+        const pts = [];
+        for (let y = -step; y <= h + step; y += step) {
+          const c = getDeinovaCorridor(name, y, tSec, w, h);
+          const jitter = dashed ? 0 : (Math.random() - 0.5) * 2.4;
+          pts.push([c.c + side * c.half + jitter, y]);
+        }
+        const path = () => { ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); };
+        if (dashed) {
+          ctx.setLineDash([6, 8]);
+          ctx.strokeStyle = 'rgba(255,90,110,.85)'; ctx.lineWidth = 2; path(); ctx.stroke();
+          ctx.setLineDash([]);
+        } else {
+          ctx.strokeStyle = 'rgba(255,20,50,.22)'; ctx.lineWidth = 14; path(); ctx.stroke();
+          ctx.strokeStyle = 'rgba(255,40,70,.75)'; ctx.lineWidth = 5; path(); ctx.stroke();
+          ctx.strokeStyle = 'rgba(255,225,230,.95)'; ctx.lineWidth = 1.6; path(); ctx.stroke();
+        }
+      }
+    };
+    drawWalls(curName, false);
+    if (nextName) drawWalls(nextName, true);
+    // 横レール
+    dn.bars.forEach(b => {
+      const c = getDeinovaCorridor(curName, b.y, tSec, w, h);
+      const segs = [[c.c - c.half, b.gx - b.gapHalf], [b.gx + b.gapHalf, c.c + c.half]];
+      segs.forEach(([x0, x1]) => {
+        if (x1 <= x0) return;
+        ctx.beginPath(); ctx.moveTo(x0, b.y); ctx.lineTo(x1, b.y);
+        ctx.strokeStyle = 'rgba(255,20,50,.25)'; ctx.lineWidth = 14; ctx.stroke();
+        ctx.strokeStyle = 'rgba(255,40,70,.8)'; ctx.lineWidth = 5; ctx.stroke();
+        ctx.strokeStyle = 'rgba(255,225,230,.95)'; ctx.lineWidth = 1.6; ctx.stroke();
+      });
+    });
+    // 火花（少しだけ）
+    if (Math.random() < 0.5) {
+      const y = Math.random() * h;
+      const c = getDeinovaCorridor(curName, y, tSec, w, h);
+      const x = c.c + (Math.random() < 0.5 ? -1 : 1) * c.half;
+      ctx.strokeStyle = 'rgba(255,240,240,.9)'; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(x, y);
+      for (let i = 0; i < 3; i++) ctx.lineTo(x + (Math.random() - 0.5) * 18, y + (Math.random() - 0.5) * 18);
+      ctx.stroke();
+    }
+  }
+
+  // ---- 突進 ----
+  function updateDeinovaBossMovement(now, dt, w, h, bossEl, startBlend) {
+    const dn = ensureDeinovaState(now);
+    const cfg = getDeinovaConfig();
+    if (!dn || !cfg) return;
+    const tm = getBossMotionElapsedSeconds(now) * 1000;
+    const d = dn.lastMotionMs === null ? 0 : tm - dn.lastMotionMs;
+    dn.lastMotionMs = tm;
+    dn.motionMs += Math.max(0, Math.min(100, d));
+    const t = dn.motionMs / 1000;
+    const phase = Math.max(1, Math.min(3, Number(state.boss.phase || 1)));
+    const homeX = clamp(w * 0.5 + Math.sin(t * 0.7) * w * 0.22, 50, w - 50);
+    const homeY = Math.max(64, h * 0.18 + Math.sin(t * 1.4) * 14);
+    const teleMs = Math.max(300, Number(cfg.chargeTelegraphMs || 850));
+    const dashMs = Math.max(200, Number(cfg.chargeDashMs || 520));
+    const backMs = Math.max(200, Number(cfg.chargeReturnMs || 800));
+    const arena = document.getElementById('shooting-arena');
+
+    if (dn.chargeMode === 'idle') {
+      const blended = typeof startBlend === 'function' ? startBlend(homeX, homeY) : { x: homeX, y: homeY };
+      state.boss.x = blended.x; state.boss.y = blended.y;
+      if (dn.motionMs >= dn.nextChargeMs && !state.countdown) {
+        dn.chargeMode = 'tele';
+        dn.chargeStartMs = dn.motionMs;
+        const from = { x: state.boss.x, y: state.boss.y };
+        const aim = getEnemyAimPosition();
+        const ang = Math.atan2(aim.y - from.y, aim.x - from.x);
+        // 行先は予告開始時に確定（後追いしない）。自機の位置を少し越えた所まで突っ込む。
+        const reach = Math.hypot(aim.x - from.x, aim.y - from.y) + 90;
+        dn.chargeFrom = from;
+        dn.chargeTo = { x: clamp(from.x + Math.cos(ang) * reach, 34, w - 34), y: clamp(from.y + Math.sin(ang) * reach, 50, h - 50) };
+        dn.chargeHit = false;
+        if (arena) {
+          if (dn.lineEl) dn.lineEl.remove();
+          dn.lineEl = document.createElement('div');
+          dn.lineEl.className = 'deinova-charge-line deinova-layer';
+          dn.lineEl.style.left = `${from.x}px`; dn.lineEl.style.top = `${from.y}px`;
+          dn.lineEl.style.width = `${Math.hypot(dn.chargeTo.x - from.x, dn.chargeTo.y - from.y)}px`;
+          dn.lineEl.style.transform = `rotate(${Math.atan2(dn.chargeTo.y - from.y, dn.chargeTo.x - from.x)}rad)`;
+          arena.appendChild(dn.lineEl);
+        }
+      }
+    }
+    const local = dn.motionMs - dn.chargeStartMs;
+    if (dn.chargeMode === 'tele') {
+      state.boss.x = dn.chargeFrom.x + Math.sin(local * 0.07) * (1 + local / teleMs * 3);
+      state.boss.y = dn.chargeFrom.y - Math.sin(Math.min(1, local / teleMs) * Math.PI * 0.5) * 14;
+      if (local >= teleMs) {
+        dn.chargeMode = 'dash';
+        if (dn.lineEl) { dn.lineEl.remove(); dn.lineEl = null; }
+      }
+    } else if (dn.chargeMode === 'dash') {
+      const p = clamp((local - teleMs) / dashMs, 0, 1);
+      const e = 1 - Math.pow(1 - p, 3);
+      state.boss.x = dn.chargeFrom.x + (dn.chargeTo.x - dn.chargeFrom.x) * e;
+      state.boss.y = (dn.chargeFrom.y - 14) + (dn.chargeTo.y - dn.chargeFrom.y + 14) * e;
+      checkDeinovaChargeHit(now, cfg);
+      if (p >= 1) dn.chargeMode = 'back';
+    } else if (dn.chargeMode === 'back') {
+      const p = clamp((local - teleMs - dashMs) / backMs, 0, 1);
+      const e = p * p * (3 - 2 * p);
+      state.boss.x = dn.chargeTo.x + (homeX - dn.chargeTo.x) * e;
+      state.boss.y = dn.chargeTo.y + (homeY - dn.chargeTo.y) * e;
+      if (p >= 1) {
+        dn.chargeMode = 'idle';
+        const every = cfg.chargeEveryMs || {};
+        dn.nextChargeMs = dn.motionMs + Math.max(2500, Number(every[phase] || 7000));
+      }
+    }
+    state.boss.x = clamp(state.boss.x, 28, w - 28);
+    state.boss.y = clamp(state.boss.y, 42, h - 35);
+    if (bossEl) bossEl.classList.toggle('deinova-dash-warning', dn.chargeMode === 'tele' || dn.chargeMode === 'dash');
+  }
+
+  function checkDeinovaChargeHit(now, cfg) {
+    const dn = state.deinova;
+    if (!dn || dn.chargeHit || state.koTransition || now < Number(state.player.invulnUntil || 0)) return;
+    const dist = Math.hypot(state.player.x - state.boss.x, state.player.y - state.boss.y);
+    if (dist > 46) return;
+    dn.chargeHit = true;
+    triggerPlayerHitScreenShake();
+    damagePlayer(now, Math.max(1, Number(cfg.chargeDamage || 420)), 'raw', 'fire', 'boss-charge');
+  }
+
+  // ---- PLASMA ----
+  function fireDeinovaBoss(now) {
+    const dn = state && state.deinova;
+    const cfg = getDeinovaConfig();
+    if (!dn || !cfg || dn.chargeMode !== 'idle') return;
+    const phase = Math.max(1, Math.min(3, Number(state.boss.phase || 1)));
+    const every = Math.max(500, Number((cfg.plasmaEveryMs || {})[phase] || 1400));
+    if (now - Number(dn.lastPlasmaAt || 0) < getStageAdjustedEnemyFireInterval(every)) return;
+    dn.lastPlasmaAt = now;
+    dn.plasmaVolley = (dn.plasmaVolley || 0) + 1;
+    const aim = getEnemyAimPosition();
+    const base = Math.atan2(aim.y - state.boss.y, aim.x - state.boss.x);
+    const ways = Math.max(1, Number((cfg.plasmaWays || {})[phase] || 3));
+    const spread = 0.2;
+    const dmg = Math.max(1, Number(cfg.plasmaDamage || BOSS.bulletDamage || 190));
+    const speed = Number(BOSS.bulletSpeed || 230);
+    const shoot = (a, sp) => {
+      const p = makeProjectile('shooting-enemy-bullet', state.boss.x, state.boss.y + 30, Math.cos(a) * sp, Math.sin(a) * sp, dmg);
+      if (!p) return;
+      p.attackElement = 'fire';
+      applyEnemyProjectileElementVisual(p, 'fire');
+      appendEnemyProjectile(p);
+    };
+    for (let i = 0; i < ways; i++) shoot(base + (i - (ways - 1) / 2) * spread, speed);
+    // 3回に1回、速い狙い撃ちの雷弾を追加
+    if (dn.plasmaVolley % 3 === 0) shoot(base, speed * 1.55);
+  }
+
+  // build2059: 放電コアに近づくと感電（一定範囲に入ると300ダメージ＋外へ弾かれる）。
+  //  高火力の近接（STRIKE系）で早く壊せる代わりに、被弾覚悟で近づく必要がある。
+  function updateDeinovaCoreShock(now) {
+    const dn = state && state.deinova;
+    const cfg = getDeinovaConfig();
+    if (!dn || !cfg) return;
+    // 倒れたコアの輪を片付ける
+    document.querySelectorAll('#shooting-arena .deinova-core-aura').forEach(a => {
+      if (!(state.normalEnemies || []).some(e => e && e.deinovaAura === a && e.hp > 0)) a.remove();
+    });
+    if (state.koTransition || state.countdown || now < Number(state.player.invulnUntil || 0)) return;
+    const member = getActiveMember();
+    if (!member || member.hp <= 0) return;
+    const r = Math.max(20, Number(cfg.coreShockRadius || 72));
+    const px = Number(state.player.x), py = Number(state.player.y);
+    const core = getDeinovaCores().find(c => Math.hypot(px - c.x, py - c.y) < r);
+    if (!core) return;
+    const ang = Math.atan2(py - core.y, px - core.x) || Math.PI / 2;
+    dn.knock = { x: core.x + Math.cos(ang) * (r + 26), y: core.y + Math.sin(ang) * (r + 26), until: now + 220 };
+    if (core.deinovaAura) {
+      core.deinovaAura.classList.remove('is-zap'); void core.deinovaAura.offsetWidth; core.deinovaAura.classList.add('is-zap');
+    }
+    createHit(px, py, true);
+    if (now < Number(member.invincibleUntil || 0)) return; // 無敵なら弾かれるだけ
+    triggerPlayerHitScreenShake();
+    damagePlayer(now, Math.max(1, Number(cfg.coreShockDamage || 300)), 'raw', 'neutral', 'deinova-core-shock');
+    state.player.invulnUntil = Math.max(Number(state.player.invulnUntil || 0), now + 800);
+  }
+
+  function updateDeinovaMechanics(dt, now) {
+    if (!isDeinovaBattle()) return;
+    updateDeinovaRails(dt, now);
+    updateDeinovaCoreShock(now);
+    updateDeinovaDischarge(dt, now);
+  }
+
   // build1764: 記憶決戦の掟「神罰」— 定期的な即死必中
   //  warnMs のカウントダウン後、出撃中のキャラが即死する（避けられない）。
   //  カウントダウン中〜発動の瞬間に「時間停止」（ナイトシェード・アルノ等の時間停止ULT、全体停止ULT）
@@ -30380,6 +31277,7 @@
   function gameLoop(ts) {
     if (!state || !state.running || state.ended || state.finishing || state.countdown) return;
     syncEnemyMotionFreezeClocks(ts);
+    syncDeinovaDischargeGauge(ts); // build2057: 時間停止・PAUSE中もHP差分を取り、GAUGEに入れない
 
     if (state.paused) {
       // メニュー表示中はゲーム進行を完全停止。
@@ -30603,6 +31501,10 @@
     // これによりAIの横移動よりブラックホールの集敵を優先する。
     updateEltenaBlackHole(dt, ts);
     updateGojoPurpleField(dt, ts);
+
+    // build2057: ディノヴァ（plasmaレール・超放電）
+    updateDeinovaMechanics(dt, ts);
+    updateDeinovaUltCores(ts); // build2060: ディノヴァULTの放電コア（どのステージでも）
 
     // 敵の位置更新後、当たり判定で使うDOM矩形を一度だけまとめて取得。
     // contact/projectileの間でDOM read/writeを往復させない。
@@ -32841,6 +33743,9 @@
       state.bossDefeatScoreAwarded = true;
       state.score += Math.max(0, Number(selectedStage?.bossScoreValue || BOSS?.scoreValue || 6000));
     }
+    // build2061: Once a memory boss has actually been defeated, a stale
+    // KO/time-over callback may not override the legitimate victory.
+    if (isMemoryBattleStage()) state.memoryBossDefeated = true;
     state.finishing = true;
     state.running = false;
     cancelAnimationFrame(rafId);
@@ -33775,6 +34680,24 @@
           }
           return;
         }
+        // build2057: ディノヴァのドロップ表示（Sランク確定／Aランク50%。結果はサーバーが正）
+        const dnDrop = isDeinovaStage() && finalized ? finalized.deinovaDrop : null;
+        if (dnDrop && list && list.isConnected) {
+          if (dnDrop.dropped) {
+            const charaDrop = {
+              type: 'material', name: 'ディノヴァ', amount: 1,
+              detail: dnDrop.ownedCount > 1 ? `${dnDrop.ownedCount}体目（限界突破に使用できます）` : '新たな仲間',
+              image: 'images/chara_113_panel.webp',
+            };
+            state.clearRewards = Array.isArray(state.clearRewards) ? [...state.clearRewards, charaDrop] : [charaDrop];
+            list.insertAdjacentHTML('beforeend', buildShootingRewardItemHtml(charaDrop));
+          } else if (dnDrop.error) {
+            const warn = document.createElement('div');
+            warn.style.cssText = 'grid-column:1/-1;padding:8px 12px;border:1px solid #bc685a;background:#fff0ed;color:#892f2f;font:700 11px/1.5 sans-serif;text-align:center';
+            warn.textContent = 'ディノヴァの抽選結果を確認できませんでした。';
+            list.appendChild(warn);
+          }
+        }
         const rewardExp = Math.max(0, Number(finalized && finalized.shinjuRewardExp || 0));
         if (!rewardExp) return;
         const shinjuDrop = {
@@ -33961,6 +34884,11 @@
   }
 
   async function endGame(win) {
+    // build2061: boss-defeat wins against previously queued loss callbacks.
+    if (!win && isMemoryBattleStage() && state?.memoryBossDefeated) {
+      console.warn('[memory battle] stale loss callback ignored after boss defeat');
+      win = true;
+    }
     if (isGachaTrialStage()) return; // 試遊ではRESULT・報酬・履歴処理に絶対に入らない
     if (!state || state.ended) return;
     if (isRpgEncounterStage()) { finishRpgEncounterBattle(!!win); return; } // build2041: RESULTなしでRPGへ
@@ -37394,6 +38322,187 @@
     }, MODE_DURATION);
   }
 
+  // ID113: single-target plasma tether; never uses global freeze.
+  function useDeinovaRaptoplasmUlt(c) {
+    if (!state || state.ended || state.finishing) return;
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const now = performance.now();
+    const duration = Math.max(100, Number(c.deinovaBindDurationMs || 3000));
+    const px = Number(state.player?.x || arena.clientWidth/2);
+    const py = Number(state.player?.y || arena.clientHeight*.8);
+    const candidates = [];
+    if (state.boss && Number(state.boss.hp)>0 && !isNormalBattle())
+      candidates.push({enemy:state.boss,boss:true,index:-1});
+    (state.normalEnemies||[]).forEach((enemy,index)=>{
+      if (enemy && Number(enemy.hp)>0) candidates.push({enemy,boss:false,index});
+    });
+    candidates.sort((a,b)=>
+      Math.hypot(Number(a.enemy.x||0)-px,Number(a.enemy.y||0)-py)-
+      Math.hypot(Number(b.enemy.x||0)-px,Number(b.enemy.y||0)-py));
+    const chosen=candidates[0];
+    showUltCut(c.ultName,c.effectKey,c);
+    state.ultLockUntil=Math.max(Number(state.ultLockUntil||0),now+260);
+    if (!chosen) { renderHud(); return; }
+    const until=now+duration;
+    if(chosen.boss){
+      state.bossStunUntil=Math.max(Number(state.bossStunUntil||0),until);
+      deferBossAttackResume(until);
+    }else{
+      // Existing per-enemy stop preserves unrelated enemies' activity.
+      freezeNormalEnemyAction(chosen.enemy,until,chosen.index);
+    }
+    // Overlay is owned by this ULT and gets removed when target dies, expires,
+    // or a subsequent cast replaces it. Do not draw into the background canvas.
+    arena.querySelector('.deinova-plasma-tether')?.remove();
+    const targetRadius=chosen.boss?Math.max(54,Number(chosen.enemy.hitRadius||60)):Math.max(28,Number(chosen.enemy.hitRadius||34));
+    createDeinovaPlasmaTether(arena,{
+      from:()=>{ const p=state&&state.player||{}; return {x:Number(p.x||px),y:Number(p.y||py)-20}; },
+      to:()=>({x:Number(chosen.enemy.x||0),y:Number(chosen.enemy.y||0)}),
+      radius:targetRadius, startAt:now, until,
+      alive:()=>!!(state&&!state.ended&&!state.finishing&&Number(chosen.enemy.hp)>0),
+    });
+    renderHud();
+  }
+
+  // build2055: ラプトプラズム（ID113 ULT）の演出。
+  //   撃ち出し（伸びる）→ 接続中（ねじれる3本の電撃・走る光点・敵を囲む拘束リング＋残り時間）→ 解除（はじける）
+  //   ダメージ・拘束の処理は useDeinovaRaptoplasmUlt 側。ここは見た目だけ。
+  const DEINOVA_TETHER_CSS = `
+    .deinova-plasma-tether{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:35;overflow:visible}
+    .deinova-plasma-tether .dpt-glow{fill:none;stroke:rgba(225,0,28,.34);stroke-width:16;stroke-linecap:round;stroke-linejoin:round;filter:blur(4px)}
+    .deinova-plasma-tether .dpt-edge{fill:none;stroke:rgba(96,0,12,.55);stroke-width:7.5;stroke-linecap:round;stroke-linejoin:round}
+    .deinova-plasma-tether .dpt-main{fill:none;stroke:#ec0020;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+    .deinova-plasma-tether .dpt-core{fill:none;stroke:#fff2f2;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+    .deinova-plasma-tether .dpt-strand{fill:none;stroke:#ff2a3d;stroke-width:1.6;stroke-linecap:round;opacity:.9}
+    .deinova-plasma-tether .dpt-branch{fill:none;stroke:#e0001c;stroke-width:1.4;stroke-linecap:round}
+    .deinova-plasma-tether .dpt-bead{fill:#fff4f4;stroke:#ff1a30;stroke-width:2.2}
+    .deinova-plasma-tether .dpt-anchor{fill:rgba(255,40,60,.32)}
+    .deinova-plasma-tether .dpt-ring{fill:none;stroke:#e6001e;stroke-width:2.6;stroke-dasharray:14 7 3 7}
+    .deinova-plasma-tether .dpt-ring2{fill:none;stroke:rgba(150,0,18,.75);stroke-width:1.4;stroke-dasharray:2 5}
+    .deinova-plasma-tether .dpt-timer{fill:none;stroke:#ff3044;stroke-width:4;stroke-linecap:round}
+    .deinova-plasma-tether .dpt-timer-bg{fill:none;stroke:rgba(110,0,14,.28);stroke-width:4}
+    .deinova-plasma-tether .dpt-claw{fill:none;stroke:#ff1a30;stroke-width:5;stroke-linecap:round;filter:drop-shadow(0 0 2px rgba(90,0,10,.8)) drop-shadow(0 0 6px rgba(255,30,50,.7))}
+    .deinova-plasma-tether .dpt-spark{fill:none;stroke:#ff3a4c;stroke-width:1.6;stroke-linecap:round}
+    .deinova-plasma-tether .dpt-flash{fill:rgba(255,236,236,.95);stroke:#ff1a30;stroke-width:3}
+    .deinova-plasma-tether .dpt-tether-group{filter:drop-shadow(0 0 4px rgba(255,20,40,.6))}
+  `;
+  function ensureDeinovaTetherStyle(){
+    if(document.getElementById('deinova-tether-style')) return;
+    const st=document.createElement('style'); st.id='deinova-tether-style'; st.textContent=DEINOVA_TETHER_CSS; document.head.appendChild(st);
+  }
+  function createDeinovaPlasmaTether(arena,o){
+    ensureDeinovaTetherStyle();
+    const NS='http://www.w3.org/2000/svg', mk=(tag,cls,parent)=>{ const e=document.createElementNS(NS,tag); if(cls) e.setAttribute('class',cls); (parent||svg).appendChild(e); return e; };
+    const svg=document.createElementNS(NS,'svg'); svg.setAttribute('class','deinova-plasma-tether'); svg.setAttribute('aria-hidden','true');
+    const anchor=mk('circle','dpt-anchor');
+    const gTether=mk('g','dpt-tether-group');
+    const glow=mk('path','dpt-glow',gTether), edge=mk('path','dpt-edge',gTether), main=mk('path','dpt-main',gTether), core=mk('path','dpt-core',gTether);
+    const strands=[mk('path','dpt-strand',gTether),mk('path','dpt-strand',gTether)];
+    const branches=[mk('path','dpt-branch',gTether),mk('path','dpt-branch',gTether)];
+    const beads=[0,1,2].map(()=>mk('circle','dpt-bead',gTether));
+    const gBind=mk('g','');
+    const timerBg=mk('circle','dpt-timer-bg',gBind), timer=mk('circle','dpt-timer',gBind);
+    const ring=mk('circle','dpt-ring',gBind), ring2=mk('circle','dpt-ring2',gBind);
+    const claws=[0,1,2].map(()=>mk('path','dpt-claw',gBind));
+    const sparks=[0,1,2,3].map(()=>mk('path','dpt-spark',gBind));
+    const flash=mk('circle','dpt-flash');
+    arena.appendChild(svg);
+
+    const LAUNCH=150, total=Math.max(1,o.until-o.startAt), R=o.radius;
+    let jag=null, jagAt=0, endAt=0, last={x:0,y:0}, live=true;
+    const bez=(a,c,b,t)=>({x:(1-t)*(1-t)*a.x+2*(1-t)*t*c.x+t*t*b.x, y:(1-t)*(1-t)*a.y+2*(1-t)*t*c.y+t*t*b.y});
+    const fmt=pts=>pts.map((p,i)=>(i?'L':'M')+p.x.toFixed(1)+' '+p.y.toFixed(1)).join(' ');
+    const frame=()=>{
+      if(!live) return;
+      const now=performance.now();
+      if(!svg.isConnected){ live=false; return; }
+      const ending=!o.alive()||now>=o.until;
+      if(ending&&!endAt) endAt=now;
+      const a=o.from(), b=ending?last:o.to(); if(!ending) last=b;
+      const dx=b.x-a.x, dy=b.y-a.y, len=Math.max(1,Math.hypot(dx,dy)), nx=-dy/len, ny=dx/len;
+      const sway=Math.sin(now*.006)*Math.min(26,len*.08);
+      const c={x:(a.x+b.x)/2+nx*sway, y:(a.y+b.y)/2+ny*sway};
+      const reach=Math.min(1,(now-o.startAt)/LAUNCH); // 撃ち出し：プレイヤーから敵へ伸びる
+      const N=Math.max(10,Math.min(26,Math.round(len/18)));
+      // 主幹のギザギザは約45msごとに作り直してジリジリさせる
+      if(!jag||now-jagAt>45){ jagAt=now; jag=Array.from({length:N+1},(_,i)=>i===0||i===N?0:(Math.random()*2-1)); }
+      const amp=Math.min(13,6+len*.02);
+      const pts=[], s1=[], s2=[];
+      for(let i=0;i<=N;i++){ const t=i/N*reach, p=bez(a,c,b,t), w=Math.sin(Math.PI*i/N);
+        pts.push({x:p.x+nx*jag[i]*amp*w, y:p.y+ny*jag[i]*amp*w});
+        const h=Math.sin(t*len*.055-now*.018)*9*w; // 2本の細い電撃が主幹にねじれて絡む
+        s1.push({x:p.x+nx*h, y:p.y+ny*h}); s2.push({x:p.x-nx*h, y:p.y-ny*h}); }
+      const d=fmt(pts); [glow,edge,main,core].forEach(e=>e.setAttribute('d',d));
+      strands[0].setAttribute('d',fmt(s1)); strands[1].setAttribute('d',fmt(s2));
+      branches.forEach((br,k)=>{ const i=Math.floor(N*(.3+.35*k+Math.random()*.15)), p=pts[Math.min(N,Math.max(0,i))]||pts[0], sg=Math.random()<.5?-1:1, L=10+Math.random()*16;
+        br.setAttribute('d',reach<1?'':`M ${p.x.toFixed(1)} ${p.y.toFixed(1)} l ${(nx*L*sg+dx/len*L*.4).toFixed(1)} ${(ny*L*sg+dy/len*L*.4).toFixed(1)} l ${(nx*L*.5*-sg).toFixed(1)} ${(ny*L*.5*-sg).toFixed(1)}`); });
+      beads.forEach((bd,k)=>{ const t=((now*.0016)+k/3)%1, p=bez(a,c,b,t*reach); bd.setAttribute('cx',p.x.toFixed(1)); bd.setAttribute('cy',p.y.toFixed(1)); bd.setAttribute('r',(2.6+Math.sin(t*Math.PI)*2.2).toFixed(2)); bd.style.display=reach<1?'none':''; });
+      anchor.setAttribute('cx',a.x.toFixed(1)); anchor.setAttribute('cy',a.y.toFixed(1)); anchor.setAttribute('r',(13+Math.sin(now*.02)*3).toFixed(1));
+      // 敵を囲む拘束リング（逆回転の2重）＋残り時間の円弧
+      const on=reach>=1;
+      gBind.style.display=on?'':'none';
+      if(on){
+        const since=now-o.startAt-LAUNCH, pop=Math.min(1,since/180), rr=R*(1.35-.35*pop);
+        const rot1=(now*.12)%360, rot2=-(now*.08)%360;
+        ring.setAttribute('cx',b.x); ring.setAttribute('cy',b.y); ring.setAttribute('r',(rr+6).toFixed(1)); ring.setAttribute('transform',`rotate(${rot1.toFixed(1)} ${b.x} ${b.y})`);
+        ring2.setAttribute('cx',b.x); ring2.setAttribute('cy',b.y); ring2.setAttribute('r',(rr+13).toFixed(1)); ring2.setAttribute('transform',`rotate(${rot2.toFixed(1)} ${b.x} ${b.y})`);
+        const tr=rr+20, circ=2*Math.PI*tr, left=Math.max(0,Math.min(1,(o.until-now)/total));
+        [timerBg,timer].forEach(e=>{ e.setAttribute('cx',b.x); e.setAttribute('cy',b.y); e.setAttribute('r',tr.toFixed(1)); });
+        timer.setAttribute('stroke-dasharray',`${(circ*left).toFixed(1)} ${circ.toFixed(1)}`); timer.setAttribute('transform',`rotate(-90 ${b.x} ${b.y})`);
+        // ラプター（爪）：接続した瞬間に3本の爪痕が走り、すっと消える
+        const ca=since<220?1:Math.max(0,1-(since-220)/320); // 0.2秒しっかり見せてから消える
+        claws.forEach((cl,k)=>{ const off=(k-1)*12; cl.style.opacity=ca.toFixed(2);
+          cl.setAttribute('d',ca<=0?'':`M ${(b.x-rr*.9+off).toFixed(1)} ${(b.y-rr*.9).toFixed(1)} Q ${(b.x+off+6).toFixed(1)} ${(b.y-4).toFixed(1)} ${(b.x+rr*.6+off).toFixed(1)} ${(b.y+rr*.95).toFixed(1)}`); });
+        sparks.forEach(sp=>{ if(Math.random()<.35){ const ang=Math.random()*Math.PI*2, r0=rr+4, r1=r0+8+Math.random()*12;
+          sp.setAttribute('d',`M ${(b.x+Math.cos(ang)*r0).toFixed(1)} ${(b.y+Math.sin(ang)*r0).toFixed(1)} L ${(b.x+Math.cos(ang+.12)*r1).toFixed(1)} ${(b.y+Math.sin(ang+.12)*r1).toFixed(1)}`); } else sp.setAttribute('d',''); });
+      }
+      // 接続した瞬間と解除の瞬間に白く光る
+      const hitAge=now-o.startAt-LAUNCH, endAge=endAt?now-endAt:-1, fl=endAt?Math.max(0,1-endAge/220):Math.max(0,1-Math.abs(hitAge)/140);
+      flash.setAttribute('cx',b.x); flash.setAttribute('cy',b.y); flash.setAttribute('r',(R*(endAt?.6+endAge/220*1.2:.8)).toFixed(1)); flash.style.opacity=fl.toFixed(2);
+      if(endAt){ gTether.style.opacity=Math.max(0,1-(now-endAt)/160).toFixed(2); gBind.style.opacity=Math.max(0,1-(now-endAt)/220).toFixed(2); anchor.style.opacity=gTether.style.opacity;
+        if(now-endAt>240){ live=false; svg.remove(); return; } }
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+    return svg;
+  }
+
+  // build2056: 麻痺の演出。赤いプラズマの拘束リング＋残り時間の円弧＋火花が、敵に付いて回る
+  function createParalysisFx(enemy, until, isBoss) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena || !enemy) return;
+    ensureDeinovaTetherStyle();
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('class', 'deinova-plasma-tether deinova-paralysis'); svg.setAttribute('aria-hidden', 'true');
+    const mk = cls => { const e = document.createElementNS(NS, cls === 'spark' ? 'path' : 'circle'); e.setAttribute('class', 'dpt-' + cls); svg.appendChild(e); return e; };
+    const timerBg = mk('timer-bg'), timer = mk('timer'), ring = mk('ring'), ring2 = mk('ring2');
+    const sparks = [mk('spark'), mk('spark'), mk('spark'), mk('spark'), mk('spark')];
+    arena.appendChild(svg);
+    const R = isBoss ? Math.max(54, Number(enemy.hitRadius || 60)) : Math.max(28, Number(enemy.hitRadius || 34));
+    const startAt = performance.now(), total = Math.max(1, until - startAt);
+    const frame = () => {
+      const now = performance.now();
+      if (!svg.isConnected || !state || state.ended || Number(enemy.hp) <= 0 || now >= until) { svg.remove(); return; }
+      if (state.paused || state.arnoSlashActive) { requestAnimationFrame(frame); return; }
+      const x = Number(enemy.x || 0), y = Number(enemy.y || 0), left = Math.max(0, Math.min(1, (until - now) / total));
+      const pop = Math.min(1, (now - startAt) / 160), rr = R * (1.3 - .3 * pop);
+      ring.setAttribute('cx', x); ring.setAttribute('cy', y); ring.setAttribute('r', (rr + 6).toFixed(1)); ring.setAttribute('transform', `rotate(${((now * .12) % 360).toFixed(1)} ${x} ${y})`);
+      ring2.setAttribute('cx', x); ring2.setAttribute('cy', y); ring2.setAttribute('r', (rr + 13).toFixed(1)); ring2.setAttribute('transform', `rotate(${(-(now * .08) % 360).toFixed(1)} ${x} ${y})`);
+      const tr = rr + 20, circ = 2 * Math.PI * tr;
+      [timerBg, timer].forEach(e => { e.setAttribute('cx', x); e.setAttribute('cy', y); e.setAttribute('r', tr.toFixed(1)); });
+      timer.setAttribute('stroke-dasharray', `${(circ * left).toFixed(1)} ${circ.toFixed(1)}`); timer.setAttribute('transform', `rotate(-90 ${x} ${y})`);
+      sparks.forEach(sp => {
+        if (Math.random() < .4) { const a = Math.random() * Math.PI * 2, r0 = rr * (.2 + Math.random() * .6), r1 = rr + 6 + Math.random() * 10, mx = x + Math.cos(a + .35) * (r0 + r1) / 2, my = y + Math.sin(a + .35) * (r0 + r1) / 2;
+          sp.setAttribute('d', `M ${(x + Math.cos(a) * r0).toFixed(1)} ${(y + Math.sin(a) * r0).toFixed(1)} L ${mx.toFixed(1)} ${my.toFixed(1)} L ${(x + Math.cos(a + .1) * r1).toFixed(1)} ${(y + Math.sin(a + .1) * r1).toFixed(1)}`); }
+        else sp.setAttribute('d', '');
+      });
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  }
+
   function useNemUlt(c) {
     showUltCut(c.ultName, c.effectKey);
     ultScreenFlash('ult-flash-nem');
@@ -39169,6 +40278,28 @@
     }
     prevTs = now;
 
+    // build2056: 麻痺つき（ID113）。斬った敵を、盤面の再開後さらに arnoSlashParalyzeMs のあいだ行動不能にする
+    const paralyzeMs = Math.max(0, Number(state.arnoSlashParalyzeMs || 0));
+    if (paralyzeMs > 0 && Array.isArray(state.arnoSlashHitTargets)) {
+      const paralyzeUntil = recoveryUntil + paralyzeMs;
+      state.arnoSlashHitTargets.forEach(t => {
+        if (t.kind === 'normal') {
+          const enemy = t.ref; if (!enemy || enemy.hp <= 0) return;
+          freezeNormalEnemyAction(enemy, paralyzeUntil, Math.max(0, (state.normalEnemies || []).indexOf(enemy)));
+          createParalysisFx(enemy, paralyzeUntil);
+        } else if (t.kind === 'boss' && state.boss && state.boss.hp > 0 && !isNormalBattle()) {
+          state.bossStunUntil = Math.max(Number(state.bossStunUntil || 0), paralyzeUntil);
+          deferBossAttackResume(paralyzeUntil);
+          createParalysisFx(state.boss, paralyzeUntil, true);
+        }
+      });
+    }
+    // build2060: ディノヴァは麻痺の代わりに、斬った敵の左右へ放電コアを設置（壊すとダメージ＋麻痺）
+    if (state.deinovaUltCoreCfg) placeDeinovaUltCores(now, recoveryUntil);
+    state.deinovaUltCoreCfg = null;
+    state.arnoSlashParalyzeMs = 0;
+    state.arnoSlashHitTargets = [];
+
     if (overlay) {
       overlay.classList.add('hide');
       setTimeout(() => { if (overlay.isConnected) overlay.remove(); }, 160);
@@ -39196,6 +40327,10 @@
     state.arnoSlashLastTapAt = -9999;
     state.arnoSlashCount = 0;
     state.arnoSlashTargetKey = '';
+    // build2056: 麻痺つき（ID113 ディノヴァ）。斬った敵を覚えておき、ULT終了後に行動不能にする
+    state.arnoSlashParalyzeMs = Math.max(0, Number(c.arnoSlashParalyzeMs || 0));
+    state.deinovaUltCoreCfg = getDeinovaUltCoreConfigFromCharacter(c); // build2060
+    state.arnoSlashHitTargets = [];
     // ULT中は通常射撃を完全に封じる。
     state.ultLockUntil = Math.max(Number(state.ultLockUntil || 0), now + duration);
     state.playerShotLockUntil = Math.max(Number(state.playerShotLockUntil || 0), now + duration);
@@ -39240,6 +40375,11 @@
       state.arnoSlashCount = Math.max(0, Number(state.arnoSlashCount || 0)) + 1;
       createArnoSlashFx(target, state.arnoSlashCount);
       damageArnoSlashTarget(c, target, tapNow);
+      if ((state.arnoSlashParalyzeMs > 0 || state.deinovaUltCoreCfg) && Array.isArray(state.arnoSlashHitTargets)) {
+        const known = state.arnoSlashHitTargets.find(t => t.key === target.key);
+        if (known) known.hits = Number(known.hits || 1) + 1;
+        else state.arnoSlashHitTargets.push({ key: target.key, kind: target.kind, ref: target.ref, hits: 1 });
+      }
       if (leftEl) leftEl.textContent = String(Math.max(0, maxHits - state.arnoSlashCount));
       // 上限に達したら、最後の斬撃の演出を見せてから少し早めに終了する（待ち時間を作らない）
       if (state.arnoSlashCount >= maxHits && state.arnoSlashActive) {
@@ -42811,6 +43951,7 @@
     else if (c.ultType === 'gojo_purple') useGojoUlt(c);
     else if (c.ultType === 'eltena_black_hole') useEltenaUlt(c);
     else if (c.ultType === 'kureha_fire_black_hole') useKurehaUlt(c);
+    else if (c.ultType === 'deinova_raptoplasm') useDeinovaRaptoplasmUlt(c);
     else if (c.ultType === 'nem_stun') useNemUlt(c);
   // build1327: shared healing ULT dispatcher includes アンジェ・リンリン・ノエル.
     else if (c.ultType === 'ange_healing_hearts') useAngeUlt(c);

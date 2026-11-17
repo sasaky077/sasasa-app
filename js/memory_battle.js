@@ -10,6 +10,7 @@
 
   const SCREEN_ID = 'screen-memory-battle';
   const RUN_KEY = 'zeraphia_memory_battle_run_v1';
+  const PENDING_KEY = 'zeraphia_memory_battle_pending_v2';
   const CACHE_KEY = 'zeraphia_memory_battle_state_cache_v1';
   // build1834: 月間初回クリア報酬は創世pt 10。サーバーでは聖樹の息吹を付与し自動変換する。
   const REWARD_SHINJU_PT = 30; // Aランク初回
@@ -101,81 +102,101 @@
   function loadRun(){ try { return JSON.parse(sessionStorage.getItem(RUN_KEY) || 'null'); } catch (_) { return null; } }
   function clearRun(){ try { sessionStorage.removeItem(RUN_KEY); } catch (_) {} }
 
-  function beginRun(stageNo, partyIds){
-    const no = Math.floor(Number(stageNo) || 0);
-    finishing = null;
-    clearRun();
-    const client = sb();
-    const uid = userId();
-    if (!client || typeof client.rpc !== 'function' || !uid) {
-      runPromise = Promise.resolve(null);
-      notify('記憶決戦の出撃記録を開始できません。ログイン状態と通信を確認して再度お試しください。');
-      return runPromise;
+  function savePending(run, win){
+    if (!win) return;
+    try { localStorage.setItem(PENDING_KEY, JSON.stringify({ ...run, win:true, pendingAt:Date.now() })); } catch (_) {}
+  }
+  function loadPending(){
+    try { const p=JSON.parse(localStorage.getItem(PENDING_KEY)||'null'); return p && p.user===userId() && p.token ? p : null; } catch (_) { return null; }
+  }
+  function clearPending(){ try { localStorage.removeItem(PENDING_KEY); } catch (_) {} }
+  function pause(ms){ return new Promise(resolve=>setTimeout(resolve,ms)); }
+  async function finalizeSavedRun(run, win){
+    const client=sb();
+    if (!client || typeof client.rpc!=='function') throw new Error('Supabase unavailable');
+    let data, error;
+    for(let attempt=0;attempt<4;attempt++){
+      ({data,error}=await client.rpc('finish_memory_battle_safe', { p_user_id:run.user,p_run_token:run.token,p_win:!!win }));
+      if (!error) break;
+      console.warn('[memory battle] secure finalize retry',attempt+1,error.message||error);
+      if(attempt<3) await pause([500,1300,2800][attempt]);
     }
-    runPromise = (async () => {
-      const { data, error } = await client.rpc('begin_memory_battle', { p_user_id: uid, p_stage_no: no });
-      if (error) throw error;
-      const token = String(data && data.run_token || '').trim();
-      if (!token) throw new Error('run token was not issued');
-      const run = { token, stageNo: no, user: uid };
-      const ids = (Array.isArray(partyIds) ? partyIds : []).map(Number).filter(n => Number.isInteger(n) && n > 0);
-      const registered = await client.rpc('memory_battle_register_rank_party', { p_user_id: uid, p_run_token: token, p_party_ids: ids });
-      run.rankRegistered = !registered.error && registered.data === true;
+    if(error) throw error;
+    if(win && (!data || data.win!==true)) {
+      clearPending();
+      throw new Error('Server rejected win for run '+run.token);
+    }
+    let rankResult=null;
+    if(win && data && data.win===true){
+      for(let attempt=0;attempt<3;attempt++){
+        const response=await client.rpc('memory_battle_claim_rank',{p_user_id:run.user,p_run_token:run.token});
+        if(!response.error && response.data && response.data.rank){rankResult=response.data;break;}
+        console.warn('[memory battle] rank claim pending',attempt+1,response.error?.message||response.data);
+        if(attempt<2) await pause([800,1800][attempt]);
+      }
+    }
+    if(win && data && data.win===true && !rankResult?.rank) throw new Error('Victory stored, rank claim pending');
+    clearRun();
+    if(win && data && data.win===true) clearPending();
+    runPromise=null;
+    applyServerState({month_key:data&&data.month_key,cleared:data&&data.cleared});
+    const claimed=!!(rankResult&&rankResult.a_reward);
+    if(claimed && window.ShinjuProgress?.refreshFromServer){try{await window.ShinjuProgress.refreshFromServer();}catch(_){}}
+    if(win && data&&data.win===true){void refresh();}
+    return {memoryConfirmed:!win||!!(data&&data.win===true),firstClearClaimed:false,firstClearAmount:0,
+      shinjuRewardExp:claimed?30:0,highScore:0,memoryRank:rankResult?.rank?String(rankResult.rank).toUpperCase():''};
+  }
+  async function recoverPending(){
+    const pending=loadPending();
+    if(!pending) return true;
+    try{
+      await finalizeSavedRun(pending,true);
+      notify('以前の記憶決戦の勝利記録をサーバーへ復旧しました。');
+      return true;
+    }catch(err){
+      console.warn('[memory battle] pending victory preserved',err);
+      notify('以前の勝利記録の確定を再試行中です。通信状態を確認してください。');
+      return false;
+    }
+  }
+  function beginRun(stageNo, partyIds){
+    const no=Math.floor(Number(stageNo)||0);
+    finishing=null;
+    const client=sb(),uid=userId();
+    if(!client || typeof client.rpc!=='function'||!uid){notify('記憶決戦の出撃記録を開始できません。');return Promise.resolve(null);}
+    runPromise=(async()=>{
+      if(!await recoverPending()) return null;
+      clearRun();
+      const {data,error}=await client.rpc('begin_memory_battle',{p_user_id:uid,p_stage_no:no});
+      if(error) throw error;
+      const token=String(data?.run_token||'').trim();
+      if(!token) throw new Error('run token missing');
+      const run={token,stageNo:no,user:uid};
+      saveRun(run);
+      const ids=(Array.isArray(partyIds)?partyIds:[]).map(Number).filter(n=>Number.isInteger(n)&&n>0);
+      const registered=await client.rpc('memory_battle_register_rank_party', {p_user_id:uid,p_run_token:token,p_party_ids:ids});
+      run.rankRegistered=!registered.error && registered.data===true;
       saveRun(run);
       return run;
-    })().catch(err => {
-      console.warn('[memory battle] begin', err && (err.message || err));
-      notify('記憶決戦の出撃記録を作成できませんでした。戦闘は開始されていません。通信状態を確認して再度お試しください。');
-      return null;
-    });
+    })().catch(err=>{console.warn('[memory battle] begin',err);notify('出撃認証に失敗しました。通信を確認してください。');return null;});
     return runPromise;
   }
-
-  // 戦闘RESULTから呼ばれる。shooting_core の結果表示が読む形 { firstClearClaimed, firstClearAmount, highScore } で返す。
-  function finishRun(win, stageNo){
-    if (finishing) return finishing;
-    finishing = (async () => {
-      let run = runPromise ? await runPromise : null;
-      if (!run) run = loadRun();
-      if (!run || !run.token || (stageNo && Number(run.stageNo) !== Number(stageNo))) {
-        if (win) notify('記憶決戦の出撃認証に失敗しました。初回報酬は未確定です。');
-        return { memoryConfirmed:false, firstClearClaimed:false, firstClearAmount:0, highScore:0 };
+  function finishRun(win,stageNo){
+    if(finishing) return finishing;
+    finishing=(async()=>{
+      let run=runPromise?await runPromise:null;
+      if(!run) run=loadRun();
+      if(!run?.token || (stageNo&&Number(run.stageNo)!==Number(stageNo))){
+        if(win) notify('出撃トークンを確認できません。記録は未確定です。');
+        return {memoryConfirmed:false,firstClearClaimed:false,firstClearAmount:0,highScore:0};
       }
-      const client = sb();
-      const { data, error } = await client.rpc('finish_memory_battle', { p_user_id: run.user, p_run_token: run.token, p_win: !!win });
-      if (error) throw error;
-      let rankResult = null;
-      if (win && data && data.win === true && run.rankRegistered) {
-        const rankReply = await client.rpc('memory_battle_claim_rank', { p_user_id: run.user, p_run_token: run.token });
-        if (rankReply.error) console.warn('[memory battle] rank reward', rankReply.error);
-        else rankResult = rankReply.data;
-      }
-      clearRun();
-      runPromise = null;
-      applyServerState({ month_key: data && data.month_key, cleared: data && data.cleared });
-      const claimed = !!(rankResult && rankResult.a_reward);
-      const amount = rankResult && rankResult.a_reward ? 30 : 0;
-      if (claimed && amount > 0 && window.ShinjuProgress && typeof window.ShinjuProgress.refreshFromServer === 'function') {
-        // 受け取り待ちに入った栄養は、神聖樹側が自動で創世ptへ変換する
-        try { await window.ShinjuProgress.refreshFromServer(); } catch (_) {}
-      }
-      if (win && (!data || data.win !== true)) notify('記憶決戦：サーバーで勝利を確認できませんでした。報酬は未確定です。');
-      if (rankResult && rankResult.rank) {
-        notify(`記憶決戦 ${rankResult.rank} RANK！${rankResult.a_reward ? ' 創世pt +30' : ''}${rankResult.s_reward ? ' 結晶 +50' : ''}`);
-      }
-      if (win && data && data.win === true) {
-        if (!rankResult?.rank) notify(claimed ? `記憶決戦クリア！ 創世pt +${amount} を獲得しました` : '記憶決戦クリア済み');
-        void refresh();
-      }
-      // 結果画面は shinjuRewardExp（自動変換後の創世pt相当量）を報酬に並べる
-      // build2007: RESULTのランク表示用に、サーバーが判定したランク（S／A）も返す
-      return { memoryConfirmed:!win || !!(data && data.win === true), firstClearClaimed:false, firstClearAmount:0, shinjuRewardExp: claimed ? amount : 0, highScore:0,
-        memoryRank: rankResult && rankResult.rank ? String(rankResult.rank).toUpperCase() : '' };
-    })().catch(err => {
-      console.warn('[memory battle] finish', err && (err.message || err));
-      if (win) notify('記憶決戦：報酬の確定に失敗しました。通信状況を確認してください。');
-      return { memoryConfirmed:false, firstClearClaimed:false, firstClearAmount:0, highScore:0 };
-    });
+      savePending(run,!!win); // Persist BEFORE network request, including page close/reload.
+      return await finalizeSavedRun(run,!!win);
+    })().catch(err=>{
+      console.warn('[memory battle] finish: pending victory retained',err);
+      if(win) notify('記憶決戦：勝利記録の通信確定に失敗しました。再入場時に自動で再送します。');
+      return {memoryConfirmed:false,firstClearClaimed:false,firstClearAmount:0,highScore:0};
+    }).finally(()=>{finishing=null;});
     return finishing;
   }
 
@@ -529,7 +550,7 @@
     if (serverState && serverState.month_key !== localMonthKey()) serverState = null; // 月替わり
     if (typeof window.showMainTab === 'function') window.showMainTab('memory-battle');
     render();
-    refresh();
+    void recoverPending().then(()=>refresh());
     // ステージ定義（shooting_stages.js）の読み込みが済んでいなければ、済んだ時点で描き直す
     if (!stages() && window.__sasaphiaShootingModulesReady) {
       Promise.resolve(window.__sasaphiaShootingModulesReady).then(render).catch(() => {});

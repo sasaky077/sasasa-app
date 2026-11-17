@@ -52,7 +52,7 @@
     LEONA_CROSS: 39,
     KUREHA: 41,
     KYOU: 42, SUZU: 43, MELORIA: 44, KIRIMARU: 45, AIRENA: 46,
-    LINLIN: 47, MUUMUU: 48, MEGMEG: 49, CHACHA: 51, RUIRUI: 53, HAO: 54, SMILE: 56, NIGHTSHADE: 57, TOWA: 101, INORI: 111, TOWA_LIGHT: 112, // ID52 is reserved for Noah (existing saves/RPC)
+    LINLIN: 47, MUUMUU: 48, MEGMEG: 49, CHACHA: 51, RUIRUI: 53, HAO: 54, SMILE: 56, NIGHTSHADE: 57, TOWA: 101, INORI: 111, TOWA_LIGHT: 112, DEINOVA: 113, // ID52 is reserved for Noah (existing saves/RPC)
   });
 
   // ============================================================
@@ -111,7 +111,7 @@
     102: 'sr', // カミラ
     41: 'sr',  // シャオラン
     42: 'r', 43: 'r', 44: 'r', 45: 'r', 46: 'r',
-    47: 'r', 48: 'r', 49: 'r', 51: 'r', 53: 'r', 54: 'sr', 56: 'sr', 57: 'sr', 101: 'sr', 111: 'sr', 112: 'sr',
+    47: 'r', 48: 'r', 49: 'r', 51: 'r', 53: 'r', 54: 'sr', 56: 'sr', 57: 'sr', 101: 'sr', 111: 'sr', 112: 'sr', 113: 'sr',
   });
 
   // 現行互換：R はSRに対して基本性能(HP/ATK)を20%落とす。育成/凸の新倍率は別フェーズで統合予定。
@@ -1437,6 +1437,17 @@
     "homeOffsetX": 0,
     "homeOffsetY": -26,
     "hidden": false
+  },
+  "113": {
+    "id":113,"name":"ディノヴァ","element":"fire","hp":650,"atk":265,
+    "image":"images/chara_113_battle_back.webp",
+    "panelImage":"images/chara_113_panel.webp",
+    "cutinImage":"images/chara_113_cutin.webp",
+    "uiScale":{"panel":1,"battleBack":1.2,"battleUp":1},
+    "portraitImage":"images/chara_113.webp",
+    "homeImage":"images/chara_113_cut.webp",
+    "upImage":"images/chara_113_home.webp",
+    "homeScale":0.83,"homeOffsetX":0,"homeOffsetY":-26,"hidden":false
   }
 });
 
@@ -3076,6 +3087,26 @@
     burstNeed: 32, burstDamage: 0, ultGainPerHit: 0.50,
   });
 
+  // ID113: 火 / PLASMA / ラプトプラズム（単体拘束）
+  SHOOTING_CHARACTERS[CHARACTER_ID.DEINOVA] = buildShootingCharacter({
+    ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON,
+    id: CHARACTER_ID.DEINOVA, effectKey: 'deinova', label: 'PLASMA / BIND',
+    description: '火属性PLASMA。最も近い敵1体をULT「ラプトプラズム」で捕縛し行動停止にする。',
+    shotType:'lightning', shotElement:'fire', shotCount:1, fireRate:300,
+    shotPowerRate:0.28, lightningMaxTargets:4, lightningTickCount:4,
+    lightningTickMs:70, lightningChainDecay:0.5,
+    lightningAcquireRange:220, lightningReleaseRange:250, lightningChainRange:160,
+    // build2056: ULTをアルノと同じ「時間停止＋連打斬撃」に変更。倍率はアルノ(0.35)より低く、代わりに麻痺（斬った敵が行動不能3秒）
+    ultType:'arno_thousand_slash', ultAddons:['stun'],
+    ultName:'ラプトプラズム', ultDescription:'盤面の敵弾を全消去して時間停止。最も近い敵の目前へ接近し、4秒間タップするたびATK×0.25の斬撃（最大13回）。終了後、斬った敵の左右に放電コアを2つ設置（10秒間）。こちらの攻撃でコアを壊すと、1つごとにその敵へATK×2.0のダメージ＋3秒間、麻痺で行動不能。',
+    arnoSlashDurationMs:4000, arnoSlashDamageAtkRate:0.25, arnoSlashMinTapIntervalMs:80, arnoSlashMaxHits:13,
+    // build2060: 斬撃後、いちばん多く斬った敵の左右に放電コアを2つ設置（HP=ATK×3）。こちらの攻撃で壊すと、1つごとにATK×2.0＋3秒麻痺
+    arnoSlashParalyzeMs:0,
+    deinovaUltCoreCount:2, deinovaUltCoreHpAtkRate:3, deinovaUltCoreDurationMs:10000,
+    deinovaUltCoreDamageAtkRate:2.0, deinovaUltCoreParalyzeMs:3000, deinovaUltCoreOffsetX:72,
+    deinovaBindDurationMs:3000, burstNeed:32, burstDamage:36, ultGainPerHit:0.5,
+  });
+
   // 別マスターではない。SHOOTING_CHARACTER_MASTERから毎回生成する読み取り用配列。
   const CHARACTER_CATALOG = Object.freeze(
     Object.values(SHOOTING_CHARACTER_MASTER)
@@ -3258,7 +3289,8 @@
       case 'veronica_brass_punch':
         return '真正面のごく狭い範囲に一撃を放ち、命中した敵に' + atk(c.ultDamageAtkMultiplier, 7) + 'のダメージ。' + note('追尾しない。範囲外ならMISS');
       case 'arno_thousand_slash':
-        return CLEAR + TIME_STOP + '：' + sec(c.arnoSlashDurationMs, 4000) + '間。最も近い敵の目前へ移動。停止中、タップするたびに' + atk(c.arnoSlashDamageAtkRate, 0.35) + 'の斬撃（最大' + String(num(c.arnoSlashMaxHits, 13)) + '回）。終了後は元の位置に戻る。';
+        return CLEAR + TIME_STOP + '：' + sec(c.arnoSlashDurationMs, 4000) + '間。最も近い敵の目前へ移動。停止中、タップするたびに' + atk(c.arnoSlashDamageAtkRate, 0.35) + 'の斬撃（最大' + String(num(c.arnoSlashMaxHits, 13)) + '回）。終了後は元の位置に戻る。' + (num(c.arnoSlashParalyzeMs, 0) > 0 ? '斬った敵は戦闘再開後' + sec(c.arnoSlashParalyzeMs, 3000) + '間、麻痺で' + ACTION_STOP + '。' : '')
+          + (num(c.deinovaUltCoreCount, 0) > 0 ? '終了後、斬った敵の周囲に放電コアを' + String(num(c.deinovaUltCoreCount, 2)) + 'つ設置（' + sec(c.deinovaUltCoreDurationMs, 10000) + '間・HPは' + atk(c.deinovaUltCoreHpAtkRate, 3) + '分）。こちらの攻撃でコアを壊すと、1つごとにその敵へ' + atk(c.deinovaUltCoreDamageAtkRate, 2) + 'のダメージ＋' + sec(c.deinovaUltCoreParalyzeMs, 3000) + '間、麻痺で' + ACTION_STOP + '。' : '');
       case 'precision_beam':
         return CLEAR + '前方に黒い手を伸ばし、射線上の敵に7秒間、' + ACTION_STOP + 'を適用。効果中に合計' + atk(c.ultDamageAtkMultiplier, 3.5) + 'のダメージ。';
       case 'jig_scramble_ray':
@@ -3301,6 +3333,7 @@
       // --- 行動妨害・防御 ---
       case 'camilla_crimson_web':
         return '盤面全体に紅い蜘蛛の巣を展開し、' + MOVE_STOP + '：3〜7秒間（凸段階で変動）。射撃は継続。移動停止中の敵への与ダメージの2〜6%をHP吸収。';
+      case 'deinova_raptoplasm': return '最も近い敵1体を赤いPLASMAで接続し、' + sec(c.deinovaBindDurationMs,3000) + '間、' + ACTION_STOP + '。' + note('ULT自体のダメージなし');
       case 'nem_stun':
         return ACTION_STOP + '：' + sec(c.ultStunMs, 5000) + '間。' + note('ULT自体のダメージなし');
       case 'towa_eternal_darkness':
