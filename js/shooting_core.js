@@ -3361,10 +3361,23 @@
       el = document.createElement('span');
       el.className = 'zfs-barrier';
       el.setAttribute('aria-hidden', 'true');
-      el.innerHTML = '<i></i><i></i>';
+      el.innerHTML = '<i class="zfs-barrier-shell"></i><i class="zfs-barrier-halo"></i><i class="zfs-barrier-glyph"></i><i class="zfs-barrier-halo zfs-barrier-halo-2"></i>';
       player.appendChild(el);
     }
     el.classList.toggle('is-double', hits >= 2);
+  }
+  // 付与した瞬間：薄い祈りの波紋と "BARRIER" 表示で守られている感を出す
+  function showFriendSupportBarrierCast() {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena || !state || !state.player) return;
+    ensureFriendSupportBattleStyle();
+    const x = Number(state.player.x || 0), y = Number(state.player.y || 0);
+    const wrap = document.createElement('div');
+    wrap.className = 'zfs-barrier-cast';
+    wrap.style.transform = `translate3d(${x}px,${y}px,0)`;
+    wrap.innerHTML = '<b class="zfs-bc-wave"></b><b class="zfs-bc-wave zfs-bc-wave-2"></b><em>BARRIER</em>';
+    arena.appendChild(wrap);
+    setTimeout(() => wrap.remove(), 900);
   }
   // 防いだ瞬間：膜が割れて破片が散り、頭上に「GUARD」
   function showFriendSupportBarrierBreak() {
@@ -3424,21 +3437,35 @@
       #shooting-event-root .zfs-battle-cut small{display:block;font:700 9px/1.2 'Cinzel',serif;letter-spacing:.3em;color:#ffe2a3;text-shadow:0 1px 4px rgba(0,0,0,.6)}
       #shooting-event-root .zfs-battle-cut strong{display:block;margin-top:2px;font:700 20px/1.25 'Noto Serif JP',serif;color:#fff;text-shadow:0 0 10px rgba(255,190,90,.9),0 2px 4px rgba(0,0,0,.5)}
       #shooting-event-root .zfs-battle-cut span{display:block;font:600 11px/1.4 'Noto Sans JP',sans-serif;color:#fff3d6;text-shadow:0 1px 3px rgba(0,0,0,.6)}
-      #shooting-event-root .zfs-barrier{position:absolute;left:50%;top:var(--core-top,38%);width:84px;height:84px;margin:-42px 0 0 -42px;pointer-events:none;z-index:3}
-      #shooting-event-root .zfs-barrier i{position:absolute;inset:0;border-radius:50%;
-        background:radial-gradient(circle,rgba(255,244,210,0) 54%,rgba(255,222,140,.18) 72%,rgba(240,196,96,.42) 90%,rgba(255,236,190,.6) 97%,rgba(255,214,120,0) 100%);
-        border:1px solid rgba(214,166,70,.5);box-shadow:0 0 12px rgba(240,190,90,.45);animation:zfsBarrier 2.4s ease-in-out infinite}
-      #shooting-event-root .zfs-barrier i + i{display:none}
-      #shooting-event-root .zfs-barrier.is-double i + i{display:block;inset:-9px;opacity:.7;animation-delay:-1.2s}
-      @keyframes zfsBarrier{0%,100%{transform:scale(.97);opacity:.75}50%{transform:scale(1.03);opacity:1}}
+      #shooting-event-root .zfs-barrier{position:absolute;left:50%;top:var(--core-top,38%);width:100px;height:100px;margin:-50px 0 0 -50px;pointer-events:none;z-index:3;filter:drop-shadow(0 0 8px rgba(168,225,255,.34)) drop-shadow(0 0 16px rgba(122,197,255,.18))}
+      #shooting-event-root .zfs-barrier > i{position:absolute;display:block;pointer-events:none}
+      #shooting-event-root .zfs-barrier .zfs-barrier-shell{inset:12px;border-radius:50%;
+        background:radial-gradient(circle at 34% 30%,rgba(255,255,255,.48) 0 10%,rgba(222,247,255,.26) 18%,rgba(138,214,255,.14) 40%,rgba(87,165,255,.07) 58%,rgba(77,150,255,0) 72%),
+                   radial-gradient(circle at 50% 58%,rgba(255,255,255,0) 58%,rgba(166,235,255,.30) 74%,rgba(134,214,255,.52) 86%,rgba(234,251,255,.82) 96%,rgba(255,255,255,0) 100%);
+        border:1px solid rgba(202,244,255,.92);box-shadow:inset 0 0 18px rgba(193,241,255,.20),0 0 12px rgba(137,212,255,.35),0 0 26px rgba(86,143,255,.16);animation:zfsBarrierShell 2.25s ease-in-out infinite}
+      #shooting-event-root .zfs-barrier .zfs-barrier-halo{left:9px;top:9px;right:9px;bottom:9px;border-radius:50%;border:2px solid rgba(233,251,255,.82);border-left-color:rgba(126,208,255,.18);border-right-color:rgba(126,208,255,.34);opacity:.92;animation:zfsBarrierHalo 4.2s linear infinite}
+      #shooting-event-root .zfs-barrier .zfs-barrier-halo-2{display:none;left:2px;top:2px;right:2px;bottom:2px;border-width:1px;border-color:rgba(215,246,255,.52);border-top-color:rgba(255,255,255,.95);border-bottom-color:rgba(126,208,255,.20);opacity:.58;animation-direction:reverse;animation-duration:3.2s}
+      #shooting-event-root .zfs-barrier .zfs-barrier-glyph{left:18px;top:18px;right:18px;bottom:18px;border-radius:50%;
+        background:radial-gradient(circle,rgba(255,255,255,0) 62%,rgba(227,248,255,.46) 63%,rgba(255,255,255,0) 66%),
+                   conic-gradient(from 20deg,rgba(255,255,255,0) 0 12%,rgba(229,251,255,.85) 12% 15%,rgba(255,255,255,0) 15% 37%,rgba(199,239,255,.85) 37% 40%,rgba(255,255,255,0) 40% 62%,rgba(229,251,255,.85) 62% 65%,rgba(255,255,255,0) 65% 87%,rgba(199,239,255,.85) 87% 90%,rgba(255,255,255,0) 90% 100%);
+        opacity:.72;mix-blend-mode:screen;animation:zfsBarrierGlyph 5.2s linear infinite}
+      #shooting-event-root .zfs-barrier.is-double .zfs-barrier-halo-2{display:block}
+      @keyframes zfsBarrierShell{0%,100%{transform:scale(.975);opacity:.88}50%{transform:scale(1.028);opacity:1}}
+      @keyframes zfsBarrierHalo{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+      @keyframes zfsBarrierGlyph{from{transform:rotate(0deg) scale(.985)}50%{transform:rotate(180deg) scale(1.02)}to{transform:rotate(360deg) scale(.985)}}
+      #shooting-event-root .zfs-barrier-cast{position:absolute;left:0;top:0;width:0;height:0;z-index:39;pointer-events:none}
+      #shooting-event-root .zfs-barrier-cast .zfs-bc-wave{position:absolute;left:-38px;top:-38px;width:76px;height:76px;border-radius:50%;border:2px solid rgba(214,247,255,.90);box-shadow:0 0 12px rgba(152,221,255,.55), inset 0 0 10px rgba(255,255,255,.20);animation:zfsBarrierCast .78s ease-out forwards}
+      #shooting-event-root .zfs-barrier-cast .zfs-bc-wave-2{left:-50px;top:-50px;width:100px;height:100px;border-width:1px;border-color:rgba(214,247,255,.58);animation-delay:.06s}
+      #shooting-event-root .zfs-barrier-cast em{position:absolute;left:0;top:-60px;transform:translateX(-50%);font:700 13px/1 'Cinzel',serif;letter-spacing:.18em;font-style:normal;color:#fff;text-shadow:0 0 10px rgba(132,214,255,.95),0 1px 3px rgba(0,0,0,.58);animation:zfsGuard .85s ease-out forwards}
       #shooting-event-root .zfs-barrier-break{position:absolute;left:0;top:0;width:0;height:0;z-index:40;pointer-events:none}
-      #shooting-event-root .zfs-barrier-break .zfs-bb-flash{position:absolute;left:-46px;top:-46px;width:92px;height:92px;border-radius:50%;
-        background:radial-gradient(circle,rgba(255,255,255,0) 50%,rgba(255,236,180,.9) 80%,rgba(255,214,120,0) 100%);animation:zfsBbFlash .45s ease-out forwards}
-      #shooting-event-root .zfs-barrier-break i{position:absolute;left:-5px;top:-3px;width:10px;height:6px;background:linear-gradient(90deg,#fff6da,#ffd27a);
-        clip-path:polygon(0 0,100% 30%,70% 100%,10% 70%);box-shadow:0 0 6px rgba(255,214,120,.9);animation:zfsShard .65s cubic-bezier(.2,.7,.3,1) forwards}
+      #shooting-event-root .zfs-barrier-break .zfs-bb-flash{position:absolute;left:-52px;top:-52px;width:104px;height:104px;border-radius:50%;
+        background:radial-gradient(circle,rgba(255,255,255,0) 42%,rgba(225,247,255,.78) 60%,rgba(171,229,255,.98) 76%,rgba(255,255,255,.15) 86%,rgba(255,255,255,0) 100%);animation:zfsBbFlash .45s ease-out forwards}
+      #shooting-event-root .zfs-barrier-break i{position:absolute;left:-5px;top:-3px;width:10px;height:6px;background:linear-gradient(90deg,#f7feff,#8dd8ff);
+        clip-path:polygon(0 0,100% 30%,70% 100%,10% 70%);box-shadow:0 0 8px rgba(150,220,255,.95);animation:zfsShard .65s cubic-bezier(.2,.7,.3,1) forwards}
       #shooting-event-root .zfs-barrier-break em{position:absolute;left:0;top:-64px;transform:translateX(-50%);font:700 13px/1 'Cinzel',serif;letter-spacing:.18em;font-style:normal;
-        color:#fff;text-shadow:0 0 8px rgba(255,200,90,1),0 1px 3px rgba(0,0,0,.6);animation:zfsGuard .85s ease-out forwards}
-      @keyframes zfsBbFlash{from{transform:scale(.9);opacity:1}to{transform:scale(1.45);opacity:0}}
+        color:#fff;text-shadow:0 0 10px rgba(132,214,255,1),0 1px 3px rgba(0,0,0,.6);animation:zfsGuard .85s ease-out forwards}
+      @keyframes zfsBarrierCast{from{transform:scale(.65);opacity:1}to{transform:scale(1.26);opacity:0}}
+      @keyframes zfsBbFlash{from{transform:scale(.88);opacity:1}to{transform:scale(1.42);opacity:0}}
       @keyframes zfsShard{from{transform:translate(0,0) rotate(0);opacity:1}to{transform:translate(var(--dx),var(--dy)) rotate(var(--r));opacity:0}}
       @keyframes zfsGuard{0%{opacity:0;transform:translate(-50%,6px)}20%{opacity:1;transform:translate(-50%,0)}75%{opacity:1}100%{opacity:0;transform:translate(-50%,-8px)}}
       @keyframes zfsCut{0%{opacity:0;transform:translateY(8px)}15%{opacity:1;transform:none}75%{opacity:1}100%{opacity:0;transform:translateY(-6px)}}
@@ -3540,6 +3567,7 @@
     } else if (s.kind === 'shield') {
       fs.shieldHits = Math.max(1, Math.floor(Number(s.hits || 1)));
       syncFriendSupportBarrier();
+      showFriendSupportBarrierCast();
     } else if (s.kind === 'heal') {
       if (member) {
         const before = Number(member.hp || 0);
