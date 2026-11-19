@@ -8,8 +8,8 @@
   const pierces=id=>{const SC=window.ShootingCharacters;return !!(SC&&typeof SC.isShootingCharacterPiercing==='function'&&SC.isShootingCharacterPiercing(id));};
   const elementOrder = ['fire','aqua','wood','light','dark'];
   const elementLabels = {fire:'FIRE',aqua:'AQUA',wood:'WOOD',light:'LIGHT',dark:'DARK'};
-  const shotOrder = ['parallel','homing','cluster','bomb','spread','laser','piercing','orbit','charge','lightning','strike','conjure','trap','ray'];
-  const shotLabels = {parallel:'PARALLEL',homing:'HOMING',cluster:'CLUSTER',bomb:'BOMB',spread:'SPREAD',laser:'LASER',piercing:'PIERCING',orbit:'ORBIT',charge:'CHARGE',lightning:'PLASMA',strike:'STRIKE',conjure:'SUMMON',trap:'TRAP',ray:'RAY'};
+  const shotOrder = ['parallel','homing','cluster','bomb','spread','laser','piercing','orbit','charge','boomerang','lightning','strike','conjure','trap','ray'];
+  const shotLabels = {parallel:'PARALLEL',homing:'HOMING',cluster:'CLUSTER',bomb:'BOMB',spread:'SPREAD',laser:'LASER',piercing:'PIERCING',orbit:'ORBIT',charge:'CHARGE',boomerang:'BOOMERANG',lightning:'PLASMA',strike:'STRIKE',conjure:'SUMMON',trap:'TRAP',ray:'RAY'};
   const shotAliases = {plasma:'lightning',orbit_forward:'orbit',charge_release:'charge',precision:'piercing',shotgun:'piercing',splash:'bomb',melee_slash:'strike',wolf_j_homing:'homing',rose_seed_splash:'spread',noah_hybrid:'laser'};
   let currentRoot = null;
   // build2047: 取り付け先（既定は戦闘前の編成画面。STORY10 RPGの編成画面は openFor('#ch10-party-select')）
