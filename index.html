@@ -433,14 +433,14 @@
   <link rel="stylesheet" href="css/skin_system.css?v=1069-skin-controls-fullscreen">
   <link rel="stylesheet" href="css/score_attack_chrome.css?v=696-score-self-badge-corner">
   <link rel="stylesheet" href="css/app_chrome.css?v=693-score-ranking-nav-v2">
-  <link rel="stylesheet" href="css/junkou_top.css?v=1357-story-title-six">
+  <link rel="stylesheet" href="css/junkou_top.css?v=2090-deinova-rank-conditions">
   <link rel="stylesheet" href="css/story_stage_select.css?v=1969-story-buttons-ranks">
   <link rel="stylesheet" href="css/faceless_stage_select.css?v=1437-noah-shared-card">
   <link rel="stylesheet" href="css/character_list.css?v=1368-translucent-header">
   <link rel="stylesheet" href="css/character_filter.css?v=1741-pierce">
   <link rel="stylesheet" href="css/character_detail_shot.css?v=1372-fixed-icons">
   <link rel="stylesheet" href="css/gacha_ratio.css?v=1374-rebuild">
-  <link rel="stylesheet" href="css/party_formation.css?v=2089-se-short-height">
+  <link rel="stylesheet" href="css/party_formation.css?v=1965-stage-top5">
   <link rel="stylesheet" href="css/shooting_party_filter.css?v=1741-pierce">
 
   <style id="item-page-build682-fixes">
@@ -3853,13 +3853,17 @@ html:not(.hv2-home) body #global-user-frame .hv2-face {
             <span class="junkou-special-play" aria-hidden="true"><img src="images/special_play_button.webp" alt=""></span>
           </button>
 
-          <!-- build2057: 最恐 -デイノヴァ-（挑戦無制限。Sランク確定／Aランク50%でディノヴァ獲得） -->
+          <!-- build2057: 最恐 -デイノヴァ-（挑戦無制限。Sランク確定／Aランク50%でデイノヴァ獲得） -->
           <button type="button" class="junkou-special-card junkou-special-card-event shooting-entry-card deinova-stage-card" onclick="openShootingEvent({stageId:'shooting_special_deinova'})" aria-label="SPECIAL STAGE 最恐 -デイノヴァ-">
             <span class="junkou-special-copy">
               <span class="junkou-special-kicker">SPECIAL STAGE</span>
               <span class="junkou-special-rule" aria-hidden="true"></span>
               <span class="junkou-special-title">最恐 -デイノヴァ-</span>
-              <span style="display:block;margin-top:4px;font-size:10px;letter-spacing:.08em;color:#8c6c48">挑戦無制限 ・ S確定 / A 50%</span>
+              <span class="deinova-rank-conditions">
+                <span class="deinova-challenge">挑戦無制限</span>
+                <span><b>Sランク</b> 300万点以上でクリア</span>
+                <span><b>Aランク</b> 200万点以上でクリア</span>
+              </span>
             </span>
             <span class="junkou-special-art" aria-hidden="true">
               <img src="images/icon_event_deinova.webp" alt="">
@@ -5005,6 +5009,19 @@ html:not(.hv2-home) body #global-user-frame .hv2-face {
 // =========================================================
 
 window.NOTICE_ITEMS = [
+  {
+    id: 'notice_inori_ticket_10_20261119',
+    date: '2026.11.19',
+    title: 'イノリ挑戦TICKET ×10 プレゼント',
+    body: 'いつもZERAPHIAをプレイしていただきありがとうございます。\n\n全プレイヤーに「イノリ挑戦TICKET」を10枚プレゼントします。\n\n下の「受け取る」ボタンからお受け取りください。',
+    reward: {
+      type: 'inori_challenge_ticket',
+      claimId: 'notice_inori_ticket_10_20261119',
+      rpcName: 'claim_inori_notice_ticket_20261119',
+      amount: 10
+    },
+    hidden: false
+  },
   {
     id: 'notice_inori_renewal_20261114',
     date: '2026.11.14',
@@ -6207,9 +6224,10 @@ window.NOTICE_ITEMS = [
       return `
         <div class="notice-reward">
           <div class="notice-reward-main">
+            <img class="notice-reward-item-icon" src="images/inori_stage_ticket.webp" alt="">
             <div class="notice-reward-copy">
               <span class="notice-reward-label">プレゼント</span>
-              <strong>イノリ挑戦TICKET ×10</strong>
+              <strong>イノリ挑戦TICKET ×${Math.max(1, Number(reward.amount || 10))}</strong>
             </div>
           </div>
           <button type="button" class="notice-reward-btn${claimed ? ' claimed' : ''}"
@@ -6360,7 +6378,9 @@ window.NOTICE_ITEMS = [
       try {
         const client = window.zsSupabase;
         if (!client || typeof client.rpc !== 'function') throw new Error('Supabaseへ接続できません');
-        const res = await client.rpc('claim_inori_renewal_ticket_20261114');
+        const res = reward.rpcName === 'claim_inori_notice_ticket_20261119'
+          ? await client.rpc(reward.rpcName, { p_claim: true })
+          : await client.rpc('claim_inori_renewal_ticket_20261114');
         if (res.error) throw res.error;
         const data = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
         if (!data || data.ok !== true) throw new Error('受取に失敗しました');
@@ -6370,7 +6390,7 @@ window.NOTICE_ITEMS = [
         try { if (window.ItemTickets && typeof window.ItemTickets.reload === 'function') await window.ItemTickets.reload(); } catch (_) {}
         try { window.dispatchEvent(new CustomEvent('zeraphia:item-tickets-changed')); } catch (_) {}
         if (!noticeBulkClaimActive && typeof window.showToast === 'function')
-          window.showToast(data.already_claimed ? '受け取り済みです' : 'イノリ挑戦TICKET ×10 を受け取りました！');
+          window.showToast((data.already_claimed || data.granted === false) ? '受け取り済みです' : 'イノリ挑戦TICKET ×10 を受け取りました！');
         renderNoticeList(); updateNoticeBadge(); return;
       } catch (err) {
         console.error('[NoticeReward] inori renewal ticket:', err);

@@ -1439,7 +1439,7 @@
     "hidden": false
   },
   "113": {
-    "id":113,"name":"ディノヴァ","element":"fire","hp":650,"atk":265,
+    "id":113,"name":"デイノヴァ","element":"fire","hp":650,"atk":265,
     "image":"images/chara_113_battle_back.webp",
     "panelImage":"images/chara_113_panel.webp",
     "cutinImage":"images/chara_113_cutin.webp",

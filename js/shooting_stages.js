@@ -107,7 +107,7 @@
     RAID_TEST: 'shooting_raid_test',
     BULLET_HELL_TEST: 'shooting_event_bullet_hell_test',
     INORI_SPECIAL: 'shooting_special_inori',
-    DEINOVA_SPECIAL: 'shooting_special_deinova', // build2057: 特別巡行「最恐 -デイノヴァ-」（挑戦無制限・S確定/A50%でディノヴァ）
+    DEINOVA_SPECIAL: 'shooting_special_deinova', // build2057: 特別巡行「最恐 -デイノヴァ-」（挑戦無制限・S確定/A50%でデイノヴァ）
     TOWA_DAWN: 'shooting_towa_dawn',                    // build1877: 隠しステージ「夜明け」（残響の塔20Fクリア後 1/30）          // build1819: 特別巡行「境界者 -イノリ-」（欠片9つでイノリ解放）
     SCORE_ATTACK_NORMAL: 'shooting_score_attack_normal',
     SCORE_ATTACK_HARD: 'shooting_score_attack_hard',
@@ -1878,12 +1878,12 @@
     // ============================================================
     // build2057: SPECIAL STAGE 最恐 -デイノヴァ-
     //  挑戦回数無制限（TICKETなし）。ランクは通常のスコアランク。
-    //  ドロップはサーバー（claim_deinova_special_drop）：Sランク確定／Aランク50%でディノヴァ1体。
+    //  ドロップはサーバー（claim_deinova_special_drop）：Sランク確定／Aランク50%でデイノヴァ1体。
     //  ギミック：
     //   ・plasmaレール … 盤面の左右に回廊を作る。触れると500ダメージ＋1.2秒無敵＋回廊中央へ押し戻し。
     //                    形は時間で変わる（直線→S字→ジグザグ→横レール）。切替の1秒前に点線で予告。自機弾は素通り。
-    //   ・超放電 … ディノヴァに与えたダメージで放電GAUGEが溜まる（行動停止・時間停止中は溜まらない）。
-    //              満タンで放電コアが2つ出現し、6秒のカウント開始。コアを全部壊すと放電中止＋ディノヴァ3秒ダウン。
+    //   ・超放電 … デイノヴァに与えたダメージで放電GAUGEが溜まる（行動停止・時間停止中は溜まらない）。
+    //              満タンで放電コアが2つ出現し、6秒のカウント開始。コアを全部壊すと放電中止＋デイノヴァ3秒ダウン。
     //              壊せなければ操作中キャラ即死。カウント中は時間停止でも止まる。放電の瞬間に無敵なら防げる。
     // ============================================================
     [SHOOTING_STAGE_ID.DEINOVA_SPECIAL]: Object.freeze({
@@ -1931,7 +1931,7 @@
         // ---- 放電コア（build2058）----
         coreCount: 2,                // 満タンと同時に出現する数。全部壊すと放電中止
         coreHp: 900,                 // 1つあたりのHP
-        coreBreakStunMs: 3000,       // 全部壊した時、ディノヴァが行動不能になる時間
+        coreBreakStunMs: 3000,       // 全部壊した時、デイノヴァが行動不能になる時間
         coreShockRadius: 72,         // build2059: この距離（px）まで近づくと感電
         coreShockDamage: 300,        // 感電ダメージ（属性相性なし）
       }),

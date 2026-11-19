@@ -93,7 +93,7 @@
     DEINOVA: 'shooting_special_deinova_boss',
     DEINOVA_RAPTOR: 'shooting_deinova_raptor',
     DEINOVA_CORE: 'shooting_deinova_core',
-    DEINOVA_ULT_CORE: 'shooting_deinova_ult_core', // build2060: ディノヴァULTの放電コア（味方の設置物）   // build2058: 超放電の放電コア（壊すと放電中止）
+    DEINOVA_ULT_CORE: 'shooting_deinova_ult_core', // build2060: デイノヴァULTの放電コア（味方の設置物）   // build2058: 超放電の放電コア（壊すと放電中止）
     VERDANT_SEED: 'shooting_verdant_seed', // build1663: 成長の実   // build1659 樹獣の森：ボス「樹獣の女王」（仮名）
   });
 
@@ -530,7 +530,7 @@
     [SHOOTING_ENEMY_ID.DEINOVA]: Object.freeze({
       id: SHOOTING_ENEMY_ID.DEINOVA,
       kind: 'boss', implemented: true,
-      name: 'ディノヴァ', displayName: 'SPECIAL STAGE　ディノヴァ',
+      name: 'デイノヴァ', displayName: 'SPECIAL STAGE　デイノヴァ',
       image: 'images/deinova_battle.webp', element: 'fire',
       gaugeHps: Object.freeze([9000, 10000, 11000]), gauges: 3,
       bulletSpeed: 230, fireRate: 1100, bulletDamage: 190,
@@ -559,7 +559,7 @@
       element: 'neutral', attackType: 'none', image: 'images/deinova_discharge_core.webp',
       hp: 900, moveSpeed: 0, scoreValue: 500, behavior: 'deinova_core_v1', uiScale: 1.15,
     }),
-    // build2060: ディノヴァ（ID113）ULTが敵の左右に置く放電コア。こちらの攻撃で壊すと、その敵にダメージ＋麻痺。
+    // build2060: デイノヴァ（ID113）ULTが敵の左右に置く放電コア。こちらの攻撃で壊すと、その敵にダメージ＋麻痺。
     //  HPはキャラ側（deinovaUltCoreHpAtkRate）。撃破数・スコアには数えない（shooting_core damageDeinovaUltCore）。
     [SHOOTING_ENEMY_ID.DEINOVA_ULT_CORE]: Object.freeze({
       id: SHOOTING_ENEMY_ID.DEINOVA_ULT_CORE, kind: 'normal', implemented: true,

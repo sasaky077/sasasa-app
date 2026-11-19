@@ -812,3 +812,25 @@ html body:not(.ui-immersive) #screen-ninmu.junkou-rebuilt {
   #screen-ninmu.junkou-rebuilt .junkou-special-ticket-balance{font-size:9px !important;}
   #screen-ninmu.junkou-rebuilt .junkou-special-ticket-balance b{font-size:13px !important;}
 }
+
+/* build2090: デイノヴァ SPECIAL STAGE: rank requirements, responsive layout */
+#screen-ninmu.junkou-rebuilt .deinova-stage-card{min-height:166px !important;}
+#screen-ninmu.junkou-rebuilt .deinova-stage-card .junkou-special-copy{padding-top:12px !important;padding-bottom:12px !important;}
+#screen-ninmu.junkou-rebuilt .deinova-stage-card .junkou-special-kicker{margin-bottom:6px !important;}
+#screen-ninmu.junkou-rebuilt .deinova-stage-card .junkou-special-rule{margin-bottom:7px !important;}
+#screen-ninmu.junkou-rebuilt .deinova-rank-conditions{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-top:7px;font:500 10px/1.35 'Noto Serif JP',serif;color:#725335;letter-spacing:0;white-space:nowrap;}
+#screen-ninmu.junkou-rebuilt .deinova-rank-conditions b{font-weight:700;color:#90632d;}
+#screen-ninmu.junkou-rebuilt .deinova-rank-conditions .deinova-challenge{font-size:9px;color:#9c7b53;}
+@media (max-width:420px){
+  #screen-ninmu.junkou-rebuilt .deinova-stage-card{min-height:156px !important;}
+  #screen-ninmu.junkou-rebuilt .deinova-stage-card .junkou-special-copy{padding:9px 5px 10px 11px !important;}
+  #screen-ninmu.junkou-rebuilt .deinova-stage-card .junkou-special-kicker{font-size:9px !important;letter-spacing:.1em !important;margin-bottom:5px !important;}
+  #screen-ninmu.junkou-rebuilt .deinova-stage-card .junkou-special-rule{margin-bottom:5px !important;}
+  #screen-ninmu.junkou-rebuilt .deinova-stage-card .junkou-special-title{font-size:16px !important;}
+  #screen-ninmu.junkou-rebuilt .deinova-rank-conditions{font-size:9px;gap:3px;margin-top:6px;}
+  #screen-ninmu.junkou-rebuilt .deinova-rank-conditions .deinova-challenge{font-size:8px;}
+}
+@media (max-width:340px){
+  #screen-ninmu.junkou-rebuilt .deinova-stage-card{min-height:150px !important;}
+  #screen-ninmu.junkou-rebuilt .deinova-rank-conditions{font-size:8px;}
+}
