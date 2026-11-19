@@ -3003,13 +3003,14 @@
   });
 
   // build2092: イノリ (ID111) — 光 SR / BOOMERANG。通常ショットは往復弧軌道。ULTは従来の鳥居を維持。
+  // build2095: 3枚刃の湾曲ブーメラン（属性色）を右45°へ射出し、頭上で弧を描いて左側から手元へ戻す。
   SHOOTING_CHARACTERS[CHARACTER_ID.INORI] = buildShootingCharacter({
     ...ERI_BASE_PROFILE,
     id: CHARACTER_ID.INORI, effectKey: 'inori',
     label: 'BOOMERANG / TORII',
-    description: '光属性のブーメランを弧を描く軌道で投げ、折り返して手元へ戻す。往路・復路で敵に命中する。ULTは左右に鳥居を建てて敵弾を防ぎ、無敵と神罰を発動する。',
+    description: '3枚刃の光属性ブーメランを右45°へ投げ、頭上で弧を描いて左側から手元へ戻す。往路・復路で敵に命中する。ULTは左右に鳥居を建てて敵弾を防ぎ、無敵と神罰を発動する。',
     shotType: 'boomerang', fireRate: 460, shotCount: 1,
-    boomerangDurationMs: 1050, boomerangReach: 265, boomerangArc: 76,
+    boomerangDurationMs: 1050, boomerangReach: 230, boomerangAngleDeg: 45,
     boomerangDamageRate: 0.11,
     ultName: '双鳥居・祈りの帳',
     ultDescription: '自機の左右に鳥居を2基設置する。鳥居は敵弾を受け止め（0～4凸で各20/25/30/35/40HIT）、2基とも崩れるか3/4/5/6/7秒経つまで自分は無敵。鳥居からは真上へ光属性レーザーを照射し続ける（0.15秒ごとにATK×0.08）。鳥居が消えた時、建っていた間のコンボ数×6/7/8/9/10の「神罰」が盤面の敵1体に降り注ぐ。',

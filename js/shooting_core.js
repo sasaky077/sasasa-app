@@ -15056,31 +15056,72 @@
     const shotCount = Math.max(1, Math.floor(Number(c.shotCount || 1)));
     const bulletClass = 'shooting-bullet' + styleClass + attrBulletClass;
 
-    // build2092 イノリ：光のブーメラン。DOM弾にして環境依存のCanvas置換を回避。
+    // build2095 イノリ：3枚刃の湾曲ブーメラン（属性色）。自機から右45°へ射出し、頭上で弧を描いて左側から手元へ戻る。
+    //  DOM弾（SVG）にして環境依存のCanvas置換を回避。形状は共有シンボルを<use>で参照し、弾ごとのDOMを最小化。
+    //  回転は内側SVGのみ（外側transformは座標用）。
     if (c.shotType === 'boomerang') {
       const arena = document.getElementById('shooting-arena');
       if (!arena) return;
-      if (!document.getElementById('inori-boomerang-style-v2092')) {
+      if (!document.getElementById('inori-boomerang-style-v2095')) {
+        ['inori-boomerang-style-v2092','inori-boomerang-style-v2094'].forEach(id => { const o = document.getElementById(id); if (o) o.remove(); });
         const style = document.createElement('style');
-        style.id = 'inori-boomerang-style-v2092';
+        style.id = 'inori-boomerang-style-v2095';
         style.textContent = `
-          #shooting-arena .shooting-bullet.inori-boomerang-shot{width:30px;height:30px;border:0!important;background:none!important;box-shadow:none!important;overflow:visible;pointer-events:none;z-index:21}
-          #shooting-arena .inori-boomerang-shot::before{content:'';position:absolute;inset:3px;border:5px solid rgba(160,227,255,.96);border-top-color:rgba(255,255,255,.98);border-left-color:rgba(255,255,255,.13);border-bottom-color:rgba(95,178,255,.38);border-radius:50%;filter:drop-shadow(0 0 5px rgba(132,216,255,.9));transform:rotate(-38deg);animation:inoriBoomSpin .24s linear infinite}
-          #shooting-arena .inori-boomerang-shot::after{content:'';position:absolute;inset:-2px;border:1px solid rgba(205,242,255,.4);border-radius:50%;box-shadow:0 0 12px rgba(100,190,255,.28);animation:inoriBoomSpin .24s linear infinite reverse}
-          @keyframes inoriBoomSpin{to{transform:rotate(322deg)}}
+          #shooting-arena .shooting-bullet.inori-boomerang-shot{--bm-hi:#fffbe0;--bm-mid:#ffc42e;--bm-deep:#a8770a;--bm-glow:rgba(255,196,46,.36);width:42px!important;height:42px!important;border:0!important;background:none!important;box-shadow:none!important;border-radius:0!important;overflow:visible!important;pointer-events:none;z-index:21}
+          #shooting-arena .shooting-bullet.inori-boomerang-shot::before,#shooting-arena .shooting-bullet.inori-boomerang-shot::after{content:none!important;display:none!important}
+          #shooting-arena .shooting-bullet.inori-boomerang-shot.shooting-bullet-fire{--bm-hi:#ffe9d6;--bm-mid:#ff6b3d;--bm-deep:#b02a14;--bm-glow:rgba(255,107,61,.36)}
+          #shooting-arena .shooting-bullet.inori-boomerang-shot.shooting-bullet-aqua{--bm-hi:#e3f7ff;--bm-mid:#38a8ff;--bm-deep:#1556a8;--bm-glow:rgba(56,168,255,.36)}
+          #shooting-arena .shooting-bullet.inori-boomerang-shot.shooting-bullet-wood{--bm-hi:#ecffe2;--bm-mid:#46c25e;--bm-deep:#1f7432;--bm-glow:rgba(70,194,94,.36)}
+          #shooting-arena .shooting-bullet.inori-boomerang-shot.shooting-bullet-dark{--bm-hi:#f3e8ff;--bm-mid:#9b5cf0;--bm-deep:#4f2394;--bm-glow:rgba(155,92,240,.36)}
+          #shooting-arena .shooting-bullet.inori-boomerang-shot.shooting-bullet-light{--bm-hi:#fffbe0;--bm-mid:#ffc42e;--bm-deep:#a8770a;--bm-glow:rgba(255,196,46,.36)}
+          #shooting-arena .inori-boomerang-shot>svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;animation:inoriBoomSpin .3s linear infinite}
+          @keyframes inoriBoomSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
         `;
         document.head.appendChild(style);
       }
+      if (!document.getElementById('inori-bm-sym')) {
+        // 刃1枚：ハブから立ち上がり、時計回りへ湾曲して鋭い切っ先へ。外縁は凸・内縁は凹の三日月形。
+        const blade = 'M-10 -3 C-14 -20 -4 -35 14 -42 C25 -46 36 -46 46 -42 C33 -39 21 -33 13 -23 C8 -16 7 -10 10 -3 Z';
+        // 刃の帯（2本）は刃の形で切り抜く
+        const bands = '<g clip-path="url(#inori-bm-clip)" style="stroke:var(--bm-hi)" stroke-width="2.6" stroke-linecap="butt">'
+          + '<path d="M-18 -27 L18 -15"/><path d="M-12 -34 L24 -22"/></g>';
+        let glow = '', edge = '', body = '';
+        [0, 120, 240].forEach(r => {
+          glow += '<use href="#inori-bm-blade" transform="rotate(' + r + ')"/>';
+          edge += '<use href="#inori-bm-blade" transform="rotate(' + r + ')"/>';
+          body += '<g transform="rotate(' + r + ')"><use href="#inori-bm-blade"/>' + bands + '</g>';
+        });
+        const sprite = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        sprite.setAttribute('aria-hidden', 'true');
+        sprite.setAttribute('width', '0'); sprite.setAttribute('height', '0');
+        sprite.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden';
+        sprite.innerHTML = '<defs>'
+          + '<path id="inori-bm-blade" d="' + blade + '"/>'
+          + '<clipPath id="inori-bm-clip"><use href="#inori-bm-blade"/></clipPath>'
+          + '<symbol id="inori-bm-sym" viewBox="-52 -52 104 104" overflow="visible">'
+          + '<g style="fill:var(--bm-glow);stroke:var(--bm-glow)" stroke-width="8" stroke-linejoin="round">' + glow + '<circle r="15"/></g>'
+          + '<g style="fill:var(--bm-deep);stroke:var(--bm-deep)" stroke-width="3.6" stroke-linejoin="round">' + edge + '<circle r="14"/></g>'
+          + '<g style="fill:var(--bm-mid)">' + body + '<circle r="12.5"/></g>'
+          + '<circle r="8" fill="none" style="stroke:var(--bm-hi)" stroke-width="2.6"/>'
+          + '<circle r="4.6" style="fill:var(--bm-mid)"/>'
+          + '</symbol></defs>';
+        document.body.appendChild(sprite);
+      }
       const el = document.createElement('i');
       el.className = bulletClass + ' inori-boomerang-shot';
+      el.innerHTML = '<svg viewBox="-52 -52 104 104" aria-hidden="true" overflow="visible"><use href="#inori-bm-sym" x="-52" y="-52" width="104" height="104"/></svg>';
       arena.appendChild(el);
-      const dir = (state.shotIndex % 2) ? 1 : -1;
+      // 常に右45°へ射出 → 頭上で弧を描いて左側へ回り込み → 左上から手元へ戻る（1パターンのみ）。
+      const angleRad = Number(c.boomerangAngleDeg ?? 45) * Math.PI / 180;
+      const reach = Number(c.boomerangReach || 230);
       const p = {el, ownerId:c.id, kind:'inori_boomerang', x:state.player.x, y, vx:0, vy:0,
         damage:effectivePower * Number(c.boomerangDamageRate || .11) / Math.max(.001,Number(c.shotPowerRate || .095)),
         attackElement:normalizeCombatElement(c.element) || 'light', pierce:true,
         piercedTargets:new WeakSet(), boomAge:0, boomDuration:Math.max(.65,Number(c.boomerangDurationMs || 1050)/1000),
-        boomReach:Number(c.boomerangReach || 265),boomArc:Number(c.boomerangArc || 76),boomDir:dir,
-        boomOriginX:state.player.x,boomOriginY:y, _hw:13,_hh:13};
+        // 縦の到達高さ boomReach、横の振れ幅は射出角から算出（出だしの接線が真上から angle になる）
+        boomReach:reach, boomWidth:reach * Math.tan(angleRad) / 2,
+        boomReturned:false,
+        boomOriginX:state.player.x,boomOriginY:y, _hw:16,_hh:16};
       positionUnit(el,p.x,p.y);
       state.bullets.push(p);
       return;
@@ -25154,12 +25195,18 @@
       } else if (p.kind === 'inori_boomerang') {
         p.boomAge += dt;
         const t = Math.min(1, p.boomAge / p.boomDuration);
-        // 到達後は最新の自機座標へ滑らかに戻る。往路・復路とも弧を描く。
-        const progress = Math.sin(Math.PI * t);
+        // x = W·sin(2πt)（前半は右・後半は左）、y = -H·sin(πt)（上がって下りる）。
+        //  t=0 の接線は右上45°、t=1 は左上から45°で手元へ戻る。
+        const offX = p.boomWidth * Math.sin(2 * Math.PI * t);
+        const offY = -p.boomReach * Math.sin(Math.PI * t);
+        // 戻り先は最新の自機座標。発射位置とのずれを後半ほど強く補正する。
         const homeX = Number(state.player.x || p.boomOriginX);
         const homeY = Number(state.player.y || p.boomOriginY) - 32;
-        p.x = p.boomOriginX + p.boomDir * p.boomArc * Math.sin(Math.PI * t) + (homeX - p.boomOriginX) * t * t;
-        p.y = p.boomOriginY - p.boomReach * progress + (homeY - p.boomOriginY) * t * t;
+        const ease = t * t;
+        p.x = p.boomOriginX + offX + (homeX - p.boomOriginX) * ease;
+        p.y = p.boomOriginY + offY + (homeY - p.boomOriginY) * ease;
+        // 折り返し後は復路として同じ敵にも再ヒットできる。
+        if (!p.boomReturned && t >= .5) { p.boomReturned = true; p.piercedTargets = new WeakSet(); }
         if (t >= 1) { p.el.remove(); return false; }
       } else if (p.kind === 'wolf_j_homing') {
         updateWolfJHomingProjectile(p, dt, now);
