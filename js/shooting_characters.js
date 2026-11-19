@@ -1439,7 +1439,7 @@
     "hidden": false
   },
   "113": {
-    "id":113,"name":"デイノヴァ","element":"fire","hp":650,"atk":265,
+    "id":113,"name":"ディノヴァ","element":"fire","hp":650,"atk":265,
     "image":"images/chara_113_battle_back.webp",
     "panelImage":"images/chara_113_panel.webp",
     "cutinImage":"images/chara_113_cutin.webp",
@@ -3002,19 +3002,15 @@
     coreTop: '38%', shotOffsetY: 42,
   });
 
-  // build1817: イノリ (ID111) — 光 SR / LASER(+)。
-  //  SHOT：縦のLASER M。敵に当たると、その位置を起点に横一線のレーザーも走る（横は縦の50%の威力・起点の敵には当たらない）。
-  //  ULT：自機の左右に鳥居（chara_111_object）を設置。鳥居は敵弾を受け止め、壊れる（0～4凸で20～40HIT）か3～7秒経つまで自分は無敵。
-  //       build1818: 鳥居が消えた時、建っていた間のコンボ数×6～10の「神罰」を敵1体へ。
-  //       鳥居からは光属性レーザーが真上へ照射され続ける。入手経路は未設定（ガチャ排出枠・配布には追加しない）。
+  // build2092: イノリ (ID111) — 光 SR / BOOMERANG。通常ショットは往復弧軌道。ULTは従来の鳥居を維持。
   SHOOTING_CHARACTERS[CHARACTER_ID.INORI] = buildShootingCharacter({
     ...ERI_BASE_PROFILE,
     id: CHARACTER_ID.INORI, effectKey: 'inori',
-    label: 'LASER(+) / TORII',
-    description: '光属性のLASER(+)。縦のレーザーが敵に当たると、そこを起点に横一線のレーザーも走る（横は50%の威力）。ULTで左右に鳥居を建て、壊れるまで無敵になり、鳥居から光のレーザーを放つ。鳥居が消えると、その間のコンボ数に応じた神罰が敵に降り注ぐ。',
-    shotType: 'laser', laserSize: 'M', fireRate: 100,
-    laserWidth: 10, laserHitWidth: 34, laserDamageAtkRate: 0.058, laserVisualHoldMs: 125,
-    laserCross: true, laserCrossDamageRate: 0.5, laserCrossMaxOrigins: 2, laserCrossHitHalfHeight: 22,
+    label: 'BOOMERANG / TORII',
+    description: '光属性のブーメランを弧を描く軌道で投げ、折り返して手元へ戻す。往路・復路で敵に命中する。ULTは左右に鳥居を建てて敵弾を防ぎ、無敵と神罰を発動する。',
+    shotType: 'boomerang', fireRate: 460, shotCount: 1,
+    boomerangDurationMs: 1050, boomerangReach: 265, boomerangArc: 76,
+    boomerangDamageRate: 0.11,
     ultName: '双鳥居・祈りの帳',
     ultDescription: '自機の左右に鳥居を2基設置する。鳥居は敵弾を受け止め（0～4凸で各20/25/30/35/40HIT）、2基とも崩れるか3/4/5/6/7秒経つまで自分は無敵。鳥居からは真上へ光属性レーザーを照射し続ける（0.15秒ごとにATK×0.08）。鳥居が消えた時、建っていた間のコンボ数×6/7/8/9/10の「神罰」が盤面の敵1体に降り注ぐ。',
     ultType: 'inori_torii_guard', ultBaseType: 'summon', ultAddons: ['invincible', 'bullet_block', 'damage'],

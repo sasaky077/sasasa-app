@@ -152,7 +152,7 @@
       .shooting-nina-electric-network.is-output-max .shooting-nina-electric-hit{
         stroke-width:3;
       }
-      /* build2055: ID113 デイノヴァ通常PLASMA。screen合成だと明るい戦闘背景で赤がピンクに飛ぶため、
+      /* build2055: ID113 ディノヴァ通常PLASMA。screen合成だと明るい戦闘背景で赤がピンクに飛ぶため、
          通常合成＋暗い深紅の縁取りで「赤い電撃」として見せる（白い芯は細く残してプラズマ感を維持） */
       .shooting-nina-electric-network.is-deinova{
         mix-blend-mode:normal;
@@ -4006,7 +4006,7 @@
         }
       }
 
-      // build2057: 特別巡行デイノヴァのドロップ。ランク判定・抽選・付与はすべてサーバー（同じrun tokenで確定済みのスコアを使う）。
+      // build2057: 特別巡行ディノヴァのドロップ。ランク判定・抽選・付与はすべてサーバー（同じrun tokenで確定済みのスコアを使う）。
       let deinovaDrop = null;
       if (win && isDeinovaStage()) deinovaDrop = await claimDeinovaSpecialDrop(sb, runToken);
 
@@ -4048,7 +4048,7 @@
     }
   }
 
-  // 獲得したデイノヴァをローカルの所持一覧へ反映（ノアの解放と同じ手順）。
+  // 獲得したディノヴァをローカルの所持一覧へ反映（ノアの解放と同じ手順）。
   async function syncDroppedDeinovaToLocal(sb, characterRowId) {
     try {
       const rowRes = await sb.from('collected_characters').select('*').eq('id', Number(characterRowId)).maybeSingle();
@@ -15056,6 +15056,36 @@
     const shotCount = Math.max(1, Math.floor(Number(c.shotCount || 1)));
     const bulletClass = 'shooting-bullet' + styleClass + attrBulletClass;
 
+    // build2092 イノリ：光のブーメラン。DOM弾にして環境依存のCanvas置換を回避。
+    if (c.shotType === 'boomerang') {
+      const arena = document.getElementById('shooting-arena');
+      if (!arena) return;
+      if (!document.getElementById('inori-boomerang-style-v2092')) {
+        const style = document.createElement('style');
+        style.id = 'inori-boomerang-style-v2092';
+        style.textContent = `
+          #shooting-arena .shooting-bullet.inori-boomerang-shot{width:30px;height:30px;border:0!important;background:none!important;box-shadow:none!important;overflow:visible;pointer-events:none;z-index:21}
+          #shooting-arena .inori-boomerang-shot::before{content:'';position:absolute;inset:3px;border:5px solid rgba(160,227,255,.96);border-top-color:rgba(255,255,255,.98);border-left-color:rgba(255,255,255,.13);border-bottom-color:rgba(95,178,255,.38);border-radius:50%;filter:drop-shadow(0 0 5px rgba(132,216,255,.9));transform:rotate(-38deg);animation:inoriBoomSpin .24s linear infinite}
+          #shooting-arena .inori-boomerang-shot::after{content:'';position:absolute;inset:-2px;border:1px solid rgba(205,242,255,.4);border-radius:50%;box-shadow:0 0 12px rgba(100,190,255,.28);animation:inoriBoomSpin .24s linear infinite reverse}
+          @keyframes inoriBoomSpin{to{transform:rotate(322deg)}}
+        `;
+        document.head.appendChild(style);
+      }
+      const el = document.createElement('i');
+      el.className = bulletClass + ' inori-boomerang-shot';
+      arena.appendChild(el);
+      const dir = (state.shotIndex % 2) ? 1 : -1;
+      const p = {el, ownerId:c.id, kind:'inori_boomerang', x:state.player.x, y, vx:0, vy:0,
+        damage:effectivePower * Number(c.boomerangDamageRate || .11) / Math.max(.001,Number(c.shotPowerRate || .095)),
+        attackElement:normalizeCombatElement(c.element) || 'light', pierce:true,
+        piercedTargets:new WeakSet(), boomAge:0, boomDuration:Math.max(.65,Number(c.boomerangDurationMs || 1050)/1000),
+        boomReach:Number(c.boomerangReach || 265),boomArc:Number(c.boomerangArc || 76),boomDir:dir,
+        boomOriginX:state.player.x,boomOriginY:y, _hw:13,_hh:13};
+      positionUnit(el,p.x,p.y);
+      state.bullets.push(p);
+      return;
+    }
+
     // ----------------------------------------------------------
     // ベロニカ：近距離剣撃
     // 弾を飛ばさず、自機前方の短い範囲だけに高威力判定を出す。
@@ -20487,7 +20517,7 @@
 
   function damageNormalEnemy(enemy, amount, now, big, elementReaction = '', suppressVisual = false) {
     if (!enemy || enemy.hp <= 0) return 0;
-    // build2060: デイノヴァULTの放電コア（味方の設置物）は撃破数・スコアに数えない
+    // build2060: ディノヴァULTの放電コア（味方の設置物）は撃破数・スコアに数えない
     if (enemy.deinovaUltCore) return damageDeinovaUltCore(enemy, amount, Number(now || performance.now()), big, elementReaction, suppressVisual);
     // build1761: HIT数で倒す敵（記憶決戦の守護者）。威力に関係なく、通った攻撃1回＝1ダメージ。
     // 属性結界などで0になった攻撃は数えない。連射の速いショットや多段ULTが有利。
@@ -24360,7 +24390,7 @@
     if (isShienBattle()) return;
     // build1592: カミラも専用の攻撃のみ（updateCamillaMechanics）。共通WARNING・通常弾は撃たない。
     if (isCamillaBattle()) return;
-    // build2057: デイノヴァはPLASMA（扇状＋狙い撃ち）のみ。突進中は撃たない。
+    // build2057: ディノヴァはPLASMA（扇状＋狙い撃ち）のみ。突進中は撃たない。
     if (BOSS && BOSS.behavior === 'deinova_v1') { fireDeinovaBoss(now); return; }
     // WARNING攻撃は必ず先に処理する。レイド軽量化で危険攻撃を消さない。
     if (handleBossDangerAttack(now)) return;
@@ -25121,6 +25151,16 @@
         updateRemnaTrapProjectile(p, dt, now);
       } else if (p.kind === 'arno_orbit_forward') {
         updateArnoOrbitProjectile(p, dt);
+      } else if (p.kind === 'inori_boomerang') {
+        p.boomAge += dt;
+        const t = Math.min(1, p.boomAge / p.boomDuration);
+        // 到達後は最新の自機座標へ滑らかに戻る。往路・復路とも弧を描く。
+        const progress = Math.sin(Math.PI * t);
+        const homeX = Number(state.player.x || p.boomOriginX);
+        const homeY = Number(state.player.y || p.boomOriginY) - 32;
+        p.x = p.boomOriginX + p.boomDir * p.boomArc * Math.sin(Math.PI * t) + (homeX - p.boomOriginX) * t * t;
+        p.y = p.boomOriginY - p.boomReach * progress + (homeY - p.boomOriginY) * t * t;
+        if (t >= 1) { p.el.remove(); return false; }
       } else if (p.kind === 'wolf_j_homing') {
         updateWolfJHomingProjectile(p, dt, now);
       } else if (p.kind === 'generic_homing') {
@@ -25172,7 +25212,7 @@
         p.el.remove();
         return false;
       }
-      if (p.y < -20 || p.x < -20 || p.x > w + 20 || ((p.kind === 'bomb_fragment' || p.kind === 'conjure_bullet') && p.y > h + 20)) {
+      if (p.kind !== 'inori_boomerang' && (p.y < -20 || p.x < -20 || p.x > w + 20 || ((p.kind === 'bomb_fragment' || p.kind === 'conjure_bullet') && p.y > h + 20))) {
         p.el.remove();
         return false;
       }
@@ -25942,7 +25982,7 @@
       const hitEnemy = state.normalEnemies.find(enemy => {
         if (!enemy || !enemy.el || enemy.hp <= 0) return false;
         if (enemy.def?.behavior === 'verdant_seed_v1') return false; // build1663
-        if (enemy.deinovaUltCore) return false; // build2060: デイノヴァULTの放電コア
+        if (enemy.deinovaUltCore) return false; // build2060: ディノヴァULTの放電コア
         // Dedicated CHARGE zako only deals contact damage while actually dashing.
         if (
           enemy.def?.behavior === 'generic_element_charge_v1' &&
@@ -25989,7 +26029,7 @@
     }
 
     // build1663: 樹獣の森（ボス戦）は配下の接触も有効（樹獣は突進中のみ）。従来はボス戦で配下の接触判定がなく、突進が素通りしていた。
-    // build2058: デイノヴァ戦の紅雷のレムナント（突進中）も同じ扱い。放電コアは接触なし
+    // build2058: ディノヴァ戦の紅雷のレムナント（突進中）も同じ扱い。放電コアは接触なし
     if (selectedStage && (selectedStage.verdant || selectedStage.deinova) && hasBossAdds()) {
       const hitAdd = (state.normalEnemies || []).find(enemy => enemy && enemy.el && enemy.hp > 0 &&
         enemy.def?.behavior !== 'verdant_seed_v1' && enemy.def?.behavior !== 'deinova_core_v1' && !enemy.deinovaUltCore &&
@@ -29140,7 +29180,7 @@
 
   // ============================================================
   // ============================================================
-  // build2060: デイノヴァ（ID113）ULT「ラプトプラズム」
+  // build2060: ディノヴァ（ID113）ULT「ラプトプラズム」
   //  アルノ型の時間停止＋連打斬撃のあと、斬った敵（いちばん多く斬った相手）の左右に放電コアを2つ設置する。
   //  コアは敵に付いて動く「味方の設置物」。通常敵の枠（state.normalEnemies）に入れるので、
   //  弾・PLASMA・レーザー・ULTなど、こちらのどの攻撃でも壊せる。撃破数・スポーン数には数えない。
@@ -29333,7 +29373,7 @@
   //  ・plasmaレール … 盤面に回廊を作る。触れると500ダメージ＋1.2秒無敵＋回廊の内側へ押し戻し。自機弾は素通り。
   //                   形は railPatternMs ごとに変わる（直線→S字→ジグザグ→横レール）。切替の1秒前に点線で予告。
   //  ・突進＋PLASMA … ボスの基本攻撃（updateDeinovaBossMovement / fireDeinovaBoss）。
-  //  ・超放電 … デイノヴァに与えたダメージで放電GAUGEが溜まる。行動停止・時間停止・スタン・捕縛中は溜まらない。
+  //  ・超放電 … ディノヴァに与えたダメージで放電GAUGEが溜まる。行動停止・時間停止・スタン・捕縛中は溜まらない。
   //             満タンで 3・2・1 → 操作中キャラ即死。カウント中は時間停止（アルノ型ULT・PAUSE）だけが止められる。
   //             放電の瞬間、操作中キャラが無敵（invincibleUntil）なら防げる。被弾後の短い無敵は対象外。
   //  時刻は *At / *Until の名前で持つので、PAUSE・アルノ型ULTの時間停止明けに自動でずれる（shiftPausedTimestamps）。
@@ -29551,7 +29591,7 @@
     dn.coresSpawned = true;
   }
 
-  // 放電コアを全部壊した：放電中止＋デイノヴァがダウン
+  // 放電コアを全部壊した：放電中止＋ディノヴァがダウン
   function breakDeinovaDischarge(now, cfg) {
     const dn = state.deinova;
     dn.dischargeAt = 0;
@@ -31942,9 +31982,9 @@
     updateEltenaBlackHole(dt, ts);
     updateGojoPurpleField(dt, ts);
 
-    // build2057: デイノヴァ（plasmaレール・超放電）
+    // build2057: ディノヴァ（plasmaレール・超放電）
     updateDeinovaMechanics(dt, ts);
-    updateDeinovaUltCores(ts); // build2060: デイノヴァULTの放電コア（どのステージでも）
+    updateDeinovaUltCores(ts); // build2060: ディノヴァULTの放電コア（どのステージでも）
 
     // 敵の位置更新後、当たり判定で使うDOM矩形を一度だけまとめて取得。
     // contact/projectileの間でDOM read/writeを往復させない。
@@ -35131,12 +35171,12 @@
           }
           return;
         }
-        // build2057: デイノヴァのドロップ表示（Sランク確定／Aランク50%。結果はサーバーが正）
+        // build2057: ディノヴァのドロップ表示（Sランク確定／Aランク50%。結果はサーバーが正）
         const dnDrop = isDeinovaStage() && finalized ? finalized.deinovaDrop : null;
         if (dnDrop && list && list.isConnected) {
           if (dnDrop.dropped) {
             const charaDrop = {
-              type: 'material', name: 'デイノヴァ', amount: 1,
+              type: 'material', name: 'ディノヴァ', amount: 1,
               detail: dnDrop.ownedCount > 1 ? `${dnDrop.ownedCount}体目（限界突破に使用できます）` : '新たな仲間',
               image: 'images/chara_113_panel.webp',
             };
@@ -35145,7 +35185,7 @@
           } else if (dnDrop.error) {
             const warn = document.createElement('div');
             warn.style.cssText = 'grid-column:1/-1;padding:8px 12px;border:1px solid #bc685a;background:#fff0ed;color:#892f2f;font:700 11px/1.5 sans-serif;text-align:center';
-            warn.textContent = 'デイノヴァの抽選結果を確認できませんでした。';
+            warn.textContent = 'ディノヴァの抽選結果を確認できませんでした。';
             list.appendChild(warn);
           }
         }
@@ -40749,7 +40789,7 @@
         }
       });
     }
-    // build2060: デイノヴァは麻痺の代わりに、斬った敵の左右へ放電コアを設置（壊すとダメージ＋麻痺）
+    // build2060: ディノヴァは麻痺の代わりに、斬った敵の左右へ放電コアを設置（壊すとダメージ＋麻痺）
     if (state.deinovaUltCoreCfg) placeDeinovaUltCores(now, recoveryUntil);
     state.deinovaUltCoreCfg = null;
     state.arnoSlashParalyzeMs = 0;
@@ -40782,7 +40822,7 @@
     state.arnoSlashLastTapAt = -9999;
     state.arnoSlashCount = 0;
     state.arnoSlashTargetKey = '';
-    // build2056: 麻痺つき（ID113 デイノヴァ）。斬った敵を覚えておき、ULT終了後に行動不能にする
+    // build2056: 麻痺つき（ID113 ディノヴァ）。斬った敵を覚えておき、ULT終了後に行動不能にする
     state.arnoSlashParalyzeMs = Math.max(0, Number(c.arnoSlashParalyzeMs || 0));
     state.deinovaUltCoreCfg = getDeinovaUltCoreConfigFromCharacter(c); // build2060
     state.arnoSlashHitTargets = [];
