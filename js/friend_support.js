@@ -122,7 +122,7 @@
       case 'stop':   return sec(s.ms) + '間、敵全体を行動停止';
       case 'clear':  return '敵弾を全て消し、' + sec(s.ms) + '間無敵';
       case 'stealth': return sec(s.ms) + '間、隠密状態（敵に狙われない）';
-      case 'smilebox': return 'びっくり箱を設置。' + sec(s.ms) + '後に爆発（' + Math.round(Number(s.base || 300) * Number(s.mul || 3)) + 'の範囲ダメージ＋アイテム）';
+      case 'smilebox':　return 'びっくり箱を設置。' + sec(s.ms) + '後に爆発+アイテム出現';
       case 'p_atk':  return scopeText(s) + 'ATK×' + s.mul;
       case 'p_cut':  return scopeText(s) + '被ダメージ' + pct(1 - s.mul) + '軽減（即死は対象外）';
       case 'p_ult':  return scopeText(s) + 'ULTゲージ獲得量×' + s.mul;
