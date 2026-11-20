@@ -104,9 +104,33 @@
       @media (prefers-reduced-motion:reduce){.zt-title-badge.tone-despair.tier-t4{animation:none}}
       #hud-title{display:block;margin-top:2px;line-height:1;min-height:0}
       #hud-title:empty{display:none}
-      /* ホームのヘッダーは名前が下端に固定された44pxの枠なので、称号は名前のすぐ上に重ねる */
-      html body #global-user-frame #hud-title{position:absolute !important;left:10px;right:9px;bottom:19px;margin:0;overflow:hidden;white-space:nowrap}
-      html body #global-user-frame #hud-title .zt-title-badge{font-size:8.5px;line-height:1.45}
+      /* build2098: 名称・称号・EXPは通常フロー。絶対配置の重なりを廃止 */
+      html body:not(.ui-immersive) #global-user-frame .hud-info #hud-title{
+        position:relative!important;inset:auto!important;left:auto!important;right:auto!important;bottom:auto!important;
+        order:2!important;display:block!important;align-self:stretch!important;box-sizing:border-box!important;
+        width:100%!important;max-width:100%!important;min-width:0!important;margin:2px 0 0!important;
+        padding:0!important;overflow:hidden!important;white-space:nowrap!important;
+        height:15px!important;line-height:15px!important;
+      }
+      html body:not(.ui-immersive) #global-user-frame .hud-info #hud-title:empty{display:none!important;height:0!important;margin:0!important}
+      html body:not(.ui-immersive) #global-user-frame .hud-info #hud-title .zt-title-badge{
+        display:inline-flex;max-width:100%;box-sizing:border-box;padding:0 3px!important;
+        border-width:0 0 1px!important;border-radius:0!important;background:transparent!important;
+        box-shadow:none!important;animation:none!important;
+        font-size:10px!important;line-height:13px!important;letter-spacing:0!important;
+        text-overflow:ellipsis;vertical-align:top;text-shadow:0 1px 1px rgba(255,255,255,.85);
+      }
+      html body:not(.ui-immersive) #global-user-frame .hud-info #hud-title .zt-title-badge::before{font-size:9px;flex:none}
+      html body:not(.ui-immersive) #global-user-frame .hud-info .hv2-exp{order:3!important;margin-top:3px!important}
+      @media (max-width:380px), (max-height:700px){
+        html body:not(.ui-immersive) #global-user-frame .hud-info #hud-title{height:13px!important;line-height:13px!important;margin-top:1px!important}
+        html body:not(.ui-immersive) #global-user-frame .hud-info #hud-title .zt-title-badge{font-size:9px!important;line-height:11px!important}
+        html body:not(.ui-immersive) #global-user-frame .hud-info .hv2-exp{margin-top:2px!important}
+      }
+      @media (min-width:390px) and (min-height:800px){
+        html body:not(.ui-immersive) #global-user-frame .hud-info #hud-title{height:16px!important;line-height:16px!important;margin-top:3px!important}
+        html body:not(.ui-immersive) #global-user-frame .hud-info #hud-title .zt-title-badge{font-size:10.5px!important;line-height:14px!important}
+      }
       .zt-block-title{display:block;margin-top:2px}
       .zt-block-title:empty{display:none}
       #zt-title-modal{position:fixed;inset:0;z-index:100050;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(30,22,12,.45)}
@@ -342,8 +366,9 @@
 
   function boot(attempt){
     if(myId() && client()){ void loadMine(true); return; }
-    if((attempt || 0) < 40) setTimeout(() => boot((attempt || 0) + 1), 250);
+    if((attempt || 0) < 100) setTimeout(() => boot((attempt || 0) + 1), 350);
   }
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => boot(0), { once:true });
   else boot(0);
+  document.addEventListener('visibilitychange', () => { if(!document.hidden && myId()) void loadMine(true); });
 })();

@@ -3576,6 +3576,7 @@ html:not(.hv2-home) body #global-user-frame .hv2-face {
     </div>
     <div class="hud-info">
       <div class="hud-name" id="hud-name">Player</div>
+      <div id="hud-title" aria-label="装備中の称号"></div>
       <span class="hud-sweep-line hud-sweep-line-player" aria-hidden="true"></span>
     </div>
   </div>
@@ -21408,7 +21409,7 @@ window.returnToTitleScreen = function(){
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1946-party-button"></script>
 <script src="js/skin_system.js?v=1709-towa-skin"></script>
-<script src="js/title_system.js?v=1815-weekly-and-phase-title"></script>
+<script src="js/title_system.js?v=2099-hud-title-visible"></script>
 <script src="js/item_tickets.js?v=1963-phase-run-guard"></script>
 <script src="js/inori_piece.js?v=1829-ticket-button"></script>
 <script src="js/item_management.js?v=1830-evolution-ticket"></script>
@@ -23432,5 +23433,50 @@ document.addEventListener('click',handleProfileTap,true);
 })();
 </script>
 <script src="js/phase_rush_hidden.js?v=2088-hidden-test" defer></script>
+<style id="zeraphia-hud-title-flow-2099">
+/* 2099: real HUD sizing. Existing 44px block and absolute name caused hidden badge. */
+html body #global-user-frame .hud-info {
+  display:flex!important;flex-direction:column!important;justify-content:flex-start!important;
+  align-items:flex-start!important;height:auto!important;min-height:60px!important;
+  overflow:visible!important;min-width:0!important;
+}
+html body #global-user-frame .hud-info #hud-name {
+  position:relative!important;top:auto!important;bottom:auto!important;
+  left:auto!important;right:auto!important;order:1!important;
+  margin:0!important;padding:0!important;flex:none!important;
+  max-width:100%!important;line-height:1.1!important;
+}
+html body #global-user-frame .hud-info #hud-title {
+  position:relative!important;top:auto!important;bottom:auto!important;
+  left:auto!important;right:auto!important;order:2!important;
+  display:block!important;flex:none!important;width:100%!important;
+  max-width:100%!important;min-height:14px!important;height:auto!important;
+  padding:0!important;margin:3px 0 0!important;
+  overflow:hidden!important;white-space:nowrap!important;
+  line-height:14px!important;visibility:visible!important;opacity:1!important;
+}
+html body #global-user-frame .hud-info #hud-title:empty {display:none!important;min-height:0!important;margin:0!important}
+html body #global-user-frame .hud-info #hud-title .zt-title-badge {
+  display:inline-flex!important;align-items:center!important;max-width:100%!important;
+  border:0!important;border-bottom:1px solid rgba(135,69,83,.65)!important;
+  border-radius:0!important;background:transparent!important;box-shadow:none!important;
+  animation:none!important;padding:0 1px!important;margin:0!important;
+  color:#813650!important;text-shadow:0 1px 1px #fff!important;
+  font-size:10px!important;line-height:13px!important;font-weight:700!important;
+  letter-spacing:0!important;overflow:hidden!important;text-overflow:ellipsis!important;
+}
+html body #global-user-frame .hud-info #hud-title .zt-title-badge .zt-rank {font-size:9px!important;flex:none!important}
+html body #global-user-frame .hud-info .hv2-exp {order:3!important;margin-top:4px!important;flex:none!important}
+@media (max-width:380px), (max-height:700px) {
+ html body #global-user-frame .hud-info {min-height:52px!important}
+ html body #global-user-frame .hud-info #hud-title {margin-top:2px!important;line-height:12px!important;min-height:12px!important}
+ html body #global-user-frame .hud-info #hud-title .zt-title-badge {font-size:9px!important;line-height:11px!important}
+ html body #global-user-frame .hud-info .hv2-exp {margin-top:3px!important}
+}
+@media (min-width:390px) and (min-height:800px) {
+ html body #global-user-frame .hud-info {min-height:64px!important}
+ html body #global-user-frame .hud-info #hud-title .zt-title-badge {font-size:10.5px!important;line-height:15px!important}
+}
+</style>
 </body>
 </html>
