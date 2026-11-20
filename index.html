@@ -5006,6 +5006,23 @@ html:not(.hv2-home) body #global-user-frame .hv2-face {
 
 window.NOTICE_ITEMS = [
   {
+    id: 'notice_inori_playable_gift_20261120',
+    date: '2026.11.20',
+    title: '「境界者 -イノリ-」プレゼント！',
+    body: 'プレイアブルキャラクター「境界者 -イノリ-」を全プレイヤーにプレゼント！\n\nまずはイノリを仲間に迎えよう！\nチケットクエスト「境界者 -イノリ-」をクリアして、イノリを限界突破＆強化しよう！\n\n下の「受け取る」ボタンからお受け取りください。',
+    reward: {
+      type: 'inori_playable_gift',
+      claimId: 'notice_inori_playable_gift_20261120',
+      statusRpcName: 'is_inori_playable_gift_claimed_20261120',
+      rpcName: 'claim_inori_playable_gift_20261120',
+      characterId: 111,
+      characterName: '境界者 -イノリ-',
+      image: 'images/chara_111_panel.webp',
+      amount: 1
+    },
+    hidden: false
+  },
+  {
     id: 'notice_inori_renewal_20261114',
     date: '2026.11.14',
     title: '「境界者：イノリ」リニューアルのお知らせ',
@@ -5959,7 +5976,8 @@ window.NOTICE_ITEMS = [
          item.reward.type === 'special_stage_ticket' ||
          item.reward.type === 'skin' ||
          item.reward.type === 'phase_silver_ticket' ||
-         item.reward.type === 'inori_challenge_ticket');
+         item.reward.type === 'inori_challenge_ticket' ||
+         item.reward.type === 'inori_playable_gift');
     });
     if (!rewardItems.length) { noticeClaimSynced = true; return; }
 
@@ -5986,6 +6004,8 @@ window.NOTICE_ITEMS = [
           res = await client.rpc(String(item.reward.statusRpcName || 'is_noah_guerrilla_bonus_claimed'));
         } else if (item.reward.type === 'phase_silver_ticket') {
           res = await client.rpc('is_notice_reward_claimed', {p_claim_id:item.reward.claimId});
+        } else if (item.reward.type === 'inori_playable_gift') {
+          res = await client.rpc(item.reward.statusRpcName);
         } else if (item.reward.type === 'skin') {
           // build1706: 衣装プレゼント（受取状況はアカウント別にDBで判定）
           res = await client.rpc(String(item.reward.statusRpcName));
@@ -5996,7 +6016,7 @@ window.NOTICE_ITEMS = [
         }
         if (res && res.error) throw res.error;
         // 新しい専用配布はアカウント別のDB判定を優先する。
-        if ((item.reward.type === 'special_stage_ticket' || item.reward.type === 'skin') && item.reward.statusRpcName && typeof (res && res.data) === 'boolean') {
+        if ((item.reward.type === 'special_stage_ticket' || item.reward.type === 'skin' || item.reward.type === 'inori_playable_gift') && item.reward.statusRpcName && typeof (res && res.data) === 'boolean') {
           item.reward.claimed = res.data;
           writeNoticeDbStatus(item.reward.claimId, res.data);
         }
@@ -6019,7 +6039,7 @@ window.NOTICE_ITEMS = [
     if (!item.reward.claimId) return false;
     // ノアお詫び配布は端末共有のlocalStorageを信用せず、ユーザー個別のDB判定を利用。
     // DB確認前は、同じアカウントで前回確認した結果を使う。まだ一度も確認していなければ「不明(null)」。
-    if ((item.reward.type === 'special_stage_ticket' || item.reward.type === 'skin') && item.reward.statusRpcName) {
+    if ((item.reward.type === 'special_stage_ticket' || item.reward.type === 'skin' || item.reward.type === 'inori_playable_gift') && item.reward.statusRpcName) {
       if (typeof item.reward.claimed === 'boolean') return item.reward.claimed;
       const cached = readNoticeDbStatus()[item.reward.claimId];
       return typeof cached === 'boolean' ? cached : null;
@@ -6043,6 +6063,20 @@ window.NOTICE_ITEMS = [
     const amount = Math.max(0, Number(reward.amount || 0));
     const claimed = isRewardClaimed(item);
 
+    if (reward.type === 'inori_playable_gift') {
+      return `
+        <div class="notice-reward">
+          <div class="notice-reward-main">
+            <img class="notice-reward-character-icon" src="${escapeHtml(reward.image)}" alt="">
+            <div class="notice-reward-copy">
+              <span class="notice-reward-label">プレイアブルキャラ / Lv1・無凸</span>
+              <strong>${escapeHtml(reward.characterName)} ×1</strong>
+            </div>
+          </div>
+          <button type="button" class="notice-reward-btn${claimed ? ' claimed' : ''}"
+            data-notice-claim="${escapeHtml(item.id)}" ${claimed ? 'disabled' : ''}>${claimed ? '受取済み' : '受け取る'}</button>
+        </div>`;
+    }
     if (reward.type === 'character') {
       return `
         <div class="notice-reward">
@@ -6353,6 +6387,53 @@ window.NOTICE_ITEMS = [
     }
 
     const reward = item.reward;
+
+    if (reward.type === 'inori_playable_gift') {
+      if (button) { button.disabled = true; button.textContent = '受取中...'; }
+      try {
+        const client = window.zsSupabase;
+        if (!client || typeof client.rpc !== 'function') throw new Error('Supabaseへ接続できません');
+        const res = await client.rpc(reward.rpcName);
+        if (res.error) throw res.error;
+        const result = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
+        if (!result || result.ok !== true) throw new Error(result && result.message || '受取に失敗しました');
+        // サーバーが確定した所持行を取得し、未所持の場合のみBOXへ反映する。
+        const uid = getCurrentUserIdForNotice();
+        const owned = await client.from('collected_characters').select('*')
+          .eq('user_id', uid).eq('character_id', 111).order('id', {ascending:true});
+        if (owned.error) throw owned.error;
+        const row = (owned.data || []).find(x => Number(x.id) === Number(result.character_row_id)) || (owned.data || [])[0];
+        if (!row) throw new Error('所持キャラを確認できませんでした');
+        const chara = typeof getCharaById === 'function' ? getCharaById(111) : null;
+        if (chara && typeof box !== 'undefined' && Array.isArray(box) &&
+            !box.some(x => Number(x.db_id) === Number(row.id))) {
+          const entry = typeof buildOwnedEntryFromChara === 'function'
+            ? buildOwnedEntryFromChara(chara, row)
+            : createCharaSummonData(chara, new Date(row.captured_at || Date.now()));
+          entry.db_id = row.id;
+          entry.limitBreak = Number(row.limit_break || 0);
+          entry.characterLevel = Number(row.character_level || 1);
+          entry.characterExp = Number(row.character_exp || 0);
+          box.push(entry);
+          if (typeof collected !== 'undefined' && collected && !collected[111]) collected[111] = entry;
+        }
+        reward.claimed = true;
+        markNoticeRewardClaimedLocally(reward.claimId);
+        writeNoticeDbStatus(reward.claimId, true);
+        try { if (typeof renderBox === 'function') renderBox(); } catch (_) {}
+        try { if (typeof renderZukan === 'function') renderZukan(); } catch (_) {}
+        try { if (typeof window.refreshShootingRoster === 'function') window.refreshShootingRoster(); } catch (_) {}
+        if (!noticeBulkClaimActive && typeof window.showToast === 'function')
+          window.showToast(result.already_claimed ? '受取済みです' : '境界者 -イノリ- ×1 を受け取りました！');
+        renderNoticeList(); updateNoticeBadge(); return;
+      } catch (error) {
+        console.error('[NoticeReward] inori character gift:', error);
+        if (!noticeBulkClaimActive && typeof window.showToast === 'function')
+          window.showToast(error && error.message || '受取に失敗しました');
+        if (button) { button.disabled = false; button.textContent = '受け取る'; }
+        return;
+      }
+    }
 
     // build1706: 衣装プレゼント。付与はサーバー（rpcName）が行い、成功したら衣装の所持状態を更新する。
     if (reward.type === 'inori_challenge_ticket') {
