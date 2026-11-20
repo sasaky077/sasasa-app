@@ -419,3 +419,39 @@ html body #screen-friend.friend-premium .friend-my-id-pill{
   box-shadow:inset 0 0 0 2px rgba(255,255,255,.8),0 1px 3px rgba(90,64,26,.08) !important;
   color:var(--fr-ink) !important;-webkit-text-fill-color:var(--fr-ink) !important;
 }
+
+/* build2100 - フレンド称号：名前・ランク・解除を維持し、独立した全幅行で全文表示 */
+html body #screen-friend.friend-premium .friend-card-compact > .friend-card-title-full{
+  grid-column:2 / -1 !important;
+  grid-row:auto !important;
+  display:block !important;
+  justify-self:start !important;
+  box-sizing:border-box !important;
+  width:100% !important;
+  min-width:0 !important;
+  margin:3px 0 2px !important;
+  padding:0 !important;
+  overflow:visible !important;
+}
+html body #screen-friend.friend-premium .friend-card-compact > .friend-card-title-full:empty{display:none !important;}
+html body #screen-friend.friend-premium .friend-card-compact > .friend-card-title-full .zt-title-badge{
+  display:inline-flex !important;
+  width:auto !important;
+  max-width:100% !important;
+  box-sizing:border-box !important;
+  white-space:normal !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+  overflow-wrap:anywhere !important;
+  line-height:1.45 !important;
+  font-size:clamp(9px,2.5vw,10.5px) !important;
+}
+html body #screen-friend.friend-premium .friend-card-compact .friend-remove-btn{
+  width:clamp(42px,12vw,49px) !important;
+  height:30px !important;
+  font-size:clamp(10px,2.8vw,12px) !important;
+}
+@media(max-width:360px){
+  html body #screen-friend.friend-premium .friend-card-compact{column-gap:6px !important;}
+  html body #screen-friend.friend-premium .friend-card-compact .friend-card-rankbox{padding-left:5px !important;}
+}

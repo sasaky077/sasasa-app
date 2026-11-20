@@ -71,7 +71,7 @@
   function labelOf(titleId, level){
     const t = getTitle(titleId);
     if(!t) return '';
-    return t.name + ' ' + roman(levelOf(level)) + (t.rarity ? ' ('+t.rarity+')' : '');
+    return t.name + ' ' + roman(levelOf(level));
   }
   function esc(v){
     return String(v==null?'':v).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch]);
@@ -147,6 +147,71 @@
       #zt-title-modal .zt-tiers{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
       #zt-title-modal .zt-close{display:block;margin:12px auto 0;padding:7px 24px;border-radius:999px;border:1px solid #c6a466;
         background:#fff;font:600 12px/1 "Noto Serif JP",serif;color:#5b4527;cursor:pointer}
+
+      /* build2101: レアリティは文字でなく配色のみ（N銀 / R金 / SR虹）。昇格tierは色を変更しない。 */
+      .zt-title-badge.rarity-n,
+      .zt-title-badge.rarity-r,
+      .zt-title-badge.rarity-sr{background-image:none;animation:none;color:#fff;border-width:1px;border-style:solid;text-shadow:0 1px 1px rgba(0,0,0,.55);box-shadow:none;max-width:100%;box-sizing:border-box}
+      .zt-title-badge.rarity-n{background:linear-gradient(180deg,#7f8894,#4a535e);border-color:#cbd2db;color:#fff}
+      .zt-title-badge.rarity-r{background:linear-gradient(180deg,#a77a30,#694713);border-color:#edc773;color:#fff5d8}
+      .zt-title-badge.rarity-sr{background:linear-gradient(105deg,#7153a1 0%,#497ba7 24%,#408f7e 47%,#b29046 71%,#a66a9c 100%);border-color:#f4e5ff;color:#fff}
+      .zt-title-badge.rarity-n .zt-rank{color:#ecf2fb}
+      .zt-title-badge.rarity-r .zt-rank{color:#ffe4a0}
+      .zt-title-badge.rarity-sr .zt-rank{color:#fff}
+      .zt-title-badge.rarity-n.tier-t2,.zt-title-badge.rarity-r.tier-t2,.zt-title-badge.rarity-sr.tier-t2{box-shadow:inset 0 0 0 1px rgba(255,255,255,.36)}
+      .zt-title-badge.rarity-n.tier-t3,.zt-title-badge.rarity-r.tier-t3,.zt-title-badge.rarity-sr.tier-t3{box-shadow:inset 0 0 0 1px rgba(255,255,255,.4),0 1px 5px rgba(80,60,50,.22)}
+      .zt-title-badge.rarity-n.tier-t4,.zt-title-badge.rarity-r.tier-t4,.zt-title-badge.rarity-sr.tier-t4{box-shadow:inset 0 0 0 1px rgba(255,255,255,.55),0 0 7px rgba(155,145,175,.36);animation:none}
+      /* ホームでは従来通り透明な文字表示。ただし名称とランクの文字色をレアリティで統一 */
+      html body:not(.ui-immersive) #global-user-frame .hud-info #hud-title .zt-title-badge.rarity-n{color:#69727d!important;border-color:#929daa!important}
+      html body:not(.ui-immersive) #global-user-frame .hud-info #hud-title .zt-title-badge.rarity-r{color:#926821!important;border-color:#b8964d!important}
+      html body:not(.ui-immersive) #global-user-frame .hud-info #hud-title .zt-title-badge.rarity-sr{color:#845aaf!important;border-color:#a18ac1!important}
+      html body:not(.ui-immersive) #global-user-frame .hud-info #hud-title .zt-title-badge .zt-rank{color:inherit!important}
+      /* build2102: ホームの称号もレアリティ別プレートを表示。HUDの配置はそのまま。 */
+      html body:not(.ui-immersive) #global-user-frame .hud-info #hud-title{
+        height:17px!important;min-height:17px!important;line-height:17px!important;
+        overflow:visible!important;margin-top:2px!important;
+      }
+      html body:not(.ui-immersive) #global-user-frame .hud-info #hud-title .zt-title-badge{
+        display:inline-flex!important;align-items:center!important;justify-content:flex-start!important;
+        width:max-content!important;max-width:100%!important;box-sizing:border-box!important;
+        height:16px!important;min-height:16px!important;padding:0 6px 0 5px!important;
+        border:1px solid!important;border-radius:999px!important;
+        font-size:9px!important;line-height:14px!important;letter-spacing:0!important;
+        color:#fff!important;text-shadow:0 1px 1px rgba(0,0,0,.5)!important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.26)!important;
+        overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;
+        background-image:linear-gradient(180deg,#7f8894,#4a535e)!important;
+      }
+      html body:not(.ui-immersive) #global-user-frame .hud-info #hud-title .zt-title-badge.rarity-n{
+        background:linear-gradient(180deg,#9ba4b0,#59616f)!important;border-color:#d8dfe8!important;color:#fff!important;
+      }
+      html body:not(.ui-immersive) #global-user-frame .hud-info #hud-title .zt-title-badge.rarity-r{
+        background:linear-gradient(180deg,#cfa34e,#80591f)!important;border-color:#f2d68c!important;color:#fffaf0!important;
+      }
+      html body:not(.ui-immersive) #global-user-frame .hud-info #hud-title .zt-title-badge.rarity-sr{
+        background:linear-gradient(105deg,#815bad,#4e89b6 26%,#4c9b8a 49%,#c49c4f 72%,#b37bb5)!important;
+        border-color:#e8d5f2!important;color:#fff!important;
+      }
+      html body:not(.ui-immersive) #global-user-frame .hud-info #hud-title .zt-title-badge .zt-rank{
+        color:inherit!important;flex:none!important;font-size:9px!important;
+      }
+      html body:not(.ui-immersive) #global-user-frame .hud-info #hud-title .zt-title-badge::before{
+        color:inherit!important;font-size:8px!important;
+      }
+      @media (max-width:380px), (max-height:700px){
+        html body:not(.ui-immersive) #global-user-frame .hud-info #hud-title{height:15px!important;min-height:15px!important;line-height:15px!important}
+        html body:not(.ui-immersive) #global-user-frame .hud-info #hud-title .zt-title-badge{
+          height:14px!important;min-height:14px!important;padding:0 4px!important;font-size:8px!important;line-height:12px!important;
+        }
+      }
+      @media (min-width:390px) and (min-height:800px){
+        html body:not(.ui-immersive) #global-user-frame .hud-info #hud-title{height:18px!important;min-height:18px!important;line-height:18px!important}
+        html body:not(.ui-immersive) #global-user-frame .hud-info #hud-title .zt-title-badge{
+          height:17px!important;min-height:17px!important;font-size:9.5px!important;line-height:15px!important;
+        }
+      }
+      /* フレンド一覧は称号全文表示を維持 */
+      #screen-friend .friend-card-title-full .zt-title-badge{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;line-height:1.5!important;max-width:100%!important;overflow-wrap:anywhere}
     `;
     document.head.appendChild(st);
   }
@@ -158,7 +223,7 @@
     const lv = levelOf(level);
     const tier = getTier(titleId, lv);
     return '<span class="zt-title-badge tone-' + esc(t.tone || 'gold') + (tier ? ' tier-' + esc(tier.key) : '') +
-      '" title="' + esc(t.desc) + '">' + esc(t.name) + '<span class="zt-rank">'+esc(roman(lv))+'</span>' + (t.rarity ? '<span class="zt-rank">'+esc(t.rarity)+'</span>' : '') + '</span>';
+      ' rarity-' + esc((t.rarity || 'N').toLowerCase()) + '" title="' + esc(t.desc) + '">' + esc(t.name) + '<span class="zt-rank">'+esc(roman(lv))+'</span>' + '</span>';
   }
 
   function readOwned(list){

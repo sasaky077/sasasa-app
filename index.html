@@ -11024,14 +11024,14 @@ startTitleBgm();
           '<strong class="friend-card-name" title="' + detailEscapeHTML(name) + '">' + detailEscapeHTML(limitPlayerDisplayName(name)) + '</strong>' +
         '</span>' +
         (favorite && favorite.favData ? '<span class="friend-card-growth">Lv.'+Math.max(1,Number(favorite.favData.character_level||1))+' <small>凸'+Math.max(0,Number(favorite.favData.limit_break||0))+'</small></span>' : '') +
-        // build1712: フレンドの装備中の称号
-        '<span class="zt-block-title" data-title-user="' + detailEscapeHTML(fid) + '"></span>' +
         '<span class="friend-card-bottomline">' +
           '<span class="friend-card-login">' + detailEscapeHTML(loginText) + '</span>' +
         '</span>' +
       '</span>' +
       '<span class="friend-card-rankbox"><small>RANK</small><b>' + Number(rank || 1) + '</b></span>' +
       '<button type="button" class="friend-remove-btn" onclick="event.stopPropagation();confirmRemoveFriend(\'' + detailEscapeHTML(fid) + '\')">解除</button>' +
+      // build2100: 称号は独立した横幅行に配置し、省略せず表示
+      '<span class="zt-block-title friend-card-title-full" data-title-user="' + detailEscapeHTML(fid) + '"></span>' +
       // build2077: お助けフレンドで借りられるスキル（カードの下に全幅で1行。js/friend_support.js）
       (window.FriendSupport && chara && typeof window.FriendSupport.cardSkillHtml === 'function' ? window.FriendSupport.cardSkillHtml(chara.id) : '');
 
@@ -21279,7 +21279,7 @@ function fadeOutOpeningBgm(){
   <link rel="stylesheet" href="css/content_lock.css?v=1843-lock-tower">
   <link rel="stylesheet" href="css/notice_redesign.css?v=1453-notice-mock">
   <link rel="stylesheet" href="css/item_redesign.css?v=1648-premium-sr-ticket">
-  <link rel="stylesheet" href="css/friend_redesign.css?v=1476-friend-mock">
+  <link rel="stylesheet" href="css/friend_redesign.css?v=2100-title-full-width">
   <link rel="stylesheet" href="css/chara_detail_redesign.css?v=1481-dps">
   <link rel="stylesheet" href="css/zukan_detail_scroll_lock.css?v=1500-portrait-fixed">
 <!-- build1501: キャラ詳細の上部は完全固定。触れた位置からのページスクロールを遮断する。 -->
@@ -21409,7 +21409,7 @@ window.returnToTitleScreen = function(){
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=1946-party-button"></script>
 <script src="js/skin_system.js?v=1709-towa-skin"></script>
-<script src="js/title_system.js?v=2099-hud-title-visible"></script>
+<script src="js/title_system.js?v=2102-home-title-plate"></script>
 <script src="js/item_tickets.js?v=1963-phase-run-guard"></script>
 <script src="js/inori_piece.js?v=1829-ticket-button"></script>
 <script src="js/item_management.js?v=1830-evolution-ticket"></script>
@@ -23476,6 +23476,13 @@ html body #global-user-frame .hud-info .hv2-exp {order:3!important;margin-top:4p
 @media (min-width:390px) and (min-height:800px) {
  html body #global-user-frame .hud-info {min-height:64px!important}
  html body #global-user-frame .hud-info #hud-title .zt-title-badge {font-size:10.5px!important;line-height:15px!important}
+}
+</style>
+<style id="zeraphia-home-title-plate-2102">
+/* Overrides old inline HUD layout style; badge rarity colors live in title_system.js. */
+html body #global-user-frame .hud-info #hud-title .zt-title-badge{
+ border-radius:999px!important;border-width:1px!important;border-style:solid!important;
+ text-shadow:0 1px 1px rgba(0,0,0,.5)!important;
 }
 </style>
 </body>
