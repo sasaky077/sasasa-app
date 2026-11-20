@@ -443,7 +443,17 @@
   <link rel="stylesheet" href="css/party_formation.css?v=1965-stage-top5">
   <link rel="stylesheet" href="css/shooting_party_filter.css?v=1741-pierce">
 
-  <style id="item-page-build682-fixes">
+  <style id="zs-profile-title-rarity-build2103">
+/* Profile only: match the N=silver, R=gold, SR=rainbow badge on the HUD. */
+#zs-player-profile .zpp-title{display:flex;align-items:center;min-height:19px;max-width:100%;min-width:0;margin-top:3px;font-size:11px;line-height:1.3}
+#zs-player-profile .zpp-title .zt-title-badge{display:inline-flex;align-items:center;justify-content:center;gap:3px;max-width:100%;min-width:0;box-sizing:border-box;border-radius:999px;padding:3px 9px 3px 8px;font:600 10.5px/1.3 'Noto Serif JP',serif;letter-spacing:.025em;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;word-break:keep-all;text-align:center}
+#zs-player-profile .zpp-title .zt-title-badge.rarity-n{background:linear-gradient(180deg,#7f8894,#4a535e)!important;border:1px solid #cbd2db!important;color:#fff!important}
+#zs-player-profile .zpp-title .zt-title-badge.rarity-r{background:linear-gradient(180deg,#a77a30,#694713)!important;border:1px solid #edc773!important;color:#fff5d8!important}
+#zs-player-profile .zpp-title .zt-title-badge.rarity-sr{background:linear-gradient(105deg,#7153a1,#497ba7 24%,#408f7e 47%,#b29046 71%,#a66a9c)!important;border:1px solid #f4e5ff!important;color:#fff!important}
+#zs-player-profile .zpp-title .zt-title-badge .zt-rank{color:inherit!important;flex:none}
+@media(max-width:360px){#zs-player-profile .zpp-title .zt-title-badge{font-size:9.5px;padding:2px 7px}}
+</style>
+<style id="item-page-build682-fixes">
     /* build682: item page visual alignment */
     #screen-item .item-page-intro h2{
       font-size:18px !important;
@@ -23362,8 +23372,15 @@ async function open(){
  const p=window.userProfile||{};
  set('zpp-rank','RANK '+(Number(p.rank)||document.getElementById('hud-lv-num')?.textContent||'—'));
  set('zpp-name',p.display_name||document.getElementById('hud-name')?.textContent||'Player');
- const titleNode=document.querySelector('#global-user-frame [class*="title"]');
- set('zpp-title','称号：'+(titleNode?.textContent?.trim()||'未設定'));
+ // build2103: mirror the equipped HUD badge (including N/R/SR color) in the player profile.
+ // This avoids guessing title rarity from plain text and preserves the title level.
+ const titleContainer=document.getElementById('zpp-title');
+ const badge=document.querySelector('#hud-title .zt-title-badge');
+ if(titleContainer){
+  titleContainer.replaceChildren();
+  if(badge){titleContainer.appendChild(badge.cloneNode(true));}
+  else{titleContainer.textContent='称号：未設定';}
+ }
  // Portrait must be the panel artwork of the user's active home character, not a home/cut-in image.
  const active=document.querySelector('#fav-display .fav-cut-img, #fav-display .fav-img, #fav-display img, #global-user-frame .hv2-face img');
  const activePath=active?.getAttribute('src')||active?.currentSrc||'';
