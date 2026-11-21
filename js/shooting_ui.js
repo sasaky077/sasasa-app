@@ -111,6 +111,7 @@
                   <span class="zpf-intro-english">— PARTY FORMATION —</span>
                 </div>
                 <div class="zpf-rule" id="shooting-party-rule-text">最大3人 · 1人から出撃可能</div>
+                <button type="button" id="deinova-rank-criteria-button" class="zpf-deinova-rank-guide" onclick="openDeinovaRankCriteria()" hidden>◇ ランク基準を確認</button>
                 <button type="button" class="zpf-popular-trigger" id="zpf-popular-trigger" onclick="openShootingStagePopular()" aria-label="使用キャラ TOP5を表示"><span>使用キャラ</span><small>TOP 5</small></button>
               </div>
               <div class="zpf-popular-overlay" id="zpf-popular-overlay" hidden aria-hidden="true">

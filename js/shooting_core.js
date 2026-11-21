@@ -5862,6 +5862,8 @@
     if (roster) roster.style.display = fixedStoryParty ? 'none' : '';
     window.ShootingPartyFilter?.refresh();
 
+    const deinovaCriteriaButton = document.getElementById('deinova-rank-criteria-button');
+    if (deinovaCriteriaButton) deinovaCriteriaButton.hidden = !isDeinovaStage();
     const ruleText = document.getElementById('shooting-party-rule-text');
     if (ruleText) {
       if (isPhaseOdysseyStage()) {
@@ -34343,14 +34345,12 @@
     }
 
     // build2063: 特別巡行「最恐 -デイノヴァ-」専用ランク判定。
-    // サーバー claim_deinova_special_drop と S/A の閾値を一致させる。
+    // サーバー claim_deinova_special_drop と S/A の閾値を一致させる（S 130万 / A 100万 / B クリア / E 敗北）。
     if (isDeinovaStage()) {
       if (!win) return 'E';
-      if (value >= 3000000) return 'S';
-      if (value >= 2000000) return 'A';
-      if (value >= 16000) return 'B';
-      if (value >= 12000) return 'C';
-      return 'D';
+      if (value >= 1300000) return 'S';
+      if (value >= 1000000) return 'A';
+      return 'B';
     }
 
     // 通常シューティングは従来仕様を維持。
@@ -37852,6 +37852,35 @@
 
   window.openShootingStage = function (stageId) {
     return window.openShootingEvent({ stageId });
+  };
+
+  // build2105: STORYの「ランク基準」と同じスタイルの確認ダイアログ。
+  // ボタンはデイノヴァのパーティ編成画面にのみ表示し、出撃前に条件を確認できる。
+  window.openDeinovaRankCriteria = function () {
+    if (!isDeinovaStage()) return;
+    const previous = document.getElementById('zss-rank-guide-overlay');
+    if (previous) previous.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'zss-rank-guide-overlay';
+    overlay.setAttribute('role', 'presentation');
+    const rows = [['S', '1,300,000点以上でクリア'], ['A', '1,000,000点以上でクリア'], ['B', '1,000,000点未満でクリア'], ['E', '敗北']];
+    overlay.innerHTML = `<section class="zss-rank-guide-panel" role="dialog" aria-modal="true" aria-labelledby="zss-rank-guide-title" tabindex="-1">
+      <button type="button" class="zss-rank-guide-close" aria-label="閉じる">×</button>
+      <small class="zss-rank-guide-kicker">RANK CRITERIA</small>
+      <h2 id="zss-rank-guide-title">ランク基準</h2>
+      <div class="zss-rank-guide-rule"></div>
+      <div class="zss-rank-guide-rows">${rows.map(([rank, condition]) => `<div class="zss-rank-guide-row"><b class="zss-rank-guide-letter ${rank === 'S' ? 'top' : ''}">${rank}</b><span>${condition}</span></div>`).join('')}</div>
+      <p class="zss-rank-guide-note">クリア時のスコアで評価します。Sランクはデイノヴァ確定、Aランクは50%で獲得できます。</p>
+      <button type="button" class="zss-rank-guide-done">閉じる</button>
+    </section>`;
+    const onKey = event => { if (event.key === 'Escape') close(); };
+    const close = () => { document.removeEventListener('keydown', onKey); overlay.remove(); };
+    overlay.addEventListener('click', event => { if (event.target === overlay) close(); });
+    overlay.querySelector('.zss-rank-guide-close').addEventListener('click', close);
+    overlay.querySelector('.zss-rank-guide-done').addEventListener('click', close);
+    document.addEventListener('keydown', onKey);
+    document.body.appendChild(overlay);
+    overlay.querySelector('.zss-rank-guide-close').focus();
   };
 
   window.openShootingEvent = function (options = {}) {
