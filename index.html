@@ -22989,12 +22989,12 @@ html body #global-user-frame .hud-sweep-line-player::after{
 
 <!-- build1448: ホーム左右メニュー（アイコン＋文字＋金線） -->
 <script src="js/home_menu_redesign.js?v=1951-music"></script>
-<link rel="stylesheet" href="css/home_v2.css?v=1960-tall-header-scale">
+<link rel="stylesheet" href="css/home_v2.css?v=2111-iphone17-layout">
 <link rel="stylesheet" href="css/global_user_frame_shared.css?v=1970-shared-hud">
 <link rel="stylesheet" href="css/chara_favorites.css?v=1914-fav">
 <link rel="stylesheet" href="css/filter_compact.css?v=2027-ult-search">
 <script src="js/home_lines.js?v=1886-lines"></script>
-<script src="js/home_v2.js?v=1957-music-release-dot"></script>
+<script src="js/home_v2.js?v=2111-iphone17-layout"></script>
 <script src="js/chara_favorites.js?v=1910-fav"></script>
 <script src="js/friend_support.js?v=2104"></script>
 <script src="js/notice_dot.js?v=1618-notice-dot"></script>
@@ -23508,26 +23508,27 @@ html body #global-user-frame .hud-info #hud-title .zt-title-badge{
 }
 </style>
 
-<!-- build2109: iPhone 17 class ONLY. Reproduce 14 Pro home-v2 composition by
-     lowering both menu columns / speech and shifting the hero art left.
-     Keep iPhone 14 Pro (393 CSS px) and iPhone SE unchanged. -->
-<style id="zeraphia-iphone17-home-v2-build2109">
-@media screen and (min-width:400px) and (max-width:440px) and (min-height:850px) and (orientation:portrait){
-  /* Left column: six shortcut buttons, down approximately 0.7 cm. */
+<!-- build2111: iPhone 17 HOME v2 correction based on uploaded build2109.
+     14 Pro (393 CSS px) and SE are excluded. Avoid min-height:850px because
+     PWA viewport shrinks with safe areas / system UI. -->
+<style id="zeraphia-iphone17-home-v2-build2111">
+@media screen and (min-width:400px) and (max-width:440px) and (orientation:portrait){
+  /* Baseline from home_v2.css: 106px on tall phones; add ~26px (under 1cm). */
   html.home-v2 body #home-v2 .hv2-side{
     top:calc(env(safe-area-inset-top,0px) + 132px)!important;
   }
-  /* Right column: keep existing card sizes and gaps; move whole group down. */
+  /* Right cards and speech panel move together without shifting banner/navigation. */
   html.home-v2 body #home-v2 .hv2-right{
+    top:auto!important;
     bottom:calc(var(--hv2-right-bottom) - 26px)!important;
   }
-  /* Make room for the right-hand group by moving its speech panel equally. */
   html.home-v2 body #home-v2 .hv2-talk{
+    top:auto!important;
     bottom:calc(var(--hv2-talk-bottom) - 26px)!important;
   }
-  /* HOME v2 actually renders this hero image; the legacy favorite-area is hidden. */
+  /* Shift the visible character (HOME v2 art, not legacy .favorite-area). */
   html.home-v2 body #home-v2 .hv2-chara.is-home-art{
-    left:-18px!important;
+    left:-26px!important;
   }
 }
 </style>
