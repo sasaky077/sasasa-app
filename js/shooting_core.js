@@ -17895,13 +17895,13 @@
     });
     showFacelessBattleCut('鈍化の呪い', 'INORI');
   }
-  // TICKET限定：必中「呪詛」。弾衝突や無敵判定を介さず、8秒間の速度50%低下。
+  // TICKET限定：必中「呪詛」。弾衝突や無敵判定を介さず、8秒間の速度30%低下。
   function applyInoriBinding(now) {
     if (!state || !state.inori || !state.player) return;
     state.inori.slowMemberId = Number(state.activeCharacterId) || -1;
     state.inori.slowUntil = now + 8000;
     syncInoriSlowDom();
-    showFacelessBattleCut('呪詛', '移動速度 −50% / 8秒');
+    showFacelessBattleCut('呪詛', '移動速度 −30% / 8秒');
   }
   // 呪い弾が出場中キャラへ当たった：そのキャラの移動速度を下げる（交代で解除）
   function applyInoriSlow(now) {
@@ -17932,7 +17932,7 @@
     // build1679: 位相回遊の異常「鈍化」は移動75%
     const poSlow = getPhaseOdysseyAnomaly() === 'slow' ? 0.75 : 1;
     if (!isInoriSlowActive()) return poSlow;
-    return poSlow * (isInoriSpecialStage() ? 0.50 : Math.max(0.1, Math.min(1, Number(getInoriConfig()?.slowMultiplier || 0.5))));
+    return poSlow * (isInoriSpecialStage() ? 0.70 : Math.max(0.1, Math.min(1, Number(getInoriConfig()?.slowMultiplier || 0.5))));
   }
   function syncInoriSlowDom() {
     const on = isInoriSlowActive();
@@ -17945,7 +17945,7 @@
       tag.id = 'inori-slow-tag';
       tag.className = 'inori-slow-tag';
       tag.innerHTML = isInoriSpecialStage()
-        ? '<strong>呪詛</strong><span class="inori-slow-effect">移動速度 −50%</span><span class="inori-slow-remaining" aria-label="呪詛の残り時間">8.0秒</span>'
+        ? '<strong>呪詛</strong><span class="inori-slow-effect">移動速度 −30%</span><span class="inori-slow-remaining" aria-label="呪詛の残り時間">8.0秒</span>'
         : '<strong>鈍化</strong><span>移動速度50%ダウン ─ キャラ交代で解除</span>';
       arena.appendChild(tag);
     }
@@ -30148,10 +30148,20 @@
     }
     // カウントダウン
     // TICKET版の予約済み神罰は行動停止で解除できない。着弾時に無敵だけ判定する。
+    // build2107: TICKETイノリの神罰は着弾時の「出場キャラ本人の無敵」のみで防ぐ。
+    // キャラ交代で付く state.player.invulnUntil (260ms) は対象外。
+    // また、交代前の無敵判定を mj.sealed にラッチしない（切替による回避を防止）。
     const protectedFromJudgment = onToriiBreak
-      ? (() => { const active = getActiveMember(); return !!(active && now < Number(active.invincibleUntil || 0)) || now < Number(state.player?.invulnUntil || 0); })()
+      ? (() => { const active = getActiveMember(); return !!(active && now < Number(active.invincibleUntil || 0)); })()
       : isMemoryJudgmentProtected(now);
-    if (!mj.sealed && (!onToriiBreak || mj.warnUntil - now <= 1000) && protectedFromJudgment) {
+    if (onToriiBreak) {
+      mj.sealed = protectedFromJudgment;
+      if (mj.el) {
+        mj.el.classList.toggle('is-sealed', protectedFromJudgment);
+        const hint = mj.el.querySelector('.mj-hint');
+        if (hint) { hint.hidden = !protectedFromJudgment; if (protectedFromJudgment) hint.textContent = '神罰を封じた'; }
+      }
+    } else if (!mj.sealed && protectedFromJudgment) {
       mj.sealed = true;
       if (mj.el) {
         mj.el.classList.add('is-sealed');
