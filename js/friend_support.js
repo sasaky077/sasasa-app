@@ -343,6 +343,16 @@
       .zfs-sheet footer button i{position:absolute;top:50%;width:6px;height:6px;margin-top:-3px;background:#b08a4f;transform:rotate(45deg)}
       .zfs-sheet footer button i.l{left:30px}.zfs-sheet footer button i.r{right:30px}
       .zfs-sheet footer button:active{transform:translateY(1px)}
+      /* build2104: flex scroll list must never compress its cards to fit viewport height. */
+      .zfs-sheet .zfs-list{min-height:0;flex:1 1 auto;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;align-content:flex-start}
+      .zfs-sheet .zfs-list > .zfs-item{flex:0 0 auto;height:auto!important;min-height:76px;max-height:none!important;align-self:stretch;align-items:center;overflow:visible}
+      .zfs-sheet .zfs-item .zfs-text{min-width:0;max-width:100%;height:auto;flex:1 1 0%;gap:3px;overflow:visible}
+      .zfs-sheet .zfs-item .zfs-text > b,
+      .zfs-sheet .zfs-item .zfs-skname,
+      .zfs-sheet .zfs-item .zfs-ds{max-width:100%;min-width:0;white-space:normal;overflow-wrap:anywhere;word-break:normal}
+      .zfs-sheet .zfs-item .zfs-ds{line-height:1.45}
+      .zfs-sheet .zfs-item .zfs-vsep{flex-shrink:0}
+      .zfs-sheet .zfs-item .zfs-check{margin-right:4px}
       @media(max-width:360px){
         .zfs-list{padding:10px 10px 6px}
         .zfs-item{padding:9px 10px 9px 9px}
