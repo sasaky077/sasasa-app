@@ -97,6 +97,58 @@
   }
 
   let selected=1, progress=null, busy=false, focusBeforePanel=null, attempt=null, finishPromise=null, replayFloor=0;
+  // build2106: keep unconfirmed results across network failures and reloads.
+  const PENDING_RESULT_KEY='zeraphia_tower_pending_result_v2106';
+  function towerAccountKey(){try{return String(localStorage.getItem('zukan_user_id')||'').trim().toLowerCase();}catch(_){return '';}}
+  function readPendingResult(){
+    try{const x=JSON.parse(localStorage.getItem(PENDING_RESULT_KEY)||'null');
+      if(!x || !x.token || !TOWER_MODES[x.mode] || typeof x.win!=='boolean')return null;
+      if(!towerAccountKey() || x.user!==towerAccountKey())return null;
+      return x;
+    }catch(_){return null;}
+  }
+  function savePendingResult(a,win){
+    if(!a || !a.token)return;
+    const x={user:towerAccountKey(),token:String(a.token),floor:Number(a.floor),party:(a.party||[]).map(Number),mode:a.mode||mode,win:!!win,savedAt:Date.now()};
+    try{localStorage.setItem(PENDING_RESULT_KEY,JSON.stringify(x));}catch(e){console.warn('[tower] pending result storage unavailable',e);}
+  }
+  function clearPendingResult(token){
+    const x=readPendingResult();
+    if(x && String(x.token)===String(token))try{localStorage.removeItem(PENDING_RESULT_KEY);}catch(_){}
+  }
+  const retryDelay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+  async function confirmTowerRunOnServer(run){
+    const response=await rpcClient().rpc('get_tower_run_confirmation_2106',{p_token:String(run.token),p_despair:run.mode==='despair'});
+    if(response.error)throw response.error;
+    if(response.data?.confirmed===true && response.data?.win===!!run.win){
+      if(response.data?.state && run.mode===mode)progress=response.data.state;
+      return response.data;
+    }
+    return null;
+  }
+  async function tryRecoverPendingResult(){
+    const pending=readPendingResult();
+    if(!pending)return true;
+    // A previous session may have committed the run without receiving the response.
+    try{
+      const confirmed=await confirmTowerRunOnServer(pending);
+      if(confirmed){clearPendingResult(pending.token);if(attempt?.token===pending.token)attempt=null;
+        await refresh();notify('前回の塔の戦闘結果をサーバーで確認しました');return true;}
+    }catch(e){console.warn('[tower] pending result confirmation failed',e);}
+    // If not committed, resend the original token and outcome, never issue another token.
+    try{
+      const {data,error}=await rpcClient().rpc(TOWER_MODES[pending.mode].rpcFinish,{p_token:pending.token,p_win:pending.win});
+      if(error)throw error;
+      if(!data?.ok || data.win!==pending.win)throw new Error('unexpected tower result');
+      clearPendingResult(pending.token);if(attempt?.token===pending.token)attempt=null;
+      await refresh();notify('未保存だった塔の結果をサーバーに保存しました');return true;
+    }catch(e){
+      try{const confirmed=await confirmTowerRunOnServer(pending);if(confirmed){clearPendingResult(pending.token);await refresh();return true;}}catch(_){}
+      console.warn('[tower] pending run still awaiting confirmation',e);
+      notify('未確定の塔の戦闘結果があります。通信を回復してから再試行してください。');return false;
+    }
+  }
+
   // build1712: 残響の塔（絶望）。画面・封印・練習・中断復帰の仕組みは通常の塔と共通で、
   //  呼ぶRPCとステージIDだけを切り替える。進行・封印はサーバー側で塔ごとに別管理。報酬は20F踏破の称号のみ。
   const TOWER_MODES=Object.freeze({
@@ -510,6 +562,7 @@
   }
   async function prepareBattle(floor,partyIds){
     if(busy) return false;
+    if(readPendingResult() && !(await tryRecoverPendingResult()))return false;
     const replay=isReplayFloor(floor);
     if(!replay && !available(floor)){notify('現在挑戦できる階層ではありません');return false;}
     const party=Array.isArray(partyIds)?partyIds.map(Number):[];
@@ -547,8 +600,31 @@
     finishPromise=(async()=>{
       if(!attempt?.token) throw new Error('出撃記録が見つかりません');
       const runMode=attempt.mode||mode;
-      const {data,error}=await rpcClient().rpc((TOWER_MODES[runMode]||M()).rpcFinish,{p_token:attempt.token,p_win:!!win});
-      if(error) throw error;
+      const pendingAttempt={...attempt,mode:runMode};
+      savePendingResult(pendingAttempt,!!win);
+      let data=null,lastError=null;
+      for(let n=0;n<3;n++){
+        try{
+          const reply=await rpcClient().rpc((TOWER_MODES[runMode]||M()).rpcFinish,{p_token:pendingAttempt.token,p_win:!!win});
+          if(reply.error)throw reply.error;
+          if(!reply.data?.ok || reply.data.win!==!!win)throw new Error('サーバーの確定応答が不正です');
+          data=reply.data;break;
+        }catch(err){
+          lastError=err;
+          try{
+            const check=await confirmTowerRunOnServer({...pendingAttempt,win:!!win});
+            if(check){
+              clearPendingResult(pendingAttempt.token);attempt=null;
+              if(check.state && runMode===mode)progress=check.state;
+              render();notify('塔の戦闘結果はサーバーに保存済みです');
+              return {towerConfirmed:true,alreadyConfirmed:true,firstClearClaimed:false,firstClearAmount:0,highScore:0};
+            }
+          }catch(confirmError){console.warn('[tower] result confirmation temporarily unavailable',confirmError);}
+          if(n<2)await retryDelay((n+1)*1200);
+        }
+      }
+      if(!data)throw lastError||new Error('サーバーの保存を確認できません');
+      clearPendingResult(pendingAttempt.token);
       if(data?.state && runMode===mode) progress=data.state;
       if(runMode==='normal' && data?.state){
         const was=normalCompletedThisWeek;
@@ -605,9 +681,9 @@
       return {towerConfirmed:true,firstClearClaimed:false,firstClearAmount:0,highScore:0};
     })().catch(err=>{
       console.error('[tower] finish was not confirmed',err);
-      notify('塔の進行を確定できませんでした。通信状態を確認してください。');
+      notify('塔の結果を保存できませんでした。RESULTを閉じずに、通信回復後「戻る」で再送してください。');
       return {towerConfirmed:false,firstClearClaimed:false,firstClearAmount:0,highScore:0};
-    });
+    }).then(result=>{if(result?.towerConfirmed===false)finishPromise=null;return result;});
     return finishPromise;
   }
   // build1643: 戦闘中にアプリが落ちた場合の復帰。
@@ -657,14 +733,14 @@
     }catch(err){ console.warn('[tower] abandon attempt not confirmed',err); }
   }
   window.ResonanceTower=Object.freeze({isTowerStageId:id=>/^shooting_(?:despair_)?tower_(?:0[1-9]|1[0-9]|20)$/.test(String(id||'')),
-    getMode:()=>mode,getDawnProof:()=>attempt && Number(attempt.floor)===20 && attempt.mode==='normal' ? {party:(attempt.party||[]).slice(),towerToken:attempt.replay?null:String(attempt.token||'')||null} : null,setMode,isReplayFloor,isCharacterAvailable,confirmSealParty,cancelSealConfirmation,prepareBattle,finishRun,refresh,getResumeAttempt,restoreAttempt,abandonAttempt});
+    getMode:()=>mode,getDawnProof:()=>attempt && Number(attempt.floor)===20 && attempt.mode==='normal' ? {party:(attempt.party||[]).slice(),towerToken:attempt.replay?null:String(attempt.token||'')||null} : null,setMode,isReplayFloor,isCharacterAvailable,confirmSealParty,cancelSealConfirmation,prepareBattle,finishRun,refresh,getResumeAttempt,restoreAttempt,abandonAttempt,tryRecoverPendingResult,hasPendingResult:()=>!!readPendingResult()});
   window.openResonanceTower=function(openMode){
     replayFloor=0;attempt=null;finishPromise=null;
     if(openMode && TOWER_MODES[openMode] && openMode!==mode){ mode=openMode; progress=null; }
     if(typeof window.requireChapter03ContentUnlock!=='function'||!window.requireChapter03ContentUnlock())return;
     closePanel();
     if(typeof window.showMainTab==='function')window.showMainTab('resonance-tower');
-    render();void refresh();
+    render();void refresh().then(()=>{if(readPendingResult())void tryRecoverPendingResult();});
   };
   window.closeResonanceTower=function(){
     replayFloor=0;closePanel();if(typeof window.showMainTab==='function')window.showMainTab('main');

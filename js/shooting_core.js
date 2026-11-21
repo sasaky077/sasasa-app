@@ -38272,6 +38272,21 @@
     );
     if (resultWasVisible) {
       if (shootingResultExitFadeRunning) return;
+      // build2106: a tower RESULT must never close unless server storage is confirmed.
+      if (isResonanceTowerStage() && !isResonanceTowerReplay() && window.ResonanceTower) {
+        const towerResult=await Promise.resolve(state?.secureFinalizePromise || window.ResonanceTower.finishRun(!!state?.lastResultWin))
+          .catch(error=>{console.warn('[tower] save confirmation failed on exit',error);return {towerConfirmed:false};});
+        let confirmed=towerResult?.towerConfirmed===true;
+        if(!confirmed && window.ResonanceTower.hasPendingResult?.()){
+          const retry=await window.ResonanceTower.tryRecoverPendingResult?.();
+          confirmed=retry===true && !window.ResonanceTower.hasPendingResult?.();
+        }
+        if(!confirmed){
+          if(typeof window.showToast==='function')window.showToast('塔の勝敗が未保存です。通信回復後、もう一度「戻る」を押して再送してください。');
+          else alert('塔の勝敗が未保存です。通信回復後、もう一度「戻る」で再送してください。');
+          return; // do not fade, clear resume state, or discard the result
+        }
+      }
       // build1971: 20Fで夜明けが当たっていれば、白フェードの代わりにクラッシュ演出（フリーズ→ノイズ→ホワイトアウト）
       let towaDawnHit = false;
       if (window.TowaDawn && typeof window.TowaDawn.playCrash === 'function' &&
