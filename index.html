@@ -9404,34 +9404,21 @@ function selectChara(now, gacha) {
     var area = document.querySelector('.favorite-area');
     var areaRect = area ? area.getBoundingClientRect() : null;
 
-    var viewportW = window.innerWidth;
-    var viewportH = window.innerHeight;
-    var isLargePhoneHome = viewportW >= 390 && viewportH >= 820;
-
-    // build2108: iPhone 17などの大型スマホでは、左右のHOMEメニュー列に
-    // 立ち絵の顔が重ならないよう、使用幅を少し狭める。SEサイズは従来維持。
-    var logicalW = isLargePhoneHome
-      ? Math.min(286, Math.max(232, viewportW * 0.70))
-      : Math.min(310, Math.max(250, viewportW * 0.80));
-
-    // build1382 + build2108: SEサイズは従来の表示を維持。
-    // 画面が縦長のスマホでは余った縦空間を使うが、大型スマホでは
-    // 顔が右メニューへ入り込みすぎないよう高さ上限を少し抑える。
+    var logicalW = Math.min(310, Math.max(250, window.innerWidth * 0.80));
+    // build1382: SEサイズは従来の表示を維持。画面が縦長のスマホでは
+    // 355pxの固定上限を段階的に緩めて、余った縦空間を立ち絵に使用する。
     // 下端の位置（favorite-area の bottom）は変更しない。
-    var tallPhoneBonus = viewportW <= 500
-      ? Math.max(0, Math.min(isLargePhoneHome ? 54 : 80, (viewportH - 700) * 0.5))
+    var viewportH = window.innerHeight;
+    var tallPhoneBonus = window.innerWidth <= 500
+      ? Math.max(0, Math.min(80, (viewportH - 700) * 0.5))
       : 0;
     var logicalH = areaRect
-      ? (isLargePhoneHome
-          ? Math.min(334 + tallPhoneBonus, Math.max(296, areaRect.height * 0.72))
-          : Math.min(355 + tallPhoneBonus, Math.max(305, areaRect.height * 0.78)))
-      : (isLargePhoneHome
-          ? Math.min(330 + tallPhoneBonus, Math.max(298, viewportH * 0.49))
-          : Math.min(350 + tallPhoneBonus, Math.max(310, viewportH * 0.52)));
+      ? Math.min(355 + tallPhoneBonus, Math.max(305, areaRect.height * 0.78))
+      : Math.min(350 + tallPhoneBonus, Math.max(310, viewportH * 0.52));
 
     // 実際のキャラ本体はこの高さへ統一。下に少し余白を残す。
-    var targetVisibleH = logicalH - (isLargePhoneHome ? 24 : 18);
-    var bottomGap = isLargePhoneHome ? 10 : 8;
+    var targetVisibleH = logicalH - 18;
+    var bottomGap = 8;
 
     // アルファ境界を元画像座標へ戻す。
     var sx = Math.max(0, Math.floor(bounds.left * img.naturalWidth));
@@ -9466,7 +9453,7 @@ function selectChara(now, gacha) {
     canvas.style.height = logicalH + 'px';
     canvas.style.display = 'block';
     canvas.style.pointerEvents = 'none';
-    canvas.style.maxWidth = isLargePhoneHome ? '70vw' : '82vw';
+    canvas.style.maxWidth = '82vw';
     canvas.style.objectFit = 'contain';
 
     // canvasは完成するまで見せない。古いcanvasを再利用するresize時は現在表示を維持する。
@@ -23009,30 +22996,6 @@ html body #global-user-frame .hud-sweep-line-player::after{
 <script src="js/home_lines.js?v=1886-lines"></script>
 <script src="js/home_v2.js?v=1957-music-release-dot"></script>
 <script src="js/chara_favorites.js?v=1910-fav"></script>
-
-<!-- build2108: large-phone home layout guard. On wider/taller phones (e.g. iPhone 17 class), reserve extra space for left/right menu columns so the home character face does not sit under the menu cards. SE-sized phones are intentionally untouched. -->
-<style id="home-large-phone-layout-build2108">
-@media (min-width:390px) and (min-height:820px){
-  #screen-main > .favorite-area{
-    justify-content:center !important;
-    padding-left:clamp(34px, 8vw, 52px) !important;
-    padding-right:clamp(134px, 31vw, 166px) !important;
-    box-sizing:border-box !important;
-  }
-  #screen-main > .favorite-area #fav-display{
-    width:100% !important;
-    display:flex !important;
-    justify-content:center !important;
-    align-items:flex-end !important;
-  }
-  #screen-main > .favorite-area .fav-normalized-canvas,
-  #screen-main > .favorite-area .fav-cut-img,
-  #screen-main > .favorite-area .fav-img{
-    max-width:min(70vw, 286px) !important;
-  }
-}
-</style>
-
 <script src="js/friend_support.js?v=2104"></script>
 <script src="js/notice_dot.js?v=1618-notice-dot"></script>
 
@@ -23542,6 +23505,30 @@ html body #global-user-frame .hud-info .hv2-exp {order:3!important;margin-top:4p
 html body #global-user-frame .hud-info #hud-title .zt-title-badge{
  border-radius:999px!important;border-width:1px!important;border-style:solid!important;
  text-shadow:0 1px 1px rgba(0,0,0,.5)!important;
+}
+</style>
+
+<!-- build2109: iPhone 17 class ONLY. Reproduce 14 Pro home-v2 composition by
+     lowering both menu columns / speech and shifting the hero art left.
+     Keep iPhone 14 Pro (393 CSS px) and iPhone SE unchanged. -->
+<style id="zeraphia-iphone17-home-v2-build2109">
+@media screen and (min-width:400px) and (max-width:440px) and (min-height:850px) and (orientation:portrait){
+  /* Left column: six shortcut buttons, down approximately 0.7 cm. */
+  html.home-v2 body #home-v2 .hv2-side{
+    top:calc(env(safe-area-inset-top,0px) + 132px)!important;
+  }
+  /* Right column: keep existing card sizes and gaps; move whole group down. */
+  html.home-v2 body #home-v2 .hv2-right{
+    bottom:calc(var(--hv2-right-bottom) - 26px)!important;
+  }
+  /* Make room for the right-hand group by moving its speech panel equally. */
+  html.home-v2 body #home-v2 .hv2-talk{
+    bottom:calc(var(--hv2-talk-bottom) - 26px)!important;
+  }
+  /* HOME v2 actually renders this hero image; the legacy favorite-area is hidden. */
+  html.home-v2 body #home-v2 .hv2-chara.is-home-art{
+    left:-18px!important;
+  }
 }
 </style>
 </body>
