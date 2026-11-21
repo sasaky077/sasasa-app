@@ -1872,16 +1872,18 @@
     [20, '結晶 ×10'],
     [30, '結晶 ×10'],
     [40, '創世ptルーレット券（銀） ×1'],
-    [50, '位相スキップ券（銀） ×1'],
-    [60, '位相スキップ券（銀） ×1'],
+    [50, '結晶 ×10'],
+    [60, '結晶 ×10'],
     [70, '結晶 ×30'],
-    [80, '位相スキップ券（金） ×1'],
+    [80, '結晶 ×10'],
     [90, '結晶 ×100'],
-    [100, '称号「理を知る者 I」'],
-    [150, '称号「理を知る者 II」'],
-    [200, '称号「理を知る者 III」'],
-    [250, '称号「理を知る者 IV」'],
-    [300, '称号「理を知る者 V」']
+    ...Array.from({length:21}, (_, i) => {
+      const floor = 100 + i * 10;
+      const level = Math.floor((floor - 100) / 50);
+      return [floor, floor % 50 === 0
+        ? '称号「理を知る者 ' + ['I','II','III','IV','V'][level] + '」＋結晶 ×' + (floor === 300 ? 500 : 50)
+        : '結晶 ×10'];
+    })
   ]);
   function renderFirstRewards(root, rec){
     const box = root.querySelector('[data-po-rewards]');
@@ -1915,12 +1917,12 @@
     box.innerHTML =
       '<header class="po-section-head is-compact"><div><h2>初回突破報酬</h2><span class="po-section-en">FIRST CLEAR REWARD</span></div>' +
         `<span class="po-first-rewards-count">${got} / ${FIRST_REWARD_TABLE.length}</span></header>` +
-      '<p class="po-first-rewards-note">各階層を初めて突破した時に1回だけ受け取れます（アカウントごと・最高到達記録で判定）。' +
+      '<p class="po-first-rewards-note">各対象階層の初回突破時に1回だけ獲得できます（最高到達記録で判定）。100F以降は10Fごとに結晶10個、50Fごとの節目は称号＋結晶50個、300Fは称号＋結晶500個です。変更前に受取済みの階層は再付与されません。' +
         (nextRow ? `次の報酬：<b>FLOOR ${nextRow[0]}</b>` : 'すべて獲得済み') + '</p>' +
       '<ul class="po-first-rewards-list">' +
         FIRST_REWARD_TABLE.map(([f, label]) => {
           const done = best >= f;
-          const isTitle = f >= 100;
+          const isTitle = f >= 100 && f % 50 === 0;
           return `<li class="${done ? 'is-got' : ''}${isTitle ? ' is-title' : ''}${nextRow && nextRow[0] === f ? ' is-next' : ''}"><b>${f}F</b><span>${label}</span>${done ? '<i aria-label="獲得済み">✓</i>' : ''}</li>`;
         }).join('') +
       '</ul>';

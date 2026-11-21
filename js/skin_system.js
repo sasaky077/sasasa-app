@@ -2,6 +2,19 @@
   'use strict';
 
   const SKIN_MASTER = {
+    112: {
+      limited_01: {
+        id:'limited_01',
+        name:'白華の和装',
+        img:'images/chara_112_b.webp',
+        home:'images/chara_112_b_cut.webp',
+        panel:'images/chara_112_b_panel.webp',
+        battle:'images/chara_112_b_battle_back.webp',
+        cutin:'images/chara_112_b_cutin.webp',
+        exchangeCost:3,
+        exchangeItem:'flower_sr'
+      }
+    },
     3: {
       limited_01: {
         id:'limited_01',

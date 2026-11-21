@@ -101,12 +101,14 @@
   }
 
   const FLOWER_SR_EXCHANGES = [
+    {id:'skin_112_limited_01',cost:3,characterId:112,name:'トワ（光の姿） 白華の和装',img:'images/chara_112_b_panel.webp',desc:'限定衣装を解放'},
     {id:'noah_ticket_1',cost:1,name:'ノア挑戦チケット ×1',img:'images/special_stage_ticket.webp',desc:'SPECIAL STAGE「理想郷 -ノア-」へ挑戦'},
     {id:'flower_r_3',cost:1,name:'聖霊花(R) ×3',img:'images/item_flower_r.webp',desc:'聖霊花(R)を3個獲得'},
     {id:'sr_ticket_1',cost:5,name:'SR確定ガチャTICKET ×1',img:'images/gacha_ticket_10.webp',desc:'恒常SRが1体確定する単発チケット'}
   ];
 
   const FLOWER_R_EXCHANGES = [
+    {group:'R ×25',id:'flower_sr_1',cost:25,name:'聖霊花(SR) ×1',img:'images/item_flower_sr.webp',desc:'聖霊花(SR)を1個獲得'},
     {
       group:'R ×1',
       id:'exp_gold_5',
@@ -501,9 +503,7 @@
     state.loading=true;
     const list=document.getElementById('item-management-list');
     if(list) list.innerHTML='<div class="item-management-loading">読み込み中...</div>';
-    const srList=document.getElementById('spirit-flower-sr-exchange-list');
-    if(srList)srList.addEventListener('click',e=>{const btn=e.target.closest('[data-flower-sr-exchange-id]');if(btn&&!btn.disabled)exchangeFlowerSR(btn.dataset.flowerSrExchangeId);});
-    document.querySelectorAll('[data-flower-sr-exchange-close]').forEach(el=>el.addEventListener('click',closeFlowerSRExchange));
+
 
     const refreshBtn=document.getElementById('item-refresh-btn');
     if(refreshBtn) refreshBtn.disabled=true;
@@ -714,7 +714,7 @@
     const evo=evolutionMaster();
     const levels=Object.fromEntries(levelMaster().map(x=>[x.id,x]));
     return Object.keys(grants||{}).map(id=>{
-      const meta=levels[id]||evo[id]||{name:id};
+      const meta=levels[id]||evo[id]||OTHER_ITEMS.find(x=>x.id===id)||{name:id};
       return (meta.name||id)+' ×'+fmt(grants[id]);
     }).join(' / ');
   }
@@ -794,6 +794,7 @@
     const modal=document.getElementById('spirit-flower-sr-exchange-modal');
     if(modal){modal.hidden=true;modal.setAttribute('aria-hidden','true');}
   }
+  function srSkinOwned(item){return !!(item.characterId && window.CharacterSkins && window.CharacterSkins.isOwned(item.characterId,'limited_01'));}
   function renderFlowerSRExchange(){
     const list=document.getElementById('spirit-flower-sr-exchange-list');
     if(!list) return;
@@ -802,10 +803,10 @@
     if(count)count.textContent=fmt(owned);
     list.innerHTML=FLOWER_SR_EXCHANGES.map(item=>
       '<article class="item-exchange-row">'+
-       '<div class="item-exchange-reward-icon"><img src="'+escapeHtml(item.img)+'" alt=""></div>'+
+       '<div class="item-exchange-reward-icon"'+(item.characterId?' data-sr-skin-preview="'+item.characterId+'"':'')+'><img src="'+escapeHtml(item.img)+'" alt=""></div>'+
        '<div class="item-exchange-copy"><strong>'+escapeHtml(item.name)+'</strong><span>'+escapeHtml(item.desc)+'</span></div>'+
        '<div class="item-exchange-cost'+(owned<item.cost?' is-short':'')+'"><img src="images/item_flower_sr.webp" alt=""><b>'+fmt(item.cost)+'</b></div>'+
-       '<button type="button" class="item-exchange-btn" data-flower-sr-exchange-id="'+escapeHtml(item.id)+'" '+(state.exchanging||owned<item.cost?'disabled':'')+'>交換</button>'+
+       '<button type="button" class="item-exchange-btn" data-flower-sr-exchange-id="'+escapeHtml(item.id)+'" '+(state.exchanging||owned<item.cost||srSkinOwned(item)?'disabled':'')+'>'+(srSkinOwned(item)?'取得済み':'交換')+'</button>'+
       '</article>'
     ).join('');
   }
@@ -817,7 +818,7 @@
   async function exchangeFlowerSR(exchangeId){
     if(state.exchanging)return;
     const def=FLOWER_SR_EXCHANGES.find(x=>x.id===exchangeId);
-    if(!def)return;
+    if(!def||srSkinOwned(def))return;
     if(Number(state.items.flower_sr||0)<def.cost){toast('聖霊花(SR)が不足しています');return;}
     if(!window.confirm('聖霊花(SR) ×'+def.cost+' を消費して\n「'+def.name+'」に交換しますか？'))return;
     state.exchanging=true;renderFlowerSRExchange();
@@ -828,6 +829,7 @@
       if(res&&res.error)throw res.error;
       let data=res&&res.data; if(typeof data==='string')data=JSON.parse(data);
       if(!data||data.ok===false)throw new Error((data&&data.message)||'交換に失敗しました');
+      if(data.skin && window.CharacterSkins){window.CharacterSkins.notifySkinAcquired(data.skin.character_id,data.skin.skin_id);try{await window.CharacterSkins.reloadMySkins()}catch(_){}}
       await fetchSnapshot();
       if(typeof window.loadInventoryFromSupabase==='function'){
         const userId=String(localStorage.getItem('zukan_user_id')||'').trim();
@@ -867,7 +869,7 @@
     const pad=String(id).padStart(2,'0');
     const skin=window.CharacterSkins && typeof window.CharacterSkins.getSkin==='function'
       ? window.CharacterSkins.getSkin(id,'limited_01') : null;
-    const chain=['images/chara_'+pad+'_b_cut.webp', skin&&skin.home, skin&&skin.panel, 'images/chara_'+pad+'_b_panel.webp']
+    const chain=(id===112?[skin&&skin.img,skin&&skin.panel]:['images/chara_'+pad+'_b_cut.webp', skin&&skin.home, skin&&skin.panel, 'images/chara_'+pad+'_b_panel.webp'])
       .filter((v,i,a)=>v && a.indexOf(v)===i);
     const c=(Array.isArray(window.CHARACTERS)?window.CHARACTERS:[]).find(x=>x&&Number(x.id)===id);
     const name=(c&&c.name)||'';
@@ -902,6 +904,9 @@
   }
 
   function bind(){
+    const srList=document.getElementById('spirit-flower-sr-exchange-list');
+    if(srList)srList.addEventListener('click',e=>{const preview=e.target.closest('[data-sr-skin-preview]');if(preview){openSkinPreview(Number(preview.dataset.srSkinPreview));return;}const btn=e.target.closest('[data-flower-sr-exchange-id]');if(btn&&!btn.disabled)exchangeFlowerSR(btn.dataset.flowerSrExchangeId);});
+    document.querySelectorAll('[data-flower-sr-exchange-close]').forEach(el=>el.addEventListener('click',closeFlowerSRExchange));
     document.querySelectorAll('#screen-item .item-category-tab').forEach(btn=>{
       btn.addEventListener('click',()=>{
         const next=btn.dataset.itemTab;
