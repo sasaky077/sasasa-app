@@ -191,9 +191,47 @@
     if (rec.run_status === 'select' && !rec.pending_choices.length) rec.pending_choices = rollChoices(rec);
     return rec;
   }
+  // build2118: developer sandbox only; never serialize or sync this record.
+  let testSession = null, testRecord = null;
+  let lastTestFloor=100, lastTestPreset='standard';
+  const testFloors = [100,150,200,250,300];
+  const testPresets = {
+    none: {label:'強化なし', n:0, q:1},
+    low: {label:'弱め', n:3, q:1},
+    standard: {label:'標準', n:5, q:2},
+    high: {label:'強め', n:6, q:3}
+  };
+  function testAllowed(){ return !!window.SasaphiaAdmin?.isEnabled?.() && !!userId(); }
+  function isTest(){ return !!testSession; }
+  function testStrengthLabel(){ return testSession ? testPresets[testSession.preset].label : ''; }
+  function buildTestBuffs(rec, preset){
+    const {n,q} = testPresets[preset];
+    if (!n) return [];
+    const result=[];
+    const add=(t,count,v,c)=>{
+      for(let i=0;i<Math.min(count,TEMPLATES[t].max);i++) result.push(Object.assign({t,q,v},c==null?{}:{c}));
+    };
+    const ix=q-1;
+    const elements=[...new Set(rec.selected_members.map(id=>primaryElement(getChar(id))).filter(e=>ELEMENTS.includes(e)))];
+    const groups=[...new Set(rec.selected_members.map(id=>shotGroupOf(getChar(id))))];
+    add('atk',n,[9,12,14][ix]);
+    add('max_hp',n,[10,13,15][ix]);
+    add('ult_gain',n,[12,17,20][ix]);
+    add('damage_cut',n,[6,8,10][ix]);
+    add('barrier',n,[8,12,14][ix]);
+    add('move_speed',Math.min(n,5),[5,7,8][ix]);
+    add('start_ult',Math.min(n,5),[12,20,25][ix]);
+    add('clear_ult',Math.min(n,4),[15,24,30][ix]);
+    add('clear_heal',Math.min(n,5),[8,12,15][ix]);
+    add('barrier_pierce',Math.min(n,4),[25,38,45][ix]);
+    if(elements.length) for(let i=0;i<Math.min(8,n+1);i++) add('atk_element',1,[18,24,28][ix],elements[i%elements.length]);
+    if(groups.length) for(let i=0;i<Math.min(8,n+1);i++) add('shot_type',1,[21,27,32][ix],[groups[i%groups.length]]);
+    return result;
+  }
   let record = null;
   let recordOwner = null;
   function load(){
+    if (testRecord) return testRecord;
     const key = storageKey();
     if (record && recordOwner === key) return record;
     let parsed = null;
@@ -203,6 +241,7 @@
     return record;
   }
   function save(options){
+    if (isTest()) return;
     if (!record) return;
     record.user_id = userId();
     record.updated_at = new Date().toISOString();
@@ -670,6 +709,11 @@
   }
   // RESULT確定。勝利→強化選択待ち、敗北→run終了。
   function finishFloor(info){
+    if (isTest()) {
+      battle = null;
+      if (testRecord) testRecord.run_status = 'ended';
+      return {phaseOdysseyConfirmed:true,phaseOdysseyWin:!!info?.win,firstClearClaimed:false,firstClearAmount:0,highScore:0,test:true};
+    }
     const rec = load();
     const floor = toInt(info && info.floor, 0);
     if (rec.run_status !== 'battle' || floor !== rec.current_floor) {
@@ -996,7 +1040,7 @@
   function closeModal(){
     const layer = modalLayer(false);
     if (modalCleanup) { const f = modalCleanup; modalCleanup = null; f(); }
-    if (layer) { layer.hidden = true; layer.textContent = ''; layer.className = 'po-layer'; }
+    if (layer) { layer.hidden = true; layer.textContent = ''; layer.className = 'po-layer'; layer.style.removeProperty('z-index'); }
   }
   function openModal(kind, build){
     const layer = modalLayer(true);
@@ -1171,6 +1215,7 @@
   }
 
   function openBuffSelect(){
+    if (isTest()) return ;
     const rec = load();
     if (rec.run_status !== 'select') return;
     if (!screen() || !screen().classList.contains('active')) return; // 他画面へ移動済みなら出さない
@@ -1386,6 +1431,7 @@
     }
   }
   async function offerSkip(tier){
+    if(isTest())return;
     const T = window.ItemTickets;
     if (!T) { notify('スキップ券を使用できません'); return; }
     if (!tier) tier = skipGoldOwned > 0 ? 'gold' : 'silver';
@@ -1413,6 +1459,7 @@
   }
   // party: 未開始ならこの3人でrunを開始してからスキップ。null＝FLOOR 1 の挑戦中runに適用。
   async function runSkip(party, tier){
+    if(isTest())return false;
     const T = window.ItemTickets;
     if (!T) return false;
     let snapshot = null;
@@ -1483,6 +1530,7 @@
   //  ・未開始：FLOOR 1 の共通パーティ選択で所持キャラから3人を自由に編成（前回の3人を初期配置）
   //  ・挑戦中：runの3人で固定された編成画面
   function openBattle(){
+    if(isTest()) return;
     const rec = load();
     if (rec.run_status === 'select') { openBuffSelect(); return; }
     if (typeof window.openShootingEvent !== 'function') { notify('戦闘エンジンの準備が完了していません'); return; }
@@ -1504,6 +1552,20 @@
   }
   // 共通パーティ選択の「戦闘開始」から呼ばれる。未開始なら確認のうえrunを開始し、出撃を確定する。
   async function prepareBattle(floor, partyIds){
+    if (isTest()) {
+      const party=uniqIds(partyIds);
+      if (!testAllowed() || testSession.owner !== userId() || Number(floor)!==testSession.floor || party.length!==PARTY_SIZE || !party.every(isOwned)) {
+        notify('管理者認証または3人編成を確認してください'); return false;
+      }
+      const rec=testRecord;
+      rec.selected_members=party.slice();
+      rec.current_floor=testSession.floor;
+      rec.build_list=buildTestBuffs(rec,testSession.preset);
+      rec.hp_state=Object.fromEntries(party.map(id=>[id,1]));
+      rec.ult_state=Object.fromEntries(party.map(id=>[id,0]));
+      rec.run_status='battle';
+      return true;
+    }
     const rec = load();
     const party = uniqIds(partyIds);
     if (!isRunActive(rec)) {
@@ -1548,6 +1610,7 @@
     return beginFloor(floor, party);
   }
   function retireRun(){
+    if(isTest())return;
     const rec = load();
     if (!isRunActive(rec)) return;
     confirmDialog('PHASE ODYSSEY / RETIRE', '挑戦を終了', `現在の挑戦（FLOOR ${rec.current_floor}）を終了します。\n取得した強化は失われ、次回は FLOOR 1 からになります。\n最高到達記録は保持されます。`, '終了する', () => {
@@ -1596,6 +1659,7 @@
   // 各挑戦終了ごとに1回。ローカルの送信待ちはサーバーの受領台帳で冪等に処理。
   const RUN_REWARD_QUEUE = 'zeraphia_po_run_reward_pending_v1:';
   function queueRunReward(rec, cleared){
+    if (isTest()) return ;
     if (!userId() || cleared < 30) return;
     const key = RUN_REWARD_QUEUE + userId();
     const token = [rec.run_seed, rec.runs_started, rec.run_started_at || 'legacy'].join('-');
@@ -1609,6 +1673,7 @@
   }
   let claimingRunRewards = null;
   function claimRunRewards(){
+    if (isTest()) return Promise.resolve(false);
     if (claimingRunRewards) return claimingRunRewards;
     const sb = rankClient(), uid = userId();
     if (!sb || !uid) return Promise.resolve(false);
@@ -1648,6 +1713,7 @@
     try { return toInt(localStorage.getItem(RANK_SENT_KEY + ':' + userId()), 0); } catch (_) { return 0; }
   }
   function submitBestFloor(partyIds){
+    if (isTest()) return Promise.resolve(false);
     const uid = userId();
     const sb = rankClient();
     const rec = load();
@@ -1938,6 +2004,7 @@
   });
   let firstRewardClaiming = null;
   function claimFirstRewards(){
+    if (isTest()) return Promise.resolve(false);
     const sb = rankClient();
     if(!sb || !userId()) return Promise.resolve(false);
     if(firstRewardClaiming) return firstRewardClaiming;
@@ -1961,6 +2028,7 @@
   // 画面遷移
   // ------------------------------------------------------------
   function open(){
+    if (isTest()) return;
     if (typeof window.requireChapter03ContentUnlock === 'function' && !window.requireChapter03ContentUnlock()) return;
     record = null; // アカウント切替・クラウド復元直後でも最新を読む
     const rec = load();
@@ -1982,10 +2050,90 @@
     // 入口は巡行の左タブ。戻ると巡行画面（直前のカテゴリのまま）へ。
     if (typeof window.showMainTab === 'function') window.showMainTab('ninmu');
   }
+  function openTestMenu(){
+    if (!testAllowed() || isTest() || !screen()?.classList.contains('active')) return;
+    if (modalLayer(false) && !modalLayer(false).hidden) return;
+    openModal('dev-test', sheet=>{
+      sheetHead(sheet,'DEVELOPER TEST / PHASE ODYSSEY','エクリプス 試遊','通常の進行・報酬・戦績には反映されません。');
+      const form=el('div','po-test-form');
+      form.style.cssText='display:grid;gap:9px;margin-top:14px;overflow:auto;min-height:0;';
+      const field=(label,values,initial)=>{
+        const row=el('label','',label); row.style.cssText='display:grid;gap:4px;font-size:12px;';
+        const select=el('select',''); select.style.cssText='width:100%;min-height:38px;padding:6px 10px;font:inherit;color:#392d45;background:#fffdf8;border:1px solid #b08a49;';
+        values.forEach(([value,text])=>{const o=el('option','',text);o.value=value;select.append(o);});
+        select.value=initial;row.append(select);form.append(row);return select;
+      };
+      const floor=field('階層',testFloors.map(f=>[String(f),f+'F　エクリプス']),String(lastTestFloor));
+      const strength=field('位相強化',Object.entries(testPresets).map(([k,v])=>[k,v.label]),lastTestPreset);
+      const preview=el('p','po-sheet-foot'); preview.style.whiteSpace='pre-line';form.append(preview);
+      const update=()=>{
+        const {n,q}=testPresets[strength.value]; const k=q-1;
+        preview.textContent=n?`共通ATK +${n*[9,12,14][k]}% ／ HP +${n*[10,13,15][k]}%\nULT回収 +${n*[12,17,20][k]}% ／ 軽減 ${Math.min(40,n*[6,8,10][k])}%\n属性・ショット強化、バリア、移動等も適用。HP満タン開始。`:'通常育成値のみ。HP満タン・ULT 0から開始。';
+      };
+      strength.addEventListener('change',update);update();sheet.append(form);
+      const actions=el('div','po-sheet-actions');
+      const cancel=el('button','po-btn','閉じる');cancel.type='button';cancel.onclick=closeModal;
+      const start=el('button','po-btn is-primary','編成へ');start.type='button';start.onclick=()=>{
+        if(!testAllowed()||isTest())return;
+        const f=Number(floor.value), preset=strength.value;
+        if(!testFloors.includes(f)||!testPresets[preset])return;
+        if(!window.ShootingCoreReady || typeof window.openShootingEvent!=='function'){notify('戦闘エンジンの準備中です');return;}
+        const normal=load();
+        testRecord=blankRecord();testRecord.draft_members=(normal.selected_members.length?normal.selected_members:normal.draft_members).slice();
+        lastTestFloor=f;lastTestPreset=preset;
+        testSession={floor:f,preset,owner:userId()};
+        closeModal();window.__shootingReturnContext={type:'phaseOdysseyTest'};
+        try{window.openShootingEvent({stageId:stageIdForFloor(f)});}
+        catch(err){console.error('[phase test]',err);endTest();window.__shootingReturnContext=null;notify('試遊を開けませんでした');}
+      };
+      actions.append(cancel,start);sheet.append(actions);
+    });
+    const layer=modalLayer(false);if(layer)layer.style.zIndex='410200';
+  }
+  function endTest(){
+    testSession=null;testRecord=null;battle=null;closeModal();
+    const layer=modalLayer(false);if(layer)layer.style.removeProperty('z-index');
+    if(typeof window.showMainTab==='function') window.showMainTab('phase-odyssey');
+    render();requestAnimationFrame(layoutPager);
+    setTimeout(()=>{if(!isTest())openTestMenu();},0);
+  }
+  function bindTestGesture(root){
+    let taps=0,last=0,down=null,awaitAuth=false;
+    const decorative=root.querySelector('.po-hero-art');
+    if(decorative)decorative.style.pointerEvents='none';
+    function inTitle(e){
+      if(!root.classList.contains('active')||isTest()||document.querySelector('#shooting-event-root.open')||document.querySelector('#sasaphia-admin-auth.show,#sasaphia-admin-panel.show')||(modalLayer(false)&&!modalLayer(false).hidden))return false;
+      const title=root.querySelector('.po-title-row');if(!title)return false;
+      const r=title.getBoundingClientRect();
+      if(r.width<=0||r.height<=0||e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)return false;
+      // Do not steal actual buttons/links. Decorative covering elements are OK.
+      const target=e.target instanceof Element?e.target:null;
+      return !target?.closest('button,a,input,select,[role="button"]');
+    }
+    function press(e){if(e.isPrimary===false||e.button>0)return;down=inTitle(e)?{x:e.clientX,y:e.clientY,id:e.pointerId}:null;}
+    function release(e){
+      const d=down;down=null;
+      if(!d||d.id!==e.pointerId||Math.hypot(e.clientX-d.x,e.clientY-d.y)>12||!inTitle(e))return;
+      const now=Date.now();if(now-last>5000)taps=0;last=now;
+      if(++taps<7)return;taps=0;
+      if(testAllowed())openTestMenu();else {awaitAuth=true;window.SasaphiaAdmin?.openAuth?.();}
+    }
+    // Window capture + geometry, rather than an overlay hit target, works even if the title's decorative layer receives the touch.
+    window.addEventListener('pointerdown',e=>{if(e.pointerType!=='touch')press(e);},{capture:true,passive:true});
+    window.addEventListener('pointerup',e=>{if(e.pointerType!=='touch')release(e);},{capture:true,passive:true});
+    // iOS: use touch events directly so cancelled synthesized clicks cannot lose taps.
+    const touchPoint=(e,t)=>({clientX:t.clientX,clientY:t.clientY,pointerId:t.identifier,target:e.target});
+    window.addEventListener('touchstart',e=>{if(e.touches.length===1)press(touchPoint(e,e.touches[0]));else down=null;},{capture:true,passive:true});
+    window.addEventListener('touchend',e=>{if(!e.touches.length&&e.changedTouches.length===1)release(touchPoint(e,e.changedTouches[0]));else down=null;},{capture:true,passive:true});
+    window.addEventListener('touchcancel',()=>{down=null;},{capture:true,passive:true});
+    window.addEventListener('pointercancel',e=>{if(e.pointerType!=='touch')down=null;},{capture:true,passive:true});
+    window.addEventListener('sasaphia-admin-mode-changed',e=>{if(awaitAuth&&e.detail?.enabled){awaitAuth=false;setTimeout(openTestMenu,80);}});
+  }
   function init(){
     const root = screen();
     if (!root || root.dataset.poBound === 'true') return;
     root.dataset.poBound = 'true';
+    bindTestGesture(root);
     root.querySelector('[data-po-slots]')?.addEventListener('click', e => {
       if (!e.target.closest('.po-slot')) return;
       if (isRunActive(load())) { openStatus(); return; } // 挑戦中は状態確認（編成は固定）
@@ -2023,7 +2171,7 @@
   }
 
   window.PhaseOdyssey = Object.freeze({
-    pickBackground,
+    pickBackground, isTest, testStrengthLabel, endTest, openTestMenu,
     STAGE_PREFIX, TEMPLATES,
     isStageId, stageIdForFloor, getRunMembers, applyToProfile, getCarryover, onBattleReset,
     modifyIncomingDamage, onDamageTaken, getUltGainMultiplier, beginFloor, finishFloor,

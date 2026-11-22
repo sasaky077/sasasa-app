@@ -1188,6 +1188,8 @@
     try { return Math.max(0, Math.min(1, Number(api.getBarrierPierce(normalizeCombatElement(targetElement))) || 0)); }
     catch (_) { return 0; }
   }
+  function isPhaseOdysseyTestStage(){ return isPhaseOdysseyStage() && !!window.PhaseOdyssey?.isTest?.(); }
+
   function getPhaseOdysseyApi() {
     return (isPhaseOdysseyStage() && window.PhaseOdyssey) ? window.PhaseOdyssey : null;
   }
@@ -1475,10 +1477,10 @@
     box.innerHTML = '';
     const main = document.createElement('strong');
     main.className = 'shooting-result-po-main';
-    main.textContent = `${cleared}階踏破`;
+    main.textContent = isPhaseOdysseyTestStage() ? (win ? 'TEST CLEAR' : 'TEST FAILED') : `${cleared}階踏破`;
     const sub = document.createElement('span');
     sub.className = 'shooting-result-po-sub';
-    sub.textContent = (win ? `FLOOR ${floor} クリア` : `FLOOR ${floor} で力尽きた`) + (best ? `　／　最高 ${best}階` : '');
+    sub.textContent = isPhaseOdysseyTestStage() ? `FLOOR ${floor} ／ ${window.PhaseOdyssey.testStrengthLabel()} ／ 記録・報酬なし` : (win ? `FLOOR ${floor} クリア` : `FLOOR ${floor} で力尽きた`) + (best ? `　／　最高 ${best}階` : '');
     box.append(main, sub);
     box.dataset.win = win ? 'true' : 'false';
   }
@@ -3810,7 +3812,7 @@
       const partyStage = document.getElementById('zpf-header-stage');
       const partySubtitle = document.getElementById('zpf-header-subtitle');
       const partyScore = document.getElementById('zpf-header-score');
-      if (partyChapter) partyChapter.textContent = isSpecialEvent ? 'SPECIAL EVENT' : `CHAPTER ${String(selectedStage?.chapter || 1).padStart(2, '0')}`;
+      if (partyChapter) partyChapter.textContent = isPhaseOdysseyTestStage() ? 'DEVELOPER TEST' : isSpecialEvent ? 'SPECIAL EVENT' : `CHAPTER ${String(selectedStage?.chapter || 1).padStart(2, '0')}`;
       if (partyStage) partyStage.textContent = stageTitle;
       if (partySubtitle) {
         partySubtitle.textContent = isSpecialEvent ? String(selectedStage?.difficultyLabel || '') : String(selectedStage?.name || selectedStage?.displayName || '');
@@ -3819,9 +3821,9 @@
       if (partyScore) {
         // build1643: 位相回遊はHIGH SCOREの代わりに最高踏破階層
         const poBest = isPhaseOdysseyStage() ? getPhaseOdysseyBestFloor() : 0;
-        partyScore.textContent = isPhaseOdysseyStage() ? (poBest ? `${poBest}階` : '--') : formatShootingScore(selectedStageHighScore);
+        partyScore.textContent = isPhaseOdysseyTestStage() ? window.PhaseOdyssey.testStrengthLabel() : isPhaseOdysseyStage() ? (poBest ? `${poBest}階` : '--') : formatShootingScore(selectedStageHighScore);
         const partyScoreLabel = partyScore.parentElement && partyScore.parentElement.querySelector('span');
-        if (partyScoreLabel) partyScoreLabel.textContent = isPhaseOdysseyStage() ? '最高踏破' : 'HIGH SCORE';
+        if (partyScoreLabel) partyScoreLabel.textContent = isPhaseOdysseyTestStage() ? '試遊強化' : isPhaseOdysseyStage() ? '最高踏破' : 'HIGH SCORE';
       }
     }
     if (score) {
@@ -3831,7 +3833,7 @@
           const raidMaxHp = Math.max(1, Math.floor(Number(state.boss.hpMax || selectedRaidContext?.maxHp || 100000)));
           setBattleScorePlate(score, isRaidLapMode() ? `${Number(state?.raidLap || 1)}周目 HP / ${raidMaxHp.toLocaleString('ja-JP')}` : `BOSS HP / ${raidMaxHp.toLocaleString('ja-JP')}`, raidHp.toLocaleString('ja-JP'));
         } else if (isPhaseOdysseyStage()) {
-          setBattleScorePlate(score, 'PHASE ODYSSEY', `FLOOR ${Number(selectedStage?.stageNo || 1)}`);
+          setBattleScorePlate(score, isPhaseOdysseyTestStage() ? 'TEST MODE' : 'PHASE ODYSSEY', `FLOOR ${Number(selectedStage?.stageNo || 1)}`);
         } else {
           setBattleScorePlate(score, 'SCORE', formatShootingScore(state?.score || 0));
         }
@@ -4091,6 +4093,7 @@
   // RETRYは新しい出撃として再加算。中断復帰(resume)では再加算しない。
   // ============================================================
   async function recordShootingCharacterUsage(characterIds, stageId) {
+    if (isPhaseOdysseyTestStage()) return false;
     const ids = Array.from(new Set(
       (Array.isArray(characterIds) ? characterIds : [])
         .map(Number)
@@ -4603,6 +4606,7 @@
   }
 
   function saveShootingResumeState(reason) {
+    if (isPhaseOdysseyTestStage()) return false;
     // Unintentional interruptions keep a checkpoint in all modes including Phase Odyssey.
     if (isGachaTrialStage() || isRpgEncounterStage() || suppressShootingResumeSave) return false;
     try {
@@ -4631,6 +4635,7 @@
   }
 
   function clearShootingResumeState() {
+    if (isPhaseOdysseyTestStage()) return;
     try { localStorage.removeItem(SHOOTING_RESUME_KEY); } catch (_) {}
   }
 
@@ -7616,7 +7621,7 @@
           const raidMaxHp = Math.max(1, Math.floor(Number(state.boss?.hpMax || selectedRaidContext?.maxHp || 100000)));
           setBattleScorePlate(score, isRaidLapMode() ? `${Number(state?.raidLap || 1)}周目 HP / ${raidMaxHp.toLocaleString('ja-JP')}` : `BOSS HP / ${raidMaxHp.toLocaleString('ja-JP')}`, raidHp.toLocaleString('ja-JP'));
         } else if (isPhaseOdysseyStage()) {
-          setBattleScorePlate(score, 'PHASE ODYSSEY', `FLOOR ${Number(selectedStage?.stageNo || 1)}`);
+          setBattleScorePlate(score, isPhaseOdysseyTestStage() ? 'TEST MODE' : 'PHASE ODYSSEY', `FLOOR ${Number(selectedStage?.stageNo || 1)}`);
         } else {
           setBattleScorePlate(score, 'SCORE', formatShootingScore(state.score));
         }
@@ -35599,8 +35604,8 @@
         if (typeof window.showToast === 'function') window.showToast('デイリー報酬の確定に失敗しました');
       }
     }
-    // build2021: profile combo high-watermark, for every shooting stage (including phase odyssey).
-    try {
+    // build2021: profile combo high-watermark, except dev sandbox.
+    if (!isPhaseOdysseyTestStage()) try {
       window.dispatchEvent(new CustomEvent('zeraphia-profile-battle-result', {
         detail: { stageId: String(state.stageId || (selectedStage && selectedStage.id) || ''), maxCombo: Math.max(0, Math.floor(Number(state.maxCombo) || 0)) }
       }));
@@ -35631,7 +35636,7 @@
       const c = getBattleCharacter(m.id);
       return `<span class="shooting-result-member${markDown && m.hp <= 0 ? ' down' : ''}" title="${c.name}"><img src="${getCharacterPanelImage(c)}" alt="${c.name}"><b>${value}${suffix}</b></span>`;
     };
-    if (kicker) kicker.textContent = isPhaseOdysseyStage()
+    if (kicker) kicker.textContent = isPhaseOdysseyTestStage() ? 'DEVELOPER TEST · NO REWARDS' : isPhaseOdysseyStage()
       ? (win ? 'PHASE ODYSSEY · FLOOR CLEAR' : 'PHASE ODYSSEY · RUN END')
       : (isResonanceTowerReplay() ? 'FREE REPLAY · NO REWARDS' : (win ? '' : 'MISSION FAILED'));
     if (title) title.textContent = 'RESULT';
@@ -36866,7 +36871,7 @@
   // battle may already be live, so also check the actual party screen state.
   let phaseOdysseyBattleCommitted = false;
   function phaseOdysseyExitLocked() {
-    if (!isPhaseOdysseyStage()) return false;
+    if (!isPhaseOdysseyStage() || isPhaseOdysseyTestStage()) return false;
     // build1655: RESULT has completed the battle; returning to the Phase Odyssey
     // lobby is progression, not an in-battle abandon.  build1653 kept the
     // committed flag set and accidentally blocked the RESULT back button.
@@ -36899,7 +36904,7 @@
   function syncShootingPauseMenuActions(menu) {
     if (!menu) return;
     const exitAction = menu.querySelector('.shooting-pause-exit');
-    if (exitAction) exitAction.hidden = isPhaseOdysseyStage();
+    if (exitAction) exitAction.hidden = isPhaseOdysseyStage() && !isPhaseOdysseyTestStage();
     const restartAction = menu.querySelector('.shooting-pause-restart');
     if (restartAction) restartAction.hidden = !canRestartShootingStageFromPause();
     syncPhaseOdysseyMissionDetails(menu);
@@ -38507,6 +38512,11 @@
         return;
       }
       if (typeof window.openResonanceTower==='function') window.openResonanceTower();
+      clearShootingResultExitFade();
+      return;
+    }
+    if (returnContext && returnContext.type === 'phaseOdysseyTest') {
+      window.PhaseOdyssey?.endTest?.();
       clearShootingResultExitFade();
       return;
     }
