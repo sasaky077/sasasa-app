@@ -10067,6 +10067,7 @@ function selectChara(now, gacha) {
       .then(function(){ return loadFromDB(); })
       .then(function(){
       window._profileLoadState = 'ready';
+      void touchPlayerActivity2116();
 
       // タイトルの裏でホームDOMを先に作り、キャラ画像の取得/デコードを開始する。
       try {
@@ -10820,6 +10821,7 @@ startTitleBgm();
       var card = await buildFriendCard(fid);
       frList.appendChild(card);
     }
+    await refreshFriendActivity2116();
   }
 
   async function copyMyId(){
@@ -10852,13 +10854,13 @@ startTitleBgm();
     return n ? n.toLocaleString('ja-JP') : '--';
   }
 
-  function getFriendLoginText(profile){
+  function getFriendLoginText(profile, serverNow){
     if(!profile || !profile.last_played) return '最終プレイ --';
 
     var t = new Date(profile.last_played).getTime();
     if(!Number.isFinite(t)) return '最終プレイ --';
 
-    var diff = Math.max(0, Date.now() - t);
+    var diff = Math.max(0, (Number.isFinite(serverNow) ? serverNow : Date.now()) - t);
     var min = Math.floor(diff / 60000);
     var hour = Math.floor(diff / 3600000);
     var day = Math.floor(diff / 86400000);
@@ -11029,6 +11031,7 @@ startTitleBgm();
 
     var div = document.createElement('div');
     div.className = 'friend-card friend-card-compact';
+    div.dataset.activityUser = String(fid);
 
     var panelHtml = panelSrc
       ? '<img src="' + panelSrc + '" class="friend-card-panel-img" alt="">'
@@ -11692,8 +11695,45 @@ startTitleBgm();
     return result;
   }
 
+  // build2116: authenticated server clock and fresh friend activity, independent of profile cache.
+  var activityBusy2116 = false, friendActivityBusy2116 = false;
+  async function touchPlayerActivity2116(){
+    if(activityBusy2116 || document.hidden || window._profileLoadState !== 'ready') return;
+    activityBusy2116 = true;
+    try {
+      var res = await sb.rpc('touch_player_activity_2116');
+      if(res.error || !res.data || !res.data.ok) throw new Error(res.error?.message || 'activity not saved');
+    } catch(e){ console.warn('[activity] update failed', e); }
+    finally { activityBusy2116 = false; }
+  }
+  async function refreshFriendActivity2116(){
+    if(friendActivityBusy2116 || document.hidden || window._profileLoadState !== 'ready') return;
+    friendActivityBusy2116 = true;
+    try {
+      var res = await sb.rpc('get_friend_activity_2116');
+      if(res.error || !res.data || !res.data.ok) throw new Error(res.error?.message || 'activity fetch failed');
+      var serverNow = Date.parse(res.data.server_now);
+      if(!Number.isFinite(serverNow)) throw new Error('invalid server clock');
+      var rows = new Map((res.data.friends || []).map(function(r){return [String(r.user_id),r];}));
+      document.querySelectorAll('#friend-list [data-activity-user]').forEach(function(card){
+        var label = card.querySelector('.friend-card-login');
+        if(label) label.textContent = getFriendLoginText(rows.get(card.dataset.activityUser),serverNow);
+      });
+    } catch(e){ console.warn('[activity] friend refresh failed',e); }
+    finally { friendActivityBusy2116 = false; }
+  }
+  function activityTick2116(){
+    if(document.hidden) return;
+    // Do not mark splash/title idle sessions as active; only visible game screens.
+    if(document.querySelector('.screen.active') && window._profileLoadState === 'ready') void touchPlayerActivity2116();
+    if(document.getElementById('screen-friend')?.classList.contains('active')) void refreshFriendActivity2116();
+  }
+  setInterval(activityTick2116,60000);
+  document.addEventListener('visibilitychange',function(){if(!document.hidden) activityTick2116();});
+  window.addEventListener('pageshow',activityTick2116);
+  window.addEventListener('online',activityTick2116);
   async function updateLastPlayed(){
-    await saveProfileToDB({ last_played: new Date().toISOString() });
+    await touchPlayerActivity2116();
   }
 
   async function addTotalScore(score){
