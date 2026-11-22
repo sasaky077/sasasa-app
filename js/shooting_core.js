@@ -3230,20 +3230,30 @@
 
   // Daily Raid scores even when the boss survives. Keep its previous sortie
   // separate from genuine stage clears, scoped to the same player and stage.
-  const SHOOTING_RAID_LAST_SORTIE_KEY = 'zeraphia_shooting_raid_last_sortie_v1';
+  const SHOOTING_RAID_LAST_SORTIE_KEY = 'zeraphia_shooting_raid_last_sortie_v2';
+  // build2117: all daily raid bosses share a stage ID. Use the confirmed boss identity instead.
+  function getRaidLastSortieBossKey() {
+    const ctx = selectedRaidContext;
+    if (!ctx) return '';
+    const enemy = String(ctx.enemyId || '').trim().toLowerCase();
+    const boss = String(ctx.bossKey || '').trim().toLowerCase();
+    const aliases = { sigma: 'shooting_raid_test', test: 'shooting_raid_test', shien: 'shooting_raid_shien', camilla: 'shooting_raid_camilla' };
+    return enemy || aliases[boss] || (boss ? 'boss:' + boss : '');
+  }
   function getRaidLastSortieStorageKey() {
     return `${SHOOTING_RAID_LAST_SORTIE_KEY}:${getShootingUserId() || 'guest'}`;
   }
-  function getRaidLastSortie(stageId = selectedStage?.id) {
-    const key = String(stageId || '');
+  function getRaidLastSortie() {
+    const key = getRaidLastSortieBossKey();
     if (!key) return null;
     try {
       const all = JSON.parse(localStorage.getItem(getRaidLastSortieStorageKey()) || '{}');
       return normalizeShootingLastClearParty(all && all[key]);
     } catch (_) { return null; }
   }
-  function saveRaidLastSortie(stageId, party) {
-    const key = String(stageId || '');
+  function saveRaidLastSortie(party) {
+    if (selectedRaidContext?.adminTest || !selectedRaidContext?.attemptStarted) return;
+    const key = getRaidLastSortieBossKey();
     const record = normalizeShootingLastClearParty({ partyIds: party, clearedAt: Date.now() });
     if (!key || !record) return;
     try {
@@ -3257,7 +3267,7 @@
     const key = String(stageId || '');
     if (!key) return null;
     // Raid uses the last confirmed sortie (not a victory requirement).
-    if (isRaidStage()) return getRaidLastSortie(key) || normalizeShootingLastClearParty(readShootingLastClearParties()[key]);
+    if (isRaidStage()) return getRaidLastSortie(); // Never fall back to ambiguous legacy stage-wide records.
     return normalizeShootingLastClearParty(readShootingLastClearParties()[key]);
   }
 
@@ -37666,7 +37676,7 @@
 
     // Raid: record the accepted sortie, even if the boss is not defeated.
     // This executes only after the raid attempt token was successfully obtained.
-    if (isRaidStage()) saveRaidLastSortie(selectedStage?.id, selectedPartyIds.slice());
+    if (isRaidStage()) saveRaidLastSortie(selectedPartyIds.slice());
 
     // 使用キャラランキング用。編成された各キャラを1出撃として記録。
     // 集計保存はゲーム開始をブロックしない。
