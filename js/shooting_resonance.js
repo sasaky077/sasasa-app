@@ -457,7 +457,7 @@
   const RECENT_DEFAULT_CHARACTERS = Object.freeze({
     41: Object.freeze({name:'シャオラン',shotType:'spread'}),
     42: Object.freeze({name:'キョウ',shotType:'strike'}),
-    43: Object.freeze({name:'スズ',shotType:'parallel'}),
+    43: Object.freeze({name:'スズ',shotType:'bomb'}), // build2134: PARALLEL→BOMB
     44: Object.freeze({name:'メロリア',shotType:'piercing'}),
     45: Object.freeze({name:'キリマル',shotType:'spread'}),
     46: Object.freeze({name:'アイレナ',shotType:'charge'}),

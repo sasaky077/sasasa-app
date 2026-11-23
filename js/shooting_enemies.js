@@ -49,6 +49,9 @@
     // build1570: DAILY RAID 日替わりボス
     RAID_SHIEN: 'shooting_raid_shien',
     RAID_CAMILLA: 'shooting_raid_camilla',
+    // build2119: DAILY RAID ネリサ（水属性）
+    RAID_NERISA: 'shooting_raid_nerisa',
+    RAID_NERISA_CLONE: 'shooting_raid_nerisa_clone',
     CAMILLA_SPIDERLING: 'camilla_spiderling',
     // build1759: 記憶決戦の守護者「カミラ」（子蜘蛛を撒く）
     MEMORY_BLUE_CAMILLA: 'memory_blue_camilla',
@@ -687,6 +690,11 @@
       bulletDamage: 190,
       behavior: 'barrage_v1',
       uiScale: 1.12,
+      // build2137: レイドのギミック説明（raid_event.js RAID_BOSS_DEFS と同じ文言）
+      raidGimmicks: Object.freeze([
+        Object.freeze({ name: '弾幕レーザー', desc: '扇状の弾幕に、ときどき直線の緑のレーザーを混ぜて撃ってくる。' }),
+        Object.freeze({ name: '降機', desc: 'PHASE3で飛行船を降り、本体が高速で動き回る。3方向レーザー、突進、上空からの強襲を使い、乗り捨てた飛行船も極太レーザーで追ってくる。' }),
+      ]),
       // build1643: 3ゲージ目（PHASE3）から立ち絵を差し替え。大きさは自キャラと同じ。
       phaseVisuals: Object.freeze({
         3: Object.freeze({ image: 'images/raid_enemy_01_battle_p3.webp', size: 'player' }),
@@ -718,6 +726,12 @@
       behavior: 'shien_blade_v2',
       // build1583: 満月斬り/半月斬り/逆半月斬り/一閃/三巴。霞化と斬撃出血は継続。
       shienMechanics: true,
+      // build2137: レイドのギミック説明（raid_event.js RAID_BOSS_DEFS と同じ文言）
+      raidGimmicks: Object.freeze([
+        Object.freeze({ name: '斬撃', desc: '予告ありの斬撃攻撃。PHASEが進むほど速くなる。' }),
+        Object.freeze({ name: '霞化', desc: '分身している間は霞となり、すべての攻撃がすり抜ける。' }),
+        Object.freeze({ name: '出血', desc: '斬撃を受けると出血し、毎秒最大HPの3%を失う。キャラを交代すると止まる。' }),
+      ]),
       // 実表示倍率は shooting_core の味方立ち絵基準で算出。
       uiScale: 1.0,
     }),
@@ -741,6 +755,51 @@
       behavior: 'camilla_v1',
       camillaMechanics: true,
       uiScale: 1.15,
+      // build2137: レイドのギミック説明（raid_event.js RAID_BOSS_DEFS と同じ文言）
+      raidGimmicks: Object.freeze([
+        Object.freeze({ name: '属性バリア', desc: '弱点属性以外の攻撃を無効化する。' }),
+        Object.freeze({ name: '蜘蛛の巣レーザー', desc: '予告のあと、巣の形にレーザーが走る。' }),
+        Object.freeze({ name: '捕縛罠', desc: '足元に罠を仕掛ける。罠の上にいると捕縛され、しばらく動けなくなる。' }),
+        Object.freeze({ name: '子蜘蛛', desc: '子蜘蛛が張り付いてHPを吸い、ボスを回復する。キャラを交代すると振り払える。' }),
+      ]),
+    }),
+    // build2119: DAILY RAID ネリサ。水に溶け込む潜入者。水属性（木属性のみ有効の属性バリア）。
+    // 弾幕は共通の barrage_v1。液状化・しずくの帳・満ち潮は shooting_core.js updateNerisaMechanics。
+    [SHOOTING_ENEMY_ID.RAID_NERISA]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.RAID_NERISA,
+      kind: 'boss',
+      implemented: true,
+      name: 'ネリサ',
+      displayName: 'RAID ENEMY　ネリサ',
+      // build2120: レイドのステージ名（編成画面の見出し・ステージ情報）
+      raidStageTitle: '水底の暗躍者',
+      image: 'images/raid_enemy_04_battle.webp',
+      element: 'aqua',
+
+      gaugeHp: 33334,
+      gauges: 3,
+      bulletSpeed: 236,
+      fireRate: 900,
+      bulletDamage: 200,
+
+      behavior: 'barrage_v1',
+      nerisaMechanics: true,
+      uiScale: 1.25,
+      // build2135: レイドのギミック説明（ロビーのRAID INFO・開幕前の告知と同じ文言は raid_event.js RAID_BOSS_DEFS.nerisa.gimmicks）
+      raidGimmicks: Object.freeze([
+        Object.freeze({ name: '属性バリア', desc: '弱点属性以外の攻撃を無効化する。' }),
+        Object.freeze({ name: 'ヴェール', desc: 'すべての攻撃を無に帰す防御。爆風判定のある攻撃を当てると、ヴェールが爆散して剥がれる。' }),
+        Object.freeze({ name: '液状分裂', desc: 'ネリサの固有ギミック。1撃300ダメージ以上の攻撃を食らうと、分裂する。分身体は最大2体まで召喚する。' }),
+      ]),
+    }),
+    // build2125: ネリサの分裂体。一撃300超えの液状化から再生する時に生まれる（build2135: HP1000）。
+    // 移動・弾幕（本体と同じ）は shooting_core.js updateNerisaClones。倒してもレイドのスコアには入らない。
+    [SHOOTING_ENEMY_ID.RAID_NERISA_CLONE]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.RAID_NERISA_CLONE, kind: 'normal', implemented: true,
+      name: 'ネリサ（分裂体）', displayName: 'RAID　ネリサ（分裂体）',
+      element: 'aqua', attackType: 'none', image: 'images/raid_enemy_04_battle.webp',
+      hp: 1000, contactDamage: 0, moveSpeed: 0, scoreValue: 0, // build2135: 2000→1000
+      behavior: 'nerisa_clone_v1', uiScale: 1.25, // build2135: 本体と見分けやすいよう小さく（1.6→1.25）
     }),
 
     // build1759: 記憶決戦の守護者。生きている間はボスに攻撃が通らない。頑丈（弱い攻撃は無効）。

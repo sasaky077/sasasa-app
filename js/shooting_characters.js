@@ -2892,7 +2892,15 @@
   SHOOTING_CHARACTERS[42] = buildShootingCharacter({ ...VERONICA_BATTLE_PROFILE, id:42, name:getShootingCharacterMaster(42).name, effectKey:'kyou', ultType:'veronica_brass_punch', ultName:'一天突破', description:'真正面の超近接打撃。ULTは狭い射程へ一撃を叩き込み、命中時ATK×7.0のダメージを与える。' });
   SHOOTING_CHARACTERS[45] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:45, effectKey:'kirimaru', shotType:'spread', shotCount:5, fireRate:500, bulletSpeed:650, shotPowerRate:0.20, ultType:'jig_scramble_ray', ultName:'水鏡乱反射', ultDescription:'水属性の反射レーザーを5秒間展開する。', jigUltDurationMs:5000, jigUltBeamCount:6, jigUltBeamSpeed:520, jigUltBeamLength:280, jigUltBeamWidth:2, jigUltDamageAtkRate:0.12, jigUltHitIntervalMs:200 });
   // build1919: スズのULTをリュネと同じ内容へ変更。通常ショット・基礎性能は従来どおり。
-  SHOOTING_CHARACTERS[43] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:43, effectKey:'suzu', shotType:'parallel', shotCount:2, shotSpacing:28, fireRate:500, bulletSpeed:640, shotPowerRate:0.14, ultType:'ryune_absolute_lethe', ultBaseType:'beam', ultAddons:['damage','barrier_clear'], ultDamageAtkMultiplier:2.8, ultName:'終幕', ultDescription:'盤面の敵全員の属性バリアを解除し、敵全体へATK×2.8のダメージを与える。' });
+  // build2134: スズのSHOTを PARALLEL（0.5秒ごと2発 ATK×0.14）→ BOMB M に変更。木属性唯一のBOMB。
+  //  0.45秒ごとに1発、直撃ATK×0.30・爆風（半径76）は直撃の55%。爆風でネリサの雫のヴェールにヒビを入れられる。
+  //  直撃は完凸でもATK510×0.30×1.3≒199で、ネリサの分裂（一撃300超え）にはならない。
+  //  BOMBは命中数が少ないため、ULTの溜まり方を 0.476→0.90/HIT に（約16秒→約15秒相当）。ULT「終幕」は変更なし。
+  SHOOTING_CHARACTERS[43] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:43, effectKey:'suzu',
+    label:'BOMB / WOOD', description:'木属性のBOMB。着弾すると小範囲に爆風が広がる。ULTで敵全員の属性バリアを解除し、全体にダメージ。',
+    shotType:'bomb', bombSize:'M', shotCount:1, fireRate:450, bulletSpeed:660, shotPowerRate:0.30, splashRadius:76, splashDamageRate:0.55,
+    ultGainPerHit:0.90,
+    ultType:'ryune_absolute_lethe', ultBaseType:'beam', ultAddons:['damage','barrier_clear'], ultDamageAtkMultiplier:2.8, ultName:'終幕', ultDescription:'盤面の敵全員の属性バリアを解除し、敵全体へATK×2.8のダメージを与える。' });
   SHOOTING_CHARACTERS[46] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:46, effectKey:'airena', shotType:'charge', chargeSize:'M', shotStyle:'kaina-charge', fireRate:0, bulletSpeed:760, shotCount:1, chargeMinMs:120, ultType:'align_sync', ultName:'SYNC', ultDescription:'7秒間、自身のCHARGE時間を50%短縮し、敵から受けるダメージを50%軽減する。', alignSyncDurationMs:7000, alignSyncChargeMultiplier:0.5, alignSyncDamageMultiplier:0.5 });
   SHOOTING_CHARACTERS[44] = buildShootingCharacter({ ...ERI_BASE_PROFILE, ...NEW_ROSTER_COMMON, id:44, effectKey:'meloria', shotType:'piercing', shotCount:1, fireRate:530, bulletSpeed:720, shotPowerRate:0.28, ultType:'meloria_stun', ultName:'冥府の宣告', ultDescription:'敵全員に5秒間、敵の行動停止（射出・移動・攻撃）を適用。各敵に20%の確率で最大HP50%のダメージ。', ultStunMs:5000, meloriaPercentChance:0.20, meloriaMaxHpDamageRate:0.50 });
 

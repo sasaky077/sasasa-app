@@ -628,3 +628,48 @@ html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-rank-total em{f
 html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-rank-total span{font-size:clamp(14px,4.4vw,18px)!important;color:#2b2118!important;-webkit-text-fill-color:#2b2118!important}
 html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-rank-note{margin-top:6px!important;font:600 11px/1.4 "Noto Serif JP",serif!important;color:#6a5640!important;-webkit-text-fill-color:#6a5640!important}
 html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-rank-note:empty{display:none!important}
+
+/* =========================================================
+   build2119: ネリサ（藍）。淡い水彩の背景に合わせ、深い藍で引き締める
+   ========================================================= */
+#daily-raid-root[data-raid-theme="nerisa"]{
+  --rt-deep:#2a2a78; --rt-mid:#5256b8; --rt-light:#a9b1ff; --rt-ink:#191a44;
+  --rt-glow:rgba(80,86,200,.32); --rt-tint:rgba(80,86,200,.08);
+  --rt-deep-a:rgba(42,42,120,.70); --rt-mid-a:rgba(82,86,184,.54);
+}
+
+/* build2133: ランクはB(15万)／A(20万)／S(25万)の3区画。各ラベルは区画の右端に揃える */
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-rank-labels.v2 > span,
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-rank-labels.v2 > span:nth-child(2){justify-content:flex-end!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-rank-labels.v2 b[data-rank="B"]{text-align:right!important;padding:0!important}
+
+/* build2135: RAID INFO のボスギミック説明 */
+html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks{padding:10px 12px!important;margin-bottom:8px!important}
+html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks[hidden]{display:none!important}
+html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks .drg-row{display:grid;grid-template-columns:5.6em 1fr;gap:8px;align-items:start;padding:6px 0;border-top:1px solid rgba(150,130,90,.25)}
+html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks .drg-row:first-of-type{border-top:0}
+html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks .drg-row b{font:700 12px/1.4 "Noto Serif JP",serif;color:var(--rt-deep,#2a2a78)!important;-webkit-text-fill-color:currentColor!important}
+html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks .drg-row p{margin:0;font:500 11px/1.55 "Noto Sans JP",sans-serif;color:#3a3446!important;-webkit-text-fill-color:currentColor!important}
+
+/* build2138: BOSS GIMMICK は最初たたむ。背景は少し白を強める */
+html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks{
+  position:relative!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.52),rgba(255,255,255,.36))!important;
+  border:1px solid var(--rt-gold,#c9a35f)!important;border-radius:4px!important;
+  box-shadow:0 2px 10px rgba(40,36,80,.10),inset 0 0 0 1px rgba(255,255,255,.35)!important;
+  backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks .drg-head .daily-raid-section-title > span{display:flex!important;flex-direction:column!important;gap:2px!important}
+html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks .drg-head small{display:block!important;font:700 9px/1.2 "Cinzel",serif!important;letter-spacing:.2em!important;color:#7a5f3e!important;-webkit-text-fill-color:currentColor!important}
+html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks .drg-head small + span{display:block!important;font:700 15px/1.3 "Noto Serif JP",serif!important;color:#2a2440!important;-webkit-text-fill-color:currentColor!important}
+html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks .drg-head{display:flex;align-items:center;justify-content:space-between;width:100%;
+  padding:0;margin:0;border:0;background:none;cursor:pointer;text-align:left;color:inherit;font:inherit}
+html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks .drg-head .daily-raid-section-title{margin:0!important}
+html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks .drg-chev{flex:0 0 auto;width:9px;height:9px;margin:0 4px 0 8px;
+  border-right:2px solid var(--rt-deep,#2a2a78);border-bottom:2px solid var(--rt-deep,#2a2a78);transform:rotate(45deg) translateY(-3px);transition:transform .2s ease}
+html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks.is-open .drg-chev{transform:rotate(-135deg) translateY(-1px)}
+html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks .drg-names{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks .drg-names em{font:700 11px/1 "Noto Serif JP",serif;font-style:normal;padding:4px 8px;border-radius:99px;
+  color:var(--rt-deep,#2a2a78)!important;-webkit-text-fill-color:currentColor!important;background:rgba(255,255,255,.7);border:1px solid rgba(150,130,90,.35)}
+html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks .drg-body{display:none;margin-top:6px}
+html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks.is-open .drg-body{display:block}
+html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks.is-open .drg-names{display:none}

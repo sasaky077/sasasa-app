@@ -17403,3 +17403,22 @@ html body #shooting-event-root :is(.shooting-stage-gimmick-notice-kicker,.shooti
   color:#fff!important;text-shadow:var(--zs-msg-shadow)!important;
 }
 html body #shooting-event-root .shooting-stage-gimmick-notice-kicker{font-family:"Cinzel",serif!important;font-size:8.5px!important;letter-spacing:.28em!important}
+
+/* build2119: 第10章 横・背後湧きの出現予告マーク */
+#shooting-event-root .flank-spawn-warn{
+  position:absolute;width:44px;height:44px;margin:-22px 0 0 -22px;
+  display:grid;place-items:center;pointer-events:none;z-index:2;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(255,70,70,.42) 0%,rgba(255,70,70,.12) 58%,rgba(255,70,70,0) 72%);
+  animation:flankWarnPulse .32s ease-in-out infinite alternate, flankWarnIn var(--warn-ms,800ms) linear forwards;
+}
+#shooting-event-root .flank-spawn-warn i{
+  font-style:normal;font-weight:900;font-size:22px;line-height:1;color:#fff;
+  text-shadow:0 0 6px #ff3030,0 0 12px #ff3030;
+}
+#shooting-event-root .flank-spawn-warn.edge-left{border-left:3px solid rgba(255,90,90,.9)}
+#shooting-event-root .flank-spawn-warn.edge-right{border-right:3px solid rgba(255,90,90,.9)}
+#shooting-event-root .flank-spawn-warn.edge-bottom{border-bottom:3px solid rgba(255,90,90,.9)}
+#shooting-event-root .flank-spawn-warn.edge-top{border-top:3px solid rgba(255,90,90,.9)}
+@keyframes flankWarnPulse{from{transform:scale(.86);opacity:.75}to{transform:scale(1.08);opacity:1}}
+@keyframes flankWarnIn{0%{filter:brightness(.8)}100%{filter:brightness(1.6)}}

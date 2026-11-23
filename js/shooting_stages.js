@@ -2439,6 +2439,27 @@
       enemyIds: [SHOOTING_ENEMY_ID.MINI_05, SHOOTING_ENEMY_ID.ZAKO_LIGHT_SHOT],
       battle: { totalEnemies: 4, maxActive: 3, spawnIntervalMs: 1500, enemyHp: 1800, enemyBulletDamage: 120, enemyBulletSpeed: 230, enemyFireRate: 1100, barrageLevel: 3 },
       text: 'ミラージュの残影を4体撃破' }),
+    // build2119: 横・背後から湧く群れ戦。前方直線型（エリ）は苦戦し、
+    //   アウラ（X字分裂が斜め後ろへ飛ぶ）・レオナクロス（罠で群れを引き寄せる）・ノエル（爆風）が活きる。
+    //   horde は shooting_core の群れAI（CH07-04と同じ）を使い、spawnEdges の順で湧く。
+    4: Object.freeze({ name: '這い寄る灰織り', element: 'neutral',
+      enemyIds: [SHOOTING_ENEMY_ID.SWARM_SPIDER_SMALL],
+      horde: { smallEnemyId: SHOOTING_ENEMY_ID.SWARM_SPIDER_SMALL,
+        spawnEdges: ['left', 'right', 'top', 'right', 'left', 'top'], warnMs: 800,
+        totalEnemies: 18, maxActive: 8, batchSize: 3, spawnIntervalMs: 1500,
+        moveSpeedMultiplier: 1.25, surroundRadius: 61,
+        groupMinCount: 3, groupHitIntervalMs: 520, groupDamageHpRate: 0.08 },
+      battle: { totalEnemies: 18, maxActive: 8, spawnIntervalMs: 1500 },
+      text: '左右から這い寄る灰織りを18体撃破' }),
+    5: Object.freeze({ name: '背後の群れ', element: 'neutral',
+      enemyIds: [SHOOTING_ENEMY_ID.SWARM_SPIDER_SMALL],
+      horde: { smallEnemyId: SHOOTING_ENEMY_ID.SWARM_SPIDER_SMALL,
+        spawnEdges: ['left', 'bottom', 'right', 'top', 'bottom', 'left', 'right', 'bottom'], warnMs: 900,
+        totalEnemies: 24, maxActive: 10, batchSize: 3, spawnIntervalMs: 1350,
+        moveSpeedMultiplier: 1.35, surroundRadius: 61,
+        groupMinCount: 3, groupHitIntervalMs: 480, groupDamageHpRate: 0.10 },
+      battle: { totalEnemies: 24, maxActive: 10, spawnIntervalMs: 1350 },
+      text: '背後から迫る群れを24体撃破' }),
   });
   const rpgEncounterStageCache = new Map();
   function rpgEncounterStageId(no) { return 'shooting_rpg_ch10_' + String(no).padStart(2, '0'); }
@@ -2460,6 +2481,7 @@
       normalBattle: Object.freeze({ itemDropRate: 0, ...def.battle }),
       mission: Object.freeze({ type: SHOOTING_MISSION_TYPE.DEFEAT_ALL, text: def.text }),
       rpgEncounter: Object.freeze({ no, name: def.name }),
+      ...(def.horde ? { spiderHorde: Object.freeze({ ...def.horde, spawnEdges: Object.freeze(def.horde.spawnEdges.slice()) }) } : {}),
       playable: true,
     });
     rpgEncounterStageCache.set(no, stage);

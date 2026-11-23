@@ -1564,8 +1564,8 @@
               <div><b>02</b><span>全滅または180秒経過で終了</span></div>
               <div><b>03</b><span>3回目終了時にBESTを共有HPへ反映</span></div>
               <div><b>04</b><span>BREAK：全員の全挑戦の合計ダメージで溜まる。満タンで以降の挑戦は全員ダメージ1.5倍</span></div>
-              <div><b>05</b><span>討伐ランク：C 討伐 / B ブレイク達成 / A＋合計BEST120% / S＋合計BEST150%</span></div>
-              <div><b>06</b><span>討伐後、挑戦したメンバーは報酬を受け取れる。S ボスの欠片／A 聖霊花(R)／B 進化素材ランダム2つ／C コイン。一覧はRAID INFOの「報酬一覧」</span></div>
+              <div><b>05</b><span>討伐ランク（チーム合計ダメージ）：B 15万（討伐）/ A 20万 / S 25万</span></div>
+              <div><b>06</b><span>討伐後、挑戦したメンバーは報酬を受け取れる。S ボスの欠片／A 聖霊花(R)／B 進化素材ランダム2つ。一覧はRAID INFOの「報酬一覧」</span></div>
               <div><b>07</b><span>累計討伐ボーナス：討伐した日数が節目に届くと結晶。30回ごとにくり返し、累計50回・100回は結晶100</span></div>
               <div><b>08</b><span>ボスの欠片を集めると、そのボスを入手できる。</span></div>
               <div><b>09</b><span>公開レイドは全国のプレイヤーが参加できます（フレンド登録は不要）。</span></div>
@@ -2069,15 +2069,19 @@
   }
 
   // build1563: 共有ブレイクゲージ / 討伐ランク
-  const RANK_NOTE={S:'ブレイク＋オーバーキル150%以上',A:'ブレイク＋オーバーキル120%以上',B:'ブレイク達成で討伐',C:'討伐'};
-  // build1662: 周回制（サーバーが lap_mode を返す場合）の表記。2周目＝1周目の半分のHP。
-  const RANK_NOTE_LAP={S:'ブレイク＋2周目討伐',A:'ブレイク＋2周目40%',B:'ブレイク＋1周目討伐',C:'1周目討伐'};
+  // build2133: ランクはチーム合計ダメージだけで決める（ブレイクは条件にしない）。周回をまたいだ合計で判定。
+  //  B＝15万（1周目討伐）／A＝20万／S＝25万。サーバーの clear_rank・報酬判定も同じ基準に合わせること。
+  const RAID_RANK_DAMAGE={B:150000,A:200000,S:250000};
+  const RANK_NOTE={S:'チーム合計25万ダメージ',A:'チーム合計20万ダメージ',B:'チーム合計15万ダメージ（討伐）',C:'討伐（旧基準）'};
+  const RANK_NOTE_LAP=RANK_NOTE;
   function rankNote(status,rank){ return ((status&&status.lap_mode)?RANK_NOTE_LAP:RANK_NOTE)[rank]||''; }
+  function rankOfDamage(total){
+    const t=n(total);
+    return t>=RAID_RANK_DAMAGE.S?'S':t>=RAID_RANK_DAMAGE.A?'A':t>=RAID_RANK_DAMAGE.B?'B':'';
+  }
   function provisionalRank(status){
     if(!status||!status.first_kill) return '';
-    const ratio=n(status.total_best)/Math.max(1,n(status.max_hp));
-    const broken=status.broken===true;
-    return broken&&ratio>=1.5?'S':broken&&ratio>=1.2?'A':broken?'B':'C';
+    return rankOfDamage(status.total_best)||'B';
   }
   function ensureBreakStyle(){
     if(document.getElementById('daily-raid-break-style-v1563')) return;
@@ -2120,22 +2124,17 @@
   }
 
   // build1780: チーム合計ダメージとランク到達ゲージ
-  //  ランク基準（サーバーと同じ）：C=最大HP×100% / B=C＋ブレイク / A=ブレイク＋120% / S=ブレイク＋150%
+  //  ランク基準（build2133）：B=チーム合計15万（討伐）/ A=20万 / S=25万。ブレイクは条件にしない
   //  ゲージは合計ダメージだけで埋まる3区画（〜C / C〜A / A〜S）。
   //  Bはダメージ条件がCと同じなので、2区画目の左端にラベルだけ置き、ブレイク済みなら点灯する。
-  const RANK_STEPS=['C','B','A','S'];
-  const RANK_SEGS=['C','A','S'];
+  const RANK_STEPS=['B','A','S'];
+  const RANK_SEGS=['B','A','S'];
   function getTeamTotalDamage(status){
     const members=Array.isArray(status&&status.members)?status.members:[];
     const sum=members.reduce((a,m)=>a+n(m.best_damage),0);
     return Math.max(sum,n(status&&status.total_best));
   }
-  function teamRankOf(total,maxHp,broken){
-    const r=total/Math.max(1,maxHp);
-    if(r<1) return '';
-    if(!broken) return 'C';
-    return r>=1.5?'S':r>=1.2?'A':'B';
-  }
+  function teamRankOf(total){ return rankOfDamage(total); }
   function ensureTeamRankCard(root){
     let card=root.querySelector('#daily-raid-teamrank');
     if(card) return card;
@@ -2146,7 +2145,7 @@
     card.id='daily-raid-teamrank';
     card.innerHTML=`
       <div class="drt-rank-head"><span class="drt-rank-title">TEAM DAMAGE</span><span class="drt-rank-now" id="daily-raid-teamrank-now"></span></div>
-      <div class="drt-rank-labels"><span><b data-rank="C">C</b></span><span><b data-rank="B">B</b><b data-rank="A">A</b></span><span><b data-rank="S">S</b></span></div>
+      <div class="drt-rank-labels v2"><span><b data-rank="B">B</b></span><span><b data-rank="A">A</b></span><span><b data-rank="S">S</b></span></div>
       <div class="drt-rank-bar">${RANK_SEGS.map(r=>`<i data-rank="${r}"><em></em></i>`).join('')}</div>
       <div class="drt-rank-total" id="daily-raid-teamrank-total"></div>
       <div class="drt-rank-note" id="daily-raid-teamrank-note"></div>`;
@@ -2156,24 +2155,19 @@
   function renderTeamRank(root,status){
     const card=ensureTeamRankCard(root);
     if(!card) return;
-    const maxHp=Math.max(1,n(status&&status.max_hp)||100000);
     const total=getTeamTotalDamage(status);
-    const hasBreak=!!status&&status.break_goal!=null;
-    const broken=!hasBreak||status.broken===true;
-        const rank=teamRankOf(total,maxHp,broken);
-    const cuts={C:maxHp,A:Math.ceil(maxHp*1.2),S:Math.ceil(maxHp*1.5)};
+    const rank=teamRankOf(total);
+    const cuts=RAID_RANK_DAMAGE;
     const clamp=v=>Math.max(0,Math.min(1,v));
     const fills={
-      C:clamp(total/cuts.C),
-      A:clamp((total-cuts.C)/Math.max(1,cuts.A-cuts.C)),
+      B:clamp(total/cuts.B),
+      A:clamp((total-cuts.B)/Math.max(1,cuts.A-cuts.B)),
       S:clamp((total-cuts.A)/Math.max(1,cuts.S-cuts.A))
     };
     const reached=RANK_STEPS.indexOf(rank);
     RANK_SEGS.forEach(r=>{
       const seg=card.querySelector(`.drt-rank-bar i[data-rank="${r}"]`);
-      // ブレイク未達成でA/S区画にダメージが届いている分は「保留」表示
-      const held=(r==='A'||r==='S')&&!broken&&fills[r]>0;
-      if(seg){ seg.querySelector('em').style.transform=`scaleX(${fills[r]})`; seg.classList.toggle('is-held',held); }
+      if(seg){ seg.querySelector('em').style.transform=`scaleX(${fills[r]})`; seg.classList.remove('is-held'); }
     });
     RANK_STEPS.forEach((r,i)=>{
       const lab=card.querySelector(`.drt-rank-labels b[data-rank="${r}"]`);
@@ -2181,20 +2175,16 @@
     });
     const nowEl=card.querySelector('#daily-raid-teamrank-now');
     nowEl.innerHTML=rank?`RANK <b>${rank}</b>`:'RANK <b>—</b>';
-    // 分母は次のランクに必要な合計ダメージ（Bはブレイク条件なのでCの次はA）
-    const target=total<cuts.C?cuts.C:total<cuts.A?cuts.A:cuts.S;
+    const next=total<cuts.B?'B':total<cuts.A?'A':'S';
+    const target=cuts[next];
     card.querySelector('#daily-raid-teamrank-total').innerHTML=`<em>${fmt(total)}</em><span> / ${fmt(target)}</span>`;
     const pending=getPendingRaidDamage(status);
     const notes=[];
-    if(total>=cuts.S) notes.push('最大ダメージ到達');
-    else{
-      const next=total<cuts.C?'C':total<cuts.A?'A':'S';
-      notes.push(`RANK ${next} まで あと ${fmt(target-total)}`);
-    }
-    if(!broken&&total>=cuts.C) notes.push('B以上はブレイクが条件');
+    if(total>=cuts.S) notes.push('RANK S 到達');
+    else notes.push(`RANK ${next} まで あと ${fmt(target-total)}`);
     if(pending>0&&status&&status.status!=='cleared') notes.push(`反映待ち ${fmt(pending)} を含む`);
     card.querySelector('#daily-raid-teamrank-note').textContent=notes.join(' · ');
-    card.title='全員のBESTダメージの合計。C：最大HP分 / B：C＋ブレイク / A：ブレイク＋120% / S：ブレイク＋150%';
+    card.title='全員のBESTダメージの合計。B：15万（討伐）／A：20万／S：25万';
   }
 
   // build1566: HP枠が伸びたとき、下端固定のページ切替インジケータが重ならないよう追従させる。
@@ -2263,9 +2253,35 @@
   // ============================================================
   const RAID_BOSS_DEFS={
     // lobbyBg: ロビー全面の背景（背景＋ボスの絵を1枚で描いたもの）。bg_raid_01.webp と同サイズ・同構図で用意する。
-    sigma:{name:'テスト',line:'―これより、調査を開始する。',lobbyBg:'images/bg_raid_01.webp',lobbyImage:'images/raid_enemy_01.webp',banner:'images/raid_banner_sigma.webp',enemyId:'shooting_raid_test',pieceImage:'images/raid_piece_test.webp'},
-    shien:{name:'シエン',line:'霞の果てで、待つ。',lobbyBg:'images/bg_raid_02.webp?v=1572',lobbyImage:'images/raid_enemy_02_battle.webp',banner:'images/raid_banner_shien.webp',enemyId:'shooting_raid_shien',pieceImage:'images/raid_piece_shien.webp'},
-    camilla:{name:'カミラ',line:'骨になるまで、愛してあげる。',lobbyBg:'images/bg_raid_03.webp',lobbyImage:'images/raid_enemy_03_battle.webp',banner:'images/raid_banner_camilla.webp',enemyId:'shooting_raid_camilla',pieceImage:'images/raid_piece_camilla.webp'},
+    sigma:{name:'テスト',line:'―これより、調査を開始する。',lobbyBg:'images/bg_raid_01.webp',lobbyImage:'images/raid_enemy_01.webp',banner:'images/raid_banner_sigma.webp',enemyId:'shooting_raid_test',pieceImage:'images/raid_piece_test.webp',
+      // build2137: RAID INFO のギミック説明
+      gimmicks:[
+        {name:'弾幕レーザー',desc:'扇状の弾幕に、ときどき直線の緑のレーザーを混ぜて撃ってくる。'},
+        {name:'降機',desc:'PHASE3で飛行船を降り、本体が高速で動き回る。3方向レーザー、突進、上空からの強襲を使い、乗り捨てた飛行船も極太レーザーで追ってくる。'},
+      ]},
+    shien:{name:'シエン',line:'霞の果てで、待つ。',lobbyBg:'images/bg_raid_02.webp?v=1572',lobbyImage:'images/raid_enemy_02_battle.webp',banner:'images/raid_banner_shien.webp',enemyId:'shooting_raid_shien',pieceImage:'images/raid_piece_shien.webp',
+      // build2137: RAID INFO のギミック説明
+      gimmicks:[
+        {name:'斬撃',desc:'予告ありの斬撃攻撃。PHASEが進むほど速くなる。'},
+        {name:'霞化',desc:'分身している間は霞となり、すべての攻撃がすり抜ける。'},
+        {name:'出血',desc:'斬撃を受けると出血し、毎秒最大HPの3%を失う。キャラを交代すると止まる。'},
+      ]},
+    camilla:{name:'カミラ',line:'骨になるまで、愛してあげる。',lobbyBg:'images/bg_raid_03.webp',lobbyImage:'images/raid_enemy_03_battle.webp',banner:'images/raid_banner_camilla.webp',enemyId:'shooting_raid_camilla',pieceImage:'images/raid_piece_camilla.webp',
+      // build2137: RAID INFO のギミック説明
+      gimmicks:[
+        {name:'属性バリア',desc:'弱点属性以外の攻撃を無効化する。'},
+        {name:'蜘蛛の巣レーザー',desc:'予告のあと、巣の形にレーザーが走る。'},
+        {name:'捕縛罠',desc:'足元に罠を仕掛ける。罠の上にいると捕縛され、しばらく動けなくなる。'},
+        {name:'子蜘蛛',desc:'子蜘蛛が張り付いてHPを吸い、ボスを回復する。キャラを交代すると振り払える。'},
+      ]},
+    // build2119: ネリサ（水属性）。ステージ名「水底の暗躍者」（shooting_enemies.js raidStageTitle）。
+    nerisa:{name:'ネリサ',line:'水は、どこにでも入り込めるの。',lobbyBg:'images/bg_raid_04.webp',lobbyImage:'images/raid_enemy_04_battle.webp',banner:'images/raid_banner_nerisa.webp',enemyId:'shooting_raid_nerisa',pieceImage:'images/raid_piece_nerisa.webp',
+      // build2135: RAID INFO に出すギミック説明（ボスごと。未設定のボスは欄を出さない）
+      gimmicks:[
+        {name:'属性バリア',desc:'弱点属性以外の攻撃を無効化する。'},
+        {name:'ヴェール',desc:'すべての攻撃を無に帰す防御。爆風判定のある攻撃を当てると、ヴェールが爆散して剥がれる。'},
+        {name:'液状分裂',desc:'ネリサの固有ギミック。1撃300ダメージ以上の攻撃を食らうと、分裂する。分身体は最大2体まで召喚する。'},
+      ]},
     // boss3:{name:'',line:'',lobbyBg:'images/bg_raid_03.webp',lobbyImage:'images/raid_enemy_03_battle.webp',enemyId:'shooting_raid_boss3',pieceImage:'images/raid_piece_boss3.webp'},
   };
   // build1711: レイドボスの欠片。アイテム名は「〇〇の欠片」、画像は images/raid_piece_<キャラ名>.webp に統一。
@@ -2275,6 +2291,7 @@
     { re:/sigma|test/i,  key:'test',    name:'テスト' },
     { re:/shien/i,       key:'shien',   name:'シエン' },
     { re:/camilla/i,     key:'camilla', name:'カミラ' },
+    { re:/nerisa/i,      key:'nerisa',  name:'ネリサ' },
   ];
   function getRaidPieceItemMeta(itemId){
     const id=String(itemId||'');
@@ -2332,7 +2349,12 @@
   function applyRaidHomeBanner(){
     const src=getRaidHomeBannerImage(null);
     if(!src) return;
-    document.querySelectorAll('img[data-raid-banner]').forEach(img=>{ if(img.getAttribute('src')!==src) img.setAttribute('src',src); });
+    // build2119: ボス別バナーが未配置（404）なら共通バナーに戻す
+    document.querySelectorAll('img[data-raid-banner]').forEach(img=>{
+      if(img.getAttribute('src')===src) return;
+      img.onerror=function(){ img.onerror=null; if(img.getAttribute('src')!=='images/raid_banner_01.webp') img.setAttribute('src','images/raid_banner_01.webp'); };
+      img.setAttribute('src',src);
+    });
   }
   let raidBannerRefreshing=false;
   async function refreshRaidHomeBanner(attempt){
@@ -2378,10 +2400,41 @@
       return null;
     }
   }
+  // build2135: RAID INFO の先頭にボスのギミック説明を出す
+  function renderBossGimmicks(root,def){
+    const page=root.querySelector('.daily-raid-info-page');
+    if(!page) return;
+    let box=page.querySelector('.daily-raid-gimmicks');
+    const list=Array.isArray(def&&def.gimmicks)?def.gimmicks:[];
+    if(!list.length){ if(box) box.hidden=true; return; }
+    if(!box){
+      box=document.createElement('section');
+      box.className='daily-raid-gimmicks raid-surface';
+      page.insertBefore(box,page.firstChild);
+    }
+    const sig=def.key+':'+list.length;
+    box.hidden=false;
+    if(box.dataset.sig===sig) return;
+    box.dataset.sig=sig;
+    // build2138: 最初はたたむ（ギミック名だけ）。見出しをタップで全文を開閉。
+    box.classList.remove('is-open');
+    box.innerHTML=`<button type="button" class="drg-head" aria-expanded="false">`+
+        `<span class="daily-raid-section-title"><span><small>BOSS GIMMICK</small><span>${esc(def.name)}のギミック</span></span></span>`+
+        `<i class="drg-chev" aria-hidden="true"></i></button>`+
+      `<div class="drg-names">${list.map(g=>`<em>${esc(g.name)}</em>`).join('')}</div>`+
+      `<div class="drg-body">${list.map(g=>`<div class="drg-row"><b>${esc(g.name)}</b><p>${esc(g.desc)}</p></div>`).join('')}</div>`;
+    const head=box.querySelector('.drg-head');
+    head.addEventListener('click',()=>{
+      const open=!box.classList.contains('is-open');
+      box.classList.toggle('is-open',open);
+      head.setAttribute('aria-expanded',open?'true':'false');
+    });
+  }
   function renderBossHero(root,status){
     if(status&&status.boss&&status.boss.key) writeCachedBoss(status.boss);
     const def=getBossDef(status);
-    // build1596: ボス別テーマ（sigma=黒 / shien=紫 / camilla=赤）。css/raid_theme.css
+    try{ renderBossGimmicks(root,def); }catch(_){ }
+    // build1596: ボス別テーマ（sigma=黒 / shien=紫 / camilla=赤 / nerisa=藍）。css/raid_theme.css
     root.dataset.raidTheme=RAID_BOSS_DEFS[def.key]?def.key:'sigma';
     root.querySelectorAll('[data-raid-boss-name]').forEach(el=>{ el.textContent=def.name; });
     root.querySelectorAll('[data-raid-boss-line]').forEach(el=>{ el.textContent=def.line||''; });
@@ -2609,7 +2662,7 @@
   function renderRewardTable(card,data,status){
     const def=getBossDef(status);
     const ranks=Array.isArray(data.ranks)?data.ranks:[];
-    const order=['C','B','A','S'];
+    const order=['C','B','A','S']; // Cは旧基準のデータ用（サーバーが返した時だけ表示）
     const byRank={}; ranks.forEach(r=>{ byRank[String(r.rank).toUpperCase()]=r.items||[]; });
     const rows=order.slice().reverse().filter(r=>byRank[r]).map(r=>{
       return `<div class="rt-row"><div class="rt-rank ${r==='S'?'s':''}">${r}<small>${esc(rankNote(currentStatus||{lap_mode:true},r))}</small></div><div class="rt-items">${rewardChipsHtml(byRank[r])}</div></div>`;
@@ -2911,6 +2964,40 @@
     }
   }
 
+  // build2120: 管理者試遊のボス選択。キャンセルで null。
+  function pickAdminTestBoss(status){
+    return new Promise(resolve=>{
+      const todayKey=(status&&status.boss&&status.boss.key)||'sigma';
+      document.getElementById('raid-admin-boss-picker')?.remove();
+      const wrap=document.createElement('div');
+      wrap.id='raid-admin-boss-picker';
+      wrap.style.cssText='position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:rgba(10,10,20,.62);font-family:inherit';
+      const box=document.createElement('div');
+      box.style.cssText='width:min(86vw,320px);background:#fff;border-radius:14px;padding:16px 14px 12px;box-shadow:0 10px 40px rgba(0,0,0,.4);color:#222';
+      box.innerHTML='<div style="font-weight:700;font-size:15px;margin-bottom:4px">管理者試遊：ボスを選択</div>'+
+        '<div style="font-size:11px;color:#666;margin-bottom:10px">記録・報酬・挑戦回数には反映されません</div>';
+      const finish=v=>{ wrap.remove(); resolve(v); };
+      Object.keys(RAID_BOSS_DEFS).forEach(key=>{
+        const def=RAID_BOSS_DEFS[key];
+        const b=document.createElement('button');
+        b.type='button';
+        b.textContent=def.name+(key===todayKey?'（本日のボス）':'');
+        b.style.cssText='display:block;width:100%;margin:0 0 8px;padding:11px 10px;border-radius:10px;border:1px solid #c9a35f;background:'+(key===todayKey?'#f6efe0':'#fafafa')+';font-size:14px;font-weight:700;color:#222';
+        b.onclick=()=>finish(key);
+        box.appendChild(b);
+      });
+      const cancel=document.createElement('button');
+      cancel.type='button';
+      cancel.textContent='キャンセル';
+      cancel.style.cssText='display:block;width:100%;padding:9px;border:0;background:none;color:#777;font-size:13px';
+      cancel.onclick=()=>finish(null);
+      box.appendChild(cancel);
+      wrap.appendChild(box);
+      wrap.addEventListener('click',e=>{ if(e.target===wrap) finish(null); });
+      document.body.appendChild(wrap);
+    });
+  }
+
   async function start(){
     const btn=document.getElementById('daily-raid-start');
     if(btn&&btn.dataset.resetTicket==='1'){ await useRaidResetTicket(); return; } // build1813
@@ -2927,9 +3014,13 @@
       const maxHp=n(status.max_hp)||100000;
 
       if(isAdmin()){
+        // build2120: 管理者試遊はボスを選べる（その日のボス以外も確認できる）。記録は保存しない。
+        const pickedKey=await pickAdminTestBoss(status);
+        if(!pickedKey){ if(btn) btn.disabled=false; return; }
         close();
         window.__shootingReturnContext={type:'raidLobby'};
-        const adminBossDef=getBossDef(status);
+        const todayKey=status&&status.boss&&status.boss.key;
+        const adminBossDef=pickedKey===todayKey?getBossDef(status):Object.assign({key:pickedKey},RAID_BOSS_DEFS[pickedKey]);
         window.openShootingEvent({
           stageId:STAGE_ID,
           enemyId:adminBossDef.enemyId,

@@ -3239,7 +3239,7 @@
     if (!ctx) return '';
     const enemy = String(ctx.enemyId || '').trim().toLowerCase();
     const boss = String(ctx.bossKey || '').trim().toLowerCase();
-    const aliases = { sigma: 'shooting_raid_test', test: 'shooting_raid_test', shien: 'shooting_raid_shien', camilla: 'shooting_raid_camilla' };
+    const aliases = { sigma: 'shooting_raid_test', test: 'shooting_raid_test', shien: 'shooting_raid_shien', camilla: 'shooting_raid_camilla', nerisa: 'shooting_raid_nerisa' };
     return enemy || aliases[boss] || (boss ? 'boss:' + boss : '');
   }
   function getRaidLastSortieStorageKey() {
@@ -3788,7 +3788,7 @@
     // ステージ選択画面と表記を揃え、「ステージ1〜4」で統一する。
     // build1570: DAILY RAIDは日替わりボスの名前を出す（ステージ名は全ボス共通のため）
     const stageTitle = isSpecialEvent
-      ? ((isRaidStage() && BOSS?.name) || selectedStage?.eventTitle || selectedStage?.name || BOSS?.displayName || BOSS?.name || 'STAGE')
+      ? ((isRaidStage() && (BOSS?.raidStageTitle || BOSS?.name)) || selectedStage?.eventTitle || selectedStage?.name || BOSS?.displayName || BOSS?.name || 'STAGE')
       : `ステージ${Number(selectedStage?.stageNo || 1)}`;
     // build1992: 戦闘ヘッダーはコンテンツ名だけ（サブタイトルは見切れるので全ステージ共通で出さない）
     const difficultyLabel = '';
@@ -11157,6 +11157,7 @@
   }
 
   function createGenericBombExplosionEffect(x, y, element, radius, bombSize) {
+    if (state && state.nerisa) nerisaBlastAt(Number(x), Number(y), Number(radius || 70)); // build2121
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
     ensureBombVisualStyles();
@@ -11235,26 +11236,82 @@
     return Array.from({ length: 8 }, (_, i) => i * 45);
   }
 
+  // build2136: CLUSTER(X)／(＋)の分裂演出をリッチに。
+  //  中心で X/＋ の光の紋章がスナップ回転 → 閃光・二重の衝撃波 → 分裂方向へ光線 → 小弾と同じ向き・速さで彗星の尾 → 火花。
+  //  小弾自体はCanvas描画のため、見た目の追加はすべてこの短命なDOM演出（約0.5秒）で行う。
+  function ensureClusterRichStyle() {
+    if (document.getElementById('cluster-rich-style-v1')) return;
+    const st = document.createElement('style');
+    st.id = 'cluster-rich-style-v1';
+    st.textContent = `
+      #shooting-event-root .crb{position:absolute;left:0;top:0;width:0;height:0;pointer-events:none;z-index:42;
+        transform:translate3d(var(--bomb-x,0px),var(--bomb-y,0px),0)}
+      #shooting-event-root .crb > i{position:absolute;left:0;top:0;pointer-events:none;display:block}
+      #shooting-event-root .crb-flash{width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;
+        background:radial-gradient(circle,#fff 0 12%,rgba(var(--bomb-rgb),1) 24%,rgba(var(--bomb-rgb),.55) 46%,rgba(var(--bomb-rgb),0) 72%);
+        animation:crbFlash .46s ease-out forwards}
+      #shooting-event-root .crb-ring{width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;
+        border:2.5px solid rgba(var(--bomb-rgb),.95);box-shadow:0 0 10px rgba(var(--bomb-rgb),.85),inset 0 0 8px rgba(var(--bomb-rgb),.6);
+        animation:crbRing .58s cubic-bezier(.15,.7,.3,1) forwards}
+      #shooting-event-root .crb-ring.r2{border-width:1.5px;animation-duration:.72s;animation-delay:.06s;opacity:0}
+      #shooting-event-root .crb-sigil{width:0;height:0;animation:crbSigil .64s cubic-bezier(.2,1.4,.4,1) forwards}
+      #shooting-event-root .crb-sigil b{position:absolute;left:-30px;top:-2.5px;width:60px;height:5px;border-radius:99px;
+        background:linear-gradient(90deg,rgba(var(--bomb-rgb),0),#fff 30%,#fff 70%,rgba(var(--bomb-rgb),0));
+        box-shadow:0 0 0 1px rgba(var(--bomb-rgb),.9),0 0 8px rgba(var(--bomb-rgb),1),0 0 18px rgba(var(--bomb-rgb),.85)}
+      #shooting-event-root .crb-sigil b + b{transform:rotate(90deg)}
+      #shooting-event-root .crb-sigil s{position:absolute;left:-13px;top:-13px;width:26px;height:26px;border:1.5px solid rgba(255,255,255,.9);
+        transform:rotate(45deg);box-shadow:0 0 0 1px rgba(var(--bomb-rgb),.85),0 0 10px rgba(var(--bomb-rgb),1)}
+      #shooting-event-root .crb-beam{width:140px;height:3px;margin-top:-1.5px;transform-origin:0 50%;border-radius:99px;
+        background:linear-gradient(90deg,#fff,rgba(var(--bomb-rgb),.95) 30%,rgba(var(--bomb-rgb),0));
+        box-shadow:0 0 6px rgba(var(--bomb-rgb),.9);
+        transform:rotate(var(--a)) scaleX(.1);animation:crbBeam .54s ease-out forwards}
+      #shooting-event-root .crb-comet{width:0;height:0;transform:rotate(var(--a));}
+      #shooting-event-root .crb-comet em{position:absolute;left:0;top:-4px;width:46px;height:8px;margin-left:-46px;border-radius:99px;
+        background:linear-gradient(90deg,rgba(var(--bomb-rgb),0),rgba(var(--bomb-rgb),.75) 55%,#fff 92%);
+        box-shadow:0 0 10px rgba(var(--bomb-rgb),.95);animation:crbComet .56s cubic-bezier(.25,.6,.4,1) forwards}
+      #shooting-event-root .crb-spark{width:4px;height:4px;margin:-2px 0 0 -2px;border-radius:50%;background:#fff;
+        box-shadow:0 0 6px 1px rgba(var(--bomb-rgb),1);animation:crbSpark .52s ease-out forwards}
+      @keyframes crbFlash{0%{transform:scale(.3);opacity:1}40%{opacity:.95}100%{transform:scale(1.9);opacity:0}}
+      @keyframes crbRing{0%{transform:scale(.25);opacity:1}100%{transform:scale(2.6);opacity:0}}
+      @keyframes crbSigil{0%{transform:rotate(var(--sig-from)) scale(.35);opacity:0}25%{opacity:1}
+        55%{transform:rotate(var(--sig-to)) scale(1.18);opacity:1}100%{transform:rotate(var(--sig-to)) scale(1);opacity:0}}
+      @keyframes crbBeam{0%{transform:rotate(var(--a)) scaleX(.1);opacity:1}45%{transform:rotate(var(--a)) scaleX(1);opacity:.95}100%{transform:rotate(var(--a)) scaleX(1.05);opacity:0}}
+      @keyframes crbComet{0%{transform:translateX(8px) scaleX(.4);opacity:1}100%{transform:translateX(var(--dist)) scaleX(1);opacity:0}}
+      @keyframes crbSpark{0%{transform:translate(0,0) scale(1.2);opacity:1}100%{transform:translate(var(--sx),var(--sy)) scale(.3);opacity:0}}
+      @media (prefers-reduced-motion:reduce){#shooting-event-root .crb-comet,#shooting-event-root .crb-spark{display:none}}
+    `;
+    document.head.appendChild(st);
+  }
+
   function createBombSplitBurstEffect(x, y, element, splitCount, pattern) {
+    if (state && state.nerisa) nerisaBlastAt(Number(x), Number(y), 55, .8); // build2121: 分裂の破裂
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
     ensureBombVisualStyles();
+    ensureClusterRichStyle();
     const visual = getBombElementVisual(element);
     const angles = getBombSplitAngles(splitCount, pattern);
     const el = document.createElement('div');
-    el.className = 'shooting-bomb-split-burst';
+    el.className = 'crb crb-' + (pattern === 'cross' ? 'cross' : 'x');
     el.style.setProperty('--bomb-x', `${Number(x || 0)}px`);
     el.style.setProperty('--bomb-y', `${Number(y || 0)}px`);
     el.style.setProperty('--bomb-rgb', visual.rgb);
-    el.innerHTML = '<i class="split-ring"></i><i class="split-core"></i>';
-    angles.forEach(angle => {
-      const ray = document.createElement('i');
-      ray.className = 'split-ray';
-      ray.style.setProperty('--split-a', `${angle}deg`);
-      el.appendChild(ray);
+    // 紋章：Xは45°、＋は0°へ、90°手前から回り込んでカチッとはまる
+    const sigTo = pattern === 'cross' ? 0 : 45;
+    const fragDist = Math.round(430 * 0.56); // 小弾の速さ×演出時間（小弾と同じだけ進む）
+    let html = '<i class="crb-flash"></i><i class="crb-ring"></i><i class="crb-ring r2"></i>' +
+      `<i class="crb-sigil" style="--sig-from:${sigTo - 90}deg;--sig-to:${sigTo}deg"><b></b><b></b><s></s></i>`;
+    angles.forEach(a => {
+      html += `<i class="crb-beam" style="--a:${a}deg"></i>`;
+      html += `<i class="crb-comet" style="--a:${a}deg"><em style="--dist:${fragDist}px"></em></i>`;
     });
+    for (let i = 0; i < 8; i++) {
+      const ang = Math.random() * Math.PI * 2, d = 18 + Math.random() * 30;
+      html += `<i class="crb-spark" style="--sx:${(Math.cos(ang) * d).toFixed(1)}px;--sy:${(Math.sin(ang) * d).toFixed(1)}px;animation-delay:${(Math.random() * .08).toFixed(2)}s"></i>`;
+    }
+    el.innerHTML = html;
     arena.appendChild(el);
-    setTimeout(() => el.remove(), 380);
+    setTimeout(() => el.remove(), 800);
   }
 
   function spawnBombSplitProjectiles(source, x, y, now, queue, ignoredTarget = null) {
@@ -12033,6 +12090,7 @@
     if (!selectedStage) return [];
     // build1592: カミラは火の属性バリアを纏う（レイドのステージは全ボス共通なのでキャッシュしない）。
     if (BOSS && BOSS.camillaMechanics && !isTowaDawnStage()) return ['fire']; // build1877: 夜明けのカミラは結界なし
+    if (BOSS && BOSS.nerisaMechanics) return ['aqua']; // build2119: ネリサは水の属性バリア（木属性のみ有効）
     if (weaknessBarrierElementCacheStage === selectedStage) {
       return weaknessBarrierElementCache;
     }
@@ -12217,8 +12275,9 @@
   }
 
   // build1896: RAID boss-only 40% resistance, preserving visual HP and result consistency.
+  const RAID_BOSS_DEFENSE_RATE = 1; // build2133: レイドボス本体の被ダメージ補正を解除（0.6→1）。ランク基準をB15万/A20万/S25万に変更したため。
   function getRaidBossDefenseMultiplier() {
-    return isRaidStage() && state && state.boss && combatElementTarget === state.boss ? 0.6 : 1;
+    return isRaidStage() && state && state.boss && combatElementTarget === state.boss ? RAID_BOSS_DEFENSE_RATE : 1;
   }
 
   function applyElementDamage(amount, attackElement, targetElement, options) {
@@ -13128,8 +13187,11 @@
       targets = [];
       vAngles.forEach((a, i) => {
         a = Number(a) || 0;
+        // build2124 RAID ネリサ：各光線は手前の雫で止まる
+        const block = state.nerisa ? getNerisaLaserBlockDist(startX, startY, a, Number(c.laserWidth || 10) / 2 + 2, now) : Infinity;
         getVLaserTargets(startX, startY, a, hitWidth).forEach(t => {
           if (seen.has(t.target)) return;
+          if (Number.isFinite(block) && ((t.x - startX) * Math.sin(a) - (t.y - startY) * Math.cos(a)) >= block) return;
           seen.add(t.target); targets.push(t);
         });
         const v = ensureVLaser(c, i);
@@ -13138,7 +13200,7 @@
           const toTop = (startY - 12) / cosA;
           const sinA = Math.sin(a);
           const toSide = Math.abs(sinA) > 0.001 ? (sinA > 0 ? (aw - startX) : startX) / Math.abs(sinA) : Infinity;
-          const len = Math.max(18, Math.min(toTop, toSide + 40));
+          const len = Math.max(18, Math.min(toTop, toSide + 40, Number.isFinite(block) ? block : Infinity));
           v.wrap.style.transform = `translate(${startX}px,${startY}px) rotate(${a}rad)`;
           v.laser.style.height = `${len}px`;
           v.laser.classList.add('active');
@@ -13153,7 +13215,15 @@
 
     // v542: Laserは全サイズ共通で貫通。見た目も最初の敵で止めず画面上端まで伸ばす。
     const beamEndY = 12;
-    const beamHeight = Math.max(18, startY - beamEndY);
+    let beamHeight = Math.max(18, startY - beamEndY);
+    // build2124 RAID ネリサ：光線は手前の雫で止まり、その先には当たらない
+    if (!vAngles && state.nerisa) {
+      const block = getNerisaLaserBlockDist(startX, startY, 0, Number(c.laserWidth || 10) / 2 + 2, now);
+      if (Number.isFinite(block)) {
+        targets = targets.filter(t => startY - Number(t.y || 0) < block);
+        beamHeight = Math.max(18, block);
+      }
+    }
 
     if (!vAngles) el = ensureIgnisLaser(c);
     if (el) {
@@ -13269,6 +13339,7 @@
     }
   }
   function createChargeWaveBurst(x, y, p) {
+    if (state && state.nerisa) nerisaBlastAt(Number(x), Number(y), Number(p && p.splashRadius || 70)); // build2121
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
     ensureChargeWaveStyle();
@@ -17090,10 +17161,69 @@
     return selectedStage && selectedStage.spiderHorde || null;
   }
 
+  // build2119: 群れの出現方向を指定できるようにする（第10章エンカウント用）。
+  //   spawnEdges: ['left','right','bottom','top'] の巡回リスト。bottom は自機の背後（画面下端）。
+  //   warnMs    : 出現位置に予告マークを出してから湧くまでの時間。
+  //   spawnEdges が無いステージ（CH07-04・位相回遊など）は従来どおりの出現位置。
+  function pickFlankSpawnPoint(cfg, n, w, h) {
+    const edges = cfg.spawnEdges;
+    const edge = String(edges[n % edges.length] || 'top');
+    const r = fixedStagePatternRandom('flank_spawn', n, 0);
+    const margin = 23;
+    const px = Number(state.player.x || w / 2), py = Number(state.player.y || h * .8);
+    let x, y;
+    if (edge === 'left' || edge === 'right') {
+      x = edge === 'left' ? margin : w - margin;
+      y = h * (0.30 + r * 0.58);
+      // 自機の真横すぐには湧かせない
+      if (Math.abs(x - px) < 120 && Math.abs(y - py) < 120) y = py > h * .55 ? py - 150 : py + 150;
+    } else if (edge === 'bottom') {
+      y = h - 26;
+      x = w * (0.10 + r * 0.80);
+      // 背後でも自機の足元には湧かせない。自機と反対側の半分へ寄せる
+      if (Math.abs(x - px) < 130) x = px < w / 2 ? w * (0.62 + r * 0.28) : w * (0.10 + r * 0.28);
+    } else {
+      x = w * (0.14 + r * 0.72);
+      y = 68 + ((n % 3) * 18);
+    }
+    return { edge, x: clamp(x, margin, w - margin), y: clamp(y, 40, h - 26) };
+  }
+
+  function showFlankSpawnWarning(point, warnMs) {
+    const layer = document.getElementById('shooting-normal-enemy-layer');
+    if (!layer) return null;
+    const el = document.createElement('div');
+    el.className = 'flank-spawn-warn edge-' + point.edge;
+    el.style.left = point.x + 'px';
+    el.style.top = point.y + 'px';
+    el.style.setProperty('--warn-ms', Math.max(100, warnMs) + 'ms');
+    el.setAttribute('aria-hidden', 'true');
+    el.innerHTML = '<i>!</i>';
+    layer.appendChild(el);
+    return el;
+  }
+
+  function flushFlankSpawnQueue(cfg, now) {
+    const queue = state.flankSpawnQueue;
+    if (!queue || !queue.length) return;
+    for (let i = queue.length - 1; i >= 0; i--) {
+      const q = queue[i];
+      if (now < q.at) continue;
+      queue.splice(i, 1);
+      q.el?.remove();
+      if (state.finishing || state.ended) continue;
+      const enemy = spawnSwarmEnemy(cfg.smallEnemyId, q.x, q.y, now, { ch704Horde: true, flankEdge: q.edge });
+      if (!enemy) continue;
+      enemy.el?.classList.add('ch704-horde-spider', 'flank-' + q.edge);
+      enemy.hpEl?.classList.add('ch704-horde-spider-hp');
+    }
+  }
+
   function spawnCh704SpiderHorde(now) {
     const cfg = getCh704SpiderHorde();
     const arena = document.getElementById('shooting-arena');
     if (!cfg || !arena || !state) return;
+    if (Array.isArray(cfg.spawnEdges) && cfg.spawnEdges.length) { spawnFlankHorde(cfg, arena, now); return; }
     const total = Math.max(1, Math.floor(Number(cfg.totalEnemies || 42)));
     const maxActive = Math.max(1, Math.floor(Number(cfg.maxActive || 21)));
     const interval = Math.max(250, Number(cfg.spawnIntervalMs || 900));
@@ -17122,6 +17252,38 @@
       enemy.el?.classList.add('ch704-horde-spider');
       enemy.hpEl?.classList.add('ch704-horde-spider-hp');
     }
+  }
+
+  function spawnFlankHorde(cfg, arena, now) {
+    if (!state.flankSpawnQueue) state.flankSpawnQueue = [];
+    flushFlankSpawnQueue(cfg, now);
+    const queue = state.flankSpawnQueue;
+    const total = Math.max(1, Math.floor(Number(cfg.totalEnemies || 24)));
+    const maxActive = Math.max(1, Math.floor(Number(cfg.maxActive || 10)));
+    const interval = Math.max(250, Number(cfg.spawnIntervalMs || 1100));
+    const warnMs = Math.max(0, Number(cfg.warnMs || 0));
+    const reserved = Number(state.normalSpawned || 0) + queue.length;
+    if (reserved >= total) return;
+    if (now - Number(state.normalLastSpawnAt || -9999) < interval) return;
+    let active = queue.length;
+    for (const e of state.normalEnemies) {
+      if (e && e.hp > 0 && e.ch704Horde) ++active;
+    }
+    if (active >= maxActive) return;
+    state.normalLastSpawnAt = now;
+    const w = arena.clientWidth, h = arena.clientHeight;
+    const batch = Math.min(Math.max(1, Number(cfg.batchSize || 3)), total - reserved, maxActive - active);
+    // 1回の湧きは同じ方向からまとめて来る（どこから来るか読めるように）
+    const n0 = Number(state.flankWaveIndex || 0);
+    state.flankWaveIndex = n0 + 1;
+    for (let i = 0; i < batch; i++) {
+      const p = pickFlankSpawnPoint(cfg, n0, w, h);
+      const spread = (i - (batch - 1) / 2) * 34;
+      if (p.edge === 'bottom' || p.edge === 'top') p.x = clamp(p.x + spread, 23, w - 23);
+      else p.y = clamp(p.y + spread, 40, h - 26);
+      queue.push({ x: p.x, y: p.y, edge: p.edge, at: now + warnMs, el: warnMs > 0 ? showFlankSpawnWarning(p, warnMs) : null });
+    }
+    if (!warnMs) flushFlankSpawnQueue(cfg, now);
   }
 
   // 一番近い味方オブジェクト。自機はアイナの気配遮断中、偽の位置になる。
@@ -17259,6 +17421,7 @@
     if (isEclipseBattle()) return true; // build1681: エクリプスの天秤
     if (getMemoryGuardianRule()) return true; // build1759: 記憶決戦の守護者
     if (isHazeBattle()) return true; // build1866: 陽炎の分身
+    if (isNerisaBattle()) return true; // build2125: ネリサの分裂体
     return !!(cfg && Array.isArray(cfg.enemyIds) && cfg.enemyIds.length);
   }
 
@@ -17945,7 +18108,8 @@
   }
   function getPlayerMoveMultiplier() {
     // build1679: 位相回遊の異常「鈍化」は移動75%
-    const poSlow = getPhaseOdysseyAnomaly() === 'slow' ? 0.75 : 1;
+    const poSlow = (getPhaseOdysseyAnomaly() === 'slow' ? 0.75 : 1) *
+      (isNerisaTideSlowActive() ? NERISA_TIDE_SLOW : 1); // build2119: ネリサの満ち潮（水中）
     if (!isInoriSlowActive()) return poSlow;
     return poSlow * (isInoriSpecialStage() ? 0.70 : Math.max(0.1, Math.min(1, Number(getInoriConfig()?.slowMultiplier || 0.5))));
   }
@@ -20172,6 +20336,7 @@
       if (enemy.camSpider) { updateCamillaSpider(enemy, dt, now); return; }
       if (enemy.memoryGuardian) { updateMemoryGuardian(enemy, dt, now); return; }
       if (enemy.hazeClone) return; // build1866: 陽炎の分身は updateHazeMechanics が動かす
+      if (enemy.nerisaClone) return; // build2125: ネリサの分裂体は updateNerisaClones が動かす
       const def = enemy.def || {};
       // build1643: イノリの鳥居は常にイノリの左右・少し後方に付き従う（移動AI・射撃なし。レーザーは本体側で管理）
       if (def.behavior === 'verdant_seed_v1' || def.behavior === 'deinova_core_v1' || def.behavior === 'deinova_ult_core_v1') { // build1663: 成長の実は動かない（熟し具合は updateVerdantSeeds）／build2058: 放電コアも固定
@@ -24448,6 +24613,8 @@
     if (isShienBattle()) return;
     // build1592: カミラも専用の攻撃のみ（updateCamillaMechanics）。共通WARNING・通常弾は撃たない。
     if (isCamillaBattle()) return;
+    // build2125: ネリサは雫に散っている間は撃たない
+    if (isNerisaBattle() && isNerisaLiquid(now)) return;
     // build2057: ディノヴァはPLASMA（扇状＋狙い撃ち）のみ。突進中は撃たない。
     if (BOSS && BOSS.behavior === 'deinova_v1') { fireDeinovaBoss(now); return; }
     // WARNING攻撃は必ず先に処理する。レイド軽量化で危険攻撃を消さない。
@@ -24933,7 +25100,7 @@
         // build463:
         // 通常時は従来のタッチ完全1:1追従。TICKETイノリの鈍化中だけ
         // 指の大きな移動でも一瞬で呪いを無視できないよう、実速度を制限する。
-        if (isInoriSpecialStage() && isInoriSlowActive()) {
+        if ((isInoriSpecialStage() && isInoriSlowActive()) || isNerisaTideSlowActive()) {
           const dx = pointerX - state.player.x, dy = pointerY - state.player.y;
           const distance = Math.hypot(dx, dy);
           const maxMove = Math.max(0, Number(c?.moveSpeed || 200)) * getPlayerMoveMultiplier() * dt;
@@ -25281,6 +25448,12 @@
         return false;
       }
       const r = getUnitRect(p, arenaRect);
+
+      // build2122 RAID ネリサ「雫のヴェール」：貫通しない自機弾は粒に触れると吸い寄せられて消える（爆発弾はその場で破裂）。
+      if (state.nerisa && absorbNerisaDropProjectile(p, now)) {
+        p.el.remove(); // 見た目は粒へ吸い寄せられる光（nerisa-canvas）が引き継ぐ
+        return false;
+      }
 
       // CH06遮断壁：通常Projectileはここで止まる。Shotgun(pierce)だけはそのまま奥へ進む。
       const chapter6BarrierTarget = findChapter6BarrierCollision(r, arenaRect, p);
@@ -28047,7 +28220,7 @@
   }
   // build1775: 弾がボスをすり抜ける状態（シエンの霞化／記憶決戦の守護者がいる間）
   function isBossPassThrough() {
-    return isShienIntangible() || isMemoryGuardShieldUp();
+    return isShienIntangible() || isMemoryGuardShieldUp() || (isNerisaBattle() && isNerisaLiquid()); // build2125: ネリサ液状化中
   }
 
   function getShienArenaSize() {
@@ -31828,6 +32001,819 @@
     updateCamillaDrain(now, cm, arena);
   }
 
+  // ============================================================
+  // build2119/2121/2122 RAID ネリサ（水属性）「水底の暗躍者」
+  //  ① 液状化（build2125）：一撃300を超えるダメージを受けると（ダメージは通る）、雫に散って1.5秒無敵。
+  //            build2132: 300はレイド防御補正（×0.6）をかける前の値で判定（ハオ最大溜め弾463で分裂）。
+  //            再生時に分裂体（HP2000・本体と同じ弾幕・属性バリアあり）が1体増える。本体＋分裂体は最大3体（build2129）。
+  //            上限後は液状化だけして増えない。分裂体へのダメージはレイドのスコアに入らない。
+  //            → 大技は控え、小さな攻撃の手数で削る（ハオの溜め弾・ULTは分裂のもと）。
+  //  ② 雫のヴェール：ボスの周りに光の粒のような水滴が浮かぶ（最前面のCanvasに描画）。
+  //            自機弾（貫通弾も）は触れると、粒へ吸い寄せられて消える。レーザーは手前の粒で止まる（build2124）。
+  //            爆風（溜め弾の破裂・爆弾・罠・ULTの爆発・分裂・びっくり箱）で粒が吹き飛び、時間とともにボスの周りへ戻る。
+  //            ハオのULT落雷は全粒を散らす。→ 吹き飛ばして、戻るまでの間に削る攻略。
+  //  ③ 満ち潮（PHASE3）：画面下から水位が上下し、水中では移動が遅くなる。
+  //  攻略ヒント：開幕に2つのギミックを説明し、初めて吸われた／液状化した／ヴェールが散った時に答えを出す。
+  //  通常の弾幕は共通の barrage_v1。水属性バリアにより木属性以外はダメージが通らない。
+  // ============================================================
+  // build2125: 液状化＝一撃300超えで雫に散り、再生時に分裂（最大4体）。ダメージ自体はそのまま通る。
+  const NERISA_SPLIT_HIT = 300;          // この値を超える一撃で液状化
+  const NERISA_LIQUID_MS = 1500;         // 雫に散っている時間（無敵・攻撃しない）
+  const NERISA_MAX_BODIES = 3;           // 本体＋分裂体の上限（build2129: 4→3）
+  const NERISA_CLONE_HP = 1000; // build2135: 2000→1000
+  const NERISA_LIQUID_IMAGE = 'images/raid_enemy_04_b_battle.webp';
+  const NERISA_DROP_HIT_R = 7;           // 粒の当たり半径
+  const NERISA_SIP_MS = 380;             // 吸われた弾が粒へ渦を巻いて吸い込まれる時間
+  const NERISA_TIER = Object.freeze({
+    // count: 粒数 / rMin,rMax: ボスからの距離 / spin: 周回速度(rad/s) / regather: 戻る速さ(1/s) / stunMs: 吹き飛んだ後に漂う時間
+    1: Object.freeze({ count: 22, rMin: 50, rMax: 92, spin: 0.55, regather: 1.25, stunMs: 1300, tide: false }),
+    2: Object.freeze({ count: 26, rMin: 50, rMax: 92, spin: 0.70, regather: 1.40, stunMs: 1150, tide: false }),
+    3: Object.freeze({ count: 30, rMin: 48, rMax: 94, spin: 0.85, regather: 1.55, stunMs: 1000, tide: false }), // build2135: 満ち潮は外した（ギミックは属性バリア・ヴェール・液状分裂の3種）
+  });
+  const NERISA_TIDE_CYCLE_MS = 15000;
+  const NERISA_TIDE_SLOW = 0.6;
+  const NERISA_ELEMENT_RGB = Object.freeze({
+    wood: [140, 232, 150], fire: [255, 150, 110], aqua: [140, 190, 255], light: [255, 236, 150], dark: [200, 150, 255], neutral: [235, 235, 255],
+  });
+
+  function isNerisaBattle() {
+    return !!(state && BOSS && BOSS.nerisaMechanics && !isNormalBattle());
+  }
+  function getNerisaTier() {
+    return clamp(Math.round(Number(state?.boss?.phase || 1)), 1, 3);
+  }
+
+  function ensureNerisaStyle() {
+    if (document.getElementById('shooting-nerisa-style-v4')) return;
+    const st = document.createElement('style');
+    st.id = 'shooting-nerisa-style-v4';
+    st.textContent = `
+      #shooting-event-root #nerisa-canvas{display:block!important;position:absolute!important;left:0!important;top:0!important;width:100%!important;height:100%!important;pointer-events:none!important;z-index:14!important;opacity:1!important;visibility:visible!important;background:transparent!important}
+      #nerisa-layer{position:absolute;inset:0;pointer-events:none;z-index:15;overflow:hidden}
+      .nerisa-badge{position:absolute;left:0;top:0;pointer-events:none;white-space:nowrap;z-index:15;
+        translate:-50% 0;padding:2px 8px 2px 6px;border-radius:99px;font:700 10px/1.3 sans-serif;letter-spacing:.06em;color:#fff;
+        background:linear-gradient(90deg,rgba(60,58,170,.82),rgba(98,110,220,.78));border:1px solid rgba(220,228,255,.85);
+        box-shadow:0 0 8px rgba(120,130,255,.6)}
+      .nerisa-badge b{display:inline-block;width:8px;height:10px;margin-right:4px;vertical-align:-1px;
+        background:radial-gradient(circle at 40% 35%,#fff 0 20%,#a9b8ff 45%,#6a70e0 100%);border-radius:50% 50% 50% 50%/60% 60% 40% 40%}
+      .nerisa-badge.pulse{animation:nerisaBadgePulse .5s ease-out}
+      .nerisa-veil-status{position:absolute;left:0;top:0;pointer-events:none;white-space:nowrap;z-index:15;translate:-50% 0;
+        padding:1px 7px;border-radius:99px;font:700 10px/1.35 sans-serif;letter-spacing:.08em;color:#2c2a8a;
+        background:rgba(255,255,255,.82);border:1px solid rgba(120,130,240,.75);box-shadow:0 0 6px rgba(140,150,255,.5)}
+      .nerisa-veil-status.broken{color:#fff;background:linear-gradient(90deg,#e0436a,#f07a4a);border-color:#ffd0c0;
+        box-shadow:0 0 10px rgba(255,110,110,.8);animation:nerisaBadgePulse .6s ease-in-out infinite alternate}
+      @keyframes nerisaBadgePulse{0%{scale:1.45;filter:brightness(1.6)}100%{scale:1;filter:none}}
+      .nerisa-liquid-tag{position:absolute;left:0;top:0;pointer-events:none;white-space:nowrap;z-index:16;text-align:center;
+        font:800 13px/1.15 sans-serif;color:#fff;letter-spacing:.04em;
+        text-shadow:0 0 3px #3c37b8,0 0 8px rgba(90,80,230,.95),0 1px 2px rgba(20,16,70,.9);animation:nerisaTag 1s ease-out forwards}
+      .nerisa-liquid-tag small{display:block;font-size:10px;font-weight:700;opacity:.95}
+      @keyframes nerisaTag{0%{opacity:0;translate:-50% 6px;scale:.8}12%{opacity:1;translate:-50% 0;scale:1.08}70%{opacity:1}100%{opacity:0;translate:-50% -20px;scale:1}}
+      #shooting-event-root #shooting-boss.nerisa-boss{animation:nerisaSway 3.2s ease-in-out infinite}
+      #shooting-event-root #shooting-boss.nerisa-boss.nerisa-liquid{animation:nerisaLiquid .5s ease-out;filter:drop-shadow(0 0 12px rgba(130,140,255,.95)) brightness(1.08)}
+      @keyframes nerisaLiquid{0%{scale:.85;opacity:.4}100%{scale:1;opacity:1}}
+      #shooting-event-root .shooting-mini-enemy.nerisa-clone:not(.defeated){opacity:.62;filter:drop-shadow(0 0 8px rgba(120,140,255,.95)) hue-rotate(-14deg) saturate(.6) brightness(1.18);animation:nerisaCloneWave 1.6s ease-in-out infinite}
+      @keyframes nerisaCloneWave{0%,100%{opacity:.55}50%{opacity:.72}}
+      #shooting-event-root #shooting-boss.nerisa-boss.nerisa-liquid-hit{filter:drop-shadow(0 0 12px rgba(130,140,255,1)) brightness(1.2) saturate(.6);opacity:.6;transition:opacity .08s}
+      @keyframes nerisaSway{0%,100%{filter:drop-shadow(0 0 4px rgba(140,150,255,.55))}50%{filter:drop-shadow(0 0 10px rgba(140,150,255,.85))}}
+      #nerisa-tide{position:absolute;left:0;right:0;bottom:0;height:0;pointer-events:none;z-index:1;
+        background:linear-gradient(180deg,rgba(176,190,255,.55) 0,rgba(110,120,230,.34) 10px,rgba(80,86,200,.30) 100%);
+        border-top:2px solid rgba(225,232,255,.85);box-shadow:0 -4px 14px rgba(150,160,255,.45)}
+      #nerisa-tide.rising{border-top-color:rgba(255,255,255,1)}
+      .nerisa-hint{position:absolute;left:50%;top:45%;translate:-50% 0;width:min(84%,330px);pointer-events:none;z-index:17;text-align:center;
+        padding:9px 12px 10px;border-radius:12px;color:#fff;
+        background:linear-gradient(180deg,rgba(40,38,120,.86),rgba(60,64,160,.80));border:1px solid rgba(210,220,255,.9);
+        box-shadow:0 4px 18px rgba(40,40,140,.45),0 0 14px rgba(140,150,255,.5);animation:nerisaHint var(--hint-ms,3600ms) ease-out forwards}
+      .nerisa-hint strong{display:block;font:800 14px/1.3 sans-serif;letter-spacing:.06em;margin-bottom:3px}
+      .nerisa-hint span{display:block;font:600 11.5px/1.45 sans-serif;opacity:.97}
+      .nerisa-hint em{font-style:normal;color:#ffe48a;font-weight:800}
+      .nerisa-hint.flash{top:53%;padding:6px 12px;background:linear-gradient(180deg,rgba(60,58,170,.82),rgba(90,100,210,.76))}
+      .nerisa-hint.flash strong{font-size:16px;margin:0}
+      @keyframes nerisaHint{0%{opacity:0;translate:-50% 8px}8%{opacity:1;translate:-50% 0}86%{opacity:1}100%{opacity:0;translate:-50% -6px}}
+      .nerisa-caption{position:absolute;left:50%;top:38%;transform:translateX(-50%);pointer-events:none;z-index:16;white-space:nowrap;
+        font:700 15px/1 'Cinzel',serif;letter-spacing:.2em;color:#f1f3ff;
+        text-shadow:0 0 4px #4b45c6,0 0 12px rgba(100,90,230,.95);animation:nerisaCaption 1.6s ease-out forwards}
+      @keyframes nerisaCaption{0%{opacity:0}15%{opacity:1}75%{opacity:1}100%{opacity:0}}
+      #shooting-event-root #shooting-player.nerisa-in-tide img{filter:hue-rotate(-12deg) saturate(.8) brightness(.95)}
+    `;
+    document.head.appendChild(st);
+  }
+
+  // 光の粒スプライト。淡い背景でも沈まないよう、藍の縁取り＋白い芯で通常合成する。
+  let nerisaGlowSprite = null, nerisaHaloSprite = null;
+  function makeNerisaSprite(stops) {
+    const c = document.createElement('canvas');
+    const S = 64; c.width = c.height = S;
+    const g = c.getContext('2d');
+    const grd = g.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+    stops.forEach(([o, col]) => grd.addColorStop(o, col));
+    g.fillStyle = grd; g.fillRect(0, 0, S, S);
+    return c;
+  }
+  function getNerisaGlowSprite() {
+    if (!nerisaGlowSprite) nerisaGlowSprite = makeNerisaSprite([
+      [0, 'rgba(255,255,255,1)'], [.16, 'rgba(255,255,255,1)'], [.24, 'rgba(214,224,255,.96)'],
+      [.38, 'rgba(128,140,246,.78)'], [.58, 'rgba(84,90,214,.32)'], [1, 'rgba(70,70,200,0)']]);
+    return nerisaGlowSprite;
+  }
+  function getNerisaHaloSprite() {
+    if (!nerisaHaloSprite) nerisaHaloSprite = makeNerisaSprite([
+      [0, 'rgba(150,160,255,.55)'], [.45, 'rgba(110,118,240,.22)'], [1, 'rgba(90,90,220,0)']]);
+    return nerisaHaloSprite;
+  }
+
+  function installNerisaLiquidGuard() {
+    const boss = state && state.boss;
+    if (!boss || boss._nerisaGuard) return;
+    let hpValue = Number(boss.hp || 0);
+    Object.defineProperty(boss, 'hp', {
+      configurable: true, enumerable: true,
+      get() { return hpValue; },
+      set(v) {
+        const next = Number(v);
+        if (!Number.isFinite(next)) return;
+        const drop = hpValue - next;
+        const inBattle = drop > 0 && state && state.running && !state.countdown && !state.ended && isNerisaBattle();
+        // 雫に散っている間は無敵
+        if (inBattle && isNerisaLiquid()) return;
+        hpValue = next;
+        // build2132: 分裂の判定はレイド共通の防御補正（×0.6）をかける前の一撃で見る。
+        //  例：ハオ最大溜め弾は防御前463（実ダメージ278）→ 分裂する。
+        const judged = drop / (isRaidStage() ? RAID_BOSS_DEFENSE_RATE : 1);
+        // 一撃300超え：ダメージは通したうえで液状化
+        if (inBattle && judged >= NERISA_SPLIT_HIT && hpValue > 0) startNerisaLiquid(judged); // build2135: 300以上（説明文に合わせる）
+      },
+    });
+    boss._nerisaGuard = true;
+  }
+
+  function isNerisaLiquid(now) {
+    const nr = state && state.nerisa;
+    return !!(nr && nr.liquidUntil && Number(now == null ? performance.now() : now) < nr.liquidUntil);
+  }
+
+  function countNerisaBodies() {
+    let n = 1;
+    for (const e of (state.normalEnemies || [])) if (e && e.nerisaClone && e.hp > 0) n++;
+    return n;
+  }
+
+  function startNerisaLiquid(raw) {
+    const nr = state && state.nerisa;
+    if (!nr || nr.liquidUntil) return;
+    const now = performance.now();
+    nr.liquidUntil = now + NERISA_LIQUID_MS;
+    nr.liquidWillSplit = countNerisaBodies() < NERISA_MAX_BODIES;
+    const bossEl = document.getElementById(BOSS_ID);
+    if (bossEl) {
+      if (!nr.normalImage) nr.normalImage = bossEl.getAttribute('src') || BOSS.image;
+      bossEl.setAttribute('src', NERISA_LIQUID_IMAGE);
+      bossEl.classList.add('nerisa-liquid');
+    }
+    const bx = Number(state.boss?.x || 0), by = Number(state.boss?.y || 0);
+    for (let i = 0; i < 22; i++) {
+      const a = Math.random() * Math.PI * 2, sp = 90 + Math.random() * 200;
+      nr.sprays.push({ x: bx + (Math.random() - .5) * 40, y: by + (Math.random() - .5) * 50, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 60, born: now, life: 600 + Math.random() * 300 });
+    }
+    nr.rings.push({ x: bx, y: by, born: now, life: 600, r0: 24, r1: 110, w: 3 });
+    // ヴェールも一緒に弾ける
+    nerisaBlastAll(.7, { noCrack: true });
+    nr.badge?.classList.remove('pulse'); void nr.badge?.offsetWidth; nr.badge?.classList.add('pulse');
+  }
+
+  function endNerisaLiquid(now, w, h) {
+    const nr = state.nerisa;
+    nr.liquidUntil = 0;
+    const bossEl = document.getElementById(BOSS_ID);
+    if (bossEl) {
+      bossEl.setAttribute('src', nr.normalImage || BOSS.image);
+      bossEl.classList.remove('nerisa-liquid');
+    }
+    const bx = Number(state.boss?.x || w / 2), by = Number(state.boss?.y || h * .18);
+    nr.rings.push({ x: bx, y: by, born: now, life: 420, r0: 90, r1: 16, w: 2.5 });
+    if (nr.liquidWillSplit && countNerisaBodies() < NERISA_MAX_BODIES && state.boss && state.boss.hp > 0) {
+      spawnNerisaClone(now, bx, by, w, h);
+      flashNerisaCaption(`分裂！ ネリサ ${countNerisaBodies()}体`, 1500);
+    }
+    nr.liquidWillSplit = false;
+  }
+
+  // 分裂体：本体の位置から生まれ、空いている持ち場へ移って漂う。弾幕は本体と同じ（updateNerisaClones）。
+  function spawnNerisaClone(now, bx, by, w, h) {
+    const def = getShootingEnemy(window.ShootingEnemies?.SHOOTING_ENEMY_ID?.RAID_NERISA_CLONE || 'shooting_raid_nerisa_clone');
+    if (!def) return null;
+    const used = new Set((state.normalEnemies || []).filter(e => e && e.nerisaClone && e.hp > 0).map(e => e.nerisaSlot));
+    const slot = [0, 1, 2].slice(0, NERISA_MAX_BODIES - 1).find(i => !used.has(i)); // 3体なら左右の2枠
+    if (slot == null) return null;
+    const e = createNormalEnemy(def, now, { noElementIcon: false });
+    if (!e) return null;
+    e.nerisaClone = true; e.nerisaSlot = slot;
+    e.hp = NERISA_CLONE_HP; e.hpMax = NERISA_CLONE_HP;
+    e.x = bx; e.y = by; e.fromX = bx; e.fromY = by; e.bornAt = now;
+    e.nerisaSeed = Math.random() * Math.PI * 2;
+    e.nerisaTick = 0; e.nerisaLastShotAt = now + 600; // 生まれてすぐは撃たない
+    e.el.classList.add('nerisa-clone');
+    renderMiniEnemyHp(e, false);
+    positionUnit(e.el, e.x, e.y);
+    positionMiniEnemyHp(e);
+    state.normalEnemies.push(e);
+    const nr = state.nerisa;
+    for (let i = 0; i < 12; i++) {
+      const a = Math.random() * Math.PI * 2, sp = 60 + Math.random() * 120;
+      nr.sprays.push({ x: bx, y: by, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, born: now, life: 500 + Math.random() * 200 });
+    }
+    return e;
+  }
+
+  // 分裂体の持ち場（左・右・中央やや下）。本体と同じ速さで左右に揺れる。
+  function updateNerisaClones(now, w, h, halted) {
+    const clones = (state.normalEnemies || []).filter(e => e && e.nerisaClone && e.hp > 0 && e.el);
+    if (!clones.length) return;
+    const phase = Number(state.boss?.phase || 1);
+    const t = getBossMotionElapsedSeconds(now);
+    const slotX = [w * .2, w * .8, w * .5], slotY = [h * .2, h * .2, h * .3];
+    for (const e of clones) {
+      const amp = w * (phase === 1 ? .10 : phase === 2 ? .12 : .14);
+      const tx = clamp(slotX[e.nerisaSlot] + Math.sin(t * (.9 + phase * .08) + e.nerisaSeed) * amp, 40, w - 40);
+      const ty = Math.max(58, slotY[e.nerisaSlot] + Math.sin(t * 1.4 + e.nerisaSeed) * 12);
+      const k = clamp((now - e.bornAt) / 700, 0, 1), ease = k * k * (3 - 2 * k);
+      e.x = e.fromX + (tx - e.fromX) * ease;
+      e.y = e.fromY + (ty - e.fromY) * ease;
+      if (k >= 1) { e.fromX = tx; e.fromY = ty; e.x = tx; e.y = ty; e.bornAt = now - 700; }
+      positionUnit(e.el, e.x, e.y);
+      positionMiniEnemyHp(e);
+      if (!halted) fireNerisaCloneBarrage(e, now, phase);
+    }
+  }
+
+  // 本体（fireBarrageBoss）と同じ弾幕を、分裂体の位置から撃つ。各分裂体が自分の間隔・回転を持つ。
+  function fireNerisaCloneBarrage(e, now, phase) {
+    const interval = getStageAdjustedEnemyFireInterval((phase === 1 ? 860 : phase === 2 ? 760 : 650) * getStageBossBarrageIntervalMultiplier());
+    if (now - e.nerisaLastShotAt < interval) return;
+    if ((state.enemyBullets || []).length > 170) return;
+    e.nerisaLastShotAt = now;
+    const aim = getEnemyAimPosition();
+    const base = Math.atan2(aim.y - e.y, aim.x - e.x);
+    const speed = Number(BOSS.bulletSpeed || 248);
+    const dmg = Number(BOSS.bulletDamage || 210);
+    const tick = ++e.nerisaTick;
+    const shot = (a, sp, d, oy) => appendEnemyProjectile(makeProjectile('shooting-enemy-bullet', e.x, e.y + oy,
+      Math.cos(a) * sp, Math.sin(a) * sp, d));
+    if (phase === 1) {
+      [-0.54, -0.36, -0.18, 0, 0.18, 0.36, 0.54].forEach(o => shot(base + o, speed, dmg, 40));
+      if (tick % 2 === 0) {
+        const start = tick * (860 * 0.0022);
+        for (let i = 0; i < 10; i++) shot(start + Math.PI * 2 * i / 10, speed * .74, Math.max(1, dmg - 25), 30);
+      }
+      return;
+    }
+    if (phase === 2) {
+      [-0.68, -0.51, -0.34, -0.17, 0, 0.17, 0.34, 0.51, 0.68].forEach(o => shot(base + o, speed * 1.02, dmg, 40));
+      const start = (tick % 2 === 0 ? 0 : Math.PI / 12) + tick * (760 * 0.0028);
+      for (let i = 0; i < 8; i++) shot(start + Math.PI * 2 * i / 8, speed * .82, Math.max(1, dmg - 18), 28);
+      return;
+    }
+    [-0.80, -0.64, -0.48, -0.32, -0.16, 0, 0.16, 0.32, 0.48, 0.64, 0.80].forEach(o => shot(base + o, speed * 1.08, dmg, 38));
+    const start = tick * (650 * 0.0034) + (tick % 2 ? Math.PI / 18 : 0);
+    for (let i = 0; i < 8; i++) shot(start + Math.PI * 2 * i / 8, speed * .86, Math.max(1, dmg - 15), 26);
+  }
+
+  // ---- 攻略ヒント（同時に1枚だけ。順番に出す）----
+  // build2128: 戦闘中の文字（ヒント・テロップ）は出さない。演出で見せる。必要になれば true に戻す。
+  const NERISA_TEXT_UI = false;
+  function queueNerisaHint(key, title, body, ms = 3600, flashOnly = false) {
+    const nr = state && state.nerisa;
+    if (!nr || !NERISA_TEXT_UI) return;
+    if (key) { if (nr.hintSeen[key]) return; nr.hintSeen[key] = true; }
+    nr.hintQueue.push({ title, body, ms, flashOnly });
+  }
+  function flashNerisaCaption(text, ms = 1300) {
+    const nr = state && state.nerisa;
+    if (!nr || !nr.layer || !NERISA_TEXT_UI) return;
+    const el = document.createElement('div');
+    el.className = 'nerisa-hint flash';
+    el.style.setProperty('--hint-ms', ms + 'ms');
+    el.innerHTML = `<strong>${text}</strong>`;
+    nr.layer.appendChild(el);
+    setTimeout(() => el.remove(), ms + 40);
+  }
+  function pumpNerisaHints(now) {
+    const nr = state.nerisa;
+    if (nr.hintBusyUntil > now || !nr.hintQueue.length) return;
+    const h = nr.hintQueue.shift();
+    const el = document.createElement('div');
+    el.className = 'nerisa-hint';
+    el.style.setProperty('--hint-ms', h.ms + 'ms');
+    el.innerHTML = `<strong>${h.title}</strong>${h.body ? `<span>${h.body}</span>` : ''}`;
+    nr.layer.appendChild(el);
+    nr.hintBusyUntil = now + h.ms + 150;
+    setTimeout(() => el.remove(), h.ms + 40);
+  }
+
+  function ensureNerisaState() {
+    if (!isNerisaBattle()) return null;
+    if (state.nerisa) return state.nerisa;
+    ensureNerisaStyle();
+    const arena = document.getElementById('shooting-arena');
+    arena?.querySelectorAll('#nerisa-layer,#nerisa-tide,#nerisa-canvas').forEach(el => el.remove());
+    const tide = document.createElement('div');
+    tide.id = 'nerisa-tide';
+    const canvas = document.createElement('canvas');
+    canvas.id = 'nerisa-canvas';
+    // build2123: css/style.css の共通指定 canvas{display:none} を必ず上書きする（他の戦闘Canvasと同じ方式）
+    canvas.setAttribute('aria-hidden', 'true');
+    ['display:block', 'position:absolute', 'left:0', 'top:0', 'width:100%', 'height:100%', 'pointer-events:none',
+      'z-index:14', 'opacity:1', 'visibility:visible', 'background:transparent'].forEach(v => {
+      const i = v.indexOf(':'); canvas.style.setProperty(v.slice(0, i), v.slice(i + 1), 'important');
+    });
+    const layer = document.createElement('div');
+    layer.id = 'nerisa-layer';
+    const badge = null, veilEl = null; // build2128: 頭上の文字表示はやめた
+    if (arena) { arena.appendChild(tide); arena.appendChild(canvas); arena.appendChild(layer); }
+    document.getElementById(BOSS_ID)?.classList.add('nerisa-boss');
+    installNerisaLiquidGuard();
+    try { const pre = new Image(); pre.src = NERISA_LIQUID_IMAGE; } catch (_) {}
+    state.nerisa = { layer, tide, canvas, ctx: canvas.getContext('2d'), badge, veilEl, veilText: '', cracks: 0, lastCrackAt: 0, collapseUntil: 0, cw: 0, ch: 0, dpr: 1,
+      drops: [], motes: [], rings: [], sprays: [], tier: 0, spin: 0, lastAt: 0, startedAt: 0,
+      sipTimes: [], lastBreakAt: 0, hintQueue: [], hintSeen: {}, hintBusyUntil: 0,
+      tideLevel: 0, tideStartAt: 0, tideCaptionCycle: -1, inTide: false, lastLiquidFxAt: 0 };
+    return state.nerisa;
+  }
+
+  // 粒の数をPHASEに合わせる。既存の粒（吹き飛んでいる途中も含む）は残し、足りない分だけボスの位置から湧かせる。
+  function syncNerisaDropCount(nr, cfg) {
+    const bx = Number(state.boss?.x || 0), by = Number(state.boss?.y || 0);
+    if (nr.drops.length > cfg.count) nr.drops.length = cfg.count;
+    for (let i = nr.drops.length; i < cfg.count; i++) {
+      nr.drops.push({ x: bx, y: by, vx: 0, vy: 0, flung: false, flungUntil: 0, home: 0, band: 0,
+        bob: Math.random() * Math.PI * 2, tw: Math.random() * Math.PI * 2, size: .8 + Math.random() * .45, flare: 0, trail: [] });
+    }
+    // 定位置：角度は均等＋少しずらす、距離は帯の中でばらす（すき間が少しできる）
+    const n = nr.drops.length;
+    nr.drops.forEach((d, i) => {
+      d.home = (i / n) * Math.PI * 2 + (fixedStagePatternRandom('nerisa_drop_a', i, 0) - .5) * (Math.PI * 2 / n) * .7;
+      d.band = cfg.rMin + (cfg.rMax - cfg.rMin) * fixedStagePatternRandom('nerisa_drop_r', i, 0);
+    });
+  }
+
+  function updateNerisaDrops(now, nr, cfg, w, h, halted) {
+    if (nr.tier !== getNerisaTier()) {
+      nr.tier = getNerisaTier();
+      syncNerisaDropCount(nr, cfg);
+    }
+    const dt = clamp((now - (nr.lastAt || now)) / 1000, 0, 0.05);
+    nr.lastAt = now;
+    if (!halted) nr.spin += cfg.spin * dt;
+    const bx = Number(state.boss?.x || w / 2), by = Number(state.boss?.y || h * .18);
+    const t = now / 1000;
+    const pull = 1 - Math.exp(-cfg.regather * dt);
+    const drag = Math.exp(-2.4 * dt);
+    const shake = Number(nr.cracks || 0) * 1.6; // ヒビが入るほど雫が震える
+    for (const d of nr.drops) {
+      const a = d.home + nr.spin;
+      const r = d.band + Math.sin(t * 1.7 + d.bob) * 5;
+      const hx = bx + Math.cos(a) * r + (shake ? Math.sin(t * 37 + d.bob * 7) * shake : 0);
+      const hy = by + Math.sin(a) * r * .82 + (shake ? Math.cos(t * 41 + d.bob * 5) * shake : 0);
+      if (d.gone) { d.x = hx; d.y = hy; continue; }
+      if (now < d.flungUntil) {
+        // 吹き飛ばされ中：慣性で漂い、壁で跳ね返る
+        d.x += d.vx * dt; d.y += d.vy * dt;
+        d.vx *= drag; d.vy *= drag;
+        if (d.x < 6 || d.x > w - 6) { d.vx *= -.6; d.x = clamp(d.x, 6, w - 6); }
+        if (d.y < 6 || d.y > h - 6) { d.vy *= -.6; d.y = clamp(d.y, 6, h - 6); }
+      } else {
+        // じわじわボスの周りへ集まる
+        d.flung = false;
+        d.vx *= drag; d.vy *= drag;
+        d.x += d.vx * dt + (hx - d.x) * pull;
+        d.y += d.vy * dt + (hy - d.y) * pull;
+      }
+      // 光の尾（動いている時だけ）
+      const last = d.trail[d.trail.length - 1];
+      if (!last || Math.hypot(last.x - d.x, last.y - d.y) > 3) {
+        d.trail.push({ x: d.x, y: d.y });
+        if (d.trail.length > 7) d.trail.shift();
+      } else if (d.trail.length > 1) d.trail.shift();
+      d.flare = Math.max(0, d.flare - dt * 3.2);
+    }
+  }
+
+  // 爆風で粒を吹き飛ばす。radius 内の粒を外向きに弾く（中心から遠いほど弱い）。
+  // build2128: ヴェールは3段階。爆風が雫に当たるたびに雫が1/3ずつ弾けて消える（0.35秒に1回まで）。
+  //  3回目で全部弾けて「崩壊」：6秒間ヴェールなし（ボスの周りの光の輪が残り時間に合わせて欠けていく）。
+  //  最後の爆風から4秒あくと、消えた雫がボスから湧き直す。崩壊明けも同じく湧き直す。文字は出さない。
+  const NERISA_CRACKS_TO_BREAK = 3;
+  const NERISA_CRACK_KEEP_MS = 4000;
+  const NERISA_CRACK_GAP_MS = 350;
+  const NERISA_COLLAPSE_MS = 6000;
+  const NERISA_REGROW_MS = 600;
+
+  function isNerisaVeilCollapsed(now) {
+    const nr = state && state.nerisa;
+    return !!(nr && nr.collapseUntil && Number(now == null ? performance.now() : now) < nr.collapseUntil);
+  }
+
+  function nerisaBlastAt(x, y, radius, power = 1, opts = {}) {
+    const nr = state && state.nerisa;
+    if (!nr || !nr.drops.length || !isNerisaBattle()) return;
+    const now = performance.now();
+    const cfg = NERISA_TIER[nr.tier] || NERISA_TIER[1];
+    const reach = Math.max(40, Number(radius || 60)); // 爆風の半径ぶんだけ散らす（全体攻撃は nerisaBlastAll）
+    let moved = 0;
+    for (const d of nr.drops) {
+      if (d.gone) continue;
+      let dx = d.x - x, dy = d.y - y;
+      const dist = Math.hypot(dx, dy);
+      if (dist > reach) continue;
+      if (dist < 1) { const a = Math.random() * Math.PI * 2; dx = Math.cos(a); dy = Math.sin(a); }
+      const len = Math.hypot(dx, dy) || 1;
+      const k = (1 - dist / reach) * .6 + .4;
+      // 爆風で押される（小さな穴）。本命は段階的に雫が減ること
+      const sp = (380 + Math.random() * 260) * k * power * (opts.noCrack ? 1 : .55);
+      const jitter = (Math.random() - .5) * .5;
+      const ca = Math.cos(jitter), sa = Math.sin(jitter);
+      const ux = dx / len, uy = dy / len;
+      d.vx = (ux * ca - uy * sa) * sp;
+      d.vy = (ux * sa + uy * ca) * sp;
+      d.flungUntil = now + cfg.stunMs * (opts.noCrack ? 1 : .45) * (.8 + Math.random() * .4);
+      if (!d.flung) moved++;
+      d.flung = true;
+      d.flare = 1;
+    }
+    if (moved) nr.rings.push({ x, y, born: now, life: 420, r0: 10, r1: Math.min(160, reach * 1.1), w: 2.5 });
+    if (opts.collapse) { collapseNerisaVeil(now); return; }
+    // 雫に当たった爆風、またはヴェールの内側（ボスの近く）で起きた爆風でヒビが入る
+    const nearVeil = state.boss && Math.hypot(Number(state.boss.x) - x, Number(state.boss.y) - y) <= reach + cfg.rMax;
+    if ((moved || nearVeil) && !opts.noCrack && !isNerisaVeilCollapsed(now)) addNerisaVeilCrack(now, x, y);
+  }
+
+  // 雫を弾けさせて消す（光の粒が飛び散る）
+  function popNerisaDrop(nr, d, now, big) {
+    d.gone = true; d.flung = false; d.vx = d.vy = 0; d.trail.length = 0;
+    const n = big ? 7 : 5;
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2, sp = (big ? 140 : 90) + Math.random() * 120;
+      nr.sprays.push({ x: d.x, y: d.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 40, born: now, life: 380 + Math.random() * 220, small: true });
+    }
+    nr.rings.push({ x: d.x, y: d.y, born: now, life: 300, r0: 3, r1: big ? 22 : 16, w: 1.6 });
+  }
+
+  function addNerisaVeilCrack(now, bx, by) {
+    const nr = state.nerisa;
+    if (now - Number(nr.lastCrackAt || 0) < NERISA_CRACK_GAP_MS) return;
+    nr.lastCrackAt = now;
+    nr.cracks = Number(nr.cracks || 0) + 1;
+    if (nr.cracks >= NERISA_CRACKS_TO_BREAK) { collapseNerisaVeil(now); return; }
+    // 残すべき数まで、爆風に近い雫から弾けさせる
+    const keep = Math.ceil(nr.drops.length * (1 - nr.cracks / NERISA_CRACKS_TO_BREAK));
+    const alive = nr.drops.filter(d => !d.gone);
+    alive.sort((p, q) => Math.hypot(p.x - bx, p.y - by) - Math.hypot(q.x - bx, q.y - by));
+    for (let i = 0; i < alive.length - keep; i++) popNerisaDrop(nr, alive[i], now, false);
+    // 残った雫が一瞬強く光る（効いている手応え）
+    for (const d of nr.drops) if (!d.gone) d.flare = Math.max(d.flare, .8);
+  }
+
+  function collapseNerisaVeil(now) {
+    const nr = state.nerisa;
+    nr.cracks = 0;
+    nr.lastCrackAt = 0;
+    nr.collapseUntil = now + NERISA_COLLAPSE_MS;
+    nr.collapseStartAt = now;
+    for (const d of nr.drops) if (!d.gone) popNerisaDrop(nr, d, now, true);
+    const bx = Number(state.boss?.x || 0), by = Number(state.boss?.y || 0);
+    nr.rings.push({ x: bx, y: by, born: now, life: 700, r0: 30, r1: 230, w: 5 });
+    nr.rings.push({ x: bx, y: by, born: now + 110, life: 700, r0: 20, r1: 170, w: 3 });
+    nr.flashUntil = now + 260;
+  }
+
+  // 消えた雫をボスから湧き直させる
+  function regrowNerisaDrops(now) {
+    const nr = state.nerisa;
+    const bx = Number(state.boss?.x || 0), by = Number(state.boss?.y || 0);
+    let n = 0;
+    for (const d of nr.drops) {
+      if (!d.gone) continue;
+      d.gone = false; d.flung = false; d.flungUntil = 0;
+      d.x = bx + (Math.random() - .5) * 20; d.y = by + (Math.random() - .5) * 20;
+      d.vx = d.vy = 0; d.trail.length = 0;
+      d.regrowAt = now + n * 18; d.flare = 1;
+      n++;
+    }
+    if (n) nr.rings.push({ x: bx, y: by, born: now, life: 520, r0: 90, r1: 14, w: 2 });
+  }
+
+  // 段階の戻り（4秒あいたら湧き直す）・崩壊明け
+  function updateNerisaVeilStage(now) {
+    const nr = state.nerisa;
+    if (nr.collapseUntil) {
+      if (now < nr.collapseUntil) return;
+      nr.collapseUntil = 0;
+      regrowNerisaDrops(now);
+      return;
+    }
+    if (nr.cracks && now - Number(nr.lastCrackAt || 0) > NERISA_CRACK_KEEP_MS) {
+      nr.cracks = 0;
+      regrowNerisaDrops(now);
+    }
+  }
+
+  // 全体攻撃（ハオの落雷など）：ボスを中心に全部吹き飛ばす。collapse 指定でヴェール崩壊。
+  function nerisaBlastAll(power = 1, opts = {}) {
+    if (!state || !state.nerisa || !state.boss) return;
+    nerisaBlastAt(Number(state.boss.x), Number(state.boss.y), 9999, power, opts);
+  }
+
+  // build2124: レーザーも雫で止まる。光線上でいちばん手前の雫までの距離を返す（無ければ Infinity）。
+  //  angle は真上からの傾き(rad)。halfW は光線の見た目の半幅。止めた雫は光り、小さな波紋を出す。
+  function getNerisaLaserBlockDist(sx, sy, angle, halfW, now) {
+    const nr = state && state.nerisa;
+    if (!nr || !nr.drops.length || !isNerisaBattle()) return Infinity;
+    const dx = Math.sin(angle), dy = -Math.cos(angle);
+    const lim = Math.max(2, Number(halfW || 5)) + NERISA_DROP_HIT_R;
+    let best = Infinity, hitDrop = null;
+    for (const d of nr.drops) {
+      if (d.flung || d.gone || (d.regrowAt && Number(now || 0) - d.regrowAt < NERISA_REGROW_MS * .5)) continue;
+      const rx = d.x - sx, ry = d.y - sy;
+      const along = rx * dx + ry * dy;
+      if (along <= 0 || along >= best) continue;
+      if (Math.abs(rx * dy - ry * dx) > lim) continue;
+      best = along; hitDrop = d;
+    }
+    if (hitDrop) {
+      hitDrop.flare = Math.min(1.2, hitDrop.flare + .25);
+      const t = Number(now || performance.now());
+      if (t - Number(hitDrop.laserFxAt || 0) > 140) {
+        hitDrop.laserFxAt = t;
+        nr.rings.push({ x: hitDrop.x, y: hitDrop.y, born: t, life: 240, r0: 3, r1: 14, w: 1.6 });
+      }
+      nr.sipTimes.push(t);
+      while (nr.sipTimes.length && t - nr.sipTimes[0] > 1500) nr.sipTimes.shift();
+      if (nr.sipTimes.length >= 8 && !nr.hintSeen.sip) {
+        queueNerisaHint('sip', '攻撃が雫に吸い込まれている…',
+          '<em>爆風を4秒以内に3回</em>当ててヴェールを崩壊させ、<br>崩壊中に<em>連射の手数</em>で削ろう（本体に一撃300超は分裂）', 4400);
+      }
+    }
+    return best;
+  }
+
+  // 自機弾の当たり判定から呼ぶ。吸い込んだら true（弾の代わりに光が粒へ吸い寄せられる演出を出す）。
+  function absorbNerisaDropProjectile(p, now) {
+    if (!isNerisaBattle() || !p || p.kind === 'remna_trap') return false; // build2124: 貫通弾も吸う
+    const nr = state.nerisa;
+    if (!nr || !nr.drops.length) return false;
+    const px = Number(p.x || 0), py = Number(p.y || 0);
+    const pr = Math.max(3, Math.min(30, Number(p._hw || 4)));
+    const rr = NERISA_DROP_HIT_R + pr;
+    for (const d of nr.drops) {
+      if (d.flung || d.gone || (d.regrowAt && now - d.regrowAt < NERISA_REGROW_MS * .5)) continue; // 吹き飛んでいる間・消えている間・湧き直し途中は吸わない
+      const dx = px - d.x, dy = py - d.y;
+      if (dx * dx + dy * dy > rr * rr) continue;
+      // 爆発する弾は、粒に触れた位置で破裂する（＝周りの粒を吹き飛ばす）
+      if (p.kind === 'charge_wave') { createChargeWaveBurst(px, py, p); return true; }
+      if (p.kind === 'generic_bomb') { createGenericBombExplosionEffect(px, py, p.attackElement, p.splashRadius, p.bombSize); return true; }
+      if (p.kind === 'generic_splash') { nerisaBlastAt(px, py, Number(p.splashRadius || 60)); return true; }
+      d.flare = Math.min(1.4, d.flare + .55);
+      if (nr.motes.length < 40) {
+        const el = normalizeCombatElement(p.attackElement || getCurrentCharacter()?.element) || 'neutral';
+        // 吸われる弾は粒の周りを渦を巻いて吸い込まれる
+        const side = Math.random() < .5 ? -1 : 1;
+        nr.motes.push({ x0: px, y0: py, d, born: now, life: NERISA_SIP_MS, rgb: NERISA_ELEMENT_RGB[el] || NERISA_ELEMENT_RGB.neutral,
+          spinDir: side, size: clamp(pr / 4, .8, 2.2) });
+      }
+      // 初めてしばらく吸われ続けたら、答えを出す
+      nr.sipTimes.push(now);
+      while (nr.sipTimes.length && now - nr.sipTimes[0] > 1500) nr.sipTimes.shift();
+      if (nr.sipTimes.length >= 8 && !nr.hintSeen.sip) {
+        queueNerisaHint('sip', '攻撃が雫に吸い込まれている…',
+          '<em>爆風を4秒以内に3回</em>当ててヴェールを崩壊させ、<br>崩壊中に<em>連射の手数</em>で削ろう（本体に一撃300超は分裂）', 4400);
+      }
+      return true;
+    }
+    return false;
+  }
+
+  // ---- 描画（最前面Canvas）----
+  function drawNerisa(now, nr, w, h) {
+    const cv = nr.canvas, g = nr.ctx;
+    if (!cv || !g) return;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    if (nr.cw !== w || nr.ch !== h || nr.dpr !== dpr) {
+      nr.cw = w; nr.ch = h; nr.dpr = dpr;
+      cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    }
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, w, h);
+    g.globalCompositeOperation = 'source-over';
+    const spr = getNerisaGlowSprite(), halo = getNerisaHaloSprite();
+    const t = now / 1000;
+    const glow = (x, y, r, a) => { if (a <= 0.01) return; g.globalAlpha = Math.min(1, a); g.drawImage(spr, x - r, y - r, r * 2, r * 2); };
+    const haze = (x, y, r, a) => { if (a <= 0.01) return; g.globalAlpha = Math.min(1, a); g.drawImage(halo, x - r, y - r, r * 2, r * 2); };
+
+    // 粒：外側の淡い光＋芯。またたく。吹き飛び中は光の尾を引く
+    // 崩壊の瞬間、画面がうっすら白く光る
+    if (nr.flashUntil && now < nr.flashUntil) {
+      g.globalAlpha = .28 * (nr.flashUntil - now) / 260;
+      g.fillStyle = 'rgba(225,232,255,1)'; g.fillRect(0, 0, w, h);
+    }
+    // 崩壊中：ボスの周りの光の輪が、残り時間に合わせて欠けていく
+    if (isNerisaVeilCollapsed(now) && state.boss) {
+      const left = clamp((nr.collapseUntil - now) / NERISA_COLLAPSE_MS, 0, 1);
+      const bx = Number(state.boss.x), by = Number(state.boss.y), R = 74;
+      g.globalAlpha = .28; g.strokeStyle = 'rgba(130,140,240,1)'; g.lineWidth = 2;
+      g.beginPath(); g.arc(bx, by, R, 0, Math.PI * 2); g.stroke();
+      const blink = left < .25 ? (.55 + Math.sin(now / 70) * .45) : 1; // 残りわずかで点滅
+      // 藍の太線＋白い芯（淡い背景でも見える）
+      g.lineCap = 'round';
+      g.globalAlpha = .85 * blink; g.strokeStyle = 'rgba(92,100,230,1)'; g.lineWidth = 5;
+      g.shadowColor = 'rgba(110,120,250,1)'; g.shadowBlur = 8;
+      g.beginPath(); g.arc(bx, by, R, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * left); g.stroke();
+      g.shadowBlur = 0;
+      g.globalAlpha = .95 * blink; g.strokeStyle = 'rgba(255,255,255,1)'; g.lineWidth = 1.6;
+      g.beginPath(); g.arc(bx, by, R, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * left); g.stroke();
+      const ea = -Math.PI / 2 + Math.PI * 2 * left; // 輪の先端の光
+      glow(bx + Math.cos(ea) * R, by + Math.sin(ea) * R, 12, .95 * blink);
+    }
+    for (const d of nr.drops) {
+      if (d.gone) continue;
+      const grow = d.regrowAt ? clamp((now - d.regrowAt) / NERISA_REGROW_MS, 0, 1) : 1;
+      if (grow <= 0) continue;
+      const tw = (.72 + Math.sin(t * 3.1 + d.tw) * .2 + Math.sin(t * 7.3 + d.tw * 2) * .08) * (grow < 1 ? (.4 + grow * .6) : 1);
+      if (d.trail.length > 1) {
+        for (let i = 0; i < d.trail.length - 1; i++) {
+          const q = d.trail[i], k = (i + 1) / d.trail.length;
+          glow(q.x, q.y, 7 * k * d.size, .35 * k * tw);
+        }
+      }
+      const R = (10 + d.flare * 9) * d.size * (grow < 1 ? grow : 1);
+      const dim = 1;
+      haze(d.x, d.y, R * 2.2, (.5 * tw + d.flare * .4) * dim);
+      glow(d.x, d.y, R, (.95 * tw + d.flare * .3) * dim);
+      // ときどき十字のきらめき
+      const sp = Math.max(0, Math.sin(t * 1.9 + d.tw * 3));
+      if (sp > .93 || d.flare > .5) {
+        const L = (6 + d.flare * 8) * d.size, a = Math.max((sp - .93) * 10, d.flare * .7);
+        g.globalAlpha = Math.min(.9, a);
+        g.strokeStyle = 'rgba(255,255,255,1)'; g.lineWidth = 1.2;
+        g.shadowColor = 'rgba(80,90,220,.95)'; g.shadowBlur = 4;
+        g.beginPath(); g.moveTo(d.x - L, d.y); g.lineTo(d.x + L, d.y); g.moveTo(d.x, d.y - L); g.lineTo(d.x, d.y + L); g.stroke();
+        g.shadowBlur = 0;
+      }
+    }
+
+    // 吸われる弾：属性色の光が粒の周りを渦巻いて吸い込まれ、縮みながら水の藍に溶ける
+    for (let i = nr.motes.length - 1; i >= 0; i--) {
+      const m = nr.motes[i];
+      const k = Math.max(0, (now - m.born) / m.life);
+      if (k >= 1) {
+        nr.rings.push({ x: m.d.x, y: m.d.y, born: now, life: 260, r0: 2, r1: 15, w: 1.5 });
+        nr.motes.splice(i, 1);
+        continue;
+      }
+      const e = k * k * (3 - 2 * k);           // ゆっくり→速く吸い込まれる
+      // 粒を中心に渦を巻きながら、半径を縮めて吸い込まれる（触れた位置から約1周弱）
+      const tx = m.d.x, ty = m.d.y;
+      const a0 = Math.atan2(m.y0 - ty, m.x0 - tx);
+      const r0 = Math.max(16, Math.hypot(m.x0 - tx, m.y0 - ty)) * 1.35;
+      const at = q => {
+        const a = a0 + m.spinDir * q * Math.PI * 1.5;
+        const r = r0 * (1 - q) * (1 + Math.sin(Math.PI * q) * .25);
+        return [tx + Math.cos(a) * r, ty + Math.sin(a) * r * .9];
+      };
+      const [x, y] = at(e);
+      // 色は弾の属性色 → 水の藍へ。縁を濃くして淡い背景でも見えるように
+      const col = m.rgb.map((c, j) => Math.round(c * .92 + ([96, 104, 232][j] - c * .92) * e));
+      const rgb = `${col[0]},${col[1]},${col[2]}`;
+      const rad = Math.max(1, 5.2 * m.size * (1 - e * .65));
+      // 来た方向へ伸びる光の尾（弧に沿って4節）
+      g.lineCap = 'round';
+      let [lx, ly] = [x, y];
+      for (let j = 1; j <= 4; j++) {
+        const [qx, qy] = at(Math.max(0, e - j * .09));
+        g.globalAlpha = .75 * (1 - j / 5) * (1 - e * .5);
+        g.strokeStyle = `rgba(${rgb},1)`; g.lineWidth = rad * 1.5 * (1 - j / 6);
+        g.beginPath(); g.moveTo(lx, ly); g.lineTo(qx, qy); g.stroke();
+        lx = qx; ly = qy;
+      }
+      g.globalAlpha = 1 - e * .4;
+      g.fillStyle = `rgba(${rgb},1)`;
+      g.shadowColor = `rgba(${rgb},1)`; g.shadowBlur = 9;
+      g.beginPath(); g.arc(x, y, Math.max(0, rad), 0, Math.PI * 2); g.fill();
+      g.shadowBlur = 0;
+      g.fillStyle = '#fff';
+      g.beginPath(); g.arc(x, y, Math.max(0, rad * .5), 0, Math.PI * 2); g.fill();
+    }
+
+    // 波紋
+    for (let i = nr.rings.length - 1; i >= 0; i--) {
+      const r = nr.rings[i], k = (now - r.born) / r.life;
+      if (k >= 1) { nr.rings.splice(i, 1); continue; }
+      if (k < 0) continue; // build2127: 記録時刻(performance.now)が描画時刻より先のことがある
+      g.globalAlpha = .85 * (1 - k);
+      g.strokeStyle = 'rgba(104,114,236,1)'; g.lineWidth = r.w * (1 - k * .5);
+      g.beginPath(); g.arc(r.x, r.y, Math.max(0, r.r0 + (r.r1 - r.r0) * (1 - (1 - k) * (1 - k))), 0, Math.PI * 2); g.stroke();
+    }
+
+    // 液状化のしぶき
+    const dt = clamp((now - (nr.lastDrawAt || now)) / 1000, 0, .05);
+    nr.lastDrawAt = now;
+    for (let i = nr.sprays.length - 1; i >= 0; i--) {
+      const s = nr.sprays[i], k = Math.max(0, (now - s.born) / s.life);
+      if (k >= 1) { nr.sprays.splice(i, 1); continue; }
+      s.vy += 420 * dt; s.x += s.vx * dt; s.y += s.vy * dt;
+      glow(s.x, s.y, (s.small ? 6 : 9) * (1 - k * .5), .85 * (1 - k));
+    }
+    g.globalAlpha = 1;
+    g.globalCompositeOperation = 'source-over';
+
+    // 頭上の「液状化」表示
+    if (nr.badge && state.boss) {
+      nr.badge.style.left = Number(state.boss.x).toFixed(1) + 'px';
+      nr.badge.style.top = Math.max(4, Number(state.boss.y) - 96).toFixed(1) + 'px';
+    }
+    if (nr.veilEl && state.boss) {
+      nr.veilEl.style.left = Number(state.boss.x).toFixed(1) + 'px';
+      nr.veilEl.style.top = Math.max(22, Number(state.boss.y) - 78).toFixed(1) + 'px';
+    }
+  }
+
+  // 満ち潮：引き潮(1.5s)→上昇(4.5s)→満潮(4s)→下降(3.5s)→引き潮(1.5s)
+  function getNerisaTideRatio(ms) {
+    const t = ((ms % NERISA_TIDE_CYCLE_MS) + NERISA_TIDE_CYCLE_MS) % NERISA_TIDE_CYCLE_MS;
+    const ease = x => x * x * (3 - 2 * x);
+    if (t < 1500) return 0;
+    if (t < 6000) return ease((t - 1500) / 4500);
+    if (t < 10000) return 1;
+    if (t < 13500) return 1 - ease((t - 10000) / 3500);
+    return 0;
+  }
+
+  function updateNerisaTide(now, nr, cfg, w, h, halted) {
+    if (!cfg.tide) {
+      if (nr.tideLevel) { nr.tideLevel = 0; nr.tide.style.height = '0px'; }
+      setNerisaInTide(nr, false);
+      return;
+    }
+    if (!nr.tideStartAt) {
+      nr.tideStartAt = now;
+      queueNerisaHint('tide', '満ち潮', '水位が上下する。<em>水中では動きが遅くなる</em>ので、潮が満ちる前に上へ', 3600);
+    }
+    const elapsed = now - nr.tideStartAt;
+    const cycle = Math.floor(elapsed / NERISA_TIDE_CYCLE_MS);
+    if (NERISA_TEXT_UI && cycle !== nr.tideCaptionCycle && cycle > 0 && (elapsed % NERISA_TIDE_CYCLE_MS) >= 900 && !halted) {
+      nr.tideCaptionCycle = cycle;
+      const cap = document.createElement('div');
+      cap.className = 'nerisa-caption';
+      cap.textContent = '満ち潮';
+      nr.layer.appendChild(cap);
+      setTimeout(() => cap.remove(), 1650);
+    }
+    const level = h * .40 * getNerisaTideRatio(elapsed);
+    nr.tideLevel = level;
+    nr.tide.style.height = level.toFixed(1) + 'px';
+    const local = elapsed % NERISA_TIDE_CYCLE_MS;
+    nr.tide.classList.toggle('rising', local >= 1500 && local < 6000);
+    setNerisaInTide(nr, level > 4 && Number(state.player?.y || 0) > h - level);
+  }
+
+  function setNerisaInTide(nr, on) {
+    if (nr.inTide === on) return;
+    nr.inTide = on;
+    document.getElementById(PLAYER_ID)?.classList.toggle('nerisa-in-tide', on);
+  }
+
+  function isNerisaTideSlowActive() {
+    return !!(state && state.nerisa && state.nerisa.inTide && isNerisaBattle());
+  }
+
+  function updateNerisaMechanics(now) {
+    if (!isNerisaBattle()) return;
+    const nr = ensureNerisaState();
+    if (!nr) return;
+    const { w, h } = getShienArenaSize();
+    const halted = state.ended || state.finishing || state.koTransition || state.phaseTransition ||
+      !(state.boss && state.boss.hp > 0);
+    const cfg = NERISA_TIER[getNerisaTier()] || NERISA_TIER[1];
+    // 開幕：2つのギミックと攻略の答えを先に見せる
+    if (!nr.startedAt && !halted) {
+      nr.startedAt = now;
+      queueNerisaHint('intro1', '雫のヴェール',
+        '弾もレーザーも雫に<em>吸い込まれる</em>。<br><em>爆風を4秒以内に3回</em>当てると<em>ヴェール崩壊（6秒）</em>', 4400);
+      queueNerisaHint('intro2', '液状化 ― 分裂',
+        '<em>一撃300を超える攻撃</em>を受けると雫に散り、<br>再生時に<em>分裂</em>する（最大4体）。<em>小さな攻撃の手数</em>で削れ', 4400);
+    }
+    if (nr.startedAt && now - nr.startedAt > 900) pumpNerisaHints(now);
+    if (nr.liquidUntil && now >= nr.liquidUntil) endNerisaLiquid(now, w, h);
+    updateNerisaVeilStage(now);
+    updateNerisaClones(now, w, h, halted);
+    updateNerisaDrops(now, nr, cfg, w, h, halted);
+    updateNerisaTide(now, nr, cfg, w, h, halted);
+    // build2127: 演出の描画エラーで gameLoop を止めない（最初の1回だけ記録）
+    try { drawNerisa(now, nr, w, h); }
+    catch (err) {
+      try { nr.ctx && nr.ctx.setTransform(1, 0, 0, 1, 0, 0); nr.ctx.globalAlpha = 1; nr.ctx.globalCompositeOperation = 'source-over'; nr.ctx.shadowBlur = 0; } catch (_) {}
+      if (!nr.drawErrorLogged) { nr.drawErrorLogged = true; console.warn('[nerisa] draw skipped', err); }
+    }
+  }
+
   function gameLoop(ts) {
     if (!state || !state.running || state.ended || state.finishing || state.countdown) return;
     syncEnemyMotionFreezeClocks(ts);
@@ -32041,6 +33027,8 @@
     syncShionCurseTags(ts);
     // build1592 RAID カミラ: 浮遊弾 / 巣レーザー / 捕縛罠 / 吸血子蜘蛛
     updateCamillaMechanics(ts);
+    // build2121 RAID ネリサ: 雫のヴェール / 満ち潮（液状化はHPガード）
+    updateNerisaMechanics(ts);
     // build1630: リズム弾幕（譜面・仮ドラム・判定）
     updateRhythmStage(ts);
 
@@ -32577,7 +33565,22 @@
     if (!stage) return [];
 
     const gimmicks = [];
-    if (stage.spiderHorde) gimmicks.push({ id:'ch704Horde', label:'小蜘蛛の大群・接触連撃' });
+    // build2137: レイドは全ボス共通ステージなので、その日のボスの説明一覧（BOSS.raidGimmicks）からギミックを出す。
+    if (stage.raid && BOSS && Array.isArray(BOSS.raidGimmicks) && BOSS.raidGimmicks.length) {
+      for (const g of BOSS.raidGimmicks) {
+        if (g.name === '属性バリア') {
+          const els = BOSS.nerisaMechanics ? ['aqua'] : (BOSS.camillaMechanics ? ['fire'] : [normalizeCombatElement(BOSS.element)].filter(Boolean));
+          gimmicks.push({ id:'elementBarrier', label:STAGE_GIMMICK_LABEL.elementBarrier, elements:els, desc:g.desc });
+        } else {
+          gimmicks.push({ id:'raidGimmick', label:g.name, desc:g.desc });
+        }
+      }
+      return gimmicks;
+    }
+    if (stage.spiderHorde && Array.isArray(stage.spiderHorde.spawnEdges) && stage.spiderHorde.spawnEdges.length) {
+      const edges = stage.spiderHorde.spawnEdges;
+      gimmicks.push({ id:'flankHorde', label: edges.includes('bottom') ? '横・背後から群れが出現' : '左右から群れが出現' });
+    } else if (stage.spiderHorde) gimmicks.push({ id:'ch704Horde', label:'小蜘蛛の大群・接触連撃' });
     if (stage.rhythm) gimmicks.push({ id:'rhythm', label:'リズム弾幕' });
     if (stage.verdant) {
       gimmicks.push({ id:'verdantCharge', label:'突進' });
@@ -32663,6 +33666,9 @@
         detail = `<small>${item.seconds || Math.max(1, Math.floor(Number(selectedStage?.timeLimitSeconds || 0)))}秒</small>`;
       } else if (item.id === 'blockingWall') {
         detail = '<small>射撃・移動を遮る壁に注意</small>';
+      } else if (item.id === 'raidGimmick' && item.desc) {
+        // build2137: レイドボスのギミックは説明文を出す
+        detail = `<small>${item.desc}</small>`;
       }
       return `<div class="shooting-stage-gimmick-notice-row"><strong>${item.label}</strong>${detail}</div>`;
     }).join('');
@@ -43006,6 +44012,7 @@
   // build1615: 爆風演出を広範囲・多層に。閃光→衝撃波2重→煙→紙吹雪（星・菱形カード・鈴）＋画面揺れ。
   // DOMは約30個・900msで破棄（軽量化のため画像は使わずCSSのみ）。
   function spawnSmileExplosionFx(x, y, radius) {
+    if (state && state.nerisa) nerisaBlastAt(Number(x), Number(y), Number(radius || 90)); // build2121
     const arena = document.getElementById('shooting-arena');
     if (!arena) return;
     const fx = document.createElement('div');
@@ -43688,6 +44695,7 @@
   }
 
   function spawnHaoTriggerBurst(trigger, level) {
+    if (state && state.nerisa) nerisaBlastAll(.8 + Number(level || 1) * .12, { collapse: true }); // build2126: 落雷は一撃でヴェール崩壊
     const arena = document.getElementById('shooting-arena');
     if (!arena || !trigger) return;
     const el = document.createElement('i');
@@ -45754,7 +46762,7 @@
 
   function getShootingSpecialStageInfoName(stage = selectedStage) {
     if (!stage) return 'STAGE';
-    if (stage === selectedStage && isRaidStage() && BOSS && BOSS.name) return String(BOSS.name);
+    if (stage === selectedStage && isRaidStage() && BOSS && BOSS.name) return String(BOSS.raidStageTitle || BOSS.name); // build2120: ボス別ステージ名
     return String(stage.stageInfoName || stage.eventTitle || stage.name || getShootingStageInfoBossName(stage) || 'STAGE').trim();
   }
 
