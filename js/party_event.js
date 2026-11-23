@@ -238,7 +238,8 @@
     const got = state.progress.bingo.length;
     return REWARDS.map(rw => {
       const done = got >= rw.lines;
-      return '<li class="pe-rw' + (done ? ' is-got' : '') + (rw.outfit ? ' is-outfit' : '') + '">' +
+      return '<li class="pe-rw' + (done ? ' is-got' : '') + (rw.outfit ? ' is-outfit' : '') + '"' +
+        (rw.outfit ? ' data-pe-outfit-preview role="button" tabindex="0" aria-label="アヤネ（正装）を見る"' : '') + '>' +
         '<span class="pe-rw-line">' + (rw.lines >= MAX_LINES ? 'MAX<br>BINGO' : rw.lines + '<small>LINE</small>') + '</span>' +
         '<img class="pe-rw-img" src="' + esc(rw.img) + '" alt="" onerror="this.style.visibility=\'hidden\'">' +
         '<b class="pe-rw-name">' + esc(rw.name) + '</b>' +
@@ -318,6 +319,7 @@
     root.addEventListener('click', e => {
       if(e.target.closest('.pe-close')){ close(); return; }
       if(e.target.closest('.pe-go')){ start(); return; }
+      if(e.target.closest('[data-pe-outfit-preview]')){ openOutfitPreview(); return; }
       const cell = e.target.closest('[data-pe-cell]');
       if(cell){
         const pn = PANELS.find(p => p.id === Number(cell.dataset.peCell));
@@ -326,6 +328,24 @@
     });
     document.body.appendChild(root);
     return root;
+  }
+
+  // build2159: 衣装報酬をタップすると立ち絵（chara_11_b.webp）を大きく表示
+  function openOutfitPreview(){
+    document.getElementById('party-event-outfit-preview')?.remove();
+    const ov = document.createElement('div');
+    ov.id = 'party-event-outfit-preview';
+    ov.setAttribute('role', 'dialog');
+    ov.setAttribute('aria-modal', 'true');
+    ov.setAttribute('aria-label', 'アヤネ（正装）');
+    ov.innerHTML =
+      '<figure class="pop-frame">' +
+        '<img src="images/chara_11_b.webp" alt="アヤネ（正装）">' +
+        '<figcaption><small>LIMITED OUTFIT</small><b>アヤネ（正装）</b></figcaption>' +
+      '</figure>' +
+      '<p class="pop-hint">タップで閉じる</p>';
+    ov.addEventListener('click', () => ov.remove());
+    document.body.appendChild(ov);
   }
 
   async function open(){
