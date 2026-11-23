@@ -107,6 +107,7 @@
     RAID_TEST: 'shooting_raid_test',
     BULLET_HELL_TEST: 'shooting_event_bullet_hell_test',
     INORI_SPECIAL: 'shooting_special_inori',
+    PARTY_EVENT: 'shooting_event_party', // build2150: 期間限定イベント「パラレル・ソワレ」（60秒ボス討伐＋夜会の加点/減点）
     DEINOVA_SPECIAL: 'shooting_special_deinova', // build2057: 特別巡行「最恐 -デイノヴァ-」（挑戦無制限・S確定/A50%でデイノヴァ）
     TOWA_DAWN: 'shooting_towa_dawn',                    // build1877: 隠しステージ「夜明け」（残響の塔20Fクリア後 1/30）          // build1819: 特別巡行「境界者 -イノリ-」（欠片9つでイノリ解放）
     SCORE_ATTACK_NORMAL: 'shooting_score_attack_normal',
@@ -1939,6 +1940,63 @@
       mission: Object.freeze({
         type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
         text: '最恐、デイノヴァを撃破',
+      }),
+      playable: true,
+    }),
+
+    // ============================================================
+    // build2150: 期間限定イベント「パラレル・ソワレ 〜並行世界への招待状〜」
+    //  60秒以内に謎の主催者を討伐。夜会の客（料理＝加点／人間＝減点）が上・左右・背後から行き交う。
+    //  祝杯のグラスを取るとボーナスタイム（減点なし・加点2倍）。
+    //  スコア＝討伐ボーナス＋残り時間ボーナス＋生存ボーナス＋夜会スコア（BOSS討伐が前提、時間切れはE）。
+    //  OPパネル（ビンゴ）の効果は party_event.js が出撃時に渡す（window.PartyEvent.getBattleOptions）。
+    //  設定値は party にまとめる（shooting_core.js updatePartyMechanics が読む）。
+    // ============================================================
+    [SHOOTING_STAGE_ID.PARTY_EVENT]: Object.freeze({
+      id: SHOOTING_STAGE_ID.PARTY_EVENT,
+      chapter: 0,
+      stageNo: 6,
+      eventId: 'party_event',
+      eventTitle: 'パラレル・ソワレ',
+      stageInfoName: 'パラレル・ソワレ 〜並行世界への招待状〜',
+      difficultyLabel: 'LIMITED EVENT',
+      type: 'boss',
+      background: 'images/event_party_bg.webp',
+      introImage: 'images/event_party_start.webp',
+      enemyIds: Object.freeze([SHOOTING_ENEMY_ID.PARTY_HOST]),
+      bossElement: 'dark',
+      enemyElement: 'dark',
+      bossGauges: 3,
+      bossGaugeHps: Object.freeze([4500, 5000, 5500]),
+      party: Object.freeze({
+        // 出現（ms）。上から・左右から・背後（下）から。背後は予告マーク付き
+        spawnFirstMs: 1200,
+        spawnEveryMs: 1250,
+        maxActive: 9,
+        rearShare: 0.22,          // 背後から湧く割合
+        sideShare: 0.33,          // 左右から湧く割合（残りは上から）
+        humanShare: 0.5,          // 人間（減点）の割合。残りは料理
+        towerEveryMs: 15000,      // シャンパンタワー（大きな加点）
+        walkSpeed: [42, 64],      // 行き交う速さ px/s
+        guestLifeMs: 7000,        // build2154: この時間で立ち去る（ふっと消える）
+        towerLifeMs: 9000,
+        // 祝杯のグラス
+        glassAtMs: [14000, 34000, 50000],
+        glassLifeMs: 7000,
+        bonusMs: 5000,
+        bonusPlusMul: 2,
+        bonusHumanValue: 300,     // ボーナス中は人間も加点
+        // スコア
+        clearBonus: 8000,
+        timeBonusMax: 8000,
+        survivalBonusMax: 8000,
+        rankS: 32000,
+        rankA: 26000,
+      }),
+      timeLimitSeconds: 60,
+      mission: Object.freeze({
+        type: SHOOTING_MISSION_TYPE.BOSS_CLEAR,
+        text: '60秒以内に謎の主催者を討伐',
       }),
       playable: true,
     }),

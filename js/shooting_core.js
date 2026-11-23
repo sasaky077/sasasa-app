@@ -4021,6 +4021,11 @@
       // build2057: 特別巡行ディノヴァのドロップ。ランク判定・抽選・付与はすべてサーバー（同じrun tokenで確定済みのスコアを使う）。
       let deinovaDrop = null;
       if (win && isDeinovaStage()) deinovaDrop = await claimDeinovaSpecialDrop(sb, runToken);
+      // build2150: イベント「パラレル・ソワレ」のパネル・ビンゴ・衣装（判定はサーバー。同じrun tokenのスコアを使う）
+      let partyEventResult = null;
+      if (isPartyEventStage() && window.PartyEvent && typeof window.PartyEvent.submitRun === 'function') {
+        partyEventResult = await window.PartyEvent.submitRun(sb, runToken, state.partyRunStats || getPartyRunStats(!!win));
+      }
 
       return {
         highScore: cloudScore,
@@ -4028,7 +4033,8 @@
         firstClearAmount: Math.max(0, Number(row?.first_clear_amount || 0)),
         gem: Number.isFinite(gem) ? Math.max(0, gem) : null,
         shinjuRewardExp,
-        deinovaDrop
+        deinovaDrop,
+        partyEventResult
       };
     } catch (err) {
       console.warn('[shooting] secure result save skipped:', err?.message || err);
@@ -7858,7 +7864,7 @@
   function addLegacyCombatScore(points) {
     // STORYではダメージ量/Hit数/ULT倍率から直接SCOREを増やさない。
     // Special / Daily / Raid等の既存スコア仕様はここでは維持する。
-    if (!state || isStoryShootingStage()) return;
+    if (!state || isStoryShootingStage() || isPartyEventStage()) return; // build2150: 夜会はクリア・時間・生存・夜会スコアだけ
     state.score += Math.max(0, Math.round(Number(points || 0)));
   }
 
@@ -12334,11 +12340,11 @@
       // build1643: 位相回遊の強化「破魔の刻印」「○属性バリア破り」：バリア越しに一部（または等倍）が通る
       const pierce = incoming ? 0 : getPhaseOdysseyBarrierPierce(targetElement);
       if (pierce <= 0) return 0;
-      return applyHitComboDamage(base * pierce * getRaidBreakDamageMultiplier() * getRaidBossDefenseMultiplier() * getFriendSupportAtkMultiplier());
+      return applyHitComboDamage(base * pierce * getRaidBreakDamageMultiplier() * getRaidBossDefenseMultiplier() * getFriendSupportAtkMultiplier() * getPartyDamageMultiplier());
     }
 
     // build2068: お助けフレンドのATK（パッシブ・アクティブ）は与ダメージ全体に掛ける
-    const elemental = base * rate * (incoming ? 1 : getRaidBreakDamageMultiplier() * getRaidBossDefenseMultiplier() * getFriendSupportAtkMultiplier());
+    const elemental = base * rate * (incoming ? 1 : getRaidBreakDamageMultiplier() * getRaidBossDefenseMultiplier() * getFriendSupportAtkMultiplier() * getPartyDamageMultiplier()); // build2150: 夜会OP
     if (incoming) return elemental;
     return applyMemoryArmor(applyHitComboDamage(elemental));
   }
@@ -17451,6 +17457,7 @@
     if (getMemoryGuardianRule()) return true; // build1759: 記憶決戦の守護者
     if (isHazeBattle()) return true; // build1866: 陽炎の分身
     if (isNerisaBattle()) return true; // build2125: ネリサの分裂体
+    if (isPartyEventStage()) return true; // build2150: 夜会の客
     return !!(cfg && Array.isArray(cfg.enemyIds) && cfg.enemyIds.length);
   }
 
@@ -20366,6 +20373,7 @@
       if (enemy.memoryGuardian) { updateMemoryGuardian(enemy, dt, now); return; }
       if (enemy.hazeClone) return; // build1866: 陽炎の分身は updateHazeMechanics が動かす
       if (enemy.nerisaClone) return; // build2125: ネリサの分裂体は updateNerisaClones が動かす
+      if (enemy.partyTarget) return; // build2150: 夜会の客は updatePartyGuests が動かす（攻撃しない）
       const def = enemy.def || {};
       // build1643: イノリの鳥居は常にイノリの左右・少し後方に付き従う（移動AI・射撃なし。レーザーは本体側で管理）
       if (def.behavior === 'verdant_seed_v1' || def.behavior === 'deinova_core_v1' || def.behavior === 'deinova_ult_core_v1') { // build1663: 成長の実は動かない（熟し具合は updateVerdantSeeds）／build2058: 放電コアも固定
@@ -20824,6 +20832,7 @@
 
       if (enemy.el) sustainHitFeedback(enemy.el, big ? 210 : 145);
     }
+    if (enemy.partyTarget && appliedDamage > 0 && enemy.hp > 0) onPartyGuestHit(enemy); // build2150
     if (enemy.hp > 0) return appliedDamage;
 
     // build2003: 記憶オーバーシアの監視者は倒した瞬間から5秒間、再召喚を禁止。
@@ -20850,7 +20859,8 @@
       state.swarmGuardDefeated = Math.max(0, Number(state.swarmGuardDefeated || 0)) + 1;
     }
     state.normalDefeated++;
-    state.score += Number(enemy.def?.scoreValue || 650);
+    if (enemy.partyTarget) onPartyGuestDefeated(enemy, Number(now || performance.now())); // build2150: 夜会の加点・減点（スコアは終了時に合算）
+    else state.score += Number(enemy.def?.scoreValue || 650);
     spawnPhaseOdysseyBurst(enemy); // build1679: 位相回遊の異常「連鎖」
     handleChapter101TutorialEnemyDefeat();
     if (shouldDropMissionItem(state.normalDefeated)) spawnMissionItem(enemy.x, enemy.y);
@@ -32843,6 +32853,371 @@
     }
   }
 
+  // ============================================================
+  // build2150: 期間限定イベント「パラレル・ソワレ」（並行世界の夜会）
+  //  ・夜会の客（料理＝倒すと加点／人間＝倒すと減点）が上・左右・背後（下）から行き交う。反撃・接触ダメージなし。
+  //  ・人間に弾が当たると青白く震える（警告）。減点は倒しきった時だけ。
+  //  ・祝杯のグラスを取るとボーナスタイム：減点なし（人間も加点）・料理の加点2倍。
+  //  ・OPパネル（ビンゴ）の効果は window.PartyEvent.getBattleOptions() を出撃時に1回だけ読む。
+  //  ・時刻はすべて「戦闘開始からの経過ms」（PAUSEで state.startedAt がずれても破綻しない）。
+  // ============================================================
+  function isPartyEventStage() {
+    return !!(selectedStage && selectedStage.eventId === 'party_event' && selectedStage.party);
+  }
+  function getPartyConfig() { return (selectedStage && selectedStage.party) || {}; }
+  function readPartyOptions() {
+    const base = { foodMul: 1, startBonusMs: 0, bossDamageMul: 1, extraGlass: 0, humanPenaltyMul: 1,
+      humanHpMul: 1, bonusExtraMs: 0, extraTower: false, bonusPlusMul: 0 };
+    try {
+      const o = window.PartyEvent && typeof window.PartyEvent.getBattleOptions === 'function'
+        ? window.PartyEvent.getBattleOptions() : null;
+      if (o && typeof o === 'object') Object.keys(base).forEach(k => { if (o[k] != null) base[k] = o[k]; });
+    } catch (_) {}
+    return base;
+  }
+  function ensurePartyState() {
+    if (!state || !isPartyEventStage()) return null;
+    if (!state.partyEv) {
+      state.partyEv = {
+        opts: readPartyOptions(),
+        nextSpawnAt: 0, spawnCount: 0, nextTowerAt: 0,
+        glassIdx: 0, glass: null, bonusUntil: 0, bonusTotalMs: 0,
+        points: 0, foodKills: 0, humanKills: 0, towerKills: 0, glassTaken: 0,
+        startBonusGiven: false,
+      };
+    }
+    return state.partyEv;
+  }
+  function getPartyElapsedMs(now) {
+    return Math.max(0, Number(now || performance.now()) - Number(state && state.startedAt || now || 0));
+  }
+  function isPartyBonusActive(now) {
+    const pe = state && state.partyEv;
+    return !!(pe && getPartyElapsedMs(now) < Number(pe.bonusUntil || 0));
+  }
+  // OP「主催者への与ダメージ」。夜会の客には掛けない（applyElementDamage から、攻撃先がボスの時だけ）
+  function getPartyDamageMultiplier() {
+    if (!isPartyEventStage() || !state || !state.partyEv) return 1;
+    if (!(combatElementTarget && combatElementTarget === state.boss)) return 1;
+    return Math.max(1, Number(state.partyEv.opts.bossDamageMul || 1));
+  }
+  function ensurePartyStyle() {
+    if (document.getElementById('party-event-style-v2150')) return;
+    const st = document.createElement('style');
+    st.id = 'party-event-style-v2150';
+    st.textContent = `
+      #shooting-event-root .shooting-mini-enemy.party-food:not(.defeated){filter:drop-shadow(0 0 6px rgba(255,214,120,.95)) drop-shadow(0 0 2px rgba(255,248,220,.9))}
+      #shooting-event-root .shooting-mini-enemy.party-human:not(.defeated){filter:drop-shadow(0 0 7px rgba(120,150,255,.95)) drop-shadow(0 0 2px rgba(200,215,255,.9))}
+      #shooting-event-root.party-bonus .shooting-mini-enemy.party-human:not(.defeated){filter:drop-shadow(0 0 8px rgba(255,214,120,1)) brightness(1.08)}
+      #shooting-event-root .shooting-mini-enemy.party-human.party-warn{animation:partyWarn .32s ease-out}
+      #shooting-event-root .shooting-mini-enemy.party-leave{transition:opacity .45s ease-in,transform .45s ease-in;opacity:0 !important}
+      @keyframes partyWarn{0%{translate:0 0}20%{translate:-3px 0;filter:drop-shadow(0 0 10px rgba(255,70,90,1)) brightness(1.3)}40%{translate:3px 0}60%{translate:-2px 0}100%{translate:0 0}}
+      #shooting-event-root .party-pop{position:absolute;left:0;top:0;z-index:30;pointer-events:none;transform:translate(-50%,-50%);
+        font:900 17px/1 "Cinzel","Noto Serif JP",serif;letter-spacing:.02em;white-space:nowrap;animation:partyPop .9s ease-out forwards}
+      #shooting-event-root .party-pop.plus{color:#fff3c4;text-shadow:0 0 6px rgba(255,190,70,1),0 1px 2px rgba(80,50,0,.9)}
+      #shooting-event-root .party-pop.big{font-size:23px}
+      #shooting-event-root .party-pop.minus{color:#dfe6ff;text-shadow:0 0 6px rgba(70,90,255,1),0 1px 2px rgba(10,10,60,.9)}
+      @keyframes partyPop{0%{opacity:0;transform:translate(-50%,-30%) scale(.6)}15%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}100%{opacity:0;transform:translate(-50%,-150%) scale(1)}}
+      #shooting-event-root .party-glass{position:absolute;left:0;top:0;width:54px;height:54px;margin:-27px 0 0 -27px;z-index:16;pointer-events:none;
+        background:center/contain no-repeat url(images/event_party_glass.webp);filter:drop-shadow(0 0 10px rgba(255,220,130,1));animation:partyGlassBob 1.1s ease-in-out infinite alternate}
+      #shooting-event-root .party-glass.fading{opacity:.45;animation:partyGlassBlink .22s steps(2) infinite}
+      @keyframes partyGlassBob{to{filter:drop-shadow(0 0 18px rgba(255,236,170,1)) brightness(1.15);margin-top:-31px}}
+      @keyframes partyGlassBlink{50%{opacity:.15}}
+      #shooting-event-root .party-bonus-veil{position:absolute;inset:0;z-index:9;pointer-events:none;opacity:0;transition:opacity .25s;
+        box-shadow:inset 0 0 70px rgba(255,200,90,.55),inset 0 0 18px rgba(255,240,190,.7)}
+      #shooting-event-root.party-bonus .party-bonus-veil{opacity:1}
+      #shooting-event-root .party-bonus-bar{position:absolute;left:12%;right:12%;top:calc(env(safe-area-inset-top,0px) + 104px);height:4px;z-index:31;pointer-events:none;
+        opacity:0;transition:opacity .2s;border-radius:2px;background:rgba(80,50,10,.35)}
+      #shooting-event-root.party-bonus .party-bonus-bar{opacity:1}
+      #shooting-event-root .party-bonus-bar i{display:block;height:100%;border-radius:2px;background:linear-gradient(90deg,#c48a2a,#ffe7a3,#c48a2a);box-shadow:0 0 8px rgba(255,210,110,.95);transform-origin:left center}
+      #shooting-event-root .party-cheers{position:absolute;inset:0;z-index:32;pointer-events:none;display:flex;align-items:center;justify-content:center;
+        font:900 40px/1 "Cinzel",serif;letter-spacing:.12em;color:#fff6d6;text-shadow:0 0 14px rgba(255,190,70,1),0 2px 4px rgba(60,30,0,.9);animation:partyCheers 1s ease-out forwards}
+      @keyframes partyCheers{0%{opacity:0;transform:scale(.6)}25%{opacity:1;transform:scale(1.08)}70%{opacity:1}100%{opacity:0;transform:scale(1.2)}}
+    `;
+    document.head.appendChild(st);
+  }
+  function ensurePartyDom() {
+    const root = document.getElementById(ROOT_ID);
+    const arena = document.getElementById('shooting-arena');
+    if (!root || !arena) return null;
+    let veil = arena.querySelector('.party-bonus-veil');
+    if (!veil) {
+      veil = document.createElement('div'); veil.className = 'party-bonus-veil'; veil.setAttribute('aria-hidden', 'true');
+      arena.appendChild(veil);
+    }
+    let bar = root.querySelector('.party-bonus-bar');
+    if (!bar) {
+      bar = document.createElement('div'); bar.className = 'party-bonus-bar'; bar.setAttribute('aria-hidden', 'true');
+      bar.innerHTML = '<i></i>';
+      root.appendChild(bar);
+    }
+    return { root, arena, bar };
+  }
+  function showPartyPop(x, y, value, big) {
+    const arena = document.getElementById('shooting-arena');
+    if (!arena) return;
+    const el = document.createElement('div');
+    el.className = 'party-pop ' + (value >= 0 ? 'plus' : 'minus') + (big ? ' big' : '');
+    el.textContent = (value >= 0 ? '+' : '−') + Math.abs(Math.round(value)).toLocaleString('ja-JP');
+    el.style.left = x + 'px'; el.style.top = y + 'px';
+    arena.appendChild(el);
+    setTimeout(() => el.remove(), 950);
+  }
+  // 出現：上（下へ歩く）・左右（横切る）・背後（下から上へ）。人間と料理を交互に近い割合で混ぜる
+  function spawnPartyGuest(now, w, h, forceTower) {
+    const pe = state.partyEv, cfg = getPartyConfig();
+    const ids = window.ShootingEnemies?.SHOOTING_ENEMY_ID || {};
+    const n = pe.spawnCount++;
+    const r = fixedStagePatternRandom('party_spawn', n, 0);
+    const r2 = fixedStagePatternRandom('party_spawn_kind', n, 0);
+    let defId;
+    if (forceTower) defId = ids.PARTY_TOWER;
+    else if (r2 < Number(cfg.humanShare || .5)) defId = [ids.PARTY_WAITER, ids.PARTY_GUEST_A, ids.PARTY_GUEST_B][n % 3];
+    else defId = ids.PARTY_DISH;
+    const def = getShootingEnemy(defId);
+    if (!def) return null;
+    const rear = !forceTower && r < Number(cfg.rearShare || .2);
+    const side = !forceTower && !rear && r < Number(cfg.rearShare || .2) + Number(cfg.sideShare || .3);
+    const sp = (cfg.walkSpeed || [42, 64]);
+    const speed = (sp[0] + (sp[1] - sp[0]) * fixedStagePatternRandom('party_speed', n, 0)) * (forceTower ? .55 : 1);
+    let x, y, vx, vy, edge;
+    if (rear) {
+      edge = 'bottom';
+      const p = pickFlankSpawnPoint({ spawnEdges: ['bottom'] }, n, w, h);
+      x = p.x; y = h + 30; vx = (fixedStagePatternRandom('party_drift', n, 0) - .5) * 30; vy = -speed;
+      showFlankSpawnWarning({ edge: 'bottom', x: p.x, y: h - 26 }, 800);
+    } else if (side) {
+      edge = n % 2 ? 'left' : 'right';
+      x = edge === 'left' ? -30 : w + 30;
+      y = h * (.30 + fixedStagePatternRandom('party_side_y', n, 0) * .40);
+      vx = edge === 'left' ? speed : -speed; vy = (fixedStagePatternRandom('party_drift', n, 0) - .5) * 16;
+    } else {
+      edge = 'top';
+      x = w * (.12 + fixedStagePatternRandom('party_top_x', n, 0) * .76);
+      y = 30; vx = (fixedStagePatternRandom('party_drift', n, 0) - .5) * 24; vy = speed;
+    }
+    const e = createNormalEnemy(def, now, { noElementIcon: Number(def.partyValue || 0) < 0 }); // 料理（光）は属性アイコンを出す
+    if (!e) return null;
+    const isHuman = Number(def.partyValue || 0) < 0;
+    const hpMul = isHuman ? Math.max(1, Number(pe.opts.humanHpMul || 1)) : 1;
+    e.hp = e.hpMax = Math.max(1, Math.round(Number(def.hp || 300) * hpMul));
+    e.partyTarget = true; e.partyHuman = isHuman; e.uid = 'party_' + n;
+    e.x = x; e.y = y; e.baseX = x; e.baseY = y;
+    e.partyVx = vx; e.partyVy = vy; e.partySeed = r * Math.PI * 2; e.partyEdge = edge;
+    e.partyBornAt = getPartyElapsedMs(now);
+    e.partyLifeMs = forceTower ? Number(cfg.towerLifeMs || 9000) : Number(cfg.guestLifeMs || 7000);
+    e.el.classList.add(isHuman ? 'party-human' : 'party-food');
+    renderMiniEnemyHp(e, false);
+    positionUnit(e.el, e.x, e.y);
+    positionMiniEnemyHp(e);
+    state.normalEnemies.push(e);
+    return e;
+  }
+  function removePartyGuest(e) {
+    if (!e) return;
+    [e.el, e.hpEl, e.elementEl, e.weaknessBarrierEl].forEach(n => { try { n && n.remove(); } catch (_) {} });
+    e.hp = 0;
+    state.normalEnemies = state.normalEnemies.filter(x => x !== e);
+  }
+  function updatePartyGuests(dt, now, w, h, halted) {
+    const list = (state.normalEnemies || []).filter(e => e && e.partyTarget && e.hp > 0 && e.el);
+    const sec = Math.max(0, Math.min(.05, Number(dt) || 0));
+    for (const e of list) {
+      if (!halted) {
+        e.x += e.partyVx * sec;
+        e.y += e.partyVy * sec;
+        // 歩く揺れ（左右）
+        const sway = Math.sin(getPartyElapsedMs(now) / 380 + e.partySeed) * 0.35;
+        e.x += sway;
+      }
+      positionUnit(e.el, e.x, e.y);
+      positionMiniEnemyHp(e);
+      if (e.x < -70 || e.x > w + 70 || e.y < -70 || e.y > h + 70) { removePartyGuest(e); continue; }
+      // build2154: 一定時間で立ち去る（ふっと消える）。消え始めたら当たり判定なし
+      if (!halted && !e.partyLeaving && getPartyElapsedMs(now) - Number(e.partyBornAt || 0) > Number(e.partyLifeMs || 7000)) {
+        e.partyLeaving = true;
+        e.hp = 0; // 当たり判定から外す（DOMは消えるまで残す）
+        e.el.classList.add('party-leave');
+        if (e.hpEl) e.hpEl.style.opacity = '0';
+        if (e.elementEl) e.elementEl.style.opacity = '0';
+        setTimeout(() => removePartyGuest(e), 480);
+      }
+    }
+  }
+  function startPartyBonus(now, ms) {
+    const pe = state.partyEv;
+    const el = getPartyElapsedMs(now);
+    pe.bonusUntil = Math.max(Number(pe.bonusUntil || 0), el) + ms;
+    pe.bonusTotalMs = Math.max(1, pe.bonusUntil - el);
+  }
+  function updatePartyGlass(now, w, h, halted) {
+    const pe = state.partyEv, cfg = getPartyConfig();
+    const el = getPartyElapsedMs(now);
+    const times = (cfg.glassAtMs || []).slice();
+    const extra = Math.max(0, Math.floor(Number(pe.opts.extraGlass || 0)));
+    for (let i = 0; i < extra; i++) times.push(24000 + i * 18000);
+    times.sort((a, b) => a - b);
+    const arena = document.getElementById('shooting-arena');
+    if (!pe.glass && pe.glassIdx < times.length && el >= times[pe.glassIdx] && !halted && arena) {
+      pe.glassIdx++;
+      const g = document.createElement('div');
+      g.className = 'party-glass';
+      g.setAttribute('aria-hidden', 'true');
+      arena.appendChild(g);
+      const gx = w * (.18 + Math.random() * .64), gy = h * (.38 + Math.random() * .28);
+      pe.glass = { el: g, x: gx, y: gy, bornAt: el };
+      positionUnit(g, gx, gy);
+    }
+    if (!pe.glass) return;
+    const g = pe.glass;
+    const life = Number(cfg.glassLifeMs || 7000);
+    const age = el - g.bornAt;
+    g.el.classList.toggle('fading', age > life - 1800);
+    const px = Number(state.player.x || 0), py = Number(state.player.y || 0);
+    if (!halted && Math.hypot(px - g.x, py - g.y) < 44) {
+      g.el.remove(); pe.glass = null; pe.glassTaken++;
+      startPartyBonus(now, Number(cfg.bonusMs || 5000) + Number(pe.opts.bonusExtraMs || 0));
+      const root = document.getElementById(ROOT_ID);
+      if (root) {
+        const c = document.createElement('div'); c.className = 'party-cheers'; c.setAttribute('aria-hidden', 'true'); c.textContent = 'CHEERS';
+        root.appendChild(c); setTimeout(() => c.remove(), 1050);
+      }
+      return;
+    }
+    if (age > life) { g.el.remove(); pe.glass = null; }
+  }
+  function updatePartyMechanics(now) {
+    if (!isPartyEventStage()) return;
+    const pe = ensurePartyState();
+    if (!pe) return;
+    ensurePartyStyle();
+    const dom = ensurePartyDom();
+    const { w, h } = getShienArenaSize();
+    const halted = !!(state.ended || state.finishing || state.countdown || state.koTransition || state.phaseTransition || !(state.boss && state.boss.hp > 0));
+    const dt = pe.lastTick ? (now - pe.lastTick) / 1000 : 0;
+    pe.lastTick = now;
+    const el = getPartyElapsedMs(now);
+    const cfg = getPartyConfig();
+    if (!halted && !pe.startBonusGiven) {
+      pe.startBonusGiven = true;
+      const ms = Math.max(0, Number(pe.opts.startBonusMs || 0));
+      if (ms > 0) startPartyBonus(now, ms);
+      pe.nextSpawnAt = Number(cfg.spawnFirstMs || 1200);
+      pe.nextTowerAt = Number(cfg.towerEveryMs || 15000) * (pe.opts.extraTower ? .66 : 1) * .5;
+    }
+    if (!halted) {
+      const alive = (state.normalEnemies || []).filter(e => e && e.partyTarget && e.hp > 0).length;
+      if (el >= pe.nextSpawnAt && alive < Number(cfg.maxActive || 9)) {
+        spawnPartyGuest(now, w, h, false);
+        pe.nextSpawnAt = el + Number(cfg.spawnEveryMs || 1250);
+      }
+      if (el >= pe.nextTowerAt) {
+        spawnPartyGuest(now, w, h, true);
+        pe.nextTowerAt = el + Number(cfg.towerEveryMs || 15000) * (pe.opts.extraTower ? .66 : 1);
+      }
+    }
+    updatePartyGuests(dt, now, w, h, halted);
+    updatePartyGlass(now, w, h, halted);
+    const bonus = isPartyBonusActive(now);
+    if (dom) {
+      dom.root.classList.toggle('party-bonus', bonus);
+      if (bonus) {
+        const left = Math.max(0, pe.bonusUntil - el);
+        const i = dom.bar.firstChild;
+        if (i) i.style.transform = 'scaleX(' + Math.max(0, Math.min(1, left / Math.max(1, pe.bonusTotalMs))).toFixed(3) + ')';
+      }
+    }
+  }
+  // 弾が人間に当たった（倒していない）：警告の震え
+  function onPartyGuestHit(enemy) {
+    if (!enemy || !enemy.partyHuman || !enemy.el || isPartyBonusActive(performance.now())) return;
+    const el = enemy.el;
+    if (el.classList.contains('party-warn')) return;
+    el.classList.add('party-warn');
+    setTimeout(() => el.classList.remove('party-warn'), 330);
+  }
+  // 夜会の客を倒した：加点／減点（ボーナス中は減点なし・人間も加点、料理は倍率）
+  function onPartyGuestDefeated(enemy, now) {
+    const pe = ensurePartyState();
+    if (!pe) return;
+    const cfg = getPartyConfig();
+    const def = enemy.def || {};
+    const base = Number(def.partyValue || 0);
+    const bonus = isPartyBonusActive(now);
+    let v;
+    if (base >= 0) {
+      v = base * Math.max(1, Number(pe.opts.foodMul || 1)) * (bonus ? Math.max(Number(cfg.bonusPlusMul || 2), Number(pe.opts.bonusPlusMul || 0)) : 1);
+      pe.foodKills++;
+      if (def.id === window.ShootingEnemies?.SHOOTING_ENEMY_ID?.PARTY_TOWER) pe.towerKills++;
+    } else if (bonus) {
+      v = Number(cfg.bonusHumanValue || 300);
+    } else {
+      v = base * Math.max(0, Number(pe.opts.humanPenaltyMul == null ? 1 : pe.opts.humanPenaltyMul));
+      pe.humanKills++;
+    }
+    v = Math.round(v);
+    pe.points += v;
+    state.score = Math.max(0, Math.round(pe.points)); // build2154: 右上のSCOREにその場で反映（討伐・時間・生存ボーナスは終了時に加算）
+    if (typeof renderHud === 'function') renderHud();
+    showPartyPop(enemy.x, enemy.y - 18, v, Math.abs(v) >= 1000);
+  }
+  function finalizePartyScore(win) {
+    if (!state || !isPartyEventStage() || state.partyScoreFinalized) return;
+    state.partyScoreFinalized = true;
+    const pe = ensurePartyState() || { points: 0 };
+    const cfg = getPartyConfig();
+    let score = Number(pe.points || 0);
+    state.partyBreakdown = { clear: 0, time: 0, survival: 0, party: Math.round(score) };
+    if (win) {
+      const limit = Math.max(1, getBattleTimeLimitSeconds());
+      const elapsedSec = Math.max(0, Number(state.clearTimeMs || 0) / 1000);
+      const timeRatio = clamp(1 - elapsedSec / limit, 0, 1);
+      const party = Array.isArray(state.party) ? state.party : [];
+      const hpMax = party.reduce((s, m) => s + Math.max(0, Number(m && m.hpMax || 0)), 0);
+      const hp = party.reduce((s, m) => s + Math.max(0, Number(m && m.hp || 0)), 0);
+      const surv = hpMax > 0 ? clamp(hp / hpMax, 0, 1) : 0;
+      state.partyBreakdown.clear = Number(cfg.clearBonus || 8000);
+      state.partyBreakdown.time = Math.round(Number(cfg.timeBonusMax || 8000) * timeRatio);
+      state.partyBreakdown.survival = Math.round(Number(cfg.survivalBonusMax || 8000) * surv);
+      score += state.partyBreakdown.clear + state.partyBreakdown.time + state.partyBreakdown.survival;
+      state.partyRemainSec = Math.max(0, Math.floor(limit - elapsedSec));
+    }
+    state.score = Math.max(0, Math.round(score));
+  }
+  function getPartyResultRank(score, win) {
+    if (!win) return 'E';
+    const cfg = getPartyConfig();
+    const v = Number(score) || 0;
+    if (v >= Number(cfg.rankS || 32000)) return 'S';
+    if (v >= Number(cfg.rankA || 26000)) return 'A';
+    return 'B';
+  }
+  // サーバー・パネル判定へ渡す1回分の記録
+  function getPartyRunStats(win) {
+    const pe = state && state.partyEv || {};
+    return {
+      win: !!win,
+      score: Math.max(0, Math.round(Number(state && state.score || 0))),
+      rank: getPartyResultRank(state && state.score, win),
+      hitsTaken: Math.max(0, Math.floor(Number(state && state.totalHitsTaken || 0))),
+      foodKills: Math.max(0, Number(pe.foodKills || 0)),
+      humanKills: Math.max(0, Number(pe.humanKills || 0)),
+      towerKills: Math.max(0, Number(pe.towerKills || 0)),
+      glassTaken: Math.max(0, Number(pe.glassTaken || 0)),
+      partyPoints: Math.round(Number(pe.points || 0)),
+      remainSec: win ? Math.max(0, Number(state && state.partyRemainSec || 0)) : 0,
+    };
+  }
+  function clearPartyDom() {
+    try {
+      const root = document.getElementById(ROOT_ID);
+      if (root) {
+        root.classList.remove('party-bonus');
+        root.querySelectorAll('.party-bonus-bar,.party-bonus-veil,.party-glass,.party-pop,.party-cheers').forEach(n => n.remove());
+      }
+    } catch (_) {}
+  }
+
   function gameLoop(ts) {
     if (!state || !state.running || state.ended || state.finishing || state.countdown) return;
     syncEnemyMotionFreezeClocks(ts);
@@ -33058,6 +33433,8 @@
     updateCamillaMechanics(ts);
     // build2121 RAID ネリサ: 雫のヴェール / 満ち潮（液状化はHPガード）
     updateNerisaMechanics(ts);
+    // build2150 イベント「パラレル・ソワレ」: 夜会の客・祝杯のグラス・ボーナスタイム
+    updatePartyMechanics(ts);
     // build1630: リズム弾幕（譜面・仮ドラム・判定）
     updateRhythmStage(ts);
 
@@ -35404,6 +35781,9 @@
       return hit ? hit.rank : 'E';
     }
 
+    // build2150: イベント「パラレル・ソワレ」専用ランク（討伐必須。S/Aはステージ設定 party.rankS/rankA）
+    if (isPartyEventStage()) return getPartyResultRank(value, win);
+
     // build2063: 特別巡行「最恐 -デイノヴァ-」専用ランク判定。
     // サーバー claim_deinova_special_drop と S/A の閾値を一致させる（S 130万 / A 100万 / B クリア / E 敗北）。
     if (isDeinovaStage()) {
@@ -36580,6 +36960,8 @@
       saveShootingLastClearParty(lastClearStageId, lastClearPartyIds);
     }
     finalizeStoryClearScore(!!win);
+    finalizePartyScore(!!win); // build2150
+    if (isPartyEventStage()) { state.partyRunStats = getPartyRunStats(!!win); clearPartyDom(); }
     if (isScoreAttackStage()) {
       state.score = Math.min(SCORE_ATTACK_MAX_SCORE, Math.max(0, Math.floor(Number(state.score || 0))));
     }
@@ -36623,6 +37005,14 @@
     // ステージ別最高スコアをローカルへ即時反映し、Supabaseへ非同期保存。
     // v172: score/result is accepted only against this battle's server run token.
     state.secureFinalizePromise = dailyQuestAtResult ? finalizeDailyQuestRun(state.score, !!win) : submitShootingHighScore(state.score, !!win);
+    // build2150: サーバー未設定（RPC未作成）の間は、パネルの進み具合を端末に記録して試せるようにする（報酬は付かない）
+    if (isPartyEventStage()) {
+      const partyStats = state.partyRunStats;
+      void Promise.resolve(state.secureFinalizePromise).then(r => {
+        if (r && r.partyEventResult) return;
+        if (window.PartyEvent && typeof window.PartyEvent.submitRun === 'function') return window.PartyEvent.submitRun(null, null, partyStats);
+      }).catch(() => {});
+    }
     if (win && isMemoryBattleStage()) {
       const memoryFinalizePromise = state.secureFinalizePromise;
       void Promise.resolve(memoryFinalizePromise).then(finalized => {

@@ -1,0 +1,181 @@
+/* =========================================================
+   build2150 — 期間限定イベント「パラレル・ソワレ」イベント画面・結果のお知らせ
+   夜会の夜色（深い藍〜葡萄色）に金の縁。文字は明朝。
+   ========================================================= */
+#party-event-screen{
+  position:fixed;inset:0;z-index:9400;display:none;flex-direction:column;
+  color:#f4ead6;font-family:"Noto Serif JP",serif;
+  background:#120d18;
+}
+#party-event-screen.is-open{display:flex;animation:peFade .28s ease-out}
+@keyframes peFade{from{opacity:0}to{opacity:1}}
+#party-event-screen .pe-bg{
+  position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:
+    linear-gradient(180deg,rgba(18,12,24,.35) 0%,rgba(18,12,24,.72) 42%,rgba(14,9,20,.92) 100%),
+    center top/cover no-repeat url(../images/event_party_lobby.webp);
+}
+#party-event-screen .pe-scroll{
+  position:relative;z-index:1;flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:calc(env(safe-area-inset-top,0px) + 10px) 14px 16px;
+}
+#party-event-screen .pe-head{text-align:center}
+#party-event-screen .pe-banner{
+  display:block;width:100%;max-width:520px;margin:0 auto;border-radius:6px;
+  box-shadow:0 0 0 1px rgba(214,178,104,.55),0 8px 22px rgba(0,0,0,.45);
+}
+#party-event-screen .pe-period{margin:8px 0 0;font-size:11.5px;letter-spacing:.08em;color:#e6cf98}
+#party-event-screen .pe-section{
+  max-width:520px;margin:14px auto 0;padding:12px 12px 13px;border-radius:8px;
+  background:linear-gradient(180deg,rgba(40,26,46,.78),rgba(22,15,28,.82));
+  box-shadow:inset 0 0 0 1px rgba(214,178,104,.42),inset 0 0 0 3px rgba(20,12,26,.6),inset 0 0 0 4px rgba(214,178,104,.18);
+}
+#party-event-screen .pe-h{
+  margin:0 0 4px;text-align:center;font-size:16px;font-weight:700;letter-spacing:.14em;color:#fbecc4;
+}
+#party-event-screen .pe-h small{display:block;font:600 9.5px/1.4 "Cinzel",serif;letter-spacing:.24em;color:#c9a35a}
+#party-event-screen .pe-lead{margin:0 0 10px;text-align:center;font-size:11px;line-height:1.6;color:#d9ccb5}
+
+/* 3×3 ボード */
+#party-event-screen .pe-board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+#party-event-screen .pe-cell{
+  position:relative;min-height:92px;padding:16px 4px 8px;border-radius:6px;cursor:pointer;overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+  box-shadow:inset 0 0 0 1px rgba(214,178,104,.28);
+  transition:transform .2s;
+}
+#party-event-screen .pe-cell-no{
+  position:absolute;left:6px;top:4px;font:700 11px/1 "Cinzel",serif;color:rgba(214,178,104,.75)
+}
+#party-event-screen .pe-cell-cond{font-size:11px;line-height:1.5;color:#dcd0b9;word-break:keep-all;white-space:nowrap}
+#party-event-screen .pe-cell.is-open{
+  background:linear-gradient(180deg,#f7e6b6,#d6ab5c 70%,#b48535);
+  box-shadow:inset 0 0 0 1px #fff1c8,0 0 12px rgba(255,210,120,.35);
+}
+#party-event-screen .pe-cell.is-open .pe-cell-no{color:#6e4a12}
+#party-event-screen .pe-cell-op{font-size:11.5px;line-height:1.45;font-weight:700;color:#3b2508;word-break:keep-all;white-space:nowrap}
+#party-event-screen .pe-cell-done{margin-top:4px;font:700 8.5px/1 "Cinzel",serif;letter-spacing:.22em;color:#7a5418}
+#party-event-screen .pe-cell.is-bingo{box-shadow:inset 0 0 0 2px #fff6d6,0 0 16px rgba(255,220,140,.75)}
+#party-event-screen .pe-cell.is-new{animation:peCellOpen .8s ease-out}
+@keyframes peCellOpen{0%{transform:rotateY(90deg) scale(.9)}60%{transform:rotateY(0) scale(1.06)}100%{transform:none}}
+
+/* ビンゴ報酬（揃ったライン数ごと） */
+#party-event-screen .pe-bingo-count{display:inline-block;margin-top:4px;font:700 13px/1 "Cinzel",serif;letter-spacing:.12em;color:#ffe39a}
+#party-event-screen .pe-rewards{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:5px}
+#party-event-screen .pe-rw{
+  display:grid;grid-template-columns:52px 34px minmax(0,1fr) 34px;align-items:center;gap:8px;
+  padding:6px 10px 6px 6px;border-radius:5px;background:rgba(255,255,255,.04);
+  box-shadow:inset 0 0 0 1px rgba(214,178,104,.16)
+}
+#party-event-screen .pe-rw-line{
+  display:flex;align-items:baseline;justify-content:center;gap:2px;text-align:center;
+  font:700 17px/1 "Cinzel",serif;color:#e6cf98
+}
+#party-event-screen .pe-rw-line small{font-size:8.5px;letter-spacing:.08em;color:#c9a35a}
+#party-event-screen .pe-rw-img{width:34px;height:34px;object-fit:contain}
+#party-event-screen .pe-rw-name{font-size:12px;line-height:1.35;font-weight:700;color:#f4ead6}
+#party-event-screen .pe-rw-state{font-style:normal;font-size:10.5px;font-weight:700;color:#ffe39a;text-align:right}
+#party-event-screen .pe-rw.is-got{background:linear-gradient(90deg,rgba(214,171,92,.28),rgba(214,171,92,.08))}
+#party-event-screen .pe-rw.is-got .pe-rw-name{color:#ffe7a8}
+#party-event-screen .pe-rw.is-outfit{
+  grid-template-columns:52px 54px minmax(0,1fr) 34px;padding:8px 10px 8px 6px;
+  background:linear-gradient(90deg,rgba(120,24,40,.55),rgba(40,20,40,.5));
+  box-shadow:inset 0 0 0 1px rgba(255,214,140,.65),0 0 14px rgba(200,60,80,.25)
+}
+#party-event-screen .pe-rw.is-outfit .pe-rw-line{font-size:11px;line-height:1.15;letter-spacing:.06em;color:#ffe39a;display:block}
+#party-event-screen .pe-rw.is-outfit .pe-rw-img{width:54px;height:54px;object-fit:cover;object-position:50% 12%;border-radius:50%;
+  box-shadow:0 0 0 2px rgba(230,207,152,.9)}
+#party-event-screen .pe-rw.is-outfit .pe-rw-name{font-size:13px;color:#ffe7a8}
+
+/* 衣装 */
+#party-event-screen .pe-outfit{display:flex;align-items:center;gap:12px}
+#party-event-screen .pe-outfit-img{width:84px;height:84px;object-fit:cover;object-position:50% 12%;border-radius:50%;
+  box-shadow:0 0 0 2px rgba(214,178,104,.8),0 0 14px rgba(180,40,60,.45);background:#2a1c2c}
+#party-event-screen .pe-outfit-body{display:flex;flex-direction:column;gap:3px}
+#party-event-screen .pe-outfit-body small{font:600 9.5px/1 "Cinzel",serif;letter-spacing:.22em;color:#c9a35a}
+#party-event-screen .pe-outfit-body strong{font-size:16px;letter-spacing:.1em;color:#fbecc4}
+#party-event-screen .pe-outfit-pips{display:flex;gap:6px;margin-top:3px}
+#party-event-screen .pe-outfit-pips i{width:22px;height:22px;border-radius:50%;
+  background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(214,178,104,.5);
+  display:flex;align-items:center;justify-content:center}
+#party-event-screen .pe-outfit-pips i::after{content:"S";font:700 11px/1 "Cinzel",serif;color:rgba(214,178,104,.45)}
+#party-event-screen .pe-outfit-pips i.is-on{background:linear-gradient(180deg,#f7e6b6,#c9973f);box-shadow:0 0 8px rgba(255,210,120,.6)}
+#party-event-screen .pe-outfit-pips i.is-on::after{color:#4a2e08}
+#party-event-screen .pe-outfit-state{font-style:normal;font-size:11px;color:#d9ccb5}
+#party-event-screen .pe-outfit.is-got .pe-outfit-state{color:#ffe39a;font-weight:700}
+
+/* ルール */
+#party-event-screen .pe-rule ul{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:6px}
+#party-event-screen .pe-rule li{display:flex;align-items:center;gap:10px;font-size:11px;line-height:1.5;color:#d9ccb5}
+#party-event-screen .pe-rule li img{width:40px;height:40px;object-fit:contain;flex:none}
+#party-event-screen .pe-rule li b{display:block;font-size:12px;color:#fbecc4}
+#party-event-screen .pe-rank{margin:10px 0 0;text-align:center;font:700 11px/1.4 "Cinzel","Noto Serif JP",serif;letter-spacing:.06em;color:#e6cf98}
+#party-event-screen .pe-note{max-width:520px;margin:10px auto 0;font-size:10.5px;line-height:1.5;color:#f0b4b4;text-align:center}
+
+/* 下部ボタン */
+#party-event-screen .pe-foot{
+  position:relative;z-index:1;display:grid;grid-template-columns:96px 1fr;gap:10px;
+  padding:10px 14px calc(env(safe-area-inset-bottom,0px) + 12px);
+  background:linear-gradient(180deg,rgba(14,9,20,0),rgba(14,9,20,.94) 30%);
+}
+#party-event-screen .pe-close{
+  height:52px;border:0;border-radius:6px;color:#f4ead6;font:700 13px/1 "Noto Serif JP",serif;letter-spacing:.1em;
+  background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(214,178,104,.45)
+}
+#party-event-screen .pe-go{
+  height:52px;border:0;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  background:linear-gradient(180deg,#f7e6b6,#d6ab5c 60%,#a87a2e);color:#3b2508;
+  box-shadow:inset 0 0 0 1px #fff1c8,0 4px 14px rgba(0,0,0,.4),0 0 16px rgba(255,210,120,.3)
+}
+#party-event-screen .pe-go b{font:900 17px/1 "Noto Serif JP",serif;letter-spacing:.3em}
+#party-event-screen .pe-go small{font-size:10px;letter-spacing:.06em;color:#5a3a10}
+#party-event-screen .pe-go:disabled{filter:grayscale(.8) brightness(.7)}
+
+/* 結果のお知らせ */
+#party-event-result{
+  position:fixed;inset:0;z-index:9600;display:flex;align-items:center;justify-content:center;padding:20px;
+  background:rgba(10,6,14,.62);animation:peFade .25s ease-out;font-family:"Noto Serif JP",serif
+}
+#party-event-result .per-card{
+  width:min(340px,100%);padding:18px 16px 16px;border-radius:10px;text-align:center;color:#f4ead6;
+  background:linear-gradient(180deg,#2c1d34,#170f1e);
+  box-shadow:inset 0 0 0 1px rgba(214,178,104,.6),0 0 30px rgba(255,200,110,.25);
+  animation:perPop .45s cubic-bezier(.2,1.4,.4,1)
+}
+@keyframes perPop{from{transform:scale(.8);opacity:0}to{transform:none;opacity:1}}
+#party-event-result .per-kicker{font:600 9.5px/1 "Cinzel",serif;letter-spacing:.26em;color:#c9a35a}
+#party-event-result h3{margin:10px 0 6px;font-size:16px;letter-spacing:.12em;color:#fbecc4}
+#party-event-result h3.per-bingo{font:900 24px/1 "Cinzel",serif;letter-spacing:.3em;color:#ffe39a;text-shadow:0 0 12px rgba(255,200,90,.9)}
+#party-event-result .per-list{list-style:none;margin:0;padding:0;display:grid;gap:5px}
+#party-event-result .per-list li{display:flex;align-items:center;justify-content:center;gap:8px;padding:6px 8px;border-radius:5px;
+  background:rgba(255,255,255,.05);font-size:12px}
+#party-event-result .per-no{width:20px;height:20px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(180deg,#f7e6b6,#c9973f);color:#4a2e08;font:700 11px/1 "Cinzel",serif}
+#party-event-result .per-outfit{margin-top:12px;display:flex;flex-direction:column;align-items:center;gap:6px}
+#party-event-result .per-outfit img{width:92px;height:92px;border-radius:50%;object-fit:cover;object-position:50% 12%;
+  box-shadow:0 0 0 2px #e6cf98,0 0 18px rgba(255,200,110,.6)}
+#party-event-result .per-outfit b{font-size:14px;color:#ffe39a;letter-spacing:.08em}
+#party-event-result .per-note{margin:10px 0 0;font-size:10.5px;color:#d9ccb5}
+#party-event-result .per-ok{margin-top:14px;width:100%;height:42px;border:0;border-radius:6px;
+  background:linear-gradient(180deg,#f7e6b6,#c9973f);color:#3b2508;font:700 14px/1 "Noto Serif JP",serif;letter-spacing:.2em}
+
+#party-event-result .per-lines{margin:0 0 8px;font:700 14px/1 "Cinzel",serif;letter-spacing:.14em;color:#e6cf98}
+#party-event-result .per-list li img{width:26px;height:26px;object-fit:contain}
+@media (max-width:360px){
+  #party-event-screen .pe-cell-cond{font-size:10px}
+  #party-event-screen .pe-cell-op{font-size:10.5px}
+}
+
+/* build2156: 記録（ランク別クリア回数など）と、累計パネルの進み具合 */
+#party-event-screen .pe-stats{list-style:none;margin:4px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:5px}
+#party-event-screen .pe-stats li{display:flex;align-items:center;gap:7px;padding:7px 9px;border-radius:5px;background:rgba(255,255,255,.05);
+  box-shadow:inset 0 0 0 1px rgba(214,178,104,.18);font-size:11px;color:#d9ccb5}
+#party-event-screen .pe-stats li:last-child{grid-column:1 / -1}
+#party-event-screen .pe-stats li b{margin-left:auto;font:700 15px/1 "Cinzel","Noto Serif JP",serif;color:#fbecc4}
+#party-event-screen .pe-stat-rank{width:20px;height:20px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font:900 11px/1 "Cinzel",serif;font-style:normal;color:#3b2508;background:transparent}
+#party-event-screen .pe-stat-rank.rank-S{background:linear-gradient(180deg,#fff1c2,#e0a93a);box-shadow:0 0 8px rgba(255,200,90,.7)}
+#party-event-screen .pe-stat-rank.rank-A{background:linear-gradient(180deg,#f1e2ff,#a98ad6)}
+#party-event-screen .pe-stat-rank.rank-B{background:linear-gradient(180deg,#e6f1ff,#7fa6d6)}
+#party-event-screen .pe-cell-prog{margin-top:4px;font:700 11px/1 "Cinzel",serif;font-style:normal;color:#e6cf98;letter-spacing:.06em}

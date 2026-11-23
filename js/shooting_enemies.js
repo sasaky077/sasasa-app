@@ -52,6 +52,13 @@
     // build2119: DAILY RAID ネリサ（水属性）
     RAID_NERISA: 'shooting_raid_nerisa',
     RAID_NERISA_CLONE: 'shooting_raid_nerisa_clone',
+    // build2150: 期間限定イベント「パラレル・ソワレ」（並行世界の夜会）
+    PARTY_HOST: 'event_party_host',
+    PARTY_DISH: 'event_party_dish',
+    PARTY_TOWER: 'event_party_tower',
+    PARTY_WAITER: 'event_party_waiter',
+    PARTY_GUEST_A: 'event_party_guest_a',
+    PARTY_GUEST_B: 'event_party_guest_b',
     CAMILLA_SPIDERLING: 'camilla_spiderling',
     // build1759: 記憶決戦の守護者「カミラ」（子蜘蛛を撒く）
     MEMORY_BLUE_CAMILLA: 'memory_blue_camilla',
@@ -800,6 +807,51 @@
       element: 'aqua', attackType: 'none', image: 'images/raid_enemy_04_battle.webp',
       hp: 1000, contactDamage: 0, moveSpeed: 0, scoreValue: 0, // build2135: 2000→1000
       behavior: 'nerisa_clone_v1', uiScale: 1.25, // build2135: 本体と見分けやすいよう小さく（1.6→1.25）
+    }),
+
+    // ------------------------------------------------------------
+    // build2150: 期間限定イベント「パラレル・ソワレ」
+    //  ボス：謎の主催者（闇）。料理（皿・シャンパンタワー）は光属性で個別HP（闇で壊しやすい）。人間は無属性。
+    //  夜会の客：撃っても反撃しない「的」。partyValue＞0＝料理（倒すと加点）／＜0＝人間（倒すと減点）。
+    //  動き・出現・加減点は shooting_core.js updatePartyMechanics。scoreValue は使わない（0）。
+    // ------------------------------------------------------------
+    [SHOOTING_ENEMY_ID.PARTY_HOST]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.PARTY_HOST, kind: 'boss', implemented: true,
+      name: '謎の主催者', displayName: 'PARALLEL SOIREE　謎の主催者',
+      image: 'images/event_party_host_battle.webp', element: 'dark',
+      gaugeHp: 5000, gauges: 3,
+      bulletSpeed: 230, fireRate: 900, bulletDamage: 190,
+      behavior: 'barrage_v1', uiScale: 1.2,
+    }),
+    [SHOOTING_ENEMY_ID.PARTY_DISH]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.PARTY_DISH, kind: 'normal', implemented: true,
+      name: '料理', displayName: 'SOIREE　料理', element: 'light', attackType: 'none',
+      image: 'images/event_party_dish.webp', hp: 260, contactDamage: 0, moveSpeed: 0, scoreValue: 0,
+      behavior: 'party_guest_v1', partyValue: 300, partyKind: 'food', uiScale: 0.78,
+    }),
+    [SHOOTING_ENEMY_ID.PARTY_TOWER]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.PARTY_TOWER, kind: 'normal', implemented: true,
+      name: 'シャンパンタワー', displayName: 'SOIREE　シャンパンタワー', element: 'light', attackType: 'none',
+      image: 'images/event_party_tower.webp', hp: 1800, contactDamage: 0, moveSpeed: 0, scoreValue: 0,
+      behavior: 'party_guest_v1', partyValue: 1500, partyKind: 'food', uiScale: 1.15,
+    }),
+    [SHOOTING_ENEMY_ID.PARTY_WAITER]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.PARTY_WAITER, kind: 'normal', implemented: true,
+      name: '給仕', displayName: 'SOIREE　給仕', element: 'neutral', attackType: 'none',
+      image: 'images/event_party_waiter.webp', hp: 520, contactDamage: 0, moveSpeed: 0, scoreValue: 0,
+      behavior: 'party_guest_v1', partyValue: -500, partyKind: 'human', uiScale: 1.0,
+    }),
+    [SHOOTING_ENEMY_ID.PARTY_GUEST_A]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.PARTY_GUEST_A, kind: 'normal', implemented: true,
+      name: '貴婦人', displayName: 'SOIREE　貴婦人', element: 'neutral', attackType: 'none',
+      image: 'images/event_party_guest_a.webp', hp: 520, contactDamage: 0, moveSpeed: 0, scoreValue: 0,
+      behavior: 'party_guest_v1', partyValue: -500, partyKind: 'human', uiScale: 1.0,
+    }),
+    [SHOOTING_ENEMY_ID.PARTY_GUEST_B]: Object.freeze({
+      id: SHOOTING_ENEMY_ID.PARTY_GUEST_B, kind: 'normal', implemented: true,
+      name: '紳士', displayName: 'SOIREE　紳士', element: 'neutral', attackType: 'none',
+      image: 'images/event_party_guest_b.webp', hp: 520, contactDamage: 0, moveSpeed: 0, scoreValue: 0,
+      behavior: 'party_guest_v1', partyValue: -500, partyKind: 'human', uiScale: 1.0,
     }),
 
     // build1759: 記憶決戦の守護者。生きている間はボスに攻撃が通らない。頑丈（弱い攻撃は無効）。
