@@ -478,3 +478,83 @@ html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-
     height:35px!important;min-height:35px!important;padding:0 8px!important;
   }
 }
+
+/* build2142 — Circular EXP ring portrait.
+   The diamond portrait becomes a circle whose gold ring shows EXP progress
+   (--hv2-exp 0..100, set by home_v2.js). The horizontal EXP bar is removed;
+   the left column is RANK / name / (title) / EXP numbers. */
+html body:not(.ui-immersive) #global-user-frame.global-user-frame .hv2-face,
+html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hv2-face{box-sizing:border-box!important;width:74px!important;height:74px!important;margin:0 2px 0 0!important;padding:5.5px!important;transform:none!important;border-radius:50%!important;overflow:hidden!important;border:0!important;background:conic-gradient(from 0deg,#9a7128 0,#d9b25e calc(var(--hv2-exp,0) * .7%),#f3dc9a calc(var(--hv2-exp,0) * 1%),rgba(110,84,40,.24) calc(var(--hv2-exp,0) * 1%) 100%)!important;box-shadow:0 0 0 1.5px rgba(184,147,74,.65),0 1px 4px rgba(90,64,20,.25)!important;}
+html body:not(.ui-immersive) #global-user-frame.global-user-frame .hv2-face img,
+html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hv2-face img{display:block!important;width:100%!important;height:100%!important;margin:0!important;transform:none!important;object-fit:cover!important;object-position:50% 18%!important;border-radius:50%!important;box-sizing:border-box!important;border:2px solid #fffaf0!important;background:#efe4cd!important;}
+html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-left,
+html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-left{grid-template-rows:25px auto!important;column-gap:10px!important;}
+html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-lv-circle,
+html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-lv-circle{top:-2px!important;height:25px!important;min-height:25px!important;}
+html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info,
+html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info{top:-2px!important;}
+html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-lv-label,
+html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-lv-label{font-size:12.5px!important;}
+html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-lv-num,
+html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-lv-num{font-size:25px!important;}
+html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info > .hud-name,
+html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info > .hud-name{font-size:17px!important;line-height:20px!important;min-height:20px!important;}
+html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info #hud-title,
+html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info #hud-title{height:16px!important;min-height:16px!important;line-height:16px!important;margin-top:1px!important;}
+html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info #hud-title .zt-title-badge,
+html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info #hud-title .zt-title-badge{height:16px!important;min-height:16px!important;line-height:14px!important;font-size:9.5px!important;}
+html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info > .hv2-exp,
+html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info > .hv2-exp{margin-top:2px!important;}
+html body:not(.ui-immersive) #global-user-frame.global-user-frame .hv2-exp .bar,
+html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hv2-exp .bar{display:none!important;}
+html body:not(.ui-immersive) #global-user-frame.global-user-frame .hv2-exp .nums,
+html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hv2-exp .nums{margin-top:0!important;font-size:11.5px!important;line-height:14px!important;white-space:nowrap!important;}
+@media (min-width:390px) and (min-height:800px) and (max-aspect-ratio:10/19){
+  html body:not(.ui-immersive) #global-user-frame.global-user-frame .hv2-face,
+  html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hv2-face{width:84px!important;height:84px!important;padding:6px!important;}
+  html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-left,
+  html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-left{grid-template-rows:28px auto!important;}
+  html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-lv-circle,
+  html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-lv-circle{height:28px!important;min-height:28px!important;}
+  html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-lv-label,
+  html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-lv-label{font-size:13px!important;}
+  html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-lv-num,
+  html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-lv-num{font-size:28px!important;}
+  html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info > .hud-name,
+  html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info > .hud-name{font-size:18.5px!important;line-height:22px!important;min-height:22px!important;}
+  html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info #hud-title,
+  html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info #hud-title{height:18px!important;min-height:18px!important;line-height:18px!important;margin-top:2px!important;}
+  html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info #hud-title .zt-title-badge,
+  html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info #hud-title .zt-title-badge{height:17px!important;min-height:17px!important;line-height:15px!important;font-size:10px!important;}
+  html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info > .hv2-exp,
+  html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info > .hv2-exp{margin-top:3px!important;}
+  html body:not(.ui-immersive) #global-user-frame.global-user-frame .hv2-exp .nums,
+  html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hv2-exp .nums{font-size:12.5px!important;line-height:15px!important;}
+}
+@media (max-width:359px){
+  html body:not(.ui-immersive) #global-user-frame.global-user-frame .hv2-face,
+  html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hv2-face{width:62px!important;height:62px!important;padding:4.5px!important;}
+  html body:not(.ui-immersive) #global-user-frame.global-user-frame .hv2-exp .nums > span:first-child,
+  html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hv2-exp .nums > span:first-child{display:none!important;}
+}
+
+/* build2144 — Ring diameter = height of the text column to its right
+   (top of RANK to bottom of the EXP numbers). Two sizes: with / without a title. */
+html body:not(.ui-immersive) #global-user-frame.global-user-frame .hv2-face,
+html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hv2-face{width:61px!important;height:61px!important;margin:-2px 0 0 0!important;padding:5px!important;align-self:start!important;}
+html body:not(.ui-immersive) #global-user-frame.global-user-frame:has(#hud-title:not(:empty)) .hv2-face,
+html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame:has(#hud-title:not(:empty)) .hv2-face{width:78px!important;height:78px!important;padding:5.5px!important;}
+@media (min-width:390px) and (min-height:800px) and (max-aspect-ratio:10/19){
+  html body:not(.ui-immersive) #global-user-frame.global-user-frame .hv2-face,
+  html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hv2-face{width:68px!important;height:68px!important;padding:5.5px!important;}
+  html body:not(.ui-immersive) #global-user-frame.global-user-frame:has(#hud-title:not(:empty)) .hv2-face,
+  html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame:has(#hud-title:not(:empty)) .hv2-face{width:88px!important;height:88px!important;padding:6px!important;}
+}
+@media (max-width:359px){
+  html body:not(.ui-immersive) #global-user-frame.global-user-frame .hv2-face,
+  html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hv2-face{width:61px!important;height:61px!important;padding:4.5px!important;}
+  html body:not(.ui-immersive) #global-user-frame.global-user-frame:has(#hud-title:not(:empty)) .hv2-face,
+  html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame:has(#hud-title:not(:empty)) .hv2-face{width:70px!important;height:70px!important;padding:5px!important;}
+  html body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info > .hud-name,
+  html.hv2-home body:not(.ui-immersive) #global-user-frame.global-user-frame .hud-info > .hud-name{font-size:15px!important;letter-spacing:.04em!important;}
+}

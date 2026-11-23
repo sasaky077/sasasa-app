@@ -343,12 +343,18 @@
       var vEl = document.querySelector('#global-user-frame .hv2-exp .v');
       if (typeof window.calcExpProgress === 'function') {
         var e = window.calcExpProgress(score);
-        if (bar) bar.style.width = Math.max(0, Math.min(100, Number(e.pct || 0))) + '%';
+        var pctv = Math.max(0, Math.min(100, Number(e.pct || 0)));
+        if (bar) bar.style.width = pctv + '%';
+        // build2142: 顔アイコンの円形EXPリング
+        var faceEl = document.querySelector('#global-user-frame .hv2-face');
+        if (faceEl) faceEl.style.setProperty('--hv2-exp', String(pctv));
         if (vEl) vEl.textContent = Number(e.current || 0).toLocaleString('ja-JP') + ' / ' + Number(e.max || 0).toLocaleString('ja-JP');
       } else {
         var circle = document.getElementById('hud-lv-circle');
         var deg = circle ? parseFloat(getComputedStyle(circle).getPropertyValue('--rank-exp')) || 0 : 0;
         if (bar) bar.style.width = Math.max(0, Math.min(100, deg / 3.6)) + '%';
+        var faceEl2 = document.querySelector('#global-user-frame .hv2-face');
+        if (faceEl2) faceEl2.style.setProperty('--hv2-exp', String(Math.max(0, Math.min(100, deg / 3.6))));
       }
     } catch(_){}
   }

@@ -5024,6 +5024,21 @@ html:not(.hv2-home) body #global-user-frame .hv2-face {
 
 window.NOTICE_ITEMS = [
   {
+    id: 'notice_nerisa_raid_release_20261124',
+    date: '2026.11.24',
+    publishAt: '2026-11-23T15:00:00Z', // 11/24 00:00 JST
+    title: '新レイドボス「ネリサ」登場！',
+    body: 'レイドバトルに新ボス「ネリサ」が登場。\n\nリリース記念に 結晶 ×30 と レイドリセット券 ×2 をプレゼント！\n\n下の「受け取る」ボタンからお受け取りください。',
+    reward: {
+      type: 'nerisa_release_bundle',
+      claimId: 'notice_nerisa_raid_release_20261124',
+      rpcName: 'claim_nerisa_release_bundle_20261124',
+      gem: 30,
+      raidResetTickets: 2
+    },
+    hidden: false
+  },
+  {
     id: 'notice_inori_playable_gift_20261120',
     date: '2026.11.20',
     title: '「境界者 -イノリ-」プレゼント！',
@@ -5268,6 +5283,7 @@ window.NOTICE_ITEMS = [
   // Older players retain the original complete notice list, regardless of device.
   const NOTICE_NEW_USER_CUTOFF = Date.parse('2026-11-14T03:00:00Z');
   const NOTICE_STARTER_IDS = new Set([
+    'notice_nerisa_raid_release_20261124',
     'notice_inori_renewal_20261114',
     'notice_phase_silver_ticket_20261114',
     'notice_song_align_sync_20261114',
@@ -5733,7 +5749,7 @@ window.NOTICE_ITEMS = [
 
   function getVisibleNotices() {
     return (window.NOTICE_ITEMS || []).filter(function (item) {
-      return item && item.hidden !== true && (!noticeIsNewUser || NOTICE_STARTER_IDS.has(item.id));
+      return item && item.hidden !== true && (!item.publishAt || Date.now() >= Date.parse(item.publishAt)) && (!noticeIsNewUser || NOTICE_STARTER_IDS.has(item.id));
     });
   }
 
@@ -5995,7 +6011,8 @@ window.NOTICE_ITEMS = [
          item.reward.type === 'skin' ||
          item.reward.type === 'phase_silver_ticket' ||
          item.reward.type === 'inori_challenge_ticket' ||
-         item.reward.type === 'inori_playable_gift');
+         item.reward.type === 'inori_playable_gift' ||
+         item.reward.type === 'nerisa_release_bundle');
     });
     if (!rewardItems.length) { noticeClaimSynced = true; return; }
 
@@ -6020,6 +6037,8 @@ window.NOTICE_ITEMS = [
           res = await client.rpc('is_test_growth_bundle_claimed');
         } else if (item.reward.type === 'special_stage_ticket') {
           res = await client.rpc(String(item.reward.statusRpcName || 'is_noah_guerrilla_bonus_claimed'));
+        } else if (item.reward.type === 'nerisa_release_bundle') {
+          res = await client.rpc('is_notice_reward_claimed', {p_claim_id:item.reward.claimId});
         } else if (item.reward.type === 'phase_silver_ticket') {
           res = await client.rpc('is_notice_reward_claimed', {p_claim_id:item.reward.claimId});
         } else if (item.reward.type === 'inori_playable_gift') {
@@ -6038,6 +6057,11 @@ window.NOTICE_ITEMS = [
           item.reward.claimed = res.data;
           writeNoticeDbStatus(item.reward.claimId, res.data);
         }
+        if (item.reward.type === 'nerisa_release_bundle' && typeof (res && res.data) === 'boolean') {
+          item.reward.claimed = res.data;
+          item.reward.claimedForUserId = noticeStatusUserId();
+          writeNoticeDbStatus(item.reward.claimId,res.data);
+        }
         if (res && res.data === true) {
           item.reward.claimed = true;
           markNoticeRewardClaimedLocally(item.reward.claimId);
@@ -6054,6 +6078,13 @@ window.NOTICE_ITEMS = [
   function isRewardClaimed(item) {
     if (!item || !item.reward) return false;
     if (item.reward.type === 'character') return item.reward.claimed === true;
+    // ネリサ配布はユーザー別のDB判定を使い、端末共通のローカル受取履歴は信用しない。
+    if (item.reward.type === 'nerisa_release_bundle') {
+      const current = noticeStatusUserId();
+      if (item.reward.claimedForUserId === current && typeof item.reward.claimed === 'boolean') return item.reward.claimed;
+      const cached = readNoticeDbStatus()[item.reward.claimId];
+      return typeof cached === 'boolean' ? cached : null;
+    }
     if (!item.reward.claimId) return false;
     // ノアお詫び配布は端末共有のlocalStorageを信用せず、ユーザー個別のDB判定を利用。
     // DB確認前は、同じアカウントで前回確認した結果を使う。まだ一度も確認していなければ「不明(null)」。
@@ -6113,6 +6144,19 @@ window.NOTICE_ITEMS = [
           >${claimed ? '受け取り済み' : '受け取る'}</button>
         </div>
       `;
+    }
+
+    if (reward.type === 'nerisa_release_bundle') {
+      return `<div class="notice-reward">
+        <div class="notice-reward-main">
+          <div class="notice-reward-copy">
+            <span class="notice-reward-label">リリース記念プレゼント</span>
+            <strong>結晶 ×30 ＋ レイドリセット券 ×2</strong>
+          </div>
+        </div>
+        <button type="button" class="notice-reward-btn${claimed ? ' claimed' : ''}"
+          data-notice-claim="${escapeHtml(item.id)}" ${claimed ? 'disabled' : ''}>${claimed ? '受取済み' : '受け取る'}</button>
+      </div>`;
     }
 
     if (reward.type === 'test_growth_bundle') {
@@ -6405,6 +6449,45 @@ window.NOTICE_ITEMS = [
     }
 
     const reward = item.reward;
+
+    if (reward.type === 'nerisa_release_bundle') {
+      if (button) { button.disabled = true; button.textContent = '受取中...'; }
+      try {
+        const client = window.zsSupabase || null;
+        if (!client || typeof client.rpc !== 'function') throw new Error('Supabaseへ接続できません');
+        const res = await client.rpc('claim_nerisa_release_bundle_20261124');
+        if (res && res.error) throw res.error;
+        const result = (typeof res.data === 'string') ? JSON.parse(res.data) : res.data;
+        if (!result || result.ok !== true) throw new Error((result && result.message) || '受け取りに失敗しました');
+        reward.claimed = true;
+        reward.claimedForUserId = noticeStatusUserId();
+        writeNoticeDbStatus(reward.claimId,true);
+        if (window.userProfile && Number.isFinite(Number(result.gem))) {
+          window.userProfile.gem = Number(result.gem);
+          const used = Array.isArray(window.userProfile.used_gachas) ? window.userProfile.used_gachas : [];
+          window.userProfile.used_gachas = Array.from(new Set(used.concat(reward.claimId)));
+        }
+        const uid = getCurrentUserIdForNotice();
+        if (uid && typeof window.loadInventoryFromSupabase === 'function') {
+          try { await window.loadInventoryFromSupabase(uid); } catch (syncErr) { console.warn('[NerisaNotice] inventory refresh failed',syncErr); }
+        }
+        if (window.ItemTickets && typeof window.ItemTickets.fetchCounts === 'function') {
+          try { await window.ItemTickets.fetchCounts(); } catch (_) {}
+        }
+        if (typeof window.updateMainUI === 'function') window.updateMainUI();
+        if (typeof window.updateSummonGemUI === 'function') window.updateSummonGemUI();
+        if (!noticeBulkClaimActive && typeof window.showToast === 'function') window.showToast(
+          result.already_claimed ? 'このプレゼントは受取済みです' : '結晶 ×30 とレイドリセット券 ×2 を受け取りました！');
+        renderNoticeList();
+        updateNoticeBadge();
+        return;
+      } catch (error) {
+        console.error('[NerisaNotice] claim failed:', error);
+        if (!noticeBulkClaimActive && typeof window.showToast === 'function') window.showToast(error && error.message ? error.message : '受け取りに失敗しました');
+        if (button) { button.disabled = false; button.textContent = '受け取る'; }
+        return;
+      }
+    }
 
     if (reward.type === 'inori_playable_gift') {
       if (button) { button.disabled = true; button.textContent = '受取中...'; }
@@ -7120,6 +7203,18 @@ window.NOTICE_ITEMS = [
   } else {
     initializeNoticeUi();
   }
+
+  // 11/24 00:00 JST: open scheduled notice without reloading the PWA.
+  // Use UTC publishAt timestamp; server RPC also enforces release time.
+  let nerisaNoticeWasVisible = getVisibleNotices().some(item => item.id === 'notice_nerisa_raid_release_20261124');
+  setInterval(function(){
+    const visible = getVisibleNotices().some(item => item.id === 'notice_nerisa_raid_release_20261124');
+    if (visible && !nerisaNoticeWasVisible) {
+      if (document.getElementById('notice-modal')?.classList.contains('active')) renderNoticeList();
+      syncNoticeRewardClaimStatus().finally(updateNoticeBadge);
+    }
+    nerisaNoticeWasVisible = visible;
+  }, 15000);
 
   window.addEventListener('focus', function(){ refreshNoticeAudience(); updateNoticeBadge(); });
   document.addEventListener('visibilitychange', function () {
@@ -21466,7 +21561,7 @@ window.returnToTitleScreen = function(){
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=2138-gimmick-fold"></script>
 <script src="js/skin_system.js?v=2115-towa-light-assets"></script>
-<script src="js/title_system.js?v=2102-home-title-plate"></script>
+<script src="js/title_system.js?v=2142-title-left"></script>
 <script src="js/item_tickets.js?v=1963-phase-run-guard"></script>
 <script src="js/inori_piece.js?v=1829-ticket-button"></script>
 <script src="js/item_management.js?v=2114-flower-exchange"></script>
@@ -23032,11 +23127,11 @@ html body #global-user-frame .hud-sweep-line-player::after{
 <!-- build1448: ホーム左右メニュー（アイコン＋文字＋金線） -->
 <script src="js/home_menu_redesign.js?v=1951-music"></script>
 <link rel="stylesheet" href="css/home_v2.css?v=2111-iphone17-layout">
-<link rel="stylesheet" href="css/global_user_frame_shared.css?v=1970-shared-hud">
+<link rel="stylesheet" href="css/global_user_frame_shared.css?v=2144-ring-match">
 <link rel="stylesheet" href="css/chara_favorites.css?v=1914-fav">
 <link rel="stylesheet" href="css/filter_compact.css?v=2027-ult-search">
 <script src="js/home_lines.js?v=1886-lines"></script>
-<script src="js/home_v2.js?v=2111-iphone17-layout"></script>
+<script src="js/home_v2.js?v=2142-exp-ring"></script>
 <script src="js/chara_favorites.js?v=1910-fav"></script>
 <script src="js/friend_support.js?v=2104"></script>
 <script src="js/notice_dot.js?v=1618-notice-dot"></script>
