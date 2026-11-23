@@ -673,3 +673,26 @@ html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks .drg-names em{fo
 html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks .drg-body{display:none;margin-top:6px}
 html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks.is-open .drg-body{display:block}
 html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks.is-open .drg-names{display:none}
+
+/* build2161: 挑戦回数の横の「リセット券」ボタン（所持＆1回以上挑戦済みの時だけ） */
+#daily-raid-root .daily-raid-reset-chip{
+  position:relative;z-index:2;flex:none;display:inline-flex;align-items:center;gap:4px;
+  height:24px;padding:0 9px 0 4px;margin:0;border:0;border-radius:999px;cursor:pointer;
+  font:700 10.5px/1 "Noto Serif JP",serif;letter-spacing:.04em;white-space:nowrap;
+  color:#4a3112;-webkit-text-fill-color:#4a3112;
+  background:linear-gradient(180deg,#fff4d2,#e3bf72);
+  box-shadow:inset 0 0 0 1px rgba(255,250,232,.9),0 0 0 1px rgba(166,123,49,.55),0 2px 6px rgba(120,86,30,.22);
+}
+#daily-raid-root .daily-raid-reset-chip[hidden]{display:none!important}
+#daily-raid-root .daily-raid-reset-chip i{font-style:normal;font-size:12px;line-height:1}
+#daily-raid-root .daily-raid-reset-chip img{width:20px;height:20px;object-fit:contain;display:block}
+#daily-raid-root .daily-raid-reset-chip b{font:700 11px/1 "Cinzel",serif}
+#daily-raid-root .daily-raid-reset-chip:active{transform:scale(.96)}
+#daily-raid-root .daily-raid-reset-chip:disabled{filter:grayscale(.6);opacity:.7}
+@media (max-width:380px){
+  #daily-raid-root .daily-raid-reset-chip{height:22px;padding:0 7px 0 3px;font-size:9.5px}
+}
+#daily-raid-root .daily-raid-attempt-overview:has(.daily-raid-reset-chip:not([hidden])){gap:6px!important;padding-right:4px!important}
+@media (max-width:380px){
+  #daily-raid-root .daily-raid-attempt-overview:has(.daily-raid-reset-chip:not([hidden])) > span{font-size:9.5px!important;letter-spacing:0!important}
+}

@@ -32985,7 +32985,9 @@
       edge = 'bottom';
       const p = pickFlankSpawnPoint({ spawnEdges: ['bottom'] }, n, w, h);
       x = p.x; y = h + 30; vx = (fixedStagePatternRandom('party_drift', n, 0) - .5) * 30; vy = -speed;
-      showFlankSpawnWarning({ edge: 'bottom', x: p.x, y: h - 26 }, 800);
+      // build2160: 予告マークは0.8秒で片付ける（群れの仕組みと違い自動では消えないため、下に溜まっていた）
+      const warnEl = showFlankSpawnWarning({ edge: 'bottom', x: p.x, y: h - 26 }, 800);
+      if (warnEl) setTimeout(() => { try { warnEl.remove(); } catch (_) {} }, 850);
     } else if (side) {
       edge = n % 2 ? 'left' : 'right';
       x = edge === 'left' ? -30 : w + 30;
@@ -33213,7 +33215,7 @@
       const root = document.getElementById(ROOT_ID);
       if (root) {
         root.classList.remove('party-bonus');
-        root.querySelectorAll('.party-bonus-bar,.party-bonus-veil,.party-glass,.party-pop,.party-cheers').forEach(n => n.remove());
+        root.querySelectorAll('.party-bonus-bar,.party-bonus-veil,.party-glass,.party-pop,.party-cheers,.flank-spawn-warn').forEach(n => n.remove());
       }
     } catch (_) {}
   }

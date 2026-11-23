@@ -383,3 +383,19 @@ html body #screen-summon.screen:not(.active) > button.summon-page-back{
     max-height:32px !important;
   }
 }
+
+/* build2162: レイド画面の戻るボタンだけヘッダーの左余白（18px）ぶん右にずれていたので、
+   他の画面と同じ基本位置（--zb-back-x / --zb-back-y）に固定する。ヘッダーの高さは固定値なので配置は崩れない。 */
+html body:not(.ui-immersive) #daily-raid-root #daily-raid-back{
+  position:fixed !important;
+  left:var(--zb-back-x) !important;
+  top:var(--zb-back-y) !important;
+  right:auto !important;
+  bottom:auto !important;
+  margin:0 !important;
+  transform:none !important;
+  z-index:50 !important;
+}
+html body:not(.ui-immersive) #daily-raid-root #daily-raid-back:active{
+  transform:translateY(1px) !important;
+}

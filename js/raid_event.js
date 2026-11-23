@@ -1454,6 +1454,7 @@
         <div class="daily-raid-attempt-overview" id="daily-raid-attempt-overview" aria-live="polite">
           <span>本日の挑戦回数</span>
           <strong>残り <b id="daily-raid-attempt-remaining">3</b> / 3 回</strong>
+          <button type="button" id="daily-raid-reset-chip" class="daily-raid-reset-chip" hidden aria-label="レイドリセット券を使う" title="レイドリセット券を使う"><img src="images/item_raid_reset_ticket.webp" alt="" onerror="this.replaceWith(Object.assign(document.createElement('i'),{textContent:'↺'}))"><b>×0</b></button>
           <button type="button" id="daily-raid-rule-open" class="daily-raid-rule-open" aria-haspopup="dialog" aria-controls="daily-raid-rule-modal">RAID RULE</button>
         </div>
 
@@ -1609,6 +1610,8 @@
     root.querySelector('#daily-raid-start').addEventListener('click',start);
     root.querySelector('#daily-raid-finalize-best').addEventListener('click',skipRemainingAttempts);
     root.querySelector('#daily-raid-recruit-cancel').addEventListener('click',cancelRecruitment);
+    // build2161: 挑戦回数の横から、いつでもレイドリセット券を使える（1回以上挑戦済み・挑戦中でない・未討伐の時）
+    root.querySelector('#daily-raid-reset-chip').addEventListener('click',()=>{ void useRaidResetTicket({ fromChip:true }); });
 
     const ruleModal=root.querySelector('#daily-raid-rule-modal');
     const ruleOpen=root.querySelector('#daily-raid-rule-open');
@@ -1773,19 +1776,38 @@
     if(!T) return;
     T.fetchCounts().then(()=>{ raidResetOwned=T.getCount('raid_reset_ticket'); renderResetTicket(status||currentStatus); }).catch(()=>{});
   }
-  async function useRaidResetTicket(){
+  async function useRaidResetTicket(opts){
     const T=window.ItemTickets;
     if(!T) return;
     const btn=ensureRoot().querySelector('#daily-raid-start');
+    const chip=ensureRoot().querySelector('#daily-raid-reset-chip');
     if(btn) btn.disabled=true;
+    if(chip) chip.disabled=true;
+    const used=Math.max(0,Math.min(3,n(currentStatus&&currentStatus.me&&currentStatus.me.attempt_count)));
     try{
-      const ok=await T.useRaidReset({message:'本日のレイドの挑戦回数を 0 / 3 に戻します。\nこれまでの挑戦で共有HPへ反映済みのダメージはそのまま残ります。\nよろしいですか？'});
+      const ok=await T.useRaidReset({message:'本日のレイドの挑戦回数を 0 / 3 に戻します（いま '+used+' / 3 回挑戦済み）。\nこれまでの挑戦で共有HPへ反映済みのダメージはそのまま残ります。\nよろしいですか？'});
       raidResetOwned=T.getCount('raid_reset_ticket');
       if(ok){
         try{ const status=await fetchStatus(); if(status&&status.raid_id){ await hydrateMemberPanels(status); render(status); } }catch(_){}
       }
       if(currentStatus&&currentStatus.raid_id) render(currentStatus);
-    }finally{ if(btn&&btn.dataset.resetTicket==='1') btn.disabled=false; }
+    }finally{ if(btn&&btn.dataset.resetTicket==='1') btn.disabled=false; if(chip) chip.disabled=false; }
+  }
+  // build2161: 挑戦回数の横のリセット券ボタン（1〜3回挑戦済みで使える）
+  function canUseResetChip(status){
+    const me=status&&status.me||{};
+    const attempts=Math.max(0,Math.min(3,n(me.attempt_count)));
+    const inBattle=!!me.attempt_started_at&&!me.attempt_finished_at;
+    const cleared=!!(status&&status.status==='cleared')||(status&&status.raid_id&&n(status.current_hp)<=0);
+    return !!(status&&status.raid_id)&&!isAdmin()&&raidResetOwned>0&&attempts>=1&&!inBattle&&!cleared;
+  }
+  function syncResetChip(status){
+    const chip=ensureRoot().querySelector('#daily-raid-reset-chip');
+    if(!chip) return;
+    const show=canUseResetChip(status);
+    chip.hidden=!show;
+    const b=chip.querySelector('b');
+    if(b) b.textContent='×'+raidResetOwned;
   }
 
   function updateAttemptOverview(status){
@@ -1797,6 +1819,7 @@
     if(isAdmin()){
       value.textContent='∞';
       box.classList.remove('is-empty');
+      syncResetChip(null);
       return;
     }
 
@@ -1805,6 +1828,7 @@
     const remaining=Math.max(0,3-used);
     value.textContent=String(remaining);
     box.classList.toggle('is-empty',remaining<=0);
+    syncResetChip(status); // build2161
   }
 
 
