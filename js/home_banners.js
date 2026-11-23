@@ -44,7 +44,7 @@ window.HOME_EVENT_BANNERS = [
     img: 'images/home_banner_deinova.webp',
     alt: '特別巡行 最恐 -デイノヴァ- Sランククリアで「SR デイノヴァ」を入手しよう！',
     actionName: 'openDeinovaSpecialFromHome',
-    hidden: false
+    hidden: true
   },
   {
     id: 'event_faceless',
@@ -68,6 +68,6 @@ window.HOME_EVENT_BANNERS = [
     img: 'images/event_banner_03.webp',
     alt: 'ウルフ実装',
     actionName: 'openWolfGachaFromHome',
-    hidden: false
+    hidden: true
   }
 ];
