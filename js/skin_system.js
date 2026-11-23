@@ -5,7 +5,7 @@
     112: {
       limited_01: {
         id:'limited_01',
-        name:'白華の和装',
+        name:'雪景色',
         img:'images/chara_112_b.webp',
         home:'images/chara_112_b_cut.webp',
         panel:'images/chara_112_b_panel.webp',
@@ -18,7 +18,7 @@
     3: {
       limited_01: {
         id:'limited_01',
-        name:'限定衣装',
+        name:'カエル',
         img:'images/chara_03_b.webp',   // build1465: 限定衣装の立ち絵（キャラ詳細用）
         home:'images/chara_03_b_cut.webp',
         panel:'images/chara_03_b_panel.webp',
@@ -29,7 +29,7 @@
     9: {
       limited_01: {
         id:'limited_01',
-        name:'限定衣装',
+        name:'制服',
         img:'images/chara_09_b.webp',   // build1465: 限定衣装の立ち絵（キャラ詳細用）
         home:'images/chara_09_b_cut.webp',
         panel:'images/chara_09_b_panel.webp',
@@ -40,7 +40,7 @@
     20: {
       limited_01: {
         id:'limited_01',
-        name:'限定衣装',
+        name:'闇夜',
         img:'images/chara_20_b.webp',   // build1465: 限定衣装の立ち絵（キャラ詳細用）
         home:'images/chara_20_b_cut.webp',
         panel:'images/chara_20_b_panel.webp',
@@ -51,7 +51,7 @@
     36: {
       limited_01: {
         id:'limited_01',
-        name:'限定衣装',
+        name:'メイド',
         img:'images/chara_36_b.webp',   // build1465: 限定衣装の立ち絵（キャラ詳細用）
         home:'images/chara_36_b_cut.webp',
         panel:'images/chara_36_b_panel.webp',
@@ -63,7 +63,7 @@
     39: {
       limited_01: {
         id:'limited_01',
-        name:'ハロウィン衣装',
+        name:'ハロウィン',
         img:'images/chara_39_b.webp',                       // キャラ詳細の立ち絵（背景つき）
         home:'images/chara_39_b_cut.webp',                  // ホーム（全身・透過）
         panel:'images/chara_39_b_panel.webp',               // パネル（バストアップ・透過）
@@ -476,7 +476,19 @@
     buildSelectorHTML,
     buildFullscreenControlsHTML,
     equip,
-    notifySkinAcquired
+    notifySkinAcquired,
+    isCharacterOwned,
+    // build2147: 所持している衣装の一覧（キャラ未所持の衣装も含む）。アイテム画面の「衣装」用
+    listOwnedSkins:()=>{
+      const out=[];
+      Object.keys(SKIN_MASTER).forEach(cid=>{
+        Object.values(SKIN_MASTER[cid]||{}).forEach(skin=>{
+          if(state.owned.has(key(cid,skin.id))) out.push({characterId:Number(cid),skin});
+        });
+      });
+      return out;
+    },
+    isLoaded:()=>state.loaded
   };
 
   function boot(attempt){

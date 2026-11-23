@@ -773,3 +773,20 @@ html body #spirit-flower-sr-exchange-modal .item-exchange-btn{
   width:100% !important;
   min-width:0 !important;
 }
+
+/* build2147: 4 tabs (進化素材・強化素材・その他・衣装) — icon above label so all four fit on one row */
+html body #screen-item.item-screen .item-category-tabs{
+  grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+  gap:5px !important;
+}
+html body #screen-item.item-screen .item-category-tab{
+  flex-direction:column !important;
+  gap:3px !important;
+  height:48px !important;
+  padding:0 2px !important;
+}
+html body #screen-item.item-screen .item-tab-icon{width:19px;height:19px;}
+html body #screen-item.item-screen .item-category-tab span{
+  font:700 clamp(10.5px,3vw,12.5px)/1 "Noto Serif JP",serif !important;
+  letter-spacing:.04em !important;
+}

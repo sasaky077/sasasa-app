@@ -1192,3 +1192,16 @@ html body:not(.ui-immersive) #screen-item.screen.active{
     padding-bottom:21px !important;
   }
 }
+
+/* =========================================================
+   build2147 — 4 category tabs (進化素材・強化素材・その他・衣装)
+   and the OUTFIT list (owned limited outfits, incl. characters not owned yet)
+   ========================================================= */
+#screen-item .item-row-skin{cursor:pointer}
+#screen-item .item-row-skin .item-row-icon-skin img{
+  width:100%;height:100%;object-fit:cover;object-position:50% 12%;
+}
+#screen-item .item-row-skin.is-chara-missing .item-row-icon-skin img{filter:grayscale(.55) brightness(1.04);opacity:.85}
+#screen-item .item-skin-status{color:#7a6849;font-size:11px}
+#screen-item .item-skin-status.is-wearing{color:#8a5a12;font-weight:700}
+#screen-item .item-skin-status.is-locked{color:#8b4a4a}

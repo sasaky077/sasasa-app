@@ -101,7 +101,7 @@
   }
 
   const FLOWER_SR_EXCHANGES = [
-    {id:'skin_112_limited_01',cost:3,characterId:112,name:'トワ（光の姿） 白華の和装',img:'images/chara_112_b_panel.webp',desc:'限定衣装を解放'},
+    {id:'skin_112_limited_01',cost:3,characterId:112,name:'トワ（光の姿） 雪景色',img:'images/chara_112_b_panel.webp',desc:'限定衣装を解放'},
     {id:'noah_ticket_1',cost:1,name:'ノア挑戦チケット ×1',img:'images/special_stage_ticket.webp',desc:'SPECIAL STAGE「理想郷 -ノア-」へ挑戦'},
     {id:'flower_r_3',cost:1,name:'聖霊花(R) ×3',img:'images/item_flower_r.webp',desc:'聖霊花(R)を3個獲得'},
     {id:'sr_ticket_1',cost:5,name:'SR確定ガチャTICKET ×1',img:'images/gacha_ticket_10.webp',desc:'恒常SRが1体確定する単発チケット'}
@@ -408,6 +408,45 @@
 
     const kicker=document.getElementById('item-panel-kicker');
     const title=document.getElementById('item-panel-title');
+
+    // build2147: 衣装（所持している限定衣装。キャラ未所持の衣装も表示）
+    if(state.tab==='skin'){
+      if(kicker) kicker.textContent='OUTFIT';
+      if(title) title.textContent='衣装';
+      const api=window.CharacterSkins;
+      if(api && typeof api.isLoaded==='function' && !api.isLoaded() && typeof api.loadMySkins==='function'){
+        list.innerHTML='<div class="item-management-loading">読み込み中...</div>';
+        api.loadMySkins(true).then(()=>{ if(state.tab==='skin') render(); });
+        return;
+      }
+      const owned=(api && typeof api.listOwnedSkins==='function') ? api.listOwnedSkins() : [];
+      if(!owned.length){
+        list.innerHTML='<div class="item-management-empty">まだ衣装を持っていません。<br>イベントや交換所で手に入る限定衣装がここに並びます。</div>';
+        return;
+      }
+      const charas=Array.isArray(window.CHARACTERS)?window.CHARACTERS:[];
+      list.innerHTML=owned.map(({characterId,skin})=>{
+        const c=charas.find(x=>x&&Number(x.id)===Number(characterId));
+        const cname=(c&&c.name)||'';
+        const hasChara=!!(api.isCharacterOwned && api.isCharacterOwned(characterId));
+        const wearing=hasChara && api.getEquippedSkinId && api.getEquippedSkinId(characterId)===skin.id;
+        const status=!hasChara
+          ? '<span class="item-skin-status is-locked">'+escapeHtml(cname)+'を入手すると着替えられます</span>'
+          : (wearing
+              ? '<span class="item-skin-status is-wearing">着用中</span>'
+              : '<span class="item-skin-status">キャラ詳細で着替えられます</span>');
+        return ''+
+          '<article class="item-row item-row-other item-row-skin'+(hasChara?'':' is-chara-missing')+'" data-skin-preview="'+Number(characterId)+'" role="button" tabindex="0" aria-label="'+escapeHtml(cname+' '+(skin.name||'限定衣装'))+'">'+
+            '<div class="item-row-icon item-row-icon-skin"><img src="'+escapeHtml(skin.panel||skin.home||'')+'" alt="" onerror="this.style.display=\'none\'"></div>'+
+            '<div class="item-row-main">'+
+              '<div class="item-row-kicker">LIMITED OUTFIT</div>'+
+              '<div class="item-row-name">'+escapeHtml(cname)+'（'+escapeHtml(skin.name||'限定衣装')+'）</div>'+
+              '<div class="item-row-desc">'+status+'</div>'+
+            '</div>'+
+          '</article>';
+      }).join('');
+      return;
+    }
 
     if(state.tab==='other'){
       if(kicker) kicker.textContent='OTHER ITEM';
@@ -910,7 +949,7 @@
     document.querySelectorAll('#screen-item .item-category-tab').forEach(btn=>{
       btn.addEventListener('click',()=>{
         const next=btn.dataset.itemTab;
-        state.tab=(next==='level'||next==='other') ? next : 'evolution';
+        state.tab=(next==='level'||next==='other'||next==='skin') ? next : 'evolution';
         const list=document.getElementById('item-management-list');
         if(list) list.scrollTop=0;
         render();
@@ -920,6 +959,8 @@
     const list=document.getElementById('item-management-list');
     if(list){
       list.addEventListener('click',e=>{
+        const skinRow=e.target.closest('.item-row-skin[data-skin-preview]');
+        if(skinRow){ openSkinPreview(Number(skinRow.dataset.skinPreview)); return; }
         const sellBtn=e.target.closest('[data-sell-item]');
         if(sellBtn && !sellBtn.disabled){
           openSell(sellBtn.dataset.sellItem);
