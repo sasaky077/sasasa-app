@@ -17,12 +17,22 @@
 (function(){
   'use strict';
 
+  // build2145: 称号の効果（装備中の1つだけがバトルに乗る）。
+  //   kind: 'hp'＝バトル中のキャラ最大HP / 'atk'＝ATK / 'ult'＝ULTゲージ回収量
+  //   値(%) = base + (Lv-1)*perLv（Lvは maxLv で頭打ち）
   const TITLE_MASTER = Object.freeze({
+    apprentice_savior: Object.freeze({
+      id:'apprentice_savior', name:'見習い救世主', rarity:'N',
+      desc:'ゼラフィアに降り立ったすべての救世主に贈られる称号。',
+      how:'全員に配布',
+      tone:'savior',
+      effect:Object.freeze({ kind:'hp', base:10, perLv:0, maxLv:1 })
+    }),
     reason_knower: Object.freeze({
       id:'reason_knower', name:'理を知る者', rarity:'SR',
       desc:'位相回遊100Fから50Fごとの初回突破で I〜V に昇格する称号。',
       how:'位相回遊100F / 150F / 200F / 250F / 300F',
-      tone:'reason', tiers:Object.freeze([{min:1,key:'t1',label:'I'}, {min:2,key:'t2',label:'II'}, {min:3,key:'t3',label:'III'}, {min:4,key:'t4',label:'IV'}, {min:5,key:'t5',label:'V'}])
+      tone:'reason', effect:Object.freeze({ kind:'atk', base:8, perLv:1, maxLv:5 }), tiers:Object.freeze([{min:1,key:'t1',label:'I'}, {min:2,key:'t2',label:'II'}, {min:3,key:'t3',label:'III'}, {min:4,key:'t4',label:'IV'}, {min:5,key:'t5',label:'V'}])
     }),
     despair_conqueror: Object.freeze({
       id: 'despair_conqueror',
@@ -31,6 +41,7 @@
       desc: '残響の塔（絶望）20Fを毎週踏破することで昇格する称号。',
       how: '今週の残響の塔を制覇し、残響の塔（絶望）20Fを踏破',
       tone: 'despair',
+      effect: Object.freeze({ kind: 'ult', base: 3, perLv: 1, maxLv: 5 }),
       // Lvがこの値以上で見た目が変わる（1：深紅／3：銀縁／5：金縁／10：輝く金縁）
       tiers: Object.freeze([
         Object.freeze({ min: 1,  key: 't1', label: '深紅' }),
@@ -73,6 +84,37 @@
     if(!t) return '';
     return t.name + ' ' + roman(levelOf(level));
   }
+  const EFFECT_LABEL = Object.freeze({ hp:'バトル中のキャラHP', atk:'ATK', ult:'ULT回収率' });
+  function effectPercent(titleId, level){
+    const t = getTitle(titleId);
+    const e = t && t.effect;
+    if(!e) return 0;
+    const lv = Math.min(levelOf(level), Math.max(1, Number(e.maxLv) || 1));
+    return Math.max(0, Number(e.base || 0) + (lv - 1) * Number(e.perLv || 0));
+  }
+  function effectText(titleId, level){
+    const t = getTitle(titleId);
+    const e = t && t.effect;
+    if(!e) return '';
+    let txt = (EFFECT_LABEL[e.kind] || e.kind) + ' +' + effectPercent(titleId, level) + '%';
+    if(Number(e.perLv) > 0){
+      const maxLv = Math.max(1, Number(e.maxLv) || 1);
+      txt += levelOf(level) >= maxLv ? '（最大）' : '（Lv' + maxLv + 'で+' + effectPercent(titleId, maxLv) + '%）';
+    }
+    return txt;
+  }
+  // バトル側が読む倍率（装備中の称号のみ）。未ロード・未装備は全て1。
+  function getBattleMultipliers(){
+    const out = { hp:1, atk:1, ult:1, titleId:'', level:0 };
+    const id = state.equipped;
+    const t = getTitle(id);
+    if(!t || !t.effect || !state.owned.has(id)) return out;
+    const lv = state.owned.get(id) || 1;
+    const k = t.effect.kind;
+    if(Object.prototype.hasOwnProperty.call(out, k)) out[k] = 1 + effectPercent(id, lv) / 100;
+    out.titleId = id; out.level = lv;
+    return out;
+  }
   function esc(v){
     return String(v==null?'':v).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch]);
   }
@@ -102,6 +144,9 @@
       .zt-title-badge.tone-despair.tier-t4 .zt-rank,.zt-title-badge.tone-despair.tier-t4::before{color:#ffe39a}
       @keyframes ztGlow{0%,100%{box-shadow:0 0 0 1px rgba(246,215,122,.85) inset,0 0 6px rgba(246,215,122,.5)}50%{box-shadow:0 0 0 1px rgba(246,215,122,.95) inset,0 0 14px rgba(246,215,122,.95)}}
       @media (prefers-reduced-motion:reduce){.zt-title-badge.tone-despair.tier-t4{animation:none}}
+      .zt-opt .zt-effect{display:block;margin:3px 0 1px;font:700 11px/1.4 "Noto Serif JP",serif;color:#8a5a12;letter-spacing:.02em}
+      .zt-opt[disabled] .zt-effect{color:#9a8c78}
+      .zt-title-badge.tone-savior{border-color:#c9ced6;background:linear-gradient(180deg,#ffffff,#e8ebf0);color:#4f5866}
       #hud-title{display:block;margin-top:2px;line-height:1;min-height:0}
       #hud-title:empty{display:none}
       /* build2098: 名称・称号・EXPは通常フロー。絶対配置の重なりを廃止 */
@@ -376,6 +421,7 @@
       return '<button type="button" class="zt-opt' + (state.equipped === t.id ? ' is-selected' : '') + '" data-zt-equip="' + esc(t.id) + '"' + (owned ? '' : ' disabled') + '>' +
         badgeHTML(t.id, lv) +
         '<span>' + esc(t.desc) + '</span>' +
+        (t.effect ? '<b class="zt-effect">効果：' + esc(effectText(t.id, lv)) + '</b>' : '') +
         '<small>' + status + '</small>' +
         tiers +
       '</button>';
@@ -419,6 +465,9 @@
     reload: () => loadMine(true),
     equip,
     getEquipped: () => state.equipped,
+    effectPercent,
+    effectText,
+    getBattleMultipliers,
     getLevel: id => state.owned.get(String(id || '')) || 0,
     isOwned: id => state.owned.has(String(id || '')),
     getPublicTitles,

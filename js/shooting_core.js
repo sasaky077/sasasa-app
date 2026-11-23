@@ -4329,6 +4329,32 @@
     return profile;
   }
 
+  // build2145: 称号の効果。装備中の1つだけ・バトル開始時に固定（途中で付け替えても変わらない）。
+  function readTitleBattleMultipliers() {
+    const base = { hp: 1, atk: 1, ult: 1 };
+    try {
+      const m = window.ZeraphiaTitles && typeof window.ZeraphiaTitles.getBattleMultipliers === 'function'
+        ? window.ZeraphiaTitles.getBattleMultipliers() : null;
+      if (!m) return base;
+      ['hp', 'atk', 'ult'].forEach(k => {
+        const v = Number(m[k]);
+        if (Number.isFinite(v) && v > 0) base[k] = v;
+      });
+    } catch (_) {}
+    return base;
+  }
+  function applyTitleEffectToProfile(profile, mul) {
+    if (!profile || !mul || (mul.hp === 1 && mul.atk === 1)) return profile;
+    const next = Object.assign({}, profile);
+    if (mul.hp !== 1) next.hp = Math.max(1, Math.round(Number(profile.hp || 1) * mul.hp));
+    if (mul.atk !== 1) next.atk = Math.max(0, Math.round(Number(profile.atk || 0) * mul.atk));
+    return next;
+  }
+  function getTitleUltGainMultiplier() {
+    const m = state && state.titleBattleMul;
+    return m && Number.isFinite(Number(m.ult)) && Number(m.ult) > 0 ? Number(m.ult) : 1;
+  }
+
   function getBattleCharacter(id) {
     const numericId = Number(id);
     if (state && state.characterProfiles && state.characterProfiles[numericId]) {
@@ -5440,7 +5466,7 @@
     const safeGainMultiplier = Math.max(0, Number.isFinite(Number(gainMultiplier)) ? Number(gainMultiplier) : 1);
     // build1643: 位相回遊の「ULT回収量上昇」。通常ステージでは常に1。
     const phaseOdysseyUltRate = Math.max(0, Number(getPhaseOdysseyApi()?.getUltGainMultiplier?.() || 1));
-    const gain = getUltGainAmountPerHit(c) * Math.max(1, Number(hitCount || 1)) * safeGainMultiplier * phaseOdysseyUltRate * getFriendSupportUltGainMultiplier(); // build2068
+    const gain = getUltGainAmountPerHit(c) * Math.max(1, Number(hitCount || 1)) * safeGainMultiplier * phaseOdysseyUltRate * getFriendSupportUltGainMultiplier() * getTitleUltGainMultiplier(); // build2068 / build2145 称号
     const wasReady = member.burst >= c.burstNeed;
     member.burst = Math.min(c.burstNeed, member.burst + gain);
     if (!wasReady && member.burst >= c.burstNeed && !member.ultReadyNotified) {
@@ -5966,8 +5992,10 @@
       CHARACTER_ID.ERI;
 
     const resolvedProfiles = Object.create(null);
+    // build2145: 装備中の称号の効果（HP/ATK）をこのバトルのキャラ性能に乗せる
+    const titleBattleMul = readTitleBattleMultipliers();
     selectedPartyIds.forEach(id => {
-      resolvedProfiles[Number(id)] = buildResonatedCharacterProfile(id);
+      resolvedProfiles[Number(id)] = applyTitleEffectToProfile(buildResonatedCharacterProfile(id), titleBattleMul);
     });
 
     const rawBossGaugeHps = Array.isArray(selectedStage?.bossGaugeHps)
@@ -6004,6 +6032,7 @@
 
     state = {
       characterProfiles: resolvedProfiles,
+      titleBattleMul,
       running: false, ended: false, finishing: false, countdown: true,
       phaseTransition: false, koTransition: false,
       tower10ReverseUntil:0,tower10ReverseTriggeredPhases:[],
@@ -16878,7 +16907,7 @@
     if (!state || !isChapter104BossStage()) return;
 
     const arnoId = Number(CHARACTER_ID.ARNO || 20);
-    const arno = buildResonatedCharacterProfile(arnoId);
+    const arno = applyTitleEffectToProfile(buildResonatedCharacterProfile(arnoId), state.titleBattleMul);
     if (!arno) return;
 
     state.characterProfiles[arnoId] = arno;

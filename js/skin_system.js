@@ -74,6 +74,20 @@
         gift:true
       }
     },
+    // build2146: アヤネ（正装）。入手はガチャ・イベント報酬で配布予定のため hidden（所持者にだけ衣装欄に出る）。
+    //   付与：player_character_skins に (user_id, 11, 'limited_01')。
+    11: {
+      limited_01: {
+        id:'limited_01',
+        name:'正装',
+        img:'images/chara_11_b.webp',               // キャラ詳細の立ち絵（背景つき）
+        home:'images/chara_11_b_cut.webp',          // ホーム（全身・透過）
+        panel:'images/chara_11_b_panel.webp',       // パネル（バストアップ）
+        battle:'images/chara_11_b_battle_back.webp',// バトルユニット（背面）
+        cutin:'images/chara_11_b_cutin.webp',       // ULTカットイン（横長）
+        hidden:true
+      }
+    },
     // build1709: トワ 衣装違い。入手経路は未実装のため hidden（所持者にだけ衣装欄に出る）。
     //   配布するときは player_character_skins に (user_id, 101, 'limited_01') を付与すればそのまま着替えられる。
     //   名前を決めたら name を変えるだけでよい。
