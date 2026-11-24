@@ -75,3 +75,11 @@ html body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom
   filter:brightness(.88) contrast(1.1) saturate(.96) !important;
   -webkit-filter:brightness(.88) contrast(1.1) saturate(.96) !important;
 }
+
+/* build2181/2182: ホーム画面・レイド画面（ホーム選択中）で、選択中ボタンの大きな白い発光（raid_event.cssの::before）が
+   左隣の「キャラ」にかぶり、アイコンと枠が白く欠けて見えていた。
+   HOME v2 のナビはホーム画面では発光を出さず、選択中は金の縁取りで示しているので、レイド画面も同じにそろえる */
+html.home-v2 body.raid-shell-active #bottom-nav-shared.bottom-nav .bottom-nav-item.active::before,
+html.home-v2 body[data-ui-immersive-reason="raid"] #bottom-nav-shared.bottom-nav .bottom-nav-item.active::before,
+html.home-v2 body #bottom-nav-shared.bottom-nav .bottom-nav-item.active::before,
+html.home-v2 body:not(.ui-immersive) #bottom-nav-shared.bottom-nav .bottom-nav-item.active::before{display:none!important}
