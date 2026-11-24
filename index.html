@@ -23659,6 +23659,258 @@ function handleProfileTap(e){
 document.addEventListener('click',handleProfileTap,true);
 })();
 </script>
+<style id="zs-rank-reward-style-2191">
+#zs-player-profile #zpp-rank.zrr-entry{cursor:pointer;position:relative;padding-right:32px;-webkit-tap-highlight-color:transparent}
+#zs-player-profile #zpp-rank.zrr-entry::after{content:'›';position:absolute;right:14px;top:50%;transform:translateY(-55%);font:18px Georgia,serif;color:#a58a61}
+#zs-player-profile #zpp-rank.zrr-entry.zrr-pending::before{content:'';position:absolute;right:4px;top:0;width:8px;height:8px;border-radius:50%;background:#c72e39;box-shadow:0 0 0 2px #fff7e8}
+#zrr-overlay{position:fixed;inset:0;z-index:100070;display:none;align-items:center;justify-content:center;padding:18px max(12px,env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom));box-sizing:border-box;background:rgba(18,12,22,.6);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);font-family:'Noto Serif JP',serif}
+#zrr-overlay.is-open{display:flex}
+#zrr-overlay .zrr-card{width:min(430px,100%);height:min(80dvh,690px);min-height:300px;display:flex;flex-direction:column;min-width:0;overflow:hidden;box-sizing:border-box;background:linear-gradient(145deg,#fffefa,#f4ede1);border:2px solid #c4a56b;border-radius:11px;box-shadow:0 0 0 2px rgba(255,255,255,.7),0 0 0 4px rgba(184,149,82,.55),0 18px 44px rgba(25,17,10,.4);color:#513a27}
+#zrr-overlay .zrr-head{display:flex;justify-content:space-between;gap:8px;align-items:center;margin:15px 17px 5px;border-bottom:1px solid #d5be90;padding-bottom:11px}
+#zrr-overlay h2{margin:0;font:700 20px/1.3 'Cinzel',Georgia,'Noto Serif JP',serif;letter-spacing:.1em;color:#765339}
+#zrr-overlay .zrr-sub{font:12px/1.6 'Noto Serif JP',serif;letter-spacing:.08em;color:#a08258}
+#zrr-overlay button{font-family:'Noto Serif JP',serif;touch-action:manipulation}
+#zrr-overlay .zrr-close{flex:0 0 auto;border:1px solid #c7a872;border-radius:50%;background:#fff8e9;color:#846540;font-size:23px;width:34px;height:34px;line-height:28px;cursor:pointer}
+#zrr-overlay .zrr-summary{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 18px 12px;font-size:12px;color:#775b3a}
+#zrr-overlay .zrr-summary strong{font:700 20px 'Cinzel',Georgia,serif;color:#684127}
+#zrr-overlay .zrr-message{font-size:11px;min-height:19px;padding:0 17px 4px;color:#956a42}
+#zrr-overlay .zrr-list{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:3px 14px 12px}
+#zrr-overlay .zrr-row{position:relative;display:flex;gap:9px;align-items:center;justify-content:space-between;padding:10px 9px;margin:4px 0;border:1px solid rgba(180,150,103,.45);background:rgba(255,255,255,.48);border-radius:5px}
+#zrr-overlay .zrr-row.zrr-milestone{background:#fff5dc;border-color:#b89755}
+#zrr-overlay .zrr-row.zrr-century{background:linear-gradient(105deg,#fff4dc,#f0e0ff);border-color:#bd94c9}
+#zrr-overlay .zrr-row.is-claimed{opacity:.56}
+#zrr-overlay .zrr-row.is-locked{opacity:.52}
+#zrr-overlay .zrr-detail{min-width:0;flex:1}
+#zrr-overlay .zrr-level{font:700 13px 'Cinzel',Georgia,serif;letter-spacing:.07em;color:#76583d;margin-bottom:4px}
+#zrr-overlay .zrr-items{font-size:11px;line-height:1.55;overflow-wrap:anywhere;color:#66513a}
+#zrr-overlay .zrr-state{flex:none;white-space:nowrap;font-size:10px;color:#97846b}
+#zrr-overlay .zrr-claim{flex:none;background:#75639b;color:white;border:1px solid #917db9;border-radius:5px;padding:8px 10px;font-size:11px;cursor:pointer}
+#zrr-overlay button:disabled{opacity:.42;cursor:default}
+#zrr-overlay .zrr-foot{flex:none;display:flex;gap:8px;padding:12px 15px 15px;border-top:1px solid #dfcfb2;background:rgba(249,245,237,.85)}
+#zrr-overlay .zrr-all{flex:1;background:#7967a2;color:#fff;border:1px solid #aa95ca;border-radius:5px;padding:11px 7px;font-size:12px;cursor:pointer}
+#zrr-overlay .zrr-done{flex:1;background:#fff8ed;color:#80603a;border:1px solid #c4a36c;border-radius:5px;padding:11px 7px;font-size:12px;cursor:pointer}
+@media(max-width:360px){#zrr-overlay .zrr-card{height:83dvh}#zrr-overlay .zrr-row{padding:8px 6px}#zrr-overlay .zrr-items{font-size:10px}#zrr-overlay .zrr-claim{padding:7px}}
+
+/* =========================================================
+   build2192: ランク報酬をPLAYER PROFILEと同じ系統に（シンプル＆上品）
+   白〜生成りのカード／金の細線の二重枠／四隅の金飾り／Cinzelの見出し／閉じるは共通の画像ボタン
+   ========================================================= */
+html body #zrr-overlay{background:rgba(35,27,27,.52);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+html body #zrr-overlay .zrr-card{
+  --zrr-gold:#c9ad73;--zrr-gold-d:#a88a52;--zrr-ink:#593d2a;--zrr-sub:#856a52;
+  position:relative;width:min(100%,360px);height:min(82dvh,660px);border-radius:14px;color:var(--zrr-ink);
+  background:
+    radial-gradient(ellipse 80% 60% at 30% 20%,rgba(255,255,255,.95),rgba(255,255,255,0) 70%),
+    radial-gradient(ellipse 70% 50% at 80% 90%,rgba(236,228,226,.7),rgba(236,228,226,0) 70%),
+    linear-gradient(160deg,#fbfaf8 0%,#f3efed 55%,#efe9e6 100%);
+  border:1.5px solid var(--zrr-gold);
+  box-shadow:0 0 0 1px rgba(255,255,255,.9),0 0 0 3px rgba(201,173,115,.55),0 16px 46px rgba(35,23,13,.42),inset 0 0 0 6px rgba(255,255,255,.55),inset 0 0 0 7px rgba(201,173,115,.45)}
+html body #zrr-overlay .zrr-card::before{content:'';position:absolute;top:7px;left:50%;width:150px;height:14px;transform:translateX(-50%);pointer-events:none;z-index:2;
+  background:linear-gradient(90deg,rgba(201,173,115,0),var(--zrr-gold)) left 50%/60px 1px no-repeat,linear-gradient(90deg,var(--zrr-gold),rgba(201,173,115,0)) right 50%/60px 1px no-repeat}
+html body #zrr-overlay .zrr-card::after{content:'';position:absolute;top:10px;left:50%;width:7px;height:7px;transform:translateX(-50%) rotate(45deg);background:var(--zrr-gold);pointer-events:none;z-index:2}
+html body #zrr-overlay .zrr-corner{position:absolute;width:14px;height:14px;pointer-events:none;z-index:2;background:linear-gradient(135deg,var(--zrr-gold) 0 30%,transparent 30%);opacity:.9}
+html body #zrr-overlay .zrr-corner::after{content:'';position:absolute;inset:3px auto auto 3px;width:16px;height:16px;border-top:1px solid var(--zrr-gold);border-left:1px solid var(--zrr-gold);opacity:.7}
+html body #zrr-overlay .zrr-corner.tl{top:8px;left:8px}
+html body #zrr-overlay .zrr-corner.tr{top:8px;right:8px;transform:scaleX(-1)}
+html body #zrr-overlay .zrr-corner.bl{bottom:8px;left:8px;transform:scaleY(-1)}
+html body #zrr-overlay .zrr-corner.br{bottom:8px;right:8px;transform:scale(-1,-1)}
+/* 見出し・閉じる（PLAYER PROFILE と同じ画像ボタン） */
+html body #zrr-overlay .zrr-head{margin:24px 18px 0;padding:0 0 10px;border-bottom:0;position:relative}
+html body #zrr-overlay .zrr-head::after{content:'';position:absolute;left:0;right:60px;bottom:0;height:1px;background:linear-gradient(90deg,rgba(201,173,115,.95),rgba(201,173,115,.5) 85%,rgba(201,173,115,0))}
+html body #zrr-overlay h2{font:700 21px/1.1 'Cinzel','Trajan Pro',Georgia,serif;letter-spacing:.07em;color:#76563c}
+html body #zrr-overlay .zrr-sub{margin-top:4px;font:500 11px/1.4 'Noto Serif JP',serif;letter-spacing:.2em;color:var(--zrr-sub)}
+html body #zrr-overlay .zrr-close.zgr-close{appearance:none;-webkit-appearance:none;position:relative;flex:0 0 36px;width:36px;height:36px;margin:-4px -4px 0 0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0;line-height:0}
+html body #zrr-overlay .zrr-close.zgr-close img{display:block;width:100%;height:100%;object-fit:contain}
+/* 現在ランク・次の報酬 */
+html body #zrr-overlay .zrr-summary{padding:12px 20px 4px;align-items:flex-end}
+html body #zrr-overlay .zrr-now{display:flex;flex-direction:column;gap:2px}
+html body #zrr-overlay .zrr-now small{font:600 9px/1 'Cinzel',serif;letter-spacing:.24em;color:var(--zrr-gold-d)}
+html body #zrr-overlay .zrr-summary strong{font:700 22px/1 'Cinzel',Georgia,serif;letter-spacing:.04em;color:var(--zrr-ink)}
+html body #zrr-overlay #zrr-next{font:500 11px/1.3 'Noto Serif JP',serif;color:var(--zrr-sub);padding:4px 10px;border:1px solid rgba(201,173,115,.55);border-radius:999px;background:rgba(255,255,255,.55);white-space:nowrap}
+html body #zrr-overlay .zrr-message{padding:6px 20px 6px;min-height:16px;font:500 10.5px/1.4 'Noto Serif JP',serif;color:var(--zrr-sub)}
+html body #zrr-overlay .zrr-message:empty{display:none}
+/* 一覧 */
+html body #zrr-overlay .zrr-list{padding:4px 16px 14px;scrollbar-width:none}
+html body #zrr-overlay .zrr-list::-webkit-scrollbar{display:none}
+html body #zrr-overlay .zrr-row{margin:0;padding:11px 4px 11px 12px;border:0;border-bottom:1px solid rgba(201,173,115,.32);border-radius:0;background:transparent;box-shadow:none;gap:10px}
+html body #zrr-overlay .zrr-row::before{content:'';position:absolute;left:0;top:12px;bottom:12px;width:2px;background:rgba(201,173,115,.35)}
+html body #zrr-overlay .zrr-level{font:700 13px/1 'Cinzel',Georgia,serif;letter-spacing:.1em;color:var(--zrr-ink);margin-bottom:7px}
+html body #zrr-overlay .zrr-items{display:flex;flex-wrap:wrap;gap:4px 5px;font-size:0;line-height:0}
+html body #zrr-overlay .zrr-item{display:inline-block;font:500 10.5px/1.5 'Noto Serif JP',serif;color:#5f4a39;padding:1px 7px;border:1px solid rgba(201,173,115,.45);border-radius:2px;background:rgba(255,255,255,.6);white-space:nowrap}
+html body #zrr-overlay .zrr-item.is-gem{color:#4a5878;border-color:rgba(120,140,190,.45)}
+html body #zrr-overlay .zrr-item.is-sr{color:#6b4a86;border-color:rgba(160,120,200,.6);background:linear-gradient(105deg,rgba(255,250,240,.9),rgba(240,228,255,.9))}
+/* 受け取れる行：金の縦線と淡い光 */
+html body #zrr-overlay .zrr-row.is-ready{background:linear-gradient(90deg,rgba(201,173,115,.14),rgba(201,173,115,0) 70%)}
+html body #zrr-overlay .zrr-row.is-ready::before{background:linear-gradient(180deg,#e2c789,#a88a52);width:3px;box-shadow:0 0 6px rgba(201,173,115,.7)}
+/* 50・100ランク：金の細い二重線の枠 */
+html body #zrr-overlay .zrr-row.zrr-milestone,html body #zrr-overlay .zrr-row.zrr-century{margin:6px 0;border:1px solid var(--zrr-gold);border-radius:3px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.7),inset 0 0 0 3px rgba(201,173,115,.35);background:rgba(255,252,244,.7)}
+html body #zrr-overlay .zrr-row.zrr-century{background:linear-gradient(105deg,rgba(255,250,238,.9),rgba(243,234,255,.85))}
+html body #zrr-overlay .zrr-row.zrr-milestone .zrr-level,html body #zrr-overlay .zrr-row.zrr-century .zrr-level{color:#8a6a32}
+html body #zrr-overlay .zrr-row.zrr-milestone::before,html body #zrr-overlay .zrr-row.zrr-century::before{display:none}
+/* 受取済・未到達 */
+html body #zrr-overlay .zrr-row.is-claimed{opacity:1}
+html body #zrr-overlay .zrr-row.is-claimed .zrr-detail{opacity:.45}
+html body #zrr-overlay .zrr-row.is-locked{opacity:.5}
+html body #zrr-overlay .zrr-state{font:500 10px/1 'Noto Serif JP',serif;letter-spacing:.1em;color:#a39383}
+html body #zrr-overlay .zrr-state.is-got{color:var(--zrr-gold-d)}
+html body #zrr-overlay .zrr-state.is-got::before{content:'✓ ';font-weight:700}
+/* ボタン：深い墨色＋金の細枠 */
+html body #zrr-overlay .zrr-claim,html body #zrr-overlay .zrr-all{
+  border:1px solid var(--zrr-gold);border-radius:2px;background:linear-gradient(180deg,#4a3828,#2c2018);color:#f6e7c4;
+  box-shadow:inset 0 0 0 1px rgba(255,236,190,.18),0 2px 6px rgba(40,26,14,.22);font:600 11px/1 'Noto Serif JP',serif;letter-spacing:.12em}
+html body #zrr-overlay .zrr-claim{padding:9px 12px}
+html body #zrr-overlay .zrr-claim:active,html body #zrr-overlay .zrr-all:active{transform:translateY(1px);filter:brightness(1.1)}
+html body #zrr-overlay .zrr-foot{padding:12px 18px 18px;border-top:1px solid rgba(201,173,115,.45);background:transparent}
+html body #zrr-overlay .zrr-foot:has(.zrr-all[hidden]){display:none}
+html body #zrr-overlay .zrr-all{padding:13px 8px;font-size:12.5px;letter-spacing:.2em}
+html body #zrr-overlay .zrr-done{display:none}
+@media(max-width:360px){html body #zrr-overlay .zrr-item{font-size:10px;padding:1px 5px}html body #zrr-overlay h2{font-size:18px}}
+/* build2194: ホームの顔アイコン（EXPリング）右上の受取可能ドット（共通の通知ドットの見た目） */
+html body #global-user-frame .hv2-face > .zrr-home-dot{position:absolute;top:1px;right:1px;z-index:6;width:var(--zs-dot-size,13px);height:var(--zs-dot-size,13px);box-sizing:border-box;border-radius:999px;
+  background:var(--zs-dot-bg,#e33434);border:2px solid var(--zs-dot-border,#fff8ec);box-shadow:var(--zs-dot-shadow,0 2px 6px rgba(80,0,0,.34));pointer-events:none}
+html body #global-user-frame .hv2-face > .zrr-home-dot[hidden]{display:none}
+html body.ui-immersive #global-user-frame .hv2-face > .zrr-home-dot{display:none}
+
+</style>
+<div id="zrr-overlay" aria-hidden="true">
+ <div class="zrr-card" role="dialog" aria-modal="true" aria-labelledby="zrr-title">
+  <span class="zrr-corner tl"></span><span class="zrr-corner tr"></span><span class="zrr-corner bl"></span><span class="zrr-corner br"></span>
+  <div class="zrr-head"><div><h2 id="zrr-title">RANK REWARD</h2><div class="zrr-sub">ランク報酬</div></div><button class="zrr-close zgr-close" type="button" aria-label="閉じる"><img src="images/button_close.webp" alt="" decoding="async"></button></div>
+  <div class="zrr-summary"><span class="zrr-now"><small>CURRENT</small><strong id="zrr-current">—</strong></span><span id="zrr-next">次の報酬まで —</span></div>
+  <div class="zrr-message" id="zrr-message" aria-live="polite"></div>
+  <div class="zrr-list" id="zrr-list"></div>
+  <div class="zrr-foot"><button type="button" class="zrr-all" id="zrr-claim-all" hidden>まとめて受け取る</button><button type="button" class="zrr-done">閉じる</button></div>
+ </div>
+</div>
+<script id="zs-rank-reward-script-2191">
+(function(){'use strict';
+const profile=document.getElementById('zs-player-profile');
+const entry=document.getElementById('zpp-rank');
+const modal=document.getElementById('zrr-overlay');
+if(!profile||!entry||!modal)return;
+const $=(id)=>document.getElementById(id);
+const list=$('zrr-list'), msg=$('zrr-message'), btnAll=$('zrr-claim-all');
+const LABELS={gem:'結晶',flower_r:'聖霊花(R)',flower_sr:'聖霊花(SR)',raid_reset_ticket:'レイドリセット券',phase_skip_ticket_silver:'位相回遊スキップ券(銀)',phase_skip_ticket_gold:'位相回遊スキップ券(金)',genesis_roulette_ticket_silver:'創世ptルーレット券(銀)',genesis_roulette_ticket_gold:'創世ptルーレット券(金)',tower_limited_ten_ticket:'10連ガチャ無料券',special_stage_ticket:'TICKET ノア',inori_challenge_ticket:'TICKET イノリ',sr_guaranteed_ticket:'SR確定ガチャTICKET'};
+let rank=1,claimed=new Set(),available=false,busy=false;
+function rewardAt(r){if(r%5!==0||r<5||r>1000)return{};const n=r%50;if(n===0)return r%100===0?{gem:50,sr_guaranteed_ticket:1}:{gem:50};const it={gem:5};const extras={5:{flower_r:3,raid_reset_ticket:1},10:{phase_skip_ticket_silver:1},15:{special_stage_ticket:3},20:{genesis_roulette_ticket_silver:1},25:{tower_limited_ten_ticket:1},30:{inori_challenge_ticket:3},35:{phase_skip_ticket_gold:1},40:{genesis_roulette_ticket_gold:1},45:{flower_sr:1}};return Object.assign(it,extras[n]||{});}
+function formatReward(o){return Object.entries(o).map(([k,v])=>(LABELS[k]||k)+' ×'+v).join(' / ');}
+function localRank(){const p=window.userProfile||{};return Math.max(1,Math.min(1000,Number(p.rank)||Number(($('zpp-rank')?.textContent||'').match(/\d+/)?.[0])||1));}
+function countPending(){let c=0;for(let r=5;r<=rank;r+=5)if(!claimed.has(r))c++;return c;}
+function badge(){const on=available&&countPending()>0;entry.classList.toggle('zrr-pending',on);homePending=on;applyHomeDot();}
+// build2194: ホーム（画面上部の顔アイコン）にも受取可能のドットを出す
+let homePending=false,homeChecking=false,lastHomeCheck=0,lastHomeRank=0;
+function applyHomeDot(){
+ const face=document.querySelector('#global-user-frame .hv2-face');if(!face)return;
+ let d=face.querySelector(':scope > .zrr-home-dot');
+ if(homePending&&!d){d=document.createElement('span');d.className='zrr-home-dot';d.setAttribute('aria-hidden','true');face.appendChild(d);}
+ if(d)d.hidden=!homePending;
+}
+async function checkHome(force){
+ const sb=window.zsSupabase;
+ if(homeChecking||busy||modal.classList.contains('is-open'))return;
+ if(!sb||!sb.rpc||window._profileLoadState!=='ready'||!String(localStorage.getItem('zukan_user_id')||'').trim())return;
+ const lr=localRank(),now=Date.now();
+ // ランクが変わっていなければ60秒に1回まで（受け取りはこの画面か別端末でしか起きないため）
+ if(!force&&lr===lastHomeRank&&now-lastHomeCheck<60000)return;
+ homeChecking=true;lastHomeCheck=now;lastHomeRank=lr;
+ try{
+  const {data,error}=await sb.rpc('get_rank_rewards');
+  if(error)throw error;
+  if(!data||!Number.isInteger(Number(data.rank)))return;
+  rank=Math.min(1000,Math.max(1,Number(data.rank)));claimed=new Set((data.claimed||[]).map(Number));available=true;
+  badge();
+ }catch(e){console.warn('[rank-reward] home check failed',e);}
+ finally{homeChecking=false;}
+}
+function setMsg(t){msg.textContent=t||'';}
+function render(scroll){
+ $('zrr-current').textContent='RANK '+rank;
+ const next=Math.min(1000,Math.ceil((rank+1)/5)*5);
+ $('zrr-next').textContent=rank>=1000?'すべてのランクに到達':'次の報酬まで あと'+(next-rank)+'ランク';
+ const pending=countPending();
+ btnAll.hidden=!available||pending<2;
+ btnAll.disabled=busy;
+ list.replaceChildren();
+ const limit=1000; // build2193: 1000まで全部表示（開いた時は受け取れる行／次の報酬の位置へ自動スクロール）
+ let target=null;
+ for(let r=5;r<=limit;r+=5){
+  const got=claimed.has(r),unlocked=r<=rank,collect=available&&unlocked&&!got;
+  const row=document.createElement('div');row.className='zrr-row'+(r%100===0?' zrr-century':r%50===0?' zrr-milestone':'')+(got?' is-claimed':!unlocked?' is-locked':collect?' is-ready':'');
+  const detail=document.createElement('div');detail.className='zrr-detail';
+  const lv=document.createElement('div');lv.className='zrr-level';lv.textContent='RANK '+r;
+  const items=document.createElement('div');items.className='zrr-items';Object.entries(rewardAt(r)).forEach(([k,v])=>{const c=document.createElement('span');c.className='zrr-item'+(k==='gem'?' is-gem':k==='sr_guaranteed_ticket'?' is-sr':'');c.textContent=(LABELS[k]||k)+' ×'+v;items.appendChild(c);});
+  detail.append(lv,items);row.appendChild(detail);
+  if(collect){const b=document.createElement('button');b.type='button';b.className='zrr-claim';b.textContent='受け取る';b.disabled=busy;b.addEventListener('click',()=>claim([r]));row.appendChild(b);}
+  else{const state=document.createElement('span');state.className='zrr-state';state.textContent=got?'受取済':!unlocked?'未到達':available?'確認中':'準備中';if(got)state.classList.add('is-got');row.appendChild(state);}
+  list.appendChild(row);
+  if(!target&&collect)target=row;
+  if(!target&&!unlocked)target=row;
+ }
+ badge();
+ if(scroll){if(target)requestAnimationFrame(()=>{if(modal.classList.contains('is-open'))list.scrollTop=Math.max(0,target.offsetTop-list.offsetTop-6);});}
+}
+async function fetchState(scroll){
+ const sb=window.zsSupabase;
+ rank=localRank();available=false;claimed=new Set();setMsg('受取状況を確認中…');render(false);
+ if(!sb||!sb.rpc){setMsg('準備中：サーバー接続を確認できません');render(scroll);return;}
+ try{
+  const {data,error}=await sb.rpc('get_rank_rewards');
+  if(error)throw error;
+  if(!data||!Number.isInteger(Number(data.rank)))throw new Error('invalid server response');
+  rank=Math.min(1000,Math.max(1,Number(data.rank)));claimed=new Set((data.claimed||[]).map(Number));available=true;
+  setMsg(countPending()?'未受取のランク報酬があります':'受取可能な報酬はありません');render(scroll);
+ }catch(e){console.warn('[rank-reward] get failed',e);setMsg('準備中：ランク報酬を取得できません');render(scroll);}
+}
+function close(){modal.classList.remove('is-open');modal.setAttribute('aria-hidden','true');}
+async function open(){modal.classList.add('is-open');modal.setAttribute('aria-hidden','false');list.scrollTop=0;await fetchState(true);}
+async function claim(ranks){
+ if(busy||!available)return;
+ const sb=window.zsSupabase;if(!sb)return;
+ busy=true;setMsg('報酬を受け取り中…');render(false);
+ try{
+  const {data,error}=await sb.rpc('claim_rank_rewards',{p_ranks:ranks});
+  if(error)throw error;
+  if(!data||data.ok!==true)throw new Error('claim unsuccessful');
+  const rewarded=Array.isArray(data.granted_ranks)?data.granted_ranks:[];
+  claimed=new Set((data.claimed||[]).map(Number));rank=Number(data.rank)||rank;
+  const totals=data.totals||{};
+  if(rewarded.length){
+    const p=window.userProfile;if(p&&Number(totals.gem)>0)p.gem=(Number(p.gem)||0)+Number(totals.gem);
+    if(p&&Number(totals.special_stage_ticket)>0)p.special_stage_ticket=(Number(p.special_stage_ticket)||0)+Number(totals.special_stage_ticket);
+    if(typeof window.refreshProfileHud==='function')window.refreshProfileHud();
+    if(typeof window.updateSummonGemUI==='function')window.updateSummonGemUI();
+    try{window.dispatchEvent(new CustomEvent('sasaphia:growth-resources-changed'));}catch(_){}
+    if(typeof window.showToast==='function')window.showToast(formatReward(totals)+' を受け取りました！');
+  }
+  setMsg(rewarded.length?rewarded.length+'段階の報酬を受け取りました':'すでに受取済みです');
+ }catch(e){console.warn('[rank-reward] claim failed',e);setMsg('受取に失敗しました。通信状況を確認して再試行してください');}
+ finally{busy=false;render(false);}
+}
+entry.classList.add('zrr-entry');entry.setAttribute('role','button');entry.setAttribute('tabindex','0');entry.setAttribute('aria-label','ランク報酬を確認');
+entry.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();open()});
+entry.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}});
+modal.querySelector('.zrr-close').addEventListener('click',close);
+modal.querySelector('.zrr-done').addEventListener('click',close);
+modal.addEventListener('click',e=>{if(e.target===modal)close()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modal.classList.contains('is-open')){e.stopPropagation();close();}},true);
+btnAll.addEventListener('click',()=>claim(null));
+// プロフィールを開くごとに受取状況をサーバーへ照会し、通知点を更新する。
+const observer=new MutationObserver(()=>{if(profile.classList.contains('is-open')&&!modal.classList.contains('is-open'))void fetchState(false);});
+// build2194: 起動直後（プロフィール読込後）・EXP反映後・アプリに戻った時にホームのドットを確認
+(function(){
+ let tries=0;const boot=setInterval(()=>{tries++;if(window._profileLoadState==='ready'){clearInterval(boot);void checkHome(true);}else if(tries>90)clearInterval(boot);},2000);
+ let t=0;const soon=(force)=>{clearTimeout(t);t=setTimeout(()=>void checkHome(force),900);};
+ const orig=window.refreshProfileHud;
+ if(typeof orig==='function'&&!orig.__zrrWrapped){const w=function(){const r=orig.apply(this,arguments);soon(false);return r;};w.__zrrWrapped=true;window.refreshProfileHud=w;}
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)soon(false);});
+ window.addEventListener('pageshow',()=>soon(false));
+ // 顔アイコンが作り直されてもドットを付け直す
+ setInterval(applyHomeDot,4000);
+})();
+observer.observe(profile,{attributes:true,attributeFilter:['class']});
+})();
+</script>
+
 <script src="js/phase_rush_hidden.js?v=2088-hidden-test" defer></script>
 <style id="zeraphia-hud-title-flow-2099">
 /* 2099: real HUD sizing. Existing 44px block and absolute name caused hidden badge. */
