@@ -791,3 +791,9 @@ html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-break-card{padd
 
 /* build2198: レイド初回表示のレイアウト確定までロビーのみ隠してジャンプを防止 */
 html body #daily-raid-root.raid-layout-pending #daily-raid-lobby{visibility:hidden!important}
+
+/* build2199: first-open RAID positioning: always use measured shared-HUD bottom.
+   Before: var(--header-h) could remain stale from the previous screen. */
+html body #daily-raid-root#daily-raid-root .daily-raid-page{
+  padding-top:var(--raid-header-offset,var(--header-h,72px))!important;
+}

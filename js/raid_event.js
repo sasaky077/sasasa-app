@@ -2934,11 +2934,40 @@
     }
   }
 
+  // build2199: 初回だけ上部が約15px詰まる現象を修正。
+  // --header-h は通常画面側で遷移時に更新されるが、RAIDを開く時点では
+  // 前画面で測定した値のままの場合がある。HUDの実際の下端を参照する。
+  let raidHeaderObserver=null;
+  function syncRaidHeaderOffset(root){
+    const hud=document.getElementById('global-user-frame');
+    if(!hud || !root) return;
+    const rect=hud.getBoundingClientRect();
+    if(!Number.isFinite(rect.bottom) || rect.bottom<=0) return;
+    const top=Math.round(rect.bottom*10)/10;
+    if(top>0){
+      root.style.setProperty('--raid-header-offset',top+'px');
+      // 共通値も同期して、レイド以外の参照箇所との不整合を避ける。
+      document.documentElement.style.setProperty('--header-h',top+'px');
+    }
+  }
+  function watchRaidHeader(root){
+    if(raidHeaderObserver){raidHeaderObserver.disconnect();raidHeaderObserver=null;}
+    syncRaidHeaderOffset(root);
+    const hud=document.getElementById('global-user-frame');
+    if(hud && typeof ResizeObserver!=='undefined'){
+      raidHeaderObserver=new ResizeObserver(()=>{
+        if(root.getAttribute('aria-hidden')==='false') syncRaidHeaderOffset(root);
+      });
+      raidHeaderObserver.observe(hud);
+    }
+  }
   async function open(options){
     if (typeof window.requireChapter03ContentUnlock === 'function' && !window.requireChapter03ContentUnlock()) return false;
     bindRaidChromeNavigation();
     document.body.classList.add('raid-shell-active');
     const root=ensureRoot();
+    // HUD高さの確定は非同期のレイド情報取得より先に行う。
+    watchRaidHeader(root);
     ensureBossPendingStyle();
     const cached=readCachedBoss();
     if(cached){ root.classList.remove('raid-boss-pending'); renderBossHero(root,{boss:{key:cached.key,name:cached.name}}); }
@@ -2968,6 +2997,8 @@
       const releaseLayout=()=>{
         requestAnimationFrame(()=>requestAnimationFrame(()=>{
           if(root.getAttribute('aria-hidden')!=='false') return;
+          // 表示直前のレイアウト（HUD/共通ナビ）をもう一度実測する。
+          syncRaidHeaderOffset(root);
           void root.getBoundingClientRect();
           root.classList.remove('raid-layout-pending');
           scheduleSwipeIndicatorSync();
@@ -2985,6 +3016,7 @@
   function close(){
     document.body.classList.remove('raid-shell-active');
     const root=document.getElementById('daily-raid-root'); if(!root) return;
+    if(raidHeaderObserver){raidHeaderObserver.disconnect();raidHeaderObserver=null;}
     root.classList.remove('show','raid-layout-pending'); root.setAttribute('aria-hidden','true');
     setTimeout(()=>{ if(root.getAttribute('aria-hidden')==='true') root.style.display='none'; },180);
   }
