@@ -33496,8 +33496,8 @@
     if (!win) return 'E';
     const cfg = getPartyConfig();
     const v = Number(score) || 0;
-    if (v >= Number(cfg.rankS || 32000)) return 'S';
-    if (v >= Number(cfg.rankA || 26000)) return 'A';
+    if (v >= Number(cfg.rankS || 30000)) return 'S';
+    if (v >= Number(cfg.rankA || 25000)) return 'A';
     return 'B';
   }
   // サーバー・パネル判定へ渡す1回分の記録
