@@ -33392,9 +33392,9 @@
       const elapsedSec = Math.max(0, Number(state.clearTimeMs || 0) / 1000);
       const timeRatio = clamp(1 - elapsedSec / limit, 0, 1);
       const party = Array.isArray(state.party) ? state.party : [];
-      const hpMax = party.reduce((s, m) => s + Math.max(0, Number(m && m.hpMax || 0)), 0);
-      const hp = party.reduce((s, m) => s + Math.max(0, Number(m && m.hp || 0)), 0);
-      const surv = hpMax > 0 ? clamp(hp / hpMax, 0, 1) : 0;
+      // build2197: 生存人数ボーナス。HP残量による減点はしない。
+      const aliveCount = party.filter(m => m && Number(m.hp || 0) > 0).length;
+      const surv = party.length > 0 ? clamp(aliveCount / party.length, 0, 1) : 0;
       state.partyBreakdown.clear = Number(cfg.clearBonus || 8000);
       state.partyBreakdown.time = Math.round(Number(cfg.timeBonusMax || 8000) * timeRatio);
       state.partyBreakdown.survival = Math.round(Number(cfg.survivalBonusMax || 8000) * surv);
@@ -33490,7 +33490,7 @@
       row('祝杯中の人間撃破',cheers,false) + row('人間の撃破（減点）',human,true) +
       row('その他の夜会スコア',other,false) +
       row('主催者討伐',clear,true) + row('残り時間ボーナス',time,true) +
-      row('生存HPボーナス',survival,true) + row('0点未満の補正',adjustment,false) +
+      row('生存ボーナス',survival,true) + row('0点未満の補正',adjustment,false) +
       '<div class="psb-row total"><span>合計 SCORE</span><b>' + actual.toLocaleString('ja-JP') + '</b></div>' +
       '<div class="psb-sub">※OP・祝杯効果による倍率は各得点に反映済み</div>';
   }
