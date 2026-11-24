@@ -649,7 +649,7 @@ html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks[hidden]{display:
 html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks .drg-row{display:grid;grid-template-columns:5.6em 1fr;gap:8px;align-items:start;padding:6px 0;border-top:1px solid rgba(150,130,90,.25)}
 html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks .drg-row:first-of-type{border-top:0}
 html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks .drg-row b{font:700 12px/1.4 "Noto Serif JP",serif;color:var(--rt-deep,#2a2a78)!important;-webkit-text-fill-color:currentColor!important}
-html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks .drg-row p{margin:0;font:500 11px/1.55 "Noto Sans JP",sans-serif;color:#3a3446!important;-webkit-text-fill-color:currentColor!important}
+html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks .drg-row p{margin:0;font:500 11.5px/1.6 "Noto Serif JP",serif!important;letter-spacing:.02em;color:#3a3446!important;-webkit-text-fill-color:currentColor!important}
 
 /* build2138: BOSS GIMMICK は最初たたむ。背景は少し白を強める */
 html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks{

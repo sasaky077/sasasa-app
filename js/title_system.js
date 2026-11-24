@@ -42,12 +42,13 @@
       how: '今週の残響の塔を制覇し、残響の塔（絶望）20Fを踏破',
       tone: 'despair',
       effect: Object.freeze({ kind: 'ult', base: 3, perLv: 1, maxLv: 5 }),
-      // Lvがこの値以上で見た目が変わる（1：深紅／3：銀縁／5：金縁／10：輝く金縁）
+      // build2184: 段階は I〜V（Lv1〜5）。表示はVで頭打ち。見た目：I 深紅／II 銀縁／III・IV 金縁／V 輝く金縁
       tiers: Object.freeze([
-        Object.freeze({ min: 1,  key: 't1', label: '深紅' }),
-        Object.freeze({ min: 3,  key: 't2', label: '銀縁' }),
-        Object.freeze({ min: 5,  key: 't3', label: '金縁' }),
-        Object.freeze({ min: 10, key: 't4', label: '輝く金縁' })
+        Object.freeze({ min: 1, key: 't1', label: 'I' }),
+        Object.freeze({ min: 2, key: 't2', label: 'II' }),
+        Object.freeze({ min: 3, key: 't3', label: 'III' }),
+        Object.freeze({ min: 4, key: 't3', label: 'IV' }),
+        Object.freeze({ min: 5, key: 't4', label: 'V' })
       ])
     })
   });
@@ -65,6 +66,13 @@
   function myId(){ try{ return String(localStorage.getItem('zukan_user_id')||'').trim().toLowerCase(); }catch(_){ return ''; } }
   function getTitle(id){ return TITLE_MASTER[String(id||'')] || null; }
   function levelOf(v){ return Math.max(1, Math.floor(Number(v) || 1)); }
+  // build2184: 段階のある称号は、最上位の段階（例：V）で表示を頭打ちにする
+  function displayLv(titleId, level){
+    const t = getTitle(titleId);
+    const lv = levelOf(level);
+    if(!t || !Array.isArray(t.tiers) || !t.tiers.length) return lv;
+    return Math.min(lv, t.tiers[t.tiers.length - 1].min);
+  }
   function getTier(titleId, level){
     const t = getTitle(titleId);
     if(!t || !Array.isArray(t.tiers) || !t.tiers.length) return null;
@@ -82,7 +90,7 @@
   function labelOf(titleId, level){
     const t = getTitle(titleId);
     if(!t) return '';
-    return t.name + ' ' + roman(levelOf(level));
+    return t.name + ' ' + roman(displayLv(titleId, level));
   }
   const EFFECT_LABEL = Object.freeze({ hp:'バトル中のキャラHP', atk:'ATK', ult:'ULT回収率' });
   function effectPercent(titleId, level){
@@ -268,7 +276,7 @@
     const lv = levelOf(level);
     const tier = getTier(titleId, lv);
     return '<span class="zt-title-badge tone-' + esc(t.tone || 'gold') + (tier ? ' tier-' + esc(tier.key) : '') +
-      ' rarity-' + esc((t.rarity || 'N').toLowerCase()) + '" title="' + esc(t.desc) + '">' + esc(t.name) + '<span class="zt-rank">'+esc(roman(lv))+'</span>' + '</span>';
+      ' rarity-' + esc((t.rarity || 'N').toLowerCase()) + '" title="' + esc(t.desc) + '">' + esc(t.name) + '<span class="zt-rank">'+esc(roman(displayLv(titleId, lv)))+'</span>' + '</span>';
   }
 
   function readOwned(list){
@@ -410,11 +418,12 @@
     ov.setAttribute('role', 'dialog');
     ov.setAttribute('aria-modal', 'true');
     ov.setAttribute('aria-label', '称号の設定');
-    const list = Object.values(TITLE_MASTER).map(t => {
+    // build2184: 持っている称号だけを出す。同じ称号は最上位の段階1つだけ（下の段階の一覧は出さない）
+    const list = Object.values(TITLE_MASTER).filter(t => state.owned.has(t.id)).map(t => {
       const owned = state.owned.has(t.id);
       const lv = state.owned.get(t.id) || 1;
       const nt = owned ? nextTier(t.id, lv) : null;
-      const tiers = Array.isArray(t.tiers) ? '<span class="zt-tiers">' + t.tiers.map(x => badgeHTML(t.id, x.min)).join('') + '</span>' : '';
+      const tiers = '';
       const status = owned
         ? ('獲得済み' + (nt ? '・次の昇格：' + esc(nt.label) + (t.id==='reason_knower' ? '（'+(100+(nt.min-1)*50)+'F）' : '（あと'+(nt.min-lv)+'回）') : '') + '　' + (state.equipped === t.id ? '設定中' : 'タップで設定'))
         : ('未獲得：' + esc(t.how));

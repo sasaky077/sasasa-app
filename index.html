@@ -428,7 +428,7 @@
   <link rel="stylesheet" href="css/tower15_boss.css?v=1485-tower15">
   <link rel="stylesheet" href="css/daily_stage_select.css?v=1816-daily-left">
   <link rel="stylesheet" href="css/raid_event.css?v=852-raid-glass-canonical">
-  <link rel="stylesheet" href="css/raid_theme.css?v=2180-enemy-fit">
+  <link rel="stylesheet" href="css/raid_theme.css?v=2183-gimmick-serif">
   <link rel="stylesheet" href="css/party_event.css?v=2172-colors">
   <link rel="stylesheet" href="css/item_management.css?v=2147-item-skins">
   <link rel="stylesheet" href="css/skin_system.css?v=1069-skin-controls-fullscreen">
@@ -3536,6 +3536,10 @@ html:not(.hv2-home) body #global-user-frame .hv2-face {
   background:linear-gradient(90deg,rgba(214,209,206,.85),rgba(228,224,221,.7) 70%,rgba(236,233,231,0));clip-path:polygon(8px 0,100% 0,calc(100% - 10px) 100%,0 100%)}
 #zs-player-profile .zpp-name{margin:7px 0 6px;font:800 25px/1.25 'Noto Serif JP',serif;letter-spacing:.06em;color:#4d3020;overflow-wrap:anywhere}
 #zs-player-profile .zpp-title{font:500 11.5px/1.4 'Noto Serif JP',serif;letter-spacing:.06em;color:#82654e}
+/* build2185: 称号はタップで設定画面へ（小さな › で合図） */
+#zs-player-profile .zpp-title.is-editable{cursor:pointer;-webkit-tap-highlight-color:transparent;gap:5px}
+#zs-player-profile .zpp-title.is-editable::after{content:'›';flex:none;font:400 15px/1 Georgia,serif;color:#a48c6f;transform:translateY(-1px)}
+#zs-player-profile .zpp-title.is-editable:active{opacity:.7}
 /* 区切り線（中央に星） */
 #zs-player-profile .zpp-rule{position:relative;height:14px;margin:12px -8px 8px}
 #zs-player-profile .zpp-rule::before{content:'';position:absolute;left:0;right:0;top:50%;height:1px;
@@ -6036,19 +6040,20 @@ window.NOTICE_ITEMS = [
     });
     if (!rewardItems.length) { noticeClaimSynced = true; return; }
 
-    for (const item of rewardItems) {
+    // build2186: 1件ずつ順番に問い合わせていたのを、全件同時に問い合わせる（待ち時間は一番遅い1件分だけ）
+    await Promise.all(rewardItems.map(async function (item) {
       try {
         let res;
         if (item.reward.type === 'start_bonus_bundle') {
           const userId = String(localStorage.getItem('zukan_user_id') || '').trim();
-          if (!userId) continue;
+          if (!userId) return;
           res = await client.rpc('is_start_bonus_claimed', {
             p_user_id: userId,
             p_claim_id: item.reward.claimId
           });
         } else if (item.reward.type === 'level_material_bundle') {
           const userId = String(localStorage.getItem('zukan_user_id') || '').trim();
-          if (!userId) continue;
+          if (!userId) return;
           res = await client.rpc('is_start_level_material_bonus_claimed', {
             p_user_id: userId,
             p_claim_id: item.reward.claimId
@@ -6088,10 +6093,8 @@ window.NOTICE_ITEMS = [
         }
       } catch (error) {
         console.warn('[NoticeReward] claim status sync skipped:', error && (error.message || error));
-        noticeClaimSynced = true;
-        return;
       }
-    }
+    }));
     noticeClaimSynced = true;
   }
 
@@ -7183,8 +7186,8 @@ window.NOTICE_ITEMS = [
       event.preventDefault();
     }
 
-    await refreshRaidClearRewardNotice();
-    await syncNoticeRewardClaimStatus();
+    // build2186: サーバーの確認を待たずにすぐ開く（端末に控えてある受取状況で先に表示）。
+    // レイド報酬と受取状況の確認は裏で同時に行い、終わったら開いたままの一覧だけ描き直す。
     ensureNoticeModal();
     renderNoticeList();
 
@@ -7195,6 +7198,21 @@ window.NOTICE_ITEMS = [
     // モーダルを開いただけでは既読にしない。
     // 各お知らせを実際にタップした時だけ、その1件を既読化する。
     updateNoticeBadge();
+
+    Promise.all([
+      refreshRaidClearRewardNotice().catch(function(){ return null; }),
+      syncNoticeRewardClaimStatus().catch(function(){})
+    ]).then(function(){
+      if (!modal.classList.contains('active')) { updateNoticeBadge(); return; }
+      const list = document.getElementById('notice-list');
+      const scroller = list && (list.closest('.notice-scroll, .notice-content, .notice-box') || list);
+      const top = scroller ? scroller.scrollTop : 0;
+      const listTop = list ? list.scrollTop : 0;
+      renderNoticeList();
+      if (scroller) scroller.scrollTop = top;
+      if (list) list.scrollTop = listTop;
+      updateNoticeBadge();
+    });
   };
 
   window.refreshNoticeBadge = async function () {
@@ -21584,7 +21602,7 @@ window.returnToTitleScreen = function(){
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=2176-rule-switch"></script>
 <script src="js/skin_system.js?v=2149-halloween"></script>
-<script src="js/title_system.js?v=2145-title-effects"></script>
+<script src="js/title_system.js?v=2184-title-owned"></script>
 <script src="js/item_tickets.js?v=1963-phase-run-guard"></script>
 <script src="js/inori_piece.js?v=1829-ticket-button"></script>
 <script src="js/item_management.js?v=2148-outfit-names"></script>
@@ -23534,19 +23552,43 @@ const close=()=>{modal.classList.remove('is-open');modal.setAttribute('aria-hidd
 modal.querySelector('.zpp-close').addEventListener('click',close);
 modal.addEventListener('click',e=>{if(e.target===modal)close()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modal.classList.contains('is-open'))close()});
+function fillProfileTitle(){
+ const titleContainer=document.getElementById('zpp-title');
+ const badge=document.querySelector('#hud-title .zt-title-badge');
+ if(!titleContainer)return;
+ titleContainer.replaceChildren();
+ if(badge){titleContainer.appendChild(badge.cloneNode(true));}
+ else{titleContainer.textContent='称号：未設定';}
+ // build2185: 称号をタップすると称号の設定画面を開く
+ const can=!!(window.ZeraphiaTitles&&typeof window.ZeraphiaTitles.openSelector==='function');
+ titleContainer.classList.toggle('is-editable',can);
+ if(can){titleContainer.setAttribute('role','button');titleContainer.setAttribute('tabindex','0');titleContainer.setAttribute('aria-label','称号を変更');}
+}
+// build2185: プロフィールの称号 → 称号設定画面。閉じたらプロフィールの称号を取り直す
+(function(){
+ const el=document.getElementById('zpp-title');if(!el)return;
+ const openTitles=async()=>{
+  if(!el.classList.contains('is-editable'))return;
+  try{await window.ZeraphiaTitles.openSelector();}catch(_){return;}
+  const sel=document.getElementById('zt-title-modal');if(!sel)return;
+  const mo=new MutationObserver(()=>{
+   if(document.getElementById('zt-title-modal'))return;
+   mo.disconnect();
+   try{window.ZeraphiaTitles.renderHud();}catch(_){}
+   setTimeout(fillProfileTitle,60);
+  });
+  mo.observe(document.body,{childList:true});
+ };
+ el.addEventListener('click',openTitles);
+ el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openTitles();}});
+})();
 async function open(){
  const p=window.userProfile||{};
  set('zpp-rank','RANK '+(Number(p.rank)||document.getElementById('hud-lv-num')?.textContent||'—'));
  set('zpp-name',p.display_name||document.getElementById('hud-name')?.textContent||'Player');
  // build2103: mirror the equipped HUD badge (including N/R/SR color) in the player profile.
  // This avoids guessing title rarity from plain text and preserves the title level.
- const titleContainer=document.getElementById('zpp-title');
- const badge=document.querySelector('#hud-title .zt-title-badge');
- if(titleContainer){
-  titleContainer.replaceChildren();
-  if(badge){titleContainer.appendChild(badge.cloneNode(true));}
-  else{titleContainer.textContent='称号：未設定';}
- }
+ fillProfileTitle();
  // Portrait must be the panel artwork of the user's active home character, not a home/cut-in image.
  const active=document.querySelector('#fav-display .fav-cut-img, #fav-display .fav-img, #fav-display img, #global-user-frame .hv2-face img');
  const activePath=active?.getAttribute('src')||active?.currentSrc||'';
