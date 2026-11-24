@@ -5028,6 +5028,22 @@ html:not(.hv2-home) body #global-user-frame .hv2-face {
 
 window.NOTICE_ITEMS = [
   {
+    id: 'notice_party_soiree_launch_20261124',
+    date: '2026.11.24',
+    title: '期間限定イベント「パラレル・ソワレ」開催！',
+    body: '期間限定イベント「パラレル・ソワレ 〜並行世界への招待状〜」開催中！\n\n夜会に挑み、OPパネルを開放してビンゴを完成させよう！\nMAX BINGO達成で、アヤネの限定衣装「正装」をゲット！\n\n開催期間：11月24日〜12月1日\n\n開催を記念して、結晶 ×5 をプレゼント！\n下の「受け取る」ボタンからお受け取りください。',
+    link: {
+      label: 'パラレル・ソワレに挑戦する',
+      target: 'party_soiree'
+    },
+    reward: {
+      type: 'gem',
+      claimId: 'notice_party_soiree_launch_20261124',
+      amount: 5
+    },
+    hidden: false
+  },
+  {
     id: 'notice_nerisa_raid_release_20261124',
     date: '2026.11.24',
     publishAt: '2026-11-23T15:00:00Z', // 11/24 00:00 JST
@@ -6378,6 +6394,9 @@ window.NOTICE_ITEMS = [
 
   // build1643: お知らせのリンクボタン。target はコンテンツ名（下の NOTICE_LINK_TARGETS で定義）。
   const NOTICE_LINK_TARGETS = {
+    party_soiree: function () {
+      if (typeof window.openPartyEventFromHome === 'function') window.openPartyEventFromHome();
+    },
     inori_challenge: function () {
       if (typeof window.openInoriPiecePanel === 'function') window.openInoriPiecePanel();
     },
@@ -21563,7 +21582,7 @@ window.returnToTitleScreen = function(){
 <script src="js/shooting_event.js?v=2165-party-guide"></script>
 <script src="js/shooting_party_filter.js?v=2048-openfor"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
-<script src="js/raid_event.js?v=2161-reset-chip"></script>
+<script src="js/raid_event.js?v=2169-nerisa-copy"></script>
 <script src="js/skin_system.js?v=2149-halloween"></script>
 <script src="js/title_system.js?v=2145-title-effects"></script>
 <script src="js/item_tickets.js?v=1963-phase-run-guard"></script>

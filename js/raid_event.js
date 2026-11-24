@@ -2299,7 +2299,7 @@
         {name:'子蜘蛛',desc:'子蜘蛛が張り付いてHPを吸い、ボスを回復する。キャラを交代すると振り払える。'},
       ]},
     // build2119: ネリサ（水属性）。ステージ名「水底の暗躍者」（shooting_enemies.js raidStageTitle）。
-    nerisa:{name:'ネリサ',line:'水は、どこにでも入り込めるの。',lobbyBg:'images/bg_raid_04.webp',lobbyImage:'images/raid_enemy_04_battle.webp',banner:'images/raid_banner_nerisa.webp',enemyId:'shooting_raid_nerisa',pieceImage:'images/raid_piece_nerisa.webp',
+    nerisa:{name:'ネリサ',line:'光すら届かない、絶望の底。',lobbyBg:'images/bg_raid_04.webp',lobbyImage:'images/raid_enemy_04_battle.webp',banner:'images/raid_banner_nerisa.webp',enemyId:'shooting_raid_nerisa',pieceImage:'images/raid_piece_nerisa.webp',
       // build2135: RAID INFO に出すギミック説明（ボスごと。未設定のボスは欄を出さない）
       gimmicks:[
         {name:'属性バリア',desc:'弱点属性以外の攻撃を無効化する。'},
