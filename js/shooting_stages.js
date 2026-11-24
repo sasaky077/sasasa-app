@@ -1958,8 +1958,8 @@
       stageNo: 6,
       eventId: 'party_event',
       eventTitle: 'パラレル・ソワレ',
-      stageInfoName: 'パラレル・ソワレ 〜並行世界への招待状〜',
-      difficultyLabel: 'LIMITED EVENT',
+      stageInfoName: 'パラレル・ソワレ ～並行世界への招待状～',
+      difficultyLabel: '', // build2173: (LIMITED EVENT) は出さない
       type: 'boss',
       background: 'images/event_party_bg.webp',
       introImage: 'images/event_party_start.webp',
@@ -1983,6 +1983,10 @@
         // 祝杯のグラス
         glassAtMs: [14000, 34000, 50000],
         glassLifeMs: 7000,
+        // build2170: 懐中時計（触れると制限時間 +5秒）。祝杯のグラス（14/34/50秒・OPで24秒）と時間をずらす
+        watchAtMs: [29000, 43000],
+        watchLifeMs: 6000,
+        watchSec: 5,
         bonusMs: 5000,
         bonusPlusMul: 2,
         bonusHumanValue: 300,     // ボーナス中は人間も加点

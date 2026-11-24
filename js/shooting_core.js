@@ -1976,7 +1976,8 @@
   function getBattleTimeLeft(now) {
     const limit = getBattleTimeLimitSeconds();
     if (!limit || !state) return 0;
-    return Math.max(0, limit - (Number(now || performance.now()) - Number(state.startedAt || performance.now())) / 1000);
+    const extra = getPartyExtraTimeSec(); // build2170: 懐中時計（パラレル・ソワレ）で延びた秒数
+    return Math.max(0, limit + extra - (Number(now || performance.now()) - Number(state.startedAt || performance.now())) / 1000);
   }
 
   function formatBattleTimer(seconds) {
@@ -3816,6 +3817,7 @@
       if (partyStage) partyStage.textContent = stageTitle;
       if (partySubtitle) {
         partySubtitle.textContent = isSpecialEvent ? String(selectedStage?.difficultyLabel || '') : String(selectedStage?.name || selectedStage?.displayName || '');
+        if (selectedStage?.eventId === 'party_event') partySubtitle.textContent = '～並行世界への招待状～'; // build2173
         partySubtitle.style.display = partySubtitle.textContent ? '' : 'none';
       }
       if (partyScore) {
@@ -32973,6 +32975,49 @@
         background:radial-gradient(circle,rgba(255,250,228,.95) 0,rgba(255,220,140,.5) 40%,rgba(255,220,140,0) 70%);animation:pgFlash .45s ease-out forwards}
       @keyframes pgBurst{to{transform:scale(4.2);opacity:0}}
       @keyframes pgFlash{0%{transform:scale(.6);opacity:1}100%{transform:scale(2.2);opacity:0}}
+      /* build2170: 懐中時計（藍のリボンに合わせた淡い藍紫＋金） */
+      #shooting-event-root .party-glass-wrap.is-watch .pg-glass{background-image:url(images/event_party_watch.webp);filter:drop-shadow(0 0 6px rgba(170,170,255,.85))}
+      #shooting-event-root .party-glass-wrap.is-watch .pg-mark{border-color:rgba(190,190,255,.8);background:radial-gradient(ellipse at center,rgba(176,176,255,.38) 0,rgba(176,176,255,.1) 55%,rgba(176,176,255,0) 72%);box-shadow:0 0 8px rgba(150,150,255,.5)}
+      #shooting-event-root .party-glass-wrap.is-watch.is-near .pg-mark{border-color:rgba(226,226,255,.98);box-shadow:0 0 14px rgba(170,170,255,.95),inset 0 0 8px rgba(210,210,255,.7)}
+      #shooting-event-root .party-glass-wrap.is-watch.is-near .pg-glass{filter:drop-shadow(0 0 10px rgba(200,200,255,1)) brightness(1.08)}
+      #shooting-event-root .party-glass-wrap.is-watch .pg-dot{background:#eef0ff;box-shadow:0 0 4px rgba(160,160,255,.95)}
+      #shooting-event-root .party-glass-wrap.is-watch .pg-hint{color:#eef0ff;text-shadow:0 0 5px rgba(120,120,255,.95),0 1px 2px rgba(20,20,60,.9)}
+      #shooting-event-root .party-glass-burst.is-watch::before{border-color:rgba(220,220,255,.95);box-shadow:0 0 12px rgba(150,150,255,.9)}
+      #shooting-event-root .party-glass-burst.is-watch::after{background:radial-gradient(circle,rgba(245,245,255,.95) 0,rgba(170,170,255,.5) 40%,rgba(170,170,255,0) 70%)}
+      #shooting-event-root .party-pop.time{color:#eef0ff;text-shadow:0 0 6px rgba(120,120,255,1),0 1px 2px rgba(20,20,60,.9)}
+      #shooting-event-root #shooting-battle-timer.party-time-plus{animation:partyTimePlus .85s ease-out;transform-origin:right center}
+      @keyframes partyTimePlus{0%{filter:none}20%{filter:drop-shadow(0 0 10px rgba(170,170,255,1)) brightness(1.35);transform:scale(1.12)}100%{filter:none;transform:none}}
+      /* build2172: 色の住み分け 加点＝赤／減点＝青／ボーナス中の人間＝オレンジ／アイテム（グラス・時計）＝黄 */
+      #shooting-event-root .shooting-mini-enemy.party-food:not(.defeated){filter:drop-shadow(0 0 6px rgba(255,86,86,.95)) drop-shadow(0 0 2px rgba(255,220,220,.9))}
+      #shooting-event-root .party-mark.food::before{border:1.5px dashed rgba(255,104,104,.95)}
+      #shooting-event-root .party-mark.food::after{background:#ffd6d6;box-shadow:0 0 5px rgba(255,90,90,.95)}
+      #shooting-event-root.party-bonus .shooting-mini-enemy.party-human:not(.defeated){filter:drop-shadow(0 0 8px rgba(255,146,40,1)) drop-shadow(0 0 2px rgba(255,226,190,.9)) brightness(1.06)}
+      #shooting-event-root.party-bonus .party-mark.human::before{border-color:rgba(255,160,70,.95);background:radial-gradient(ellipse at center,rgba(255,150,60,.28) 0,rgba(255,150,60,.08) 55%,rgba(255,150,60,0) 72%);box-shadow:0 0 7px rgba(255,140,50,.6)}
+      #shooting-event-root.party-bonus .party-mark.human::after{border-color:rgba(255,190,120,.38)}
+      #shooting-event-root .party-pop.plus{color:#ffe3e3;text-shadow:0 0 6px rgba(255,60,60,1),0 1px 2px rgba(80,0,0,.9)}
+      #shooting-event-root .party-pop.minus{color:#dfe6ff;text-shadow:0 0 6px rgba(70,100,255,1),0 1px 2px rgba(10,10,60,.9)}
+      #shooting-event-root .party-glass-wrap .pg-glass,#shooting-event-root .party-glass-wrap.is-watch .pg-glass{filter:drop-shadow(0 0 7px rgba(255,226,60,.95))}
+      #shooting-event-root .party-glass-wrap.is-near .pg-glass,#shooting-event-root .party-glass-wrap.is-watch.is-near .pg-glass{filter:drop-shadow(0 0 11px rgba(255,236,90,1)) brightness(1.08)}
+      #shooting-event-root .party-glass-wrap .pg-mark,#shooting-event-root .party-glass-wrap.is-watch .pg-mark{border-color:rgba(255,226,70,.9);background:radial-gradient(ellipse at center,rgba(255,232,90,.42) 0,rgba(255,232,90,.12) 55%,rgba(255,232,90,0) 72%);box-shadow:0 0 8px rgba(255,220,60,.55)}
+      #shooting-event-root .party-glass-wrap.is-near .pg-mark,#shooting-event-root .party-glass-wrap.is-watch.is-near .pg-mark{border-color:rgba(255,246,170,1);box-shadow:0 0 14px rgba(255,226,70,.95),inset 0 0 8px rgba(255,240,150,.7)}
+      #shooting-event-root .party-glass-wrap .pg-dot,#shooting-event-root .party-glass-wrap.is-watch .pg-dot{background:#fff8c8;box-shadow:0 0 4px rgba(255,226,60,.95)}
+      #shooting-event-root .party-glass-wrap .pg-hint,#shooting-event-root .party-glass-wrap.is-watch .pg-hint{color:#fffbe0;text-shadow:0 0 5px rgba(240,190,0,.95),0 1px 2px rgba(60,40,0,.9)}
+      #shooting-event-root .party-glass-burst::before,#shooting-event-root .party-glass-burst.is-watch::before{border-color:rgba(255,240,140,.95);box-shadow:0 0 12px rgba(255,220,60,.9)}
+      #shooting-event-root .party-glass-burst::after,#shooting-event-root .party-glass-burst.is-watch::after{background:radial-gradient(circle,rgba(255,252,220,.95) 0,rgba(255,226,80,.5) 40%,rgba(255,226,80,0) 70%)}
+      #shooting-event-root .party-pop.time{color:#fffbe0;text-shadow:0 0 6px rgba(240,190,0,1),0 1px 2px rgba(60,40,0,.9)}
+      @keyframes partyTimePlus{0%{filter:none}20%{filter:drop-shadow(0 0 10px rgba(255,220,60,1)) brightness(1.3);transform:scale(1.12)}100%{filter:none;transform:none}}
+      /* ボーナスタイム：画面の縁をオレンジに、残り時間は中央上の札（CHEERS 秒数＋減っていくバー） */
+      #shooting-event-root .party-bonus-veil{box-shadow:inset 0 0 70px rgba(255,140,40,.5),inset 0 0 16px rgba(255,200,140,.6)}
+      #shooting-event-root .party-bonus-bar{left:50%;right:auto;width:150px;margin-left:-75px;height:auto;top:calc(env(safe-area-inset-top,0px) + 112px);
+        display:grid;grid-template-columns:auto 1fr;align-items:center;column-gap:8px;row-gap:4px;padding:6px 12px 7px;border-radius:8px;background:rgba(40,18,8,.62);
+        box-shadow:inset 0 0 0 1px rgba(255,170,80,.75),0 0 14px rgba(255,140,40,.45);transform:translateY(-4px);transition:opacity .2s,transform .2s}
+      #shooting-event-root.party-bonus .party-bonus-bar{transform:none}
+      #shooting-event-root .party-bonus-bar .pb-label{font:700 10px/1 "Cinzel",serif;letter-spacing:.18em;color:#ffd7a8}
+      #shooting-event-root .party-bonus-bar .pb-sec{justify-self:end;font:900 18px/1 "Cinzel",serif;color:#fff1de;text-shadow:0 0 8px rgba(255,140,40,1);font-variant-numeric:tabular-nums}
+      #shooting-event-root .party-bonus-bar .pb-track{grid-column:1 / -1;display:block;height:5px;border-radius:3px;background:rgba(255,255,255,.14);overflow:hidden}
+      #shooting-event-root .party-bonus-bar i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#ff8a2a,#ffd08a);box-shadow:0 0 8px rgba(255,150,60,.95);transform-origin:left center}
+      #shooting-event-root.party-bonus .party-bonus-bar.is-ending{animation:partyBonusEnd .3s steps(2) infinite}
+      @keyframes partyBonusEnd{50%{opacity:.45}}
       @keyframes partyCheers{0%{opacity:0;transform:scale(.6)}25%{opacity:1;transform:scale(1.08)}70%{opacity:1}100%{opacity:0;transform:scale(1.2)}}
     `;
     document.head.appendChild(st);
@@ -32989,7 +33034,8 @@
     let bar = root.querySelector('.party-bonus-bar');
     if (!bar) {
       bar = document.createElement('div'); bar.className = 'party-bonus-bar'; bar.setAttribute('aria-hidden', 'true');
-      bar.innerHTML = '<i></i>';
+      // build2172: 残りボーナスタイムを「CHEERS 3.2」＋減っていくバーで見せる
+      bar.innerHTML = '<span class="pb-label">CHEERS</span><b class="pb-sec">0.0</b><span class="pb-track"><i></i></span>';
       root.appendChild(bar);
     }
     return { root, arena, bar };
@@ -33178,6 +33224,64 @@
     }
     if (age > life) { g.el.remove(); pe.glass = null; }
   }
+  // build2170: 懐中時計（制限時間 +5秒）。祝杯のグラスと同じく「触れて取る」。スコアの残り時間ボーナスは基本の60秒で計算する
+  function getPartyExtraTimeSec() {
+    if (!state || !state.partyEv || !isPartyEventStage()) return 0;
+    return Math.max(0, Number(state.partyEv.extraSec || 0));
+  }
+  function updatePartyWatch(now, w, h, halted) {
+    const pe = state.partyEv, cfg = getPartyConfig();
+    const times = Array.isArray(cfg.watchAtMs) ? cfg.watchAtMs : [];
+    if (!times.length) return;
+    const el = getPartyElapsedMs(now);
+    const arena = document.getElementById('shooting-arena');
+    pe.watchIdx = pe.watchIdx || 0;
+    if (!pe.watch && pe.watchIdx < times.length && el >= times[pe.watchIdx] && !halted && arena) {
+      pe.watchIdx++;
+      const sec = Math.max(1, Number(cfg.watchSec || 5));
+      const g = document.createElement('div');
+      g.className = 'party-glass-wrap is-watch';
+      g.setAttribute('aria-hidden', 'true');
+      g.innerHTML = '<i class="pg-mark"></i><i class="pg-glass"></i><b class="pg-hint">TIME +' + sec + '</b><i class="pg-dot"></i><i class="pg-dot"></i><i class="pg-dot"></i>';
+      arena.appendChild(g);
+      const hint = g.querySelector('.pg-hint');
+      setTimeout(() => { try { hint && hint.remove(); } catch (_) {} }, 1850);
+      // グラスと重ならない位置（グラスがあれば反対側）
+      let gx = w * (.18 + Math.random() * .64);
+      if (pe.glass && Math.abs(gx - pe.glass.x) < 90) gx = pe.glass.x < w / 2 ? w * .78 : w * .22;
+      const gy = h * (.40 + Math.random() * .26);
+      pe.watch = { el: g, x: gx, y: gy, bornAt: el, sec };
+      g.style.transform = `translate3d(${gx.toFixed(1)}px,${gy.toFixed(1)}px,0)`;
+    }
+    if (!pe.watch) return;
+    const g = pe.watch;
+    const life = Number(cfg.watchLifeMs || 6000);
+    const age = el - g.bornAt;
+    g.el.classList.toggle('fading', age > life - 1800);
+    const px = Number(state.player.x || 0), py = Number(state.player.y || 0);
+    const dist = Math.hypot(px - g.x, py - g.y);
+    g.el.classList.toggle('is-near', dist < 120);
+    if (!halted && dist < 44) {
+      g.el.remove(); pe.watch = null;
+      pe.extraSec = Number(pe.extraSec || 0) + g.sec;
+      pe.watchTaken = Number(pe.watchTaken || 0) + 1;
+      const burst = document.createElement('div');
+      burst.className = 'party-glass-burst is-watch'; burst.setAttribute('aria-hidden', 'true');
+      burst.style.transform = `translate3d(${g.x.toFixed(1)}px,${(g.y - 10).toFixed(1)}px,0)`;
+      arena && arena.appendChild(burst);
+      setTimeout(() => { try { burst.remove(); } catch (_) {} }, 620);
+      const pop = document.createElement('div');
+      pop.className = 'party-pop time big';
+      pop.textContent = '+' + g.sec + 's';
+      pop.style.left = g.x + 'px'; pop.style.top = (g.y - 30) + 'px';
+      arena && arena.appendChild(pop);
+      setTimeout(() => pop.remove(), 950);
+      const timer = document.getElementById('shooting-battle-timer');
+      if (timer) { timer.classList.remove('party-time-plus'); void timer.offsetWidth; timer.classList.add('party-time-plus'); setTimeout(() => timer.classList.remove('party-time-plus'), 900); }
+      return;
+    }
+    if (age > life) { g.el.remove(); pe.watch = null; }
+  }
   function updatePartyMechanics(now) {
     if (!isPartyEventStage()) return;
     const pe = ensurePartyState();
@@ -33210,13 +33314,17 @@
     }
     updatePartyGuests(dt, now, w, h, halted);
     updatePartyGlass(now, w, h, halted);
+    updatePartyWatch(now, w, h, halted); // build2170
     const bonus = isPartyBonusActive(now);
     if (dom) {
       dom.root.classList.toggle('party-bonus', bonus);
       if (bonus) {
         const left = Math.max(0, pe.bonusUntil - el);
-        const i = dom.bar.firstChild;
+        const i = dom.bar.querySelector('.pb-track i');
         if (i) i.style.transform = 'scaleX(' + Math.max(0, Math.min(1, left / Math.max(1, pe.bonusTotalMs))).toFixed(3) + ')';
+        const sec = dom.bar.querySelector('.pb-sec');
+        if (sec) sec.textContent = (left / 1000).toFixed(1);
+        dom.bar.classList.toggle('is-ending', left < 1500);
       }
     }
   }
@@ -33305,8 +33413,12 @@
       const st = document.createElement('style');
       st.id = 'party-result-breakdown-style-2164';
       st.textContent = `
-        #shooting-result.is-party-event-result{overflow-y:auto;align-items:flex-start;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
-        #shooting-result.is-party-event-result .shooting-result-card{box-sizing:border-box;margin:auto;max-height:calc(100% - 10px);overflow-y:auto;padding:16px 18px 16px}
+        /* build2173: 画面ごとのスクロールはやめ、カードは画面内に収める。高さが足りない時は「スコア内訳」だけスクロール */
+        html body #shooting-event-root #shooting-result.is-party-event-result{overflow:hidden !important;overscroll-behavior:none}
+        html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card{overflow:hidden !important;overflow-y:hidden !important}
+        html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card > *:not(#party-score-breakdown){flex-shrink:0 !important}
+        html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card > #party-score-breakdown{flex:0 1 auto !important;min-height:84px !important;overflow-y:auto !important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+        #shooting-result #party-score-breakdown > .psb-heading{position:sticky;top:-9px;z-index:1;margin:-9px -11px 0;padding:9px 11px 6px;background:rgba(255,251,243,.98)}
         #shooting-result.is-party-event-result .shooting-result-rank-wrap{margin:7px 0 8px}
         #shooting-result.is-party-event-result .shooting-result-rank{font-size:55px;line-height:.9}
         #shooting-result.is-party-event-result .shooting-result-stats{margin-bottom:8px}
@@ -37007,6 +37119,8 @@
   function getShootingResultStageLabel() {
     const stage = selectedStage;
     if (!stage) return '';
+    // build2173: パラレル・ソワレは名前だけ（SPECIAL PROC. や (LIMITED EVENT) は付けない）
+    if (stage.eventId === 'party_event') return 'パラレル・ソワレ ～並行世界への招待状～';
     if (stage.eventId === 'phase_odyssey') {
       return `${String(stage.eventTitle || '位相回遊').trim()} ｜ FLOOR ${Math.max(1, Math.floor(Number(stage.stageNo || 1)))}`;
     }
@@ -47407,6 +47521,9 @@
       } catch (_) {}
       return ['RAID BATTLE', raidBossName || getShootingStageInfoBossName(stage)];
     }
+
+    // build2173: パラレル・ソワレの開幕表示は「パラレル・ソワレ / ～並行世界への招待状～」だけ
+    if (stage.eventId === 'party_event') return ['パラレル・ソワレ', '～並行世界への招待状～'];
 
     // build1779: 記憶決戦は「SPECIAL PROC. / 記憶決戦 / ボス名」
     if (stage.eventId === 'memory_battle') {

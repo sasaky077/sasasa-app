@@ -258,3 +258,29 @@
   #party-event-screen .pe-rw.is-outfit .pe-rw-img{width:48px;height:48px}
   #party-event-screen .pe-rw.is-outfit .pe-rw-name{font-size:13px}
 }
+
+/* build2170: 懐中時計（制限時間+5秒）— 淡い藍紫 */
+#party-event-rule-guide .is-watch .prg-ring{border:1.5px solid rgba(190,190,255,.8);background:radial-gradient(ellipse,rgba(176,176,255,.38),rgba(176,176,255,0) 70%)}
+#party-event-rule-guide .is-watch .prg-icon img{filter:drop-shadow(0 0 6px rgba(170,170,255,.8))}
+#party-event-rule-guide .is-watch b{color:#dcdcff}
+
+/* build2171: バトル中の背景（夜会の大広間）。.shooting-bg は既定で battle_bg_01 固定のため、ステージIDで差し替える */
+html body #shooting-event-root[data-shooting-stage="shooting_event_party"] .shooting-stage{background:#120e18 !important}
+html body #shooting-event-root[data-shooting-stage="shooting_event_party"] .shooting-bg{
+  background:url('../images/event_party_bg.webp?v=2171') center center/cover no-repeat !important;
+  opacity:.94 !important;
+  filter:brightness(1.06) saturate(.96) !important;
+}
+/* 上下のHUDの文字が読めるよう、白いもやを上下にだけ薄く残す（中央の床は夜の暗さのまま） */
+html body #shooting-event-root[data-shooting-stage="shooting_event_party"] .shooting-wash{
+  background:linear-gradient(180deg,rgba(246,240,228,.34) 0,rgba(246,240,228,.10) 14%,rgba(246,240,228,0) 26%,rgba(246,240,228,0) 80%,rgba(246,240,228,.16) 100%) !important;
+}
+
+/* build2172: ルール案内も同じ色分け（料理＝赤／招待客＝青／グラス・時計＝黄） */
+#party-event-rule-guide .is-food .prg-ring{border:1.5px dashed rgba(255,104,104,.95)}
+#party-event-rule-guide .is-food .prg-icon img{filter:drop-shadow(0 0 5px rgba(255,86,86,.8))}
+#party-event-rule-guide .is-food b{color:#ffc9c9}
+#party-event-rule-guide .is-human .prg-icon img{filter:drop-shadow(0 0 5px rgba(120,150,255,.85))}
+#party-event-rule-guide .is-glass .prg-ring,#party-event-rule-guide .is-watch .prg-ring{border:1.5px solid rgba(255,226,70,.9);background:radial-gradient(ellipse,rgba(255,232,90,.4),rgba(255,232,90,0) 70%);box-shadow:none}
+#party-event-rule-guide .is-glass .prg-icon img,#party-event-rule-guide .is-watch .prg-icon img{filter:drop-shadow(0 0 6px rgba(255,226,60,.9))}
+#party-event-rule-guide .is-glass b,#party-event-rule-guide .is-watch b{color:#fff0a6}

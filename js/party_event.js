@@ -307,7 +307,7 @@
         '<button type="button" class="pe-rule-bar pe-rule-again">' +
           '<span class="pe-rule-bar-k">RULE</span>' +
           '<span class="pe-rule-bar-t">夜会の作法</span>' +
-          '<span class="pe-rule-bar-icons" aria-hidden="true"><img src="images/event_party_dish.webp" alt=""><img src="images/event_party_guest_a.webp" alt=""><img src="images/event_party_glass.webp" alt=""></span>' +
+          '<span class="pe-rule-bar-icons" aria-hidden="true"><img src="images/event_party_dish.webp" alt=""><img src="images/event_party_guest_a.webp" alt=""><img src="images/event_party_glass.webp" alt=""><img src="images/event_party_watch.webp" alt=""></span>' +
           '<span class="pe-rule-bar-arrow" aria-hidden="true">›</span>' +
         '</button>' +
         '<p class="pe-note" hidden></p>' +
@@ -383,7 +383,8 @@
         '<ul class="prg-list">' +
           '<li class="is-food"><span class="prg-icon"><img src="images/event_party_dish.webp" alt=""><i class="prg-ring"></i></span><p><b>料理を撃って</b>スコアを獲得。<small>シャンパンタワーは高得点。光属性なので闇の攻撃で壊しやすい</small></p></li>' +
           '<li class="is-human"><span class="prg-icon"><img src="images/event_party_guest_a.webp" alt=""><i class="prg-ring"></i></span><p><b>招待客への攻撃</b>は減点。<small>弾が当たると青く震えて知らせます</small></p></li>' +
-          '<li class="is-glass"><span class="prg-icon"><img src="images/event_party_glass.webp" alt=""><i class="prg-ring"></i></span><p><b>祝杯のグラスに触れると</b>ボーナスタイム！<small>減点なし・料理の加点2倍</small></p></li>' +
+          '<li class="is-glass"><span class="prg-icon"><img src="images/event_party_glass.webp" alt=""><i class="prg-ring"></i></span><p><b>祝杯のグラスに触れると</b>ボーナスタイム！<small>その間は招待客もオレンジに光り、撃っても加点・料理は2倍</small></p></li>' +
+          '<li class="is-watch"><span class="prg-icon"><img src="images/event_party_watch.webp" alt=""><i class="prg-ring"></i></span><p><b>懐中時計に触れると</b>制限時間＋5秒。<small>1回の出撃で2回まで現れます</small></p></li>' +
         '</ul>' +
         '<p class="prg-rank">S 32,000点　A 26,000点　B 討伐<small>時間切れはE</small></p>' +
         '<div class="prg-actions">' +
