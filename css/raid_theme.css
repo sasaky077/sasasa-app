@@ -772,3 +772,19 @@ html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-break-card{padd
   html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-hp-card .daily-raid-hpbar{height:8px!important;min-height:8px!important;flex-basis:8px!important}
   html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-break-card{padding:5px 14px!important}
 }
+
+/* build2189: 背の高い端末でもセーフエリア（ノッチ・ホームバー）の分だけ縦が足りず、HPカードの下が見切れていた。
+   ボス名の上の余白とボス名の領域の最小の高さを詰める（ボス名・キャッチの大きさは変えない） */
+@media (min-height:761px){
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby .daily-raid-enemy-page > .daily-raid-hero{min-height:104px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-enemy-page .daily-raid-hero-copy{top:6px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal-main b{font-size:clamp(30px,9vw,36px)!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby .daily-raid-hpbox{gap:6px!important}
+}
+
+/* build2190: 幅の広い端末（Pro Maxなど）で「ENEMY INFO」「RAID INFO」が2行に折り返していた。
+   1行に固定し、収まるように文字と字間を少しだけ詰める */
+@media (min-width:401px){
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-swipe-tab{gap:8px!important;padding:8px 10px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-swipe-tab span{white-space:nowrap!important;font-size:13.5px!important;letter-spacing:.09em!important}
+}
