@@ -38346,6 +38346,7 @@
     // build1643: 和風ボス（レムナント：イノリ）
     japan:   Object.freeze(['bgm-battle-japan-01']),
     dawn:    Object.freeze(['bgm-battle-dawn-01']), // 夜明け専用BGM
+    soiree:  Object.freeze(['bgm-battle-soiree-01']), // build2188: パラレル・ソワレ専用BGM
   });
   let shootingBattleBgmSessionActive = false;
   let shootingBattleBgmFadeRaf = 0;
@@ -38353,6 +38354,7 @@
 
   function getShootingBattleBgmPoolKey() {
     if (isTowaDawnStage()) return 'dawn';
+    if (isPartyEventStage()) return 'soiree'; // build2188
     // 位相回遊のエクリプス戦では専用曲を優先。
     if (isPhaseOdysseyStage() && BOSS && BOSS.eclipseMechanics) return 'eclipse';
     if (isRhythmStage()) return 'rhythm';
