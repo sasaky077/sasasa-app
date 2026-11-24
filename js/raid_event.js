@@ -1564,12 +1564,12 @@
               <div><b>01</b><span>1人につき1日3回。BESTダメージを採用</span></div>
               <div><b>02</b><span>全滅または180秒経過で終了</span></div>
               <div><b>03</b><span>3回目終了時にBESTを共有HPへ反映</span></div>
-              <div><b>04</b><span>BREAK：全員の全挑戦の合計ダメージで溜まる。満タンで以降の挑戦は全員ダメージ1.5倍</span></div>
-              <div><b>05</b><span>討伐ランク（チーム合計ダメージ）：B 15万（討伐）/ A 20万 / S 25万</span></div>
-              <div><b>06</b><span>討伐後、挑戦したメンバーは報酬を受け取れる。S ボスの欠片／A 聖霊花(R)／B 進化素材ランダム2つ。一覧はRAID INFOの「報酬一覧」</span></div>
-              <div><b>07</b><span>累計討伐ボーナス：討伐した日数が節目に届くと結晶。30回ごとにくり返し、累計50回・100回は結晶100</span></div>
-              <div><b>08</b><span>ボスの欠片を集めると、そのボスを入手できる。</span></div>
-              <div><b>09</b><span>公開レイドは全国のプレイヤーが参加できます（フレンド登録は不要）。</span></div>
+              <div data-raid-rule-break hidden><b>04</b><span>BREAK：全員の全挑戦の合計ダメージで溜まる。満タンで以降の挑戦は全員ダメージ1.5倍</span></div>
+              <div><b data-raid-rule-no>04</b><span data-raid-rule-rank>討伐ランク（チーム合計ダメージ）：B 15万（討伐）/ A 16.5万 / S 18万</span></div>
+              <div><b>05</b><span>討伐後、挑戦したメンバーは報酬を受け取れる。S ボスの欠片／A 聖霊花(R)／B 進化素材ランダム2つ。一覧はRAID INFOの「報酬一覧」</span></div>
+              <div><b>06</b><span>累計討伐ボーナス：討伐した日数が節目に届くと結晶。30回ごとにくり返し、累計50回・100回は結晶100</span></div>
+              <div><b>07</b><span>ボスの欠片を集めると、そのボスを入手できる。</span></div>
+              <div><b>08</b><span>公開レイドは全国のプレイヤーが参加できます（フレンド登録は不要）。</span></div>
             </div>
           </section>
         </div>
@@ -1623,6 +1623,7 @@
     };
     const openRuleModal=()=>{
       if(!ruleModal) return;
+      try{ syncRaidRuleText(ruleModal); }catch(_){}
       ruleModal.hidden=false;
       ruleModal.setAttribute('aria-hidden','false');
       requestAnimationFrame(()=>ruleModal.classList.add('is-open'));
@@ -2080,6 +2081,12 @@
     if(pending<=0){ pendingEl.hidden=true; box.hidden=true; box.classList.remove('is-lethal'); return; }
     const predicted=Math.max(0,hp-pending);
     pendingEl.hidden=false;
+    box.hidden=true; box.classList.remove('is-lethal'); // build2175: 反映待ちの数字はTEAM GOALに集約
+    if(true){
+      pendingEl.style.left=`${(predicted/maxHp)*100}%`;
+      pendingEl.style.width=`${(Math.min(hp,pending)/maxHp)*100}%`;
+      return;
+    }
     pendingEl.style.left=`${(predicted/maxHp)*100}%`;
     pendingEl.style.width=`${(Math.min(hp,pending)/maxHp)*100}%`;
     box.hidden=false;
@@ -2095,8 +2102,24 @@
   // build1563: 共有ブレイクゲージ / 討伐ランク
   // build2133: ランクはチーム合計ダメージだけで決める（ブレイクは条件にしない）。周回をまたいだ合計で判定。
   //  B＝15万（1周目討伐）／A＝20万／S＝25万。サーバーの clear_rank・報酬判定も同じ基準に合わせること。
-  const RAID_RANK_DAMAGE={B:150000,A:200000,S:250000};
-  const RANK_NOTE={S:'チーム合計25万ダメージ',A:'チーム合計20万ダメージ',B:'チーム合計15万ダメージ（討伐）',C:'討伐（旧基準）'};
+  // build2176: 2026-11-25 0:00（日本時間）からBREAK廃止・A 16.5万 / S 18万。それより前は旧ルール（サーバーの切り替えと同時）
+  const RAID_RULE_2176_AT=Date.parse('2026-11-25T00:00:00+09:00');
+  function isRaidRule2176(){ return Date.now()>=RAID_RULE_2176_AT; }
+  const RAID_RANK_OLD={B:150000,A:200000,S:250000}, RAID_RANK_NEW={B:150000,A:165000,S:180000};
+  function curRankCuts(){ return isRaidRule2176()?RAID_RANK_NEW:RAID_RANK_OLD; }
+  const RAID_RANK_DAMAGE={get B(){return curRankCuts().B;},get A(){return curRankCuts().A;},get S(){return curRankCuts().S;}};
+  function manText(v){ return (v/10000).toString()+'万'; }
+  const RANK_NOTE={get S(){return 'チーム合計'+manText(RAID_RANK_DAMAGE.S)+'ダメージ';},get A(){return 'チーム合計'+manText(RAID_RANK_DAMAGE.A)+'ダメージ';},B:'チーム合計15万ダメージ（討伐）',C:'討伐（旧基準）'};
+  function rankCutsText(sep){ const c=RAID_RANK_DAMAGE; return 'B'+sep[0]+manText(c.B)+'（討伐）'+sep[1]+'A'+sep[0]+manText(c.A)+sep[1]+'S'+sep[0]+manText(c.S); }
+  function syncRaidRuleText(root){
+    const r=root||document; const on=isRaidRule2176();
+    const br=r.querySelector('[data-raid-rule-break]'); if(br) br.hidden=on;
+    const no=r.querySelector('[data-raid-rule-no]'); if(no) no.textContent=on?'04':'05';
+    const rk=r.querySelector('[data-raid-rule-rank]'); if(rk) rk.textContent='討伐ランク（チーム合計ダメージ）：'+rankCutsText([' ',' / ']);
+    // 後ろの番号を詰める／戻す
+    const grid=r.querySelector('.daily-raid-rule-modal-grid');
+    if(grid){ let i=0; grid.querySelectorAll(':scope > div').forEach(d=>{ if(d.hidden) return; i++; const b=d.querySelector('b'); if(b) b.textContent=String(i).padStart(2,'0'); }); }
+  }
   const RANK_NOTE_LAP=RANK_NOTE;
   function rankNote(status,rank){ return ((status&&status.lap_mode)?RANK_NOTE_LAP:RANK_NOTE)[rank]||''; }
   function rankOfDamage(total){
@@ -2135,15 +2158,18 @@
     const box=root.querySelector('#daily-raid-break');
     const hasBreak=!!status&&status.break_goal!=null;
     if(!box) return;
-    box.hidden=!hasBreak;
-    if(!hasBreak) return;
+    // build2175: ルールはそのまま。表示は発動中だけ1行で（溜まっていく途中のゲージは出さない）
+    syncRaidRuleText(root);
+    // build2176: 11/25 0:00以降はBREAK廃止で常に非表示。それまではbuild2175と同じ（発動中だけ1行）
+    box.hidden=isRaidRule2176()||!hasBreak||status.broken!==true;
+    if(box.hidden) return;
     const dmg=n(status.break_damage), goal=Math.max(1,n(status.break_goal));
     const broken=status.broken===true;
     const pct=broken?100:Math.min(99,Math.floor(dmg/goal*100));
     box.classList.toggle('is-broken',broken);
     root.querySelector('#daily-raid-break-fill').style.transform=`scaleX(${broken?1:Math.min(1,dmg/goal)})`;
     root.querySelector('#daily-raid-break-pct').textContent=broken?'MAX':`${pct}%`;
-    root.querySelector('#daily-raid-break-text').textContent=broken?(cleared?'ブレイク達成':'ダメージ1.5倍'):`ブレイクまで ${fmt(goal-dmg)}`;
+    root.querySelector('#daily-raid-break-text').textContent=broken?(cleared?'ブレイク達成':'発動中 · 全員のダメージ ×1.5'):`ブレイクまで ${fmt(goal-dmg)}`;
     box.title=broken?'ブレイク中：以降の挑戦は全員の与ダメージ1.5倍':'全員の全挑戦の合計ダメージで溜まります。満タンでブレイク（以降の挑戦は全員ダメージ1.5倍）';
   }
 
@@ -2161,20 +2187,48 @@
   function teamRankOf(total){ return rankOfDamage(total); }
   function ensureTeamRankCard(root){
     let card=root.querySelector('#daily-raid-teamrank');
-    if(card) return card;
-    const anchor=root.querySelector('.daily-raid-hpbox .drt-break-card');
+    // build2175: 「Sまであと◯◯」を一番上に。HP・周回・BREAKはその下の補足
+    const anchor=root.querySelector('.daily-raid-hpbox .drt-hp-card');
+    if(card){
+      if(anchor&&card.nextElementSibling!==anchor) anchor.insertAdjacentElement('beforebegin',card);
+      return card;
+    }
     if(!anchor) return null;
     card=document.createElement('div');
-    card.className='drt-rank-card';
+    card.className='drt-rank-card drt-goal-card';
     card.id='daily-raid-teamrank';
     card.innerHTML=`
-      <div class="drt-rank-head"><span class="drt-rank-title">TEAM DAMAGE</span><span class="drt-rank-now" id="daily-raid-teamrank-now"></span></div>
+      <div class="drt-rank-head"><span class="drt-rank-title">TEAM GOAL</span><span class="drt-rank-now" id="daily-raid-teamrank-now"></span></div>
+      <div class="drt-goal-main" id="daily-raid-goal-main"></div>
       <div class="drt-rank-labels v2"><span><b data-rank="B">B</b></span><span><b data-rank="A">A</b></span><span><b data-rank="S">S</b></span></div>
       <div class="drt-rank-bar">${RANK_SEGS.map(r=>`<i data-rank="${r}"><em></em></i>`).join('')}</div>
       <div class="drt-rank-total" id="daily-raid-teamrank-total"></div>
-      <div class="drt-rank-note" id="daily-raid-teamrank-note"></div>`;
-    anchor.insertAdjacentElement('afterend',card);
+      <div class="drt-goal-next" id="daily-raid-goal-next"></div>
+      <div class="drt-rank-note" id="daily-raid-teamrank-note" hidden></div>`;
+    anchor.insertAdjacentElement('beforebegin',card);
     return card;
+  }
+  // build2175: いま自分が何をすればいいか（1行）
+  function goalNextText(status){
+    if(!status||!status.raid_id) return '';
+    const me=status.me||{};
+    const members=Array.isArray(status.members)?status.members:[];
+    const attempts=Math.max(0,Math.min(3,n(me.attempt_count)));
+    const inBattle=!!me.attempt_started_at&&!me.attempt_finished_at;
+    const cleared=status.status==='cleared'||n(status.current_hp)<=0&&!status.lap_mode;
+    if(isAdmin()) return '管理者テスト中（記録には反映されません）';
+    if(status.status==='cleared'){
+      if(isRankRewardClaimable(status)) return '討伐完了！ 下のボタンで報酬を受け取れます';
+      return 'RAID CLEAR'+(status.clear_rank?' · RANK '+status.clear_rank+' 確定':'');
+    }
+    if(inBattle) return 'あなたは挑戦中です';
+    if(attempts<3) return 'あなたの挑戦：残り '+(3-attempts)+' 回';
+    const waiting=members.filter(m=>String(m.user_id||'')!==uid()&&!(Math.min(3,n(m.attempt_count))>=3&&m.attempt_finished_at));
+    if(waiting.length){
+      const names=waiting.slice(0,2).map(m=>m.display_name||'プレイヤー').join('・')+(waiting.length>2?' ほか':'');
+      return 'あとは仲間の挑戦待ち（'+names+'）';
+    }
+    return cleared?'RAID CLEAR':'ランク確定を待っています';
   }
   function renderTeamRank(root,status){
     const card=ensureTeamRankCard(root);
@@ -2199,16 +2253,17 @@
     });
     const nowEl=card.querySelector('#daily-raid-teamrank-now');
     nowEl.innerHTML=rank?`RANK <b>${rank}</b>`:'RANK <b>—</b>';
-    const next=total<cuts.B?'B':total<cuts.A?'A':'S';
-    const target=cuts[next];
-    card.querySelector('#daily-raid-teamrank-total').innerHTML=`<em>${fmt(total)}</em><span> / ${fmt(target)}</span>`;
     const pending=getPendingRaidDamage(status);
-    const notes=[];
-    if(total>=cuts.S) notes.push('RANK S 到達');
-    else notes.push(`RANK ${next} まで あと ${fmt(target-total)}`);
-    if(pending>0&&status&&status.status!=='cleared') notes.push(`反映待ち ${fmt(pending)} を含む`);
-    card.querySelector('#daily-raid-teamrank-note').textContent=notes.join(' · ');
-    card.title='全員のBESTダメージの合計。B：15万（討伐）／A：20万／S：25万';
+    const confirmed=!!(status&&status.status==='cleared');
+    const main=card.querySelector('#daily-raid-goal-main');
+    if(total>=cuts.S) main.innerHTML=`<b class="is-done">RANK S ${confirmed?'達成！':'到達！'}</b>`;
+    else main.innerHTML=`<small>S まで あと</small><b>${fmt(cuts.S-total)}</b>`;
+    card.classList.toggle('is-s',total>=cuts.S);
+    card.querySelector('#daily-raid-teamrank-total').innerHTML=
+      `<span>チーム合計</span> <em>${fmt(total)}</em><span> / ${fmt(cuts.S)}</span>`+
+      (pending>0&&!confirmed?`<small class="drt-goal-pending">うち反映待ち ${fmt(pending)}</small>`:'');
+    card.querySelector('#daily-raid-goal-next').textContent=goalNextText(status);
+    card.title='全員のBESTダメージの合計（3回目終了前の分も含む）。'+rankCutsText(['：','／']);
   }
 
   // build1566: HP枠が伸びたとき、下端固定のページ切替インジケータが重ならないよう追従させる。

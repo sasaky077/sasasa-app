@@ -21,22 +21,25 @@
   const PANELS = Object.freeze([
     { id:1, cond:'Bランク以上で\nクリア 1回',        op:'料理の加点\n+20%',               cum:p=>p.clears_b>=1, count:p=>p.clears_b, need:1 },
     { id:2, cond:'被弾5回以内で\nクリア',            op:'開始直後に\nボーナスタイム3秒',  run:r=>r.win && r.hitsTaken<=5 },
-    { id:3, cond:'Aランク以上で\nクリア 1回',        op:'主催者への\n与ダメージ+10%',     cum:p=>p.clears_a>=1, count:p=>p.clears_a, need:1 },
-    { id:4, cond:'減点なしで\nクリア',            op:'祝杯のグラス\n+1',               run:r=>r.win && r.humanKills===0 },
+    { id:3, cond:'Aランク以上で\nクリア 3回',        op:'主催者への\n与ダメージ+10%',     cum:p=>p.clears_a>=3, count:p=>p.clears_a, need:3 },
+    { id:4, cond:'減点なしで\nクリア',            op:'常時ATK\n1.3倍',               run:r=>r.win && r.humanKills===0 },
     { id:5, cond:'料理を\n累計100皿',                op:'人間の減点\n−30%',               cum:p=>p.food_total>=100, count:p=>p.food_total, need:100 },
     { id:6, cond:'1回で料理を\n15皿倒して\nクリア',  op:'人間のHP\n+50%',                 run:r=>r.win && r.foodKills>=15 },
     { id:7, cond:'Bランク以上で\nクリア 5回',        op:'ボーナスタイム\n+2秒',           cum:p=>p.clears_b>=5, count:p=>p.clears_b, need:5 },
     { id:8, cond:'残り20秒以上で\nクリア',           op:'シャンパン\nタワー出現UP',       run:r=>r.win && r.remainSec>=20 },
-    { id:9, cond:'Aランク以上で\nクリア 3回',        op:'ボーナス中の\n加点×2.5',         cum:p=>p.clears_a>=3, count:p=>p.clears_a, need:3 }
+    { id:9, cond:'Sランクで\nクリア 1回',           op:'ボーナス中の\n加点×2.5',         cum:p=>p.clears_s>=1, count:p=>p.clears_s, need:1 }
   ]);
+  // 表示順：中央をSランク達成（ID9）とし、従来中央の料理100皿（ID5）を右下へ。
+  // IDは既存の開放状態・OP効果に紐づくため変更しない。
+  const BOARD_ORDER = Object.freeze([1,2,3,4,9,6,7,8,5]);
   const oneLine = t => String(t || '').replace(/\n/g, '');
   const brText = t => esc(t).replace(/\n/g, '<br>');
 
   // ビンゴのライン（id はサーバーと共通）。3×3なので最大8ライン
   const LINES = Object.freeze([
-    { id:'row1', cells:[1,2,3] }, { id:'row2', cells:[4,5,6] }, { id:'row3', cells:[7,8,9] },
-    { id:'col1', cells:[1,4,7] }, { id:'col2', cells:[2,5,8] }, { id:'col3', cells:[3,6,9] },
-    { id:'diag1', cells:[1,5,9] }, { id:'diag2', cells:[3,5,7] }
+    { id:'row1', cells:[1,2,3] }, { id:'row2', cells:[4,9,6] }, { id:'row3', cells:[7,8,5] },
+    { id:'col1', cells:[1,4,7] }, { id:'col2', cells:[2,9,8] }, { id:'col3', cells:[3,6,5] },
+    { id:'diag1', cells:[1,9,5] }, { id:'diag2', cells:[3,9,7] }
   ]);
   const MAX_LINES = LINES.length;
   // 揃ったライン数ごとの報酬（その本数に届いた時に1回だけ）。8ライン＝全パネル＝MAX BINGO
@@ -154,7 +157,7 @@
       foodMul:        has(1) ? 1.2 : 1,
       startBonusMs:   has(2) ? 3000 : 0,
       bossDamageMul:  has(3) ? 1.1 : 1,
-      extraGlass:     has(4) ? 1 : 0,
+      atkMul:         has(4) ? 1.3 : 1,
       humanPenaltyMul:has(5) ? 0.7 : 1,
       humanHpMul:     has(6) ? 1.5 : 1,
       bonusExtraMs:   has(7) ? 2000 : 0,
@@ -221,7 +224,7 @@
     const pr = state.progress;
     const lit = new Set();
     LINES.forEach(l => { if(pr.bingo.includes(l.id)) l.cells.forEach(c => lit.add(c)); });
-    return PANELS.map(pn => {
+    return BOARD_ORDER.map(id => PANELS.find(pn => pn.id === id)).map(pn => {
       const open = pr.panels.includes(pn.id);
       const cls = 'pe-cell' + (open ? ' is-open' : '') + (lit.has(pn.id) ? ' is-bingo' : '') + (highlight && highlight.includes(pn.id) ? ' is-new' : '');
       return '<div class="' + cls + '" data-pe-cell="' + pn.id + '">' +

@@ -12502,9 +12502,16 @@
   }
 
   // build1563: DAILY RAIDの共有ブレイク達成中は、与ダメージ1.5倍（受けるダメージは対象外）。
+  // build2176: 2026-11-25 0:00（日本時間）からBREAKの倍率は廃止（挑戦の順番で得失が出るため）。
+  //  切り替えはバトル開始時点で判定し、バトル途中で0時をまたいでも倍率は変えない。
   const RAID_BREAK_DAMAGE_MULTIPLIER = 1.5;
+  const RAID_NO_BREAK_AT = Date.parse('2026-11-25T00:00:00+09:00');
   function getRaidBreakDamageMultiplier() {
-    return (selectedRaidContext && selectedRaidContext.broken && isRaidStage()) ? RAID_BREAK_DAMAGE_MULTIPLIER : 1;
+    if (!(selectedRaidContext && selectedRaidContext.broken && isRaidStage())) return 1;
+    if (selectedRaidContext.__noBreak2176 === undefined) {
+      try { selectedRaidContext.__noBreak2176 = Date.now() >= RAID_NO_BREAK_AT; } catch (_) { return 1; }
+    }
+    return selectedRaidContext.__noBreak2176 ? 1 : RAID_BREAK_DAMAGE_MULTIPLIER;
   }
   function ensureRaidBreakBadge() {
     const arena = document.getElementById('shooting-arena');
@@ -32868,7 +32875,7 @@
   }
   function getPartyConfig() { return (selectedStage && selectedStage.party) || {}; }
   function readPartyOptions() {
-    const base = { foodMul: 1, startBonusMs: 0, bossDamageMul: 1, extraGlass: 0, humanPenaltyMul: 1,
+    const base = { foodMul: 1, startBonusMs: 0, bossDamageMul: 1, atkMul: 1, humanPenaltyMul: 1,
       humanHpMul: 1, bonusExtraMs: 0, extraTower: false, bonusPlusMul: 0 };
     try {
       const o = window.PartyEvent && typeof window.PartyEvent.getBattleOptions === 'function'
@@ -32899,11 +32906,15 @@
     const pe = state && state.partyEv;
     return !!(pe && getPartyElapsedMs(now) < Number(pe.bonusUntil || 0));
   }
-  // OP「主催者への与ダメージ」。夜会の客には掛けない（applyElementDamage から、攻撃先がボスの時だけ）
+  // build2179: パネル04は全ての夜会の対象への攻撃ダメージ×1.3。
+  // パネル03の主催者限定与ダメージ+10%とは独立して乗算する。
+  // applyElementDamage は incoming=true の時に本関数を呼ばないため被ダメージは変えない。
   function getPartyDamageMultiplier() {
     if (!isPartyEventStage() || !state || !state.partyEv) return 1;
-    if (!(combatElementTarget && combatElementTarget === state.boss)) return 1;
-    return Math.max(1, Number(state.partyEv.opts.bossDamageMul || 1));
+    const atkMul = Math.max(1, Number(state.partyEv.opts.atkMul || 1));
+    const bossMul = (combatElementTarget && combatElementTarget === state.boss)
+      ? Math.max(1, Number(state.partyEv.opts.bossDamageMul || 1)) : 1;
+    return atkMul * bossMul;
   }
   function ensurePartyStyle() {
     if (document.getElementById('party-event-style-v2150')) return;
@@ -33179,8 +33190,7 @@
     const pe = state.partyEv, cfg = getPartyConfig();
     const el = getPartyElapsedMs(now);
     const times = (cfg.glassAtMs || []).slice();
-    const extra = Math.max(0, Math.floor(Number(pe.opts.extraGlass || 0)));
-    for (let i = 0; i < extra; i++) times.push(24000 + i * 18000);
+    // build2179: OP04「祝杯のグラス+1」を廃止。出現回数は基本ステージ設定どおり。
     times.sort((a, b) => a - b);
     const arena = document.getElementById('shooting-arena');
     if (!pe.glass && pe.glassIdx < times.length && el >= times[pe.glassIdx] && !halted && arena) {

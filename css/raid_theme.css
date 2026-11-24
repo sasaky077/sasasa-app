@@ -696,3 +696,79 @@ html body #daily-raid-root#daily-raid-root .daily-raid-gimmicks.is-open .drg-nam
 @media (max-width:380px){
   #daily-raid-root .daily-raid-attempt-overview:has(.daily-raid-reset-chip:not([hidden])) > span{font-size:9.5px!important;letter-spacing:0!important}
 }
+
+/* =========================================================
+   build2175: レイドロビーを「Sまであと◯◯」中心に。
+   TEAM GOAL（チーム合計・反映待ち込み）を一番上、HP・周回は補足、BREAKは発動中だけ1行
+   ========================================================= */
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal-card .drt-rank-head{margin-bottom:2px!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal-main{display:flex!important;align-items:baseline!important;gap:10px!important;margin:2px 0 8px!important;line-height:1!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal-main small{font:700 14px/1 "Noto Serif JP",serif!important;letter-spacing:.06em!important;color:#3a2c1e!important;-webkit-text-fill-color:#3a2c1e!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal-main b{font:700 clamp(30px,10vw,40px)/1 "Cinzel",serif!important;font-variant-numeric:tabular-nums!important;color:var(--rt-deep)!important;-webkit-text-fill-color:var(--rt-deep)!important;text-shadow:0 1px 0 #fff!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal-main b.is-done{font-size:clamp(24px,8vw,32px)!important;letter-spacing:.06em!important;color:#a8782a!important;-webkit-text-fill-color:#a8782a!important;text-shadow:0 0 10px rgba(255,214,120,.6),0 1px 0 #fff!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal-card .drt-rank-total{margin-top:7px!important;display:flex!important;align-items:baseline!important;flex-wrap:wrap!important;gap:4px 6px!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal-card .drt-rank-total em{font-size:clamp(15px,4.6vw,18px)!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal-card .drt-rank-total span{font-size:12px!important;font-family:"Noto Serif JP",serif!important;color:#5a4632!important;-webkit-text-fill-color:#5a4632!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal-card .drt-goal-pending{margin-left:auto!important;font:600 10.5px/1 "Noto Serif JP",serif!important;color:#7a6044!important;-webkit-text-fill-color:#7a6044!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal-next{margin-top:8px!important;padding-top:7px!important;border-top:1px solid rgba(154,125,74,.22)!important;
+  font:700 12.5px/1.35 "Noto Serif JP",serif!important;color:#3a2c1e!important;-webkit-text-fill-color:#3a2c1e!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal-next:empty{display:none!important}
+/* HP・周回は補足として小さめに */
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-hp-card{padding:9px 18px 11px!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-hp-card .daily-raid-hphead strong{font-size:clamp(15px,4.8vw,19px)!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-hp-card .daily-raid-hphead strong em{font-size:clamp(20px,6.4vw,26px)!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-hp-card .daily-raid-hpbar{height:10px!important;min-height:10px!important;flex-basis:10px!important}
+/* BREAKは発動中だけ1行 */
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-break-card{padding:8px 18px!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-break-card .daily-raid-break{display:flex!important;align-items:center!important;gap:10px!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-break-card .daily-raid-break[hidden]{display:none!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-break-card .daily-raid-break-bar,
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-break-card #daily-raid-break-pct{display:none!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-break-card{display:flex!important;align-items:center!important;gap:10px!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-break-card .drt-break-title{margin:0!important;font-size:15px!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-break-card #daily-raid-break-text{font:700 12px/1.3 "Noto Serif JP",serif!important}
+
+/* =========================================================
+   build2180: ENEMY INFO をスクロールなしで収める（全端末共通）
+   ボス名の上の余白を詰め、TEAM GOALを上へ。HPカードは「現在のHP ……数値」の1行＋バーに。
+   空きがある端末ではボス名とカードの間が広がり、カードはバトル開始ボタンの上に揃う
+   ========================================================= */
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby .daily-raid-enemy-page{padding-top:0!important;padding-bottom:6px!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby .daily-raid-enemy-page > .daily-raid-hero{
+  flex:1 1 auto!important;flex-shrink:1!important;min-height:122px!important;height:auto!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-enemy-page .daily-raid-hero-copy{top:12px!important;bottom:auto!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby .daily-raid-hpbox{gap:7px!important}
+/* TEAM GOAL：余白だけ少し詰める */
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal-card{padding:10px 16px 10px!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal-main{margin:1px 0 6px!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal-card .drt-rank-total{margin-top:6px!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal-next{margin-top:6px!important;padding-top:6px!important}
+/* HP：ラベルと数値を1行に */
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-hp-card{padding:8px 16px 10px!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-hp-card .daily-raid-hphead{
+  display:flex!important;align-items:baseline!important;justify-content:space-between!important;gap:10px!important;margin:0 0 6px!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-hp-card .daily-raid-hphead > div{flex:0 0 auto!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-hp-card #daily-raid-hptext{margin:0!important;text-align:right!important;white-space:nowrap!important;line-height:1!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-hp-card #daily-raid-hptext .drt-hp-now{font-size:clamp(18px,5.4vw,22px)!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-hp-card #daily-raid-hptext .drt-hp-max{font-size:clamp(12px,3.6vw,14px)!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-hp-card .daily-raid-hpbar{margin-top:0!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-break-card{padding:6px 16px!important}
+
+/* 画面の低い端末（SEなど）：ボス名・キャッチを小さく、TEAM GOALの数字も一回り小さく */
+@media (max-height:760px){
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby .daily-raid-enemy-page > .daily-raid-hero{min-height:68px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-enemy-page .daily-raid-hero-copy{top:6px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-enemy-page .daily-raid-hero-copy small{display:none!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-enemy-page .daily-raid-hero-copy strong{font-size:clamp(26px,7.6vw,30px)!important;margin-top:0!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-enemy-page .daily-raid-hero-copy span{font-size:11.5px!important;margin-top:4px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal-card{padding:8px 14px 8px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal-card .drt-rank-head{margin-bottom:0!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal-main b{font-size:clamp(26px,8vw,30px)!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal-main{margin:0 0 4px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal-card .drt-rank-total{margin-top:4px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal-next{margin-top:5px!important;padding-top:5px!important;font-size:12px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-hp-card{padding:6px 14px 8px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-hp-card .daily-raid-hphead{margin-bottom:4px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-hp-card .daily-raid-hpbar{height:8px!important;min-height:8px!important;flex-basis:8px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-break-card{padding:5px 14px!important}
+}
