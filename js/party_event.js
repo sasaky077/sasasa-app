@@ -301,15 +301,13 @@
           '<p class="pe-lead">縦・横・斜めの揃ったライン数で受け取れます。<br><b class="pe-bingo-count"></b></p>' +
           '<ul class="pe-rewards"></ul>' +
         '</section>' +
-        '<section class="pe-section pe-rule">' +
-          '<h3 class="pe-h"><small>RULE</small>夜会の作法</h3>' +
-          '<ul>' +
-            '<li><img src="images/event_party_dish.webp" alt=""><span><b>料理・シャンパンタワー</b>倒すと加点。光属性なので闇の攻撃で壊しやすい</span></li>' +
-            '<li><img src="images/event_party_guest_a.webp" alt=""><span><b>給仕・客人</b>倒すと減点。当たると青く震える</span></li>' +
-            '<li><img src="images/event_party_glass.webp" alt=""><span><b>祝杯のグラス</b>取るとボーナスタイム（減点なし・加点2倍）</span></li>' +
-          '</ul>' +
-          '<p class="pe-rank">S 32,000点　A 26,000点　B 討伐（時間切れはE）</p>' +
-        '</section>' +
+        // build2166: ルールは1か所（ポップアップ）にまとめ、ここは開くための細い帯だけ
+        '<button type="button" class="pe-rule-bar pe-rule-again">' +
+          '<span class="pe-rule-bar-k">RULE</span>' +
+          '<span class="pe-rule-bar-t">夜会の作法</span>' +
+          '<span class="pe-rule-bar-icons" aria-hidden="true"><img src="images/event_party_dish.webp" alt=""><img src="images/event_party_guest_a.webp" alt=""><img src="images/event_party_glass.webp" alt=""></span>' +
+          '<span class="pe-rule-bar-arrow" aria-hidden="true">›</span>' +
+        '</button>' +
         '<p class="pe-note" hidden></p>' +
       '</div>' +
       '<footer class="pe-foot">' +
@@ -319,6 +317,7 @@
     root.addEventListener('click', e => {
       if(e.target.closest('.pe-close')){ close(); return; }
       if(e.target.closest('.pe-go')){ start(); return; }
+      if(e.target.closest('.pe-rule-again')){ showRuleGuide({ sortie:false }); return; }
       if(e.target.closest('[data-pe-outfit-preview]')){ openOutfitPreview(); return; }
       const cell = e.target.closest('[data-pe-cell]');
       if(cell){
@@ -359,12 +358,59 @@
     const root = document.getElementById('party-event-screen');
     if(root) root.classList.remove('is-open');
   }
-  function start(){
-    if(!canEnter()){ toast('開催期間外です'); return; }
+  // build2165: 初回だけ、出撃前に3行のルール案内（戦闘前なのでタイマーは動かない）。表示済みはプレイヤー単位で端末に保存
+  function ruleSeenKey(){
+    let uid = '';
+    try{ uid = String(localStorage.getItem('zukan_user_id') || ''); }catch(_){}
+    return 'zeraphia_party_rule_seen_v1:' + (uid || 'guest');
+  }
+  function isRuleSeen(){ try{ return localStorage.getItem(ruleSeenKey()) === '1'; }catch(_){ return true; } }
+  function markRuleSeen(){ try{ localStorage.setItem(ruleSeenKey(), '1'); }catch(_){} }
+  function showRuleGuide(opts){
+    const o = opts || {};
+    document.getElementById('party-event-rule-guide')?.remove();
+    const ov = document.createElement('div');
+    ov.id = 'party-event-rule-guide';
+    ov.setAttribute('role', 'dialog');
+    ov.setAttribute('aria-modal', 'true');
+    ov.setAttribute('aria-label', '夜会の作法');
+    ov.innerHTML =
+      '<div class="prg-card">' +
+        '<small class="prg-kicker">HOW TO PLAY</small>' +
+        '<h3>夜会の作法</h3>' +
+        '<ul class="prg-list">' +
+          '<li class="is-food"><span class="prg-icon"><img src="images/event_party_dish.webp" alt=""><i class="prg-ring"></i></span><p><b>料理を撃って</b>スコアを獲得。<small>シャンパンタワーは高得点。光属性なので闇の攻撃で壊しやすい</small></p></li>' +
+          '<li class="is-human"><span class="prg-icon"><img src="images/event_party_guest_a.webp" alt=""><i class="prg-ring"></i></span><p><b>招待客への攻撃</b>は減点。<small>弾が当たると青く震えて知らせます</small></p></li>' +
+          '<li class="is-glass"><span class="prg-icon"><img src="images/event_party_glass.webp" alt=""><i class="prg-ring"></i></span><p><b>祝杯のグラスに触れると</b>ボーナスタイム！<small>減点なし・料理の加点2倍</small></p></li>' +
+        '</ul>' +
+        '<p class="prg-rank">S 32,000点　A 26,000点　B 討伐<small>時間切れはE</small></p>' +
+        '<div class="prg-actions">' +
+          '<button type="button" class="prg-close">閉じる</button>' +
+          (o.sortie ? '<button type="button" class="prg-go">出撃する</button>' : '') +
+        '</div>' +
+      '</div>';
+    const finish = go => {
+      ov.remove();
+      if(o.sortie){ markRuleSeen(); if(go || o.closeAlsoGoes) launch(); }
+    };
+    ov.addEventListener('click', e => {
+      if(e.target.closest('.prg-go')){ finish(true); return; }
+      if(e.target.closest('.prg-close')){ finish(!!o.closeAlsoGoes); return; }
+    });
+    document.body.appendChild(ov);
+  }
+  function launch(){
     if(typeof window.openShootingEvent !== 'function'){ toast('戦闘エンジンの準備が完了していません'); return; }
     close();
     try{ window.openShootingEvent({ stageId:STAGE_ID }); }
     catch(err){ console.error('[party event] open stage failed', err); toast('イベントを開けませんでした'); }
+  }
+  function start(){
+    if(!canEnter()){ toast('開催期間外です'); return; }
+    if(typeof window.openShootingEvent !== 'function'){ toast('戦闘エンジンの準備が完了していません'); return; }
+    // 初回のみ案内（「閉じる」でも「出撃する」でも先へ進む）。2回目以降は自動表示しない
+    if(!isRuleSeen()){ showRuleGuide({ sortie:true, closeAlsoGoes:true }); return; }
+    launch();
   }
 
   // ---------------- 結果のお知らせ ----------------
@@ -406,6 +452,7 @@
   window.openPartyEventFromHome = function(){ void open(); return true; };
   window.PartyEvent = Object.freeze({
     STAGE_ID, PANELS, LINES, REWARDS,
+    showRuleGuide,
     open, close, load,
     isOpen, canEnter,
     getBattleOptions,

@@ -32883,6 +32883,8 @@
         nextSpawnAt: 0, spawnCount: 0, nextTowerAt: 0,
         glassIdx: 0, glass: null, bonusUntil: 0, bonusTotalMs: 0,
         points: 0, foodKills: 0, humanKills: 0, towerKills: 0, glassTaken: 0,
+         // build2164: リザルト内訳用。得点計算そのものは変更しない。
+         dishScore: 0, towerScore: 0, bonusHumanScore: 0, humanPenaltyScore: 0,
         startBonusGiven: false,
       };
     }
@@ -32932,6 +32934,45 @@
       #shooting-event-root .party-bonus-bar i{display:block;height:100%;border-radius:2px;background:linear-gradient(90deg,#c48a2a,#ffe7a3,#c48a2a);box-shadow:0 0 8px rgba(255,210,110,.95);transform-origin:left center}
       #shooting-event-root .party-cheers{position:absolute;inset:0;z-index:32;pointer-events:none;display:flex;align-items:center;justify-content:center;
         font:900 40px/1 "Cinzel",serif;letter-spacing:.12em;color:#fff6d6;text-shadow:0 0 14px rgba(255,190,70,1),0 2px 4px rgba(60,30,0,.9);animation:partyCheers 1s ease-out forwards}
+      /* build2165: 撃ってよい／いけない／取る、を色と形で先に伝える（パラレル・ソワレ専用） */
+      #shooting-event-root .party-mark{position:absolute;left:0;top:0;pointer-events:none;z-index:1;opacity:0;transition:opacity .25s ease-out;will-change:transform}
+      #shooting-event-root .party-mark.is-on{opacity:1}
+      #shooting-event-root .party-mark.is-leaving{opacity:0;transition:opacity .4s ease-in}
+      #shooting-event-root .party-mark::before{content:"";position:absolute;inset:0;border-radius:50%}
+      #shooting-event-root .party-mark.human::before{border:1.5px solid rgba(160,186,255,.78);background:radial-gradient(ellipse at center,rgba(150,178,255,.24) 0,rgba(150,178,255,.08) 55%,rgba(150,178,255,0) 72%);box-shadow:0 0 6px rgba(140,168,255,.45)}
+      #shooting-event-root .party-mark.human::after{content:"";position:absolute;inset:-4px -6px;border-radius:50%;border:1px solid rgba(190,208,255,.32)}
+      #shooting-event-root .party-mark.food::before{border:1.5px dashed rgba(240,200,110,.9);animation:partyMarkSpin 6s linear infinite}
+      #shooting-event-root .party-mark.food::after{content:"";position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px 0 0 -2px;border-radius:50%;background:#ffe6a2;box-shadow:0 0 5px rgba(255,214,120,.9)}
+      @keyframes partyMarkSpin{to{transform:rotate(360deg)}}
+      #shooting-event-root .party-mark .party-protect{position:absolute;left:50%;top:100%;margin-top:2px;transform:translateX(-50%);white-space:nowrap;
+        font:700 8.5px/1 "Cinzel",serif;letter-spacing:.2em;color:#e6edff;text-shadow:0 0 4px rgba(90,120,255,.95),0 1px 1px rgba(10,14,50,.9);animation:partyProtect 1.3s ease-out forwards}
+      @keyframes partyProtect{0%{opacity:0;transform:translate(-50%,-3px)}18%{opacity:1;transform:translate(-50%,0)}70%{opacity:1}100%{opacity:0}}
+      #shooting-event-root .party-glass-wrap{position:absolute;left:0;top:0;width:0;height:0;z-index:16;pointer-events:none;will-change:transform}
+      #shooting-event-root .party-glass-wrap .pg-mark{position:absolute;left:-30px;top:16px;width:60px;height:18px;border-radius:50%;
+        border:1.5px solid rgba(255,222,150,.75);background:radial-gradient(ellipse at center,rgba(255,226,160,.42) 0,rgba(255,226,160,.12) 55%,rgba(255,226,160,0) 72%);
+        box-shadow:0 0 8px rgba(255,210,120,.45);transition:box-shadow .2s,border-color .2s,transform .2s;animation:pgMarkPulse 1.4s ease-in-out infinite}
+      @keyframes pgMarkPulse{50%{transform:scale(1.08)}}
+      #shooting-event-root .party-glass-wrap.is-near .pg-mark{border-color:rgba(255,240,196,.98);box-shadow:0 0 14px rgba(255,220,140,.9),inset 0 0 8px rgba(255,236,180,.7)}
+      #shooting-event-root .party-glass-wrap .pg-glass{position:absolute;left:-26px;top:-36px;width:52px;height:52px;
+        background:center/contain no-repeat url(images/event_party_glass.webp);filter:drop-shadow(0 0 6px rgba(255,220,140,.85));animation:pgBob 1.6s ease-in-out infinite alternate}
+      @keyframes pgBob{from{translate:0 2px}to{translate:0 -6px}}
+      #shooting-event-root .party-glass-wrap.is-near .pg-glass{filter:drop-shadow(0 0 10px rgba(255,232,170,1)) brightness(1.08)}
+      #shooting-event-root .party-glass-wrap .pg-dot{position:absolute;left:0;top:-12px;width:3px;height:3px;border-radius:50%;background:#fff3cf;box-shadow:0 0 4px rgba(255,214,120,.95);opacity:0;animation:pgDot 2.2s ease-in-out infinite}
+      #shooting-event-root .party-glass-wrap .pg-dot:nth-child(4){animation-delay:.7s;--dx:-18px}
+      #shooting-event-root .party-glass-wrap .pg-dot:nth-child(5){animation-delay:1.4s;--dx:16px}
+      #shooting-event-root .party-glass-wrap .pg-dot:nth-child(6){animation-delay:1.05s;--dx:-6px}
+      @keyframes pgDot{0%{opacity:0;transform:translate(var(--dx,8px),14px)}30%{opacity:.9}100%{opacity:0;transform:translate(calc(var(--dx,8px) * 1.3),-26px)}}
+      #shooting-event-root .party-glass-wrap .pg-hint{position:absolute;left:0;top:38px;transform:translateX(-50%);white-space:nowrap;
+        font:700 9.5px/1 "Cinzel",serif;letter-spacing:.18em;color:#fff4d4;text-shadow:0 0 5px rgba(255,190,80,.95),0 1px 2px rgba(60,30,0,.9);animation:pgHint 1.8s ease-out forwards}
+      @keyframes pgHint{0%{opacity:0}15%{opacity:1}75%{opacity:1}100%{opacity:0}}
+      #shooting-event-root .party-glass-wrap.fading .pg-glass,#shooting-event-root .party-glass-wrap.fading .pg-mark{animation:partyGlassBlink .22s steps(2) infinite}
+      #shooting-event-root .party-glass-burst{position:absolute;left:0;top:0;width:0;height:0;z-index:17;pointer-events:none}
+      #shooting-event-root .party-glass-burst::before{content:"";position:absolute;left:-14px;top:-14px;width:28px;height:28px;border-radius:50%;
+        border:2px solid rgba(255,236,180,.95);box-shadow:0 0 12px rgba(255,210,110,.9);animation:pgBurst .55s ease-out forwards}
+      #shooting-event-root .party-glass-burst::after{content:"";position:absolute;left:-22px;top:-22px;width:44px;height:44px;border-radius:50%;
+        background:radial-gradient(circle,rgba(255,250,228,.95) 0,rgba(255,220,140,.5) 40%,rgba(255,220,140,0) 70%);animation:pgFlash .45s ease-out forwards}
+      @keyframes pgBurst{to{transform:scale(4.2);opacity:0}}
+      @keyframes pgFlash{0%{transform:scale(.6);opacity:1}100%{transform:scale(2.2);opacity:0}}
       @keyframes partyCheers{0%{opacity:0;transform:scale(.6)}25%{opacity:1;transform:scale(1.08)}70%{opacity:1}100%{opacity:0;transform:scale(1.2)}}
     `;
     document.head.appendChild(st);
@@ -33013,9 +33054,43 @@
     positionUnit(e.el, e.x, e.y);
     positionMiniEnemyHp(e);
     state.normalEnemies.push(e);
+    attachPartyMark(e); // build2165
     return e;
   }
+  // build2165: 人間＝足元の淡い青の保護リング（登場時だけ小さくPROTECT）、料理＝金の小さな照準。移動に追従
+  function attachPartyMark(e) {
+    if (!e || !e.el || !e.el.parentNode) return;
+    const scale = Math.max(.5, parseFloat(e.el.style.getPropertyValue('--enemy-scale')) || 1);
+    const human = !!e.partyHuman;
+    const w = Math.round((human ? 50 : 38) * scale), h = Math.round((human ? 15 : 13) * scale);
+    const m = document.createElement('div');
+    m.className = 'party-mark ' + (human ? 'human' : 'food');
+    m.setAttribute('aria-hidden', 'true');
+    m.style.width = w + 'px'; m.style.height = h + 'px';
+    if (human) {
+      const t = document.createElement('span'); t.className = 'party-protect'; t.textContent = 'PROTECT';
+      m.appendChild(t); setTimeout(() => { try { t.remove(); } catch (_) {} }, 1350);
+    }
+    e.el.parentNode.insertBefore(m, e.el);
+    e.partyMarkEl = m; e.partyMarkW = w; e.partyMarkH = h;
+    e.partyMarkDy = Math.round((human ? 27 : 20) * scale);
+    positionPartyMark(e);
+    requestAnimationFrame(() => m.classList.add('is-on'));
+  }
+  function positionPartyMark(e) {
+    const m = e && e.partyMarkEl;
+    if (!m) return;
+    m.style.transform = `translate3d(${(e.x - e.partyMarkW / 2).toFixed(1)}px,${(e.y + e.partyMarkDy - e.partyMarkH / 2).toFixed(1)}px,0)`;
+  }
+  function removePartyMark(e, fade) {
+    const m = e && e.partyMarkEl;
+    if (!m) return;
+    e.partyMarkEl = null;
+    if (fade) { m.classList.add('is-leaving'); setTimeout(() => { try { m.remove(); } catch (_) {} }, 420); }
+    else { try { m.remove(); } catch (_) {} }
+  }
   function removePartyGuest(e) {
+    removePartyMark(e, false);
     if (!e) return;
     [e.el, e.hpEl, e.elementEl, e.weaknessBarrierEl].forEach(n => { try { n && n.remove(); } catch (_) {} });
     e.hp = 0;
@@ -33034,12 +33109,14 @@
       }
       positionUnit(e.el, e.x, e.y);
       positionMiniEnemyHp(e);
+      positionPartyMark(e); // build2165
       if (e.x < -70 || e.x > w + 70 || e.y < -70 || e.y > h + 70) { removePartyGuest(e); continue; }
       // build2154: 一定時間で立ち去る（ふっと消える）。消え始めたら当たり判定なし
       if (!halted && !e.partyLeaving && getPartyElapsedMs(now) - Number(e.partyBornAt || 0) > Number(e.partyLifeMs || 7000)) {
         e.partyLeaving = true;
         e.hp = 0; // 当たり判定から外す（DOMは消えるまで残す）
         e.el.classList.add('party-leave');
+        removePartyMark(e, true); // build2165
         if (e.hpEl) e.hpEl.style.opacity = '0';
         if (e.elementEl) e.elementEl.style.opacity = '0';
         setTimeout(() => removePartyGuest(e), 480);
@@ -33062,13 +33139,18 @@
     const arena = document.getElementById('shooting-arena');
     if (!pe.glass && pe.glassIdx < times.length && el >= times[pe.glassIdx] && !halted && arena) {
       pe.glassIdx++;
+      // build2165: グラスは「触れて取る」アイテムと分かる見た目に（足元の金のマーカー・光の粒・出現直後だけTOUCH TO GET）
       const g = document.createElement('div');
-      g.className = 'party-glass';
+      g.className = 'party-glass-wrap';
       g.setAttribute('aria-hidden', 'true');
+      g.innerHTML = '<i class="pg-mark"></i><i class="pg-glass"></i><b class="pg-hint">TOUCH TO GET</b><i class="pg-dot"></i><i class="pg-dot"></i><i class="pg-dot"></i>';
       arena.appendChild(g);
+      const hint = g.querySelector('.pg-hint');
+      setTimeout(() => { try { hint && hint.remove(); } catch (_) {} }, 1850);
+      // 出現位置・判定半径は従来どおり
       const gx = w * (.18 + Math.random() * .64), gy = h * (.38 + Math.random() * .28);
       pe.glass = { el: g, x: gx, y: gy, bornAt: el };
-      positionUnit(g, gx, gy);
+      g.style.transform = `translate3d(${gx.toFixed(1)}px,${gy.toFixed(1)}px,0)`;
     }
     if (!pe.glass) return;
     const g = pe.glass;
@@ -33076,9 +33158,17 @@
     const age = el - g.bornAt;
     g.el.classList.toggle('fading', age > life - 1800);
     const px = Number(state.player.x || 0), py = Number(state.player.y || 0);
-    if (!halted && Math.hypot(px - g.x, py - g.y) < 44) {
+    const dist = Math.hypot(px - g.x, py - g.y);
+    g.el.classList.toggle('is-near', dist < 120);
+    if (!halted && dist < 44) {
       g.el.remove(); pe.glass = null; pe.glassTaken++;
       startPartyBonus(now, Number(cfg.bonusMs || 5000) + Number(pe.opts.bonusExtraMs || 0));
+      // build2165: 取った瞬間、グラスの位置から金の光が広がってボーナスタイムへつなぐ
+      const burst = document.createElement('div');
+      burst.className = 'party-glass-burst'; burst.setAttribute('aria-hidden', 'true');
+      burst.style.transform = `translate3d(${g.x.toFixed(1)}px,${(g.y - 10).toFixed(1)}px,0)`;
+      arena && arena.appendChild(burst);
+      setTimeout(() => { try { burst.remove(); } catch (_) {} }, 620);
       const root = document.getElementById(ROOT_ID);
       if (root) {
         const c = document.createElement('div'); c.className = 'party-cheers'; c.setAttribute('aria-hidden', 'true'); c.textContent = 'CHEERS';
@@ -33140,6 +33230,7 @@
   }
   // 夜会の客を倒した：加点／減点（ボーナス中は減点なし・人間も加点、料理は倍率）
   function onPartyGuestDefeated(enemy, now) {
+    removePartyMark(enemy, true); // build2165
     const pe = ensurePartyState();
     if (!pe) return;
     const cfg = getPartyConfig();
@@ -33158,6 +33249,11 @@
       pe.humanKills++;
     }
     v = Math.round(v);
+    if (base >= 0) {
+      if (def.id === window.ShootingEnemies?.SHOOTING_ENEMY_ID?.PARTY_TOWER) pe.towerScore = (pe.towerScore || 0) + v;
+      else pe.dishScore = (pe.dishScore || 0) + v;
+    } else if (bonus) pe.bonusHumanScore = (pe.bonusHumanScore || 0) + v;
+    else pe.humanPenaltyScore = (pe.humanPenaltyScore || 0) + v;
     pe.points += v;
     state.score = Math.max(0, Math.round(pe.points)); // build2154: 右上のSCOREにその場で反映（討伐・時間・生存ボーナスは終了時に加算）
     if (typeof renderHud === 'function') renderHud();
@@ -33186,6 +33282,75 @@
     }
     state.score = Math.max(0, Math.round(score));
   }
+  // build2164: パラレル・ソワレ専用のスコア明細。敗北時も加減点を表示。
+  // 料理・塔・祝杯中の人間・人間撃破の合計は pe.points と必ず一致する。
+  function renderPartyScoreBreakdown() {
+    const result = document.getElementById('shooting-result');
+    const card = result && result.querySelector('.shooting-result-card');
+    if (!result || !card) return;
+    const active = isPartyEventStage();
+    result.classList.toggle('is-party-event-result', active);
+    let detail = card.querySelector('#party-score-breakdown');
+    if (!active) { if (detail) detail.remove(); return; }
+    if (!detail) {
+      detail = document.createElement('section');
+      detail.id = 'party-score-breakdown';
+      detail.className = 'party-score-breakdown';
+      detail.setAttribute('aria-label', '夜会スコア内訳');
+      const stats = card.querySelector('.shooting-result-stats');
+      if (stats) stats.insertAdjacentElement('afterend', detail);
+      else card.appendChild(detail);
+    }
+    if (!document.getElementById('party-result-breakdown-style-2164')) {
+      const st = document.createElement('style');
+      st.id = 'party-result-breakdown-style-2164';
+      st.textContent = `
+        #shooting-result.is-party-event-result{overflow-y:auto;align-items:flex-start;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+        #shooting-result.is-party-event-result .shooting-result-card{box-sizing:border-box;margin:auto;max-height:calc(100% - 10px);overflow-y:auto;padding:16px 18px 16px}
+        #shooting-result.is-party-event-result .shooting-result-rank-wrap{margin:7px 0 8px}
+        #shooting-result.is-party-event-result .shooting-result-rank{font-size:55px;line-height:.9}
+        #shooting-result.is-party-event-result .shooting-result-stats{margin-bottom:8px}
+        #party-score-breakdown{margin:2px 0 12px;padding:9px 11px 8px;text-align:left;border:1px solid rgba(157,127,79,.32);background:rgba(255,251,243,.75);font-family:'Noto Serif JP',serif}
+        #party-score-breakdown .psb-heading{display:flex;justify-content:space-between;gap:8px;padding:0 0 6px;border-bottom:1px solid rgba(157,127,79,.27);font-size:10px;font-weight:700;color:#826338;letter-spacing:.09em}
+        #party-score-breakdown .psb-row{display:flex;justify-content:space-between;gap:8px;padding:4px 0;font-size:11px;line-height:1.4;color:#64543e}
+        #party-score-breakdown .psb-row b{font:600 12px/1.4 'Cinzel','Noto Serif JP',serif;color:#806337;white-space:nowrap;font-variant-numeric:tabular-nums}
+        #party-score-breakdown .psb-row.negative b{color:#a3545d}
+        #party-score-breakdown .psb-row.total{margin-top:3px;padding-top:8px;border-top:1px solid rgba(157,127,79,.35);font-weight:700}
+        #party-score-breakdown .psb-row.total b{font-size:15px;color:#574025}
+        #party-score-breakdown .psb-sub{font-size:9px;color:#9b8870;padding-top:4px}
+        @media(max-height:740px){#shooting-result.is-party-event-result .shooting-result-card{padding-top:12px;padding-bottom:12px}#party-score-breakdown .psb-row{padding:3px 0}}
+      `;
+      document.head.appendChild(st);
+    }
+    const pe = state && state.partyEv || {};
+    const breakdown = state && state.partyBreakdown || {};
+    const dish = Math.round(Number(pe.dishScore || 0));
+    const tower = Math.round(Number(pe.towerScore || 0));
+    const cheers = Math.round(Number(pe.bonusHumanScore || 0));
+    const human = Math.round(Number(pe.humanPenaltyScore || 0));
+    const guestTotal = Math.round(Number(pe.points || 0));
+    const tracked = dish + tower + cheers + human;
+    // 旧形式で記録が欠ける場合の差分も隠さず開示。
+    const other = guestTotal - tracked;
+    const clear = Math.round(Number(breakdown.clear || 0));
+    const time = Math.round(Number(breakdown.time || 0));
+    const survival = Math.round(Number(breakdown.survival || 0));
+    const rawTotal = guestTotal + clear + time + survival;
+    const actual = Math.max(0,Math.round(Number(state && state.score || 0)));
+    const adjustment = actual - rawTotal; // 負点時の合計0点補正
+    const fmt = v => (v >= 0 ? '+' : '−') + Math.abs(v).toLocaleString('ja-JP');
+    const row = (label,v,always) => (!always && !v) ? '' :
+      '<div class="psb-row' + (v < 0 ? ' negative' : '') + '"><span>' + label + '</span><b>' + fmt(v) + '</b></div>';
+    detail.innerHTML = '<div class="psb-heading"><span>SCORING DETAILS</span><span>スコア内訳</span></div>' +
+      row('料理の撃破',dish,true) + row('シャンパンタワー',tower,true) +
+      row('祝杯中の人間撃破',cheers,false) + row('人間の撃破（減点）',human,true) +
+      row('その他の夜会スコア',other,false) +
+      row('主催者討伐',clear,true) + row('残り時間ボーナス',time,true) +
+      row('生存HPボーナス',survival,true) + row('0点未満の補正',adjustment,false) +
+      '<div class="psb-row total"><span>合計 SCORE</span><b>' + actual.toLocaleString('ja-JP') + '</b></div>' +
+      '<div class="psb-sub">※OP・祝杯効果による倍率は各得点に反映済み</div>';
+  }
+
   function getPartyResultRank(score, win) {
     if (!win) return 'E';
     const cfg = getPartyConfig();
@@ -33215,7 +33380,7 @@
       const root = document.getElementById(ROOT_ID);
       if (root) {
         root.classList.remove('party-bonus');
-        root.querySelectorAll('.party-bonus-bar,.party-bonus-veil,.party-glass,.party-pop,.party-cheers,.flank-spawn-warn').forEach(n => n.remove());
+        root.querySelectorAll('.party-bonus-bar,.party-bonus-veil,.party-glass,.party-glass-wrap,.party-glass-burst,.party-mark,.party-pop,.party-cheers,.flank-spawn-warn').forEach(n => n.remove());
       }
     } catch (_) {}
   }
@@ -37073,6 +37238,7 @@
       stageLabel.title = stageLabel.textContent;
     }
     if (score) score.textContent = String(state.score).padStart(6, '0');
+    renderPartyScoreBreakdown(); // build2164: 夜会のみ。その他のリザルトでは明細を除去。
     if (combo) combo.textContent = String(state.maxCombo || 0);
     if (hitDetails) hitDetails.innerHTML = state.party.map(m => resultMemberHtml(m, m.hitCount || 0, '回', false)).join('');
     if (hitTotal) hitTotal.textContent = `${totalHits}回`;
