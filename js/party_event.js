@@ -389,7 +389,7 @@
           '<li class="is-glass"><span class="prg-icon"><img src="images/event_party_glass.webp" alt=""><i class="prg-ring"></i></span><p><b>祝杯のグラスに触れると</b>ボーナスタイム！<small>その間は招待客もオレンジに光り、撃っても加点・料理は2倍</small></p></li>' +
           '<li class="is-watch"><span class="prg-icon"><img src="images/event_party_watch.webp" alt=""><i class="prg-ring"></i></span><p><b>懐中時計に触れると</b>制限時間＋5秒。<small>1回の出撃で2回まで現れます</small></p></li>' +
         '</ul>' +
-        '<p class="prg-rank">S 32,000点　A 26,000点　B 討伐<small>時間切れはE</small></p>' +
+        '<p class="prg-rank">S 30,000点　A 25,000点　B 討伐<small>時間切れはE</small></p>' +
         '<div class="prg-actions">' +
           '<button type="button" class="prg-close">閉じる</button>' +
           (o.sortie ? '<button type="button" class="prg-go">出撃する</button>' : '') +

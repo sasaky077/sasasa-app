@@ -1994,8 +1994,8 @@
         clearBonus: 8000,
         timeBonusMax: 8000,
         survivalBonusMax: 8000,
-        rankS: 32000,
-        rankA: 26000,
+        rankS: 30000,
+        rankA: 25000,
       }),
       timeLimitSeconds: 60,
       mission: Object.freeze({
