@@ -242,7 +242,9 @@
         (rw.outfit ? ' data-pe-outfit-preview role="button" tabindex="0" aria-label="アヤネ（正装）を見る"' : '') + '>' +
         '<span class="pe-rw-line">' + (rw.lines >= MAX_LINES ? 'MAX<br>BINGO' : rw.lines + '<small>LINE</small>') + '</span>' +
         '<img class="pe-rw-img" src="' + esc(rw.img) + '" alt="" onerror="this.style.visibility=\'hidden\'">' +
-        '<b class="pe-rw-name">' + esc(rw.name) + '</b>' +
+        (rw.outfit
+          ? '<b class="pe-rw-name"><small>LIMITED OUTFIT　限定衣装</small>アヤネ（正装）</b>'
+          : '<b class="pe-rw-name">' + esc(rw.name) + '</b>') +
         '<em class="pe-rw-state">' + (done ? '獲得' : '') + '</em>' +
       '</li>';
     }).join('');

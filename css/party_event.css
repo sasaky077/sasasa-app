@@ -249,3 +249,12 @@
 #party-event-rule-guide .prg-list p small{display:block;margin-top:2px;font-size:10.5px;line-height:1.45;color:#bfb2a0}
 #party-event-rule-guide .prg-rank{margin:12px 0 0;font:700 12px/1.4 "Cinzel","Noto Serif JP",serif;letter-spacing:.06em;color:#e6cf98}
 #party-event-rule-guide .prg-rank small{display:block;font:500 10px/1.4 "Noto Serif JP",serif;color:#bfb2a0}
+
+/* build2167: 衣装報酬は「限定衣装」を小さな見出し行、「アヤネ（正装）」を1行で（途中で折り返さない） */
+#party-event-screen .pe-rw.is-outfit .pe-rw-name{display:flex;flex-direction:column;gap:3px;white-space:nowrap;font-size:14px;letter-spacing:.06em}
+#party-event-screen .pe-rw.is-outfit .pe-rw-name small{font:600 8.5px/1 "Cinzel","Noto Serif JP",serif;letter-spacing:.16em;color:#e6b9a0}
+@media (max-width:360px){
+  #party-event-screen .pe-rw.is-outfit{grid-template-columns:46px 48px minmax(0,1fr) 22px}
+  #party-event-screen .pe-rw.is-outfit .pe-rw-img{width:48px;height:48px}
+  #party-event-screen .pe-rw.is-outfit .pe-rw-name{font-size:13px}
+}
