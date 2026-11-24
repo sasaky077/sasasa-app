@@ -387,7 +387,7 @@
           '<li class="is-food"><span class="prg-icon"><img src="images/event_party_dish.webp" alt=""><i class="prg-ring"></i></span><p><b>料理を撃って</b>スコアを獲得。<small>シャンパンタワーは高得点。光属性なので闇の攻撃で壊しやすい</small></p></li>' +
           '<li class="is-human"><span class="prg-icon"><img src="images/event_party_guest_a.webp" alt=""><i class="prg-ring"></i></span><p><b>招待客への攻撃</b>は減点。<small>弾が当たると青く震えて知らせます</small></p></li>' +
           '<li class="is-glass"><span class="prg-icon"><img src="images/event_party_glass.webp" alt=""><i class="prg-ring"></i></span><p><b>祝杯のグラスに触れると</b>ボーナスタイム！<small>その間は招待客もオレンジに光り、撃っても加点・料理は2倍</small></p></li>' +
-          '<li class="is-watch"><span class="prg-icon"><img src="images/event_party_watch.webp" alt=""><i class="prg-ring"></i></span><p><b>懐中時計に触れると</b>制限時間＋5秒。<small>1回の出撃で2回まで現れます</small></p></li>' +
+          '<li class="is-watch"><span class="prg-icon"><img src="images/event_party_watch.webp" alt=""><i class="prg-ring"></i></span><p><b>懐中時計に触れると</b>制限時間＋5秒。<small>15秒ごとに計3回現れます</small></p></li>' +
         '</ul>' +
         '<p class="prg-rank">S 30,000点　A 25,000点　B 討伐<small>時間切れはE</small></p>' +
         '<div class="prg-actions">' +

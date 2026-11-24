@@ -33117,6 +33117,9 @@
   // build2165: 人間＝足元の淡い青の保護リング（登場時だけ小さくPROTECT）、料理＝金の小さな照準。移動に追従
   function attachPartyMark(e) {
     if (!e || !e.el || !e.el.parentNode) return;
+    // build2196: 料理・シャンパンタワーの足元の回転点線リングは生成しない。
+    // 招待客の青い保護リングだけを残す。
+    if (!e.partyHuman) return;
     const scale = Math.max(.5, parseFloat(e.el.style.getPropertyValue('--enemy-scale')) || 1);
     const human = !!e.partyHuman;
     const w = Math.round((human ? 50 : 38) * scale), h = Math.round((human ? 15 : 13) * scale);
@@ -33199,7 +33202,7 @@
       const g = document.createElement('div');
       g.className = 'party-glass-wrap';
       g.setAttribute('aria-hidden', 'true');
-      g.innerHTML = '<i class="pg-mark"></i><i class="pg-glass"></i><b class="pg-hint">TOUCH TO GET</b><i class="pg-dot"></i><i class="pg-dot"></i><i class="pg-dot"></i>';
+      g.innerHTML = '<i class="pg-glass"></i><b class="pg-hint">TOUCH TO GET</b><i class="pg-dot"></i><i class="pg-dot"></i><i class="pg-dot"></i>';
       arena.appendChild(g);
       const hint = g.querySelector('.pg-hint');
       setTimeout(() => { try { hint && hint.remove(); } catch (_) {} }, 1850);
@@ -33252,7 +33255,7 @@
       const g = document.createElement('div');
       g.className = 'party-glass-wrap is-watch';
       g.setAttribute('aria-hidden', 'true');
-      g.innerHTML = '<i class="pg-mark"></i><i class="pg-glass"></i><b class="pg-hint">TIME +' + sec + '</b><i class="pg-dot"></i><i class="pg-dot"></i><i class="pg-dot"></i>';
+      g.innerHTML = '<i class="pg-glass"></i><b class="pg-hint">TIME +' + sec + '</b><i class="pg-dot"></i><i class="pg-dot"></i><i class="pg-dot"></i>';
       arena.appendChild(g);
       const hint = g.querySelector('.pg-hint');
       setTimeout(() => { try { hint && hint.remove(); } catch (_) {} }, 1850);
