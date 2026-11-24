@@ -563,3 +563,11 @@ html.home-v2 #home-v2 .hv2-side{
     top:calc(env(safe-area-inset-top,0px) + 106px)!important;
   }
 }
+
+/* =========================================================
+   build2187: キャラのセリフが小さすぎたので拡大（11px→約13px）。
+   3行になっても右の3ボタンにかぶらないよう、吹き出しの基本の高さを68→84pxに（右の3ボタンはその分だけ上へ）
+   ========================================================= */
+:root{--hv2-talk-h:84px}
+#home-v2 .hv2-talk p{font-size:clamp(12px,3.4vw,13.5px)!important;line-height:1.5!important;letter-spacing:.02em!important}
+#home-v2 .hv2-talk h4{font-size:12px!important}
