@@ -788,3 +788,6 @@ html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-break-card{padd
   html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-swipe-tab{gap:8px!important;padding:8px 10px!important}
   html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-swipe-tab span{white-space:nowrap!important;font-size:13.5px!important;letter-spacing:.09em!important}
 }
+
+/* build2198: レイド初回表示のレイアウト確定までロビーのみ隠してジャンプを防止 */
+html body #daily-raid-root.raid-layout-pending #daily-raid-lobby{visibility:hidden!important}

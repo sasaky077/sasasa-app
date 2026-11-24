@@ -2943,6 +2943,9 @@
     const cached=readCachedBoss();
     if(cached){ root.classList.remove('raid-boss-pending'); renderBossHero(root,{boss:{key:cached.key,name:cached.name}}); }
     else root.classList.add('raid-boss-pending');
+    // build2198: 初回ロビー表示中のレイアウトジャンプ防止。
+    // 描画前の非表示状態でサーバー情報を反映し、CSS/font/viewport反映後に公開する。
+    root.classList.add('raid-layout-pending');
     root.style.display='block'; root.setAttribute('aria-hidden','false');
     if(options&&options.immediate) root.classList.add('show'); else requestAnimationFrame(()=>root.classList.add('show'));
     try{
@@ -2960,12 +2963,29 @@
       console.error('[raid] open failed',err); showEntryMode();
     }finally{
       root.classList.remove('raid-boss-pending');
+      // レイドのDOMを確定した後、2フレーム分レイアウトを反映させて表示する。
+      // フォントの到着やSafariのviewport安定化が遅れた場合も再計測する。
+      const releaseLayout=()=>{
+        requestAnimationFrame(()=>requestAnimationFrame(()=>{
+          if(root.getAttribute('aria-hidden')!=='false') return;
+          void root.getBoundingClientRect();
+          root.classList.remove('raid-layout-pending');
+          scheduleSwipeIndicatorSync();
+        }));
+      };
+      if(document.fonts&&document.fonts.ready){
+        Promise.race([document.fonts.ready.catch(()=>{}),new Promise(resolve=>setTimeout(resolve,450))])
+          .then(releaseLayout,releaseLayout);
+        document.fonts.ready.then(()=>{
+          if(root.getAttribute('aria-hidden')==='false') scheduleSwipeIndicatorSync();
+        }).catch(()=>{});
+      }else releaseLayout();
     }
   }
   function close(){
     document.body.classList.remove('raid-shell-active');
     const root=document.getElementById('daily-raid-root'); if(!root) return;
-    root.classList.remove('show'); root.setAttribute('aria-hidden','true');
+    root.classList.remove('show','raid-layout-pending'); root.setAttribute('aria-hidden','true');
     setTimeout(()=>{ if(root.getAttribute('aria-hidden')==='true') root.style.display='none'; },180);
   }
 
