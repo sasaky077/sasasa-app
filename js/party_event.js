@@ -22,7 +22,7 @@
     { id:1, cond:'Bランク以上で\nクリア 1回',        op:'料理の加点\n+20%',               cum:p=>p.clears_b>=1, count:p=>p.clears_b, need:1 },
     { id:2, cond:'被弾5回以内で\nクリア',            op:'開始直後に\nボーナスタイム3秒',  run:r=>r.win && r.hitsTaken<=5 },
     { id:3, cond:'Aランク以上で\nクリア 1回',        op:'主催者への\n与ダメージ+10%',     cum:p=>p.clears_a>=1, count:p=>p.clears_a, need:1 },
-    { id:4, cond:'人間を1人も\n倒さずにクリア',      op:'祝杯のグラス\n+1',               run:r=>r.win && r.humanKills===0 },
+    { id:4, cond:'減点なしで\nクリア',            op:'祝杯のグラス\n+1',               run:r=>r.win && r.humanKills===0 },
     { id:5, cond:'料理を\n累計100皿',                op:'人間の減点\n−30%',               cum:p=>p.food_total>=100, count:p=>p.food_total, need:100 },
     { id:6, cond:'1回で料理を\n15皿倒して\nクリア',  op:'人間のHP\n+50%',                 run:r=>r.win && r.foodKills>=15 },
     { id:7, cond:'Bランク以上で\nクリア 5回',        op:'ボーナスタイム\n+2秒',           cum:p=>p.clears_b>=5, count:p=>p.clears_b, need:5 },

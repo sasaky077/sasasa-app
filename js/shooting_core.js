@@ -33413,11 +33413,30 @@
       const st = document.createElement('style');
       st.id = 'party-result-breakdown-style-2164';
       st.textContent = `
-        /* build2173: 画面ごとのスクロールはやめ、カードは画面内に収める。高さが足りない時は「スコア内訳」だけスクロール */
+        /* build2174: 完全固定レイアウト。カードは画面の高さぴったりで、RETRY／戻るは常に最下部に固定。
+           高さが足りない分は「スコア内訳」と「報酬」の中だけでスクロールする（画面・カード自体はスクロールしない） */
         html body #shooting-event-root #shooting-result.is-party-event-result{overflow:hidden !important;overscroll-behavior:none}
-        html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card{overflow:hidden !important;overflow-y:hidden !important}
-        html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card > *:not(#party-score-breakdown){flex-shrink:0 !important}
-        html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card > #party-score-breakdown{flex:0 1 auto !important;min-height:84px !important;overflow-y:auto !important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+        html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card{height:100% !important;max-height:100% !important;overflow:hidden !important;overflow-y:hidden !important;gap:8px !important}
+        html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card > *{flex-shrink:0 !important;min-height:0}
+        html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card > #party-score-breakdown{flex:0 1 auto !important;min-height:64px !important;max-height:220px !important;overflow-y:auto !important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+        html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card > #shooting-result-rewards{flex:0 1 auto !important;min-height:64px !important;max-height:none !important;overflow-y:auto !important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+        html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card > .shooting-result-actions{margin-top:auto !important;flex-shrink:0 !important}
+        @media (max-height:700px){
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card{gap:6px !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-detail-row{min-height:40px !important;padding-top:2px !important;padding-bottom:2px !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card > #party-score-breakdown,
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card > #shooting-result-rewards{min-height:56px !important}
+        }
+        @media (max-height:600px){
+          html body #shooting-event-root #shooting-result.is-party-event-result #shooting-result-title{font-size:20px !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-detail-row{min-height:30px !important;padding-top:0 !important;padding-bottom:0 !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card{gap:4px !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-stats strong{font-size:22px !important;margin-top:2px !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-stats > div{padding-top:5px !important;padding-bottom:5px !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card button{height:36px !important;margin-top:5px !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card > #party-score-breakdown,
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card > #shooting-result-rewards{min-height:48px !important}
+        }
         #shooting-result #party-score-breakdown > .psb-heading{position:sticky;top:-9px;z-index:1;margin:-9px -11px 0;padding:9px 11px 6px;background:rgba(255,251,243,.98)}
         #shooting-result.is-party-event-result .shooting-result-rank-wrap{margin:7px 0 8px}
         #shooting-result.is-party-event-result .shooting-result-rank{font-size:55px;line-height:.9}
