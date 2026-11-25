@@ -2243,6 +2243,11 @@
       S:clamp((total-cuts.A)/Math.max(1,cuts.S-cuts.A))
     };
     const reached=RANK_STEPS.indexOf(rank);
+    // build2205: 区画の幅を点数の幅に比例させる（旧：B・A・Sを同じ幅にしていたため、B区画だけで0〜15万を受け持ち、
+    //  「Sまであと◯◯」に対してゲージが極端に短く見えていた）。ラベルも同じ比率で並べ、各区画の右端に置く。
+    const spans=[cuts.B,cuts.A-cuts.B,cuts.S-cuts.A].map(v=>Math.max(1,Number(v)||1));
+    const cols=spans.map(v=>`minmax(0,${v}fr)`).join(' ');
+    card.querySelectorAll('.drt-rank-bar,.drt-rank-labels').forEach(el=>el.style.setProperty('grid-template-columns',cols,'important'));
     RANK_SEGS.forEach(r=>{
       const seg=card.querySelector(`.drt-rank-bar i[data-rank="${r}"]`);
       if(seg){ seg.querySelector('em').style.transform=`scaleX(${fills[r]})`; seg.classList.remove('is-held'); }
