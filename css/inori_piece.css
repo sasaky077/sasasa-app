@@ -1239,3 +1239,19 @@ html body #inori-piece-overlay.noah-piece-overlay .noah-piece-screen{
   transform:none !important;
 }
 
+/* build2226/2227: イノリ・ノア共通。SE実機で本文が縮んで注記がボタンに潜る問題。本文は縮めず、高さが足りない時はパズルを小さく→それでも足りなければスクロール */
+html body #inori-piece-overlay .noah-piece-body, html body #noah-piece-overlay .noah-piece-body{flex:1 0 auto !important;min-height:min-content !important}
+html body #inori-piece-overlay .noah-piece-actions, html body #noah-piece-overlay .noah-piece-actions{flex:0 0 auto !important;position:relative !important;z-index:1}
+html body #inori-piece-overlay .noah-piece-note, html body #noah-piece-overlay .noah-piece-note{white-space:normal !important;max-width:100% !important;text-wrap:balance}
+@media (max-height:700px){
+html body #inori-piece-overlay .noah-piece-lead, html body #noah-piece-overlay .noah-piece-lead{margin-top:2px !important}
+html body #inori-piece-overlay .noah-piece-progress, html body #noah-piece-overlay .noah-piece-progress{padding-top:4px !important}
+html body #inori-piece-overlay .noah-puzzle-frame, html body #noah-piece-overlay .noah-puzzle-frame{width:min(56%,206px) !important;padding:7px !important;margin-top:10px !important}
+html body #inori-piece-overlay .noah-puzzle-piece.locked::after, html body #noah-piece-overlay .noah-puzzle-piece.locked::after{width:20px !important;height:20px !important}
+html body #inori-piece-overlay .noah-piece-note, html body #noah-piece-overlay .noah-piece-note{margin-top:8px !important;padding-bottom:11px !important;font-size:11.5px !important}
+html body #inori-piece-overlay .noah-piece-challenge, html body #noah-piece-overlay .noah-piece-challenge{height:44px !important}
+}
+@media (max-height:700px){
+html body #noah-piece-overlay .noah-piece-lead h2{font-size:16px !important;margin-top:3px !important}
+html body #noah-piece-overlay .noah-puzzle-frame{width:min(52%,192px) !important;margin-top:8px !important}
+}

@@ -1509,7 +1509,7 @@
 
         <section class="daily-raid-entry" id="daily-raid-entry">
           <div class="daily-raid-entry-hero">
-            <img src="images/raid_enemy_01.webp" alt="テスト">
+            <img src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="">
             <div><small>RAID BATTLE</small><strong data-raid-boss-name>テスト</strong><span>全国のプレイヤーとレイドに挑戦できます。</span></div>
           </div>
           <div class="daily-raid-mode-grid">
@@ -1545,7 +1545,7 @@
                   <section class="daily-raid-hero">
                     <div class="daily-raid-hero-halo" aria-hidden="true"></div><div class="daily-raid-hero-lines" aria-hidden="true"></div>
                     <div class="daily-raid-hero-rank"><span>RAID ENEMY</span><b data-raid-boss-name>テスト</b></div>
-                    <img src="images/raid_enemy_01.webp" alt="テスト">
+                    <img src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="">
                     <div class="daily-raid-hero-copy"><small>RAID ENEMY</small><strong data-raid-boss-name>テスト</strong><span data-raid-boss-line>―これより、調査を開始する。</span></div>
                   </section>
 
@@ -2409,7 +2409,7 @@
   // ============================================================
   const RAID_BOSS_DEFS={
     // lobbyBg: ロビー全面の背景（背景＋ボスの絵を1枚で描いたもの）。bg_raid_01.webp と同サイズ・同構図で用意する。
-    sigma:{name:'テスト',line:'―これより、調査を開始する。',lobbyBg:'images/bg_raid_01.webp',lobbyImage:'images/raid_enemy_01.webp',banner:'images/raid_banner_sigma.webp',enemyId:'shooting_raid_test',pieceImage:'images/raid_piece_test.webp',
+    sigma:{name:'テスト',line:'―これより、調査を開始する。',lobbyBg:'images/bg_raid_01.webp',lobbyImage:'images/raid_enemy_01_battle.webp',banner:'images/raid_banner_sigma.webp',enemyId:'shooting_raid_test',pieceImage:'images/raid_piece_test.webp',
       // build2137: RAID INFO のギミック説明
       gimmicks:[
         {name:'弾幕レーザー',desc:'扇状の弾幕に、ときどき直線の緑のレーザーを混ぜて撃ってくる。'},
