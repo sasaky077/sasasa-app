@@ -109,6 +109,9 @@
 
   const FLOWER_R_EXCHANGES = [
     {group:'R ×25',id:'flower_sr_1',cost:25,name:'聖霊花(SR) ×1',img:'images/item_flower_sr.webp',desc:'聖霊花(SR)を1個獲得'},
+    // build2221: プロフィールのカードデザイン（各1回）。付与はサーバー（exchange_spirit_flower_r → player_profile_card_designs）
+    {group:'R ×5',id:'pcard_study',cost:5,designId:'study',name:'陽だまりの書斎',img:'images/profile_card_study.webp',desc:'カードデザインを解放（プロフィール）'},
+    {group:'R ×5',id:'pcard_festival',cost:5,designId:'festival',name:'星夜の祝祭',img:'images/profile_card_festival.webp',desc:'カードデザインを解放（プロフィール）'},
     {
       group:'R ×1',
       id:'exp_gold_5',
@@ -887,11 +890,15 @@
       const skinOwned=!!(item.characterId && window.CharacterSkins &&
         typeof window.CharacterSkins.isOwned==='function' &&
         window.CharacterSkins.isOwned(item.characterId,skinId));
-      const canExchange=!item.disabled && !skinOwned && owned>=item.cost && !state.exchanging;
-      // build1489: 限定衣装は画像タップで衣装の立ち絵をプレビューできる。
-      const previewAttr=item.characterId ? ' data-skin-preview="'+Number(item.characterId)+'" role="button" tabindex="0" aria-label="限定衣装をプレビュー"' : '';
+      // build2221: カードデザインは所持済みなら交換不可（取得済み）
+      const designOwned=!!(item.designId && window.ProfileCardDesign && window.ProfileCardDesign.isOwned(item.designId));
+      const doneOnce=skinOwned||designOwned;
+      const canExchange=!item.disabled && !doneOnce && owned>=item.cost && !state.exchanging;
+      // build1489: 限定衣装は画像タップで衣装の立ち絵をプレビューできる。build2221: カードデザインも背景をプレビュー
+      const previewAttr=item.characterId ? ' data-skin-preview="'+Number(item.characterId)+'" role="button" tabindex="0" aria-label="限定衣装をプレビュー"'
+        : item.designId ? ' data-design-preview="'+escapeHtml(item.designId)+'" role="button" tabindex="0" aria-label="カードデザインをプレビュー"' : '';
       const icon=item.img
-        ? '<div class="item-exchange-reward-icon'+(item.characterId?' is-previewable':'')+'"'+previewAttr+'><img src="'+escapeHtml(item.img)+'" alt="" onerror="this.style.display=\'none\'"></div>'
+        ? '<div class="item-exchange-reward-icon'+(item.characterId||item.designId?' is-previewable':'')+(item.designId?' is-design':'')+'"'+previewAttr+'><img src="'+escapeHtml(item.img)+'" alt="" onerror="this.style.display=\'none\'"></div>'
         : '<div class="item-exchange-reward-icon is-placeholder"><span>?</span></div>';
 
       let displayName=item.name;
@@ -902,9 +909,10 @@
         displayName=(c&&c.name?c.name+' ':'')+((sk&&sk.name)||'限定衣装');
         displayDesc=skinOwned?'取得済み':'キャラクター衣装を解放';
       }
+      if(item.designId && designOwned) displayDesc='取得済み・プロフィールで設定';
 
       return groupHead+
-        '<article class="item-exchange-row'+(item.disabled?' is-disabled':'')+(skinOwned?' is-owned':'')+'">'+
+        '<article class="item-exchange-row'+(item.disabled?' is-disabled':'')+(doneOnce?' is-owned':'')+'">'+
           icon+
           '<div class="item-exchange-copy">'+
             '<strong>'+escapeHtml(displayName)+'</strong>'+
@@ -915,7 +923,7 @@
           '</div>'+
           '<button type="button" class="item-exchange-btn" data-flower-exchange-id="'+escapeHtml(item.id)+'" '+
             (canExchange?'':'disabled')+'>'+
-            (item.disabled?'準備中':(skinOwned?'取得済み':'交換'))+
+            (item.disabled?'準備中':(doneOnce?'取得済み':'交換'))+
           '</button>'+
         '</article>';
     }).join('');
@@ -945,10 +953,16 @@
 
     const owned=Math.max(0,Math.floor(Number(state.items.flower_r||0)));
     // build2215: 回数指定（限定衣装は常に1回）
-    const qty=def.characterId?1:Math.max(1,Math.min(Math.floor(owned/def.cost),Math.floor(Number(quantity)||1)));
+    const single=!!(def.characterId||def.designId);
+    const qty=single?1:Math.max(1,Math.min(Math.floor(owned/def.cost),Math.floor(Number(quantity)||1)));
     if(owned<def.cost*qty){
       toast('聖霊花(R)が不足しています');
       return;
+    }
+    // build2221: カードデザインは所持済みなら交換しない。交換前に確認
+    if(def.designId){
+      if(window.ProfileCardDesign && window.ProfileCardDesign.isOwned(def.designId)){ toast('このカードデザインは取得済みです'); return; }
+      if(!window.confirm('聖霊花(R) ×'+def.cost+' を消費して\nカードデザイン「'+def.name+'」を解放しますか？')) return;
     }
 
     state.exchanging=true;
@@ -982,11 +996,20 @@
         }
       }
 
+      // build2221: カードデザインの解放
+      const gotDesign=def.designId ? String(result.profile_card_design||def.designId) : '';
+      if(gotDesign && window.ProfileCardDesign){
+        try{ window.ProfileCardDesign.markOwned(gotDesign); }catch(_){}
+        try{ window.ProfileCardDesign.loadOwned(); }catch(_){}
+      }
+
       try{window.dispatchEvent(new CustomEvent('sasaphia:growth-resources-changed'))}catch(_){}
       renderFlowerExchange();
       render();
 
-      if(result.skin && result.skin.character_id){
+      if(gotDesign){
+        toast('カードデザイン「'+def.name+'」を解放しました。プロフィールの CARD DESIGN から設定できます');
+      }else if(result.skin && result.skin.character_id){
         const c=(Array.isArray(window.CHARACTERS)?window.CHARACTERS:[]).find(x=>x&&Number(x.id)===Number(result.skin.character_id));
         const skDone=window.CharacterSkins&&typeof window.CharacterSkins.getSkin==='function'?window.CharacterSkins.getSkin(def.characterId,'limited_01'):null;
         toast('交換しました：'+((c&&c.name)||'キャラクター')+' '+((skDone&&skDone.name)||'限定衣装'));
@@ -1109,6 +1132,30 @@
     document.body.appendChild(ov);
     ov.querySelector('.item-skin-preview-close').focus();
   }
+  // build2221: カードデザインの背景を大きく表示（限定衣装のプレビューと同じ見た目）
+  function openDesignPreview(designId){
+    const api=window.ProfileCardDesign;
+    const d=api && typeof api.getDesign==='function' ? api.getDesign(designId) : null;
+    if(!d || !d.bg) return;
+    closeSkinPreview();
+    const ov=document.createElement('div');
+    ov.id='item-skin-preview';
+    ov.className='is-design-preview';
+    ov.setAttribute('role','dialog');
+    ov.setAttribute('aria-modal','true');
+    ov.setAttribute('aria-label','カードデザイン '+d.name);
+    ov.innerHTML=
+      '<div class="item-skin-preview-frame">'+
+        '<img class="item-skin-preview-img" alt="" src="'+escapeHtml(d.bg)+'">'+
+        '<div class="item-skin-preview-caption"><small>CARD DESIGN</small><strong>'+escapeHtml(d.name)+'</strong><span>プロフィールのカードデザイン</span></div>'+
+      '</div>'+
+      '<button type="button" class="item-skin-preview-close" aria-label="閉じる">×</button>'+
+      '<p class="item-skin-preview-hint">タップで閉じる</p>';
+    ov.addEventListener('click',closeSkinPreview);
+    document.addEventListener('keydown',onSkinPreviewKey);
+    document.body.appendChild(ov);
+    ov.querySelector('.item-skin-preview-close').focus();
+  }
   function onSkinPreviewKey(e){ if(e.key==='Escape') closeSkinPreview(); }
   function closeSkinPreview(){
     const old=document.getElementById('item-skin-preview');
@@ -1177,11 +1224,13 @@
       exchangeList.addEventListener('click',e=>{
         const preview=e.target.closest('[data-skin-preview]');
         if(preview){ openSkinPreview(Number(preview.dataset.skinPreview)); return; }
+        const dPreview=e.target.closest('[data-design-preview]');
+        if(dPreview){ openDesignPreview(dPreview.dataset.designPreview); return; }
         const btn=e.target.closest('[data-flower-exchange-id]');
         if(btn && !btn.disabled){
           // build2215: 限定衣装以外は数量を選んでから交換
           const d=exchangeDef('r',btn.dataset.flowerExchangeId);
-          if(d && !d.characterId) openExchangeQty('r',d.id);
+          if(d && !d.characterId && !d.designId) openExchangeQty('r',d.id);
           else exchangeFlowerR(btn.dataset.flowerExchangeId);
         }
       });

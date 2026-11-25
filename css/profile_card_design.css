@@ -33,6 +33,43 @@
   background-position:center,center,center,center,center,center!important;
   background-repeat:no-repeat!important;
 }
+/* build2221: 陽だまりの書斎（明るい羊皮紙）・星夜の祝祭（夜空） */
+#zs-player-profile .zpp-card[data-design="study"],
+.zcd-thumb[data-design="study"]{
+  background-color:#f4e9d6!important;
+  background-image:
+    var(--zpp-design-bg,none),
+    radial-gradient(40% 26% at 10% 6%,rgba(150,170,110,.35),rgba(150,170,110,0) 70%),
+    radial-gradient(70% 24% at 50% 100%,rgba(190,160,120,.4),rgba(190,160,120,0) 72%),
+    linear-gradient(180deg,#f7eedd 0%,#f2e6d0 100%)!important;
+  background-size:cover,auto,auto,auto!important;background-position:center!important;background-repeat:no-repeat!important}
+#zs-player-profile .zpp-card[data-design="festival"],
+.zcd-thumb[data-design="festival"]{
+  background-color:#1f1d44!important;
+  background-image:
+    /* 中央の星を少し落ち着かせ、数字を読みやすく */
+    radial-gradient(ellipse 72% 52% at 50% 54%,rgba(20,18,48,.5) 0%,rgba(20,18,48,.38) 55%,rgba(20,18,48,.12) 85%,rgba(20,18,48,0) 100%),
+    var(--zpp-design-bg,none),
+    radial-gradient(40% 22% at 80% 8%,rgba(255,226,160,.22),rgba(255,226,160,0) 70%),
+    radial-gradient(80% 30% at 50% 100%,rgba(150,90,150,.4),rgba(150,90,150,0) 72%),
+    linear-gradient(175deg,#2c2a5e 0%,#232150 55%,#1b1a3e 100%)!important;
+  background-size:auto,cover,auto,auto,auto!important;background-position:center!important;background-repeat:no-repeat!important}
+#zs-player-profile .zpp-card[data-design="study"] > .zpp-arc,
+#zs-player-profile .zpp-card[data-design="study"] > .zpp-watermark,
+#zs-player-profile .zpp-card[data-design="festival"] > .zpp-arc,
+#zs-player-profile .zpp-card[data-design="festival"] > .zpp-watermark{display:none!important}
+/* 明るい絵のデザイン（花畑・書斎）は、ラベルの帯と文字のふちを白寄りに */
+#zs-player-profile .zpp-card[data-design="study"] .zpp-stat-label span{
+  background:linear-gradient(90deg,rgba(255,251,242,.8),rgba(250,243,230,.6) 75%,rgba(255,255,255,0))!important}
+#zs-player-profile .zpp-card[data-design="study"] .zpp-rank{
+  background:linear-gradient(90deg,rgba(255,251,242,.88),rgba(246,238,224,.75) 70%,rgba(255,255,255,0))!important}
+#zs-player-profile .zpp-card[data-design="study"] .zpp-stat-value,
+#zs-player-profile .zpp-card[data-design="study"] .zpp-name{text-shadow:0 0 6px rgba(255,250,240,.9),0 0 2px rgba(255,250,240,.9)}
+/* 星夜の祝祭は見出しを金寄りに */
+#zs-player-profile .zpp-card[data-design="festival"] #zpp-heading{background:linear-gradient(180deg,#fff1cc,#e6c37a)!important;-webkit-background-clip:text!important;background-clip:text!important}
+#zs-player-profile .zcd-thumb[data-design="study"] i{color:rgba(120,90,60,.4)}
+#zs-player-profile .zcd-thumb[data-design="festival"] i{color:rgba(240,228,214,.45)}
+
 /* 絵のあるデザインでは、右上の弧と透かしは出さない（宵闇は透かしを淡く残す） */
 #zs-player-profile .zpp-card[data-design="flower"] > .zpp-arc,
 #zs-player-profile .zpp-card[data-design="flower"] > .zpp-watermark,
@@ -68,14 +105,17 @@
 #zs-player-profile .zpp-card[data-tone="dark"] .zpp-note{color:#cbbca8!important}
 #zs-player-profile .zpp-card[data-tone="dark"] .zpp-avatar{background:#3a3150;box-shadow:0 0 0 2px rgba(40,30,55,.9),0 0 0 3px rgba(201,173,115,.55),0 6px 14px rgba(0,0,0,.4)!important}
 
-/* ---- 「カードデザイン」ボタン（カードの一番下） ---- */
-#zs-player-profile .zpp-design-btn{display:flex;align-items:center;justify-content:center;gap:6px;margin:2px auto 0;padding:6px 16px 5px;
-  border:1px solid rgba(201,173,115,.7);border-radius:999px;background:rgba(255,255,255,.66);color:#7a5c40;
-  font:600 11px/1 'Noto Serif JP',serif;letter-spacing:.14em;cursor:pointer;-webkit-tap-highlight-color:transparent;
-  box-shadow:0 1px 4px rgba(80,55,30,.12)}
-#zs-player-profile .zpp-design-btn svg{width:10px;height:10px;color:#c4a462}
-#zs-player-profile .zpp-design-btn:active{transform:scale(.97)}
-#zs-player-profile .zpp-card[data-tone="dark"] .zpp-design-btn{background:rgba(255,255,255,.06);color:#e6d8c4;border-color:rgba(214,184,120,.6)}
+/* ---- 「CARD DESIGN」（build2219：ボタンらしさを消し、下の飾り線に添える細い英字。薄い霞で絵の上でも読める） ---- */
+#zs-player-profile .zpp-design-btn{position:relative;display:flex;align-items:center;justify-content:center;gap:9px;margin:-2px auto 0;padding:6px 14px 5px;
+  border:0;border-radius:0;background:none;box-shadow:none;color:#a07e45;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  font:600 9.5px/1 'Cinzel',Georgia,serif;letter-spacing:.34em}
+#zs-player-profile .zpp-design-btn span{padding-left:.34em}
+#zs-player-profile .zpp-design-btn svg{flex:none;width:8px;height:8px;color:currentColor}
+#zs-player-profile .zpp-design-btn::before{content:'';position:absolute;inset:-4px -10px;z-index:-1;border-radius:50%;pointer-events:none;
+  background:radial-gradient(closest-side,rgba(255,252,246,.92),rgba(255,252,246,.7) 55%,rgba(255,252,246,0))}
+#zs-player-profile .zpp-design-btn:active{opacity:.6}
+#zs-player-profile .zpp-card[data-tone="dark"] .zpp-design-btn{color:#d6bf93}
+#zs-player-profile .zpp-card[data-tone="dark"] .zpp-design-btn::before{background:radial-gradient(closest-side,rgba(30,22,46,.6),rgba(30,22,46,0))}
 
 /* ---- デザインを選ぶ画面 ---- */
 #zs-player-profile .zcd-picker{position:absolute;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;padding:18px;box-sizing:border-box;
@@ -107,3 +147,7 @@
 #zs-player-profile .zcd-item.is-locked{cursor:default}
 #zs-player-profile .zcd-item.is-locked .zcd-thumb{filter:grayscale(.8) brightness(.9);opacity:.55}
 #zs-player-profile .zcd-limited{position:absolute;left:4px;top:4px;padding:2px 5px;font:700 7.5px/1 'Cinzel',serif;font-style:normal;letter-spacing:.1em;color:#fff;background:linear-gradient(90deg,#8a5cc0,#c0609a);border-radius:2px}
+
+/* build2221: 見出しが絵（ランタンなど）に重なっても読めるように */
+#zs-player-profile .zpp-card[data-design="study"] #zpp-heading{text-shadow:0 0 6px rgba(255,250,238,.95),0 0 14px rgba(255,248,232,.9),0 0 2px rgba(255,250,238,.95)!important}
+#zs-player-profile .zpp-card[data-design="festival"] #zpp-heading{filter:drop-shadow(0 0 4px rgba(20,16,48,.95)) drop-shadow(0 0 10px rgba(20,16,48,.8))}

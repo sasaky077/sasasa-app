@@ -1210,3 +1210,6 @@ html body:not(.ui-immersive) #screen-item.screen.active{
 .item-sell-stepper input{font-size:16px!important;font-variant-numeric:tabular-nums;-webkit-user-select:text;user-select:text}
 .item-exchange-qty-modal .item-sell-summary strong b{font-variant-numeric:tabular-nums}
 .item-sell-stepper input{min-width:0!important;width:100%!important;box-sizing:border-box}
+
+/* build2221: 交換所のカードデザイン行（縦長の絵を上側で切り取って見せる） */
+.item-exchange-reward-icon.is-design img{width:100%;height:100%;object-fit:cover;object-position:center 18%}
