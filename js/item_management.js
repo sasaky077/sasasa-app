@@ -101,7 +101,7 @@
   }
 
   const FLOWER_SR_EXCHANGES = [
-    {id:'skin_112_limited_01',cost:3,characterId:112,name:'トワ（光の姿） 雪景色',img:'images/chara_112_b_panel.webp',desc:'限定衣装を解放'},
+    {id:'skin_112_limited_01',cost:3,characterId:112,name:'トワ（光の姿） 雪桜',img:'images/chara_112_b_panel.webp',desc:'限定衣装を解放'},
     {id:'noah_ticket_1',cost:1,name:'ノア挑戦チケット ×1',img:'images/special_stage_ticket.webp',desc:'SPECIAL STAGE「理想郷 -ノア-」へ挑戦'},
     {id:'flower_r_3',cost:1,name:'聖霊花(R) ×3',img:'images/item_flower_r.webp',desc:'聖霊花(R)を3個獲得'},
     {id:'sr_ticket_1',cost:5,name:'SR確定ガチャTICKET ×1',img:'images/gacha_ticket_10.webp',desc:'恒常SRが1体確定する単発チケット'}

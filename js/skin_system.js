@@ -5,7 +5,7 @@
     112: {
       limited_01: {
         id:'limited_01',
-        name:'雪景色',
+        name:'雪桜',
         img:'images/chara_112_b.webp',
         home:'images/chara_112_b_cut.webp',
         panel:'images/chara_112_b_panel.webp',
@@ -29,7 +29,7 @@
     9: {
       limited_01: {
         id:'limited_01',
-        name:'制服',
+        name:'青い春',
         img:'images/chara_09_b.webp',   // build1465: 限定衣装の立ち絵（キャラ詳細用）
         home:'images/chara_09_b_cut.webp',
         panel:'images/chara_09_b_panel.webp',
@@ -51,7 +51,7 @@
     36: {
       limited_01: {
         id:'limited_01',
-        name:'メイド',
+        name:'給仕',
         img:'images/chara_36_b.webp',   // build1465: 限定衣装の立ち絵（キャラ詳細用）
         home:'images/chara_36_b_cut.webp',
         panel:'images/chara_36_b_panel.webp',
@@ -63,7 +63,7 @@
     39: {
       limited_01: {
         id:'limited_01',
-        name:'ハロウィン',
+        name:'収穫祭',
         img:'images/chara_39_b.webp',                       // キャラ詳細の立ち絵（背景つき）
         home:'images/chara_39_b_cut.webp',                  // ホーム（全身・透過）
         panel:'images/chara_39_b_panel.webp',               // パネル（バストアップ・透過）
