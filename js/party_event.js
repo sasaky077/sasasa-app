@@ -9,7 +9,7 @@
 //     get_party_event_state()                         → progress
 //     finish_party_event_run(p_run_token, p_stats)    → { progress, new_panels, new_bingo, new_rewards, outfit_granted, title_granted }
 //   build2202: 追加ミッション（MAX BINGO後に解放）：スコア35,000以上でクリア → 称号「華麗なる一族」(soiree_noble)。
-//     progress に best_score（最高スコア）と mission_title（達成済み）を持つ。仕様は party_event_mission_server_spec.md
+//     progress に mission_title（達成済み）を持つ。仕様は party_event_mission_server_spec.md
 //   サーバーのRPCが未作成の間は「端末モード」：パネルの進み具合だけ端末に保存して試せる（報酬なし）。
 // ・開催期間は js/home_banners.js の PARTY_EVENT_PERIOD（管理者は期間外でも入れる）。
 // =========================================================
@@ -73,12 +73,12 @@
   };
 
   function emptyProgress(){
-    return { clears_b:0, clears_a:0, clears_s:0, food_total:0, best_score:0, panels:[], bingo:[], outfit:false, mission_title:false };
+    return { clears_b:0, clears_a:0, clears_s:0, food_total:0, panels:[], bingo:[], outfit:false, mission_title:false };
   }
   function normProgress(p){
     const o = emptyProgress();
     if(!p || typeof p !== 'object') return o;
-    ['clears_b','clears_a','clears_s','food_total','best_score'].forEach(k => { o[k] = Math.max(0, Math.floor(Number(p[k]) || 0)); });
+    ['clears_b','clears_a','clears_s','food_total'].forEach(k => { o[k] = Math.max(0, Math.floor(Number(p[k]) || 0)); });
     o.panels = (Array.isArray(p.panels) ? p.panels : []).map(Number).filter(n => n >= 1 && n <= 9);
     o.panels = o.panels.filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => a - b);
     o.bingo = (Array.isArray(p.bingo) ? p.bingo : []).map(String).filter(id => LINES.some(l => l.id === id));
@@ -137,7 +137,6 @@
     const p = normProgress(prev);
     const r = Object.assign({ win:false, rank:'E', score:0, hitsTaken:99, foodKills:0, humanKills:99, remainSec:0 }, run || {});
     const runScore = Math.max(0, Math.floor(Number(r.score) || 0));
-    if(r.win) p.best_score = Math.max(p.best_score, runScore);
     if(r.win){
       if(['S','A','B'].includes(r.rank)) p.clears_b++;
       if(['S','A'].includes(r.rank)) p.clears_a++;
@@ -279,8 +278,23 @@
     const html = T && typeof T.badgeHTML === 'function' ? T.badgeHTML(MISSION.titleId, 1) : '';
     return html || '<span class="pe-ms-title-text">' + esc(MISSION.titleName) + '</span>';
   }
+  // build2203: 管理者だけ、ミッション欄の見た目を切り替えて確認できる（表示のみ。保存・送信はしない）
+  let missionPreview = ''; // '' | 'locked' | 'open' | 'done'
+  function previewProgress(){
+    const pr = normProgress(state.progress);
+    if(missionPreview === 'locked'){ pr.bingo = LINES.slice(0, 3).map(l => l.id); pr.mission_title = false; }
+    if(missionPreview === 'open'){ pr.bingo = LINES.map(l => l.id); pr.mission_title = false; }
+    if(missionPreview === 'done'){ pr.bingo = LINES.map(l => l.id); pr.mission_title = true; }
+    return pr;
+  }
+  function missionDevHTML(){
+    if(!isAdmin()) return '';
+    const b = (k, label) => '<button type="button" data-pe-ms-dev="' + k + '"' + (missionPreview === k ? ' class="is-on"' : '') + '>' + label + '</button>';
+    return '<div class="pe-ms-dev"><small>DEV 表示確認</small>' +
+      b('', '実データ') + b('locked', '未解放') + b('open', '解放後') + b('done', '達成') + b('popup', '獲得演出') + '</div>';
+  }
   function missionHTML(){
-    const pr = state.progress;
+    const pr = missionPreview ? previewProgress() : state.progress;
     const lines = pr.bingo.length;
     const unlocked = lines >= MAX_LINES;
     const done = pr.mission_title;
@@ -291,10 +305,7 @@
       status = '<p class="pe-ms-status is-done"><b>達成</b><span>称号を獲得しました</span></p>' +
         '<button type="button" class="pe-ms-equip">称号を設定する</button>';
     }else if(unlocked){
-      const best = pr.best_score;
-      const ratio = Math.min(1, best / MISSION.scoreNeed);
-      status = '<div class="pe-ms-meter" aria-hidden="true"><i style="width:' + (ratio * 100).toFixed(1) + '%"></i></div>' +
-        '<p class="pe-ms-status"><span>自己ベスト</span><b>' + (best > 0 ? fmt(best) : '—') + '</b><small>/ ' + fmt(MISSION.scoreNeed) + '</small></p>';
+      status = ''; // build2204: 解放後は条件と報酬だけを見せる（自己ベスト表示は廃止）
     }else{
       status = '<p class="pe-ms-status is-locked"><span>MAX BINGO（8 LINE）で解放</span><b>' + lines + '</b><small>/ ' + MAX_LINES + ' LINE</small></p>';
     }
@@ -310,7 +321,7 @@
       '</div>' +
       status +
       (unlocked ? '' : '<i class="pe-ms-lock" aria-hidden="true"></i>') +
-    '</div>';
+    '</div>' + missionDevHTML();
   }
 
   function render(highlight){
@@ -391,7 +402,17 @@
       if(e.target.closest('.pe-go')){ start(); return; }
       if(e.target.closest('.pe-rule-again')){ showRuleGuide({ sortie:false }); return; }
       if(e.target.closest('[data-pe-outfit-preview]')){ openOutfitPreview(); return; }
+      const dev = e.target.closest('[data-pe-ms-dev]');
+      if(dev && isAdmin()){
+        const k = dev.getAttribute('data-pe-ms-dev');
+        if(k === 'popup'){ pendingPopup = { titleGranted:true, mode:'preview' }; showResultPopup(); return; }
+        missionPreview = k;
+        const ms = root.querySelector('.pe-mission');
+        if(ms) ms.innerHTML = missionHTML();
+        return;
+      }
       if(e.target.closest('.pe-ms-equip')){
+        if(missionPreview){ toast('表示確認中です（称号は持っていないので設定できません）'); return; }
         if(typeof window.openTitleSelector === 'function') window.openTitleSelector();
         else toast('称号はプロフィールから設定できます');
         return;
@@ -432,6 +453,7 @@
     render();
   }
   function close(){
+    missionPreview = '';
     const root = document.getElementById('party-event-screen');
     if(root) root.classList.remove('is-open');
   }
@@ -522,7 +544,8 @@
         ((out.titleGranted || out.missionReachedLocal)
           ? '<div class="per-title"><small>EXTRA MISSION CLEAR</small><div class="per-title-badge">' + titleBadge() + '</div>' +
             '<p>' + esc(MISSION.effect) + '</p>' +
-            (out.titleGranted ? '<p class="per-note">称号はプロフィールの「称号」から設定できます</p>' : '<p class="per-note">端末モードのため称号は付与されません</p>') +
+            (out.mode === 'preview' ? '<p class="per-note">表示確認（称号は付与されません）</p>'
+              : out.titleGranted ? '<p class="per-note">称号はプロフィールの「称号」から設定できます</p>' : '<p class="per-note">端末モードのため称号は付与されません</p>') +
             '</div>'
           : '') +
         (out.mode === 'server' && rewards.length ? '<p class="per-note">報酬はプレゼントボックスに届きます</p>' : '') +
