@@ -867,3 +867,25 @@ html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal3 .drt-goal
   html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal3 .drt-rank-title{display:none!important}
   html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal3 .drt-goal-main{padding-right:76px!important}
 }
+
+/* =========================================================
+   build2208: SE（高さ700px以下）でENEMY INFOをスクロールなしに収める
+   ・ボス名とキャッチを1行に並べ、ボス名の領域を最小40pxに（旧68px）
+   ・TEAM GOALカードの上下の余白と段の間隔をもう少し詰める
+   ========================================================= */
+@media (max-height:700px){
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby .daily-raid-enemy-page > .daily-raid-hero{min-height:40px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-enemy-page .daily-raid-hero-copy{top:2px!important;display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:baseline!important;gap:10px!important;max-width:96%!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-enemy-page .daily-raid-hero-copy strong{font-size:26px!important;line-height:1.1!important;margin:0!important;white-space:nowrap!important;flex:none!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-enemy-page .daily-raid-hero-copy span{font-size:10.5px!important;margin:0!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;min-width:0!important;letter-spacing:.06em!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-enemy-page .daily-raid-hero-copy::after{display:none!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal3.drt-goal-card{padding-top:7px!important;padding-bottom:7px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal3 .drt-rank-head{top:6px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal3 .drt-goal-main b{font-size:28px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal3 .drt-goal-main{margin:0 0 3px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal3 .g2-row + .g2-row{margin-top:4px!important;padding-top:4px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal3 .g2-medal{width:24px!important;height:24px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal3 .g2-bar .g2-medal[data-rank="A"]{width:20px!important;height:20px!important;margin:-10px 0 0 -10px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal3 .drt-rank-total{margin-top:4px!important;padding-top:4px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal3 .drt-goal-next{margin-top:2px!important;font-size:12px!important}
+}
