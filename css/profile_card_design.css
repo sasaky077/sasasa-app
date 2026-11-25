@@ -1,0 +1,109 @@
+/* =========================================================
+   build2217: PLAYER PROFILE のカードデザイン（着せ替え）
+   背景の絵：images/profile_card_<id>.webp（--zpp-design-bg）。無い間は下の色の背景が見える
+   ========================================================= */
+
+/* ---- 背景（絵＋仮の色） ---- */
+#zs-player-profile .zpp-card[data-design="flower"],
+.zcd-thumb[data-design="flower"]{
+  background-color:#faf6f5!important;
+  background-image:
+    var(--zpp-design-bg,none),
+    radial-gradient(60% 34% at 88% 10%,rgba(190,182,236,.55),rgba(190,182,236,0) 70%),
+    radial-gradient(48% 30% at 8% 6%,rgba(206,186,232,.5),rgba(206,186,232,0) 70%),
+    radial-gradient(70% 26% at 18% 100%,rgba(240,190,216,.6),rgba(240,190,216,0) 72%),
+    radial-gradient(70% 26% at 88% 100%,rgba(184,178,238,.55),rgba(184,178,238,0) 72%),
+    linear-gradient(180deg,#fcfaf8 0%,#f8f3f3 60%,#f3eef4 100%)!important;
+  background-size:cover,auto,auto,auto,auto,auto!important;
+  background-position:center,center,center,center,center,center!important;
+  background-repeat:no-repeat!important;
+}
+#zs-player-profile .zpp-card[data-design="dusk"],
+.zcd-thumb[data-design="dusk"]{
+  background-color:#2a2440!important;
+  background-image:
+    /* 絵の中央が明るいので、文字が読めるよう暗い紫の幕を重ねる（中央は濃く、月と葉のある端は薄く） */
+    radial-gradient(ellipse 78% 58% at 50% 54%,rgba(34,26,52,.78) 0%,rgba(34,26,52,.7) 45%,rgba(34,26,52,.42) 75%,rgba(34,26,52,.18) 100%),
+    var(--zpp-design-bg,none),
+    radial-gradient(34% 22% at 78% 12%,rgba(214,170,196,.28),rgba(214,170,196,0) 70%),
+    radial-gradient(90% 34% at 50% 100%,rgba(116,78,128,.55),rgba(116,78,128,0) 72%),
+    radial-gradient(60% 40% at 15% 40%,rgba(80,64,112,.45),rgba(80,64,112,0) 70%),
+    linear-gradient(170deg,#3b3253 0%,#2d2743 55%,#221e32 100%)!important;
+  background-size:auto,cover,auto,auto,auto,auto!important;
+  background-position:center,center,center,center,center,center!important;
+  background-repeat:no-repeat!important;
+}
+/* 絵のあるデザインでは、右上の弧と透かしは出さない（宵闇は透かしを淡く残す） */
+#zs-player-profile .zpp-card[data-design="flower"] > .zpp-arc,
+#zs-player-profile .zpp-card[data-design="flower"] > .zpp-watermark,
+#zs-player-profile .zpp-card[data-design="dusk"] > .zpp-arc{display:none!important}
+#zs-player-profile .zpp-card[data-design="dusk"] > .zpp-watermark{color:#cbb8e2;opacity:.12}
+
+/* ---- 花畑：文字は今のデザインと同じ茶系。絵の上でも読めるよう、ラベルの帯を白寄りに ---- */
+#zs-player-profile .zpp-card[data-design="flower"] .zpp-stat-label span{
+  background:linear-gradient(90deg,rgba(255,255,255,.78),rgba(250,246,244,.6) 75%,rgba(255,255,255,0))!important}
+#zs-player-profile .zpp-card[data-design="flower"] .zpp-rank{
+  background:linear-gradient(90deg,rgba(255,255,255,.85),rgba(246,241,240,.75) 70%,rgba(255,255,255,0))!important}
+#zs-player-profile .zpp-card[data-design="flower"] .zpp-stat-value,
+#zs-player-profile .zpp-card[data-design="flower"] .zpp-name{text-shadow:0 0 6px rgba(255,255,255,.9),0 0 2px rgba(255,255,255,.9)}
+
+/* ---- 宵闇：暗い地に明るい文字 ---- */
+#zs-player-profile .zpp-card[data-tone="dark"]{
+  --zpp-gold:#c9ad73;--zpp-ink:#efe6da;--zpp-sub:#cbbca8;color:#efe6da;
+  box-shadow:0 0 0 1px rgba(255,255,255,.18),0 0 0 3px rgba(201,173,115,.5),0 16px 46px rgba(10,6,20,.6),inset 0 0 0 6px rgba(255,255,255,.04),inset 0 0 0 7px rgba(201,173,115,.45)!important}
+#zs-player-profile .zpp-card[data-tone="dark"] #zpp-heading{color:#d8c6ea!important;
+  background:linear-gradient(180deg,#efe4f7,#bba3d6);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+#zs-player-profile .zpp-card[data-tone="dark"] .zpp-rank{color:#eadfcd!important;background:rgba(255,255,255,.04)!important;
+  box-shadow:inset 0 0 0 1px rgba(214,184,120,.55)}
+#zs-player-profile .zpp-card[data-tone="dark"] #zpp-rank.zrr-entry::after{color:#d8c39b!important}
+#zs-player-profile .zpp-card[data-tone="dark"] .zpp-name{color:#f6efe6!important;text-shadow:0 1px 8px rgba(20,10,30,.6)}
+#zs-player-profile .zpp-card[data-tone="dark"] .zpp-title{color:#d0c2b0!important}
+#zs-player-profile .zpp-card[data-tone="dark"] .zpp-title.is-editable::after{color:#d8c39b!important}
+#zs-player-profile .zpp-card[data-tone="dark"] .zpp-stat-label{color:#e2d6c5!important}
+#zs-player-profile .zpp-card[data-tone="dark"] .zpp-stat-label svg{color:#d6bf93!important}
+#zs-player-profile .zpp-card[data-tone="dark"] .zpp-stat-label span{
+  background:linear-gradient(90deg,rgba(255,255,255,.1),rgba(255,255,255,.05) 75%,rgba(255,255,255,0))!important}
+#zs-player-profile .zpp-card[data-tone="dark"] .zpp-stat-value{color:#f4ece1!important;text-shadow:0 1px 6px rgba(20,10,30,.55)}
+#zs-player-profile .zpp-card[data-tone="dark"] #zpp-story .zpp-chapter-word{color:#e3d6c4!important}
+#zs-player-profile .zpp-card[data-tone="dark"] .zpp-note{color:#cbbca8!important}
+#zs-player-profile .zpp-card[data-tone="dark"] .zpp-avatar{background:#3a3150;box-shadow:0 0 0 2px rgba(40,30,55,.9),0 0 0 3px rgba(201,173,115,.55),0 6px 14px rgba(0,0,0,.4)!important}
+
+/* ---- 「カードデザイン」ボタン（カードの一番下） ---- */
+#zs-player-profile .zpp-design-btn{display:flex;align-items:center;justify-content:center;gap:6px;margin:2px auto 0;padding:6px 16px 5px;
+  border:1px solid rgba(201,173,115,.7);border-radius:999px;background:rgba(255,255,255,.66);color:#7a5c40;
+  font:600 11px/1 'Noto Serif JP',serif;letter-spacing:.14em;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  box-shadow:0 1px 4px rgba(80,55,30,.12)}
+#zs-player-profile .zpp-design-btn svg{width:10px;height:10px;color:#c4a462}
+#zs-player-profile .zpp-design-btn:active{transform:scale(.97)}
+#zs-player-profile .zpp-card[data-tone="dark"] .zpp-design-btn{background:rgba(255,255,255,.06);color:#e6d8c4;border-color:rgba(214,184,120,.6)}
+
+/* ---- デザインを選ぶ画面 ---- */
+#zs-player-profile .zcd-picker{position:absolute;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;padding:18px;box-sizing:border-box;
+  background:rgba(25,18,22,.45);opacity:0;transition:opacity .18s ease}
+#zs-player-profile .zcd-picker.is-open{opacity:1}
+#zs-player-profile .zcd-sheet{position:relative;width:min(100%,340px);box-sizing:border-box;padding:16px 14px 16px;border-radius:12px;
+  background:linear-gradient(160deg,#fbfaf8,#f1ece8);border:1.5px solid #c9ad73;
+  box-shadow:0 0 0 3px rgba(201,173,115,.35),0 14px 40px rgba(20,12,8,.45);color:#593d2a;font-family:'Noto Serif JP',serif}
+#zs-player-profile .zcd-head{display:flex;align-items:baseline;gap:10px;padding:2px 34px 10px 4px;border-bottom:1px solid rgba(201,173,115,.5)}
+#zs-player-profile .zcd-head span{font:700 16px/1 'Cinzel',Georgia,serif;letter-spacing:.12em;color:#76563c}
+#zs-player-profile .zcd-head small{font:500 10.5px/1 'Noto Serif JP',serif;letter-spacing:.12em;color:#8a6f55}
+#zs-player-profile .zcd-close{position:absolute;top:8px;right:8px;width:30px;height:30px;border:0;background:none;color:#8a6c4f;font:400 22px/1 Georgia,serif;cursor:pointer}
+#zs-player-profile .zcd-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px;max-height:min(58dvh,420px);overflow-y:auto;overscroll-behavior:contain}
+#zs-player-profile .zcd-item{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:0;border:0;background:none;cursor:pointer;color:inherit;font:inherit;-webkit-tap-highlight-color:transparent}
+#zs-player-profile .zcd-thumb{position:relative;display:block;width:100%;aspect-ratio:3/4.3;border-radius:7px;overflow:hidden;
+  border:1px solid rgba(201,173,115,.75);box-shadow:inset 0 0 0 3px rgba(255,255,255,.45),inset 0 0 0 4px rgba(201,173,115,.4),0 2px 6px rgba(60,40,20,.18)}
+#zs-player-profile .zcd-thumb[data-design="classic"]{background:radial-gradient(ellipse 80% 60% at 30% 25%,rgba(255,255,255,.95),rgba(255,255,255,0) 70%),linear-gradient(160deg,#fbfaf8,#f3efed 55%,#efe9e6)}
+/* サムネイルの中に、プロフィールの行を表す細い線（どのデザインでも同じ） */
+#zs-player-profile .zcd-thumb i{position:absolute;left:16%;right:16%;top:22%;height:30%;
+  background:linear-gradient(currentColor,currentColor) 0 0/60% 2px no-repeat,linear-gradient(currentColor,currentColor) 0 40%/80% 2px no-repeat,linear-gradient(currentColor,currentColor) 0 80%/70% 2px no-repeat;
+  color:rgba(120,90,60,.35)}
+#zs-player-profile .zcd-thumb[data-design="dusk"] i{color:rgba(240,228,214,.4)}
+#zs-player-profile .zcd-item.is-on .zcd-thumb{border-color:#b8862e;box-shadow:inset 0 0 0 3px rgba(255,255,255,.45),0 0 0 2px #e2bf72,0 0 10px rgba(226,191,114,.7)}
+#zs-player-profile .zcd-item.is-on .zcd-thumb::after{content:'✓';position:absolute;right:5px;top:5px;width:18px;height:18px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;background:#b8862e;color:#fff;font:700 11px/1 sans-serif}
+#zs-player-profile .zcd-name{font:700 12px/1.2 'Noto Serif JP',serif;letter-spacing:.06em;color:#5a3e2a}
+#zs-player-profile .zcd-sub{font:600 8.5px/1 'Cinzel','Noto Serif JP',serif;letter-spacing:.12em;color:#9a8166}
+#zs-player-profile .zcd-item.is-on .zcd-sub{color:#a8782a}
+#zs-player-profile .zcd-item.is-locked{cursor:default}
+#zs-player-profile .zcd-item.is-locked .zcd-thumb{filter:grayscale(.8) brightness(.9);opacity:.55}
+#zs-player-profile .zcd-limited{position:absolute;left:4px;top:4px;padding:2px 5px;font:700 7.5px/1 'Cinzel',serif;font-style:normal;letter-spacing:.1em;color:#fff;background:linear-gradient(90deg,#8a5cc0,#c0609a);border-radius:2px}

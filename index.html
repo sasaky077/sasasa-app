@@ -3489,6 +3489,15 @@ html:not(.hv2-home) body #global-user-frame .hv2-face {
 /* build2017: PLAYER PROFILE をモックに合わせて作り直し（白い羊皮紙＋細い金の額縁・四隅の飾り・リボン見出し・アイコン付きの2列） */
 #zs-player-profile{position:fixed;inset:0;z-index:22000;display:none;align-items:center;justify-content:center;padding:18px;box-sizing:border-box;background:rgba(35,27,27,.52);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
 #zs-player-profile.is-open{display:flex}
+/* build2216: スクロールで上下左右に動く・跳ねるのを止める。横スクロールなし、縦は入りきらない時だけ。端での跳ね返りと背面への伝わりも止める */
+#zs-player-profile{overscroll-behavior:contain;touch-action:none}
+#zs-player-profile .zpp-card{overflow:hidden!important;overscroll-behavior:contain!important;touch-action:manipulation}
+@supports (overflow:clip){#zs-player-profile .zpp-card{overflow:clip!important}}
+/* 中身が入りきらないほど低い画面だけ縦スクロール。飾り（弧・透かし）は長さに含めない */
+@media (max-height:600px){
+  #zs-player-profile#zs-player-profile .zpp-card{overflow-x:hidden!important;overflow-y:auto!important;touch-action:pan-y!important}
+  #zs-player-profile .zpp-card > .zpp-arc,#zs-player-profile .zpp-card > .zpp-watermark{display:none!important}
+}
 #zs-player-profile .zpp-card{
   --zpp-gold:#c9ad73;--zpp-gold-d:#a88a52;--zpp-ink:#593d2a;--zpp-sub:#856a52;
   position:relative;overflow:auto;max-height:min(88dvh,820px);width:min(100%,348px);
@@ -23487,6 +23496,7 @@ html:not(.hv2-home) body #global-user-frame .hud-resource {
 })();
 </script>
 
+<link rel="stylesheet" href="css/profile_card_design.css?v=2218-card-art">
 <div id="zs-player-profile" aria-hidden="true">
  <div class="zpp-card" role="dialog" aria-modal="true" aria-labelledby="zpp-heading">
   <i class="zpp-corner tl" aria-hidden="true"></i><i class="zpp-corner tr" aria-hidden="true"></i><i class="zpp-corner bl" aria-hidden="true"></i><i class="zpp-corner br" aria-hidden="true"></i>
@@ -23659,6 +23669,7 @@ function handleProfileTap(e){
 document.addEventListener('click',handleProfileTap,true);
 })();
 </script>
+<script src="js/profile_card_design.js?v=2218-card-art"></script>
 <style id="zs-rank-reward-style-2191">
 #zs-player-profile #zpp-rank.zrr-entry{cursor:pointer;position:relative;padding-right:32px;-webkit-tap-highlight-color:transparent}
 #zs-player-profile #zpp-rank.zrr-entry::after{content:'›';position:absolute;right:14px;top:50%;transform:translateY(-55%);font:18px Georgia,serif;color:#a58a61}
