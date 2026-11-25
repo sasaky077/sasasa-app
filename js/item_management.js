@@ -583,16 +583,17 @@
     };
   }
 
-  function updateSellUI(){
+  function updateSellUI(typing){
     const id=state.sellItemId;
     if(!id) return;
     const data=getSellMeta(id);
     const max=Math.max(1,data.owned);
-    state.sellQty=Math.max(1,Math.min(max,Math.floor(Number(state.sellQty)||1)));
+    // build2215: 入力中（typing）は空欄・途中の値を書き換えない。確定時に1〜最大へ丸める
+    if(!typing) state.sellQty=Math.max(1,Math.min(max,Math.floor(Number(state.sellQty)||1)));
+    const q=Math.max(0,Math.min(max,Math.floor(Number(state.sellQty)||0)));
 
     const qty=document.getElementById('item-sell-qty');
-    if(qty){
-      qty.max=String(max);
+    if(qty && !typing){
       qty.value=String(state.sellQty);
     }
 
@@ -601,10 +602,10 @@
     const total=document.getElementById('item-sell-total-price');
     if(owned) owned.textContent=fmt(data.owned);
     if(unit) unit.textContent=fmt(data.price);
-    if(total) total.textContent=fmt(data.price*state.sellQty);
+    if(total) total.textContent=fmt(data.price*q);
 
     const confirm=document.getElementById('item-sell-confirm');
-    if(confirm) confirm.disabled=!(data.owned>0 && data.price>0 && state.sellQty>0);
+    if(confirm) confirm.disabled=!(data.owned>0 && data.price>0 && q>0);
   }
 
   function openSell(id){
@@ -684,6 +685,185 @@
     }
   }
 
+
+  /* ---------------------------------------------------------
+     build2215: 数量入力（売却・交換で共通）
+     ・数字を自由に入力できる（入力中は空欄も可）
+     ・最大値を超えたら、その場で最大値に置き換える
+     ・空欄／0のまま入力欄を離れたら1にする
+     ・タップで数字を全選択（そのまま打ち直せる）
+     --------------------------------------------------------- */
+  function bindQtyInput(input,getMax,onChange){
+    if(!input || input.dataset.qtyBound==='1') return;
+    input.dataset.qtyBound='1';
+    try{ input.type='text'; }catch(_){}
+    input.setAttribute('inputmode','numeric');
+    input.setAttribute('pattern','[0-9]*');
+    input.setAttribute('autocomplete','off');
+    input.setAttribute('enterkeyhint','done');
+    input.addEventListener('focus',()=>{ setTimeout(()=>{ try{input.select()}catch(_){} },0); });
+    input.addEventListener('input',()=>{
+      const max=Math.max(1,Math.floor(Number(getMax())||1));
+      const raw=String(input.value||'')
+        .replace(/[０-９]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0xFEE0))
+        .replace(/\D/g,'').replace(/^0+/,'');
+      if(raw===''){ if(input.value!=='') input.value=''; onChange(0,true); return; }
+      let n=parseInt(raw,10);
+      if(n>max) n=max;
+      if(input.value!==String(n)) input.value=String(n);
+      onChange(n,true);
+    });
+    const settle=()=>{
+      const max=Math.max(1,Math.floor(Number(getMax())||1));
+      let n=parseInt(String(input.value||'').replace(/\D/g,''),10);
+      if(!(n>0)) n=1;
+      if(n>max) n=max;
+      input.value=String(n);
+      onChange(n,false);
+    };
+    input.addEventListener('blur',settle);
+    input.addEventListener('change',settle);
+    input.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); input.blur(); } });
+  }
+
+  /* 交換の数量ダイアログ（売却ダイアログと同じ見た目） */
+  const exchangeQty={kind:'',id:'',qty:1};
+  function exchangeDef(kind,id){
+    return (kind==='sr'?FLOWER_SR_EXCHANGES:FLOWER_R_EXCHANGES).find(x=>x.id===id)||null;
+  }
+  function exchangeOwned(kind){
+    return Math.max(0,Math.floor(Number(state.items[kind==='sr'?'flower_sr':'flower_r']||0)));
+  }
+  function exchangeMax(kind,def){
+    if(!def||!(def.cost>0)) return 0;
+    return Math.min(9999,Math.floor(exchangeOwned(kind)/def.cost));
+  }
+  function ensureExchangeQtyModal(){
+    let modal=document.getElementById('item-exchange-qty-modal');
+    if(modal) return modal;
+    modal=document.createElement('div');
+    modal.id='item-exchange-qty-modal';
+    modal.className='item-sell-modal item-exchange-qty-modal';
+    modal.hidden=true;
+    modal.setAttribute('aria-hidden','true');
+    modal.innerHTML=
+      '<div class="item-sell-backdrop" data-exchange-qty-close></div>'+
+      '<section class="item-sell-dialog" role="dialog" aria-modal="true" aria-labelledby="item-exchange-qty-title">'+
+        '<button type="button" class="item-sell-close" data-exchange-qty-close aria-label="閉じる">×</button>'+
+        '<small class="item-sell-kicker">EXCHANGE</small>'+
+        '<h2 id="item-exchange-qty-title">アイテム交換</h2>'+
+        '<div class="item-sell-selected">'+
+          '<div class="item-sell-icon" id="item-exchange-qty-icon"></div>'+
+          '<div class="item-sell-copy"><strong id="item-exchange-qty-name">--</strong><span id="item-exchange-qty-owned">--</span></div>'+
+        '</div>'+
+        '<div class="item-sell-stepper">'+
+          '<button type="button" id="item-exchange-qty-minus" aria-label="交換回数を減らす">−</button>'+
+          '<input id="item-exchange-qty-input" type="text" value="1" inputmode="numeric" aria-label="交換回数">'+
+          '<button type="button" id="item-exchange-qty-plus" aria-label="交換回数を増やす">＋</button>'+
+          '<button type="button" id="item-exchange-qty-max">MAX</button>'+
+        '</div>'+
+        '<div class="item-sell-summary">'+
+          '<div><span>消費</span><strong><img id="item-exchange-qty-cost-icon" src="images/item_flower_r.webp" alt=""> <b id="item-exchange-qty-cost">0</b></strong></div>'+
+          '<div><span>獲得</span><strong><b id="item-exchange-qty-gain">--</b></strong></div>'+
+        '</div>'+
+        '<button type="button" class="item-sell-confirm" id="item-exchange-qty-confirm">交換する</button>'+
+        '<p class="item-sell-note">交換後のアイテムは直接アイテムBOXへ加算されます。</p>'+
+      '</section>';
+    // 交換所のモーダル（item-exchange-modal）より手前に出す
+    modal.style.zIndex='18100';
+    const host=document.getElementById('screen-item')||document.body;
+    host.appendChild(modal);
+    modal.querySelectorAll('[data-exchange-qty-close]').forEach(el=>el.addEventListener('click',closeExchangeQty));
+    const input=modal.querySelector('#item-exchange-qty-input');
+    bindQtyInput(input,()=>exchangeMax(exchangeQty.kind,exchangeDef(exchangeQty.kind,exchangeQty.id)),(n,typing)=>{
+      exchangeQty.qty=n; updateExchangeQtyUI(typing);
+    });
+    modal.querySelector('#item-exchange-qty-minus').addEventListener('click',()=>{exchangeQty.qty=Math.max(1,(exchangeQty.qty||1)-1);updateExchangeQtyUI();});
+    modal.querySelector('#item-exchange-qty-plus').addEventListener('click',()=>{exchangeQty.qty=(exchangeQty.qty||0)+1;updateExchangeQtyUI();});
+    modal.querySelector('#item-exchange-qty-max').addEventListener('click',()=>{exchangeQty.qty=exchangeMax(exchangeQty.kind,exchangeDef(exchangeQty.kind,exchangeQty.id));updateExchangeQtyUI();});
+    modal.querySelector('#item-exchange-qty-confirm').addEventListener('click',()=>{
+      const n=Math.max(1,Math.floor(Number(exchangeQty.qty)||0));
+      const kind=exchangeQty.kind, id=exchangeQty.id;
+      closeExchangeQty();
+      if(kind==='sr') exchangeFlowerSR(id,n,true); else exchangeFlowerR(id,n);
+    });
+    return modal;
+  }
+  function gainText(def,qty){
+    // 「共鳴石 ×1」→「共鳴石 ×(1×回数)」
+    const m=String(def.name||'').match(/^(.*?)\s*[×x]\s*(\d+)\s*$/);
+    if(m) return m[1]+' ×'+fmt(Number(m[2])*qty);
+    return (def.name||'')+(qty>1?' ×'+fmt(qty):'');
+  }
+  function updateExchangeQtyUI(typing){
+    const modal=document.getElementById('item-exchange-qty-modal');
+    if(!modal) return;
+    const def=exchangeDef(exchangeQty.kind,exchangeQty.id);
+    if(!def) return;
+    const max=Math.max(1,exchangeMax(exchangeQty.kind,def));
+    if(!typing) exchangeQty.qty=Math.max(1,Math.min(max,Math.floor(Number(exchangeQty.qty)||1)));
+    const q=Math.max(0,Math.min(max,Math.floor(Number(exchangeQty.qty)||0)));
+    const input=modal.querySelector('#item-exchange-qty-input');
+    if(input && !typing) input.value=String(q||1);
+    const sr=exchangeQty.kind==='sr';
+    modal.querySelector('#item-exchange-qty-owned').textContent='所持 '+(sr?'聖霊花(SR)':'聖霊花(R)')+' '+fmt(exchangeOwned(exchangeQty.kind))+'（最大 '+fmt(max)+'回）';
+    modal.querySelector('#item-exchange-qty-cost-icon').src=sr?'images/item_flower_sr.webp':'images/item_flower_r.webp';
+    modal.querySelector('#item-exchange-qty-cost').textContent=fmt(def.cost*q);
+    modal.querySelector('#item-exchange-qty-gain').textContent=q>0?gainText(def,q):'--';
+    modal.querySelector('#item-exchange-qty-confirm').disabled=!(q>0)||!!state.exchanging;
+  }
+  function openExchangeQty(kind,id){
+    const def=exchangeDef(kind,id);
+    if(!def) return;
+    if(exchangeMax(kind,def)<1){ toast(kind==='sr'?'聖霊花(SR)が不足しています':'聖霊花(R)が不足しています'); return; }
+    const modal=ensureExchangeQtyModal();
+    exchangeQty.kind=kind; exchangeQty.id=id; exchangeQty.qty=1;
+    modal.querySelector('#item-exchange-qty-name').textContent=def.name;
+    modal.querySelector('#item-exchange-qty-icon').innerHTML=def.img?'<img src="'+escapeHtml(def.img)+'" alt="" onerror="this.style.display=\'none\'">':'';
+    updateExchangeQtyUI();
+    modal.hidden=false; modal.setAttribute('aria-hidden','false');
+  }
+  function closeExchangeQty(){
+    const modal=document.getElementById('item-exchange-qty-modal');
+    if(modal){ modal.hidden=true; modal.setAttribute('aria-hidden','true'); }
+  }
+  // サーバーに回数指定版（p_quantity）が無い間は、1回ずつの交換を繰り返す
+  function isMissingRpcSignature(err){
+    const msg=String(err&&(err.message||err.details||err.hint)||'');
+    return (err&&err.code==='PGRST202')||/Could not find the function|function .* does not exist|p_quantity/i.test(msg);
+  }
+  async function callExchangeRpc(fn,exchangeId,qty,onProgress){
+    const client=window.zsSupabase;
+    if(!client || typeof client.rpc!=='function') throw new Error('サーバーへ接続できません');
+    const parse=res=>{
+      if(res && res.error) throw res.error;
+      let r=res?res.data:null;
+      if(typeof r==='string'){ try{r=JSON.parse(r)}catch(_){} }
+      if(!r || r.ok===false) throw new Error((r&&r.message)||'交換に失敗しました');
+      return r;
+    };
+    if(qty<=1) return parse(await client.rpc(fn,{p_exchange_id:exchangeId}));
+    try{
+      const r=parse(await client.rpc(fn,{p_exchange_id:exchangeId,p_quantity:qty}));
+      if(r.exchanged===undefined) r.exchanged=qty;
+      return r;
+    }catch(err){
+      if(!isMissingRpcSignature(err)) throw err;
+    }
+    // 旧サーバー：1回ずつ。途中で失敗したら、そこまでの結果を返す
+    const total={ok:true,grants:{},exchanged:0};
+    for(let i=0;i<qty;i++){
+      if(onProgress) onProgress(i,qty);
+      let r;
+      try{ r=parse(await client.rpc(fn,{p_exchange_id:exchangeId})); }
+      catch(err){ if(total.exchanged>0){ total.partialError=err; break; } throw err; }
+      total.exchanged++;
+      Object.keys(r.grants||{}).forEach(k=>{ total.grants[k]=(total.grants[k]||0)+Math.max(0,Math.floor(Number(r.grants[k])||0)); });
+      ['remaining_flower_r','remaining_flower_sr','skin'].forEach(k=>{ if(r[k]!==undefined) total[k]=r[k]; });
+    }
+    return total;
+  }
+
   function closeFlowerExchange(){
     const modal=document.getElementById('spirit-flower-exchange-modal');
     if(!modal) return;
@@ -758,13 +938,15 @@
     }).join(' / ');
   }
 
-  async function exchangeFlowerR(exchangeId){
+  async function exchangeFlowerR(exchangeId,quantity){
     if(state.exchanging) return;
     const def=FLOWER_R_EXCHANGES.find(x=>x.id===exchangeId);
     if(!def || def.disabled) return;
 
     const owned=Math.max(0,Math.floor(Number(state.items.flower_r||0)));
-    if(owned<def.cost){
+    // build2215: 回数指定（限定衣装は常に1回）
+    const qty=def.characterId?1:Math.max(1,Math.min(Math.floor(owned/def.cost),Math.floor(Number(quantity)||1)));
+    if(owned<def.cost*qty){
       toast('聖霊花(R)が不足しています');
       return;
     }
@@ -773,21 +955,12 @@
     renderFlowerExchange();
 
     try{
-      const client=window.zsSupabase;
-      if(!client || typeof client.rpc!=='function') throw new Error('サーバーへ接続できません');
-
-      const res=await client.rpc('exchange_spirit_flower_r',{
-        p_exchange_id:exchangeId
+      const result=await callExchangeRpc('exchange_spirit_flower_r',exchangeId,qty,(i,n)=>{
+        const b=document.querySelector('[data-flower-exchange-id="'+exchangeId+'"]'); if(b) b.textContent='交換中 '+(i+1)+'/'+n;
       });
-      if(res && res.error) throw res.error;
 
-      let result=res?res.data:null;
-      if(typeof result==='string'){
-        try{result=JSON.parse(result)}catch(_){}
-      }
-      if(!result || result.ok===false) throw new Error((result&&result.message)||'交換に失敗しました');
-
-      state.items.flower_r=Math.max(0,Math.floor(Number(result.remaining_flower_r)||0));
+      if(result.remaining_flower_r!==undefined) state.items.flower_r=Math.max(0,Math.floor(Number(result.remaining_flower_r)||0));
+      if(result.partialError) toast('途中で止まりました（'+fmt(result.exchanged)+'回まで交換済み）');
       Object.keys(result.grants||{}).forEach(id=>{
         state.items[id]=Math.max(0,Math.floor(Number(state.items[id]||0)))+
           Math.max(0,Math.floor(Number(result.grants[id]||0)));
@@ -854,20 +1027,21 @@
     const modal=document.getElementById('spirit-flower-sr-exchange-modal');
     if(modal){modal.hidden=false;modal.setAttribute('aria-hidden','false');}
   }
-  async function exchangeFlowerSR(exchangeId){
+  async function exchangeFlowerSR(exchangeId,quantity,confirmed){
     if(state.exchanging)return;
     const def=FLOWER_SR_EXCHANGES.find(x=>x.id===exchangeId);
     if(!def||srSkinOwned(def))return;
-    if(Number(state.items.flower_sr||0)<def.cost){toast('聖霊花(SR)が不足しています');return;}
-    if(!window.confirm('聖霊花(SR) ×'+def.cost+' を消費して\n「'+def.name+'」に交換しますか？'))return;
+    const ownedSr=Math.floor(Number(state.items.flower_sr||0));
+    const qty=def.characterId?1:Math.max(1,Math.min(Math.floor(ownedSr/def.cost),Math.floor(Number(quantity)||1)));
+    if(ownedSr<def.cost*qty){toast('聖霊花(SR)が不足しています');return;}
+    // build2215: 数量ダイアログで確認済みなら確認を出さない（限定衣装は従来どおり確認）
+    if(!confirmed && !window.confirm('聖霊花(SR) ×'+def.cost+' を消費して\n「'+def.name+'」に交換しますか？'))return;
     state.exchanging=true;renderFlowerSRExchange();
     try{
-      const client=window.zsSupabase;
-      if(!client||typeof client.rpc!=='function')throw new Error('サーバーへ接続できません');
-      const res=await client.rpc('exchange_spirit_flower_sr',{p_exchange_id:exchangeId});
-      if(res&&res.error)throw res.error;
-      let data=res&&res.data; if(typeof data==='string')data=JSON.parse(data);
-      if(!data||data.ok===false)throw new Error((data&&data.message)||'交換に失敗しました');
+      const data=await callExchangeRpc('exchange_spirit_flower_sr',exchangeId,qty,(i,n)=>{
+        const b=document.querySelector('[data-flower-sr-exchange-id="'+exchangeId+'"]'); if(b) b.textContent='交換中 '+(i+1)+'/'+n;
+      });
+      if(data.partialError) toast('途中で止まりました（'+fmt(data.exchanged)+'回まで交換済み）');
       if(data.skin && window.CharacterSkins){window.CharacterSkins.notifySkinAcquired(data.skin.character_id,data.skin.skin_id);try{await window.CharacterSkins.reloadMySkins()}catch(_){}}
       await fetchSnapshot();
       if(typeof window.loadInventoryFromSupabase==='function'){
@@ -876,7 +1050,7 @@
       }
       render();renderFlowerSRExchange();
       try{window.dispatchEvent(new CustomEvent('sasaphia:growth-resources-changed'))}catch(_){}
-      toast('交換しました：'+def.name);
+      toast('交換しました：'+(qty>1?gainText(def,data.exchanged||qty):def.name));
     }catch(err){console.error('[ItemManagement] SR exchange failed',err);toast(err&&err.message||'交換に失敗しました');}
     finally{state.exchanging=false;renderFlowerSRExchange();}
   }
@@ -944,7 +1118,7 @@
 
   function bind(){
     const srList=document.getElementById('spirit-flower-sr-exchange-list');
-    if(srList)srList.addEventListener('click',e=>{const preview=e.target.closest('[data-sr-skin-preview]');if(preview){openSkinPreview(Number(preview.dataset.srSkinPreview));return;}const btn=e.target.closest('[data-flower-sr-exchange-id]');if(btn&&!btn.disabled)exchangeFlowerSR(btn.dataset.flowerSrExchangeId);});
+    if(srList)srList.addEventListener('click',e=>{const preview=e.target.closest('[data-sr-skin-preview]');if(preview){openSkinPreview(Number(preview.dataset.srSkinPreview));return;}const btn=e.target.closest('[data-flower-sr-exchange-id]');if(btn&&!btn.disabled){const d=exchangeDef('sr',btn.dataset.flowerSrExchangeId);if(d&&!d.characterId)openExchangeQty('sr',d.id);else exchangeFlowerSR(btn.dataset.flowerSrExchangeId);}});
     document.querySelectorAll('[data-flower-sr-exchange-close]').forEach(el=>el.addEventListener('click',closeFlowerSRExchange));
     document.querySelectorAll('#screen-item .item-category-tab').forEach(btn=>{
       btn.addEventListener('click',()=>{
@@ -1004,7 +1178,12 @@
         const preview=e.target.closest('[data-skin-preview]');
         if(preview){ openSkinPreview(Number(preview.dataset.skinPreview)); return; }
         const btn=e.target.closest('[data-flower-exchange-id]');
-        if(btn && !btn.disabled) exchangeFlowerR(btn.dataset.flowerExchangeId);
+        if(btn && !btn.disabled){
+          // build2215: 限定衣装以外は数量を選んでから交換
+          const d=exchangeDef('r',btn.dataset.flowerExchangeId);
+          if(d && !d.characterId) openExchangeQty('r',d.id);
+          else exchangeFlowerR(btn.dataset.flowerExchangeId);
+        }
       });
       exchangeList.addEventListener('keydown',e=>{
         if(e.key!=='Enter' && e.key!==' ') return;
@@ -1025,18 +1204,16 @@
     const qty=document.getElementById('item-sell-qty');
     const confirm=document.getElementById('item-sell-confirm');
 
-    if(minus) minus.addEventListener('click',()=>{state.sellQty--;updateSellUI();});
-    if(plus) plus.addEventListener('click',()=>{state.sellQty++;updateSellUI();});
+    if(minus) minus.addEventListener('click',()=>{state.sellQty=Math.max(1,(Number(state.sellQty)||1)-1);updateSellUI();});
+    if(plus) plus.addEventListener('click',()=>{state.sellQty=(Number(state.sellQty)||0)+1;updateSellUI();});
     if(max) max.addEventListener('click',()=>{
       if(state.sellItemId) state.sellQty=getSellMeta(state.sellItemId).owned;
       updateSellUI();
     });
-    if(qty){
-      qty.addEventListener('input',()=>{
-        state.sellQty=Math.floor(Number(qty.value)||1);
-        updateSellUI();
-      });
-    }
+    // build2215: 自由入力（入力中は空欄も可、最大値超えはその場で最大値に置き換え）
+    bindQtyInput(qty,()=>state.sellItemId?getSellMeta(state.sellItemId).owned:1,(n,typing)=>{
+      state.sellQty=n; updateSellUI(typing);
+    });
     if(confirm) confirm.addEventListener('click',sell);
 
     window.addEventListener('sasaphia:growth-resources-changed',()=>{

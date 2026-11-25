@@ -1205,3 +1205,8 @@ html body:not(.ui-immersive) #screen-item.screen.active{
 #screen-item .item-skin-status{color:#7a6849;font-size:11px}
 #screen-item .item-skin-status.is-wearing{color:#8a5a12;font-weight:700}
 #screen-item .item-skin-status.is-locked{color:#8b4a4a}
+
+/* build2215: 数量の自由入力。iPhoneで入力欄をタップした時に画面が拡大されないよう16px */
+.item-sell-stepper input{font-size:16px!important;font-variant-numeric:tabular-nums;-webkit-user-select:text;user-select:text}
+.item-exchange-qty-modal .item-sell-summary strong b{font-variant-numeric:tabular-nums}
+.item-sell-stepper input{min-width:0!important;width:100%!important;box-sizing:border-box}
