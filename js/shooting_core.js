@@ -33463,6 +33463,87 @@
         #party-score-breakdown .psb-row.total b{font-size:15px;color:#574025}
         #party-score-breakdown .psb-sub{font-size:9px;color:#9b8870;padding-top:4px}
         @media(max-height:740px){#shooting-result.is-party-event-result .shooting-result-card{padding-top:12px;padding-bottom:12px}#party-score-breakdown .psb-row{padding:3px 0}}
+        /* build2201: スコア内訳と報酬を広げる（全端末）
+           ・内訳は2列（合計は全幅）、報酬は1行を低く（46→36px）、RETRY／戻るは横並び（RETRYを広め）
+           ・空いた高さは内訳と報酬で分け合う */
+        html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card > #party-score-breakdown{max-height:none !important;margin:0 !important}
+        html body #shooting-event-root #shooting-result.is-party-event-result #shooting-result-rewards .shooting-result-reward-list{max-height:none !important;gap:4px !important}
+        html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-reward-item{min-height:36px !important;grid-template-columns:32px minmax(0,1fr) auto !important;padding:2px 12px 2px 6px !important;gap:8px !important}
+        html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-reward-icon{width:30px !important;height:30px !important;margin:0 !important}
+        html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-reward-icon img{width:28px !important;height:28px !important}
+        html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-reward-copy b{font-size:13.5px !important}
+        html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-reward-item > strong{font-size:15.5px !important}
+        html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-first-clear-bar{min-height:34px !important;padding-top:2px !important;padding-bottom:2px !important}
+        html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-first-clear-main img{width:24px !important;height:24px !important}
+        html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card > .shooting-result-actions{display:grid !important;grid-template-columns:1.5fr 1fr;gap:8px !important}
+        html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-actions button,
+        html body #shooting-event-root #shooting-result.is-party-event-result #shooting-result-retry{height:46px !important;margin:0 !important;width:100% !important;min-width:0 !important}
+        #shooting-result.is-party-event-result #party-score-breakdown{display:grid;grid-template-columns:1fr 1fr;column-gap:14px;align-content:start}
+        #shooting-result.is-party-event-result #party-score-breakdown > .psb-heading,
+        #shooting-result.is-party-event-result #party-score-breakdown > .psb-row.total,
+        #shooting-result.is-party-event-result #party-score-breakdown > .psb-sub{grid-column:1 / -1}
+        #shooting-result.is-party-event-result #party-score-breakdown .psb-row{padding:3px 0;font-size:10.5px}
+        #shooting-result.is-party-event-result #party-score-breakdown .psb-row b{font-size:11.5px}
+        #shooting-result.is-party-event-result #party-score-breakdown .psb-row.total{margin-top:2px;padding-top:5px}
+        #shooting-result.is-party-event-result #party-score-breakdown .psb-sub{padding-top:2px}
+
+        /* 背の中くらいの端末（741〜900px：15 Proなど）はRANKの紋章を一回り小さく */
+        @media (min-height:741px) and (max-height:900px){
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card > .shooting-result-rank-wrap{zoom:.78;margin:2px auto 4px !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card > #shooting-result-title{margin-bottom:0 !important}
+        }
+
+        /* build2201: 画面の低い端末（高さ740px以下・SEなど）は上半分を1帯にまとめる。
+           RANK（小さく）＋SCORE／MAX COMBOを横一列、被弾・生存・タイムは3つの小札（顔アイコンは省略）、
+           SPECIAL EVENTとステージ名は省略。内訳と報酬は中身が少ない方が縮み、多い方が残りを使う。 */
+        @media (max-height:740px){
+          html body #shooting-event-root #shooting-result.is-party-event-result{padding:8px 10px !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card{display:grid !important;gap:6px 10px !important;padding:10px 12px !important;
+            grid-template-columns:84px minmax(0,1fr) !important;
+            grid-template-rows:auto auto auto minmax(0,max-content) minmax(0,max-content) 1fr auto !important;
+            grid-template-areas:"title title" "rank stats" "meta meta" "bd bd" "rw rw" "gap gap" "act act" !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card > #shooting-result-kicker,
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card > #shooting-result-stage-label{display:none !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card > #shooting-result-title{grid-area:title;font-size:19px !important;line-height:1 !important;margin:0 !important;padding:0 !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card > .shooting-result-rank-wrap{grid-area:rank;align-self:center;justify-self:center;margin:0 !important;zoom:.7}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card > .shooting-result-stats{grid-area:stats;align-self:center;margin:0 !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-stats > div{padding-top:6px !important;padding-bottom:6px !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-stats strong{font-size:24px !important;margin-top:2px !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card > .shooting-result-breakdown{grid-area:meta;margin:0 !important;display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;padding:0 8px !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-breakdown .shooting-result-member-list,
+          html body #shooting-event-root #shooting-result.is-party-event-result #shooting-result-survivor-details,
+          html body #shooting-event-root #shooting-result.is-party-event-result #shooting-result-hit-details,
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-breakdown .shooting-result-detail-row[style*="none"]{display:none !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-breakdown .shooting-result-detail-row:not([style*="none"]){display:flex !important;flex-direction:column !important;align-items:center !important;justify-content:center !important;gap:2px !important;min-height:0 !important;padding:8px 2px 6px !important;border:0 !important;background:none !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-breakdown .shooting-result-detail-row + .shooting-result-detail-row{border-left:1px solid rgba(157,127,79,.25) !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-breakdown .shooting-result-detail-row::before,
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-breakdown .shooting-result-detail-row::after,
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-breakdown .shooting-result-detail-row strong::before{display:none !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-breakdown .shooting-result-detail-label{font-size:10px !important;letter-spacing:.04em !important;margin:0 !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-breakdown .shooting-result-detail-row strong{font-size:16px !important;line-height:1.1 !important;margin:0 !important;padding:0 !important;border:0 !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card > #party-score-breakdown{grid-area:bd;align-self:stretch !important;min-height:72px !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card > #shooting-result-rewards{grid-area:rw;align-self:stretch !important;min-height:84px !important;max-height:none !important;margin:0 !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card > #shooting-result-rewards:not([style*="none"]){display:flex !important;flex-direction:column !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result #shooting-result-rewards .shooting-result-reward-head{margin:0 0 4px !important;padding:0 !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result #shooting-result-rewards .shooting-result-reward-list{flex:1 1 auto !important;min-height:0 !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card > .shooting-result-actions{grid-area:act;margin:0 !important;padding:0 !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-actions button,
+          html body #shooting-event-root #shooting-result.is-party-event-result #shooting-result-retry{height:42px !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-reward-item{min-height:34px !important}
+          #shooting-result.is-party-event-result #party-score-breakdown{padding:7px 10px 6px}
+          #shooting-result.is-party-event-result #party-score-breakdown > .psb-heading{top:-7px;margin:-7px -10px 0;padding:7px 10px 5px}
+          #shooting-result.is-party-event-result #party-score-breakdown .psb-row{padding:2px 0}
+          #shooting-result.is-party-event-result #party-score-breakdown .psb-sub{display:none}
+        }
+        @media (max-height:600px){
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card{grid-template-columns:70px minmax(0,1fr) !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card > .shooting-result-rank-wrap{zoom:.58}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-stats strong{font-size:21px !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card > #party-score-breakdown{min-height:60px !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-card > #shooting-result-rewards{min-height:72px !important}
+          html body #shooting-event-root #shooting-result.is-party-event-result .shooting-result-actions button,
+          html body #shooting-event-root #shooting-result.is-party-event-result #shooting-result-retry{height:38px !important}
+        }
       `;
       document.head.appendChild(st);
     }
