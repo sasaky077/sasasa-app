@@ -75,3 +75,6 @@
 :is(#ztb1,html):is(#ztb2,html):is(#ztb3,html) body #global-user-frame #hud-title .zt-title-badge.zt-b{
   padding:.12em .95em .12em 1.75em!important;height:auto!important;min-height:0!important;line-height:1.35!important}
 :is(#ztb1,html):is(#ztb2,html):is(#ztb3,html) body #global-user-frame #hud-title .zt-title-badge.zt-b > .zt-gem{left:.72em;width:.55em;height:.55em;margin-top:-.275em}
+
+/* build2230: ホーム上部の称号が下寄り（EXPに近すぎ）だったので、名前とEXPの中間へ4px持ち上げる（レイアウト高さは変えない） */
+:is(#ztb1,html):is(#ztb2,html):is(#ztb3,html) body #global-user-frame .hud-info #hud-title{position:relative!important;top:-4px!important}
