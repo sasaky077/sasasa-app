@@ -889,3 +889,142 @@ html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal3 .drt-goal
   html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal3 .drt-rank-total{margin-top:4px!important;padding-top:4px!important}
   html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal3 .drt-goal-next{margin-top:2px!important;font-size:12px!important}
 }
+
+/* build2209: TEAM GOAL 表示崩れの修正
+   ・S到達の見出しを1行に（折り返さない）
+   ・数値（+30,000 / 30,000 など）がはみ出さないよう、段の小見出しは縮めて省略
+   ・幅の狭い端末（〜400px）は OVER KILL の小見出し「討伐後の追加ダメージ」を省く */
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal3 .drt-goal-main b.is-done{white-space:nowrap!important;font-size:clamp(18px,5.4vw,22px)!important;letter-spacing:.14em!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal3 .g2-name{min-width:0!important;flex:1 1 auto!important;overflow:hidden!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal3 .g2-name small{overflow:hidden!important;text-overflow:ellipsis!important;min-width:0!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal3 .g2-val{flex:none!important}
+@media (max-width:400px){
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal3 .g2-over .g2-name small{display:none!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal3 .g2-val b{font-size:15px!important}
+}
+
+
+/* =========================================================
+   build2210: TEAM GOAL（モック準拠）＋ボス名の白い霞＋タブの日本語表記
+   ========================================================= */
+/* タブ：01 | 敵情報 ／ 02 | レイド情報 */
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-swipe-tab span{font-family:"Noto Serif JP","Shippori Mincho B1",serif!important;font-weight:700!important;letter-spacing:.16em!important;white-space:nowrap!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-swipe-tab .drt-tab-sub{display:none!important}
+/* ボス名・キャッチを背景にのまれないよう白い霞 */
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-enemy-page .daily-raid-hero-copy{isolation:isolate}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-enemy-page .daily-raid-hero-copy::before{content:""!important;position:absolute!important;z-index:-1!important;left:-18px;right:-34px;top:-10px;bottom:-12px;
+  background:radial-gradient(ellipse 62% 70% at 38% 52%,rgba(255,255,255,.86),rgba(255,255,255,.62) 48%,rgba(255,255,255,0) 100%)!important;
+  filter:blur(4px);pointer-events:none!important;display:block!important;opacity:1!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-enemy-page .daily-raid-hero-copy strong,html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-enemy-page .daily-raid-hero-copy span{text-shadow:0 0 8px rgba(255,255,255,.95),0 0 2px rgba(255,255,255,.9)!important}
+
+/* カード本体 */
+html body #daily-raid-root#daily-raid-root .daily-raid-hpbox.has-goal2 .drt-hp-card{display:none!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4.drt-goal-card{padding:10px 14px 9px!important;text-align:center}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 :is(b,span,small,em,i,u,s){text-shadow:none!important}
+/* 現在ランクの帯（紺のプレート＋金の縁、左右に月桂樹） */
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-ribbon{display:flex;align-items:center;justify-content:center;gap:4px;margin:0 auto}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-laurel-wrap{display:block;width:20px;height:34px;color:#c19a4c}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-laurel-wrap.is-r{transform:scaleX(-1)}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-laurel{display:block;width:100%;height:100%}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-plate{position:relative;display:flex;align-items:center;justify-content:center;gap:12px;min-width:200px;height:34px;padding:0 30px;
+  clip-path:polygon(14px 0,calc(100% - 14px) 0,100% 50%,calc(100% - 14px) 100%,14px 100%,0 50%);
+  background:linear-gradient(180deg,#e9cf8a,#b98a35)}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-plate::before{content:"";position:absolute;inset:2px;clip-path:inherit;
+  clip-path:polygon(13px 0,calc(100% - 13px) 0,100% 50%,calc(100% - 13px) 100%,13px 100%,0 50%);
+  background:linear-gradient(180deg,var(--rt-mid,#5256b8),var(--rt-deep,#2a2a78) 70%)}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-plate span{position:relative;font:700 16px/1 "Noto Serif JP",serif!important;letter-spacing:.2em;color:#fff!important;-webkit-text-fill-color:#fff!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-plate b{position:relative;font:700 30px/1 "Cinzel",serif!important;color:#e9c46a!important;-webkit-text-fill-color:#e9c46a!important;
+  text-shadow:0 1px 0 #7a5418,0 0 10px rgba(233,196,106,.55)!important;margin-top:2px}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4.is-norank .g4-plate b{color:#cfd3ef!important;-webkit-text-fill-color:#cfd3ef!important;font-size:22px!important}
+/* 次のランクまで あと（淡いプレート＋両端の菱形） */
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-next{position:relative;display:flex;align-items:baseline;justify-content:center;gap:8px;margin:7px 4px 0;padding:5px 30px 4px;
+  background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(246,240,226,.92));
+  border-top:1px solid rgba(201,166,94,.55);border-bottom:1px solid rgba(201,166,94,.55);
+  clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 50%,calc(100% - 12px) 100%,12px 100%,0 50%)}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-next::before,html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-next::after{content:"";position:absolute;top:50%;width:6px;height:6px;margin-top:-3px;transform:rotate(45deg);border:1px solid #c9a65e;background:#fff}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-next::before{left:13px}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-next::after{right:13px}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-next .g4-next-rank{font:italic 700 30px/1 "Cinzel",serif!important;color:#c08a2c!important;-webkit-text-fill-color:#c08a2c!important;text-shadow:0 1px 0 #fff3d0!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-next > *{white-space:nowrap!important;flex:none}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-next span{font:700 14px/1 "Noto Serif JP",serif!important;letter-spacing:.1em;color:#2b2118!important;-webkit-text-fill-color:#2b2118!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-next .g4-next-num{font:italic 700 32px/1 "Cinzel",serif!important;letter-spacing:.01em;color:#b8862e!important;-webkit-text-fill-color:#b8862e!important;font-variant-numeric:tabular-nums}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-next small{font:600 15px/1 "Cinzel",serif!important;color:#2b2118!important;-webkit-text-fill-color:#2b2118!important}
+/* 現在 ◯ / S pt */
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-now{display:flex;align-items:baseline;justify-content:center;gap:8px;margin-top:6px;line-height:1}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-now span{font:600 13px/1 "Noto Serif JP","Cinzel",serif!important;color:#3a2c1e!important;-webkit-text-fill-color:#3a2c1e!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-now b{font:700 22px/1 "Cinzel",serif!important;color:var(--rt-deep,#2a2a78)!important;-webkit-text-fill-color:var(--rt-deep,#2a2a78)!important;font-variant-numeric:tabular-nums}
+/* 目盛りゲージ */
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-scale{position:relative;margin:26px 12px 0}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-bar{position:relative;height:12px;border-radius:7px;border:1px solid #c9a65e;background:linear-gradient(180deg,#f4f1ea,#fff);box-shadow:inset 0 1px 2px rgba(60,40,20,.18)}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-bar > i,html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-bar > s{position:absolute;top:1px;bottom:1px;left:0;display:block;border-radius:6px;transition:left .6s ease,width .6s ease}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-bar > i{background:linear-gradient(180deg,rgba(255,255,255,.35) 0 40%,transparent 40%),linear-gradient(90deg,var(--rt-deep,#2a2a78),var(--rt-mid,#5256b8))}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-bar > s{border-radius:0 6px 6px 0;background:linear-gradient(90deg,var(--rt-mid,#5256b8),var(--rt-light,#a9b1ff));opacity:.45}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-bar > s[hidden]{display:none!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-bar > u{position:absolute;top:50%;z-index:1;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;transform:rotate(45deg);background:#fff;border:1px solid #b9a27a;text-decoration:none}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-bar > u.is-done{background:#e9c46a;border-color:#8a6420}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-pin{position:absolute;top:50%;z-index:3;width:0;height:0}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-pin[hidden]{display:none!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-pin::before{content:"";position:absolute;left:-6px;top:-6px;width:10px;height:10px;transform:rotate(45deg);
+  background:linear-gradient(135deg,#fff3c4,#e2b24c);border:1px solid #8a6420;box-shadow:0 0 6px rgba(233,196,106,.9)}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-pin em{position:absolute;left:0;bottom:9px;transform:translateX(-50%);white-space:nowrap;padding:3px 8px 2px;font:700 10px/1 "Noto Serif JP",serif!important;font-style:normal!important;letter-spacing:.12em;
+  color:#fff!important;-webkit-text-fill-color:#fff!important;background:linear-gradient(180deg,var(--rt-mid,#5256b8),var(--rt-deep,#2a2a78));border:1px solid #c9a65e;border-radius:2px}
+/* メダルと点数 */
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-marks{position:relative;height:42px;margin-top:4px}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-mark{position:absolute;top:0;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:1px;white-space:nowrap}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-mark img{width:26px;height:26px;object-fit:contain;filter:grayscale(1) brightness(1.05) contrast(.9);opacity:.55}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-mark.is-done img{filter:drop-shadow(0 1px 2px rgba(40,25,10,.3));opacity:1}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-mark b{font:600 12px/1 "Cinzel",serif!important;color:#5a4632!important;-webkit-text-fill-color:#5a4632!important;font-variant-numeric:tabular-nums}
+/* 各ランクの状態（斜めに区切った帯） */
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-states{display:grid;margin:3px -6px 0;height:18px}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-state{display:flex;align-items:center;justify-content:center;gap:4px;font:700 10.5px/1 "Noto Serif JP",serif!important;letter-spacing:.1em;white-space:nowrap;
+  clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%)}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-state:first-child{clip-path:polygon(0 0,100% 0,calc(100% - 8px) 100%,0 100%);border-radius:9px 0 0 9px}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-state:last-child{clip-path:polygon(8px 0,100% 0,100% 100%,0 100%);border-radius:0 9px 9px 0}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-state.is-done{background:linear-gradient(180deg,rgba(220,222,240,.9),rgba(200,204,232,.9));color:#3a3f7a!important;-webkit-text-fill-color:#3a3f7a!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-state.is-done i{font-style:normal;font-weight:700}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-state.is-current{background:linear-gradient(180deg,#fbeab6,#e9c977);color:#4a3210!important;-webkit-text-fill-color:#4a3210!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-state.is-target{background:linear-gradient(180deg,rgba(236,232,224,.95),rgba(222,216,204,.95));color:#4a3d2c!important;-webkit-text-fill-color:#4a3d2c!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-state.is-locked{background:rgba(232,228,220,.7);color:#9a8b74!important;-webkit-text-fill-color:#9a8b74!important}
+/* チーム合計・反映待ち */
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-total{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:8px;line-height:1}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-total-main{display:flex;align-items:baseline;gap:7px}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-total-main small{font:600 13px/1 "Noto Serif JP","Cinzel",serif!important;color:#3a2c1e!important;-webkit-text-fill-color:#3a2c1e!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-total-main b{font:700 21px/1 "Cinzel",serif!important;color:var(--rt-deep,#2a2a78)!important;-webkit-text-fill-color:var(--rt-deep,#2a2a78)!important;font-variant-numeric:tabular-nums}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-pending{display:flex;align-items:baseline;gap:6px;padding:5px 12px 4px;border-radius:999px;border:1px solid rgba(201,166,94,.55);background:rgba(240,236,228,.85);
+  box-shadow:-12px 0 0 -11px rgba(154,125,74,.4)}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-pending[hidden]{display:none!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-pending small{font:600 11px/1 "Noto Serif JP",serif!important;letter-spacing:.06em;color:#6a5640!important;-webkit-text-fill-color:#6a5640!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-pending b{font:600 12.5px/1 "Cinzel",serif!important;color:#4a3d2c!important;-webkit-text-fill-color:#4a3d2c!important;font-variant-numeric:tabular-nums}
+/* 画面の低い端末（SEなど） */
+@media (max-height:700px){
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4.drt-goal-card{padding:6px 10px 6px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-plate{height:30px;min-width:180px}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-plate span{font-size:14px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-plate b{font-size:26px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-laurel-wrap{height:28px;width:17px}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-next{margin-top:4px;padding:2px 26px 1px}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-next .g4-next-rank{font-size:26px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-next .g4-next-num{font-size:27px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-next span{font-size:13px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-now{margin-top:3px}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-now b{font-size:19px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-scale{margin-top:22px}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-pin em{font-size:9px!important;padding:2px 6px 1px}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-bar{height:10px}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-marks{height:33px;margin-top:2px}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-mark img{width:20px;height:20px}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-mark b{font-size:11px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-states{height:16px}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-total{margin-top:5px}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-total-main b{font-size:18px!important}
+  /* SE：ボタンを少し低くしてカードの分を確保 */
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby .daily-raid-actions.daily-raid-actions :is(#daily-raid-start,#daily-raid-finalize-best),
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby .daily-raid-actions.daily-raid-actions.can-finalize-early :is(#daily-raid-start,#daily-raid-finalize-best){min-height:46px!important;height:46px!important;max-height:46px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby .daily-raid-enemy-page > .daily-raid-hero{min-height:36px!important}
+  /* ボタン行を10px低くした分、敵情報の領域を広げる（旧74px） */
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby .daily-raid-swipe-shell{padding-bottom:64px!important}
+}
+@media (max-width:360px){
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-next .g4-next-num{font-size:24px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-plate{min-width:160px;padding:0 22px}
+}

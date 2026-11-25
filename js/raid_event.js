@@ -1483,10 +1483,10 @@
           <div class="daily-raid-swipe-shell">
             <nav class="daily-raid-swipe-tabs raid-surface" aria-label="レイド情報切替">
               <button type="button" class="daily-raid-swipe-tab raid-surface is-active" data-raid-page="0" aria-selected="true">
-                <small>01</small><span>ENEMY INFO<em class="drt-tab-sub">エネミー情報</em></span>
+                <small>01</small><span>敵情報</span>
               </button>
               <button type="button" class="daily-raid-swipe-tab raid-surface" data-raid-page="1" aria-selected="false">
-                <small>02</small><span>RAID INFO<em class="drt-tab-sub">レイド情報</em></span>
+                <small>02</small><span>レイド情報</span>
               </button>
             </nav>
 
@@ -2185,9 +2185,12 @@
     return Math.max(sum,n(status&&status.total_best));
   }
   function teamRankOf(total){ return rankOfDamage(total); }
+  // build2210: TEAM GOAL（モック準拠）。現在ランクの帯／次のランクまで あと◯pt／現在 ◯ / S pt／
+  //  B・A・Sの目盛りゲージ（現在地ピン、実線＝反映済み・淡色＝反映待ち）／各ランクの状態（達成済み・現在のランク・目標ランク）／チーム合計と反映待ち
+  const G4_LAUREL='<svg class="g4-laurel" viewBox="0 0 24 40" aria-hidden="true"><path d="M18 38C8 32 4 22 6 8" fill="none" stroke="currentColor" stroke-width="1.4"/>'+
+    '<path d="M6 9c-3-2-3-5-1-7 2 2 2 5 1 7zM6 15c-4-1-5-4-4-7 3 1 4 4 4 7zM7 21c-4 0-6-3-5-6 3 0 5 3 5 6zM9 27c-4 1-6-2-6-5 3 0 5 2 6 5zM12 32c-3 2-6 0-7-3 3-1 6 0 7 3z" fill="currentColor"/></svg>';
   function ensureTeamRankCard(root){
     let card=root.querySelector('#daily-raid-teamrank');
-    // build2206: TEAM GOALとボスHPを1枚に統合（ボス討伐／OVER KILLの2段）。旧HPカードは隠す
     const box=root.querySelector('.daily-raid-hpbox');
     const anchor=root.querySelector('.daily-raid-hpbox .drt-hp-card');
     if(box) box.classList.add('has-goal2');
@@ -2197,23 +2200,19 @@
     }
     if(!anchor) return null;
     card=document.createElement('div');
-    card.className='drt-rank-card drt-goal-card drt-goal2 drt-goal3';
+    card.className='drt-rank-card drt-goal-card drt-goal4';
     card.id='daily-raid-teamrank';
-    // build2207: ランクの目印は金・銀・銅のメダル画像。2段とも左→右に進み、右端の到達点にメダル
-    const medal=r=>`<img class="g2-medal" data-rank="${r}" src="images/rank_medal_${r.toLowerCase()}.webp" alt="${r}" decoding="async" data-keep-src>`;
+    const medal=r=>`<img src="images/rank_medal_${r.toLowerCase()}.webp" alt="${r}" decoding="async" data-keep-src>`;
     card.innerHTML=`
-      <div class="drt-rank-head"><span class="drt-rank-title">TEAM GOAL</span><span class="g3-now" id="daily-raid-teamrank-now"></span></div>
-      <div class="drt-goal-main" id="daily-raid-goal-main"></div>
-      <div class="g2-row g2-boss" data-g2="boss">
-        <div class="g2-top"><span class="g2-name"><b>DEFEAT</b><small>ボス討伐</small></span><span class="g2-val" data-g2-val></span></div>
-        <div class="g2-track"><div class="g2-bar"><i data-g2-fill></i><s data-g2-pend></s></div>${medal('B')}</div>
+      <div class="g4-ribbon"><span class="g4-laurel-wrap is-l">${G4_LAUREL}</span><div class="g4-plate"><span>現在ランク</span><b data-g4-rank>—</b></div><span class="g4-laurel-wrap is-r">${G4_LAUREL}</span></div>
+      <div class="g4-next" data-g4-next></div>
+      <div class="g4-now" data-g4-now></div>
+      <div class="g4-scale">
+        <div class="g4-bar"><i data-g4-done></i><s data-g4-pend></s>${['B','A','S'].map(r=>`<u data-g4-tick="${r}"></u>`).join('')}<span class="g4-pin" data-g4-pin><em>現在地</em></span></div>
+        <div class="g4-marks">${['B','A','S'].map(r=>`<div class="g4-mark" data-g4-mark="${r}">${medal(r)}<b></b></div>`).join('')}</div>
+        <div class="g4-states">${['B','A','S'].map(r=>`<span data-g4-state="${r}"></span>`).join('')}</div>
       </div>
-      <div class="g2-row g2-over" data-g2="over">
-        <div class="g2-top"><span class="g2-name"><b>OVER KILL</b><small>討伐後の追加ダメージ</small></span><span class="g2-val" data-g2-val></span></div>
-        <div class="g2-track"><div class="g2-bar"><i data-g2-fill></i><s data-g2-pend></s><span class="g2-tick" data-g2-tick></span>${medal('A')}</div>${medal('S')}</div>
-      </div>
-      <div class="drt-rank-total" id="daily-raid-teamrank-total"></div>
-      <div class="drt-goal-next" id="daily-raid-goal-next"></div>`;
+      <div class="g4-total"><span class="g4-total-main"><small>チーム合計</small><b data-g4-total></b><small>pt</small></span><span class="g4-pending" data-g4-pending></span></div>`;
     anchor.insertAdjacentElement('beforebegin',card);
     return card;
   }
@@ -2242,58 +2241,56 @@
   function renderTeamRank(root,status){
     const card=ensureTeamRankCard(root);
     if(!card) return;
-    // build2206: 2段ゲージ。ボス討伐＝B（HPが0へ減っていく）／OVER KILL＝討伐後の追加分（中間にA、右端にS）。
-    //  実線＝反映済み、斜線＝反映待ち（各メンバーの3回目終了で反映）。数値・ランク判定は従来どおりチーム合計で決める。
     const total=getTeamTotalDamage(status);
     const rank=teamRankOf(total);
     const cuts=RAID_RANK_DAMAGE;
     const confirmed=!!(status&&status.status==='cleared');
     const pending=confirmed?0:Math.min(total,getPendingRaidDamage(status));
-    const done=Math.max(0,total-pending); // 反映済み
-    const clamp=v=>Math.max(0,Math.min(1,v));
-    const B=Math.max(1,cuts.B), over=Math.max(1,cuts.S-cuts.B), aAt=clamp((cuts.A-cuts.B)/over);
-    const setBar=(row,solidFrom,solidTo,pendFrom,pendTo)=>{
-      const fill=row.querySelector('[data-g2-fill]'), pend=row.querySelector('[data-g2-pend]');
-      fill.style.left=(solidFrom*100)+'%'; fill.style.width=(Math.max(0,solidTo-solidFrom)*100)+'%';
-      pend.style.left=(pendFrom*100)+'%'; pend.style.width=(Math.max(0,pendTo-pendFrom)*100)+'%';
-      pend.hidden=pendTo-pendFrom<=0.0005;
+    const done=Math.max(0,total-pending);
+    const steps=['B','A','S'];
+    // 目盛りは B・A・S を見やすい間隔で置く（0〜Bは左端の短い区間、B〜A・A〜Sは同じ幅）
+    const P={B:.15,A:.55,S:.95};
+    const pos=v=>{
+      v=Math.max(0,Number(v)||0);
+      if(v<=cuts.B) return P.B*v/Math.max(1,cuts.B);
+      if(v<=cuts.A) return P.B+(P.A-P.B)*(v-cuts.B)/Math.max(1,cuts.A-cuts.B);
+      if(v<=cuts.S) return P.A+(P.S-P.A)*(v-cuts.A)/Math.max(1,cuts.S-cuts.A);
+      return Math.min(1,P.S+(1-P.S)*(v-cuts.S)/Math.max(1,(cuts.S-cuts.A)/2));
     };
-    // ボス討伐：残りHP（反映待ち込みの予測）を実線、反映待ちで削れる分を斜線
-    const boss=card.querySelector('[data-g2="boss"]');
-    const remainPred=Math.max(0,B-total), remainDone=Math.max(0,B-done);
-    const killed=total>=B;
-    // 削れた分が左から進む（残りHPは右側に残る）。右端のBメダルに届いたら討伐
-    setBar(boss,1-remainPred/B,1,1-remainDone/B,1-remainPred/B);
-    boss.classList.toggle('is-done',killed);
-    // 反映済みだけで0になったらDEFEATED、反映待ち込みで0なら「討伐圏内」
-    boss.classList.toggle('is-pending-kill',killed&&done<B);
-    boss.querySelector('[data-g2-val]').innerHTML=killed
-      ?(done>=B?'<b class="g2-stamp">DEFEATED</b>':'<b class="g2-stamp is-pending">討伐圏内</b>')
-      :`<small>HP</small><b>${fmt(remainPred)}</b><small>/ ${fmt(B)}</small>`;
-    // OVER KILL：討伐後の追加ダメージを左から積む
-    const overRow=card.querySelector('[data-g2="over"]');
-    const ovTotal=Math.max(0,total-B), ovDone=Math.max(0,done-B);
-    setBar(overRow,0,clamp(ovDone/over),clamp(ovDone/over),clamp(ovTotal/over));
-    overRow.classList.toggle('is-locked',!killed);
-    overRow.classList.toggle('is-full',total>=cuts.S);
-    overRow.querySelector('[data-g2-val]').innerHTML=`<b>+${fmt(Math.min(ovTotal,over))}</b><small>/ ${fmt(over)}</small>`;
-    const markA=overRow.querySelector('.g2-medal[data-rank="A"]'), tick=overRow.querySelector('[data-g2-tick]');
-    if(markA) markA.style.left=(aAt*100)+'%';
-    if(tick) tick.style.left=(aAt*100)+'%';
-    card.querySelectorAll('.g2-medal').forEach(m=>m.classList.toggle('is-done',total>=cuts[m.dataset.rank]));
-    // 見出し・次の目標
-    const nowEl=card.querySelector('#daily-raid-teamrank-now');
-    nowEl.innerHTML=rank
-      ?`<small>RANK</small><img src="images/rank_medal_${rank.toLowerCase()}.webp" alt="${rank}" data-keep-src>`
-      :'<small>RANK</small><i class="g3-none" aria-label="未到達"></i>';
-    const main=card.querySelector('#daily-raid-goal-main');
-    if(total>=cuts.S) main.innerHTML=`<b class="is-done">RANK S ${confirmed?'ACHIEVED':'REACHED'}</b>`;
-    else main.innerHTML=`<small>S まで あと</small><b>${fmt(cuts.S-total)}</b>`; // 途中の段階は2段ゲージで見せる
-    card.classList.toggle('is-s',total>=cuts.S);
-    card.querySelector('#daily-raid-teamrank-total').innerHTML=
-      `<span>チーム合計</span> <em>${fmt(total)}</em>`+
-      (pending>0?`<small class="drt-goal-pending"><i></i>反映待ち ${fmt(pending)}</small>`:'');
-    card.querySelector('#daily-raid-goal-next').textContent=goalNextText(status);
+    const pct=v=>(v*100).toFixed(2)+'%';
+    card.querySelector('[data-g4-rank]').textContent=rank||'—';
+    card.classList.toggle('is-norank',!rank);
+    card.classList.toggle('is-s',rank==='S');
+    const target=steps.find(r=>total<cuts[r]);
+    const next=card.querySelector('[data-g4-next]');
+    next.innerHTML=target
+      ?`<b class="g4-next-rank">${target}</b><span>ランクまで　あと</span><b class="g4-next-num">${fmt(cuts[target]-total)}</b><small>pt</small>`
+      :`<b class="g4-next-rank">S</b><span>ランク${confirmed?'達成':'到達'}！</span>`;
+    card.querySelector('[data-g4-now]').innerHTML=`<span>現在</span><b>${fmt(total)}</b><span>/ ${fmt(cuts.S)} pt</span>`;
+    const pDone=pos(done), pTot=pos(total);
+    const dEl=card.querySelector('[data-g4-done]'), pEl=card.querySelector('[data-g4-pend]');
+    dEl.style.width=pct(pDone);
+    pEl.style.left=pct(pDone); pEl.style.width=pct(Math.max(0,pTot-pDone)); pEl.hidden=pTot-pDone<=0.0005;
+    const pin=card.querySelector('[data-g4-pin]');
+    pin.style.left=pct(pTot); pin.hidden=total<=0;
+    steps.forEach(r=>{
+      const x=pct(P[r]);
+      const t=card.querySelector(`[data-g4-tick="${r}"]`); t.style.left=x; t.classList.toggle('is-done',total>=cuts[r]);
+      const m=card.querySelector(`[data-g4-mark="${r}"]`); m.style.left=x; m.classList.toggle('is-done',total>=cuts[r]);
+      m.querySelector('b').textContent=fmt(cuts[r]);
+      const st=card.querySelector(`[data-g4-state="${r}"]`);
+      const reached=total>=cuts[r];
+      const kind=r===rank?'current':reached?'done':r===target?'target':'locked';
+      st.className='g4-state is-'+kind;
+      st.innerHTML=kind==='done'?'<i>✓</i>達成済み':kind==='current'?'現在のランク':kind==='target'?'目標ランク':'未到達';
+    });
+    // 状態の帯は、隣り合う目盛りの中間で区切る
+    const m1=(P.B+P.A)/2, m2=(P.A+P.S)/2;
+    card.querySelector('.g4-states').style.gridTemplateColumns=`${m1}fr ${m2-m1}fr ${1-m2}fr`;
+    card.querySelector('[data-g4-total]').textContent=fmt(total);
+    const pend=card.querySelector('[data-g4-pending]');
+    pend.hidden=!(pending>0);
+    pend.innerHTML=pending>0?`<small>反映待ち</small><b>${fmt(pending)}</b>`:'';
     card.title='全員のBESTダメージの合計（3回目終了前の分も含む）。'+rankCutsText(['：','／']);
   }
 
