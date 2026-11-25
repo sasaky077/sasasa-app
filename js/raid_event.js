@@ -322,9 +322,10 @@
           const res=await client.from('user_profiles').select('*').in('user_id',missing);
           if(res&&res.error) throw res.error;
           const found=new Map();
-          for(const profile of (res&&res.data||[])){
+          // build2213: メンバーごとのお気に入りキャラ取得を1件ずつ待たず、まとめて並行に行う
+          await Promise.all((res&&res.data||[]).map(async profile=>{
             const id=String(profile&&profile.user_id||'').trim().toLowerCase();
-            if(!id) continue;
+            if(!id) return;
             let panel='';
             try{
               if(typeof window.getFriendFavoriteCharacter==='function'){
@@ -334,7 +335,7 @@
             }catch(_){ }
             if(!panel) panel=getCharacterPanelById(profile.favorite_char_id||1);
             found.set(id,panel); memberPanelCache.set(id,panel);
-          }
+          }));
           missing.forEach(id=>{ if(!found.has(id)) memberPanelCache.set(id,getCharacterPanelById(1)); });
         }catch(err){
           console.warn('[raid] member panel load skipped',err&&err.message||err);
@@ -344,6 +345,54 @@
     }
     members.forEach(m=>{ m.panel_src=memberPanelCache.get(String(m.user_id||'').trim().toLowerCase())||''; });
     return status;
+  }
+  // build2213: 端末に控えてあるメンバー画像だけを先に当てる（通信しない）。未取得があれば true
+  function applyCachedMemberPanels(status){
+    const members=Array.isArray(status&&status.members)?status.members:[];
+    let missing=false;
+    members.forEach(m=>{
+      const id=String(m&&m.user_id||'').trim().toLowerCase();
+      if(!id) return;
+      if(memberPanelCache.has(id)) m.panel_src=memberPanelCache.get(id)||'';
+      else{ m.panel_src=''; missing=true; }
+    });
+    return missing;
+  }
+  // build2213: 表示前に、背景・ボス絵・メダルなど見えている画像の読み込みと展開を待つ（上限あり）
+  function collectRaidCriticalImages(root){
+    const urls=new Set();
+    const pushBg=el=>{
+      if(!el) return;
+      const bg=getComputedStyle(el).backgroundImage||'';
+      bg.replace(/url\(["']?([^"')]+)["']?\)/g,(_,u)=>{ if(!/^data:/.test(u)) urls.add(u); return ''; });
+    };
+    pushBg(root); pushBg(root.querySelector('.daily-raid-page')); pushBg(root.querySelector('.daily-raid-lobby'));
+    root.querySelectorAll('.daily-raid-enemy-page img, .daily-raid-hero img, .daily-raid-entry-hero img, #daily-raid-teamrank img').forEach(img=>{
+      const u=img.currentSrc||img.getAttribute('src')||''; if(u&&!/^data:/.test(u)) urls.add(u);
+    });
+    return [...urls];
+  }
+  function waitRaidImages(root,limitMs){
+    const urls=collectRaidCriticalImages(root);
+    if(!urls.length) return Promise.resolve();
+    const one=u=>new Promise(resolve=>{
+      const im=new Image(); im.decoding='async';
+      const done=()=>{ if(typeof im.decode==='function') im.decode().then(resolve,resolve); else resolve(); };
+      im.onload=done; im.onerror=resolve; im.src=u;
+    });
+    return Promise.race([Promise.all(urls.map(one)),new Promise(r=>setTimeout(r,limitMs))]);
+  }
+  function ensureRaidLoadingCover(root){
+    let cover=root.querySelector(':scope > .raid-loading-cover');
+    if(!cover){
+      cover=document.createElement('div');
+      cover.className='raid-loading-cover';
+      cover.setAttribute('aria-hidden','true');
+      // build2214: 読み込みの印は起動時と同じ紋様画像（op_loading.webp）を回す
+      cover.innerHTML='<div class="raid-loading-mark"><img src="images/op_loading.webp" alt="" decoding="async" data-keep-src><span>LOADING</span></div>';
+      root.appendChild(cover);
+    }
+    return cover;
   }
 
   function ensureEarlyFinalizeStyle(){
@@ -3004,12 +3053,22 @@
     // build2198: 初回ロビー表示中のレイアウトジャンプ防止。
     // 描画前の非表示状態でサーバー情報を反映し、CSS/font/viewport反映後に公開する。
     root.classList.add('raid-layout-pending');
+    ensureRaidLoadingCover(root); // build2213: 準備ができるまで画面全体を落ち着いた読み込み表示で覆う
     root.style.display='block'; root.setAttribute('aria-hidden','false');
     if(options&&options.immediate) root.classList.add('show'); else requestAnimationFrame(()=>root.classList.add('show'));
     try{
       const status=await fetchStatus();
       refreshResetTicketCount(status); // build1813
-      if(status&&status.raid_id){ await hydrateMemberPanels(status); render(status); }
+      if(status&&status.raid_id){
+        // build2213: まず敵情報を描く。メンバー画像（レイド情報タブ）は裏で並行取得し、揃ったら描き直す
+        const missing=applyCachedMemberPanels(status);
+        render(status);
+        if(missing){
+          hydrateMemberPanels(status).then(()=>{
+            if(root.getAttribute('aria-hidden')==='false'&&currentStatus===status) render(status);
+          }).catch(()=>{});
+        }
+      }
       else{
         // チーム未所属でもその日のボスで表示する
         const boss=cached||await fetchTodayBoss();
@@ -3034,12 +3093,15 @@
         }));
       };
       if(document.fonts&&document.fonts.ready){
-        Promise.race([document.fonts.ready.catch(()=>{}),new Promise(resolve=>setTimeout(resolve,450))])
-          .then(releaseLayout,releaseLayout);
+        // build2213: フォントに加えて、背景・ボス絵・メダルの展開も待つ（合わせて最大1.5秒）
+        Promise.race([
+          Promise.all([document.fonts.ready.catch(()=>{}),waitRaidImages(root,1500)]),
+          new Promise(resolve=>setTimeout(resolve,1500))
+        ]).then(releaseLayout,releaseLayout);
         document.fonts.ready.then(()=>{
           if(root.getAttribute('aria-hidden')==='false') scheduleSwipeIndicatorSync();
         }).catch(()=>{});
-      }else releaseLayout();
+      }else waitRaidImages(root,1500).then(releaseLayout,releaseLayout);
     }
   }
   function close(){

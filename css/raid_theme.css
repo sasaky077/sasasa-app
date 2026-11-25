@@ -1037,3 +1037,23 @@ html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-pendi
   html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-next .g4-next-num{font-size:24px!important}
   html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal4 .g4-plate{min-width:160px;padding:0 22px}
 }
+
+/* =========================================================
+   build2213: レイドを開いた直後の読み込み表示
+   背景・ボス絵・フォント・メダルが揃うまで、HUDより下を落ち着いた幕で覆い、揃ったらふわっと消す
+   ========================================================= */
+html body #daily-raid-root > .raid-loading-cover{
+  position:absolute;left:0;right:0;bottom:0;top:var(--raid-header-offset,0px);z-index:60;
+  display:flex;align-items:center;justify-content:center;pointer-events:none;
+  background:
+    radial-gradient(120% 70% at 50% 35%,rgba(255,255,255,.96),rgba(242,240,246,.98) 60%,rgba(232,229,238,1)),
+    #eeedf2;
+  opacity:0;visibility:hidden;transition:opacity .28s ease,visibility 0s linear .28s}
+html body #daily-raid-root.raid-layout-pending > .raid-loading-cover{opacity:1;visibility:visible;pointer-events:auto;transition:none}
+html body #daily-raid-root > .raid-loading-cover .raid-loading-mark{display:flex;flex-direction:column;align-items:center;gap:12px;transform:translateY(-6vh)}
+/* build2214: 起動時と同じ紋様（白い線）を、明るい幕の上で見えるよう濃い金色に染めて回す */
+html body #daily-raid-root > .raid-loading-cover .raid-loading-mark img{display:block;width:104px;height:104px;object-fit:contain;
+  filter:brightness(.4) sepia(1) saturate(2.1) hue-rotate(-6deg) contrast(1.35) drop-shadow(0 0 1px rgba(150,112,40,.55)) drop-shadow(0 0 8px rgba(201,166,94,.35));
+  animation:raidLoadSpin 2s linear infinite}
+html body #daily-raid-root > .raid-loading-cover .raid-loading-mark span{font:600 10px/1 "Cinzel",serif;letter-spacing:.42em;padding-left:.42em;color:#8a7454}
+@keyframes raidLoadSpin{to{transform:rotate(360deg)}}
