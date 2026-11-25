@@ -60,6 +60,7 @@
       desc: '並行世界の夜会で、誰よりも華麗に振る舞った者に贈られる称号。',
       how: 'パラレル・ソワレでMAX BINGO（8 LINE）達成後、スコア35,000以上でクリア',
       tone: 'noble',
+      noRank: true, // build2225: 段階のない称号。I・II などのローマ数字を出さない（無印）
       effect: Object.freeze({ kind: 'lethal_guard', base: 50, perLv: 0, maxLv: 1 })
     })
   });
@@ -101,6 +102,7 @@
   function labelOf(titleId, level){
     const t = getTitle(titleId);
     if(!t) return '';
+    if(t.noRank) return t.name; // build2225: 無印の称号
     return t.name + ' ' + roman(displayLv(titleId, level));
   }
   const EFFECT_LABEL = Object.freeze({ hp:'バトル中のキャラHP', atk:'ATK', ult:'ULT回収率', lethal_guard:'即死攻撃を無効' });
@@ -288,8 +290,12 @@
     ensureStyle();
     const lv = levelOf(level);
     const tier = getTier(titleId, lv);
-    return '<span class="zt-title-badge tone-' + esc(t.tone || 'gold') + (tier ? ' tier-' + esc(tier.key) : '') +
-      ' rarity-' + esc((t.rarity || 'N').toLowerCase()) + '" title="' + esc(t.desc) + '">' + esc(t.name) + '<span class="zt-rank">'+esc(roman(displayLv(titleId, lv)))+'</span>' + '</span>';
+    // build2224: 剣型の札（両端が尖った細長い札＋左の菱形の宝石）。札と宝石は中の要素で描く（css/title_badge.css）
+    return '<span class="zt-title-badge zt-b tone-' + esc(t.tone || 'gold') + (tier ? ' tier-' + esc(tier.key) : '') +
+      ' rarity-' + esc((t.rarity || 'N').toLowerCase()) + '" title="' + esc(t.desc) + '">' +
+      '<i class="zt-plate" aria-hidden="true"></i><i class="zt-gem" aria-hidden="true"></i>' +
+      '<span class="zt-name">' + esc(t.name) + '</span>' +
+      (t.noRank ? '' : '<span class="zt-rank">'+esc(roman(displayLv(titleId, lv)))+'</span>') + '</span>';
   }
 
   function readOwned(list){
