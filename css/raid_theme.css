@@ -911,10 +911,19 @@ html body #daily-raid-root#daily-raid-root[data-raid-theme] .drt-goal3 .g2-val{f
 html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-swipe-tab span{font-family:"Noto Serif JP","Shippori Mincho B1",serif!important;font-weight:700!important;letter-spacing:.16em!important;white-space:nowrap!important}
 html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-swipe-tab .drt-tab-sub{display:none!important}
 /* ボス名・キャッチを背景にのまれないよう白い霞 */
-html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-enemy-page .daily-raid-hero-copy{isolation:isolate}
-html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-enemy-page .daily-raid-hero-copy::before{content:""!important;position:absolute!important;z-index:-1!important;left:-18px;right:-34px;top:-10px;bottom:-12px;
-  background:radial-gradient(ellipse 62% 70% at 38% 52%,rgba(255,255,255,.86),rgba(255,255,255,.62) 48%,rgba(255,255,255,0) 100%)!important;
-  filter:blur(4px);pointer-events:none!important;display:block!important;opacity:1!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby .daily-raid-enemy-page .daily-raid-hero .daily-raid-hero-copy{isolation:isolate!important;overflow:visible!important}
+html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby .daily-raid-enemy-page .daily-raid-hero .daily-raid-hero-copy::before{content:""!important;display:block!important;position:absolute!important;z-index:-1!important;
+  left:-14px!important;right:-40px!important;top:-9px!important;bottom:-11px!important;width:auto!important;height:auto!important;
+  margin:0!important;transform:none!important;border:0!important;border-radius:0!important;opacity:1!important;pointer-events:none!important;filter:none!important;
+  /* 縁まで段階的に透明へ（切り取られても線が出ないよう、箱の端で必ず0になる） */
+  background:radial-gradient(closest-side,
+    rgba(255,255,255,.80) 0%,rgba(255,255,255,.76) 30%,rgba(255,255,255,.66) 48%,rgba(255,255,255,.50) 62%,
+    rgba(255,255,255,.32) 74%,rgba(255,255,255,.16) 85%,rgba(255,255,255,.05) 94%,rgba(255,255,255,0) 100%)!important}
+/* 霞が欄の上端で切れないよう、名前を少し下げる（SE） */
+@media (max-height:700px){
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby .daily-raid-enemy-page .daily-raid-hero .daily-raid-hero-copy{top:11px!important}
+  html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-lobby .daily-raid-enemy-page > .daily-raid-hero{min-height:48px!important}
+}
 html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-enemy-page .daily-raid-hero-copy strong,html body #daily-raid-root#daily-raid-root[data-raid-theme] .daily-raid-enemy-page .daily-raid-hero-copy span{text-shadow:0 0 8px rgba(255,255,255,.95),0 0 2px rgba(255,255,255,.9)!important}
 
 /* カード本体 */
