@@ -286,3 +286,52 @@ html body #shooting-event-root[data-shooting-stage="shooting_event_party"] .shoo
 #party-event-rule-guide .is-glass .prg-ring,#party-event-rule-guide .is-watch .prg-ring{border:1.5px solid rgba(255,226,70,.9);background:radial-gradient(ellipse,rgba(255,232,90,.4),rgba(255,232,90,0) 70%);box-shadow:none}
 #party-event-rule-guide .is-glass .prg-icon img,#party-event-rule-guide .is-watch .prg-icon img{filter:drop-shadow(0 0 6px rgba(255,226,60,.9))}
 #party-event-rule-guide .is-glass b,#party-event-rule-guide .is-watch b{color:#fff0a6}
+
+/* build2202: 追加ミッション（MAX BINGOで解放 → スコア35,000以上 → 称号「華麗なる一族」） */
+#party-event-screen .pe-section-mission{
+  background:
+    radial-gradient(120% 70% at 50% 0%,rgba(214,171,92,.16),transparent 62%),
+    linear-gradient(180deg,rgba(46,22,40,.86),rgba(20,12,24,.9));
+  box-shadow:inset 0 0 0 1px rgba(230,200,130,.6),inset 0 0 0 3px rgba(20,12,26,.6),inset 0 0 0 4px rgba(230,200,130,.24),0 0 18px rgba(214,171,92,.12);
+}
+#party-event-screen .pe-ms{position:relative;display:grid;gap:9px;margin-top:6px}
+#party-event-screen .pe-ms-k{display:block;font:600 9px/1.3 "Cinzel","Noto Serif JP",serif;letter-spacing:.22em;color:#c9a35a}
+#party-event-screen .pe-ms-cond{text-align:center;padding:9px 10px;border-radius:5px;background:rgba(255,255,255,.045);box-shadow:inset 0 0 0 1px rgba(214,178,104,.2)}
+#party-event-screen .pe-ms-cond b{display:block;margin-top:3px;font:700 15px/1.35 "Noto Serif JP",serif;letter-spacing:.06em;color:#fbecc4}
+#party-event-screen .pe-ms-reward{text-align:center;padding:10px 10px 9px;border-radius:5px;
+  background:linear-gradient(90deg,rgba(120,24,40,.42),rgba(60,30,70,.42),rgba(120,24,40,.42));
+  box-shadow:inset 0 0 0 1px rgba(255,214,140,.5)}
+#party-event-screen .pe-ms-badge{margin:6px 0 5px;display:flex;justify-content:center}
+#party-event-screen .pe-ms-badge .zt-title-badge,
+#party-event-result .per-title-badge .zt-title-badge{font-size:13px !important;padding:4px 14px 4px 12px !important;max-width:none !important;letter-spacing:.14em}
+#party-event-screen .pe-ms-badge .zt-title-badge::before,
+#party-event-result .per-title-badge .zt-title-badge::before{font-size:11px}
+#party-event-screen .pe-ms-badge .zt-rank,
+#party-event-result .per-title-badge .zt-rank{display:none}
+#party-event-screen .pe-ms-title-text{font:700 15px/1.3 "Noto Serif JP",serif;letter-spacing:.14em;color:#ffe7a8}
+#party-event-screen .pe-ms-effect{margin:0;font-size:11px;line-height:1.5;color:#f1dcc0}
+#party-event-screen .pe-ms-meter{height:5px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden;box-shadow:inset 0 0 0 1px rgba(214,178,104,.2)}
+#party-event-screen .pe-ms-meter i{display:block;height:100%;background:linear-gradient(90deg,#b8862e,#ffe39a);box-shadow:0 0 8px rgba(255,214,120,.6)}
+#party-event-screen .pe-ms-status{margin:0;display:flex;align-items:baseline;justify-content:center;gap:6px;font-size:11px;color:#d9ccb5}
+#party-event-screen .pe-ms-status b{font:700 16px/1 "Cinzel","Noto Serif JP",serif;color:#fbecc4;font-variant-numeric:tabular-nums}
+#party-event-screen .pe-ms-status small{font:600 11px/1 "Cinzel",serif;color:#c9a35a}
+#party-event-screen .pe-ms-status.is-done b{font:700 14px/1 "Noto Serif JP",serif;letter-spacing:.3em;color:#ffe39a;text-shadow:0 0 10px rgba(255,200,90,.7)}
+#party-event-screen .pe-ms-equip{justify-self:center;min-width:170px;height:34px;padding:0 18px;border:0;border-radius:5px;cursor:pointer;
+  background:linear-gradient(180deg,#f7e6b6,#c9973f);color:#3b2508;font:700 12.5px/1 "Noto Serif JP",serif;letter-spacing:.14em;
+  box-shadow:0 0 0 1px rgba(255,240,200,.6) inset,0 2px 8px rgba(0,0,0,.35)}
+/* 未解放：条件と報酬は見せたまま、全体を沈めて鍵を重ねる */
+#party-event-screen .pe-ms.is-locked .pe-ms-cond,
+#party-event-screen .pe-ms.is-locked .pe-ms-reward{filter:saturate(.35) brightness(.62)}
+#party-event-screen .pe-ms-lock{position:absolute;top:8px;right:8px;width:22px;height:22px;border-radius:50%;
+  background:rgba(14,8,18,.85);box-shadow:inset 0 0 0 1px rgba(214,178,104,.55)}
+#party-event-screen .pe-ms-lock::before{content:"";position:absolute;left:7px;top:10px;width:8px;height:6px;border-radius:1px;background:#e6cf98}
+#party-event-screen .pe-ms-lock::after{content:"";position:absolute;left:8px;top:5px;width:4px;height:5px;border:1.5px solid #e6cf98;border-bottom:0;border-radius:4px 4px 0 0}
+#party-event-screen .pe-ms.is-done .pe-ms-reward{box-shadow:inset 0 0 0 1px rgba(255,228,150,.85),0 0 16px rgba(255,200,110,.35)}
+
+/* 結果ポップアップ：称号獲得 */
+#party-event-result .per-title{margin-top:12px;padding:12px 10px 4px;border-radius:6px;
+  background:linear-gradient(90deg,rgba(120,24,40,.45),rgba(60,30,70,.45),rgba(120,24,40,.45));box-shadow:inset 0 0 0 1px rgba(255,214,140,.6)}
+#party-event-result .per-title small{display:block;font:700 10px/1 "Cinzel",serif;letter-spacing:.24em;color:#ffe39a;text-shadow:0 0 8px rgba(255,200,90,.7)}
+#party-event-result .per-title-badge{margin:10px 0 6px;display:flex;justify-content:center}
+#party-event-result .per-title > p{margin:0;font-size:11.5px;color:#f1dcc0}
+#party-event-result .per-title .per-note{margin:8px 0 6px}

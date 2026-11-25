@@ -4339,7 +4339,8 @@
 
   // build2145: 称号の効果。装備中の1つだけ・バトル開始時に固定（途中で付け替えても変わらない）。
   function readTitleBattleMultipliers() {
-    const base = { hp: 1, atk: 1, ult: 1 };
+    // build2202: lethalGuard＝即死攻撃を無効にする確率（0〜1）。称号「華麗なる一族」で0.5
+    const base = { hp: 1, atk: 1, ult: 1, lethalGuard: 0 };
     try {
       const m = window.ZeraphiaTitles && typeof window.ZeraphiaTitles.getBattleMultipliers === 'function'
         ? window.ZeraphiaTitles.getBattleMultipliers() : null;
@@ -4348,8 +4349,36 @@
         const v = Number(m[k]);
         if (Number.isFinite(v) && v > 0) base[k] = v;
       });
+      const g = Number(m.lethalGuard);
+      if (Number.isFinite(g) && g > 0) base.lethalGuard = Math.min(1, g);
     } catch (_) {}
     return base;
+  }
+  // build2202: 称号「華麗なる一族」— 即死攻撃を確率で無効にする（全バトル共通・装備はバトル開始時に固定）。
+  //  対象：即死弾（WARNING・禍眼など）、ヘルフレイム即死、超放電、神罰（即死型）、狙撃。
+  //  無効にした時はダメージ・被弾回数・コンボ切れなし。続けて判定されないよう被弾時と同じ1.15秒だけ無敵。
+  function tryTitleLethalGuard(now) {
+    if (!state || state.ended) return false;
+    const chance = Number(state.titleBattleMul && state.titleBattleMul.lethalGuard || 0);
+    if (!(chance > 0) || Math.random() >= chance) return false;
+    if (state.player) state.player.invulnUntil = Math.max(Number(state.player.invulnUntil || 0), now + 1150);
+    state.titleLethalGuarded = (state.titleLethalGuarded || 0) + 1;
+    showMemoryGuardNotice('即死を華麗に退けた', true, 'NOBLE GRACE');
+    if (!document.getElementById('title-lethal-guard-style-2202')) {
+      const st = document.createElement('style');
+      st.id = 'title-lethal-guard-style-2202';
+      st.textContent = '@keyframes titleLethalGuard{0%{filter:drop-shadow(0 0 0 rgba(255,220,140,0)) brightness(1)}25%{filter:drop-shadow(0 0 14px rgba(255,214,120,.95)) brightness(1.35)}100%{filter:drop-shadow(0 0 0 rgba(255,220,140,0)) brightness(1)}}' +
+        '#shooting-event-root .title-lethal-guard{animation:titleLethalGuard .9s ease-out both}';
+      document.head.appendChild(st);
+    }
+    const player = document.getElementById(PLAYER_ID);
+    if (player) {
+      player.classList.remove('title-lethal-guard');
+      void player.offsetWidth;
+      player.classList.add('title-lethal-guard');
+      setTimeout(() => player.classList.remove('title-lethal-guard'), 900);
+    }
+    return true;
   }
   function applyTitleEffectToProfile(profile, mul) {
     if (!profile || !mul || (mul.hp === 1 && mul.atk === 1)) return profile;
@@ -26413,6 +26442,9 @@
     if (now < (member.invincibleUntil || 0)) return;
     // build2068: お助けフレンドの「1回被弾無効」
     if (consumeFriendSupportShield(now)) return;
+    // build2202: 即死攻撃は称号「華麗なる一族」で確率無効（奇襲ステージのWARNINGは即死ではないので対象外）
+    if (!isAmbushStage() && ((attackType || 'raw') === 'lethal' || Number(amount) >= ENEMY_FIXED_DAMAGE.LETHAL) &&
+        tryTitleLethalGuard(now)) return;
     // 敵弾が実際に味方へ通った時だけ画面を短く揺らす。
     // 接触ダメージ・無敵中の弾・デコイ/召喚物への命中では発火しない。
     if (hitSource === 'enemy-bullet') triggerPlayerHitScreenShake();
@@ -29952,6 +29984,7 @@
     }
     const member = getActiveMember();
     if (!member || member.hp <= 0) return;
+    if (tryTitleLethalGuard(now)) return; // build2202
     showDamageNumber(state.player.x, state.player.y, Math.max(1, Math.round(member.hp)), 'player', true, '');
     member.hp = 0;
     triggerPlayerHitScreenShake();
@@ -30440,6 +30473,7 @@
       // build1865: キャラが倒れた演出は共通の「〇〇 LOST」（beginPlayerDefeat）で出す
       return;
     }
+    if (tryTitleLethalGuard(now)) return; // build2202
     showDamageNumber(state.player.x, state.player.y, Math.max(1, Math.round(member.hp)), 'player', true, '');
     member.hp = 0;
     triggerPlayerHitScreenShake();
@@ -30555,6 +30589,7 @@
     const member = getActiveMember();
     if (!member || member.hp <= 0) return;
     const name = String((getCurrentCharacter() || {}).name || '');
+    if (tryTitleLethalGuard(now)) return; // build2202
     showDamageNumber(px, py, Math.max(1, Math.round(member.hp)), 'player', true, '');
     member.hp = 0;
     triggerPlayerHitScreenShake();

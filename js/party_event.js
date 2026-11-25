@@ -7,7 +7,9 @@
 //   ビンゴは揃ったライン数（1〜8）ごとに報酬。8ライン（MAX BINGO）でアヤネ（正装）。
 // ・判定と報酬はサーバー（Supabase RPC）：
 //     get_party_event_state()                         → progress
-//     finish_party_event_run(p_run_token, p_stats)    → { progress, new_panels, new_bingo, new_rewards, outfit_granted }
+//     finish_party_event_run(p_run_token, p_stats)    → { progress, new_panels, new_bingo, new_rewards, outfit_granted, title_granted }
+//   build2202: 追加ミッション（MAX BINGO後に解放）：スコア35,000以上でクリア → 称号「華麗なる一族」(soiree_noble)。
+//     progress に best_score（最高スコア）と mission_title（達成済み）を持つ。仕様は party_event_mission_server_spec.md
 //   サーバーのRPCが未作成の間は「端末モード」：パネルの進み具合だけ端末に保存して試せる（報酬なし）。
 // ・開催期間は js/home_banners.js の PARTY_EVENT_PERIOD（管理者は期間外でも入れる）。
 // =========================================================
@@ -54,6 +56,14 @@
     { lines:8, name:'限定衣装：アヤネ（正装）',    img:'images/chara_11_b_panel.webp', outfit:true }
   ]);
 
+  // build2202: 追加ミッション（8 LINE＝MAX BINGO達成で解放）。判定はサーバー（finish_party_event_run）
+  const MISSION = Object.freeze({
+    scoreNeed:35000,
+    titleId:'soiree_noble',
+    titleName:'華麗なる一族',
+    effect:'即死攻撃を50%の確率で無効'
+  });
+
   const state = {
     mode:'',          // 'server' | 'local'（RPC未作成）
     loaded:false,
@@ -63,16 +73,17 @@
   };
 
   function emptyProgress(){
-    return { clears_b:0, clears_a:0, clears_s:0, food_total:0, panels:[], bingo:[], outfit:false };
+    return { clears_b:0, clears_a:0, clears_s:0, food_total:0, best_score:0, panels:[], bingo:[], outfit:false, mission_title:false };
   }
   function normProgress(p){
     const o = emptyProgress();
     if(!p || typeof p !== 'object') return o;
-    ['clears_b','clears_a','clears_s','food_total'].forEach(k => { o[k] = Math.max(0, Math.floor(Number(p[k]) || 0)); });
+    ['clears_b','clears_a','clears_s','food_total','best_score'].forEach(k => { o[k] = Math.max(0, Math.floor(Number(p[k]) || 0)); });
     o.panels = (Array.isArray(p.panels) ? p.panels : []).map(Number).filter(n => n >= 1 && n <= 9);
     o.panels = o.panels.filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => a - b);
     o.bingo = (Array.isArray(p.bingo) ? p.bingo : []).map(String).filter(id => LINES.some(l => l.id === id));
     o.outfit = !!p.outfit;
+    o.mission_title = !!p.mission_title;
     return o;
   }
   function sb(){ return window.zsSupabase || null; }
@@ -124,7 +135,9 @@
   // 1回分の記録から、開くパネル・揃うライン・衣装を求める（端末モード用。サーバーも同じ規則で判定する）
   function applyRun(prev, run){
     const p = normProgress(prev);
-    const r = Object.assign({ win:false, rank:'E', hitsTaken:99, foodKills:0, humanKills:99, remainSec:0 }, run || {});
+    const r = Object.assign({ win:false, rank:'E', score:0, hitsTaken:99, foodKills:0, humanKills:99, remainSec:0 }, run || {});
+    const runScore = Math.max(0, Math.floor(Number(r.score) || 0));
+    if(r.win) p.best_score = Math.max(p.best_score, runScore);
     if(r.win){
       if(['S','A','B'].includes(r.rank)) p.clears_b++;
       if(['S','A'].includes(r.rank)) p.clears_a++;
@@ -147,7 +160,10 @@
     const newRewards = REWARDS.filter(rw => rw.lines > before && rw.lines <= p.bingo.length).map(rw => rw.lines);
     let outfitGranted = false;
     if(!p.outfit && p.bingo.length >= MAX_LINES){ p.outfit = true; outfitGranted = true; }
-    return { progress:p, newPanels, newBingo, newRewards, outfitGranted };
+    // build2202: 追加ミッション。この出撃でパネル・ビンゴを更新した後の状態で判定（8本目と同時の達成も可）
+    let missionReached = false;
+    if(!p.mission_title && p.bingo.length >= MAX_LINES && r.win && runScore >= MISSION.scoreNeed){ p.mission_title = true; missionReached = true; }
+    return { progress:p, newPanels, newBingo, newRewards, outfitGranted, missionReached };
   }
 
   // 出撃時のOP（開いているパネルの効果）。shooting_core.js の readPartyOptions が読む
@@ -185,10 +201,14 @@
             newBingo:(Array.isArray(d.new_bingo) ? d.new_bingo : []).map(String),
             newRewards:(Array.isArray(d.new_rewards) ? d.new_rewards : []).map(Number),
             outfitGranted:!!d.outfit_granted,
+            titleGranted:!!d.title_granted,
             mode:'server'
           };
           if(out.outfitGranted && window.CharacterSkins && typeof window.CharacterSkins.notifySkinAcquired === 'function'){
             window.CharacterSkins.notifySkinAcquired(11, 'limited_01');
+          }
+          if(out.titleGranted && window.ZeraphiaTitles && typeof window.ZeraphiaTitles.notifyAcquired === 'function'){
+            window.ZeraphiaTitles.notifyAcquired(MISSION.titleId, 1);
           }
           scheduleResultPopup(out);
           return out;
@@ -198,7 +218,7 @@
       const res = applyRun(state.progress, stats);
       state.progress = res.progress;
       writeLocal(state.progress);
-      const out = { newPanels:res.newPanels, newBingo:res.newBingo, newRewards:res.newRewards, outfitGranted:false, outfitReachedLocal:res.outfitGranted, mode:'local' };
+      const out = { newPanels:res.newPanels, newBingo:res.newBingo, newRewards:res.newRewards, outfitGranted:false, outfitReachedLocal:res.outfitGranted, missionReachedLocal:res.missionReached, mode:'local' };
       scheduleResultPopup(out);
       return out;
     }catch(err){
@@ -253,12 +273,54 @@
     }).join('');
   }
 
+  // build2202: 追加ミッション（MAX BINGOで解放 → スコア35,000以上でクリア → 称号）
+  function titleBadge(){
+    const T = window.ZeraphiaTitles;
+    const html = T && typeof T.badgeHTML === 'function' ? T.badgeHTML(MISSION.titleId, 1) : '';
+    return html || '<span class="pe-ms-title-text">' + esc(MISSION.titleName) + '</span>';
+  }
+  function missionHTML(){
+    const pr = state.progress;
+    const lines = pr.bingo.length;
+    const unlocked = lines >= MAX_LINES;
+    const done = pr.mission_title;
+    const stateCls = done ? 'is-done' : (unlocked ? 'is-open' : 'is-locked');
+    const fmt = n => Math.max(0, Math.floor(Number(n) || 0)).toLocaleString('ja-JP');
+    let status;
+    if(done){
+      status = '<p class="pe-ms-status is-done"><b>達成</b><span>称号を獲得しました</span></p>' +
+        '<button type="button" class="pe-ms-equip">称号を設定する</button>';
+    }else if(unlocked){
+      const best = pr.best_score;
+      const ratio = Math.min(1, best / MISSION.scoreNeed);
+      status = '<div class="pe-ms-meter" aria-hidden="true"><i style="width:' + (ratio * 100).toFixed(1) + '%"></i></div>' +
+        '<p class="pe-ms-status"><span>自己ベスト</span><b>' + (best > 0 ? fmt(best) : '—') + '</b><small>/ ' + fmt(MISSION.scoreNeed) + '</small></p>';
+    }else{
+      status = '<p class="pe-ms-status is-locked"><span>MAX BINGO（8 LINE）で解放</span><b>' + lines + '</b><small>/ ' + MAX_LINES + ' LINE</small></p>';
+    }
+    return '<div class="pe-ms ' + stateCls + '">' +
+      '<div class="pe-ms-cond">' +
+        '<span class="pe-ms-k">MISSION</span>' +
+        '<b>スコア ' + fmt(MISSION.scoreNeed) + ' 以上でクリア</b>' +
+      '</div>' +
+      '<div class="pe-ms-reward">' +
+        '<span class="pe-ms-k">REWARD　称号</span>' +
+        '<div class="pe-ms-badge">' + titleBadge() + '</div>' +
+        '<p class="pe-ms-effect">効果：' + esc(MISSION.effect) + '</p>' +
+      '</div>' +
+      status +
+      (unlocked ? '' : '<i class="pe-ms-lock" aria-hidden="true"></i>') +
+    '</div>';
+  }
+
   function render(highlight){
     const root = document.getElementById('party-event-screen');
     if(!root) return;
     const pr = state.progress;
     root.querySelector('.pe-board').innerHTML = boardHTML(highlight);
     root.querySelector('.pe-rewards').innerHTML = rewardsHTML();
+    const ms = root.querySelector('.pe-mission');
+    if(ms) ms.innerHTML = missionHTML();
     root.querySelector('.pe-bingo-count').textContent = pr.bingo.length + ' / ' + MAX_LINES + ' LINE';
     root.querySelector('.pe-stats').innerHTML = [
       ['S', 'Sランク', pr.clears_s + '回'],
@@ -306,6 +368,11 @@
           '<p class="pe-lead">縦・横・斜めの揃ったライン数で受け取れます。<br><b class="pe-bingo-count"></b></p>' +
           '<ul class="pe-rewards"></ul>' +
         '</section>' +
+        // build2202: 追加ミッション
+        '<section class="pe-section pe-section-mission">' +
+          '<h3 class="pe-h"><small>EXTRA MISSION</small>華麗なる夜会へ</h3>' +
+          '<div class="pe-mission"></div>' +
+        '</section>' +
         // build2166: ルールは1か所（ポップアップ）にまとめ、ここは開くための細い帯だけ
         '<button type="button" class="pe-rule-bar pe-rule-again">' +
           '<span class="pe-rule-bar-k">RULE</span>' +
@@ -324,6 +391,11 @@
       if(e.target.closest('.pe-go')){ start(); return; }
       if(e.target.closest('.pe-rule-again')){ showRuleGuide({ sortie:false }); return; }
       if(e.target.closest('[data-pe-outfit-preview]')){ openOutfitPreview(); return; }
+      if(e.target.closest('.pe-ms-equip')){
+        if(typeof window.openTitleSelector === 'function') window.openTitleSelector();
+        else toast('称号はプロフィールから設定できます');
+        return;
+      }
       const cell = e.target.closest('[data-pe-cell]');
       if(cell){
         const pn = PANELS.find(p => p.id === Number(cell.dataset.peCell));
@@ -423,7 +495,7 @@
   let pendingPopup = null;
   function scheduleResultPopup(out){
     if(!out) return;
-    const anything = (out.newPanels && out.newPanels.length) || (out.newBingo && out.newBingo.length) || (out.newRewards && out.newRewards.length) || out.outfitGranted || out.outfitReachedLocal;
+    const anything = (out.newPanels && out.newPanels.length) || (out.newBingo && out.newBingo.length) || (out.newRewards && out.newRewards.length) || out.outfitGranted || out.outfitReachedLocal || out.titleGranted || out.missionReachedLocal;
     if(!anything) return;
     pendingPopup = out;
     setTimeout(showResultPopup, 900);
@@ -447,6 +519,12 @@
         (rewards.filter(r => !r.outfit).length ? '<ul class="per-list">' + rewards.filter(r => !r.outfit).map(r => '<li><img src="' + esc(r.img) + '" alt=""><b>' + esc(r.name) + '</b></li>').join('') + '</ul>' : '') +
         (out.outfitGranted ? '<div class="per-outfit"><img src="images/chara_11_b_panel.webp" alt=""><b>アヤネ（正装）を獲得</b></div>' : '') +
         (out.outfitReachedLocal ? '<p class="per-note">MAX BINGO達成（端末モードのため衣装は付与されません）</p>' : '') +
+        ((out.titleGranted || out.missionReachedLocal)
+          ? '<div class="per-title"><small>EXTRA MISSION CLEAR</small><div class="per-title-badge">' + titleBadge() + '</div>' +
+            '<p>' + esc(MISSION.effect) + '</p>' +
+            (out.titleGranted ? '<p class="per-note">称号はプロフィールの「称号」から設定できます</p>' : '<p class="per-note">端末モードのため称号は付与されません</p>') +
+            '</div>'
+          : '') +
         (out.mode === 'server' && rewards.length ? '<p class="per-note">報酬はプレゼントボックスに届きます</p>' : '') +
         (out.mode === 'local' && rewards.length ? '<p class="per-note">端末モードのため報酬は付与されません</p>' : '') +
         '<button type="button" class="per-ok">OK</button>' +
@@ -457,7 +535,7 @@
 
   window.openPartyEventFromHome = function(){ void open(); return true; };
   window.PartyEvent = Object.freeze({
-    STAGE_ID, PANELS, LINES, REWARDS,
+    STAGE_ID, PANELS, LINES, REWARDS, MISSION,
     showRuleGuide,
     open, close, load,
     isOpen, canEnter,

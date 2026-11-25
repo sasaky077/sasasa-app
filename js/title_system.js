@@ -19,6 +19,7 @@
 
   // build2145: 称号の効果（装備中の1つだけがバトルに乗る）。
   //   kind: 'hp'＝バトル中のキャラ最大HP / 'atk'＝ATK / 'ult'＝ULTゲージ回収量
+  //         'lethal_guard'＝即死攻撃を値(%)の確率で無効（build2202）
   //   値(%) = base + (Lv-1)*perLv（Lvは maxLv で頭打ち）
   const TITLE_MASTER = Object.freeze({
     apprentice_savior: Object.freeze({
@@ -50,6 +51,16 @@
         Object.freeze({ min: 4, key: 't3', label: 'IV' }),
         Object.freeze({ min: 5, key: 't4', label: 'V' })
       ])
+    }),
+    // build2202: パラレル・ソワレの追加ミッション（MAX BINGO後、スコア35,000以上でクリア）の報酬
+    soiree_noble: Object.freeze({
+      id: 'soiree_noble',
+      rarity: 'SR',
+      name: '華麗なる一族',
+      desc: '並行世界の夜会で、誰よりも華麗に振る舞った者に贈られる称号。',
+      how: 'パラレル・ソワレでMAX BINGO（8 LINE）達成後、スコア35,000以上でクリア',
+      tone: 'noble',
+      effect: Object.freeze({ kind: 'lethal_guard', base: 50, perLv: 0, maxLv: 1 })
     })
   });
 
@@ -92,7 +103,7 @@
     if(!t) return '';
     return t.name + ' ' + roman(displayLv(titleId, level));
   }
-  const EFFECT_LABEL = Object.freeze({ hp:'バトル中のキャラHP', atk:'ATK', ult:'ULT回収率' });
+  const EFFECT_LABEL = Object.freeze({ hp:'バトル中のキャラHP', atk:'ATK', ult:'ULT回収率', lethal_guard:'即死攻撃を無効' });
   function effectPercent(titleId, level){
     const t = getTitle(titleId);
     const e = t && t.effect;
@@ -104,6 +115,7 @@
     const t = getTitle(titleId);
     const e = t && t.effect;
     if(!e) return '';
+    if(e.kind === 'lethal_guard') return '即死攻撃を' + effectPercent(titleId, level) + '%の確率で無効';
     let txt = (EFFECT_LABEL[e.kind] || e.kind) + ' +' + effectPercent(titleId, level) + '%';
     if(Number(e.perLv) > 0){
       const maxLv = Math.max(1, Number(e.maxLv) || 1);
@@ -113,13 +125,14 @@
   }
   // バトル側が読む倍率（装備中の称号のみ）。未ロード・未装備は全て1。
   function getBattleMultipliers(){
-    const out = { hp:1, atk:1, ult:1, titleId:'', level:0 };
+    const out = { hp:1, atk:1, ult:1, lethalGuard:0, titleId:'', level:0 };
     const id = state.equipped;
     const t = getTitle(id);
     if(!t || !t.effect || !state.owned.has(id)) return out;
     const lv = state.owned.get(id) || 1;
     const k = t.effect.kind;
-    if(Object.prototype.hasOwnProperty.call(out, k)) out[k] = 1 + effectPercent(id, lv) / 100;
+    if(k === 'lethal_guard') out.lethalGuard = Math.min(1, effectPercent(id, lv) / 100); // 確率（0〜1）
+    else if(Object.prototype.hasOwnProperty.call(out, k)) out[k] = 1 + effectPercent(id, lv) / 100;
     out.titleId = id; out.level = lv;
     return out;
   }
