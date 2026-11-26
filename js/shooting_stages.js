@@ -2437,7 +2437,7 @@
         bulletQuantityMultiplier: 0.80, // build2003: 通常弾の発射頻度を20%削減（禍眼・凝視は変更しない）
         bossAdds: Object.freeze({ enemyIds: Object.freeze([SHOOTING_ENEMY_ID.MEMORY_WATCHER]), totalEnemies: 0, maxActive: 2, startDelayMs: 2600, spawnIntervalMs: 7000, defeatedRespawnMs: 5000 }) }),
     }),
-    // build2240: 06 ネリサ（水）。画面上は「05」。木しか通らない＋大潮（定期の大ダメージ→PHASE3は即死。無敵でのみ防げる）
+    // build2240: 06 ネリサ（水）。画面上は「05」。木しか通らない＋水葬（定期の大ダメージ→PHASE3は即死。無敵でのみ防げる）
     //  ＋水鏡（一撃300以上を受けると液状化して即反撃）。リンリン（木・無敵ULT）が活躍し、大技主体（ハオ等）は反撃を受ける。
     //  レイドの「雫のヴェール」は使わない（爆風が必須にならないように）。戦闘中の文字ヒントも出さない。
     Object.freeze({
@@ -2445,17 +2445,19 @@
       panelImage: 'images/memory_nerisa.webp',
       enemyId: SHOOTING_ENEMY_ID.RAID_NERISA, element: 'aqua',
       background: 'images/battle_bg_01.webp',
-      bossGaugeHps: Object.freeze([10000, 11500, 13500]),
+      // build2241: リンリンで余裕すぎたため難化。HP増・大潮の間隔短縮・ULT回収量×0.8（ULTは水葬2回に1回しか間に合わない）
+      bossGaugeHps: Object.freeze([11000, 13000, 15000]),
       timeLimitSeconds: 180,
       rules: Object.freeze([
         Object.freeze({ type: 'element_barrier' }),
-        // 大潮：約17秒ごとに3秒のカウントダウン。PHASE1・2は最大HPの70%、PHASE3は即死。出撃中キャラの無敵でのみ防げる（時間停止は不可）。
-        Object.freeze({ type: 'judgment', title: '大潮', theme: 'tide', firstMs: 12000, intervalMs: 17000, warnMs: 3000,
-          damageRate: 0.7, lethalFromPhase: 3, invincibleOnly: true }),
+        // 水葬：約15秒ごとに3秒のカウントダウン。PHASE1・2は最大HPの60%、PHASE3は即死。出撃中キャラの無敵でのみ防げる（時間停止は不可）。
+        Object.freeze({ type: 'judgment', title: '水葬', theme: 'tide', firstMs: 10000, intervalMs: 15000, warnMs: 3000,
+          damageRate: 0.6, lethalFromPhase: 3, invincibleOnly: true }),
         // 水鏡：一撃300以上で液状化（既存の分裂）＋反撃（最大HPの45%）。無敵なら防げる。
         Object.freeze({ type: 'nerisa_counter', damageRate: 0.45, delayMs: 220 }),
       ]),
-      extra: Object.freeze({ bossElement: 'aqua', enemyElement: 'aqua', bulletQuantityMultiplier: 0.9,
+      extra: Object.freeze({ bossElement: 'aqua', enemyElement: 'aqua', bulletQuantityMultiplier: 1.0,
+        ultGainMultiplier: 0.8, // build2241: ULTの溜まりを遅くし、水葬に合わせてULTを温存させる
         nerisaMemory: Object.freeze({ dropScale: 0, hints: false }) }),
     }),
   ]);

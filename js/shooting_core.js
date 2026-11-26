@@ -5482,6 +5482,11 @@
     return Math.max(0, gain);
   }
 
+  // build2241: ステージごとのULT回収量補正（記憶決戦ネリサなど）。未指定は1
+  function getStageUltGainMultiplier() {
+    const v = Number(selectedStage && selectedStage.ultGainMultiplier);
+    return Number.isFinite(v) && v > 0 ? v : 1;
+  }
   function grantUltGaugeForHits(c, hitCount = 1, ownerId = null, gainMultiplier = 1) {
     if (!state || !c || hitCount <= 0) return;
     // build1255: CH04でも通常どおりULTゲージを加算する。
@@ -5503,7 +5508,7 @@
     const safeGainMultiplier = Math.max(0, Number.isFinite(Number(gainMultiplier)) ? Number(gainMultiplier) : 1);
     // build1643: 位相回遊の「ULT回収量上昇」。通常ステージでは常に1。
     const phaseOdysseyUltRate = Math.max(0, Number(getPhaseOdysseyApi()?.getUltGainMultiplier?.() || 1));
-    const gain = getUltGainAmountPerHit(c) * Math.max(1, Number(hitCount || 1)) * safeGainMultiplier * phaseOdysseyUltRate * getFriendSupportUltGainMultiplier() * getTitleUltGainMultiplier(); // build2068 / build2145 称号
+    const gain = getUltGainAmountPerHit(c) * Math.max(1, Number(hitCount || 1)) * safeGainMultiplier * phaseOdysseyUltRate * getFriendSupportUltGainMultiplier() * getTitleUltGainMultiplier() * getStageUltGainMultiplier(); // build2068 / build2145 称号 / build2241 ステージ補正
     const wasReady = member.burst >= c.burstNeed;
     member.burst = Math.min(c.burstNeed, member.burst + gain);
     if (!wasReady && member.burst >= c.burstNeed && !member.ultReadyNotified) {
@@ -30382,13 +30387,26 @@
     return String(t || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
   }
   function ensureNerisaMemoryStyle() {
-    if (document.getElementById('nerisa-memory-style-v2240')) return;
+    if (document.getElementById('nerisa-memory-style-v2243')) return;
     const st = document.createElement('style');
-    st.id = 'nerisa-memory-style-v2240';
+    st.id = 'nerisa-memory-style-v2243';
     st.textContent = `
-      .memory-judgment.is-tide{background:radial-gradient(ellipse at 50% 50%,rgba(120,180,255,0) 55%,rgba(90,150,255,.16) 82%,rgba(20,60,160,.34) 100%)}
-      .memory-judgment.is-tide .mj-box{color:#eef6ff;text-shadow:0 0 8px rgba(90,160,255,.95),0 0 2px #06245a,0 0 1px #000}
-      .memory-judgment.is-tide.is-sealed{background:radial-gradient(ellipse at 50% 45%,rgba(200,240,255,0) 35%,rgba(150,230,255,.22) 80%,rgba(40,120,160,.3) 100%)}
+      /* build2243: 水葬の予告（控えめ版）— 青い縁取り＋下から薄く迫る水面＋少し大きめのカウント */
+      .memory-judgment.is-tide{background:radial-gradient(ellipse at 50% 48%,rgba(80,140,240,0) 58%,rgba(50,110,230,.16) 84%,rgba(16,50,150,.36) 100%);overflow:hidden}
+      .memory-judgment.is-tide::after{content:"";position:absolute;left:-10%;right:-10%;bottom:0;height:18%;pointer-events:none;
+        background:linear-gradient(180deg,rgba(150,205,255,0) 0%,rgba(90,150,240,.14) 40%,rgba(30,80,190,.24) 100%);
+        border-top:1px solid rgba(210,236,255,.55);border-radius:50% 50% 0 0/10px 10px 0 0;
+        animation:mjTideRise 3s linear forwards, mjTideWave 1.2s ease-in-out infinite alternate}
+      @keyframes mjTideRise{from{height:4%}to{height:22%}}
+      @keyframes mjTideWave{from{translate:-2% 0}to{translate:2% 0}}
+      .memory-judgment.is-tide .mj-box{color:#f2f8ff;padding:4px 14px;border-radius:4px;background:rgba(8,32,100,.38);
+        text-shadow:0 0 8px rgba(100,170,255,1),0 0 2px #041a4a,0 0 1px #000}
+      .memory-judgment.is-tide .mj-title{font-size:17px}
+      .memory-judgment.is-tide .mj-count{font-size:32px}
+      .memory-judgment.is-tide.is-sealed{background:radial-gradient(ellipse at 50% 45%,rgba(200,240,255,0) 40%,rgba(150,230,255,.18) 82%,rgba(40,120,160,.26) 100%)}
+      .memory-judgment.is-tide.is-sealed::after{border-top-color:rgba(230,250,255,.8);background:linear-gradient(180deg,rgba(200,245,255,0),rgba(150,225,255,.18))}
+      .memory-judgment.is-tide.is-sealed .mj-box{background:rgba(20,90,120,.32);text-shadow:0 0 8px rgba(150,235,255,1),0 0 2px #063a4a}
+      @media (prefers-reduced-motion:reduce){.memory-judgment.is-tide::after{animation:none}}
       .nerisa-counter-charge{position:absolute;left:0;top:0;width:120px;height:120px;border-radius:50%;pointer-events:none;z-index:31;
         border:3px solid rgba(210,235,255,.95);box-shadow:0 0 18px rgba(120,180,255,.95),inset 0 0 14px rgba(150,200,255,.8);
         animation:nerisaCounterCharge .24s ease-in forwards}

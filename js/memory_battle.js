@@ -230,7 +230,7 @@
       } else if (rule.type === 'judgment') {
         const sec = Math.round(Math.max(5000, Number(rule.intervalMs || 20000)) / 1000);
         const dmg = Math.max(0, Math.floor(Number(rule.damage || 0)));
-        // build2240: 大潮（割合ダメージ→後半は即死。無敵でのみ防げる）
+        // build2240: 水葬（割合ダメージ→後半は即死。無敵でのみ防げる）
         if (Number(rule.damageRate || 0) > 0) {
           const pct = Math.round(Number(rule.damageRate) * 100);
           rows.push({ icon: 'judgment', name: String(rule.title || '神罰'), text: `約${sec}秒ごとに最大HPの${pct}%ダメージ`
