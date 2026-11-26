@@ -1215,7 +1215,7 @@ html body:not(.ui-immersive) #screen-item.screen.active{
 .item-exchange-reward-icon.is-design img{width:100%;height:100%;object-fit:cover;object-position:center 18%}
 
 /* build2235: レイド欠片の交換ボタン（必要数に達したら金色で目立たせる） */
-html body #screen-item #item-management-list .item-sell-btn.item-piece-exchange-btn.is-ready:not(:disabled){
+html body #screen-item #item-management-list .item-piece-exchange-btn.is-ready:not(:disabled){
   border-color:#b48a3e!important;color:#4a2f0d!important;
   background:linear-gradient(180deg,#fff8e3 0%,#f2d993 55%,#dcb862 100%)!important;
   box-shadow:0 0 0 1px rgba(255,248,224,.8) inset,0 0 10px rgba(226,186,92,.55);
@@ -1223,4 +1223,5 @@ html body #screen-item #item-management-list .item-sell-btn.item-piece-exchange-
 }
 @keyframes itemPieceReady{from{box-shadow:0 0 0 1px rgba(255,248,224,.8) inset,0 0 4px rgba(226,186,92,.35)}to{box-shadow:0 0 0 1px rgba(255,248,224,.8) inset,0 0 12px rgba(226,186,92,.75)}}
 #item-management-list .item-row-price .item-piece-ready{color:#8a5d17;font-weight:700;white-space:normal;line-height:1.25}
-@media (prefers-reduced-motion:reduce){#item-management-list .item-sell-btn.item-piece-exchange-btn.is-ready{animation:none}}
+@media (prefers-reduced-motion:reduce){#item-management-list .item-piece-exchange-btn.is-ready{animation:none}}
+#item-management-list .item-row-count strong small{font-size:.62em;opacity:.7;margin-left:1px}

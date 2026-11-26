@@ -2460,7 +2460,7 @@
       img:'images/raid_piece_'+hit.key+'.webp',
       // build2235: どの日でもアイテム画面から交換できる（bossKey＝サーバーのボスキー、need＝必要数）
       bossKey:hit.bossKey, charaName:hit.name, need:RAID_PIECE_NEED,
-      desc:'デイリーレイドのSランク討伐で手に入る、'+hit.name+'の欠片。'+RAID_PIECE_NEED+'個集めると、ここから'+hit.name+'と交換できる。'
+      desc:'デイリーレイドのSランク討伐で手に入る、'+hit.name+'の欠片。'+RAID_PIECE_NEED+'個集めると、'+hit.name+'と交換できる。'
     };
   }
   window.getRaidPieceItemMeta=getRaidPieceItemMeta;

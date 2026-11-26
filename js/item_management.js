@@ -360,8 +360,8 @@
     if(RETIRED_EVOLUTION_ITEMS.has(id)) return false;
     if(id==='kyoumei_stone') return true;
     if(/^soul_vessel_(fire|aqua|wood|dark|light|mystis|chaos)$/.test(id)) return true;
-    // レイド欠片の正本定義を参照し、名前が似た非レイド素材は含めない。
-    return typeof window.getRaidPieceItemMeta==='function' && !!window.getRaidPieceItemMeta(id);
+    // build2237: レイド欠片は「その他」タブへ移動（交換ボタン付き）
+    return false;
   }
 
   function getEvolutionIds(){
@@ -456,6 +456,7 @@
       if(title) title.textContent='その他';
 
       list.innerHTML=OTHER_ITEMS.map(meta=>{
+        if(meta.raidPiece) return '';
         const qty=meta.source==='profile'
           ? state.specialStageTicket
           : Math.max(0,Number(state.items[meta.id]||0));
@@ -481,7 +482,7 @@
             '</div>'+
             actionHtml+
           '</article>';
-      }).join('');
+      }).join('') + raidPieceRowsHtml();
       return;
     }
 
@@ -607,10 +608,30 @@
   function pieceActionHtml(id,qty){
     const pm=raidPieceMeta(id); if(!pm) return '';
     const need=Math.max(1,Number(pm.need||10)), ready=qty>=need;
-    return '<div class="item-row-actions">'+
-      '<button class="item-sell-btn item-piece-exchange-btn'+(ready?' is-ready':'')+'" type="button" data-piece-exchange="'+escapeHtml(id)+'" '+(ready&&!state.exchanging?'':'disabled')+'>交換</button>'+
-      '<div class="item-row-price">'+(ready?'<b class="item-piece-ready">'+escapeHtml(pm.charaName)+'と交換できます</b>':'あと'+fmt(need-qty)+'個で交換')+'</div>'+
+    return '<div class="item-row-actions item-row-actions-other">'+
+      '<button class="item-exchange-open-btn item-piece-exchange-btn'+(ready?' is-ready':'')+'" type="button" data-piece-exchange="'+escapeHtml(id)+'" '+(ready&&!state.exchanging?'':'disabled')+'>交換</button>'+
     '</div>';
+  }
+  // build2237: 「その他」タブのレイド欠片（所持しているものだけ、ボス順）
+  const RAID_PIECE_ORDER=['sigma','shien','camilla','nerisa'];
+  function raidPieceRowsHtml(){
+    const ids=Object.keys(state.items||{}).filter(id=>raidPieceMeta(id) && Number(state.items[id]||0)>0);
+    ids.sort((a,b)=>RAID_PIECE_ORDER.indexOf(raidPieceMeta(a).bossKey)-RAID_PIECE_ORDER.indexOf(raidPieceMeta(b).bossKey));
+    return ids.map(id=>{
+      const pm=raidPieceMeta(id), qty=Math.max(0,Number(state.items[id]||0));
+      const need=Math.max(1,Number(pm.need||10));
+      return ''+
+        '<article class="item-row item-row-other item-row-raid-piece'+(qty>=need?' is-ready':'')+'">'+
+          renderIcon(pm,'other')+
+          '<div class="item-row-main">'+
+            '<div class="item-row-kicker">RAID PIECE</div>'+
+            '<div class="item-row-name">'+escapeHtml(pm.name)+'</div>'+
+            '<div class="item-row-desc">'+escapeHtml(pm.desc||'')+'</div>'+
+            '<div class="item-row-count item-row-count-other"><span>OWNED</span><strong>'+fmt(qty)+'<small> / '+fmt(need)+'</small></strong></div>'+
+          '</div>'+
+          pieceActionHtml(id,qty)+
+        '</article>';
+    }).join('');
   }
   async function exchangeRaidPiece(id){
     const pm=raidPieceMeta(id); if(!pm||state.exchanging) return;
