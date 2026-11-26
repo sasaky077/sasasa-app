@@ -15,6 +15,23 @@
 (function(){
   'use strict';
 
+  // build2234: 「対象外を足していく」方式をやめ、自分のキャラしか出ない場所だけを対象にする（許可リスト）。
+  //  許可リストの外（フレンド・他プレイヤー・新しく増えた画面など）では、自分の衣装に差し替えない。
+  //  許可リストの中でも、下の EXCLUDE（お助け・レイドのメンバー・ランキング等）は対象外のまま。
+  const INCLUDE = [
+    '#global-user-frame',                               // 上部のアイコン
+    '#home-v2', '#screen-main',                         // ホーム
+    '#screen-zukan',                                    // キャラ一覧
+    '#detail-modal:not(.is-friend-character-detail)',   // 自分のキャラ詳細
+    '#zs-player-profile',                               // 自分のプロフィール
+    '#shooting-event-root',                             // パーティ編成・戦闘結果（お助け欄は EXCLUDE）
+    '#raid-bestparty-1924',                             // レイドの自分のベストパーティ
+    '#phase-odyssey-layer', '#screen-phase-odyssey',    // 位相回遊の編成
+    '#screen-resonance-tower',                          // 共鳴の塔の編成
+    '#screen-item',                                     // アイテム（キャラアイコン）
+    '[data-skin-own]'                                   // 個別に対象にしたい場所
+  ].join(',');
+
   const EXCLUDE = [
     // 他のプレイヤー
     '#screen-friend', '.friend-profile-detail', '#friend-profile-detail',
@@ -55,7 +72,7 @@
   }
 
   function isExcluded(el){
-    try{ return !!(el && el.closest && el.closest(EXCLUDE)); }catch(_){ return false; }
+    try{ return !(el && el.closest && el.closest(INCLUDE)) || !!el.closest(EXCLUDE); }catch(_){ return true; }
   }
 
   /* ---- <img> ---- */
