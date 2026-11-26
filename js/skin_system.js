@@ -389,34 +389,75 @@
   }
   function skinLabel(skin){ return (skin && skin.name) || '限定衣装'; }
 
+  // build2231: 他のプレイヤーの装備中衣装。
+  //  ・まずサーバー関数 get_public_equipped_skins（RLSを越えて「装備中の衣装だけ」返す）でまとめて取得
+  //  ・関数が無い／失敗した時は従来どおりテーブルを直接読む（user_id は小文字化せず元の値で照会）
+  //  ・取得失敗は記録しない（次回また取りに行く）。成功結果も5分で取り直す（相手が着替えても反映される）
+  const PUBLIC_TTL=5*60*1000;
+  const publicFetchedAt=new Map(); // uidLower -> time
+  let publicRpcMissing=false;
+
+  function putPublic(uidLower, rows){
+    // その人の全キャラをいったん通常扱いにしてから、返ってきた衣装を入れる
+    for(const k of Array.from(state.publicEquipped.keys())){ if(k.indexOf(uidLower+':')===0) state.publicEquipped.delete(k); }
+    (rows||[]).forEach(r=>{
+      const cid=Number(r.character_id||0), sid=String(r.skin_id||'');
+      if(cid && sid && getSkin(cid,sid)) state.publicEquipped.set(uidLower+':'+cid, sid);
+    });
+    publicFetchedAt.set(uidLower, Date.now());
+  }
+
+  async function preloadPublicEquipped(userIds){
+    const sb=client();
+    const ids=Array.from(new Set((userIds||[]).map(v=>String(v||'').trim()).filter(Boolean)));
+    if(!sb || !ids.length || publicRpcMissing) return false;
+    const need=ids.filter(id=>{ const t=publicFetchedAt.get(id.toLowerCase()); return !t || Date.now()-t>PUBLIC_TTL; });
+    if(!need.length) return true;
+    try{
+      const res=await sb.rpc('get_public_equipped_skins',{ p_user_ids: need });
+      if(res && res.error) throw res.error;
+      const byUser=new Map();
+      (res && res.data || []).forEach(r=>{
+        const u=String(r.user_id||'').trim().toLowerCase();
+        if(!byUser.has(u)) byUser.set(u,[]);
+        byUser.get(u).push(r);
+      });
+      need.forEach(id=>{ const u=id.toLowerCase(); putPublic(u, byUser.get(u)||[]); });
+      return true;
+    }catch(err){
+      const msg=String(err && (err.message||err.code) || err);
+      if(/PGRST202|does not exist|Could not find the function/i.test(msg)) publicRpcMissing=true;
+      console.warn('[CharacterSkins] public skins rpc skipped',msg);
+      return false;
+    }
+  }
+
   async function getPublicEquippedSkinId(userId, characterId){
-    const uid=String(userId||'').trim().toLowerCase();
+    const rawUid=String(userId||'').trim();
+    const uid=rawUid.toLowerCase();
     const charId=Number(characterId||0);
     if(!uid || !charId) return 'default';
 
     if(uid===currentUserId()) return getEquippedSkinId(charId);
 
     const cacheKey=uid+':'+charId;
-    if(state.publicEquipped.has(cacheKey)) return state.publicEquipped.get(cacheKey);
+    const fetchedAt=publicFetchedAt.get(uid);
+    const fresh=fetchedAt && Date.now()-fetchedAt<=PUBLIC_TTL;
+    if(fresh) return state.publicEquipped.get(cacheKey) || 'default';
+
+    if(await preloadPublicEquipped([rawUid])) return state.publicEquipped.get(cacheKey) || 'default';
 
     const sb=client();
     if(!sb) return 'default';
-
     try{
       const res=await sb.from('player_equipped_character_skins')
-        .select('skin_id')
-        .eq('user_id',uid)
-        .eq('character_id',charId)
-        .maybeSingle();
+        .select('character_id,skin_id')
+        .eq('user_id',rawUid);
       if(res && res.error) throw res.error;
-      const skinId=res && res.data && getSkin(charId,res.data.skin_id)
-        ? String(res.data.skin_id)
-        : 'default';
-      state.publicEquipped.set(cacheKey,skinId);
-      return skinId;
+      putPublic(uid, res && res.data || []);
+      return state.publicEquipped.get(cacheKey) || 'default';
     }catch(err){
       console.warn('[CharacterSkins] public skin load skipped',err&&err.message||err);
-      state.publicEquipped.set(cacheKey,'default');
       return 'default';
     }
   }
@@ -473,6 +514,7 @@
     getPublicHomeImage,
     getPublicPortraitImage,
     getPublicEquippedSkinId,
+    preloadPublicEquipped,
     buildSelectorHTML,
     buildFullscreenControlsHTML,
     equip,

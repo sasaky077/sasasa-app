@@ -30358,6 +30358,26 @@
     `;
     document.head.appendChild(st);
   }
+  // build2232: TICKETイノリの神罰カウントダウン停止中、有効な無敵を停止時間ぶん延ばす。
+  //  イノリの鳥居ULTが付けた無敵は、鳥居側の記録（終了時刻・無敵時刻）も一緒にずらして整合を保つ。
+  function shiftInoriJudgmentInvincibility(now, dt) {
+    if (!state || !(dt > 0)) return;
+    const prev = now - dt; // 前フレームの時点でまだ有効だった無敵だけを延ばす
+    const g = state.inoriGuard;
+    (state.party || []).forEach(m => {
+      if (!m) return;
+      const u = Number(m.invincibleUntil || 0);
+      if (!(u > prev)) return;
+      const linked = g && Number(g.memberId) === Number(m.id) && Number(g.invincibleUntil) === u;
+      m.invincibleUntil = u + dt;
+      if (linked) g.invincibleUntil = m.invincibleUntil;
+    });
+    if (g && Number(g.endAt || 0) > prev) {
+      g.endAt = Number(g.endAt) + dt;
+      if (Number(g.nextTickAt || 0) > 0) g.nextTickAt = Number(g.nextTickAt) + dt;
+    }
+    if (state.player && Number(state.player.invulnUntil || 0) > prev) state.player.invulnUntil = Number(state.player.invulnUntil) + dt;
+  }
   function updateMemoryJudgment(now) {
     const rule = getMemoryRule('judgment');
     if (!rule || !state || !state.boss) return;
@@ -30392,6 +30412,9 @@
       if (timeStopped) {
         if (mj.warnUntil) mj.warnUntil += dtJ;
         if (state.inori && Number(state.inori.reviveAt || 0) > 0) state.inori.reviveAt += dtJ;
+        // build2232: カウントダウンを止めている間は、味方の無敵（神除けの札・ULT等）も同じだけ止める。
+        //  （ゲージ破壊の演出中に無敵だけ減って、再開直後の神罰を防げない理不尽を解消）
+        if (mj.warnUntil && dtJ > 0) shiftInoriJudgmentInvincibility(now, dtJ);
         if (mj.el) mj.el.classList.add('is-frozen');
         return;
       }

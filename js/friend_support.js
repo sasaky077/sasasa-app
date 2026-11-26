@@ -168,6 +168,7 @@
             lastPlayed: p.last_played ? new Date(p.last_played).getTime() : 0 };
         }).sort((x, y) => (y.lastPlayed || 0) - (x.lastPlayed || 0));
         // 衣装（公開パネル画像）があれば差し替え。失敗しても通常画像のまま
+        try{ if(window.CharacterSkins && typeof window.CharacterSkins.preloadPublicEquipped === 'function') await window.CharacterSkins.preloadPublicEquipped(uniq); }catch(_){}
         await Promise.all(list.map(async f => {
           try{
             if(window.CharacterSkins && typeof window.CharacterSkins.getPublicPanelImage === 'function'){
@@ -406,6 +407,7 @@
     loadFriends().then(list => {
       // 初回（まだ一度も選んでいない）なら、最近遊んだフレンドを自動で選んでおく
       if(!readSelection() && !isNoneChosen() && list && list.length) writeSelection(list[0]);
+      else { const cur = readSelection(); const live = cur && list && list.find(f => f.userId === cur.userId); if(live && live.panel !== cur.panel) writeSelection(live); }
       renderRow();
     });
   }
