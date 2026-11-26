@@ -262,7 +262,7 @@
         if (Number(rule.spiderCount || 0) > 0) rows.push({ icon: 'drop', name: '吸血', text: '子蜘蛛に張り付かれると、ボスが回復する' });
       } else if (rule.type === 'maga_eye' || rule.type === 'overseer_watch' || rule.type === 'overseer_gaze') { // build1982
         if (info[rule.type]) rows.push({ icon: rule.type === 'maga_eye' ? 'sniper' : 'eye', name: info[rule.type].name, text: info[rule.type].desc });
-      } else if (rule.type === 'nerisa_counter' && info[rule.type]) { // build2240
+      } else if ((rule.type === 'nerisa_counter' || rule.type === 'nerisa_prison') && info[rule.type]) { // build2240 / build2244
         rows.push({ icon: 'drop', name: info[rule.type].name, text: info[rule.type].desc });
       } else if (info[rule.type]) {
         rows.push({ icon: 'rule', name: info[rule.type].name, text: info[rule.type].desc });

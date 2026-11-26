@@ -2354,6 +2354,7 @@
     overseer_gaze: Object.freeze({ name: '凝視', desc: '凝視の間だけ光の安全地帯が現れる。外にいると禍眼が高速で迫り、中では止まる。安全地帯は次々に移る' }),
     // build2240: 水底の記憶：ネリサ
     nerisa_counter: Object.freeze({ name: '水鏡', desc: '強い一撃を受けると雫に散り、すぐさま反撃してくる' }),
+    nerisa_prison: Object.freeze({ name: '水牢', desc: '場に出続けると5秒ごとに移動が10%ずつ遅くなる（最大60%）。交代で元に戻る' }),
   });
   const MEMORY_BATTLE_STAGES = Object.freeze([
     Object.freeze({
@@ -2455,6 +2456,8 @@
           damageRate: 0.6, lethalFromPhase: 3, invincibleOnly: true }),
         // 水鏡：一撃300以上で液状化（既存の分裂）＋反撃（最大HPの45%）。無敵なら防げる。
         Object.freeze({ type: 'nerisa_counter', damageRate: 0.45, delayMs: 220 }),
+        // build2244: 水牢：同じキャラが場に出続けると5秒ごとに移動速度−10%（最大6段＝−60%）。交代でリセット。リンリン出しっぱなし対策
+        Object.freeze({ type: 'nerisa_prison', everyMs: 5000, step: 0.1, maxStacks: 6 }),
       ]),
       extra: Object.freeze({ bossElement: 'aqua', enemyElement: 'aqua', bulletQuantityMultiplier: 1.0,
         ultGainMultiplier: 0.8, // build2241: ULTの溜まりを遅くし、水葬に合わせてULTを温存させる

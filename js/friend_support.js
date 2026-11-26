@@ -21,6 +21,7 @@
   //     heal  … 操作中キャラのHPを rate（最大HP比）回復
   //     stop  … ms のあいだ敵全体を行動停止
   //     clear … 敵弾を全消去し、ms のあいだ無敵
+  //     cleanse … 操作中キャラの状態異常（燃焼・出血・捕縛・子蜘蛛・鈍化・操作反転・水牢）をすべて解除（build2245）
   //     stealth … ms のあいだ隠密（敵に狙われない。敵は発動した位置を狙い続ける。アイナULTの気配遮断と同じ仕組み）
   //     smilebox … スマイルのびっくり箱を設置。ms 後に爆発（操作中キャラのATK×mul の範囲ダメージ＋アイテム1個。箱は敵弾も防ぐ）
   //   kind（PASSIVE）: すべて「属性限定」＝フレンドのキャラと同じ属性のキャラを操作している間だけ効く（全属性バフは無し）
@@ -43,7 +44,7 @@
     7:   A('shield','咆哮',       { hits:1 }),
     8:   A('stop',  '威圧',       { ms:2000 }),
     9:   P('p_cut', 'いばらの記憶',       { mul:.9 }),
-    10:  A('ult',   '星の導き',       { rate:.3 }),
+    10:  A('cleanse','星の祓い',        {}), // build2245: 状態異常をすべて解除
     11:  A('stop',  '蛇睨み',           { ms:2000 }),
     12:  A('shield','光の円環',         { hits:1 }),
     13:  A('atk',   '五月雨',       { mul:1.4, ms:4000 }),
@@ -54,7 +55,7 @@
     18:  P('p_cut', '黒羽の加護',       { mul:.9 }),
     19:  P('p_atk', '爆炎の心得', { mul:1.1 }),
     20:  A('stop',  '千ノ刻',           { ms:2000 }),
-    21:  A('heal',  '慈愛の光',         { rate:.25 }),
+    21:  A('cleanse','清めの光',        {}), // build2245: 状態異常をすべて解除
     22:  A('atk',   'キョーレツな応援', { mul:1.3, ms:5000 }),
     23:  P('p_cut', '静寂の加護',       { mul:.9 }),
     24:  A('heal',  '癒やしの灯',       { rate:.25 }),
@@ -121,6 +122,7 @@
       case 'heal':   return '操作中キャラのHPを' + pct(s.rate) + '回復';
       case 'stop':   return sec(s.ms) + '間、敵全体を行動停止';
       case 'clear':  return '敵弾を全て消し、' + sec(s.ms) + '間無敵';
+      case 'cleanse': return '操作中キャラの状態異常をすべて解除';
       case 'stealth': return sec(s.ms) + '間、隠密状態（敵に狙われない）';
       case 'smilebox': return 'びっくり箱を設置。' + sec(s.ms) + '後に爆発＋アイテム出現';
       case 'p_atk':  return scopeText(s) + 'ATK×' + s.mul;

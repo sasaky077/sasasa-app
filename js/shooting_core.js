@@ -3612,6 +3612,9 @@
       state.friendStealthTotalMs = ms;
       document.getElementById(PLAYER_ID)?.classList.add('aina-stealth-active');
       if (!isAinaStealthActive(now)) spawnAinaStealthVisuals(aim.x, aim.y);
+    } else if (s.kind === 'cleanse') {
+      // build2245: 操作中キャラのすべての状態異常を解除（アンジェ・オリオンのフレンドスキル）
+      cleanseActiveMemberAilments(now);
     } else if (s.kind === 'clear') {
       clearEnemyBulletsOnly();
       if (member) member.invincibleUntil = Math.max(Number(member.invincibleUntil || 0), now + Math.max(0, Number(s.ms || 1000)));
@@ -3621,6 +3624,57 @@
     renderHud();
   }
   window.useFriendSupportSkill = useFriendSupportSkill;
+
+  // build2245: 操作中キャラの状態異常をまとめて解除する。
+  //  燃焼（ヘイズ）／出血（シエン）／捕縛（カミラ）／張り付いた子蜘蛛（カミラ・記憶決戦）／鈍化・呪詛（イノリ）
+  //  ／操作反転（残響の塔10F）／水牢（記憶決戦ネリサ）
+  function cleanseActiveMemberAilments(now = performance.now()) {
+    if (!state) return 0;
+    const member = getActiveMember();
+    let n = 0;
+    if (member) {
+      if (Number(member.hazeBurnUntil || 0) > now) { member.hazeBurnUntil = 0; member.hazeBurnNextTickAt = 0; n++; }
+      if (member.shienBleeding) { member.shienBleeding = false; member.shienBleedNextAt = 0; n++; }
+    }
+    if (Number(state.camillaBindUntil || 0) > now) { try { clearCamillaBind(); } catch (_) { state.camillaBindUntil = 0; state.camillaBindPos = null; } n++; }
+    (state.normalEnemies || []).forEach(e => {
+      if (!e || !e.camSpider || e.camState !== 'latched') return;
+      e.camState = 'crawl';
+      e.camRecoverAt = now + 1200;
+      e.x += Number(e.latchDx || 0) * 2.4; e.y += Number(e.latchDy || 0) * 2.4 - 20;
+      e.el?.classList.remove('camilla-spider-latched');
+      n++;
+    });
+    if (state.inori && state.inori.slowMemberId) { try { clearInoriSlow(); } catch (_) {} n++; }
+    if (Number(state.tower10ReverseUntil || 0) > now) {
+      state.tower10ReverseUntil = 0;
+      try { removeTower10ReverseBanner(); } catch (_) {}
+      n++;
+    }
+    if (state.nerisaPrison && state.nerisaPrison.stacks > 0) {
+      state.nerisaPrison.fieldMs = 0; state.nerisaPrison.stacks = 0;
+      n++;
+    }
+    // 浄化の演出（白い光の輪）
+    const arena = document.getElementById('shooting-arena');
+    if (arena && state.player) {
+      if (!document.getElementById('friend-cleanse-style-v2245')) {
+        const st = document.createElement('style'); st.id = 'friend-cleanse-style-v2245';
+        st.textContent = `.friend-cleanse-fx{position:absolute;left:0;top:0;width:130px;height:130px;border-radius:50%;pointer-events:none;z-index:34;
+          background:radial-gradient(circle,rgba(255,255,255,.95) 0 10%,rgba(255,246,200,.6) 26%,rgba(255,236,170,0) 62%);
+          box-shadow:0 0 0 2px rgba(255,248,220,.9);animation:friendCleanse .6s ease-out forwards}
+          @keyframes friendCleanse{0%{scale:.25;opacity:1}100%{scale:1.4;opacity:0}}`;
+        document.head.appendChild(st);
+      }
+      const fx = document.createElement('div');
+      fx.className = 'friend-cleanse-fx';
+      fx.style.transform = `translate3d(${Number(state.player.x)}px,${Number(state.player.y)}px,0) translate(-50%,-50%)`;
+      arena.appendChild(fx);
+      setTimeout(() => fx.remove(), 650);
+    }
+    renderHud();
+    return n;
+  }
 
   function renderShootingLastClearParty() {
     const panel = document.getElementById('shooting-last-clear-party');
@@ -18188,7 +18242,8 @@
   function getPlayerMoveMultiplier() {
     // build1679: 位相回遊の異常「鈍化」は移動75%
     const poSlow = (getPhaseOdysseyAnomaly() === 'slow' ? 0.75 : 1) *
-      (isNerisaTideSlowActive() ? NERISA_TIDE_SLOW : 1); // build2119: ネリサの満ち潮（水中）
+      (isNerisaTideSlowActive() ? NERISA_TIDE_SLOW : 1) * // build2119: ネリサの満ち潮（水中）
+      getNerisaPrisonMultiplier(); // build2244: 記憶決戦ネリサ「水牢」
     if (!isInoriSlowActive()) return poSlow;
     return poSlow * (isInoriSpecialStage() ? 0.70 : Math.max(0.1, Math.min(1, Number(getInoriConfig()?.slowMultiplier || 0.5))));
   }
@@ -25182,10 +25237,12 @@
         // build463:
         // 通常時は従来のタッチ完全1:1追従。TICKETイノリの鈍化中だけ
         // 指の大きな移動でも一瞬で呪いを無視できないよう、実速度を制限する。
-        if ((isInoriSpecialStage() && isInoriSlowActive()) || isNerisaTideSlowActive()) {
+        const prisonOnly = isNerisaPrisonSlowActive() && !(isInoriSpecialStage() && isInoriSlowActive()) && !isNerisaTideSlowActive();
+        if ((isInoriSpecialStage() && isInoriSlowActive()) || isNerisaTideSlowActive() || isNerisaPrisonSlowActive()) {
           const dx = pointerX - state.player.x, dy = pointerY - state.player.y;
           const distance = Math.hypot(dx, dy);
-          const maxMove = Math.max(0, Number(c?.moveSpeed || 200)) * getPlayerMoveMultiplier() * dt;
+          // build2244: 水牢だけの時は、指の1:1追従に近い基準速度（移動速度×1.5）から割合で落とす
+          const maxMove = Math.max(0, Number(c?.moveSpeed || 200)) * (prisonOnly ? 1.5 : 1) * getPlayerMoveMultiplier() * dt;
           const ratio = distance > 0 ? Math.min(1, maxMove / distance) : 0;
           state.player.x += dx * ratio;
           state.player.y += dy * ratio;
@@ -30387,9 +30444,9 @@
     return String(t || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
   }
   function ensureNerisaMemoryStyle() {
-    if (document.getElementById('nerisa-memory-style-v2243')) return;
+    if (document.getElementById('nerisa-memory-style-v2244')) return;
     const st = document.createElement('style');
-    st.id = 'nerisa-memory-style-v2243';
+    st.id = 'nerisa-memory-style-v2244';
     st.textContent = `
       /* build2243: 水葬の予告（控えめ版）— 青い縁取り＋下から薄く迫る水面＋少し大きめのカウント */
       .memory-judgment.is-tide{background:radial-gradient(ellipse at 50% 48%,rgba(80,140,240,0) 58%,rgba(50,110,230,.16) 84%,rgba(16,50,150,.36) 100%);overflow:hidden}
@@ -30407,6 +30464,21 @@
       .memory-judgment.is-tide.is-sealed::after{border-top-color:rgba(230,250,255,.8);background:linear-gradient(180deg,rgba(200,245,255,0),rgba(150,225,255,.18))}
       .memory-judgment.is-tide.is-sealed .mj-box{background:rgba(20,90,120,.32);text-shadow:0 0 8px rgba(150,235,255,1),0 0 2px #063a4a}
       @media (prefers-reduced-motion:reduce){.memory-judgment.is-tide::after{animation:none}}
+      /* build2244: 水牢 — 自機を包む水の泡。段数（--k）で濃く、小さく締まっていく */
+      .nerisa-prison-bubble{position:absolute;left:0;top:0;width:86px;height:86px;border-radius:50%;pointer-events:none;z-index:12;opacity:0;
+        transition:opacity .35s ease;
+        background:radial-gradient(circle at 38% 32%,rgba(255,255,255,calc(.18 + .25*var(--k,0))) 0 9%,rgba(160,210,255,0) 22%),
+          radial-gradient(circle,rgba(110,170,255,0) 46%,rgba(90,150,250,calc(.10 + .30*var(--k,0))) 68%,rgba(40,100,220,calc(.25 + .45*var(--k,0))) 100%);
+        border:calc(1px + 2px*var(--k,0)) solid rgba(190,225,255,calc(.45 + .45*var(--k,0)));
+        box-shadow:0 0 calc(6px + 12px*var(--k,0)) rgba(90,160,255,.8),inset 0 0 calc(6px + 14px*var(--k,0)) rgba(120,180,255,.7);
+        animation:nerisaPrisonWobble 1.6s ease-in-out infinite alternate}
+      @keyframes nerisaPrisonWobble{from{border-radius:50% 48% 52% 50%}to{border-radius:48% 52% 49% 51%}}
+      .nerisa-prison-burst{position:absolute;left:0;top:0;width:92px;height:92px;border-radius:50%;pointer-events:none;z-index:13;
+        border:2px solid rgba(210,235,255,.95);box-shadow:0 0 12px rgba(120,180,255,.9);animation:nerisaPrisonPop .5s ease-out forwards}
+      .nerisa-prison-burst.is-tighten{animation-name:nerisaPrisonTighten}
+      @keyframes nerisaPrisonPop{from{scale:.8;opacity:1}to{scale:1.7;opacity:0}}
+      @keyframes nerisaPrisonTighten{from{scale:1.6;opacity:.2}to{scale:.85;opacity:0}}
+      @media (prefers-reduced-motion:reduce){.nerisa-prison-bubble{animation:none}}
       .nerisa-counter-charge{position:absolute;left:0;top:0;width:120px;height:120px;border-radius:50%;pointer-events:none;z-index:31;
         border:3px solid rgba(210,235,255,.95);box-shadow:0 0 18px rgba(120,180,255,.95),inset 0 0 14px rgba(150,200,255,.8);
         animation:nerisaCounterCharge .24s ease-in forwards}
@@ -32994,6 +33066,66 @@
     document.getElementById(PLAYER_ID)?.classList.toggle('nerisa-in-tide', on);
   }
 
+  // build2244: 記憶決戦ネリサ「水牢」— 同じキャラが場に出続けると everyMs ごとに移動速度が step ずつ落ちる（最大 maxStacks 段）。
+  //  交代でリセット。戦闘が止まっている間（PAUSE・演出中）は進まない。文字は出さず、自機を包む水の泡が濃くなっていく。
+  function getNerisaPrisonRule() {
+    return (getNerisaMemoryCfg() && typeof getMemoryRule === 'function') ? getMemoryRule('nerisa_prison') : null;
+  }
+  function isNerisaPrisonSlowActive() {
+    return !!(state && state.nerisaPrison && state.nerisaPrison.stacks > 0 && getNerisaPrisonRule());
+  }
+  function getNerisaPrisonMultiplier() {
+    const rule = getNerisaPrisonRule();
+    if (!rule || !state || !state.nerisaPrison) return 1;
+    return Math.max(0.1, 1 - Number(rule.step || 0.1) * Math.max(0, Number(state.nerisaPrison.stacks || 0)));
+  }
+  function updateNerisaPrison(now) {
+    const rule = getNerisaPrisonRule();
+    if (!rule || !state || !state.player) return;
+    const arena = document.getElementById('shooting-arena');
+    let pr = state.nerisaPrison;
+    if (!pr) {
+      pr = state.nerisaPrison = { memberId: Number(state.activeCharacterId || 0), fieldMs: 0, stacks: 0, lastAt: now, el: null };
+    }
+    const dt = Math.max(0, Math.min(250, now - Number(pr.lastAt || now)));
+    pr.lastAt = now;
+    const active = Number(state.activeCharacterId || 0);
+    if (pr.memberId !== active) {
+      // 交代でリセット（泡が弾ける）
+      if (pr.stacks > 0) spawnNerisaPrisonBurst(arena, Number(state.player.x), Number(state.player.y), false);
+      pr.memberId = active; pr.fieldMs = 0; pr.stacks = 0;
+    }
+    const running = state.running && !state.countdown && !state.paused && !state.ended && !state.finishing &&
+      !state.koTransition && !state.phaseTransition;
+    if (running) pr.fieldMs += dt;
+    const every = Math.max(1000, Number(rule.everyMs || 5000));
+    const maxStacks = Math.max(1, Math.floor(Number(rule.maxStacks || 6)));
+    const next = Math.min(maxStacks, Math.floor(pr.fieldMs / every));
+    if (next > pr.stacks) spawnNerisaPrisonBurst(arena, Number(state.player.x), Number(state.player.y), true);
+    pr.stacks = next;
+    // 自機を包む水の泡（段数で濃く・小さく締まる）
+    if (!arena) return;
+    if (!pr.el || !pr.el.isConnected) {
+      ensureNerisaMemoryStyle();
+      pr.el = document.createElement('div');
+      pr.el.className = 'nerisa-prison-bubble';
+      arena.appendChild(pr.el);
+    }
+    const k = pr.stacks / maxStacks;
+    pr.el.style.opacity = pr.stacks > 0 && !state.ended ? String(0.25 + 0.75 * k) : '0';
+    pr.el.style.setProperty('--k', k.toFixed(3));
+    pr.el.style.transform = `translate3d(${Number(state.player.x)}px,${Number(state.player.y)}px,0) translate(-50%,-50%) scale(${(1.25 - 0.35 * k).toFixed(3)})`;
+  }
+  function spawnNerisaPrisonBurst(arena, x, y, tighten) {
+    if (!arena || !Number.isFinite(x) || !Number.isFinite(y)) return;
+    ensureNerisaMemoryStyle();
+    const el = document.createElement('div');
+    el.className = 'nerisa-prison-burst' + (tighten ? ' is-tighten' : '');
+    el.style.transform = `translate3d(${x}px,${y}px,0) translate(-50%,-50%)`;
+    arena.appendChild(el);
+    setTimeout(() => el.remove(), 520);
+  }
+
   function isNerisaTideSlowActive() {
     return !!(state && state.nerisa && state.nerisa.inTide && isNerisaBattle());
   }
@@ -33020,6 +33152,7 @@
     }
     if (nr.startedAt && now - nr.startedAt > 900) pumpNerisaHints(now);
     if (nr.liquidUntil && now >= nr.liquidUntil) endNerisaLiquid(now, w, h);
+    try { updateNerisaPrison(now); } catch (err) { if (!nr.prisonErrorLogged) { nr.prisonErrorLogged = true; console.warn('[nerisa] prison skipped', err); } } // build2244
     updateNerisaVeilStage(now);
     updateNerisaClones(now, w, h, halted);
     updateNerisaDrops(now, nr, cfg, w, h, halted);
