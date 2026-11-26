@@ -1285,7 +1285,29 @@
     document.removeEventListener('keydown',onSkinPreviewKey);
   }
 
+  // build2239: アイテム画面から別の画面へ移ったら、交換・売却・プレビューの画面をすべて閉じる
+  function closeAllItemOverlays(){
+    try{closeExchangeQty();}catch(_){}
+    try{closeFlowerSRExchange();}catch(_){}
+    try{closeFlowerExchange();}catch(_){}
+    try{closeSell();}catch(_){}
+    try{closeSkinPreview();}catch(_){}
+  }
+  function watchItemScreenLeave(){
+    const screen=document.getElementById('screen-item');
+    if(!screen || screen.dataset.leaveWatch) return;
+    screen.dataset.leaveWatch='1';
+    let wasActive=screen.classList.contains('active');
+    new MutationObserver(()=>{
+      const active=screen.classList.contains('active');
+      if(wasActive && !active) closeAllItemOverlays();
+      wasActive=active;
+    }).observe(screen,{attributes:true,attributeFilter:['class']});
+  }
+  window.closeItemManagementOverlays=closeAllItemOverlays;
+
   function bind(){
+    watchItemScreenLeave();
     const srList=document.getElementById('spirit-flower-sr-exchange-list');
     if(srList)srList.addEventListener('click',e=>{const preview=e.target.closest('[data-sr-skin-preview]');if(preview){openSkinPreview(Number(preview.dataset.srSkinPreview));return;}const btn=e.target.closest('[data-flower-sr-exchange-id]');if(btn&&!btn.disabled){const d=exchangeDef('sr',btn.dataset.flowerSrExchangeId);if(d&&!d.characterId)openExchangeQty('sr',d.id);else exchangeFlowerSR(btn.dataset.flowerSrExchangeId);}});
     document.querySelectorAll('[data-flower-sr-exchange-close]').forEach(el=>el.addEventListener('click',closeFlowerSRExchange));

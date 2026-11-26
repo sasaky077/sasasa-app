@@ -30378,6 +30378,33 @@
     }
     if (state.player && Number(state.player.invulnUntil || 0) > prev) state.player.invulnUntil = Number(state.player.invulnUntil) + dt;
   }
+  function escapeJudgmentTitle(t) {
+    return String(t || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  }
+  function ensureNerisaMemoryStyle() {
+    if (document.getElementById('nerisa-memory-style-v2240')) return;
+    const st = document.createElement('style');
+    st.id = 'nerisa-memory-style-v2240';
+    st.textContent = `
+      .memory-judgment.is-tide{background:radial-gradient(ellipse at 50% 50%,rgba(120,180,255,0) 55%,rgba(90,150,255,.16) 82%,rgba(20,60,160,.34) 100%)}
+      .memory-judgment.is-tide .mj-box{color:#eef6ff;text-shadow:0 0 8px rgba(90,160,255,.95),0 0 2px #06245a,0 0 1px #000}
+      .memory-judgment.is-tide.is-sealed{background:radial-gradient(ellipse at 50% 45%,rgba(200,240,255,0) 35%,rgba(150,230,255,.22) 80%,rgba(40,120,160,.3) 100%)}
+      .nerisa-counter-charge{position:absolute;left:0;top:0;width:120px;height:120px;border-radius:50%;pointer-events:none;z-index:31;
+        border:3px solid rgba(210,235,255,.95);box-shadow:0 0 18px rgba(120,180,255,.95),inset 0 0 14px rgba(150,200,255,.8);
+        animation:nerisaCounterCharge .24s ease-in forwards}
+      @keyframes nerisaCounterCharge{from{scale:1.5;opacity:.2}to{scale:.35;opacity:1}}
+      .nerisa-counter-lance{position:absolute;left:0;top:0;height:14px;margin-top:-7px;transform-origin:0 50%;pointer-events:none;z-index:32;border-radius:7px;
+        background:linear-gradient(90deg,rgba(150,200,255,.2),rgba(225,242,255,1) 70%,#fff);
+        box-shadow:0 0 14px rgba(110,170,255,1),0 0 30px rgba(90,150,255,.7);animation:nerisaCounterLance .5s ease-out forwards}
+      @keyframes nerisaCounterLance{0%{clip-path:inset(0 100% 0 0);opacity:1}25%{clip-path:inset(0 0 0 0);opacity:1}100%{clip-path:inset(0 0 0 0);opacity:0;height:4px;margin-top:-2px}}
+      .nerisa-counter-hit{position:absolute;left:0;top:0;width:150px;height:150px;border-radius:50%;pointer-events:none;z-index:33;
+        background:radial-gradient(circle,rgba(255,255,255,.95) 0 12%,rgba(170,215,255,.75) 30%,rgba(90,150,255,0) 68%);
+        animation:nerisaCounterHit .6s ease-out forwards}
+      @keyframes nerisaCounterHit{0%{scale:.2;opacity:1}100%{scale:1.25;opacity:0}}
+      @media (prefers-reduced-motion:reduce){.nerisa-counter-charge,.nerisa-counter-lance,.nerisa-counter-hit{animation-duration:.01s}}
+    `;
+    document.head.appendChild(st);
+  }
   function updateMemoryJudgment(now) {
     const rule = getMemoryRule('judgment');
     if (!rule || !state || !state.boss) return;
@@ -30433,9 +30460,10 @@
       if (!onToriiBreak && now < mj.nextAt) return;
       mj.warnUntil = onToriiBreak ? Number(state.inori.reviveAt) : now + warnMs;
       mj.sealed = false;
+      if (rule.theme) ensureNerisaMemoryStyle();
       mj.el = document.createElement('div');
-      mj.el.className = 'memory-judgment';
-      mj.el.innerHTML = '<div class="mj-box"><div class="mj-title">神罰</div><div class="mj-count"></div><div class="mj-hint" hidden></div></div>'; // build1773: 攻略のヒントは出さない
+      mj.el.className = 'memory-judgment' + (rule.theme ? ' is-' + String(rule.theme).replace(/[^a-z0-9_-]/gi, '') : '');
+      mj.el.innerHTML = '<div class="mj-box"><div class="mj-title">' + escapeJudgmentTitle(rule.title || '神罰') + '</div><div class="mj-count"></div><div class="mj-hint" hidden></div></div>'; // build1773: 攻略のヒントは出さない
       arena.appendChild(mj.el);
     }
     // カウントダウン
@@ -30443,10 +30471,10 @@
     // build2107: TICKETイノリの神罰は着弾時の「出場キャラ本人の無敵」のみで防ぐ。
     // キャラ交代で付く state.player.invulnUntil (260ms) は対象外。
     // また、交代前の無敵判定を mj.sealed にラッチしない（切替による回避を防止）。
-    const protectedFromJudgment = onToriiBreak
+    const protectedFromJudgment = (onToriiBreak || rule.invincibleOnly) // build2240: invincibleOnly＝出撃中キャラの無敵だけで防ぐ
       ? (() => { const active = getActiveMember(); return !!(active && now < Number(active.invincibleUntil || 0)); })()
       : isMemoryJudgmentProtected(now);
-    if (onToriiBreak) {
+    if (onToriiBreak || rule.invincibleOnly) {
       mj.sealed = protectedFromJudgment;
       if (mj.el) {
         mj.el.classList.toggle('is-sealed', protectedFromJudgment);
@@ -30481,15 +30509,24 @@
     flash.className = 'memory-judgment-flash';
     arena.appendChild(flash);
     setTimeout(() => flash.remove(), 600);
+    const jTitle = String(rule.title || '神罰');
     if (mj.sealed || protectedFromJudgment) {
-      showMemoryGuardNotice('神罰を退けた', true, 'JUDGMENT');
+      showMemoryGuardNotice(jTitle + 'を退けた', true, 'JUDGMENT');
       return;
     }
     const member = getActiveMember();
     if (!member || member.hp <= 0) return;
     const name = String((getCurrentCharacter() || {}).name || '');
+    // build2240: damageRate＝最大HPの割合ダメージ。lethalFromPhase 以降は即死。
+    const jPhase = Math.max(1, Number(state.boss?.phase || 1));
+    const lethalNow = Number(rule.lethalFromPhase || 0) > 0 && jPhase >= Number(rule.lethalFromPhase);
+    if (!lethalNow && Number(rule.damageRate || 0) > 0) {
+      triggerPlayerHitScreenShake();
+      damagePlayer(now, Math.max(1, Math.round(Number(member.hpMax || 0) * Number(rule.damageRate))), 'raw', 'neutral', 'judgment');
+      return;
+    }
     // build1801: rule.damage があれば即死ではなく固定ダメージ（属性相性・シオンULTの軽減・HP強化が効く）
-    const fixed = Math.max(0, Number(rule.damage || 0));
+    const fixed = lethalNow ? 0 : Math.max(0, Number(rule.damage || 0));
     if (fixed > 0) {
       triggerPlayerHitScreenShake();
       damagePlayer(now, fixed, 'raw', normalizeCombatElement(rule.element || selectedStage.bossElement || selectedStage.element) || 'neutral', 'judgment');
@@ -30501,7 +30538,7 @@
     member.hp = 0;
     triggerPlayerHitScreenShake();
     renderHud();
-    if (!name) showMemoryGuardNotice('神罰', false, 'JUDGMENT');
+    if (!name) showMemoryGuardNotice(jTitle, false, 'JUDGMENT');
     beginPlayerDefeat(); // build1865: 「〇〇 LOST」は共通演出で表示
   }
 
@@ -32283,7 +32320,55 @@
     nr.rings.push({ x: bx, y: by, born: now, life: 600, r0: 24, r1: 110, w: 3 });
     // ヴェールも一緒に弾ける
     nerisaBlastAll(.7, { noCrack: true });
+    triggerNerisaMemoryCounter(now); // build2240: 記憶決戦「水鏡」の反撃
     nr.badge?.classList.remove('pulse'); void nr.badge?.offsetWidth; nr.badge?.classList.add('pulse');
+  }
+
+  // build2240: 記憶決戦ネリサ「水鏡」— 液状化した瞬間、自機へ水の槍で反撃（最大HPのdamageRate）。無敵なら防げる。
+  //  文字は出さず、「強く撃つ → 雫に散る → 槍が飛んでくる」の見た目だけで伝える。
+  function triggerNerisaMemoryCounter(now) {
+    if (!getNerisaMemoryCfg() || typeof getMemoryRule !== 'function') return;
+    const rule = getMemoryRule('nerisa_counter');
+    if (!rule || !state || state.ended || state.finishing) return;
+    const arena = document.getElementById('shooting-arena');
+    const bx = Number(state.boss?.x || 0), by = Number(state.boss?.y || 0);
+    const delay = Math.max(0, Number(rule.delayMs || 220));
+    ensureNerisaMemoryStyle();
+    // 予兆：ボスの位置に青白い輪
+    if (arena) {
+      const ring = document.createElement('div');
+      ring.className = 'nerisa-counter-charge';
+      ring.style.transform = `translate3d(${bx}px,${by}px,0) translate(-50%,-50%)`;
+      arena.appendChild(ring);
+      setTimeout(() => ring.remove(), delay + 200);
+    }
+    setTimeout(() => {
+      if (!state || state.ended || state.finishing || state.koTransition) return;
+      const member = getActiveMember();
+      if (!member || member.hp <= 0) return;
+      const t = performance.now();
+      const px = Number(state.player?.x || 0), py = Number(state.player?.y || 0);
+      const sx = Number(state.boss?.x || bx), sy = Number(state.boss?.y || by);
+      if (arena) {
+        const len = Math.hypot(px - sx, py - sy), ang = Math.atan2(py - sy, px - sx) * 180 / Math.PI;
+        const lance = document.createElement('div');
+        lance.className = 'nerisa-counter-lance';
+        lance.style.width = `${len}px`;
+        lance.style.transform = `translate3d(${sx}px,${sy}px,0) rotate(${ang}deg)`;
+        arena.appendChild(lance);
+        setTimeout(() => lance.remove(), 520);
+        const hit = document.createElement('div');
+        hit.className = 'nerisa-counter-hit';
+        hit.style.transform = `translate3d(${px}px,${py}px,0) translate(-50%,-50%)`;
+        arena.appendChild(hit);
+        setTimeout(() => hit.remove(), 620);
+      }
+      const protectedNow = t < Number(member.invincibleUntil || 0);
+      if (protectedNow) { showMemoryGuardNotice('反撃を防いだ', true, 'COUNTER'); return; }
+      const dmg = Math.max(1, Math.round(Number(member.hpMax || member.hp || 0) * Math.max(0, Number(rule.damageRate || 0.45))));
+      triggerPlayerHitScreenShake();
+      damagePlayer(t, dmg, 'raw', 'neutral', 'nerisa-counter');
+    }, delay);
   }
 
   function endNerisaLiquid(now, w, h) {
@@ -32386,7 +32471,12 @@
   // ---- 攻略ヒント（同時に1枚だけ。順番に出す）----
   // build2128: 戦闘中の文字（ヒント・テロップ）は出さない。演出で見せる。必要になれば true に戻す。
   const NERISA_TEXT_UI = false;
+  // build2240: 記憶決戦ネリサの設定（ステージの nerisaMemory）。レイドでは null
+  function getNerisaMemoryCfg() {
+    return (selectedStage && selectedStage.nerisaMemory) || null;
+  }
   function queueNerisaHint(key, title, body, ms = 3600, flashOnly = false) {
+    if (getNerisaMemoryCfg() && getNerisaMemoryCfg().hints === false) return; // build2240: 記憶決戦は文字ヒントなし
     const nr = state && state.nerisa;
     if (!nr || !NERISA_TEXT_UI) return;
     if (key) { if (nr.hintSeen[key]) return; nr.hintSeen[key] = true; }
@@ -32897,7 +32987,11 @@
     const { w, h } = getShienArenaSize();
     const halted = state.ended || state.finishing || state.koTransition || state.phaseTransition ||
       !(state.boss && state.boss.hp > 0);
-    const cfg = NERISA_TIER[getNerisaTier()] || NERISA_TIER[1];
+    const baseCfg = NERISA_TIER[getNerisaTier()] || NERISA_TIER[1];
+    // build2240: 記憶決戦は雫のヴェールの粒を減らす（dropScale:0＝ヴェールなし）
+    const mcfg = getNerisaMemoryCfg();
+    const cfg = mcfg && mcfg.dropScale != null
+      ? Object.assign({}, baseCfg, { count: Math.max(0, Math.round(baseCfg.count * Number(mcfg.dropScale))) }) : baseCfg;
     // 開幕：2つのギミックと攻略の答えを先に見せる
     if (!nr.startedAt && !halted) {
       nr.startedAt = now;
@@ -40157,6 +40251,8 @@
 
   window.closeShootingEvent = async function () {
     if (rejectShootingBattleAbandon()) return;
+    // build2238: 戦闘から戻る時に、サーバーで付与された結晶・コインをHUDへ反映
+    try { if (typeof window.syncWalletFromServer === 'function') setTimeout(() => window.syncWalletFromServer(true), 300); } catch (_) {}
     phaseOdysseyBattleCommitted = false;
     // 塔の確認中にゲーム画面を閉じても、出撃に進まない。
     if (window.ResonanceTower?.cancelSealConfirmation) window.ResonanceTower.cancelSealConfirmation();

@@ -2352,6 +2352,8 @@
     overseer_watch: Object.freeze({ name: '監視', desc: 'しもべの視界に入っている間、敵弾がすべて自機を追ってくる' }),
     maga_eye: Object.freeze({ name: '禍眼', desc: '即死の眼が10秒間ゆっくり追ってくる。敵弾を消すスキルでのみ消せる' }),
     overseer_gaze: Object.freeze({ name: '凝視', desc: '凝視の間だけ光の安全地帯が現れる。外にいると禍眼が高速で迫り、中では止まる。安全地帯は次々に移る' }),
+    // build2240: 水底の記憶：ネリサ
+    nerisa_counter: Object.freeze({ name: '水鏡', desc: '強い一撃を受けると雫に散り、すぐさま反撃してくる' }),
   });
   const MEMORY_BATTLE_STAGES = Object.freeze([
     Object.freeze({
@@ -2435,8 +2437,29 @@
         bulletQuantityMultiplier: 0.80, // build2003: 通常弾の発射頻度を20%削減（禍眼・凝視は変更しない）
         bossAdds: Object.freeze({ enemyIds: Object.freeze([SHOOTING_ENEMY_ID.MEMORY_WATCHER]), totalEnemies: 0, maxActive: 2, startDelayMs: 2600, spawnIntervalMs: 7000, defeatedRespawnMs: 5000 }) }),
     }),
+    // build2240: 06 ネリサ（水）。画面上は「05」。木しか通らない＋大潮（定期の大ダメージ→PHASE3は即死。無敵でのみ防げる）
+    //  ＋水鏡（一撃300以上を受けると液状化して即反撃）。リンリン（木・無敵ULT）が活躍し、大技主体（ハオ等）は反撃を受ける。
+    //  レイドの「雫のヴェール」は使わない（爆風が必須にならないように）。戦闘中の文字ヒントも出さない。
+    Object.freeze({
+      no: 6, bossKey: 'nerisa', bossName: 'ネリサ', title: '水底の記憶',
+      panelImage: 'images/memory_nerisa.webp',
+      enemyId: SHOOTING_ENEMY_ID.RAID_NERISA, element: 'aqua',
+      background: 'images/battle_bg_01.webp',
+      bossGaugeHps: Object.freeze([10000, 11500, 13500]),
+      timeLimitSeconds: 180,
+      rules: Object.freeze([
+        Object.freeze({ type: 'element_barrier' }),
+        // 大潮：約17秒ごとに3秒のカウントダウン。PHASE1・2は最大HPの70%、PHASE3は即死。出撃中キャラの無敵でのみ防げる（時間停止は不可）。
+        Object.freeze({ type: 'judgment', title: '大潮', theme: 'tide', firstMs: 12000, intervalMs: 17000, warnMs: 3000,
+          damageRate: 0.7, lethalFromPhase: 3, invincibleOnly: true }),
+        // 水鏡：一撃300以上で液状化（既存の分裂）＋反撃（最大HPの45%）。無敵なら防げる。
+        Object.freeze({ type: 'nerisa_counter', damageRate: 0.45, delayMs: 220 }),
+      ]),
+      extra: Object.freeze({ bossElement: 'aqua', enemyElement: 'aqua', bulletQuantityMultiplier: 0.9,
+        nerisaMemory: Object.freeze({ dropScale: 0, hints: false }) }),
+    }),
   ]);
-  const MEMORY_BATTLE_SLOT_COUNT = 4; // build1982: UIはリヴィア / テスト / ヘイズ / オーバーシア（内部番号 01 / 03 / 04 / 05、表示は 01〜04）
+  const MEMORY_BATTLE_SLOT_COUNT = 5; // build2240: リヴィア / テスト / ヘイズ / オーバーシア / ネリサ（内部番号 01 / 03 / 04 / 05 / 06、表示は 01〜05）
   const memoryBattleStageCache = new Map();
   function getMemoryBattleStageDef(no) {
     const n = Math.floor(Number(no) || 0);

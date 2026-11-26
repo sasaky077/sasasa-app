@@ -143,6 +143,8 @@
     const claimed=!!(rankResult&&rankResult.a_reward);
     if(claimed && window.ShinjuProgress?.refreshFromServer){try{await window.ShinjuProgress.refreshFromServer();}catch(_){}}
     if(win && data&&data.win===true){void refresh();}
+    // build2238: Sランク報酬などの結晶を再起動なしでHUDへ反映
+    try{ if(typeof window.syncWalletFromServer==='function') void window.syncWalletFromServer(true); }catch(_){}
     return {memoryConfirmed:!win||!!(data&&data.win===true),firstClearClaimed:false,firstClearAmount:0,
       shinjuRewardExp:claimed?30:0,highScore:0,memoryRank:rankResult?.rank?String(rankResult.rank).toUpperCase():''};
   }
@@ -228,7 +230,14 @@
       } else if (rule.type === 'judgment') {
         const sec = Math.round(Math.max(5000, Number(rule.intervalMs || 20000)) / 1000);
         const dmg = Math.max(0, Math.floor(Number(rule.damage || 0)));
-        rows.push({ icon: 'judgment', name: '神罰', text: dmg > 0
+        // build2240: 大潮（割合ダメージ→後半は即死。無敵でのみ防げる）
+        if (Number(rule.damageRate || 0) > 0) {
+          const pct = Math.round(Number(rule.damageRate) * 100);
+          rows.push({ icon: 'judgment', name: String(rule.title || '神罰'), text: `約${sec}秒ごとに最大HPの${pct}%ダメージ`
+            + (rule.lethalFromPhase ? `（PHASE${rule.lethalFromPhase}は即死）` : '') + (rule.invincibleOnly ? '。無敵で防げる' : '') });
+          return;
+        }
+        rows.push({ icon: 'judgment', name: String(rule.title || '神罰'), text: dmg > 0
           ? `約${sec}秒ごとに、出撃中のキャラへ${dmg.toLocaleString('ja-JP')}ダメージ`
           : `約${sec}秒ごとに、出撃中のキャラが即死する` });
       } else if (rule.type === 'sniper') {
@@ -253,6 +262,8 @@
         if (Number(rule.spiderCount || 0) > 0) rows.push({ icon: 'drop', name: '吸血', text: '子蜘蛛に張り付かれると、ボスが回復する' });
       } else if (rule.type === 'maga_eye' || rule.type === 'overseer_watch' || rule.type === 'overseer_gaze') { // build1982
         if (info[rule.type]) rows.push({ icon: rule.type === 'maga_eye' ? 'sniper' : 'eye', name: info[rule.type].name, text: info[rule.type].desc });
+      } else if (rule.type === 'nerisa_counter' && info[rule.type]) { // build2240
+        rows.push({ icon: 'drop', name: info[rule.type].name, text: info[rule.type].desc });
       } else if (info[rule.type]) {
         rows.push({ icon: 'rule', name: info[rule.type].name, text: info[rule.type].desc });
       }
@@ -275,7 +286,7 @@
   }
   // カードの立ち絵：ステージ定義の panelImage（images/rivia_panel.webp 等）。無ければ戦闘画像。
   function panelImage(def){
-    const portraits = {1:'images/memory_rivia.webp',3:'images/memory_test.webp',4:'images/memory_haze.webp',5:'images/memory_oversheer.webp'}; // build1982
+    const portraits = {1:'images/memory_rivia.webp',3:'images/memory_test.webp',4:'images/memory_haze.webp',5:'images/memory_oversheer.webp',6:'images/memory_nerisa.webp'}; // build2240
     return portraits[Number(def.no)] || String(def.panelImage || '') || bossImage(def);
   }
 
@@ -423,7 +434,8 @@
       1: { name:'リヴィア', condition:'ショット「CHARGE」を持つキャラを編成せずにクリア' },
       3: { name:'テスト', condition:'1体のみで編成してクリア' },
       4: { name:'ヘイズ', condition:'レアリティ「SR」のキャラを編成せずにクリア' },
-      5: { name:'オーバーシア', condition:'ショット「HOMING」を持つキャラを編成せずにクリア' } // build1982（判定はサーバー）
+      5: { name:'オーバーシア', condition:'ショット「HOMING」を持つキャラを編成せずにクリア' }, // build1982（判定はサーバー）
+      6: { name:'ネリサ', condition:'レアリティ「R」のキャラだけで編成してクリア' } // build2240（判定はサーバー）
     };
     const def = definitions[stageNo];
     if (!def) return;
@@ -465,7 +477,7 @@
     if (!root) return;
     const S = stages();
     const visibleDefs = S && Array.isArray(S.MEMORY_BATTLE_STAGES)
-      ? S.MEMORY_BATTLE_STAGES.filter(def => def && (def.no === 1 || def.no === 3 || def.no === 4 || def.no === 5)) // build1982: 05 オーバーシア
+      ? S.MEMORY_BATTLE_STAGES.filter(def => def && (def.no === 1 || def.no === 3 || def.no === 4 || def.no === 5 || def.no === 6)) // build2240: 06 ネリサ
       : [];
     const total = visibleDefs.length || 3;
     const cleared = clearedSet();
@@ -491,7 +503,7 @@
       const displayNo = index + 1; // 画面上は01 リヴィア / 02 テスト / 03 ヘイズ
       const rank = rankState[String(no)] || '';
       const done = Boolean(rank);
-      const condition = ({1:'CHARGEキャラなしでクリア',3:'1体編成でクリア',4:'SRキャラなしでクリア',5:'HOMINGキャラなしでクリア'})[no] || '';
+      const condition = ({1:'CHARGEキャラなしでクリア',3:'1体編成でクリア',4:'SRキャラなしでクリア',5:'HOMINGキャラなしでクリア',6:'Rキャラだけでクリア'})[no] || '';
       const img = panelImage(def);
       const fallback = bossImage(def);
       const rules = ruleRows(def).map(r => `<li class="mb-rule">${ruleIconHtml(r.icon)}<span class="mb-rule-name">${esc(r.name)}</span><span class="mb-rule-text">${esc(r.text)}</span></li>`).join('');
@@ -500,7 +512,7 @@
           <span class="mb-ribbon"><b>${pad2(displayNo)}</b></span>
           <div class="mb-names">
             <strong class="mb-boss">${esc(def.bossName)}</strong>
-            <span class="mb-sub"><i></i>${esc(({1:'雨宿りの守護者の記憶',3:'未知との遭遇の記憶',4:'揺らめく陽炎の記憶',5:'監視者の記憶'})[no] || def.title || '')}<i></i></span>
+            <span class="mb-sub"><i></i>${esc(({1:'雨宿りの守護者の記憶',3:'未知との遭遇の記憶',4:'揺らめく陽炎の記憶',5:'監視者の記憶',6:'水底の記憶'})[no] || def.title || '')}<i></i></span>
           </div>
           ${rank ? `<span class="mb-rank-indicator mb-rank-${rank.toLowerCase()}"><small>BEST</small><b>${rank}</b></span>` : `<span class="mb-rank-indicator mb-rank-none"><small>BEST</small><b>—</b></span>`}
           <button type="button" class="mb-rewards-open" data-mb-rewards="${no}" aria-label="${esc(def.bossName)}のクリア報酬を見る">クリア報酬 <span aria-hidden="true">›</span></button>
