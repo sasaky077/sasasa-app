@@ -530,14 +530,115 @@
             '<div class="item-row-desc">'+escapeHtml(meta.desc||'進化に使用する素材。')+'</div>'+
             '<div class="item-row-count"><span>OWNED</span><strong>'+fmt(qty)+'</strong></div>'+
           '</div>'+
+          (pieceActionHtml(id,qty) ||
           '<div class="item-row-actions">'+
             '<button class="item-sell-btn" type="button" data-sell-item="'+escapeHtml(id)+'" '+(sellable?'':'disabled')+'>売却</button>'+
             '<div class="item-row-price">'+
               (price>0?'<img src="images/icon_coin.webp" alt=""> '+fmt(price)+' / 個':'売却対象外')+
             '</div>'+
-          '</div>'+
+          '</div>')+
         '</article>';
     }).join('');
+  }
+
+  // build2236: キャラ入手の共通処理（レイド欠片の交換など）
+  function resolveCharaId(id, name){
+    const n=Number(id||0); if(n>0) return n;
+    const list=Array.isArray(window.CHARACTERS)?window.CHARACTERS:[];
+    const c=list.find(x=>x&&String(x.name)===String(name||''));
+    return c?Number(c.id):0;
+  }
+  async function syncOwnedCharacter(charaId){
+    let synced=false;
+    if(charaId && typeof window.refreshOwnedCharacterById==='function'){
+      try{ await window.refreshOwnedCharacterById(charaId); synced=true; }catch(err){ console.warn('[ItemManagement] owned character sync failed',err); }
+    }
+    if(!synced && typeof window.loadDatabaseFromSupabase==='function'){ try{ await window.loadDatabaseFromSupabase(); synced=true; }catch(_){ } }
+    return synced;
+  }
+  function showCharacterObtainModal(o){
+    o=o||{};
+    const cid=Number(o.charaId||0);
+    const list=Array.isArray(window.CHARACTERS)?window.CHARACTERS:[];
+    const c=list.find(x=>x&&Number(x.id)===cid)||{};
+    const name=String(o.name||c.name||'');
+    const img=c.panelImg||(cid?'images/chara_'+String(cid).padStart(2,'0')+'_panel.webp':'');
+    const msg=String(o.message||(name+' が仲間になりました！'));
+    const title=o.converted?'CONVERTED':(/限界突破|凸/.test(msg)?'LIMIT BREAK':'NEW CHARACTER');
+    if(!document.getElementById('zs-obtain-style')){
+      const st=document.createElement('style'); st.id='zs-obtain-style';
+      st.textContent=`
+        #zs-obtain-modal{position:fixed;inset:0;z-index:520600;display:flex;align-items:center;justify-content:center;background:rgba(255,250,238,.84);
+          backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);animation:zsObIn .45s ease-out both}
+        #zs-obtain-modal .zso-card{position:relative;display:flex;flex-direction:column;align-items:center;gap:11px;padding:24px 26px 18px;width:min(300px,84vw);box-sizing:border-box;
+          border:1px solid #d6b878;border-radius:4px;background:linear-gradient(180deg,#fffdf6,#f6ecd6);box-shadow:0 10px 30px rgba(120,90,40,.25);animation:zsObPop .55s cubic-bezier(.2,1.3,.4,1) both}
+        #zs-obtain-modal .zso-card::before{content:"";position:absolute;inset:5px;border:1px solid rgba(214,184,120,.45);pointer-events:none}
+        #zs-obtain-modal small{font:600 9px/1 "Cinzel",serif;letter-spacing:.36em;color:#b58a3e}
+        #zs-obtain-modal .zso-title{font:700 17px/1 "Cinzel",serif;letter-spacing:.22em;color:#8a6224}
+        #zs-obtain-modal .zso-face{position:relative;width:150px;height:150px}
+        #zs-obtain-modal .zso-face::before{content:"";position:absolute;inset:-14px;border-radius:50%;background:radial-gradient(circle,rgba(255,226,150,.75),rgba(255,226,150,0) 68%);animation:zsObGlow 2.2s ease-in-out infinite alternate}
+        #zs-obtain-modal img{position:relative;width:150px;height:150px;object-fit:cover;object-position:50% 16%;border-radius:50%;border:2px solid #e2c88e;box-shadow:0 0 22px rgba(255,214,120,.65);background:#fff8e8}
+        #zs-obtain-modal .zso-name{font:700 20px/1.2 "Noto Serif JP",serif;color:#4f3a22;letter-spacing:.08em}
+        #zs-obtain-modal .zso-msg{font:500 13px/1.5 "Noto Serif JP",serif;color:#6b5434;text-align:center}
+        #zs-obtain-modal button{margin-top:4px;padding:9px 30px;border:1px solid #c9a25a;background:#fffaf0;color:#6b5434;font:600 13px/1 "Noto Serif JP",serif;letter-spacing:.2em;border-radius:2px}
+        @keyframes zsObIn{from{opacity:0}to{opacity:1}}
+        @keyframes zsObPop{from{opacity:0;transform:scale(.86) translateY(10px)}to{opacity:1;transform:none}}
+        @keyframes zsObGlow{from{opacity:.55;transform:scale(.95)}to{opacity:1;transform:scale(1.05)}}
+        @media (prefers-reduced-motion:reduce){#zs-obtain-modal,#zs-obtain-modal .zso-card,#zs-obtain-modal .zso-face::before{animation:none}}`;
+      document.head.appendChild(st);
+    }
+    document.getElementById('zs-obtain-modal')?.remove();
+    const el=document.createElement('div'); el.id='zs-obtain-modal'; el.setAttribute('role','dialog'); el.setAttribute('aria-modal','true');
+    el.setAttribute('data-skin-ignore','');
+    el.innerHTML='<div class="zso-card"><small>'+escapeHtml(o.kicker||'GET')+'</small><div class="zso-title">'+title+'</div>'+
+      (img?'<div class="zso-face"><img src="'+escapeHtml(img)+'" alt="" onerror="this.style.visibility=\'hidden\'"></div>':'')+
+      '<div class="zso-name">'+escapeHtml(name)+'</div><div class="zso-msg">'+escapeHtml(msg)+'</div><button type="button">閉じる</button></div>';
+    el.querySelector('button').addEventListener('click',()=>el.remove());
+    el.addEventListener('click',e=>{ if(e.target===el) el.remove(); });
+    document.body.appendChild(el);
+  }
+  window.showCharacterObtainModal=showCharacterObtainModal;
+  window.syncOwnedCharacterById=syncOwnedCharacter;
+
+  // build2235: レイドボスの欠片は、必要数に達していればどの日でもここからキャラと交換できる
+  function raidPieceMeta(id){
+    try{ const m=typeof window.getRaidPieceItemMeta==='function'?window.getRaidPieceItemMeta(id):null; return m&&m.bossKey?m:null; }catch(_){ return null; }
+  }
+  function pieceActionHtml(id,qty){
+    const pm=raidPieceMeta(id); if(!pm) return '';
+    const need=Math.max(1,Number(pm.need||10)), ready=qty>=need;
+    return '<div class="item-row-actions">'+
+      '<button class="item-sell-btn item-piece-exchange-btn'+(ready?' is-ready':'')+'" type="button" data-piece-exchange="'+escapeHtml(id)+'" '+(ready&&!state.exchanging?'':'disabled')+'>交換</button>'+
+      '<div class="item-row-price">'+(ready?'<b class="item-piece-ready">'+escapeHtml(pm.charaName)+'と交換できます</b>':'あと'+fmt(need-qty)+'個で交換')+'</div>'+
+    '</div>';
+  }
+  async function exchangeRaidPiece(id){
+    const pm=raidPieceMeta(id); if(!pm||state.exchanging) return;
+    const need=Math.max(1,Number(pm.need||10));
+    if(Number(state.items[id]||0)<need) return;
+    if(!window.confirm(pm.charaName+'の欠片を'+need+'個使って、'+pm.charaName+'を仲間にします。\n\nOK？')) return;
+    state.exchanging=true; render();
+    try{
+      const client=window.zsSupabase;
+      if(!client||typeof client.rpc!=='function') throw new Error('サーバーへ接続できません');
+      const userId=String(localStorage.getItem('zukan_user_id')||'').trim();
+      let res=await client.rpc('exchange_raid_boss_piece',{p_user_id:userId,p_boss_key:pm.bossKey});
+      if(res&&res.error){
+        const msg=String(res.error.message||res.error.code||'');
+        if(/PGRST202|does not exist|Could not find the function/i.test(msg)) throw new Error('サーバーの更新が必要です（exchange_raid_boss_piece が未適用）');
+        throw res.error;
+      }
+      let data=res&&res.data; if(typeof data==='string') data=JSON.parse(data);
+      if(!data||data.ok===false) throw new Error((data&&data.message)||'交換できませんでした');
+      await fetchSnapshot();
+      if(userId&&typeof window.loadInventoryFromSupabase==='function') try{await window.loadInventoryFromSupabase(userId)}catch(_){}
+      // build2236: 再起動なしで所持BOXへ反映し、入手モーダルを出す
+      const charaId=resolveCharaId(data.chara_id||data.character_id, pm.charaName);
+      await syncOwnedCharacter(charaId);
+      try{window.dispatchEvent(new CustomEvent('sasaphia:growth-resources-changed'))}catch(_){}
+      showCharacterObtainModal({ charaId, name:data.chara_name||pm.charaName, message:data.message, converted:!!data.converted, kicker:'RAID PIECE EXCHANGE' });
+    }catch(err){ console.error('[ItemManagement] raid piece exchange failed',err); toast(err&&err.message||'交換できませんでした'); }
+    finally{ state.exchanging=false; render(); }
   }
 
   async function refresh(){
@@ -1182,6 +1283,8 @@
       list.addEventListener('click',e=>{
         const skinRow=e.target.closest('.item-row-skin[data-skin-preview]');
         if(skinRow){ openSkinPreview(Number(skinRow.dataset.skinPreview)); return; }
+        const pieceBtn=e.target.closest('[data-piece-exchange]');
+        if(pieceBtn){ if(!pieceBtn.disabled) exchangeRaidPiece(pieceBtn.dataset.pieceExchange); return; }
         const sellBtn=e.target.closest('[data-sell-item]');
         if(sellBtn && !sellBtn.disabled){
           openSell(sellBtn.dataset.sellItem);

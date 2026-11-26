@@ -430,7 +430,7 @@
   <link rel="stylesheet" href="css/raid_event.css?v=852-raid-glass-canonical">
   <link rel="stylesheet" href="css/raid_theme.css?v=2214-raid-loading-img">
   <link rel="stylesheet" href="css/party_event.css?v=2204-no-best">
-  <link rel="stylesheet" href="css/item_management.css?v=2221-exchange-designs">
+  <link rel="stylesheet" href="css/item_management.css?v=2235-piece-anyday">
   <link rel="stylesheet" href="css/skin_system.css?v=1069-skin-controls-fullscreen">
   <link rel="stylesheet" href="css/score_attack_chrome.css?v=696-score-self-badge-corner">
   <link rel="stylesheet" href="css/app_chrome.css?v=693-score-ranking-nav-v2">
@@ -17429,6 +17429,44 @@ function showTenResult(results){
     return fresh.length;
   };
 
+  // build2236: 光トワ以外（レイド欠片の交換など）でも、再起動なしで所持BOXへ反映する汎用版。
+  //  指定キャラの所持行だけをサーバーから取り直して入れ替える（他キャラの育成状態や並びには触れない）。
+  window.refreshOwnedCharacterById = async function(charaId){
+    var cid = Number(charaId||0);
+    var uid = String(localStorage.getItem('zukan_user_id') || '').trim();
+    var sb = window.zsSupabase;
+    if(!cid || !uid || !sb) throw new Error('所持キャラ同期に必要な情報がありません');
+    var result = await sb.from('collected_characters').select('*')
+      .ilike('user_id', uid).eq('character_id',cid).order('id',{ascending:true});
+    if(result.error) throw result.error;
+    var rows = Array.isArray(result.data) ? result.data : [];
+    var chara = typeof getCharaById === 'function' ? getCharaById(cid) : CHARACTERS.find(function(c){return Number(c.id)===cid;});
+    if(!chara) throw new Error('キャラ定義が見つかりません: '+cid);
+    var fresh=rows.map(function(row){
+      var lb=Math.max(0,Number(row.limit_break||0));
+      var lv=Math.max(1,Number(row.character_level||1));
+      var exp=Math.max(0,Number(row.character_exp||0));
+      var base=row.base_stats||Object.assign({},chara.stats);
+      var boosted=applyLimitBreakStats(base,lb,chara.rarity,chara.id);
+      var stats=(window.CharacterLeveling && typeof window.CharacterLeveling.applyToStats==='function')
+        ?window.CharacterLeveling.applyToStats(boosted,chara.rarity,lb,lv):boosted;
+      var time='';
+      if(row.captured_at){var d=new Date(row.captured_at);if(!isNaN(d.getTime())) time=(d.getMonth()+1)+'/'+d.getDate()+' '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0');}
+      return {id:chara.id,name:chara.name,img:chara.img,cutImg:chara.cutImg,element:chara.element,
+        baseStats:base,stats:stats,limitBreak:lb,rarity:chara.rarity,time:time,
+        capturedAt:row.captured_at,db_id:row.id,characterLevel:lv,characterExp:exp,
+        isFavorite:!!row.is_favorite,isLocked:!!row.is_locked};
+    });
+    for(var i=box.length-1;i>=0;i--){if(box[i]&&Number(box[i].id)===cid)box.splice(i,1);}
+    fresh.forEach(function(e){box.push(e);});
+    if(fresh.length)collected[cid]=fresh[0];else delete collected[cid];
+    try{renderBox();}catch(e){console.warn('[OwnedCharacter] box render:',e);}
+    try{if(typeof updateMainUI==='function')updateMainUI();}catch(_){}
+    try{if(typeof updateZukanLimitBreakNotice==='function')updateZukanLimitBreakNotice();}catch(_){}
+    try{if(typeof window.refreshShootingRoster==='function')window.refreshShootingRoster();}catch(_){}
+    return fresh.length;
+  };
+
   function renderBox(){
     var grid = document.getElementById('box-grid');
     if(!grid) return;
@@ -21612,13 +21650,13 @@ window.returnToTitleScreen = function(){
 <script src="js/shooting_event.js?v=2232-judgment-invinc"></script>
 <script src="js/shooting_party_filter.js?v=2048-openfor"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
-<script src="js/raid_event.js?v=2229-no-enemy01"></script>
+<script src="js/raid_event.js?v=2236-obtain-modal"></script>
 <script src="js/skin_system.js?v=2231-friend-skin"></script>
 <script src="js/skin_everywhere.js?v=2234-allowlist"></script>
 <script src="js/title_system.js?v=2225-noble-norank"></script>
 <script src="js/item_tickets.js?v=1963-phase-run-guard"></script>
 <script src="js/inori_piece.js?v=1829-ticket-button"></script>
-<script src="js/item_management.js?v=2223-skin-names"></script>
+<script src="js/item_management.js?v=2236-obtain-modal"></script>
 <script src="js/party_event.js?v=2204-no-best"></script>
 
 <script id="zeraphia-service-worker-register-v1">

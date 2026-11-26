@@ -2444,11 +2444,12 @@
   //  サーバーのアイテムIDに piece（または fragment）とボス名（sigma/test・shien・camilla）が含まれていれば欠片として扱う。
   //  アイテム画面（item_management.js）からも window.getRaidPieceItemMeta で同じ定義を使う。
   const RAID_PIECE_KEYS=[
-    { re:/sigma|test/i,  key:'test',    name:'テスト' },
-    { re:/shien/i,       key:'shien',   name:'シエン' },
-    { re:/camilla/i,     key:'camilla', name:'カミラ' },
-    { re:/nerisa/i,      key:'nerisa',  name:'ネリサ' },
+    { re:/sigma|test/i,  key:'test',    name:'テスト', bossKey:'sigma'   },
+    { re:/shien/i,       key:'shien',   name:'シエン', bossKey:'shien'   },
+    { re:/camilla/i,     key:'camilla', name:'カミラ', bossKey:'camilla' },
+    { re:/nerisa/i,      key:'nerisa',  name:'ネリサ', bossKey:'nerisa'  },
   ];
+  const RAID_PIECE_NEED=10; // build2235: 欠片の必要数（サーバー側でも同じ値で判定）
   function getRaidPieceItemMeta(itemId){
     const id=String(itemId||'');
     if(!/piece|fragment/i.test(id) || /noah/i.test(id)) return null;
@@ -2457,7 +2458,9 @@
     return {
       id, name:hit.name+'の欠片', shortName:hit.name+'の欠片',
       img:'images/raid_piece_'+hit.key+'.webp',
-      desc:'デイリーレイドのSランク討伐で手に入る、'+hit.name+'の欠片。レイド画面で集めた数に応じて'+hit.name+'と交換できる。'
+      // build2235: どの日でもアイテム画面から交換できる（bossKey＝サーバーのボスキー、need＝必要数）
+      bossKey:hit.bossKey, charaName:hit.name, need:RAID_PIECE_NEED,
+      desc:'デイリーレイドのSランク討伐で手に入る、'+hit.name+'の欠片。'+RAID_PIECE_NEED+'個集めると、ここから'+hit.name+'と交換できる。'
     };
   }
   window.getRaidPieceItemMeta=getRaidPieceItemMeta;
@@ -2691,8 +2694,12 @@
       catch(err){ if(isMissingRpc(err)) throw new Error('サーバーの更新が必要です（exchange_daily_raid_boss_piece が未適用）。'); throw err; }
       if(!r||r.ok===false) throw new Error(r&&r.message||'交換できませんでした');
       try{ if(typeof window.loadInventoryFromSupabase==='function') await window.loadInventoryFromSupabase(uid()); }catch(_){ }
-      try{ if(typeof window.loadDatabaseFromSupabase==='function') await window.loadDatabaseFromSupabase(); }catch(_){ }
-      if(typeof window.showToast==='function') window.showToast(`${def.name}が仲間になりました！`);
+      // build2236: 再起動なしで所持BOXへ反映し、入手モーダルを出す
+      const cid=Number(boss.chara_id||0);
+      if(typeof window.syncOwnedCharacterById==='function') await window.syncOwnedCharacterById(cid);
+      else { try{ if(typeof window.loadDatabaseFromSupabase==='function') await window.loadDatabaseFromSupabase(); }catch(_){ } }
+      if(typeof window.showCharacterObtainModal==='function') window.showCharacterObtainModal({charaId:cid,name:def.name,kicker:'RAID PIECE EXCHANGE'});
+      else if(typeof window.showToast==='function') window.showToast(`${def.name}が仲間になりました！`);
       const latest=await fetchStatus(); if(latest){ await hydrateMemberPanels(latest); render(latest); }
     }catch(err){
       console.error('[raid] piece exchange failed',err);
