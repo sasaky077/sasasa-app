@@ -18,6 +18,7 @@
   const EXCLUDE = [
     // 他のプレイヤー
     '#screen-friend', '.friend-profile-detail', '#friend-profile-detail',
+    '.is-friend-character-detail', // build2233: フレンドのキャラ詳細（共通のキャラ詳細モーダルを使う）
     '.zfs-overlay', '#zfs-section',
     '#daily-raid-member-list', '.dr-party-overlay',
     '.score-attack-ranking', '[data-ranking-scope]', '.zpf-popular-rank',
