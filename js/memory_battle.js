@@ -146,7 +146,7 @@
     // build2238: Sランク報酬などの結晶を再起動なしでHUDへ反映
     try{ if(typeof window.syncWalletFromServer==='function') void window.syncWalletFromServer(true); }catch(_){}
     return {memoryConfirmed:!win||!!(data&&data.win===true),firstClearClaimed:false,firstClearAmount:0,
-      shinjuRewardExp:claimed?30:0,highScore:0,memoryRank:rankResult?.rank?String(rankResult.rank).toUpperCase():''};
+      shinjuRewardExp:claimed?Math.max(0,Number(rankResult.a_pt ?? 30)||0):0,highScore:0,memoryRank:rankResult?.rank?String(rankResult.rank).toUpperCase():''};
   }
   async function recoverPending(){
     const pending=loadPending();

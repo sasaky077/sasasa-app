@@ -37376,7 +37376,7 @@
         const shinjuDrop = {
           type: 'material',
           name: isMemoryBattleStage() ? '創世pt' : '聖樹の息吹',
-          amount: 1,
+          amount: isMemoryBattleStage() ? rewardExp : 1,
           detail: isMemoryBattleStage() ? `創世pt +${rewardExp}` : `神樹成長素材 / 創世EXP +${rewardExp}`,
           image: 'images/shinju_aura.webp',
         };
