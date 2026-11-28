@@ -36452,8 +36452,8 @@
     { rank: 'S', score: 24000 },
     { rank: 'A', score: 20000 },
     { rank: 'B', score: 16000 },
-    { rank: 'C', score: 12000 },
-    { rank: 'D', score: 8000 },
+    // build2247: ランクは S / A / B / C / E の5段階。D は廃止し、B未満のクリアはすべて C（Eは敗北）。
+    { rank: 'C', score: 0 },
   ]);
 
   // SCORE ATTACK専用ランク基準。
@@ -36462,8 +36462,7 @@
     { rank: 'S', score: 1500000 },
     { rank: 'A', score: 1000000 },
     { rank: 'B', score: 700000 },
-    { rank: 'C', score: 400000 },
-    { rank: 'D', score: 200000 },
+    { rank: 'C', score: 200000 }, // build2247: D を廃止（旧C 40万・D 20万 → C 20万以上）
   ]);
 
   function getResultRank(score, win) {

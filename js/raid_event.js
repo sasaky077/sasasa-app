@@ -2251,7 +2251,7 @@
     card=document.createElement('div');
     card.className='drt-rank-card drt-goal-card drt-goal4';
     card.id='daily-raid-teamrank';
-    const medal=r=>`<img src="images/rank_medal_${r.toLowerCase()}.webp" alt="${r}" decoding="async" data-keep-src>`;
+    const medal=r=>`<img class="zr-rank-emblem" src="images/rank_medal_${r.toLowerCase()}.webp?v=2249" alt="${r}" decoding="async" data-keep-src>`; // build2249: ゲージの目印は紋章だと小さく見づらいので、ランク文字だけの画像（S虹・A金・B銀・C銅・Eシャンパン）
     card.innerHTML=`
       <div class="g4-ribbon"><span class="g4-laurel-wrap is-l">${G4_LAUREL}</span><div class="g4-plate"><span>現在ランク</span><b data-g4-rank>—</b></div><span class="g4-laurel-wrap is-r">${G4_LAUREL}</span></div>
       <div class="g4-next" data-g4-next></div>

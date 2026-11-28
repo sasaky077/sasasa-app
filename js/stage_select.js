@@ -45,10 +45,12 @@
   const SHOOTING_HIGH_SCORE_KEY = 'zeraphia_shooting_high_scores_v1';
 
   // build1506: ランクの優劣は文字コードではなく実際のランク順で比較する。
-  const STORY_RANK_ORDER = ['S', 'A', 'B', 'C', 'D', 'E'];
+  // build2247: ランクは S / A / B / C / E の5段階。旧記録の D は C として扱う。
+  const STORY_RANK_ORDER = ['S', 'A', 'B', 'C', 'E'];
+  const normStoryRank = r => { const v = String(r || '').toUpperCase(); return v === 'D' ? 'C' : v; };
   function highestStoryRank(a, b) {
-    const left = String(a || '').toUpperCase();
-    const right = String(b || '').toUpperCase();
+    const left = normStoryRank(a);
+    const right = normStoryRank(b);
     const leftIndex = STORY_RANK_ORDER.indexOf(left);
     const rightIndex = STORY_RANK_ORDER.indexOf(right);
     if (leftIndex < 0) return rightIndex < 0 ? '' : right;
@@ -204,9 +206,7 @@
     if (value >= 24000) return 'S';
     if (value >= 20000) return 'A';
     if (value >= 16000) return 'B';
-    if (value >= 12000) return 'C';
-    if (value >= 8000) return 'D';
-    return 'E';
+    return 'C'; // build2247: クリア時の記録なので、B未満はすべて C（E＝敗北は記録されない）
   }
 
   function formatStoryShootingScore(value) {
@@ -225,7 +225,7 @@
       ? [['S', 'ヒントを使わずにクリア'], ['A', 'ヒントを使用してクリア（過去のクリア記録を含む）']]
       : type === 'STORY' ? [['S', 'ストーリーを最後まで読む']] : unranked ? [] : [
           ['S', '24,000点以上'], ['A', '20,000点以上'], ['B', '16,000点以上'],
-          ['C', '12,000点以上'], ['D', '8,000点以上'], ['E', '8,000点未満']
+          ['C', 'クリア（16,000点未満）'], ['E', '敗北']
         ];
     const overlay = document.createElement('div');
     overlay.id = 'zss-rank-guide-overlay';

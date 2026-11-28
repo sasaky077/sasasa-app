@@ -1,0 +1,49 @@
+/* build2248: スコアランクの色をゲーム全体で統一
+   S＝虹 ／ A＝金 ／ B＝銀 ／ C＝銅 ／ E＝シャンパンゴールド（旧 D は C 扱い）
+   文字のランクは js/rank_colors.js が data-zr-rank を付け、ここで色を塗る。
+   画像のランク（RESULT・レイド・パラレル・ソワレ）は images/rank_emblem_*.webp を使う。 */
+:root{
+  --zr-rank-s:linear-gradient(100deg,#ff7fb4 0%,#ffb36b 18%,#f3d65a 36%,#74d9a0 54%,#62b9ff 72%,#a98bff 90%,#ff8fc8 100%);
+  --zr-rank-a:linear-gradient(180deg,#f8e29a 0%,#d9aa45 45%,#a2731f 78%,#d8b25e 100%);
+  --zr-rank-b:linear-gradient(180deg,#e3e7ec 0%,#9aa2ae 45%,#646d7a 78%,#a8b0bb 100%);
+  --zr-rank-c:linear-gradient(180deg,#f0c09c 0%,#c27b4f 45%,#8a4a28 78%,#c98a5f 100%);
+  --zr-rank-e:linear-gradient(180deg,#f2e5c4 0%,#cdb47f 45%,#9c8452 78%,#d2bd8e 100%);
+  --zr-dot-s:conic-gradient(from 30deg,#ff7fb4,#ffb36b,#f3d65a,#74d9a0,#62b9ff,#a98bff,#ff7fb4);
+  --zr-dot-a:linear-gradient(135deg,#fff1c0,#e2b450 45%,#a2731f);
+  --zr-dot-b:linear-gradient(135deg,#ffffff,#c4cad3 45%,#7d8693);
+  --zr-dot-c:linear-gradient(135deg,#ffe1c8,#cf8a5c 45%,#8a4a28);
+  --zr-dot-e:linear-gradient(135deg,#fff7e2,#dcc797 45%,#a68e5c);
+}
+html body [data-zr-rank]{
+  -webkit-background-clip:text !important;
+  background-clip:text !important;
+  -webkit-text-fill-color:transparent !important;
+  color:transparent !important;
+  text-shadow:none !important;
+  filter:drop-shadow(0 1px 0 rgba(255,255,255,.55)) drop-shadow(0 1px 1.5px rgba(60,40,10,.28));
+}
+html body [data-zr-rank] *{-webkit-text-fill-color:inherit !important;color:inherit !important}
+html body [data-zr-rank="S"]{background-image:var(--zr-rank-s) !important;background-size:200% 100% !important;animation:zrRankShine 6s linear infinite}
+html body [data-zr-rank="A"]{background-image:var(--zr-rank-a) !important}
+html body [data-zr-rank="B"]{background-image:var(--zr-rank-b) !important}
+html body [data-zr-rank="C"]{background-image:var(--zr-rank-c) !important}
+html body [data-zr-rank="E"]{background-image:var(--zr-rank-e) !important}
+@keyframes zrRankShine{from{background-position:0% 50%}to{background-position:200% 50%}}
+@media (prefers-reduced-motion:reduce){html body [data-zr-rank="S"]{animation:none}}
+
+/* 記憶決戦：達成ランクの丸（S＝虹・A＝金） */
+html body #screen-memory-battle .mb-progress-track i.is-done.is-rank-s{background:var(--zr-dot-s)!important;box-shadow:0 0 0 1px rgba(255,255,255,.85),0 0 8px rgba(190,160,255,.85)!important}
+html body #screen-memory-battle .mb-progress-track i.is-done.is-rank-a{background:var(--zr-dot-a)!important;box-shadow:0 0 0 1px rgba(154,116,50,.75),0 0 6px rgba(240,200,100,.85)!important}
+/* 記憶決戦：クリア済みカードの枠（S＝虹・A＝金） */
+html body #screen-memory-battle .mb-card.mb-clear-rank-a{border:2px solid #c6a465!important;background:linear-gradient(180deg,#fffdfa,#f9f4eb)!important;box-shadow:inset 0 0 0 3px #fffcf7,0 1px 9px rgba(113,83,38,.10)!important}
+html body #screen-memory-battle .mb-card.mb-clear-rank-a .mb-ribbon{background:linear-gradient(180deg,#e1ca97,#b99555)!important;box-shadow:inset 0 0 0 1px rgba(255,250,229,.8)!important}
+html body #screen-memory-battle .mb-card.mb-clear-rank-a .mb-ribbon b{color:#473319!important}
+html body #screen-memory-battle .mb-card.mb-clear-rank-s{
+  border:2px solid transparent!important;
+  background:linear-gradient(180deg,#fffefc,#faf6ff) padding-box,var(--zr-rank-s) border-box!important;
+  box-shadow:inset 0 0 0 3px #fffdfd,0 1px 10px rgba(150,120,220,.16)!important}
+html body #screen-memory-battle .mb-card.mb-clear-rank-s .mb-ribbon{background:var(--zr-rank-s)!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.8)!important}
+html body #screen-memory-battle .mb-card.mb-clear-rank-s .mb-ribbon b{color:#3d2a55!important}
+
+/* 画像のランク（紋章）は小さく使う時も形を崩さない */
+html body img.zr-rank-emblem{object-fit:contain}

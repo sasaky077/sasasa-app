@@ -339,7 +339,7 @@
       ['B', 'Bランク以上', pr.clears_b + '回'],
       ['', '料理（累計）', pr.food_total + '皿'],
       ['', 'ビンゴ', pr.bingo.length + ' / ' + MAX_LINES + ' LINE']
-    ].map(x => '<li>' + (x[0] ? '<i class="pe-stat-rank rank-' + x[0] + '"><img src="images/rank_medal_' + x[0].toLowerCase() + '.webp" alt="' + x[0] + '" decoding="async"></i>' : '<i class="pe-stat-rank"></i>') +
+    ].map(x => '<li>' + (x[0] ? '<i class="pe-stat-rank rank-' + x[0] + '"><img class="zr-rank-emblem" src="images/rank_emblem_' + x[0].toLowerCase() + '.webp" alt="' + x[0] + '" decoding="async"></i>' : '<i class="pe-stat-rank"></i>') +
       '<span>' + esc(x[1]) + '</span><b>' + esc(x[2]) + '</b></li>').join('');
     root.querySelector('.pe-period').textContent = '開催期間　' + periodText();
     const note = root.querySelector('.pe-note');

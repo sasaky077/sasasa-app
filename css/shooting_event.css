@@ -17422,3 +17422,45 @@ html body #shooting-event-root .shooting-stage-gimmick-notice-kicker{font-family
 #shooting-event-root .flank-spawn-warn.edge-top{border-top:3px solid rgba(255,90,90,.9)}
 @keyframes flankWarnPulse{from{transform:scale(.86);opacity:.75}to{transform:scale(1.08);opacity:1}}
 @keyframes flankWarnIn{0%{filter:brightness(.8)}100%{filter:brightness(1.6)}}
+
+/* build2247: RESULTのランクを紋章画像で表示（S / A / B / C / E の5段階。旧Dは C の紋章）
+   画像に「RANK」の文字と月桂冠が入っているので、従来の月桂冠の背景・RANKの小見出し・文字のランクは隠す。
+   ランク文字（textContent・data-rank）はそのまま残し、読み上げとJSの処理は変えない。 */
+html body #shooting-event-root #shooting-result .shooting-result-rank-wrap{
+  background:none !important;
+}
+html body #shooting-event-root #shooting-result .shooting-result-rank-wrap small{display:none !important}
+html body #shooting-event-root #shooting-result .shooting-result-rank{
+  position:absolute !important;
+  inset:0 !important;
+  width:auto !important;
+  height:auto !important;
+  margin:0 !important;
+  font-size:0 !important;
+  line-height:0 !important;
+  color:transparent !important;
+  -webkit-text-fill-color:transparent !important;
+  text-shadow:none !important;
+  background:url("../images/rank_emblem_e.webp") center/contain no-repeat !important;
+  -webkit-background-clip:border-box !important;
+  background-clip:border-box !important;
+  filter:drop-shadow(0 3px 6px rgba(110,74,20,.22)) !important;
+}
+html body #shooting-event-root #shooting-result .shooting-result-rank[data-rank="S"]{
+  background-image:url("../images/rank_emblem_s.webp") !important;
+  filter:drop-shadow(0 0 10px rgba(255,214,240,.65)) drop-shadow(0 3px 6px rgba(110,74,20,.2)) !important;
+}
+html body #shooting-event-root #shooting-result .shooting-result-rank[data-rank="A"]{background-image:url("../images/rank_emblem_a.webp") !important}
+html body #shooting-event-root #shooting-result .shooting-result-rank[data-rank="B"]{background-image:url("../images/rank_emblem_b.webp") !important}
+html body #shooting-event-root #shooting-result .shooting-result-rank:is([data-rank="C"],[data-rank="D"]){background-image:url("../images/rank_emblem_c.webp") !important}
+html body #shooting-event-root #shooting-result .shooting-result-rank[data-rank="E"]{
+  background-image:url("../images/rank_emblem_e.webp") !important;
+  filter:grayscale(.35) opacity(.88) drop-shadow(0 3px 6px rgba(110,74,20,.18)) !important;
+}
+/* 紋章が出てくる時の小さな演出（S は少し長めに光る） */
+html body #shooting-event-root #shooting-result.is-visible .shooting-result-rank,
+html body #shooting-event-root #shooting-result[aria-hidden="false"] .shooting-result-rank{animation:zrEmblemIn .55s cubic-bezier(.2,1.25,.4,1) both}
+@keyframes zrEmblemIn{from{opacity:0;transform:scale(.72)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){html body #shooting-event-root #shooting-result .shooting-result-rank{animation:none !important}}
+html body #shooting-event-root #shooting-result[aria-hidden="false"] .shooting-result-rank.memory-rank-upgrade,
+html body #shooting-event-root #shooting-result .shooting-result-rank.memory-rank-upgrade{animation:memoryRankUpgrade .6s cubic-bezier(.2,.9,.3,1.3) both}
