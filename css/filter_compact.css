@@ -231,3 +231,13 @@ html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-footer
   html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-dialog{width:min(100%,640px) !important;}
   html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-grid-shots{grid-template-columns:repeat(8,minmax(0,1fr)) !important;}
 }
+
+/* build2251: 凸数（すべて／無凸／1凸／2凸／3凸／完凸）を1行に6つ */
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-grid-lb{grid-template-columns:repeat(6,minmax(0,1fr)) !important;}
+html body :is(#zukan-filter-menu-layer,#shooting-party-filter-layer) .zcf-grid-lb .zcf-choice{
+  min-height:var(--zcf-h) !important;
+  padding:0 2px !important;
+  font-size:clamp(10px,2.75vw,13px) !important;
+  letter-spacing:0 !important;
+  white-space:nowrap !important;
+}

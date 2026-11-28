@@ -16265,6 +16265,7 @@ function showTenResult(results){
     elements: [],
     rarities: [],
     shotTypes: [],
+    limitBreaks: [], // build2251: 凸数（'0'〜'4'、空=すべて。複数選択はOR）
     pierce: 'all', // build1741: 'all' | 'yes'（貫通あり） | 'no'（貫通なし）
     favOnly: false, // build1910: お気に入り（★）のみ
     sort: 'id',
@@ -16282,6 +16283,7 @@ function showTenResult(results){
     zukanIndexFilter.elements = [];
     zukanIndexFilter.rarities = [];
     zukanIndexFilter.shotTypes = [];
+    zukanIndexFilter.limitBreaks = [];
     zukanIndexFilter.pierce = 'all';
     zukanIndexFilter.favOnly = false;
     zukanIndexFilter.sort = 'id';
@@ -16432,6 +16434,7 @@ function showTenResult(results){
     return (Array.isArray(zukanIndexFilter.elements) && zukanIndexFilter.elements.length > 0) ||
       (Array.isArray(zukanIndexFilter.rarities) && zukanIndexFilter.rarities.length > 0) ||
       (Array.isArray(zukanIndexFilter.shotTypes) && zukanIndexFilter.shotTypes.length > 0) ||
+      (Array.isArray(zukanIndexFilter.limitBreaks) && zukanIndexFilter.limitBreaks.length > 0) ||
       (zukanIndexFilter.pierce === 'yes' || zukanIndexFilter.pierce === 'no') ||
       !!zukanIndexFilter.favOnly ||
       !!String(zukanIndexFilter.ultQuery || '').trim() ||
@@ -16446,6 +16449,28 @@ function showTenResult(results){
   function isZukanRaritySelected(value){
     var selected = Array.isArray(zukanIndexFilter.rarities) ? zukanIndexFilter.rarities : [];
     return value === 'all' ? selected.length === 0 : selected.indexOf(value) >= 0;
+  }
+
+  // build2251: 凸数の絞り込み
+  function getZukanMaxLimitBreak(){
+    return (typeof MAX_LIMIT_BREAK !== 'undefined' && MAX_LIMIT_BREAK > 0) ? Number(MAX_LIMIT_BREAK) : 4;
+  }
+  function getZukanLimitBreakLabel(lb){
+    lb = Number(lb);
+    if(lb <= 0) return '無凸';
+    if(lb >= getZukanMaxLimitBreak()) return '完凸';
+    return lb + '凸';
+  }
+  // 所持していないキャラは null（凸数で絞り込んでいる時は表示しない）
+  function getZukanCharaLimitBreak(charaId){
+    var rep = getRepresentativeOwnedInstance(charaId);
+    if(!rep) return null;
+    var lb = Number(rep.limitBreak != null ? rep.limitBreak : rep.limit_break) || 0;
+    return Math.max(0, Math.min(getZukanMaxLimitBreak(), lb));
+  }
+  function isZukanLimitBreakSelected(value){
+    var selected = Array.isArray(zukanIndexFilter.limitBreaks) ? zukanIndexFilter.limitBreaks : [];
+    return value === 'all' ? selected.length === 0 : selected.indexOf(String(value)) >= 0;
   }
 
   function isZukanShotTypeSelected(value){
@@ -16489,12 +16514,17 @@ function showTenResult(results){
     var selectedElements = Array.isArray(zukanIndexFilter.elements) ? zukanIndexFilter.elements : [];
     var selectedRarities = Array.isArray(zukanIndexFilter.rarities) ? zukanIndexFilter.rarities : [];
     var selectedShotTypes = Array.isArray(zukanIndexFilter.shotTypes) ? zukanIndexFilter.shotTypes : [];
+    var selectedLimitBreaks = Array.isArray(zukanIndexFilter.limitBreaks) ? zukanIndexFilter.limitBreaks : [];
     var list = (chars || []).filter(function(chara){
       if(!chara) return false;
       if(zukanIndexFilter.favOnly && !(window.CharaFavorites && window.CharaFavorites.has(chara.id))) return false;
       if(selectedElements.length && selectedElements.indexOf(normalizeZukanElement(chara.element)) < 0) return false;
       if(selectedRarities.length && selectedRarities.indexOf(normalizeZukanRarity(chara.rarity)) < 0) return false;
       if(selectedShotTypes.length && selectedShotTypes.indexOf(getZukanCharacterShotType(chara)) < 0) return false;
+      if(selectedLimitBreaks.length){
+        var lbNow = getZukanCharaLimitBreak(chara.id);
+        if(lbNow == null || selectedLimitBreaks.indexOf(String(lbNow)) < 0) return false;
+      }
       if(zukanIndexFilter.pierce === 'yes' || zukanIndexFilter.pierce === 'no'){
         var SC = window.ShootingCharacters;
         var pierces = !!(SC && typeof SC.isShootingCharacterPiercing === 'function' && SC.isShootingCharacterPiercing(chara.id));
@@ -16565,6 +16595,12 @@ function showTenResult(results){
       button('R',isZukanRaritySelected('r'),"setZukanRarityFilter('r')",'zcf-rarity-r')
     ].join('');
     var shots = ['all'].concat(ZUKAN_SHOT_TYPE_ORDER).map(shotBtn).join('');
+    var lbKeys = ['all'];
+    for(var lbi = 0; lbi <= getZukanMaxLimitBreak(); lbi++) lbKeys.push(String(lbi));
+    var limitBreaks = lbKeys.map(function(key){
+      return button(key === 'all' ? 'すべて' : getZukanLimitBreakLabel(key), isZukanLimitBreakSelected(key),
+        "setZukanLimitBreakFilter('" + key + "')", 'zcf-lb-' + key);
+    }).join('');
     var pierceNow = zukanIndexFilter.pierce === 'yes' || zukanIndexFilter.pierce === 'no' ? zukanIndexFilter.pierce : 'all';
     var pierce = [
       button('すべて', pierceNow === 'all', "setZukanPierceFilter('all')", 'zcf-pierce-all'),
@@ -16594,6 +16630,8 @@ function showTenResult(results){
             '<div class="zcf-grid zcf-grid-attr">' + attrs + '</div></section>' +
           '<section class="zcf-section zcf-row"><h3 class="zcf-section-title">レアリティ</h3>' +
             '<div class="zcf-grid zcf-grid-rarity">' + rarity + '</div></section>' +
+          '<section class="zcf-section zcf-row zcf-section-lb"><h3 class="zcf-section-title">凸数</h3>' +
+            '<div class="zcf-grid zcf-grid-lb">' + limitBreaks + '</div></section>' +
           '<section class="zcf-section zcf-row"><h3 class="zcf-section-title">貫通</h3>' +
             '<div class="zcf-grid zcf-grid-pierce">' + pierce + '</div></section>' +
           '<section class="zcf-section zcf-row"><h3 class="zcf-section-title">並び順</h3>' +
@@ -16733,6 +16771,26 @@ function showTenResult(results){
     renderZukanFilterMenu();
   }
 
+  // build2251: 凸数は複数選べる（OR）。選択中をもう一度押すと外れる。
+  function setZukanLimitBreakFilter(value){
+    var v = String(value == null ? 'all' : value);
+    if(v === 'all'){
+      zukanIndexFilter.limitBreaks = [];
+    } else {
+      var n = Number(v);
+      if(!(n >= 0 && n <= getZukanMaxLimitBreak())) return;
+      v = String(Math.floor(n));
+      var selected = Array.isArray(zukanIndexFilter.limitBreaks) ? zukanIndexFilter.limitBreaks.slice() : [];
+      var index = selected.indexOf(v);
+      if(index >= 0) selected.splice(index, 1);
+      else selected.push(v);
+      zukanIndexFilter.limitBreaks = selected;
+    }
+    renderBox();
+    renderZukanFilterMenu();
+  }
+  window.setZukanLimitBreakFilter = setZukanLimitBreakFilter;
+
   // build1741: 貫通は1つだけ選ぶ。選択中をもう一度押すと「すべて」に戻る。
   function setZukanPierceFilter(value){
     var v = value === 'yes' || value === 'no' ? value : 'all';
@@ -16759,6 +16817,7 @@ function showTenResult(results){
     zukanIndexFilter.elements = [];
     zukanIndexFilter.rarities = [];
     zukanIndexFilter.shotTypes = [];
+    zukanIndexFilter.limitBreaks = [];
     zukanIndexFilter.pierce = 'all';
     zukanIndexFilter.favOnly = false;
     zukanIndexFilter.sort = 'id';
@@ -21687,7 +21746,7 @@ window.returnToTitleScreen = function(){
 };
 </script>
 <script src="js/shooting_event.js?v=2247-rank-emblem"></script>
-<script src="js/shooting_party_filter.js?v=2048-openfor"></script>
+<script src="js/shooting_party_filter.js?v=2251-limitbreak"></script>
 <script src="js/admin_mode.js?v=693-score-ranking-nav-v2"></script>
 <script src="js/raid_event.js?v=2249-gauge-letter"></script>
 <script src="js/skin_system.js?v=2231-friend-skin"></script>
@@ -23261,7 +23320,7 @@ html body #global-user-frame .hud-sweep-line-player::after{
 <link rel="stylesheet" href="css/home_v2.css?v=2187-talk-size">
 <link rel="stylesheet" href="css/global_user_frame_shared.css?v=2163-ring-fine">
 <link rel="stylesheet" href="css/chara_favorites.css?v=1914-fav">
-<link rel="stylesheet" href="css/filter_compact.css?v=2027-ult-search">
+<link rel="stylesheet" href="css/filter_compact.css?v=2251-limitbreak">
 <script src="js/home_lines.js?v=1886-lines"></script>
 <script src="js/home_v2.js?v=2142-exp-ring"></script>
 <script src="js/chara_favorites.js?v=1910-fav"></script>

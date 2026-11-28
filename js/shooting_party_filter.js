@@ -3,7 +3,7 @@
 // remain exclusively owned by shooting_core.js / ResonanceTower.
 (function(){
   'use strict';
-  const state = { query:'', ult:'', elements:[], rarities:[], shotTypes:[], pierce:'all', favOnly:false, sort:'id' }; // build1914: favOnly=お気に入り（★）のみ // build1741: pierce='all'|'yes'|'no'
+  const state = { query:'', ult:'', elements:[], rarities:[], shotTypes:[], limitBreaks:[], pierce:'all', favOnly:false, sort:'id' }; // build1914: favOnly=お気に入り（★）のみ // build1741: pierce='all'|'yes'|'no'
   const isFav=id=>!!(window.CharaFavorites&&window.CharaFavorites.has(id)); // build1914
   const pierces=id=>{const SC=window.ShootingCharacters;return !!(SC&&typeof SC.isShootingCharacterPiercing==='function'&&SC.isShootingCharacterPiercing(id));};
   const elementOrder = ['fire','aqua','wood','light','dark'];
@@ -26,11 +26,19 @@
   function shot(value){const s=String(value||'').toLowerCase();return shotAliases[s]||s;}
   function getData(id){return window.ShootingCharacters?.SHOOTING_CHARACTERS?.[id]||{};}
   function currentRoster(){return document.querySelector(rootSelector+' .shooting-party-roster');}
-  function isActive(){return state.query.trim()||state.ult.trim()||state.elements.length||state.rarities.length||state.shotTypes.length||state.pierce!=='all'||state.favOnly||state.sort!=='id';}
+  function isActive(){return state.query.trim()||state.ult.trim()||state.elements.length||state.rarities.length||state.shotTypes.length||state.limitBreaks.length||state.pierce!=='all'||state.favOnly||state.sort!=='id';}
   function ownedLevel(id){
     const data=window.ShootingCharacters?.getOwnedShootingInstance?.(id);
     return Math.max(0,Number(data?.characterLevel??data?.character_level??0)||0);
   }
+  // build2251: 凸数（所持していなければ null）
+  function maxLb(){return (typeof MAX_LIMIT_BREAK!=='undefined'&&MAX_LIMIT_BREAK>0)?Number(MAX_LIMIT_BREAK):4;}
+  function ownedLb(id){
+    const data=window.ShootingCharacters?.getOwnedShootingInstance?.(id);
+    if(!data)return null;
+    return Math.max(0,Math.min(maxLb(),Number(data.limitBreak??data.limit_break??0)||0));
+  }
+  function lbLabel(k){const n=Number(k);return n<=0?'無凸':n>=maxLb()?'完凸':n+'凸';}
   function rank(id){const c=getData(id);return window.ShootingCharacters?.getShootingBaseOrderRank?.(c.id)??id;}
   // build2027: ULT検索（ULT名・ULT説明文）。判定は shooting_characters.js の共通関数。
   function ultOk(id){
@@ -53,6 +61,7 @@
         (!state.elements.length||state.elements.includes(elem(c.element)))&&
         (!state.rarities.length||state.rarities.includes(rarity(c.rarity)))&&
         (!state.shotTypes.length||state.shotTypes.includes(shot(c.shotType||c.mainShot?.type)))&&
+        (!state.limitBreaks.length||(()=>{const lb=ownedLb(id);return lb!=null&&state.limitBreaks.includes(String(lb));})())&&
         (state.pierce==='all'||(state.pierce==='yes')===pierces(id))&&
         (!state.favOnly||isFav(id))&&
         ultOk(id);
@@ -134,6 +143,7 @@
     const layer=document.createElement('div');layer.id='shooting-party-filter-layer';layer.className='zcf-overlay';
     const attrs=['all',...elementOrder].map(k=>chip('elements',k,k==='all'?'すべて':elementLabels[k],k==='all'?'':'images/type_'+k+'.webp')).join('');
     const rarities=['all','sr','r'].map(k=>chip('rarities',k,k==='all'?'すべて':k.toUpperCase())).join('');
+    const lbs=['all',...Array.from({length:maxLb()+1},(_,i)=>String(i))].map(k=>chip('limitBreaks',k,k==='all'?'すべて':lbLabel(k))).join('');
     const shots=['all',...shotOrder].map(k=>chip('shotTypes',k,k==='all'?'すべて':shotLabels[k],k==='all'?'':'images/shot_'+(k==='lightning'?'plasma':k)+'.webp')).join('');
     const pierceChips=['all','yes','no'].map(k=>`<button type="button" class="zcf-choice${state.pierce===k?' is-selected':''}" data-pierce="${k}" aria-pressed="${state.pierce===k}"><span class="zcf-choice-label">${{all:'すべて',yes:'貫通あり',no:'貫通なし'}[k]}</span></button>`).join('');
     const favChips=[['all','すべて'],['only','お気に入りのみ']].map(([k,label])=>{const on=k==='only'?state.favOnly:!state.favOnly;return `<button type="button" class="zcf-choice${on?' is-selected':''}${k==='only'?' zcf-fav-only':''}" data-fav="${k}" aria-pressed="${on}">${k==='only'?'<i class="zcf-fav-star" aria-hidden="true">★</i>':''}<span class="zcf-choice-label">${label}</span></button>`;}).join('');
@@ -148,6 +158,7 @@
         <section class="zcf-section zcf-row"><h3 class="zcf-section-title">お気に入り</h3><div class="zcf-grid zcf-grid-fav">${favChips}</div></section>
         <section class="zcf-section zcf-section-attr"><h3 class="zcf-section-title">属性</h3><div class="zcf-grid zcf-grid-attr">${attrs}</div></section>
         <section class="zcf-section zcf-row"><h3 class="zcf-section-title">レアリティ</h3><div class="zcf-grid zcf-grid-rarity">${rarities}</div></section>
+        <section class="zcf-section zcf-row zcf-section-lb"><h3 class="zcf-section-title">凸数</h3><div class="zcf-grid zcf-grid-lb">${lbs}</div></section>
         <section class="zcf-section zcf-row"><h3 class="zcf-section-title">貫通</h3><div class="zcf-grid zcf-grid-pierce">${pierceChips}</div></section>
         <section class="zcf-section zcf-row"><h3 class="zcf-section-title">並び順</h3><div class="zcf-grid zcf-grid-sort">${sorts}</div></section>
         <section class="zcf-section zcf-section-shots"><h3 class="zcf-section-title">ショットタイプ</h3><div class="zcf-grid zcf-grid-shots">${shots}</div></section>
@@ -166,7 +177,7 @@
         layer.querySelector('.zcf-ult-field')?.classList.remove('has-value');syncToolbar();return;
       }
       if(target.hasAttribute('data-reset')){
-        state.ult='';state.elements=[];state.rarities=[];state.shotTypes=[];state.pierce='all';state.favOnly=false;state.sort='id';state.query='';
+        state.ult='';state.elements=[];state.rarities=[];state.shotTypes=[];state.limitBreaks=[];state.pierce='all';state.favOnly=false;state.sort='id';state.query='';
         apply();closeDialog();syncToolbar();openDialog();return;
       }
       const group=target.dataset.group,key=target.dataset.key;
@@ -201,7 +212,7 @@
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('shooting-party-filter-layer')){e.stopPropagation();closeDialog();}});
   function reset(){
     closeDialog();
-    state.query='';state.ult='';state.elements=[];state.rarities=[];state.shotTypes=[];state.pierce='all';state.favOnly=false;state.sort='id';
+    state.query='';state.ult='';state.elements=[];state.rarities=[];state.shotTypes=[];state.limitBreaks=[];state.pierce='all';state.favOnly=false;state.sort='id';
     const input=document.querySelector('#zpf-filter-toolbar input');
     if(input&&document.activeElement===input)input.blur();
     syncToolbar();
