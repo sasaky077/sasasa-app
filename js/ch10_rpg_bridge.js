@@ -1,8 +1,12 @@
 (() => { 'use strict';
- // ZERAPHIA CH10 RPG bridge — build2040
- // RPG(iframe) を開閉し、RPG内の会話を本編ノベルエンジン(window.StoryNovel)で、
+ // ZERAPHIA STORY RPG bridge — build2040 / build2250: 全章共通化
+ // RPG(iframe: rpg/index.html?ch=N) を開閉し、RPG内の会話を本編ノベルエンジン(window.StoryNovel)で、
  // ランダムエンカウントを本編のシューティング戦闘(openShootingEvent)で再生する。
- const RPG_BUILD='2067';
+ // RPGの中身（rpg/ 以下）を更新したら RPG_BUILD を上げる（iframe内の全ファイルのキャッシュ対策）
+ const RPG_BUILD='2250';
+ // RPG形式で遊ぶ章。章を作り直したらここに番号を足すだけで、STORYの章ボタンがRPGを開く
+ const RPG_CHAPTERS=[10];
+ let currentCh=10;
  let root=null, returnFocus=null, frame=null, novelOpen=false, battleOpen=false, battleDone=null;
  function close(){
    if(!root||novelOpen||battleOpen)return;
@@ -10,18 +14,19 @@
    document.body.classList.remove('ch10-rpg-modal-open');
    if(returnFocus && returnFocus.isConnected)returnFocus.focus();
  }
- function open(){
+ function open(ch){
    if(root)return;
+   currentCh=Number(ch)||currentCh;
    returnFocus=document.activeElement;
    root=document.createElement('div');
    root.className='ch10-rpg-modal';
    root.setAttribute('role','dialog');
    root.setAttribute('aria-modal','true');
-   root.setAttribute('aria-label','第10章 RPGモード 開発中');
+   root.setAttribute('aria-label','第'+currentCh+'章 RPGモード');
    frame=document.createElement('iframe');
    // RPG本体も更新のたびに必ず新しいものを読む（古い index.html がキャッシュに残ると旧データのまま動くため）
-   frame.src='rpg/ch10/index.html?v='+RPG_BUILD;
-   frame.title='ZERAPHIA 第10章 RPG試作';
+   frame.src='rpg/index.html?ch='+currentCh+'&v='+RPG_BUILD;
+   frame.title='ZERAPHIA 第'+currentCh+'章 RPG';
    frame.setAttribute('allow','fullscreen');
    root.append(frame);
    document.body.append(root);
@@ -37,11 +42,11 @@
    const SN=window.StoryNovel;
    const entries=data && Array.isArray(data.entries) ? data.entries : [];
    if(!SN || typeof SN.playPost!=='function' || !entries.length) return false;
-   const id='rpg_ch10_'+String(key||'talk').replace(/[^a-zA-Z0-9_-]/g,'');
+   const id='rpg_ch'+(Number(data&&data.chapter)||currentCh)+'_'+String(key||'talk').replace(/[^a-zA-Z0-9_-]/g,'');
    // 本編シナリオ表は freeze されているので、RPG用の1件を足した新しい表に差し替える
    const base=window.ZERAPHIA_STORY_SCENARIO||{};
    window.ZERAPHIA_STORY_SCENARIO=Object.freeze(Object.assign({}, base, { [id]: {
-     chapter:data.chapter||10, chapterTitle:data.chapterTitle||'', stageNo:data.stageNo||1, stageTitle:data.stageTitle||'',
+     chapter:data.chapter||currentCh, chapterTitle:data.chapterTitle||'', stageNo:data.stageNo||1, stageTitle:data.stageTitle||'',
      post:entries
    }}));
    let done=false;
@@ -125,7 +130,7 @@
          <header class="zpf-header" aria-label="編成">
            <button class="zpf-header-back" type="button" data-act="cancel" aria-label="戻る"><span aria-hidden="true">‹</span> 戻る</button>
            <div class="zpf-header-center">
-             <span class="zpf-header-chapter">CHAPTER 10</span>
+             <span class="zpf-header-chapter">CHAPTER ${Number(opts.chapter)||currentCh}</span>
              <strong class="zpf-header-stage">編成</strong>
              <small class="zpf-header-subtitle">${esc(opts.place||'')}</small>
            </div>
@@ -185,9 +190,17 @@
    try{ if(window.ShootingPartyFilter&&typeof window.ShootingPartyFilter.openFor==='function') window.ShootingPartyFilter.openFor('#ch10-party-select'); }catch(err){ console.warn('[ch10 party] filter failed',err); }
    return true;
  }
+ // 全章共通の名前（RPG側はこちらを優先して呼ぶ）
+ window.ZERAPHIA_RPG_CHAPTERS=RPG_CHAPTERS.slice();
+ window.isZeraphiaRpgChapter=ch=>RPG_CHAPTERS.includes(Number(ch));
+ window.openZeraphiaStoryRPG=open;
+ window.closeZeraphiaRPG=close;
+ window.playZeraphiaRPGNovel=playNovel;
+ window.startZeraphiaRPGEncounter=startEncounter;
+ window.openZeraphiaRPGParty=openParty;
+ // 旧名（CH10専用だった頃の呼び出し元のために残す）
  window.openZeraphiaCh10Party=openParty;
-
- window.openZeraphiaCh10RPG=open;
+ window.openZeraphiaCh10RPG=()=>open(10);
  window.closeZeraphiaCh10RPG=close;
  window.playZeraphiaCh10Novel=playNovel;
  window.startZeraphiaCh10Encounter=startEncounter;

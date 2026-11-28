@@ -3584,7 +3584,7 @@ html:not(.hv2-home) body #global-user-frame .hv2-face {
 
 <link rel="stylesheet" href="css/ch10_rpg_party.css?v=2048">
 <link rel="stylesheet" href="css/ch10_rpg_bridge.css?v=2048">
-<script src="js/ch10_rpg_bridge.js?v=2067" defer></script>
+<script src="js/ch10_rpg_bridge.js?v=2250-rpg-common" defer></script>
 <style id="deinova-rank-criteria-build2105">
   /* build2112: rank guide is attached to body, above shooting party root (240000). */
   html body > #zss-rank-guide-overlay{z-index:400000!important;box-sizing:border-box;}
@@ -21530,7 +21530,7 @@ function fadeOutOpeningBgm(){
           if (illustration.getAttribute('src') !== fallback) illustration.src = fallback;
         }, { once: true });
       }
-      button.addEventListener('click', function(){ if (chapter === 10) { window.openZeraphiaCh10RPG(); return; } openChapter(chapter, mode || 'normal'); });
+      button.addEventListener('click', function(){ if (typeof window.isZeraphiaRpgChapter === 'function' && window.isZeraphiaRpgChapter(chapter)) { window.openZeraphiaStoryRPG(chapter); return; } openChapter(chapter, mode || 'normal'); }); // build2250: RPG形式の章は js/ch10_rpg_bridge.js の RPG_CHAPTERS で管理
       list.appendChild(button);
     }
   }

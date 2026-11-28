@@ -1,0 +1,151 @@
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0f1623;color:#f3eedf;font-family:"Yu Mincho","Hiragino Mincho ProN",serif;touch-action:none}
+#shell{--u:.4px;position:relative;width:100%;height:100dvh;max-width:560px;margin:auto;background:#ebe7e2;overflow:hidden}
+#world{position:absolute;inset:0;display:block;width:100%;height:100%;touch-action:none}
+#toast.show{opacity:1}
+#overlay{position:absolute;inset:0;z-index:30;display:grid;place-items:center;background:rgba(11,18,29,.62);padding:22px}
+#overlay[hidden],#dialog[hidden],#rpg-novel[hidden]{display:none !important}
+.panel{width:100%;padding:26px 22px;background:linear-gradient(180deg,#f7f2ea,#e3dacd);border:1px solid #c7ad7e;box-shadow:0 0 0 3px rgba(255,249,235,.55) inset,0 12px 32px rgba(0,0,0,.28);color:#58493c;max-height:84dvh;overflow:auto}
+.micro{font:700 12px Georgia,serif;letter-spacing:.22em;color:#8e6d48}.panel h1{font-size:22px;line-height:1.45;margin:18px 0}.panel p{font-size:14px;line-height:1.85}.panel .light{font-size:12px;color:#7f736a}.panel button{width:100%;margin-top:12px;padding:14px 16px;border-radius:8px;border:1px solid #c3a471;background:linear-gradient(180deg,#344662,#253248);color:#fff1d8;font:700 16px "Yu Mincho",serif;cursor:pointer}.panel .ghost{background:transparent;color:#6d553a}
+.speaker{font-size:13px;letter-spacing:.18em;color:#8c6e4a;margin-bottom:10px}.line{font-size:16px;line-height:1.8;min-height:50px}.next{text-align:right;font-size:11px;color:#8f8172}
+#rpg-novel{position:absolute;inset:0;z-index:50;overflow:hidden;background:#151b25;cursor:pointer;touch-action:manipulation;font-family:"Noto Serif JP","Yu Mincho",serif}
+.rpg-novel-bg{position:absolute;inset:0;background:linear-gradient(180deg,#465064 0%,#afb2b7 48%,#6a6d73 100%)}
+.rpg-novel-bg::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 58% 12%,rgba(255,255,255,.33),transparent 28%),linear-gradient(180deg,rgba(12,15,21,.16),transparent 24%,rgba(12,15,21,.18) 70%,rgba(5,7,12,.60) 100%),repeating-linear-gradient(90deg,transparent 0 70px,rgba(255,255,255,.05) 71px 76px);opacity:.85}
+.rpg-novel-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,13,18,.20),rgba(0,0,0,0) 28%,rgba(0,0,0,.08) 65%,rgba(5,8,12,.26) 100%)}
+.rpg-novel-head{position:absolute;left:16px;right:16px;top:calc(env(safe-area-inset-top) + 16px);display:flex;align-items:start;justify-content:space-between;z-index:4;color:#f0e5d0}
+.rpg-novel-head button{border:1px solid rgba(241,226,193,.42);background:rgba(39,53,78,.52);color:#fff7e4;padding:9px 14px;font:500 14px "Yu Mincho",serif;cursor:pointer}
+.rpg-novel-head-center{text-align:center;flex:1;padding:0 10px}.rpg-novel-head-center span{display:block;font:500 11px Georgia,serif;letter-spacing:.22em}.rpg-novel-head-center small{display:block;margin-top:8px;font-size:16px;letter-spacing:.12em}
+.rpg-portrait{position:absolute;right:4.5%;bottom:-12dvh;width:min(64vw,35dvh);max-width:330px;height:auto;object-fit:contain;object-position:center bottom;z-index:1;pointer-events:none;filter:drop-shadow(0 5px 9px rgba(33,32,42,.20))}
+.rpg-novel-dialog{position:absolute;left:15px;right:15px;bottom:calc(env(safe-area-inset-bottom) + 16px);min-height:170px;padding:18px 20px 14px;background:linear-gradient(180deg,rgba(250,249,251,.83),rgba(239,239,241,.88));backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);border:1px solid #c9ae7d;box-shadow:0 8px 30px rgba(0,0,0,.20),inset 0 0 0 2px rgba(255,255,255,.55);z-index:3;color:#3e342f}
+#rpg-novel-name{display:inline-block;min-width:120px;padding:8px 16px;margin:-4px 0 14px;background:linear-gradient(180deg,#52627d,#3b4760);clip-path:polygon(0 0,88% 0,100% 50%,88% 100%,0 100%,10px 50%);color:#fff4da;font-weight:700;letter-spacing:.14em}
+#rpg-novel-text{font-size:15px;line-height:2;white-space:pre-wrap;min-height:74px;letter-spacing:.04em}
+#rpg-novel-next{text-align:right;margin-top:8px;font:10px Georgia,serif;letter-spacing:.2em;color:#998469}
+
+/* ===== モック準拠UI : 1u = 画面幅/950（モック画像の1px） ===== */
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#frame{position:absolute;inset:0;z-index:8;pointer-events:none;border-style:solid;border-color:transparent;
+  border-width:0 calc(var(--u)*40) calc(var(--u)*110 + env(safe-area-inset-bottom)) calc(var(--u)*40);
+  border-image:url(images/ui2_frame.png) 0 40 110 40 stretch}
+#top{position:absolute;left:0;right:0;top:0;z-index:10;padding-top:env(safe-area-inset-top);background:#ebe7e2;pointer-events:none;
+  font-family:"Noto Serif JP","Yu Mincho","YuMincho","Hiragino Mincho ProN",serif;filter:drop-shadow(0 calc(var(--u)*4) calc(var(--u)*10) rgba(20,24,40,.18))}
+.hdr-img{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none}
+#top .place{position:absolute;left:calc(var(--u)*70);top:calc(env(safe-area-inset-top) + var(--u)*194);font-size:calc(var(--u)*53);line-height:1.2;font-weight:500;letter-spacing:.19em;color:#f7f2e9;white-space:nowrap;text-shadow:0 calc(var(--u)*2) calc(var(--u)*6) rgba(0,0,0,.45)}
+#top .quest{position:absolute;left:calc(var(--u)*71);top:calc(env(safe-area-inset-top) + var(--u)*283);font-size:calc(var(--u)*28);line-height:1.2;font-weight:500;letter-spacing:.05em;color:#f1ebdf;white-space:nowrap;text-shadow:0 1px calc(var(--u)*4) rgba(0,0,0,.45)}
+.return-hit{position:absolute;left:calc(var(--u)*712);top:calc(env(safe-area-inset-top) + var(--u)*28);width:calc(var(--u)*206);height:calc(var(--u)*72);pointer-events:auto;border:0;padding:0;background:transparent;border-radius:calc(var(--u)*14);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.return-hit:active{background:rgba(255,240,205,.14)}
+.return-hit:focus-visible,.img-btn:focus-visible{outline:2px solid #f2dfb6;outline-offset:2px}
+#controls{position:absolute;inset:0;z-index:10;pointer-events:none}
+#stick{position:absolute;left:calc(var(--u)*30);bottom:calc(var(--u)*65 + env(safe-area-inset-bottom));width:calc(var(--u)*300);height:calc(var(--u)*300);border-radius:50%;pointer-events:auto;touch-action:none;user-select:none;-webkit-tap-highlight-color:transparent}
+#stick .stick-base{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#stick-knob{position:absolute;left:50%;top:50%;width:calc(var(--u)*116);height:calc(var(--u)*116);transform:translate(-50%,-50%);pointer-events:none;filter:drop-shadow(0 calc(var(--u)*5) calc(var(--u)*8) rgba(30,32,50,.28))}
+.img-btn{position:absolute;pointer-events:auto;border:0;padding:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;filter:drop-shadow(0 calc(var(--u)*7) calc(var(--u)*10) rgba(24,28,46,.26));transition:transform .08s,filter .08s}
+.img-btn img{display:block;width:100%;height:100%;pointer-events:none}
+.img-btn:active{transform:scale(.97);filter:drop-shadow(0 calc(var(--u)*3) calc(var(--u)*6) rgba(24,28,46,.3)) brightness(1.15)}
+#action{right:calc(var(--u)*37);bottom:calc(var(--u)*226 + env(safe-area-inset-bottom));width:calc(var(--u)*303);height:calc(var(--u)*113)}
+#menu{right:calc(var(--u)*50);bottom:calc(var(--u)*102 + env(safe-area-inset-bottom));width:calc(var(--u)*267);height:calc(var(--u)*97)}
+#toast{position:absolute;left:50%;top:calc(env(safe-area-inset-top) + var(--u)*372);transform:translateX(-50%);padding:8px 14px;border-radius:999px;background:rgba(22,32,52,.82);border:1px solid rgba(235,217,181,.5);color:#fff6e2;font-size:13px;white-space:nowrap;opacity:0;transition:opacity .2s;z-index:20;pointer-events:none}
+#toast.show{opacity:1}
+#dialog{position:absolute;left:calc(var(--u)*40);right:calc(var(--u)*40);bottom:calc(var(--u)*380 + env(safe-area-inset-bottom));padding:18px 20px;border:1px solid #cfb78f;background:linear-gradient(180deg,rgba(250,247,241,.94),rgba(236,231,223,.94));box-shadow:0 8px 24px rgba(0,0,0,.18),0 0 0 2px rgba(255,250,238,.55) inset;color:#4d4035;z-index:25}
+#editor-panel{position:absolute;left:8px;right:8px;top:calc(env(safe-area-inset-top) + var(--u)*350);z-index:28;padding:8px 10px;background:rgba(18,26,44,.86);border:1px solid rgba(235,217,181,.55);color:#f6ecd6;font:12px/1.5 system-ui,sans-serif;border-radius:8px}
+#editor-panel[hidden]{display:none}
+#editor-panel b{display:block;font-size:12px;letter-spacing:.1em;color:#f2dfb6}
+#editor-panel span{display:block;opacity:.8;font-size:11px}
+#editor-panel .row{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+#editor-panel button{font:11px system-ui,sans-serif;padding:5px 7px;border-radius:5px;border:1px solid rgba(235,217,181,.5);background:#2a3a57;color:#fff2d7;cursor:pointer}
+#editor-panel .fold{float:right;padding:2px 8px}
+#editor-panel.folded span,#editor-panel.folded .row{display:none}
+
+/* build2040: エンカウント演出（UIより上に重ねる） */
+#fx{position:absolute;inset:0;width:100%;height:100%;z-index:60;pointer-events:none}
+
+/* build2043: 起動時は紙色で全面を覆い、マップ・ヘッダー・UI画像が揃ってからフェードで見せる */
+html,body{background:#f7f4ee}
+#boot-cover{position:absolute;inset:0;z-index:100;background:#f7f4ee;pointer-events:none;transition:opacity .35s ease}
+#boot-cover.done{opacity:0}
+/* build2067: 読み込みに時間がかかる時だけ出すバー */
+#boot-cover .boot-load{position:absolute;left:50%;top:50%;width:46%;max-width:220px;transform:translate(-50%,-50%);height:3px;background:rgba(120,100,70,.18);border-radius:2px;animation:bootLoadIn .3s ease}
+#boot-cover .boot-load i{position:absolute;left:0;top:0;bottom:0;width:0;background:#a8875a;border-radius:2px;transition:width .2s ease}
+#boot-cover .boot-load span{position:absolute;left:0;right:0;top:12px;text-align:center;font:600 10px/1 "Cinzel","Noto Serif JP",serif;letter-spacing:.32em;color:#9b8361}
+@keyframes bootLoadIn{from{opacity:0}to{opacity:1}}
+
+/* ===== build2045: メニュー / 編成 ===== */
+.label-btn{position:absolute}
+.label-btn .btn-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:calc(var(--u)*16);
+  font:600 calc(var(--u)*36)/1 "Noto Serif JP","Yu Mincho",serif;letter-spacing:.12em;color:#f3e7cc;text-shadow:0 1px 3px rgba(0,0,0,.6);pointer-events:none;padding-left:calc(var(--u)*6)}
+.btn-ico{position:relative;width:calc(var(--u)*34);height:calc(var(--u)*26);border-top:calc(var(--u)*3.5) solid #e6d3a6;border-bottom:calc(var(--u)*3.5) solid #e6d3a6;box-sizing:border-box}
+.btn-ico::after{content:"";position:absolute;left:0;right:0;top:50%;height:calc(var(--u)*3.5);margin-top:calc(var(--u)*-1.75);background:#e6d3a6}
+
+#overlay{background:rgba(24,30,46,.48);padding:0;place-items:end center;backdrop-filter:blur(2px)}
+.sheet{width:min(100%,560px);max-height:88dvh;overflow:auto;box-sizing:border-box;
+  background:linear-gradient(180deg,#fbf8f1,#f1ebdf);border-top:1px solid #cdb58a;box-shadow:0 -10px 30px rgba(20,24,40,.28),0 0 0 1px rgba(255,255,255,.6) inset;
+  border-radius:14px 14px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom));color:#4a3d2e;font-family:"Noto Serif JP","Yu Mincho",serif;animation:sheetUp .22s ease-out}
+.sheet[hidden]{display:none}
+@keyframes sheetUp{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(166,135,88,.35);padding-bottom:10px;margin-bottom:12px}
+.sheet-head small{display:block;font:700 10px Georgia,serif;letter-spacing:.3em;color:#a1824f}
+.sheet-head h2{margin:2px 0 0;font-size:20px;letter-spacing:.14em;font-weight:600}
+.sheet-close{width:36px;height:36px;border-radius:50%;border:1px solid #cdb58a;background:#fffdf7;color:#7a6142;font-size:20px;line-height:1;cursor:pointer}
+.menu-list{display:grid;gap:8px}
+.menu-item{display:flex;align-items:center;gap:14px;width:100%;padding:13px 14px;border:1px solid #d8c6a2;border-radius:8px;background:#fffdf8;text-align:left;cursor:pointer;color:inherit;font-family:inherit;box-shadow:0 1px 0 rgba(255,255,255,.8) inset}
+.menu-item:active{background:#f4ecdc}
+.menu-item span{flex:1}.menu-item b{display:block;font-size:16px;letter-spacing:.12em;font-weight:600}
+.menu-item em{display:block;font-style:normal;font-size:11px;color:#8b7759;margin-top:2px;letter-spacing:.04em}
+.menu-item u{text-decoration:none;color:#b0925d;font-size:22px}
+.menu-item.is-dummy{opacity:.55}
+.mi{flex:0 0 38px;height:38px;border-radius:50%;background:#2b3a57;box-shadow:0 0 0 2px #d9c18f inset;position:relative}
+.mi::before{content:"";position:absolute;inset:0;margin:auto;background:#f0dfb6;-webkit-mask:var(--m) center/58% no-repeat;mask:var(--m) center/58% no-repeat}
+.mi-party{--m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3Cpath d='M3 21c0-5 4-8 9-8s9 3 9 8z'/%3E%3C/svg%3E")}
+.mi-bag{--m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M8 7V6a4 4 0 0 1 8 0v1h3l1 14H4L5 7zm2 0h4V6a2 2 0 0 0-4 0z'/%3E%3C/svg%3E")}
+.mi-mission{--m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 2h2v20H5zM8 3h11l-2 4 2 4H8z'/%3E%3C/svg%3E")}
+.mi-gear{--m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 2h4l.6 2.6 2.2 1.3 2.6-.8 2 3.4-2 1.9v2.6l2 1.9-2 3.4-2.6-.8-2.2 1.3L14 22h-4l-.6-2.6-2.2-1.3-2.6.8-2-3.4 2-1.9v-2.6l-2-1.9 2-3.4 2.6.8 2.2-1.3zm2 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6z'/%3E%3C/svg%3E")}
+.menu-reset{display:block;margin:16px auto 0;border:0;background:none;color:#a08d70;font-size:11px;text-decoration:underline;cursor:pointer;font-family:inherit}
+
+.party-note{font-size:12px;color:#7d6a4f;margin:0 0 10px;line-height:1.6}
+.party-slots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.slot{position:relative;aspect-ratio:3/4;border:1px dashed #c9b083;border-radius:8px;background:rgba(255,255,255,.55);display:grid;place-items:center;color:#b39b70;font-size:22px;cursor:pointer;overflow:hidden;padding:0;font-family:inherit}
+.slot.filled{border:1px solid #b9965a;background:#fffaf0;box-shadow:0 2px 8px rgba(80,60,30,.12)}
+.slot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top}
+.slot .no{position:absolute;left:5px;top:5px;z-index:2;width:20px;height:20px;border-radius:50%;background:#2b3a57;color:#f3e2b8;font:700 11px/20px Georgia,serif;text-align:center}
+.slot .nm{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:14px 4px 5px;background:linear-gradient(transparent,rgba(30,26,20,.75));color:#fff6e3;font-size:12px;letter-spacing:.06em;text-align:center}
+.slot .lead{position:absolute;right:5px;top:5px;z-index:2;font:700 9px Georgia,serif;letter-spacing:.12em;color:#2b3a57;background:#f1dfb3;padding:2px 5px;border-radius:3px}
+.roster-head{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;margin-bottom:8px;letter-spacing:.08em}
+.roster-head span{font-size:11px;color:#8b7759}
+.roster{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:16px}
+.ch{position:relative;aspect-ratio:3/4;border:1px solid #d9c7a3;border-radius:7px;overflow:hidden;background:#efe8da;cursor:pointer;padding:0;font-family:inherit}
+.ch img.pn{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top}
+.ch .el{position:absolute;left:3px;top:3px;width:18px;height:18px;z-index:2}
+.ch .nm{position:absolute;left:0;right:0;bottom:0;padding:10px 2px 3px;background:linear-gradient(transparent,rgba(30,26,20,.72));color:#fff;font-size:10.5px;text-align:center;z-index:2}
+.ch.sel{outline:3px solid #c09a52;outline-offset:-3px}
+.ch.sel::after{content:attr(data-order);position:absolute;right:4px;top:4px;z-index:3;width:20px;height:20px;border-radius:50%;background:#c09a52;color:#fff;font:700 11px/20px Georgia,serif;text-align:center}
+.ch.locked{cursor:default}.ch.locked img.pn{filter:grayscale(1) brightness(.75);opacity:.55}
+.ch.locked .nm{background:rgba(40,40,48,.75)}
+.ch.locked::before{content:"未加入";position:absolute;inset:0;display:grid;place-items:center;z-index:2;color:#fff;font-size:11px;letter-spacing:.1em;text-shadow:0 1px 3px #000}
+.ch .noimg{position:absolute;inset:0;display:grid;place-items:center;color:#9a8662;font-size:12px}
+.party-foot{display:flex;gap:10px}
+.party-foot button{flex:1;height:46px;border-radius:7px;font:600 15px "Noto Serif JP",serif;letter-spacing:.14em;cursor:pointer}
+#party-save{border:1px solid #1f2a40;background:linear-gradient(180deg,#34466a,#22304b);color:#f5e7c6}
+#party-save:disabled{opacity:.45;cursor:default}
+.party-foot .ghost{border:1px solid #cdb58a;background:#fffdf7;color:#6e5638}
+
+/* build2049: 目的が更新された時、ヘッダーの「目的：」を金色に光らせる */
+#top .quest.quest-new{animation:questNew 1.8s ease-out}
+@keyframes questNew{0%{color:#ffe7a6;text-shadow:0 0 calc(var(--u)*18) rgba(255,214,130,.95),0 1px calc(var(--u)*4) rgba(0,0,0,.45)}100%{color:#f1ebdf;text-shadow:0 1px calc(var(--u)*4) rgba(0,0,0,.45)}}
+
+/* build2051: エリア名の表示（ステージ開始・エリア移動の共通演出）。中央にじわっと出て、じわっと消える */
+#area-title{position:absolute;left:0;right:0;top:44%;z-index:40;display:flex;flex-direction:column;align-items:center;gap:calc(var(--u)*14);pointer-events:none;opacity:0;transform:translateY(-50%)}
+#area-title b{font:600 calc(var(--u)*50)/1.3 "Noto Serif JP","Yu Mincho",serif;letter-spacing:.22em;padding-left:.22em;color:#26324c;white-space:nowrap;
+  text-shadow:0 0 calc(var(--u)*6) #fffdf6,0 0 calc(var(--u)*14) #fffdf6,0 0 calc(var(--u)*28) rgba(255,250,236,.95)}
+#area-title .at-line{display:block;width:calc(var(--u)*440);height:calc(var(--u)*2.5);background:linear-gradient(90deg,transparent,rgba(176,140,74,.95) 28%,rgba(176,140,74,.95) 72%,transparent);box-shadow:0 0 calc(var(--u)*8) #fffdf6}
+#area-title.play{animation:areaTitle 3.4s ease-in-out forwards}
+#area-title.play b{animation:areaTitleText 3.4s ease-out forwards}
+@keyframes areaTitle{0%{opacity:0}25%{opacity:1}72%{opacity:1}100%{opacity:0}}
+@keyframes areaTitleText{0%{filter:blur(6px);letter-spacing:.32em}30%{filter:blur(0);letter-spacing:.22em}100%{filter:blur(0);letter-spacing:.22em}}
+/* 章番号なし・読み込み失敗の表示 */
+.boot-error{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;margin:0;color:#e9e3d4;background:#121826;font:500 15px/1.9 "Noto Serif JP",serif}
+.rpg-portrait[hidden]{display:none!important}
+/* ヘッダーの章表示（ui2_header_base.webp の上に文字で描く。章番号・タイトルは章データから） */
+#top .hdr-story{position:absolute;left:calc(var(--u)*126);top:calc(env(safe-area-inset-top) + var(--u)*44);display:flex;gap:calc(var(--u)*38);align-items:baseline;white-space:nowrap;
+  font-family:"Noto Serif JP","Yu Mincho",serif;font-weight:700;font-size:calc(var(--u)*30);line-height:1.2;letter-spacing:.02em;color:#f3ecdc;text-shadow:0 1px calc(var(--u)*3) rgba(0,0,0,.4)}
+#top .hdr-story b{font-weight:700;letter-spacing:.01em}
+#top .hdr-chapter{position:absolute;left:calc(var(--u)*72);top:calc(env(safe-area-inset-top) + var(--u)*146);display:flex;gap:calc(var(--u)*36);white-space:nowrap;
+  font-family:Georgia,"Times New Roman",serif;font-size:calc(var(--u)*22.5);line-height:1.2;letter-spacing:.32em;color:#efe8d8;text-shadow:0 1px calc(var(--u)*3) rgba(0,0,0,.35)}

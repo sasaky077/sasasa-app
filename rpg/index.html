@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#121826">
+  <title>ZERAPHIA STORY</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="style.css?v=2250">
+</head>
+<body>
+<main id="shell">
+  <div id="boot-cover" aria-hidden="true"></div>
+  <canvas id="world" aria-label="マップ"></canvas>
+  <div id="frame" aria-hidden="true"></div>
+
+  <header id="top">
+    <img class="hdr-img" src="images/ui2_header_base.webp" alt="" draggable="false">
+    <div class="hdr-story" id="hdr-story" aria-hidden="true"></div>
+    <div class="hdr-chapter" id="hdr-chapter" aria-hidden="true"></div>
+    <span class="sr-only"></span>
+    <div class="place" id="place"></div>
+    <div class="quest" id="quest"></div>
+    <button id="returnToStory" class="return-hit" type="button" aria-label="戻る"></button>
+  </header>
+
+  <div id="toast"></div>
+
+  <div id="controls">
+    <div id="stick" role="button" aria-label="移動スティック">
+      <img class="stick-base" src="images/ui2_stick_base.png" alt="" draggable="false">
+      <img id="stick-knob" src="images/ui2_stick_knob.png" alt="" draggable="false">
+    </div>
+    <button id="action" class="img-btn" type="button" aria-label="調べる"><img src="images/ui2_btn_search.png" alt="" draggable="false"></button>
+    <button id="menu" class="img-btn label-btn" type="button" aria-label="メニュー"><img src="images/ui2_btn_blank.png" alt="" draggable="false"><span class="btn-label"><i class="btn-ico"></i>メニュー</span></button>
+  </div>
+
+  <div id="overlay" hidden>
+    <!-- メニュー -->
+    <section class="sheet" id="menu-sheet" aria-label="メニュー">
+      <header class="sheet-head"><div><small>MENU</small><h2>メニュー</h2></div><button class="sheet-close" type="button" data-close aria-label="閉じる">×</button></header>
+      <nav class="menu-list">
+        <button type="button" class="menu-item" data-open="party"><i class="mi mi-party"></i><span><b>編成</b><em>出撃するメンバーを選ぶ</em></span><u>›</u></button>
+        <button type="button" class="menu-item is-dummy" data-dummy><i class="mi mi-bag"></i><span><b>持ち物</b><em>準備中</em></span><u>›</u></button>
+        <button type="button" class="menu-item is-dummy" data-dummy><i class="mi mi-mission"></i><span><b>ミッション</b><em>準備中</em></span><u>›</u></button>
+        <button type="button" class="menu-item is-dummy" data-dummy><i class="mi mi-gear"></i><span><b>設定</b><em>準備中</em></span><u>›</u></button>
+      </nav>
+      <button id="reset" type="button" class="menu-reset">最初からやり直す（開発用）</button>
+    </section>
+    <!-- 編成 -->
+    <section class="sheet" id="party-sheet" aria-label="編成" hidden>
+      <header class="sheet-head"><div><small>PARTY</small><h2>編成</h2></div><button class="sheet-close" type="button" data-back aria-label="もどる">‹</button></header>
+      <p class="party-note">エンカウント戦に出撃するメンバー（最大3人）。先頭がリーダーです。</p>
+      <div class="party-slots" id="party-slots"></div>
+      <div class="roster-head"><b>手持ち（ストーリー）</b><span id="roster-count"></span></div>
+      <div class="roster" id="roster"></div>
+      <footer class="party-foot"><button type="button" class="ghost" data-back>もどる</button><button type="button" id="party-save">決定</button></footer>
+    </section>
+  </div>
+
+  <div id="dialog" hidden>
+    <div class="speaker" id="speaker"></div>
+    <div class="line" id="line"></div>
+    <div class="next">タップして続ける ▸</div>
+  </div>
+
+  <section id="rpg-novel" hidden aria-label="ノベルパート">
+    <div class="rpg-novel-bg"></div>
+    <div class="rpg-novel-shade"></div>
+    <div class="rpg-novel-head">
+      <button id="back-to-story" type="button">〈 戻る</button>
+      <div class="rpg-novel-head-center"><span></span><small id="rpg-novel-scene"></small></div>
+      <button id="novel-skip" type="button">SKIP ✦</button>
+    </div>
+    <img class="rpg-portrait" id="rpg-novel-portrait" alt="" hidden>
+    <div class="rpg-novel-dialog">
+      <div id="rpg-novel-name"></div>
+      <div id="rpg-novel-text"></div>
+      <div id="rpg-novel-next">TAP TO CONTINUE</div>
+</div>
+  </section>
+  <div id="area-title" aria-live="polite"><span class="at-line"></span><b id="area-title-name"></b><span class="at-line"></span></div>
+  <canvas id="fx" aria-hidden="true"></canvas>
+</main>
+<!-- 起動：?ch=章番号 で chapters/chNN.js を読み込む。&v= は本編のブリッジが付けるキャッシュ対策の番号 -->
+<script>
+(function(){
+  const q=new URLSearchParams(location.search);
+  const ch=parseInt(q.get('ch'),10);
+  const v=encodeURIComponent(q.get('v')||Date.now());
+  if(!(ch>0)){
+    document.getElementById('shell').innerHTML='<p class="boot-error">章番号がありません。<br>index.html?ch=10 のように開いてください。</p>';
+    return;
+  }
+  const files=['objects.js','chapters/ch'+String(ch).padStart(2,'0')+'.js','rpg.js'];
+  (function next(i){
+    if(i>=files.length) return;
+    const s=document.createElement('script');
+    s.src=files[i]+'?v='+v;
+    s.onload=()=>next(i+1);
+    s.onerror=()=>{ document.getElementById('shell').innerHTML='<p class="boot-error">'+files[i]+' が読み込めませんでした。</p>'; };
+    document.body.appendChild(s);
+  })(0);
+})();
+</script>
+</body>
+</html>
